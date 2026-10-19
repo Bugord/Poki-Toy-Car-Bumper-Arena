@@ -36,14 +36,29 @@ MonoBehaviour:
   bots:
     count: 6
     retargetInterval: 2
-    edgeMargin: 2
+    retargetJitter: 0.5
+    edgeMargin: 1.5
+    lookAhead: 0.25
+    caution: {x: 0.6, y: 1.4}
+    pushDistance: 3.5
+    pushAngle: 45
+    aimBehind: 1.5
+    aimLead: 0.3
+    distanceWeight: 1
+    edgeWeight: 0.6
+    playerWeight: -0.15
+    crowdPenalty: 0.4
+    pickNoise: 0.5
     boostDelay: {x: 0.3, y: 1.2}
   round:
     duration: 75
     resultDelay: 1.5
     fallHeight: -3
+    removeHeight: -25
   arena:
     radius: 15
+    spawnRadius: 0.6
+    spawnHeight: 0.05
     minRadius: 5
     crumbleDelay: 15
     crumbleInterval: 6

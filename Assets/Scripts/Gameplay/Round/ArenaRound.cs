@@ -58,6 +58,12 @@ namespace ToyCarArena.Gameplay.Round
 
         public int CarsLeft { get; private set; }
 
+        /// <summary>
+        /// How far from the middle the arena reaches now, in metres. The one place the bots read the edge from: the
+        /// crumbling edge (step 5 of the brief) will shrink it, until then it is the starting radius.
+        /// </summary>
+        public float ArenaRadius => tuning.Arena.Radius;
+
         public void Begin()
         {
             if (hasBegun) {
@@ -65,8 +71,7 @@ namespace ToyCarArena.Gameplay.Round
             }
 
             hasBegun = true;
-            // The bots join in step 4 of the brief; until then the player has the arena to itself.
-            Spawn(1);
+            Spawn(1 + tuning.Bots.Count);
             Player = cars[0];
             CarsLeft = cars.Count;
             IsRunning = true;
@@ -118,8 +123,12 @@ namespace ToyCarArena.Gameplay.Round
                 var outward = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
                 // At the very middle (a radius of 0) a car faces away from the camera.
                 var facing = radius > 0f ? -outward : Vector3.forward;
-                var car = resolver.InstantiateInjected(carPrefab, outward * radius + Vector3.up * height,
-                    Quaternion.LookRotation(facing), carParent);
+                var position = outward * radius + Vector3.up * height;
+                var rotation = Quaternion.LookRotation(facing);
+                var car = resolver.InstantiateInjected(carPrefab, position, rotation, carParent);
+                // The interpolated Rigidbody wakes up where the prefab was made, at the origin, and puts the transform
+                // back there; placing the body itself keeps the cars apart.
+                car.Movement.Place(position, rotation);
                 car.name = i == 0 ? "Player Car" : $"Bot Car {i}";
                 cars.Add(car);
             }

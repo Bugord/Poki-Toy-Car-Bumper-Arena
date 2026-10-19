@@ -1,5 +1,6 @@
 using Bugord.Core;
 using ToyCarArena.Gameplay.Arena;
+using ToyCarArena.Gameplay.Bots;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Input;
 using ToyCarArena.Gameplay.Round;
@@ -57,6 +58,7 @@ namespace ToyCarArena.Gameplay
             // the injector builds them, and outlive the scene.
             builder.RegisterEntryPoint<ArenaRound>().AsSelf().WithParameter(carPrefab).WithParameter(transform);
             builder.RegisterEntryPoint<PlayerDriver>();
+            builder.RegisterEntryPoint<BotDriver>();
             if (isStandalone) {
                 builder.RegisterEntryPoint<StandaloneRound>();
             }
