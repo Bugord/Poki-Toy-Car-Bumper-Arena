@@ -1,22 +1,25 @@
 /* Sizes are in reference pixels of a 1080x1920 portrait screen (the panel scales with the screen, expanding on the
-   other axis, so a landscape screen is as tall as the portrait one and wider). Colours are the palette in ui_theme
+   other axis, so a landscape screen is as tall as the portrait one and wider). They are the numbers of the Claude
+   Design canvas "Toy Car Arena UI", whose stage is drawn in these same pixels. Colours are the palette in ui_theme
    (var(--navy) and the rest).
 
-   The shared vocabulary:
-   - screen: a full-screen layer, white text over the game; screen--dimmed puts the navy dim under it and centres what
-     it holds.
-   - card: the white rounded sticker the result sits on, navy text.
-   - pill: a white sticker pill, navy text.
-   - display: outlined title text. stroke: the same text twice, the second label (stroke__face) without outline over
-     the first, so the outline lies outside the letters and the face keeps its full width.
+   The shared vocabulary, as in SMUP:
+   - screen: a full-screen layer, white text over the game; screen--dimmed puts the navy dim under it.
+   - card: the white rounded sticker the result sits on, navy text. inset: a flat soft panel inside a card. rule: a
+     soft line across a card.
+   - pill: a white sticker pill, navy text. plate: a translucent navy pill under white text over the game.
+   - display: outlined title text. stroke: outlined text with the outline outside the letters, as the design draws
+     it: the text twice, the second label (stroke__face) without outline and drop over the first.
    - caption: small muted spaced-out text.
+   - watch: the stopwatch icon, built from elements so the build carries no image for it.
    - button: a sticker button; button--green is the one to press, button--big the tall one. Its first child is always
      button__face, the coloured face over the darker band along its bottom; button__label is its text over the face.
+   - key: a keyboard key cap (the SPACE hint).
 
-   A sticker's hard drop is a thicker navy bottom border: 9 px of outline and the drop under it (20 in all on pills and
-   buttons, 25 on cards). UI Toolkit draws no box-shadow, so spacing between siblings is their margins. A pill's round
-   ends are an explicit border-radius of half its (fixed) height, because a radius too big for the box is not clamped
-   to a circle on both axes. */
+   A sticker's hard drop is a thicker navy bottom border: 9 px of outline and the drop under it (20 in all on pills,
+   25 on cards). That border would squash the bottom corners of the fill inside it, so PillShape redraws such an
+   element with them round, and gives an element with border-radius: 999px round ends (UI Toolkit would draw an
+   ellipse). UI Toolkit draws no box-shadow, gap or gradient: spacing between siblings is their margins. */
 
 .screen {
     position: absolute;
@@ -29,14 +32,13 @@
 }
 
 .screen--dimmed {
-    justify-content: center;
     background-color: rgba(29, 43, 79, 0.6);
 }
 
 .card {
     align-items: center;
     width: 981px;
-    padding: 36px 50px 41px 50px;
+    padding: 46px 50px 50px 50px;
     border-width: 9px;
     border-bottom-width: 25px;
     border-color: var(--navy);
@@ -45,18 +47,43 @@
     color: var(--navy);
 }
 
+.inset {
+    flex-direction: row;
+    align-self: stretch;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 40px 24px 30px;
+    border-radius: 40px;
+    background-color: var(--soft);
+}
+
+.rule {
+    flex-shrink: 0;
+    align-self: stretch;
+    height: 7px;
+    margin: 40px 0;
+    border-radius: 4px;
+    background-color: var(--soft);
+}
+
 .pill {
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    height: 124px;
-    padding: 0 40px;
     border-width: 9px;
     border-bottom-width: 20px;
     border-color: var(--navy);
-    border-radius: 62px;
+    border-radius: 999px;
     background-color: var(--white);
     color: var(--navy);
+}
+
+.plate {
+    flex-direction: row;
+    align-items: center;
+    border-radius: 999px;
+    background-color: rgba(29, 43, 79, 0.75);
+    color: var(--white);
 }
 
 .display {
@@ -68,28 +95,53 @@
     white-space: nowrap;
 }
 
-.stroke > .stroke__face {
-    position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    -unity-text-outline-width: 0;
-    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
-}
-
 .caption {
+    margin: 0;
+    padding: 0;
     font-size: 40px;
     letter-spacing: 3px;
     color: var(--muted);
     -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+/* The stopwatch: a gold dial in a navy ring, the knob on top of the ring and the hand pointing up. */
+.watch {
+    flex-shrink: 0;
+    width: 64px;
+    height: 64px;
+    margin-top: 12px;
+    border-width: 8px;
+    border-color: var(--navy);
+    border-radius: 32px;
+    background-color: var(--gold);
+}
+
+.watch__knob {
+    position: absolute;
+    left: 14px;
+    top: -22px;
+    width: 20px;
+    height: 14px;
+    border-radius: 4px;
+    background-color: var(--navy);
+}
+
+.watch__hand {
+    position: absolute;
+    left: 20px;
+    top: 5px;
+    width: 8px;
+    height: 22px;
+    border-radius: 4px;
+    background-color: var(--navy);
 }
 
 /* The sticker button. Its height comes from its padding and content, never height or min-height. Every view drops the
    theme's unity-button class (Button.ussClassName), so this styles alone. The face covers the button but the bottom
    16 px, which show the button's own colour as the darker band; the label comes after it, so it draws over it. A
    button's text goes in a button__label, never in its text attribute, which the face would cover. Pressed, it sinks
-   onto its drop. */
+   onto its drop and keeps its layout: its border and fill go transparent and PillShape draws it without the drop. */
 .button {
     flex-direction: row;
     justify-content: center;
@@ -125,6 +177,8 @@
 }
 
 .button:active {
+    border-color: rgba(0, 0, 0, 0);
+    background-color: rgba(0, 0, 0, 0);
     translate: 0 11px;
 }
 
@@ -132,9 +186,10 @@
     margin: 0;
     padding: 0;
     -unity-text-align: middle-center;
+    white-space: nowrap;
 }
 
-/* The one to press. White label with a navy outline. */
+/* The one to press. White label with a navy stroke. */
 .button--green {
     background-color: var(--green-shade);
 }
@@ -148,14 +203,15 @@
     background-color: var(--green-hover);
 }
 
-.button--green > .button__label {
+.button--green .button__label {
     color: var(--white);
     -unity-text-outline-width: 16px;
     -unity-text-outline-color: var(--navy);
 }
 
-/* The tall button at the bottom of a result card. */
+/* The tall button at the bottom of the result screen. */
 .button--big {
+    padding: 24px 50px 46px 50px;
     border-width: 11px;
     border-bottom-width: 27px;
     border-radius: 68px;
@@ -166,12 +222,31 @@
     border-radius: 57px;
 }
 
-.button--big > .button__label {
+.button--big .button__label {
     font-size: 104px;
 }
 
 .button--big:active {
     translate: 0 16px;
+}
+
+.key {
+    margin-left: 20px;
+    padding: 0 26px 4px 26px;
+    border-width: 7px;
+    border-bottom-width: 14px;
+    border-color: var(--navy);
+    border-radius: 18px;
+    background-color: var(--white);
+}
+
+.key__text {
+    margin: 0;
+    padding: 0;
+    font-size: 40px;
+    letter-spacing: 2px;
+    color: var(--navy);
+    -unity-text-align: middle-center;
 }
 
 /* The opaque cover while the arena scene loads. It takes every click and touch, so nothing under it is pressed. */
@@ -184,8 +259,8 @@
     background-color: var(--navy);
 }
 
-/* The HUD: a row of pills at the top centre, 60 px from the edge. On a wide screen the row stays in the middle, over
-   the arena. */
+/* The HUD: the stopwatch pill at the top centre, 54 px from the edge, and under it the plate with a car per car in the
+   round. On a wide screen it stays in the middle, over the arena. */
 .hud {
     position: absolute;
     left: 0;
@@ -193,76 +268,269 @@
     right: 0;
     bottom: 0;
     align-items: center;
+    padding-top: 54px;
 }
 
-.hud__row {
-    flex-direction: row;
-    margin-top: 60px;
+.hud__timer {
+    height: 136px;
+    min-width: 320px;
+    padding: 0 46px 0 24px;
+    transition-property: scale;
+    transition-duration: 0.15s;
+    transition-timing-function: ease-out;
 }
 
-.hud__pill {
-    min-width: 270px;
+/* The time, wide enough for any m:ss so the pill does not change width every second. */
+.hud__time {
+    min-width: 150px;
+    margin-left: 18px;
 }
 
-.hud__pill--cars {
-    margin-left: 27px;
-}
-
-/* The value in a pill (72 px Lilita One); the pill's height is fixed, so the label centres on its face. */
-.hud__value {
+.hud__time-text {
     margin: 0;
-    padding: 0 0 8px 0;
-    font-size: 72px;
+    padding: 0 0 6px 0;
+    font-size: 88px;
     color: var(--navy);
     -unity-text-align: middle-center;
     white-space: nowrap;
 }
 
-.hud__caption {
-    margin: 0 20px 8px 0;
-    padding: 0;
-    font-size: 40px;
-    letter-spacing: 3px;
-    color: var(--muted);
-    -unity-text-align: middle-center;
-    white-space: nowrap;
-}
-
-/* The last seconds: the time pill turns red with a white number. */
-.hud__pill--urgent {
+/* The last seconds: the pill turns red, the time white with a navy stroke, the dial white, and the pill beats once a
+   second (HudView sets hud__timer--beat for a moment). */
+.hud__timer--urgent {
     background-color: var(--red);
 }
 
-.hud__pill--urgent > .hud__value {
+.hud__timer--urgent .watch {
+    background-color: var(--white);
+}
+
+.hud__timer--urgent .hud__time-text {
     color: var(--white);
-    -unity-text-outline-width: 8px;
+    -unity-text-outline-width: 14px;
     -unity-text-outline-color: var(--navy);
 }
 
-/* The round's result: the title tilted over the dimmed arena, the card under it. */
+.hud__timer--beat {
+    scale: 1.12 1.12;
+    transition-duration: 0.05s;
+}
+
+/* The cars left: one little car seen from above per car in the round (HudView builds them), dim once it is out, and
+   N LEFT after them. The plate pops when a car goes out. */
+.hud__cars {
+    margin-top: 24px;
+    padding: 18px 36px 18px 28px;
+    transition-property: scale;
+    transition-duration: 0.2s;
+    transition-timing-function: ease-out;
+}
+
+.hud__cars--pop {
+    scale: 1.12 1.12;
+    transition-duration: 0.05s;
+}
+
+.hud__pips {
+    flex-direction: row;
+    align-items: center;
+}
+
+.hud__cars-text {
+    margin: 0 0 0 8px;
+    padding: 0;
+    font-size: 50px;
+    letter-spacing: 1px;
+    color: var(--white);
+    -unity-text-align: middle-left;
+    white-space: nowrap;
+}
+
+.pip {
+    flex-shrink: 0;
+    width: 52px;
+    height: 68px;
+    margin-right: 14px;
+    transition-property: opacity;
+    transition-duration: 0.3s;
+}
+
+.pip__wheel {
+    position: absolute;
+    width: 12px;
+    height: 20px;
+    border-radius: 4px;
+    background-color: var(--navy);
+}
+
+.pip__wheel--front-left {
+    left: 0;
+    top: 8px;
+}
+
+.pip__wheel--front-right {
+    right: 0;
+    top: 8px;
+}
+
+.pip__wheel--back-left {
+    left: 0;
+    bottom: 8px;
+}
+
+.pip__wheel--back-right {
+    right: 0;
+    bottom: 8px;
+}
+
+.pip__body {
+    position: absolute;
+    left: 6px;
+    top: 0;
+    width: 40px;
+    height: 68px;
+    border-width: 6px;
+    border-color: var(--navy);
+    border-radius: 13px;
+    background-color: var(--white);
+}
+
+.pip__glass {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    top: 10px;
+    height: 12px;
+    border-radius: 3px;
+    background-color: var(--navy);
+}
+
+.pip--out {
+    opacity: 0.3;
+}
+
+.pip--out .pip__body {
+    border-color: var(--white);
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.pip--out .pip__glass,
+.pip--out .pip__wheel {
+    background-color: var(--white);
+}
+
+/* The round's result: the title near the top, tilted over the dimmed arena, a line under it, the card with the place
+   and the time on the arena, and PLAY AGAIN at the bottom with the free height between them. Only the top spacer gives
+   way when a screen is too short. While round-over--enter is on (RoundOverView takes it off once the screen shows),
+   the title is small, the card low and the button lower, so they spring into place. */
+.round-over {
+    justify-content: flex-start;
+}
+
+.round-over__spacer-top {
+    flex-shrink: 1;
+    height: 300px;
+    min-height: 120px;
+}
+
 .round-over__title {
     flex-shrink: 0;
-    margin-bottom: 70px;
     rotate: -3deg;
+    transition-property: scale, opacity;
+    transition-duration: 0.35s;
+    transition-timing-function: ease-out-back;
 }
 
 .round-over__title-text {
     margin: 0;
     padding: 0;
-    font-size: 150px;
+    font-size: 171px;
 }
 
 .round-over__title--won {
     color: var(--gold);
 }
 
+/* KNOCKED OUT is the long one: at the full size its outline would touch the sides of a portrait screen. */
 .round-over__title--out {
+    font-size: 148px;
     color: var(--red);
 }
 
+/* Confetti round YOU WIN! (pieces placed in RoundOver.uxml from the title's top left corner), shown on a win only. */
+.round-over__confetti {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: none;
+}
+
+.round-over__confetti--shown {
+    display: flex;
+}
+
+.confetti {
+    position: absolute;
+    width: 24px;
+    height: 46px;
+    border-width: 5px;
+    border-color: var(--navy);
+    border-radius: 6px;
+    transition-property: scale;
+    transition-duration: 0.4s;
+    transition-timing-function: ease-out-back;
+    transition-delay: 0.15s;
+}
+
+.round-over__subtitle {
+    flex-shrink: 0;
+    margin: 34px 0 0 0;
+    padding: 0;
+    font-size: 52px;
+    letter-spacing: 2px;
+    color: var(--white);
+    text-shadow: 0 6px 0 rgb(29, 43, 79);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.round-over__card {
+    flex-shrink: 0;
+    margin-top: 64px;
+    transition-property: translate, opacity;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-out;
+    transition-delay: 0.05s;
+}
+
 .round-over__place {
+    align-self: stretch;
     align-items: center;
-    margin-bottom: 30px;
+}
+
+/* The place on a flat tilted pill: gold, silver or bronze on the podium, soft past it (RoundOverView). */
+.round-over__place-pill {
+    margin-top: 22px;
+    padding: 0 56px 10px 56px;
+    border-width: 7px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--soft);
+    rotate: -2deg;
+}
+
+.round-over__place-pill--gold {
+    background-color: var(--gold);
+}
+
+.round-over__place-pill--silver {
+    background-color: var(--silver);
+}
+
+.round-over__place-pill--bronze {
+    background-color: var(--bronze);
 }
 
 .round-over__place-value {
@@ -274,7 +542,96 @@
     white-space: nowrap;
 }
 
-/* As wide as the card's inside. */
+.round-over__of {
+    margin-top: 26px;
+}
+
+.round-over__time-label {
+    flex-direction: row;
+    align-items: center;
+}
+
+.round-over__time-caption {
+    margin-left: 26px;
+}
+
+.round-over__time-value {
+    margin: 0;
+    padding: 0;
+    font-size: 72px;
+    color: var(--navy);
+    -unity-text-align: middle-right;
+    white-space: nowrap;
+}
+
+.round-over__spacer {
+    flex-grow: 1;
+    flex-shrink: 0;
+    min-height: 45px;
+}
+
+/* PLAY AGAIN and, where there is a keyboard, the key that presses it. The entrance moves this wrapper, not the
+   button, whose own translate is its press. */
+.round-over__actions {
+    flex-shrink: 0;
+    align-items: center;
+    transition-property: translate, opacity;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-out;
+    transition-delay: 0.12s;
+}
+
 .round-over__button {
-    align-self: stretch;
+    width: 981px;
+}
+
+.round-over__hint {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 36px;
+}
+
+.round-over__hint-text {
+    margin: 0;
+    padding: 0;
+    font-size: 40px;
+    letter-spacing: 3px;
+    color: var(--white);
+    text-shadow: 0 5px 0 rgb(29, 43, 79);
+}
+
+.round-over__spacer-bottom {
+    flex-shrink: 0;
+    height: 70px;
+}
+
+.round-over--enter .round-over__title {
+    scale: 0.4 0.4;
+    opacity: 0;
+}
+
+.round-over--enter .confetti {
+    scale: 0 0;
+}
+
+.round-over--enter .round-over__card {
+    translate: 0 120px;
+    opacity: 0;
+}
+
+.round-over--enter .round-over__actions {
+    translate: 0 240px;
+    opacity: 0;
+}
+
+/* Last, so the face of a stroke wins over every rule above that gives its text an outline or a drop: the outline is
+   centred on the letters' edge, so the face over it keeps the letters their full width. */
+.stroke > .stroke__face {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    -unity-text-outline-width: 0;
+    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
 }

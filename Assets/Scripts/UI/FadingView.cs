@@ -29,6 +29,7 @@ namespace ToyCarArena.UI
             Root.style.display = DisplayStyle.None;
             SetOpacity(0f);
             OnAttached();
+            PillShape.Keep(Root);
         }
 
         /// <summary>
