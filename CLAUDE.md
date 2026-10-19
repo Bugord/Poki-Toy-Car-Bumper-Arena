@@ -8,8 +8,8 @@
 
 - **Unity 6.6 (`6000.6.6f1`)**, URP, сборка **Web (WebGL)**. Бриф предлагал Three.js + Rapier, но пользователь выбрал Unity, решение окончательное.
 - **bugord-kit**: git-сабмодуль `External/bugord-kit`, подключён в `Packages/manifest.json` через `file:`.
-  - `com.bugord.core`: `ILogger<T>`, пулы (`ComponentPool<T>`), `IKeyValueStorage`, `IApplicationFocus`, `AddBugordCore()`.
-  - `com.bugord.app`: `AppLifetimeScope`, загрузочные задачи (`IBootTask`), машина состояний приложения, `IGamePlatform` (Poki или локальная заглушка), WebGL-шаблон Poki.
+  - `com.bugord.core`: `ILogger<T>`, пулы (`ComponentPool<T>`), `IKeyValueStorage`, `IApplicationFocus`, `AddBugordCore()`, `SceneInjector` (`Bugord.Core`, интеграция с VContainer).
+  - `com.bugord.app`: `AppLifetimeScope`, загрузочные задачи (`IBootTask`), машина состояний приложения, `IGamePlatform` (Poki или локальная заглушка), `PillShape` (`Bugord.App.UI`), WebGL-шаблон Poki.
 - **VContainer** (DI), **UniState** (состояния приложения), **UniTask** (async).
 - **UIKit** на UI Toolkit (`ViewModel` + `View`, `builder.RegisterScreen<VM, V>()`). uGUI нет.
 - **Super Console** (v0.6.1, Pro через `SUPERCONSOLE_PRO`): дев-консоль. Есть только в development-сборках.
@@ -22,13 +22,13 @@
 Assets/
   Scripts/                ToyCarArena.asmdef, пространство имён ToyCarArena.*
     App/                  GameScope, состояния RoundState и ResultState, LevelScene, BuildInfo
-    Gameplay/             GameplayScope, SceneInjector, GameTuning
+    Gameplay/             GameplayScope, GameTuning
       Cars/               Car (машинка в раунде), CarMovement (физика), PlayerDriver (ввод игрока → машинка)
       Arena/              ArenaCamera, ArenaFloor (диск арены строится из Arena.Radius)
       Input/              InputService, сгенерированный InputSystemActions
       Round/              ArenaRound (спавн, выбывание, итог), RoundResult, StandaloneRound
       Bots/               появится на шаге 4
-    UI/                   экраны UIKit: CurtainView + ScreenCurtain, HudView, RoundOverView; общие FadingView и PillShape
+    UI/                   экраны UIKit: CurtainView + ScreenCurtain, HudView, RoundOverView; общий FadingView
     Audio/                появится вместе со звуком
     Editor/               ToyCarArena.Editor.asmdef: WebGLBuild, BuildNumber, SceneMenu, SuperConsoleLinker
   Scenes/                 Boot.unity (GameScope), Game.unity (GameplayScope в корне)
@@ -53,12 +53,12 @@ Builds/  Library/  Temp/  Logs/  UserSettings/   не в git
 - **`GameScope`** (`Scripts/App`, в сцене `Boot`) наследует `AppLifetimeScope` кита. Кит регистрирует хранилище, логирование, платформу, UIKit (если задан `ScreenCatalog`) и машину состояний. Игра в `ConfigureGame` регистрирует свои состояния, экраны и сервисы и задаёт корневое состояние через `RegisterAppEntryPoint<T>()`.
 - **`LevelScene`** загружает `Game` аддитивно внутри `LifetimeScope.EnqueueParent(parentScope)`, поэтому `GameplayScope` становится дочерним к `GameScope`. Состояния получают сервисы уровня через `levelScene.Resolve<T>()`. Геймплейный код о состояниях не знает.
 - **`GameplayScope`** (корень `Game`) регистрирует всё, что нужно геймплею. Без родителя (сцена `Game` открыта напрямую) он сам вызывает `AddBugordCore()`, и сцена играется отдельно.
-- **Внедрение в сцену**: компоненты получают зависимости методом `private void Construct(...)` с `[Inject]`. Вызывает его `SceneInjector` по имени, потому что в WebGL-сборке линкер вырезает атрибут `[Inject]`. Префабы создаются через `resolver.InstantiateInjected(...)`.
+- **Внедрение в сцену**: компоненты получают зависимости методом `private void Construct(...)` с `[Inject]`. Вызывает его `SceneInjector` из кита по имени, потому что в WebGL-сборке линкер вырезает атрибут `[Inject]`. Префабы создаются через `resolver.InstantiateInjected(...)`.
 - **Состояния** (`Scripts/App`, `StateBase` / `StateBase<TPayload>`, `Execute` возвращает `Transition.GoTo<...>()`):
   - `RoundState` (корневое): грузит арену, если её нет, начинает раунд, зовёт `GameplayStart`, открывает HUD и убирает шторку. Ждёт `ArenaRound.Finished`, зовёт `GameplayStop`, выжидает `Round.ResultDelay` и переходит в `ResultState` с `RoundResult`.
   - `ResultState`: экран RoundOver поверх арены, какой она закончилась. После PLAY AGAIN опускает шторку, грузит сцену заново и возвращается в `RoundState`. Реклама между раундами (шаг 7) встанет сюда же, под шторку.
 - **Раунд** (`ArenaRound`, entry point в `GameplayScope`): `Begin()` ставит машинки на круг `Arena.SpawnRadius` носом к центру, на высоте `Arena.SpawnHeight`. Машинка ниже `Round.FallHeight` выбывает (`Car.TakeOut`), ниже `Round.RemoveHeight` её убирают. Раунд кончается, когда выбыл игрок, когда он остался один или когда вышло время. Раунд одноразовый: следующий идёт в заново загруженной сцене. Кто рулит машинками, раунд не знает: `PlayerDriver` (ITickable) рулит `round.Player`, пока раунд идёт. Сцена `Game` без Boot играет раунды через `StandaloneRound`: он перезагружает сцену после каждого.
-- **UI** (UIKit на UI Toolkit, `Scripts/UI` + `Assets/UI`): стиль «Sunny Sticker», как в SMUP: белые и яркие наклейки с толстой navy-обводкой и жёсткой тенью снизу, весь текст Lilita One. Тень рисуется толстым нижним бордером, потому что box-shadow в UI Toolkit нет; `PillShape` (скопирован из SMUP, кандидат в кит) перерисовывает такие элементы с круглыми нижними углами заливки и даёт `border-radius: 999px` круглые концы. Обводка снаружи букв (класс `stroke`): текст дважды, второй лейбл (`stroke__face`) без обводки поверх первого. Иконки (секундомер, машинки, конфетти) собраны из элементов, картинок нет. Размеры заданы в референсных пикселях 1080×1920, панель масштабируется по Expand. Экраны: `Curtain` (слой попапов, шторка между сценами, `ScreenCurtain`), `Hud` (сверху по центру пилюля с секундомером и временем, под ней плашка с машинкой на каждую машину раунда, выбывшие тусклые, и «N LEFT»; при 10 секундах и меньше пилюля краснеет и пульсирует раз в секунду, плашка подпрыгивает, когда машина выбывает), `RoundOver` (наклонный заголовок YOU WIN! с конфетти / KNOCKED OUT / TIME UP! и подзаголовок; карточка с местом на пилюле золото/серебро/бронза, «OF N CARS» и временем на арене, место скрыто, пока машина одна; большая зелёная PLAY AGAIN внизу, под ней на десктопе подсказка «OR PRESS SPACE»; Space и Enter тоже жмут; заголовок, карточка и кнопка въезжают при показе). `FadingView` пропускает ввод только после того, как экран проявился. Макеты экранов (телефон и десктоп) лежат в Claude Design: https://claude.ai/artifact/TK9sXmFcdo281rei8sAv75
+- **UI** (UIKit на UI Toolkit, `Scripts/UI` + `Assets/UI`): стиль «Sunny Sticker», как в SMUP: белые и яркие наклейки с толстой navy-обводкой и жёсткой тенью снизу, весь текст Lilita One. Тень рисуется толстым нижним бордером, потому что box-shadow в UI Toolkit нет; `PillShape` из кита (`Bugord.App.UI`, вынесен из SMUP) перерисовывает такие элементы с круглыми нижними углами заливки и даёт `border-radius: 999px` круглые концы. Обводка снаружи букв (класс `stroke`): текст дважды, второй лейбл (`stroke__face`) без обводки поверх первого. Иконки (секундомер, машинки, конфетти) собраны из элементов, картинок нет. Размеры заданы в референсных пикселях 1080×1920, панель масштабируется по Expand. Экраны: `Curtain` (слой попапов, шторка между сценами, `ScreenCurtain`), `Hud` (сверху по центру пилюля с секундомером и временем, под ней плашка с машинкой на каждую машину раунда, выбывшие тусклые, и «N LEFT»; при 10 секундах и меньше пилюля краснеет и пульсирует раз в секунду, плашка подпрыгивает, когда машина выбывает), `RoundOver` (наклонный заголовок YOU WIN! с конфетти / KNOCKED OUT / TIME UP! и подзаголовок; карточка с местом на пилюле золото/серебро/бронза, «OF N CARS» и временем на арене, место скрыто, пока машина одна; большая зелёная PLAY AGAIN внизу, под ней на десктопе подсказка «OR PRESS SPACE»; Space и Enter тоже жмут; заголовок, карточка и кнопка въезжают при показе). `FadingView` пропускает ввод только после того, как экран проявился. Макеты экранов (телефон и десктоп) лежат в Claude Design: https://claude.ai/artifact/TK9sXmFcdo281rei8sAv75
 - **Платформа**: только через `IGamePlatform` из кита (`GameplayStart/Stop`, `CommercialBreak`, `RewardedBreak`, `Measure`). При `POKI_ENABLED` это `PokiGamePlatform`, иначе `LocalGamePlatform`. Её инициализирует загрузочная задача кита. `gameLoadingFinished` вызывает сам загрузчик Poki из шаблона, когда Unity загрузилась; из игры его не вызываем.
 - **`GameTuning`** (`data_game_tuning.asset`): все числа физики и геймплея в одном ассете, разделы Car, Controls, Boost, Bots, Round, Arena. Регистрируется в `GameplayScope`.
 - **Машинка** (`CarMovement`) аркадная поверх Rigidbody. Её зовут `Drive(heading, amount)`: куда ехать и насколько сильно. Игрок и боты рулят одним API. Поворот через `angularVelocity.y` без перелёта, скорость вдоль носа тянется к `MaxSpeed`, боковой занос гасится `Grip`. Рулит только колёсами на арене: луч вниз по слою `Arena`. Удары и падение с края остаются за физикой.
@@ -111,7 +111,7 @@ unity status
 - В `Assets/` кладём только используемые модели Kenney, архивы паков целиком не кладём.
 - Каждый ассет и скрипт коммитим вместе с его `.meta`.
 - Если редактор подключён (`unity status`), сцены, префабы и `.asset` меняем через него (`unity command …`), а не правкой YAML вручную. Если редактор открыт без фокуса, в режиме Play ставь `Application.runInBackground = true`, иначе игра встаёт на паузу.
-- Кит меняем в его собственном репозитории (сабмодуль), а не копиями здесь. Код, который понадобился второй игре, переносим в кит. Пример: `SceneInjector`, он скопирован из SMUP.
+- Кит меняем в его собственном репозитории (сабмодуль), а не копиями здесь. Код, который понадобился второй игре, переносим в кит. Пример: `SceneInjector` и `PillShape`, они начинались в SMUP.
 - Стиль кода как в образце:
   - фигурные скобки типов и членов на новой строке, у `if`/`foreach`/`try` на той же;
   - приватные поля без подчёркивания, присваиваются через `this.`;

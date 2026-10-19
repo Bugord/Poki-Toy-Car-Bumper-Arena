@@ -1,5 +1,5 @@
 <!--
-    Managed stripping is High for WebGL. VContainer finds constructors by reflection and SceneInjector finds Construct methods
+    Managed stripping is High for WebGL. VContainer finds constructors by reflection and the kit's SceneInjector finds Construct methods
     by name, neither of which the linker can follow, so the assemblies whose types the containers build are kept whole.
 -->
 <linker>
