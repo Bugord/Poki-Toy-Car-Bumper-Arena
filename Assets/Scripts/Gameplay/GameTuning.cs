@@ -187,10 +187,77 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float retargetInterval = 2f;
 
+            [Tooltip("Share of the retarget interval each pick lengthens or shortens it by at random, so the bots do " +
+                "not change their minds together")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float retargetJitter = 0.5f;
+
             [Tooltip("A bot this close to the edge, in metres, turns back towards the middle")]
             [Min(0f)]
             [SerializeField]
-            private float edgeMargin = 2f;
+            private float edgeMargin = 1.5f;
+
+            [Tooltip("Seconds ahead a bot foresees where its speed takes it; heading past the edge margin by then, it " +
+                "turns back towards the middle before it gets there")]
+            [Min(0f)]
+            [SerializeField]
+            private float lookAhead = 0.25f;
+
+            [Tooltip("Least and most a bot's look-ahead is multiplied by, picked at random for each bot: low is bold " +
+                "and pushes cars further out, high is careful")]
+            [SerializeField]
+            private Vector2 caution = new(0.6f, 1.4f);
+
+            [Tooltip("A bot with its target right in front of its nose and this close, in metres (centre to centre), " +
+                "is pushing it: it stops looking ahead and keeps pushing up to the edge margin; 0 never commits")]
+            [Min(0f)]
+            [SerializeField]
+            private float pushDistance = 3.5f;
+
+            [Tooltip("Widest angle off a bot's nose, in degrees, its target counts as right in front at")]
+            [Range(0f, 90f)]
+            [SerializeField]
+            private float pushAngle = 45f;
+
+            [Tooltip("A bot aims this far behind its target, in metres, on the side facing the middle, so the hit " +
+                "pushes the target out towards the edge")]
+            [Min(0f)]
+            [SerializeField]
+            private float aimBehind = 1.5f;
+
+            [Tooltip("Seconds of its target's motion a bot aims ahead of it")]
+            [Min(0f)]
+            [SerializeField]
+            private float aimLead = 0.3f;
+
+            [Tooltip("How much a target's distance counts against it in a pick, per arena diameter away")]
+            [Min(0f)]
+            [SerializeField]
+            private float distanceWeight = 1f;
+
+            [Tooltip("How much a target counts for being out near the edge, where it is easy to push off: this for a " +
+                "car right at the edge, nothing for one in the middle")]
+            [Min(0f)]
+            [SerializeField]
+            private float edgeWeight = 0.6f;
+
+            [Tooltip("What the player's car counts for in a pick, beside the others; below 0 the bots pick on the " +
+                "player less, so a new player is not mobbed")]
+            [SerializeField]
+            private float playerWeight = -0.15f;
+
+            [Tooltip("What a target counts against it for each other bot already after it, so the bots spread out " +
+                "instead of mobbing one car")]
+            [Min(0f)]
+            [SerializeField]
+            private float crowdPenalty = 0.4f;
+
+            [Tooltip("Most a random amount added to each target's score in a pick can be, so the same bot does not " +
+                "always pick the same car")]
+            [Min(0f)]
+            [SerializeField]
+            private float pickNoise = 0.5f;
 
             [Tooltip("Shortest and longest delay before a bot boosts once its target is ahead, in seconds")]
             [SerializeField]
@@ -198,7 +265,19 @@ namespace ToyCarArena.Gameplay
 
             public int Count => count;
             public float RetargetInterval => retargetInterval;
+            public float RetargetJitter => retargetJitter;
             public float EdgeMargin => edgeMargin;
+            public float LookAhead => lookAhead;
+            public Vector2 Caution => caution;
+            public float PushDistance => pushDistance;
+            public float PushAngle => pushAngle;
+            public float AimBehind => aimBehind;
+            public float AimLead => aimLead;
+            public float DistanceWeight => distanceWeight;
+            public float EdgeWeight => edgeWeight;
+            public float PlayerWeight => playerWeight;
+            public float CrowdPenalty => crowdPenalty;
+            public float PickNoise => pickNoise;
             public Vector2 BoostDelay => boostDelay;
         }
 
