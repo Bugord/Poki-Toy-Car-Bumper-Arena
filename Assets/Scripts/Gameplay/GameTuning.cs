@@ -247,6 +247,12 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float playerWeight = -0.15f;
 
+            [Tooltip("Seconds from the start of a round during which no bot picks the player's car, so a new player " +
+                "has time to find their car and the controls before anyone comes for them")]
+            [Min(0f)]
+            [SerializeField]
+            private float playerGrace = 6f;
+
             [Tooltip("What a target counts against it for each other bot already after it, so the bots spread out " +
                 "instead of mobbing one car")]
             [Min(0f)]
@@ -276,6 +282,7 @@ namespace ToyCarArena.Gameplay
             public float DistanceWeight => distanceWeight;
             public float EdgeWeight => edgeWeight;
             public float PlayerWeight => playerWeight;
+            public float PlayerGrace => playerGrace;
             public float CrowdPenalty => crowdPenalty;
             public float PickNoise => pickNoise;
             public Vector2 BoostDelay => boostDelay;

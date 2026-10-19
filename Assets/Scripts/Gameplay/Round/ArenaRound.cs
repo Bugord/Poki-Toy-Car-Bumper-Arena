@@ -57,6 +57,11 @@ namespace ToyCarArena.Gameplay.Round
 
         public float TimeLeft => Mathf.Max(0f, tuning.Round.Duration - elapsed);
 
+        /// <summary>
+        /// Seconds since the round began.
+        /// </summary>
+        public float Elapsed => elapsed;
+
         public int CarsLeft { get; private set; }
 
         /// <summary>
