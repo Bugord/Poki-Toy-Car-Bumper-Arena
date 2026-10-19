@@ -23,7 +23,7 @@ Assets/
   Scripts/                ToyCarArena.asmdef, пространство имён ToyCarArena.*
     App/                  GameScope, состояния RoundState и ResultState, LevelScene, BuildInfo
     Gameplay/             GameplayScope, GameTuning
-      Cars/               Car (машинка в раунде), CarMovement (физика), PlayerDriver (ввод игрока → машинка)
+      Cars/               Car (машинка в раунде), CarMovement (физика), PlayerDriver (ввод игрока → машинка), CarLook (цвет кузова и маркер игрока)
       Arena/              ArenaCamera, ArenaFloor (диск арены строится из Arena.Radius)
       Input/              InputService, сгенерированный InputSystemActions
       Round/              ArenaRound (спавн, выбывание, итог), RoundResult, StandaloneRound
@@ -67,6 +67,7 @@ Builds/  Library/  Temp/  Logs/  UserSettings/   не в git
   - мышь с зажатой кнопкой ведёт машинку к курсору;
   - палец по умолчанию работает как плавающий джойстик (`Controls.TouchSteering`, вариант FollowFinger ведёт к пальцу как мышь).
   - Рулит только первый палец. Нажатия на экранные кнопки (`IOnScreenControls`) не рулят. Клик мыши в течение секунды после касания считается эхом тача и игнорируется.
+- **Вид машинок** (`CarLook` на `Car.prefab`, `Apply(index)` зовёт `ArenaRound.Spawn`; 0 игрок, 1..N боты): кузов красится сдвигом UV модели на другой квадрат атласа `colormap` (атлас это палитра плоских квадратов; множитель `_BaseColor` затемнил бы окна, бамперы и колёса), поэтому `mdl_car_racer.fbx` читаемая (Read/Write) и у каждой машинки свой клон меша. Квадрат по индексу, цвета и размеры маркера лежат на компоненте в префабе, не в `GameTuning`: это внешний вид, геймплей их не читает. Игрока выделяет маркер: белое кольцо на полу под машинкой и стрелка над ней, обе с navy-обводкой (мэши строятся в коде, материалы `mat_player_marker*` Unlit). Маркер живёт в мире, а не на машинке, поэтому не кренится вместе с ней, стрелка смотрит в камеру, у выбывшей машинки маркер скрыт. Без коллайдеров, слой по умолчанию.
 - **`ArenaCamera`** сохраняет угол из сцены и отъезжает вдоль взгляда так, чтобы арена (`Arena.Radius + ViewMargin`) целиком влезла и в портрет, и в альбом.
 - **Ссылки на ассеты в сценах проверяем в сборке.** В WebGL-плеере обращение к null не падает сразу: `null.GetType()` читает мусор, и ошибка всплывает дальше (`Class::FromIl2CppType`, `VContainerException:  is not assignable from …` с пустым именем типа). Поэтому scope проверяет свои serialized-ссылки сам и бросает исключение с понятным текстом. Тот же текст ошибки в релизной сборке (не в development) даёт и дженерик `builder.RegisterInstance<T>(obj)`, когда ссылка жива. Поэтому ScriptableObject регистрируем недженерик-перегрузкой `builder.RegisterInstance(obj, typeof(T))`.
 

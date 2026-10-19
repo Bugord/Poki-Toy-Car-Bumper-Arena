@@ -467,6 +467,7 @@ GameObject:
   - component: {fileID: 2979525318293385101}
   - component: {fileID: 5058133182158369765}
   - component: {fileID: 9129053375818311994}
+  - component: {fileID: 4642534986577596277}
   m_Layer: 6
   m_Name: Car
   m_TagString: Untagged
@@ -562,3 +563,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9f7e9898b37642841a1fbe0805529f32, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Cars.Car
+--- !u!114 &4642534986577596277
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8950181487849744919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9fa8e2b2636a6a044a7f64c6632a1fb2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Cars.CarLook
+  body: {fileID: 1138314476950220024}
+  bodySwatch: {x: 1, y: 1}
+  swatches:
+  - {x: 1, y: 1}
+  - {x: 4, y: 1}
+  - {x: 5, y: 1}
+  - {x: 2, y: 1}
+  - {x: 7, y: 1}
+  - {x: 3, y: 1}
+  - {x: 0, y: 2}
+  - {x: 0, y: 0}
+  markerFill: {fileID: 2100000, guid: 67abec6b3c8fad5429dc53cdea4f25da, type: 2}
+  markerOutline: {fileID: 2100000, guid: 4cea892f3909cd14d8be753c90cd7c30, type: 2}
+  ringRadius: {x: 1.45, y: 1.8}
+  outlineWidth: 0.1
+  ringHeight: 0.03
+  arrowSize: {x: 1.5, y: 1.7}
+  arrowHeight: 2.7
+  arrowBob: {x: 0.2, y: 1.5}

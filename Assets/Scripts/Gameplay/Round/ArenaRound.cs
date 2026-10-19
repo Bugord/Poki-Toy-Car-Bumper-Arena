@@ -122,6 +122,7 @@ namespace ToyCarArena.Gameplay.Round
                 var car = resolver.InstantiateInjected(carPrefab, outward * radius + Vector3.up * height,
                     Quaternion.LookRotation(facing), carParent);
                 car.name = i == 0 ? "Player Car" : $"Bot Car {i}";
+                car.GetComponent<CarLook>().Apply(i);
                 cars.Add(car);
             }
         }
