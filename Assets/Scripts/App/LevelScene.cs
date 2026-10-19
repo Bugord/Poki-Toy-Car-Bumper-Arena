@@ -26,6 +26,11 @@ namespace ToyCarArena.App
             this.parentScope = parentScope;
         }
 
+        /// <summary>
+        /// Whether the Game scene is loaded and its services can be resolved.
+        /// </summary>
+        public bool IsLoaded => gameplayScope != null;
+
         public async UniTask Load(CancellationToken token)
         {
             await Unload();

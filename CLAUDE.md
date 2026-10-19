@@ -21,19 +21,23 @@
 ```
 Assets/
   Scripts/                ToyCarArena.asmdef, пространство имён ToyCarArena.*
-    App/                  GameScope, состояния приложения, LevelScene, BuildInfo
+    App/                  GameScope, состояния RoundState и ResultState, LevelScene, BuildInfo
     Gameplay/             GameplayScope, SceneInjector, GameTuning
-      Cars/               CarMovement (физика машинки), PlayerDriver (ввод игрока → машинка)
-      Arena/              ArenaCamera
+      Cars/               Car (машинка в раунде), CarMovement (физика), PlayerDriver (ввод игрока → машинка)
+      Arena/              ArenaCamera, ArenaFloor (диск арены строится из Arena.Radius)
       Input/              InputService, сгенерированный InputSystemActions
-      Bots/ Round/        появятся на шагах 3–4
-    UI/  Audio/           появятся вместе с экранами и звуком
+      Round/              ArenaRound (спавн, выбывание, итог), RoundResult, StandaloneRound
+      Bots/               появится на шаге 4
+    UI/                   экраны UIKit: CurtainView + ScreenCurtain, HudView, RoundOverView; общий FadingView
+    Audio/                появится вместе со звуком
     Editor/               ToyCarArena.Editor.asmdef: WebGLBuild, BuildNumber, SceneMenu, SuperConsoleLinker
   Scenes/                 Boot.unity (GameScope), Game.unity (GameplayScope в корне)
   Data/<Kind>/            ScriptableObject-данные: Data/Gameplay/data_game_tuning.asset, Data/Physics/phys_car
   Art/Models|Textures|Materials/   модели Kenney (FBX), атлас colormap, материалы
   Prefabs/<Kind>/         Prefabs/Cars/Car.prefab
-  UI/  Input/
+  UI/                     ui_theme.tss (палитра, шрифт), ui_screens.uss, Screens/*.uxml, Fonts/ (Lilita One),
+                          data_screen_catalog и ui_panel_settings (заданы у GameScope в Boot)
+  Input/
   Settings/               UniversalRP + UniversalRP_Renderer, глобальные настройки URP
   WebGLTemplates/poki-template/   шаблон из кита (Tools > Bugord Kit > Install Poki WebGL Template)
   link.xml                сборки, которые не трогает stripping
@@ -50,7 +54,11 @@ Builds/  Library/  Temp/  Logs/  UserSettings/   не в git
 - **`LevelScene`** загружает `Game` аддитивно внутри `LifetimeScope.EnqueueParent(parentScope)`, поэтому `GameplayScope` становится дочерним к `GameScope`. Состояния получают сервисы уровня через `levelScene.Resolve<T>()`. Геймплейный код о состояниях не знает.
 - **`GameplayScope`** (корень `Game`) регистрирует всё, что нужно геймплею. Без родителя (сцена `Game` открыта напрямую) он сам вызывает `AddBugordCore()`, и сцена играется отдельно.
 - **Внедрение в сцену**: компоненты получают зависимости методом `private void Construct(...)` с `[Inject]`. Вызывает его `SceneInjector` по имени, потому что в WebGL-сборке линкер вырезает атрибут `[Inject]`. Префабы создаются через `resolver.InstantiateInjected(...)`.
-- **Состояния** (`Scripts/App`, `StateBase` / `StateBase<TPayload>`, `Execute` возвращает `Transition.GoTo<...>()`). Сейчас есть только `ArenaState`: грузит арену и ждёт. Раунд, результат и рестарт появятся на шаге 3.
+- **Состояния** (`Scripts/App`, `StateBase` / `StateBase<TPayload>`, `Execute` возвращает `Transition.GoTo<...>()`):
+  - `RoundState` (корневое): грузит арену, если её нет, начинает раунд, зовёт `GameplayStart`, открывает HUD и убирает шторку. Ждёт `ArenaRound.Finished`, зовёт `GameplayStop`, выжидает `Round.ResultDelay` и переходит в `ResultState` с `RoundResult`.
+  - `ResultState`: экран RoundOver поверх арены, какой она закончилась. После PLAY AGAIN опускает шторку, грузит сцену заново и возвращается в `RoundState`. Реклама между раундами (шаг 7) встанет сюда же, под шторку.
+- **Раунд** (`ArenaRound`, entry point в `GameplayScope`): `Begin()` ставит машинки на круг `Arena.SpawnRadius` носом к центру, на высоте `Arena.SpawnHeight`. Машинка ниже `Round.FallHeight` выбывает (`Car.TakeOut`), ниже `Round.RemoveHeight` её убирают. Раунд кончается, когда выбыл игрок, когда он остался один или когда вышло время. Раунд одноразовый: следующий идёт в заново загруженной сцене. Кто рулит машинками, раунд не знает: `PlayerDriver` (ITickable) рулит `round.Player`, пока раунд идёт. Сцена `Game` без Boot играет раунды через `StandaloneRound`: он перезагружает сцену после каждого.
+- **UI** (UIKit на UI Toolkit, `Scripts/UI` + `Assets/UI`): стиль «Sunny Sticker», то есть белые наклейки с толстой navy-обводкой и жёсткой тенью снизу. Тень рисуется толстым нижним бордером, потому что box-shadow в UI Toolkit нет. Размеры заданы в референсных пикселях 1080×1920, панель масштабируется по Expand. Экраны: `Curtain` (слой попапов, шторка между сценами, `ScreenCurtain`), `Hud` (время и CARS; при 10 секундах и меньше плашка времени краснеет), `RoundOver` (YOU WIN! / KNOCKED OUT / TIME UP!, место, PLAY AGAIN; Space и Enter тоже жмут). `FadingView` пропускает ввод только после того, как экран проявился. Макеты экранов лежат в Claude Design: https://claude.ai/artifact/TK9sXmFcdo281rei8sAv75
 - **Платформа**: только через `IGamePlatform` из кита (`GameplayStart/Stop`, `CommercialBreak`, `RewardedBreak`, `Measure`). При `POKI_ENABLED` это `PokiGamePlatform`, иначе `LocalGamePlatform`. Её инициализирует загрузочная задача кита. `gameLoadingFinished` вызывает сам загрузчик Poki из шаблона, когда Unity загрузилась; из игры его не вызываем.
 - **`GameTuning`** (`data_game_tuning.asset`): все числа физики и геймплея в одном ассете, разделы Car, Controls, Boost, Bots, Round, Arena. Регистрируется в `GameplayScope`.
 - **Машинка** (`CarMovement`) аркадная поверх Rigidbody. Её зовут `Drive(heading, amount)`: куда ехать и насколько сильно. Игрок и боты рулят одним API. Поворот через `angularVelocity.y` без перелёта, скорость вдоль носа тянется к `MaxSpeed`, боковой занос гасится `Grip`. Рулит только колёсами на арене: луч вниз по слою `Arena`. Удары и падение с края остаются за физикой.
@@ -60,7 +68,7 @@ Builds/  Library/  Temp/  Logs/  UserSettings/   не в git
   - палец по умолчанию работает как плавающий джойстик (`Controls.TouchSteering`, вариант FollowFinger ведёт к пальцу как мышь).
   - Рулит только первый палец. Нажатия на экранные кнопки (`IOnScreenControls`) не рулят. Клик мыши в течение секунды после касания считается эхом тача и игнорируется.
 - **`ArenaCamera`** сохраняет угол из сцены и отъезжает вдоль взгляда так, чтобы арена (`Arena.Radius + ViewMargin`) целиком влезла и в портрет, и в альбом.
-- **Ссылки на ассеты в сценах проверяем в сборке.** В WebGL-плеере обращение к null не падает сразу: `null.GetType()` читает мусор, и ошибка всплывает дальше (`Class::FromIl2CppType`, `VContainerException:  is not assignable from …` с пустым именем типа). Поэтому scope проверяет свои serialized-ссылки сам и бросает исключение с понятным текстом.
+- **Ссылки на ассеты в сценах проверяем в сборке.** В WebGL-плеере обращение к null не падает сразу: `null.GetType()` читает мусор, и ошибка всплывает дальше (`Class::FromIl2CppType`, `VContainerException:  is not assignable from …` с пустым именем типа). Поэтому scope проверяет свои serialized-ссылки сам и бросает исключение с понятным текстом. Тот же текст ошибки в релизной сборке (не в development) даёт и дженерик `builder.RegisterInstance<T>(obj)`, когда ссылка жива. Поэтому ScriptableObject регистрируем недженерик-перегрузкой `builder.RegisterInstance(obj, typeof(T))`.
 
 ## Команды
 

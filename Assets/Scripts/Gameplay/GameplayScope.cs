@@ -1,6 +1,8 @@
 using Bugord.Core;
 using ToyCarArena.Gameplay.Arena;
+using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Input;
+using ToyCarArena.Gameplay.Round;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
@@ -21,25 +23,43 @@ namespace ToyCarArena.Gameplay
         [SerializeField]
         private ArenaCamera arenaCamera;
 
+        [Tooltip("The car every driver gets, the player's and the bots', placed by the round")]
+        [SerializeField]
+        private Car carPrefab;
+
         protected override void Configure(IContainerBuilder builder)
         {
             // Checked here: in the WebGL player a missing reference does not throw where it is used, a null instance's
             // GetType() reads garbage and VContainer fails later with an empty type name.
             Require(tuning, nameof(tuning));
             Require(arenaCamera, nameof(arenaCamera));
+            Require(carPrefab, nameof(carPrefab));
 
-            // No parent means no Boot, so no app scope to bring the kit's storage and logging.
-            if (Parent == null) {
+            // No parent means no Boot, so no app scope to bring the kit's storage and logging, nor app states to play
+            // the round.
+            var isStandalone = Parent == null;
+            if (isStandalone) {
                 builder.AddBugordCore();
             }
 
-            builder.RegisterInstance(tuning);
+            // The non-generic overload on purpose: in the release WebGL player (IL2CPP, faster-smaller code generation)
+            // RegisterInstance<GameTuning>(tuning) hands VContainer a broken instance, and the build fails with
+            // "VContainerException:  is not assignable from ToyCarArena.Gameplay.GameTuning". Development builds are fine.
+            builder.RegisterInstance(tuning, typeof(GameTuning));
 
             // Nothing is drawn over the game yet; the HUD with the boost button will take its own presses.
             builder.Register<IOnScreenControls, NoOnScreenControls>(Lifetime.Singleton);
             builder.RegisterEntryPoint<InputService>().As<IInputService>();
 
             builder.RegisterComponent(arenaCamera);
+
+            // The cars go under this scope's object: with no parent given they would land in DontDestroyOnLoad, where
+            // the injector builds them, and outlive the scene.
+            builder.RegisterEntryPoint<ArenaRound>().AsSelf().WithParameter(carPrefab).WithParameter(transform);
+            builder.RegisterEntryPoint<PlayerDriver>();
+            if (isStandalone) {
+                builder.RegisterEntryPoint<StandaloneRound>();
+            }
 
             builder.RegisterBuildCallback(InjectScene);
         }

@@ -222,9 +222,14 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float fallHeight = -3f;
 
+            [Tooltip("A car out of the round keeps falling in view and is put away below this height, in metres")]
+            [SerializeField]
+            private float removeHeight = -25f;
+
             public float Duration => duration;
             public float ResultDelay => resultDelay;
             public float FallHeight => fallHeight;
+            public float RemoveHeight => removeHeight;
         }
 
         /// <summary>
@@ -237,6 +242,17 @@ namespace ToyCarArena.Gameplay
             [Min(1f)]
             [SerializeField]
             private float radius = 15f;
+
+            [Tooltip("The cars start on a circle this share of the radius out from the middle, facing it")]
+            [Range(0f, 0.95f)]
+            [SerializeField]
+            private float spawnRadius = 0.6f;
+
+            [Tooltip("Height above the floor the cars start at, in metres, so they settle onto it instead of starting " +
+                "inside it")]
+            [Min(0f)]
+            [SerializeField]
+            private float spawnHeight = 0.05f;
 
             [Tooltip("The edge stops crumbling at this radius, in metres")]
             [Min(1f)]
@@ -270,6 +286,8 @@ namespace ToyCarArena.Gameplay
             private float viewMargin = 1.5f;
 
             public float Radius => radius;
+            public float SpawnRadius => spawnRadius;
+            public float SpawnHeight => spawnHeight;
             public float MinRadius => minRadius;
             public float CrumbleDelay => crumbleDelay;
             public float CrumbleInterval => crumbleInterval;

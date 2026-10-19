@@ -1,0 +1,19 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="round-over" class="screen screen--dimmed">
+        <Style src="../ui_screens.uss" />
+        <ui:VisualElement picking-mode="Ignore" class="stroke round-over__title">
+            <ui:Label text="TIME UP!" picking-mode="Ignore" class="display round-over__title-text" />
+            <ui:Label text="TIME UP!" picking-mode="Ignore" class="display round-over__title-text stroke__face" />
+        </ui:VisualElement>
+        <ui:VisualElement class="card">
+            <ui:VisualElement name="place" picking-mode="Ignore" class="round-over__place">
+                <ui:Label text="YOUR PLACE" picking-mode="Ignore" class="caption" />
+                <ui:Label name="place-value" text="#1 of 1" picking-mode="Ignore" class="round-over__place-value" />
+            </ui:VisualElement>
+            <ui:Button name="play-again-button" class="button button--green button--big round-over__button">
+                <ui:VisualElement picking-mode="Ignore" class="button__face" />
+                <ui:Label text="PLAY AGAIN" picking-mode="Ignore" class="button__label" />
+            </ui:Button>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

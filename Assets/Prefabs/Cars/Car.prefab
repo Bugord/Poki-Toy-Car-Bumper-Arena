@@ -466,6 +466,7 @@ GameObject:
   - component: {fileID: 3722834523934355766}
   - component: {fileID: 2979525318293385101}
   - component: {fileID: 5058133182158369765}
+  - component: {fileID: 9129053375818311994}
   m_Layer: 6
   m_Name: Car
   m_TagString: Untagged
@@ -549,3 +550,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9b76f194d252fd84c9ed30ea4cc62a0f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Cars.CarMovement
+--- !u!114 &9129053375818311994
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8950181487849744919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f7e9898b37642841a1fbe0805529f32, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Cars.Car

@@ -1,0 +1,280 @@
+/* Sizes are in reference pixels of a 1080x1920 portrait screen (the panel scales with the screen, expanding on the
+   other axis, so a landscape screen is as tall as the portrait one and wider). Colours are the palette in ui_theme
+   (var(--navy) and the rest).
+
+   The shared vocabulary:
+   - screen: a full-screen layer, white text over the game; screen--dimmed puts the navy dim under it and centres what
+     it holds.
+   - card: the white rounded sticker the result sits on, navy text.
+   - pill: a white sticker pill, navy text.
+   - display: outlined title text. stroke: the same text twice, the second label (stroke__face) without outline over
+     the first, so the outline lies outside the letters and the face keeps its full width.
+   - caption: small muted spaced-out text.
+   - button: a sticker button; button--green is the one to press, button--big the tall one. Its first child is always
+     button__face, the coloured face over the darker band along its bottom; button__label is its text over the face.
+
+   A sticker's hard drop is a thicker navy bottom border: 9 px of outline and the drop under it (20 in all on pills and
+   buttons, 25 on cards). UI Toolkit draws no box-shadow, so spacing between siblings is their margins. A pill's round
+   ends are an explicit border-radius of half its (fixed) height, because a radius too big for the box is not clamped
+   to a circle on both axes. */
+
+.screen {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    color: var(--white);
+}
+
+.screen--dimmed {
+    justify-content: center;
+    background-color: rgba(29, 43, 79, 0.6);
+}
+
+.card {
+    align-items: center;
+    width: 981px;
+    padding: 36px 50px 41px 50px;
+    border-width: 9px;
+    border-bottom-width: 25px;
+    border-color: var(--navy);
+    border-radius: 58px;
+    background-color: var(--white);
+    color: var(--navy);
+}
+
+.pill {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    height: 124px;
+    padding: 0 40px;
+    border-width: 9px;
+    border-bottom-width: 20px;
+    border-color: var(--navy);
+    border-radius: 62px;
+    background-color: var(--white);
+    color: var(--navy);
+}
+
+.display {
+    color: var(--white);
+    -unity-text-outline-width: 18px;
+    -unity-text-outline-color: var(--navy);
+    text-shadow: 0 18px 0 rgb(29, 43, 79);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.stroke > .stroke__face {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    -unity-text-outline-width: 0;
+    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+}
+
+.caption {
+    font-size: 40px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    -unity-text-align: middle-center;
+}
+
+/* The sticker button. Its height comes from its padding and content, never height or min-height. Every view drops the
+   theme's unity-button class (Button.ussClassName), so this styles alone. The face covers the button but the bottom
+   16 px, which show the button's own colour as the darker band; the label comes after it, so it draws over it. A
+   button's text goes in a button__label, never in its text attribute, which the face would cover. Pressed, it sinks
+   onto its drop. */
+.button {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    min-width: 504px;
+    margin: 0;
+    padding: 19px 50px 35px 50px;
+    border-width: 9px;
+    border-bottom-width: 20px;
+    border-color: var(--navy);
+    border-radius: 50px;
+    background-color: var(--shade);
+    background-image: none;
+    color: var(--navy);
+    font-size: 63px;
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.button__face {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 16px;
+    border-radius: 41px;
+    background-color: var(--white);
+}
+
+.button:hover > .button__face,
+.button:focus > .button__face {
+    background-color: var(--soft);
+}
+
+.button:active {
+    translate: 0 11px;
+}
+
+.button__label {
+    margin: 0;
+    padding: 0;
+    -unity-text-align: middle-center;
+}
+
+/* The one to press. White label with a navy outline. */
+.button--green {
+    background-color: var(--green-shade);
+}
+
+.button--green > .button__face {
+    background-color: var(--green);
+}
+
+.button--green:hover > .button__face,
+.button--green:focus > .button__face {
+    background-color: var(--green-hover);
+}
+
+.button--green > .button__label {
+    color: var(--white);
+    -unity-text-outline-width: 16px;
+    -unity-text-outline-color: var(--navy);
+}
+
+/* The tall button at the bottom of a result card. */
+.button--big {
+    border-width: 11px;
+    border-bottom-width: 27px;
+    border-radius: 68px;
+}
+
+.button--big > .button__face {
+    bottom: 23px;
+    border-radius: 57px;
+}
+
+.button--big > .button__label {
+    font-size: 104px;
+}
+
+.button--big:active {
+    translate: 0 16px;
+}
+
+/* The opaque cover while the arena scene loads. It takes every click and touch, so nothing under it is pressed. */
+.curtain {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--navy);
+}
+
+/* The HUD: a row of pills at the top centre, 60 px from the edge. On a wide screen the row stays in the middle, over
+   the arena. */
+.hud {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+}
+
+.hud__row {
+    flex-direction: row;
+    margin-top: 60px;
+}
+
+.hud__pill {
+    min-width: 270px;
+}
+
+.hud__pill--cars {
+    margin-left: 27px;
+}
+
+/* The value in a pill (72 px Lilita One); the pill's height is fixed, so the label centres on its face. */
+.hud__value {
+    margin: 0;
+    padding: 0 0 8px 0;
+    font-size: 72px;
+    color: var(--navy);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.hud__caption {
+    margin: 0 20px 8px 0;
+    padding: 0;
+    font-size: 40px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+/* The last seconds: the time pill turns red with a white number. */
+.hud__pill--urgent {
+    background-color: var(--red);
+}
+
+.hud__pill--urgent > .hud__value {
+    color: var(--white);
+    -unity-text-outline-width: 8px;
+    -unity-text-outline-color: var(--navy);
+}
+
+/* The round's result: the title tilted over the dimmed arena, the card under it. */
+.round-over__title {
+    flex-shrink: 0;
+    margin-bottom: 70px;
+    rotate: -3deg;
+}
+
+.round-over__title-text {
+    margin: 0;
+    padding: 0;
+    font-size: 150px;
+}
+
+.round-over__title--won {
+    color: var(--gold);
+}
+
+.round-over__title--out {
+    color: var(--red);
+}
+
+.round-over__place {
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.round-over__place-value {
+    margin: 0;
+    padding: 0;
+    font-size: 130px;
+    color: var(--navy);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+/* As wide as the card's inside. */
+.round-over__button {
+    align-self: stretch;
+}

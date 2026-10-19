@@ -152,8 +152,8 @@ MonoBehaviour:
     TypeName: 
   autoRun: 1
   autoInjectGameObjects: []
-  screenCatalog: {fileID: 0}
-  panelSettings: {fileID: 0}
+  screenCatalog: {fileID: 11400000, guid: 303b9fc320f74fc48a46ad9eda8c497e, type: 2}
+  panelSettings: {fileID: 11400000, guid: 9c53cf531d7052246ab3a4a0f2a4402f, type: 2}
   targetFrameRate: 60
   storagePrefix: toycararena
 --- !u!4 &2030469846

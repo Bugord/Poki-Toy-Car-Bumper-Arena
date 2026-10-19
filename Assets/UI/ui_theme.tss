@@ -1,0 +1,27 @@
+@import url("unity-theme://default");
+
+/* "Sunny Sticker": chunky casual stickers. Everything has a thick navy outline, white or bright fills, round pills and
+   rounded cards, and a hard navy drop under it, which UI Toolkit (no box-shadow) draws as a thicker bottom border.
+   All text is Lilita One, a font asset made from the font in UI/Fonts, so display text can take an outline.
+
+   The palette, as variables every style sheet of the panel can use (var(--navy)). Translucent colours cannot be built
+   from them, so the dim is written out where used: rgba(29, 43, 79, 0.6) over a screen.
+   - navy: outlines, drops, text on white; white: cards, pills, text on the game
+   - soft: a button face under the pointer; shade: a white button's face shade; muted: captions and secondary text
+   - red: the last seconds, a knock-out; gold: a win
+   - green/green-shade/green-hover: the primary button */
+:root {
+    -unity-font-definition: url("/Assets/UI/Fonts/font_lilita_one.asset");
+    color: #1d2b4f;
+
+    --navy: #1d2b4f;
+    --white: #ffffff;
+    --soft: #eef3fb;
+    --shade: #c7d3ea;
+    --muted: #5b6b8c;
+    --red: #ff4d4d;
+    --gold: #ffc93c;
+    --green: #5bd34a;
+    --green-shade: #2f9e2a;
+    --green-hover: #74de63;
+}

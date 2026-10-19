@@ -216,83 +216,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &1192618470
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 7842240790297131067, guid: 222cdabef3973de4db083cc9179a4027, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7842240790297131067, guid: 222cdabef3973de4db083cc9179a4027, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0.05
-      objectReference: {fileID: 0}
-    - target: {fileID: 7842240790297131067, guid: 222cdabef3973de4db083cc9179a4027, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7842240790297131067, guid: 222cdabef3973de4db083cc9179a4027, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7842240790297131067, guid: 222cdabef3973de4db083cc9179a4027, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7842240790297131067, guid: 222cdabef3973de4db083cc9179a4027, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7842240790297131067, guid: 222cdabef3973de4db083cc9179a4027, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7842240790297131067, guid: 222cdabef3973de4db083cc9179a4027, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7842240790297131067, guid: 222cdabef3973de4db083cc9179a4027, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7842240790297131067, guid: 222cdabef3973de4db083cc9179a4027, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8950181487849744919, guid: 222cdabef3973de4db083cc9179a4027, type: 3}
-      propertyPath: m_Name
-      value: PlayerCar
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 8950181487849744919, guid: 222cdabef3973de4db083cc9179a4027, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1192618472}
-  m_SourcePrefab: {fileID: 100100000, guid: 222cdabef3973de4db083cc9179a4027, type: 3}
---- !u!1 &1192618471 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8950181487849744919, guid: 222cdabef3973de4db083cc9179a4027, type: 3}
-  m_PrefabInstance: {fileID: 1192618470}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1192618472
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1192618471}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a03e78bdb75917d49baee0271858c97d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Cars.PlayerDriver
 --- !u!1 &1404793204
 GameObject:
   m_ObjectHideFlags: 0
@@ -328,6 +251,7 @@ MonoBehaviour:
   autoInjectGameObjects: []
   tuning: {fileID: 11400000, guid: d3ac6d0d1668c84439c54712e09fbaca, type: 2}
   arenaCamera: {fileID: 1867175643}
+  carPrefab: {fileID: 9129053375818311994, guid: 222cdabef3973de4db083cc9179a4027, type: 3}
 --- !u!4 &1404793206
 Transform:
   m_ObjectHideFlags: 0
@@ -355,8 +279,9 @@ GameObject:
   - component: {fileID: 1674820963}
   - component: {fileID: 1674820961}
   - component: {fileID: 1674820965}
+  - component: {fileID: 1674820966}
   m_Layer: 7
-  m_Name: ArenaPlaceholder
+  m_Name: Arena
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -418,7 +343,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1674820960}
-  m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 0}
 --- !u!4 &1674820964
 Transform:
   m_ObjectHideFlags: 0
@@ -428,8 +353,8 @@ Transform:
   m_GameObject: {fileID: 1674820960}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.5, z: 0}
-  m_LocalScale: {x: 30, y: 0.5, z: 30}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -455,7 +380,19 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30
-  m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 0}
+--- !u!114 &1674820966
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1674820960}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27e0e5882c08fb345a803e483b43d110, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Arena.ArenaFloor
 --- !u!1 &1867175639
 GameObject:
   m_ObjectHideFlags: 0
@@ -569,4 +506,3 @@ SceneRoots:
   - {fileID: 1867175642}
   - {fileID: 477846442}
   - {fileID: 1674820964}
-  - {fileID: 1192618470}

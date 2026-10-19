@@ -1,0 +1,14 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="hud" picking-mode="Ignore" class="hud">
+        <Style src="../ui_screens.uss" />
+        <ui:VisualElement picking-mode="Ignore" class="hud__row">
+            <ui:VisualElement name="time-pill" picking-mode="Ignore" class="pill hud__pill">
+                <ui:Label name="time" text="0:00" picking-mode="Ignore" class="hud__value" />
+            </ui:VisualElement>
+            <ui:VisualElement name="cars-pill" picking-mode="Ignore" class="pill hud__pill hud__pill--cars">
+                <ui:Label text="CARS" picking-mode="Ignore" class="hud__caption" />
+                <ui:Label name="cars" text="0/0" picking-mode="Ignore" class="hud__value" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
