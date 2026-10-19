@@ -15,6 +15,9 @@ namespace ToyCarArena.Gameplay
         private CarSettings car = new();
 
         [SerializeField]
+        private ControlSettings controls = new();
+
+        [SerializeField]
         private BoostSettings boost = new();
 
         [SerializeField]
@@ -27,13 +30,15 @@ namespace ToyCarArena.Gameplay
         private ArenaSettings arena = new();
 
         public CarSettings Car => car;
+        public ControlSettings Controls => controls;
         public BoostSettings Boost => boost;
         public BotSettings Bots => bots;
         public RoundSettings Round => round;
         public ArenaSettings Arena => arena;
 
         /// <summary>
-        /// How a car drives and how hard it pushes. A car's own data may scale these later, when the cars differ.
+        /// How a car drives and how hard it pushes. A car's own data may scale these later, when the cars differ. The car
+        /// is about 2.6 m long.
         /// </summary>
         [Serializable]
         public sealed class CarSettings
@@ -41,27 +46,42 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Top speed on the flat, in metres per second")]
             [Min(0f)]
             [SerializeField]
-            private float maxSpeed = 12f;
+            private float maxSpeed = 10f;
 
             [Tooltip("Speed gained per second at full throttle, in metres per second")]
             [Min(0f)]
             [SerializeField]
-            private float acceleration = 25f;
+            private float acceleration = 20f;
 
-            [Tooltip("Turn rate at speed, in degrees per second")]
+            [Tooltip("Speed lost per second off the throttle, or above the speed the throttle asks for, in metres per second")]
             [Min(0f)]
             [SerializeField]
-            private float turnSpeed = 180f;
+            private float braking = 12f;
+
+            [Tooltip("Fastest turn, in degrees per second")]
+            [Min(0f)]
+            [SerializeField]
+            private float turnSpeed = 300f;
+
+            [Tooltip("How fast the turn rate builds up and dies down, in degrees per second squared; it also eases the " +
+                "car onto its heading without overshooting")]
+            [Min(1f)]
+            [SerializeField]
+            private float turnAcceleration = 2000f;
 
             [Tooltip("Rigidbody mass; the heavier car of two moves less when they hit")]
             [Min(0.01f)]
             [SerializeField]
             private float mass = 1f;
 
+            [Tooltip("Height of the centre of mass above the bottom of the car, in metres; low keeps it on its wheels")]
+            [SerializeField]
+            private float centerOfMassHeight = 0.3f;
+
             [Tooltip("How fast sideways sliding dies down, per second; low drifts, high grips")]
             [Min(0f)]
             [SerializeField]
-            private float grip = 8f;
+            private float grip = 6f;
 
             [Tooltip("Extra impulse on a hit, per metre per second of closing speed, on top of the physics")]
             [Min(0f)]
@@ -70,10 +90,53 @@ namespace ToyCarArena.Gameplay
 
             public float MaxSpeed => maxSpeed;
             public float Acceleration => acceleration;
+            public float Braking => braking;
             public float TurnSpeed => turnSpeed;
+            public float TurnAcceleration => turnAcceleration;
             public float Mass => mass;
+            public float CenterOfMassHeight => centerOfMassHeight;
             public float Grip => grip;
             public float BumpForce => bumpForce;
+        }
+
+        /// <summary>
+        /// How the mouse and a finger steer. The keys and a gamepad stick point where the car should go, up being away
+        /// from the camera; the mouse drives the car towards the cursor while its button is held.
+        /// </summary>
+        [Serializable]
+        public sealed class ControlSettings
+        {
+            [Tooltip("Joystick: the finger is a stick that appears where it touched. Follow Finger: the car drives " +
+                "towards the finger, as it does towards the mouse")]
+            [SerializeField]
+            private TouchSteering touchSteering = TouchSteering.Joystick;
+
+            [Tooltip("How far the finger moves from where it touched for full throttle, as a share of the screen's " +
+                "shorter side; dragged further, the stick's centre follows the finger")]
+            [Range(0.02f, 0.5f)]
+            [SerializeField]
+            private float joystickRadius = 0.1f;
+
+            [Tooltip("Share of the joystick radius the finger moves before the car starts")]
+            [Range(0f, 0.9f)]
+            [SerializeField]
+            private float joystickDeadZone = 0.2f;
+
+            [Tooltip("Following the mouse or a finger, the car stops this close to it, in metres")]
+            [Min(0f)]
+            [SerializeField]
+            private float pointerStopRadius = 1f;
+
+            [Tooltip("Following the mouse or a finger, the car slows down from this far, in metres")]
+            [Min(0f)]
+            [SerializeField]
+            private float pointerSlowRadius = 4f;
+
+            public TouchSteering TouchSteering => touchSteering;
+            public float JoystickRadius => joystickRadius;
+            public float JoystickDeadZone => joystickDeadZone;
+            public float PointerStopRadius => pointerStopRadius;
+            public float PointerSlowRadius => pointerSlowRadius;
         }
 
         /// <summary>
@@ -200,12 +263,25 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float crumbleWarning = 1.5f;
 
+            [Tooltip("Room the camera leaves around the arena, in metres, so a car at the edge is in view in any " +
+                "screen shape")]
+            [Min(0f)]
+            [SerializeField]
+            private float viewMargin = 1.5f;
+
             public float Radius => radius;
             public float MinRadius => minRadius;
             public float CrumbleDelay => crumbleDelay;
             public float CrumbleInterval => crumbleInterval;
             public float CrumbleStep => crumbleStep;
             public float CrumbleWarning => crumbleWarning;
+            public float ViewMargin => viewMargin;
+        }
+
+        public enum TouchSteering
+        {
+            Joystick,
+            FollowFinger,
         }
     }
 }

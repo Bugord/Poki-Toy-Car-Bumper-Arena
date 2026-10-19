@@ -10,15 +10,24 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6f052ae8e66cbab459cd0e546b2d7e3f, type: 3}
-  m_Name: data_game_tuning
+  m_Name: 
   m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.GameTuning
   car:
-    maxSpeed: 12
-    acceleration: 25
-    turnSpeed: 180
+    maxSpeed: 10
+    acceleration: 20
+    braking: 12
+    turnSpeed: 300
+    turnAcceleration: 2000
     mass: 1
-    grip: 8
+    centerOfMassHeight: 0.3
+    grip: 6
     bumpForce: 1
+  controls:
+    touchSteering: 0
+    joystickRadius: 0.1
+    joystickDeadZone: 0.2
+    pointerStopRadius: 1
+    pointerSlowRadius: 4
   boost:
     impulse: 12
     duration: 0.4
@@ -40,3 +49,4 @@ MonoBehaviour:
     crumbleInterval: 6
     crumbleStep: 1.5
     crumbleWarning: 1.5
+    viewMargin: 1.5

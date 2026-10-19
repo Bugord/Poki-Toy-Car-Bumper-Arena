@@ -22,12 +22,18 @@
 Assets/
   Scripts/                ToyCarArena.asmdef, пространство имён ToyCarArena.*
     App/                  GameScope, состояния приложения, LevelScene, BuildInfo
-    Gameplay/             GameplayScope, SceneInjector, GameTuning, затем Cars/ Bots/ Arena/ Round/ Input/
+    Gameplay/             GameplayScope, SceneInjector, GameTuning
+      Cars/               CarMovement (физика машинки), PlayerDriver (ввод игрока → машинка)
+      Arena/              ArenaCamera
+      Input/              InputService, сгенерированный InputSystemActions
+      Bots/ Round/        появятся на шагах 3–4
     UI/  Audio/           появятся вместе с экранами и звуком
     Editor/               ToyCarArena.Editor.asmdef: WebGLBuild, BuildNumber, SceneMenu, SuperConsoleLinker
   Scenes/                 Boot.unity (GameScope), Game.unity (GameplayScope в корне)
-  Data/<Kind>/            ScriptableObject-данные: Data/Gameplay/data_game_tuning.asset
-  Art/  Prefabs/<Kind>/  UI/  Input/
+  Data/<Kind>/            ScriptableObject-данные: Data/Gameplay/data_game_tuning.asset, Data/Physics/phys_car
+  Art/Models|Textures|Materials/   модели Kenney (FBX), атлас colormap, материалы
+  Prefabs/<Kind>/         Prefabs/Cars/Car.prefab
+  UI/  Input/
   Settings/               UniversalRP + UniversalRP_Renderer, глобальные настройки URP
   WebGLTemplates/poki-template/   шаблон из кита (Tools > Bugord Kit > Install Poki WebGL Template)
   link.xml                сборки, которые не трогает stripping
@@ -36,7 +42,7 @@ Tools/build-webgl.sh      сборка релиза в batch mode
 Builds/  Library/  Temp/  Logs/  UserSettings/   не в git
 ```
 
-Имена ассетов в snake_case с префиксом типа (`data_`, `mat_`, `sfx_`, `music_`, `tex_`), префабы в PascalCase.
+Имена ассетов в snake_case с префиксом типа (`data_`, `mat_`, `mdl_`, `tex_`, `phys_`, `sfx_`, `music_`), префабы в PascalCase. Физматериал в Unity 6.6 имеет расширение `.physicMaterial`: с `.physicsMaterial` ассет уходит в DefaultImporter.
 
 ## Архитектура
 
@@ -46,7 +52,14 @@ Builds/  Library/  Temp/  Logs/  UserSettings/   не в git
 - **Внедрение в сцену**: компоненты получают зависимости методом `private void Construct(...)` с `[Inject]`. Вызывает его `SceneInjector` по имени, потому что в WebGL-сборке линкер вырезает атрибут `[Inject]`. Префабы создаются через `resolver.InstantiateInjected(...)`.
 - **Состояния** (`Scripts/App`, `StateBase` / `StateBase<TPayload>`, `Execute` возвращает `Transition.GoTo<...>()`). Сейчас есть только `ArenaState`: грузит арену и ждёт. Раунд, результат и рестарт появятся на шаге 3.
 - **Платформа**: только через `IGamePlatform` из кита (`GameplayStart/Stop`, `CommercialBreak`, `RewardedBreak`, `Measure`). При `POKI_ENABLED` это `PokiGamePlatform`, иначе `LocalGamePlatform`. Её инициализирует загрузочная задача кита. `gameLoadingFinished` вызывает сам загрузчик Poki из шаблона, когда Unity загрузилась; из игры его не вызываем.
-- **`GameTuning`** (`data_game_tuning.asset`): все числа физики и геймплея в одном ассете, разделы Car, Boost, Bots, Round, Arena. Регистрируется в `GameplayScope`.
+- **`GameTuning`** (`data_game_tuning.asset`): все числа физики и геймплея в одном ассете, разделы Car, Controls, Boost, Bots, Round, Arena. Регистрируется в `GameplayScope`.
+- **Машинка** (`CarMovement`) аркадная поверх Rigidbody. Её зовут `Drive(heading, amount)`: куда ехать и насколько сильно. Игрок и боты рулят одним API. Поворот через `angularVelocity.y` без перелёта, скорость вдоль носа тянется к `MaxSpeed`, боковой занос гасится `Grip`. Рулит только колёсами на арене: луч вниз по слою `Arena`. Удары и падение с края остаются за физикой.
+- **Управление** (`PlayerDriver` + `InputService`):
+  - клавиши и стик задают направление относительно камеры;
+  - мышь с зажатой кнопкой ведёт машинку к курсору;
+  - палец по умолчанию работает как плавающий джойстик (`Controls.TouchSteering`, вариант FollowFinger ведёт к пальцу как мышь).
+  - Рулит только первый палец. Нажатия на экранные кнопки (`IOnScreenControls`) не рулят. Клик мыши в течение секунды после касания считается эхом тача и игнорируется.
+- **`ArenaCamera`** сохраняет угол из сцены и отъезжает вдоль взгляда так, чтобы арена (`Arena.Radius + ViewMargin`) целиком влезла и в портрет, и в альбом.
 - **Ссылки на ассеты в сценах проверяем в сборке.** В WebGL-плеере обращение к null не падает сразу: `null.GetType()` читает мусор, и ошибка всплывает дальше (`Class::FromIl2CppType`, `VContainerException:  is not assignable from …` с пустым именем типа). Поэтому scope проверяет свои serialized-ссылки сам и бросает исключение с понятным текстом.
 
 ## Команды
@@ -83,7 +96,9 @@ unity status
 - **Все числа геймплея хранятся в `GameTuning`**: скорость, масса, сила толчка, ускорение и его перезарядка, осыпание, длина раунда, число ботов. В коде их не хардкодим.
 - **Poki только через `IGamePlatform`.** `gameplayStart` в начале раунда, `gameplayStop` при выбывании игрока, на экране результата и на паузе. `commercialBreak` между раундами, `rewardedBreak` за открытие машинки. Пока идёт реклама, игра и звук на паузе.
 - Никаких внешних ссылок, сторонней аналитики и рекламы.
-- Управление работает одинаково с клавиатуры (WASD/стрелки + пробел) и с тача (джойстик + кнопка). UI проверяем в портретной и в альбомной ориентации.
+- Управление работает с клавиатуры (WASD/стрелки + пробел), с мыши и с тача (джойстик + кнопка). Большинство игроков Poki играют мышью или пальцем, поэтому без клавиатуры игра должна оставаться полноценной. UI проверяем в портретной и в альбомной ориентации.
+- Проверка управления в браузерной панели: эмуляция телефона шлёт мышь, а не касания. Тач проверяем синтетическими `TouchEvent` на canvas, долгое нажатие мыши проверяем синтетическими `mousedown`/`mousemove`, потому что `left_click_drag` слишком короткий.
+- Одноразовые правки ассетов при закрытом редакторе делаем временным editor-скриптом через `Unity.exe -batchmode -quit -nographics -projectPath . -executeMethod …`, потом удаляем его. Editor-сборка не может называть типы, унаследованные от VContainer (CS0012), поэтому такие компоненты берём через `GetComponent(typeof(GameplayScope))` в переменную типа `Component`.
 - Размер сборки держим маленьким: только нужные пакеты и модули движка, mono-аудио, сжатые текстуры. После каждой сборки смотрим `Builds/WebGL-report.txt`.
 - В `Assets/` кладём только используемые модели Kenney, архивы паков целиком не кладём.
 - Каждый ассет и скрипт коммитим вместе с его `.meta`.

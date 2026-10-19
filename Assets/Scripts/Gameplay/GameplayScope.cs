@@ -1,4 +1,6 @@
 using Bugord.Core;
+using ToyCarArena.Gameplay.Arena;
+using ToyCarArena.Gameplay.Input;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
@@ -15,22 +17,38 @@ namespace ToyCarArena.Gameplay
         [SerializeField]
         private GameTuning tuning;
 
+        [Tooltip("The camera over the arena, which steering turns screen points into the arena with")]
+        [SerializeField]
+        private ArenaCamera arenaCamera;
+
         protected override void Configure(IContainerBuilder builder)
         {
+            // Checked here: in the WebGL player a missing reference does not throw where it is used, a null instance's
+            // GetType() reads garbage and VContainer fails later with an empty type name.
+            Require(tuning, nameof(tuning));
+            Require(arenaCamera, nameof(arenaCamera));
+
             // No parent means no Boot, so no app scope to bring the kit's storage and logging.
             if (Parent == null) {
                 builder.AddBugordCore();
             }
 
-            // Checked here: in the WebGL player a null instance does not throw, its GetType() reads garbage and VContainer
-            // fails later with an empty type name.
-            if (tuning == null) {
-                throw new MissingReferenceException($"{nameof(GameplayScope)} in {gameObject.scene.name} has no {nameof(GameTuning)}.");
-            }
-
             builder.RegisterInstance(tuning);
 
+            // Nothing is drawn over the game yet; the HUD with the boost button will take its own presses.
+            builder.Register<IOnScreenControls, NoOnScreenControls>(Lifetime.Singleton);
+            builder.RegisterEntryPoint<InputService>().As<IInputService>();
+
+            builder.RegisterComponent(arenaCamera);
+
             builder.RegisterBuildCallback(InjectScene);
+        }
+
+        private void Require(Object reference, string field)
+        {
+            if (reference == null) {
+                throw new MissingReferenceException($"{nameof(GameplayScope)} in {gameObject.scene.name} has no {field}.");
+            }
         }
 
         /// <summary>
