@@ -1,0 +1,2 @@
+# Shell scripts keep LF line endings, or bash fails on them in a checkout with core.autocrlf.
+*.sh text eol=lf

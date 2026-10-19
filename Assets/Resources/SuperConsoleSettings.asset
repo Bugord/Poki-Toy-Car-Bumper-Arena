@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 889224ad9d664de6aaa250889ed35516, type: 3}
+  m_Name: SuperConsoleSettings
+  m_EditorClassIdentifier: SuperConsole.Runtime::Bugord.SuperConsole.ConsoleSettings
+  maxLogsPerFrame: 100
+  bufferCapacity: 5000
+  mobileBufferCapacity: 3000
+  unityBridgeQueueCapacity: 1000
+  captureUnityLogs: 1
+  forwardLogsToUnity: 1
+  stackTracesForErrors: 1
+  stackTracesForWarnings: 1
+  stackTracesForLogs: 1
+  includeInBuilds: 0
+  autoCreateOverlay: 1
+  startVisible: 0
+  releaseCursor: 1
+  toggleKey: 96
+  openOnThreeFingerTap: 1
+  openOnShake: 0
+  theme: 1
+  showStackTracesForErrors: 1
+  showStackTracesForWarnings: 1
+  showStackTracesForLogs: 1
+  tagColorOverrides: []
+  spikeThreshold: 1.5
+  commandAssemblies: []
+  uiAssets: {fileID: 11400000, guid: a5d45619a3614d9d9dbcb81155538871, type: 2}
+  reducedMotion: 0
+  additionalStyleSheets: []

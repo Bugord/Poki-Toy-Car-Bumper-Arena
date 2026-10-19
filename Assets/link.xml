@@ -1,0 +1,16 @@
+<!--
+    Managed stripping is High for WebGL. VContainer finds constructors by reflection and SceneInjector finds Construct methods
+    by name, neither of which the linker can follow, so the assemblies whose types the containers build are kept whole.
+-->
+<linker>
+    <assembly fullname="ToyCarArena" preserve="all" />
+    <assembly fullname="Bugord.Core" preserve="all" />
+    <assembly fullname="Bugord.Core.VContainer" preserve="all" />
+    <!-- The kit's ILogger<T> while Super Console is installed, also when a release build leaves the console out. -->
+    <assembly fullname="Bugord.Core.SuperConsole" preserve="all" />
+    <assembly fullname="Bugord.App" preserve="all" />
+    <assembly fullname="UIKit" preserve="all" />
+    <assembly fullname="UIKit.VContainer" preserve="all" />
+    <assembly fullname="UniState" preserve="all" />
+    <assembly fullname="VContainer" preserve="all" />
+</linker>

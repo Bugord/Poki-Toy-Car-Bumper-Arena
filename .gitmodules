@@ -1,0 +1,3 @@
+[submodule "External/bugord-kit"]
+	path = External/bugord-kit
+	url = https://github.com/Bugord/bugord-kit.git

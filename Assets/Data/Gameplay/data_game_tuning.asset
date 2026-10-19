@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f052ae8e66cbab459cd0e546b2d7e3f, type: 3}
+  m_Name: data_game_tuning
+  m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.GameTuning
+  car:
+    maxSpeed: 12
+    acceleration: 25
+    turnSpeed: 180
+    mass: 1
+    grip: 8
+    bumpForce: 1
+  boost:
+    impulse: 12
+    duration: 0.4
+    bumpMultiplier: 1.5
+    cooldown: 3
+  bots:
+    count: 6
+    retargetInterval: 2
+    edgeMargin: 2
+    boostDelay: {x: 0.3, y: 1.2}
+  round:
+    duration: 75
+    resultDelay: 1.5
+    fallHeight: -3
+  arena:
+    radius: 15
+    minRadius: 5
+    crumbleDelay: 15
+    crumbleInterval: 6
+    crumbleStep: 1.5
+    crumbleWarning: 1.5
