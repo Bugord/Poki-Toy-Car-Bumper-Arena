@@ -51,6 +51,7 @@ Assets/
   link.xml                сборки, которые не трогает stripping
 External/bugord-kit/      сабмодуль кита
 Tools/build-webgl.sh      сборка релиза в batch mode
+Tools/upload-poki.sh      выгрузка Builds/WebGL на Poki (+ poki-auth.js, обновляет вход CLI); poki.json это id игры
 Builds/  Library/  Temp/  Logs/  UserSettings/   не в git
 ```
 
@@ -102,6 +103,10 @@ git submodule update --init
 Tools/build-webgl.sh
 Tools/build-webgl.sh --development
 
+# Выгрузить последнюю сборку на Poki новой версией; --dry-run только проверяет и печатает имя и заметки
+Tools/upload-poki.sh
+Tools/upload-poki.sh --dry-run
+
 # Проверить сборку локально: именно localhost, а не 127.0.0.1 (его Poki SDK считает чужим хостингом)
 cd Builds/WebGL && python -m http.server 8642   # затем http://localhost:8642/index.html (?inspector=1 для режима Poki Inspector)
 
@@ -109,7 +114,7 @@ cd Builds/WebGL && python -m http.server 8642   # затем http://localhost:86
 unity status
 ```
 
-В редакторе: Tools > Build > WebGL (Poki) / WebGL Development (Poki); Shift+1 открывает Boot, Shift+2 открывает Game.
+В редакторе: Tools > Build > WebGL (Poki) / WebGL Development (Poki), Upload to Poki, WebGL (Poki) and Upload; Shift+1 открывает Boot, Shift+2 открывает Game.
 
 ## Сборка для Poki
 
@@ -120,6 +125,8 @@ unity status
 - Code Optimization Disk Size with LTO, его ставит `WebGLBuild` (`-noLTO` даёт просто Disk Size).
 - Без сплэша Unity, без постобработки URP (у рендерера нет Post Process Data), без видео-шейдеров, без HDR, Run In Background выключен (релизная сборка без него не соберётся).
 - `POKI_ENABLED` и `SUPERCONSOLE_PRO` в WebGL-дефайнах. Номер сборки берётся из `git rev-list --count HEAD`; на мелком клоне сборка падает, либо передай `-buildNumber`.
+- `ui_panel_settings`: Texture Slot Count 1, как в SMUP. С 8 слотами шейдер `Hidden/Internal-UIRDefault` не линкуется на Adreno 6xx ("cannot compute gv size for oob"), и весь UI на таких телефонах розовый; один слот это простейший вариант шейдера, вид тот же, вызовов отрисовки чуть больше.
+- **Выгрузка** (`Tools/upload-poki.sh` или `PokiUpload` в редакторе, перенесены из SMUP, подробности в его `Docs/poki-upload.md`): `npx @poki/cli upload` с id игры из `poki.json`. Проверяет, что сборка есть, не сжата и несёт `build.json`; версия называется `<Product Name> v<Version> (<номер>)` (`Toy Car Bumper Arena v0.1.0 (36)`, у development-сборки ещё ` dev`: её на игроков не выпускаем), в заметках коммит сборки. Предупреждает, если собран не тот коммит, что выгружен, или есть незакоммиченные правки. Входит по upload-токену Poki из `POKI_UPLOAD_TOKEN` или `UserSettings/poki-upload-token.txt` (UserSettings не в git; токен никогда не коммитим), без него CLI открывает браузер. Выгрузка не отправляет игру на ревью: его запрашивают вручную в дашборде.
 
 ## Правила
 
