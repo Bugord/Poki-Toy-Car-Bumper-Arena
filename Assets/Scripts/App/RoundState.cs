@@ -3,6 +3,7 @@ using System.Threading;
 using Bugord.App.Platform;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.Gameplay;
+using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
 using ToyCarArena.UI;
 using UIKit.Runtime.Abstractions;
@@ -72,7 +73,7 @@ namespace ToyCarArena.App
 
                 progress.Record(result);
                 var record = bests.Record(result);
-                platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration);
+                platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, levelScene.Resolve<PlayerDriver>());
 
                 var delay = result.Outcome == RoundOutcome.Out ? tuning.Round.OutResultDelay : tuning.Round.ResultDelay;
                 await UniTask.Delay(TimeSpan.FromSeconds(delay), cancellationToken: token);

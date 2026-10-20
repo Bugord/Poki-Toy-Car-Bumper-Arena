@@ -80,7 +80,7 @@ namespace ToyCarArena.Gameplay
             // The cars go under this scope's object: with no parent given they would land in DontDestroyOnLoad, where
             // the injector builds them, and outlive the scene.
             builder.RegisterEntryPoint<ArenaRound>().AsSelf().WithParameter(carPrefab).WithParameter(transform);
-            builder.RegisterEntryPoint<PlayerDriver>();
+            builder.RegisterEntryPoint<PlayerDriver>().AsSelf();
             builder.RegisterEntryPoint<BotDriver>();
             builder.RegisterEntryPoint<ArenaCrumble>().AsSelf();
             if (isStandalone) {

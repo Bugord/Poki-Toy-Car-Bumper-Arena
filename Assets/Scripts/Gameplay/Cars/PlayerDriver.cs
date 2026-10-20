@@ -18,6 +18,8 @@ namespace ToyCarArena.Gameplay.Cars
     /// A drag wins over the keys while it lasts. Boost (Space, the right mouse button, a gamepad's south button or the
     /// boost button on a touch screen) fires the car's boost towards where it is steered. Once the round is over the
     /// car rolls to a stop, so a click on the result screen does not steer it, and boost does nothing.
+    /// It also notes how the player plays the round (<see cref="FirstInput"/>, <see cref="FirstMoveTime"/>,
+    /// <see cref="Boosts"/>), so the analytics can tell a player who never found the controls from one who was bored.
     /// </summary>
     public sealed class PlayerDriver : ITickable, IInitializable, IDisposable
     {
@@ -32,6 +34,21 @@ namespace ToyCarArena.Gameplay.Cars
 
         private bool isDriving;
 
+        /// <summary>
+        /// What the player first steered with this round, null until they steer.
+        /// </summary>
+        public InputMethod? FirstInput { get; private set; }
+
+        /// <summary>
+        /// Seconds into the round of the player's first steer, or a negative number until they steer.
+        /// </summary>
+        public float FirstMoveTime { get; private set; } = -1f;
+
+        /// <summary>
+        /// Boosts the player's car fired this round.
+        /// </summary>
+        public int Boosts { get; private set; }
+
         public PlayerDriver(IInputService input, GameTuning tuning, ArenaCamera arenaCamera, ArenaRound round)
         {
             this.input = input;
@@ -43,10 +60,12 @@ namespace ToyCarArena.Gameplay.Cars
         public void Initialize()
         {
             input.BoostPressed += OnBoostPressed;
+            input.MoveUsed += OnMoveUsed;
         }
 
         public void Dispose()
         {
+            input.MoveUsed -= OnMoveUsed;
             input.BoostPressed -= OnBoostPressed;
         }
 
@@ -83,8 +102,16 @@ namespace ToyCarArena.Gameplay.Cars
         private void OnBoostPressed()
         {
             var car = round.Player;
-            if (round.IsRunning && !car.IsOut) {
-                car.Movement.TryBoost();
+            if (round.IsRunning && !car.IsOut && car.Movement.TryBoost()) {
+                Boosts++;
+            }
+        }
+
+        private void OnMoveUsed(InputMethod method)
+        {
+            if (FirstInput == null && round.IsRunning && !round.Player.IsOut) {
+                FirstInput = method;
+                FirstMoveTime = round.Elapsed;
             }
         }
 
