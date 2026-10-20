@@ -661,6 +661,53 @@
     color: var(--gold);
 }
 
+/* The joystick under a steering finger (HudView places and sizes both parts from the driver's joystick): a pale
+   see-through disc with a navy outline where the finger came down, and on it a white knob sticker with its navy drop
+   under the finger. They spring in as the finger starts to steer and shrink away as it lets go. The layer covers the
+   screen so both are placed in its pixels. */
+.hud__stick {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.hud__stick-base,
+.hud__stick-knob {
+    position: absolute;
+    border-radius: 999px;
+    border-color: var(--navy);
+    opacity: 0;
+    scale: 0.6 0.6;
+    transition-property: opacity, scale;
+    transition-duration: 0.12s;
+    transition-timing-function: ease-out;
+}
+
+.hud__stick-base {
+    border-width: 8px;
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.hud__stick-knob {
+    border-width: 8px;
+    border-bottom-width: 16px;
+    background-color: var(--white);
+}
+
+.hud__stick--shown .hud__stick-base {
+    opacity: 0.8;
+    scale: 1 1;
+    transition-timing-function: ease-out-back;
+}
+
+.hud__stick--shown .hud__stick-knob {
+    opacity: 1;
+    scale: 1 1;
+    transition-timing-function: ease-out-back;
+}
+
 /* The boost button, on a touch screen only (HudView shows it once the screen is one): a round white sticker at the
    bottom right, under the right thumb, while the left one steers. The charge is an orange disc in it that grows from
    the middle as the boost cools down (HudView scales it); once it fills the button, the button turns orange, its label

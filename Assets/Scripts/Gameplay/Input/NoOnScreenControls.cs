@@ -20,5 +20,13 @@ namespace ToyCarArena.Gameplay.Input
         {
             return false;
         }
+
+        public void ShowJoystick(Vector2 center, Vector2 knob, float radius)
+        {
+        }
+
+        public void HideJoystick()
+        {
+        }
     }
 }

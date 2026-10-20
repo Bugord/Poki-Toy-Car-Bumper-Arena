@@ -39,6 +39,7 @@ namespace ToyCarArena.UI
         private const string StartWideClass = "hud__start--wide";
         private const string StartTouchClass = "hud__start--touch";
         private const string StartDesktopClass = "hud__start--desktop";
+        private const string StickShownClass = "hud__stick--shown";
         private const string PopupStartClass = "ko-pop--start";
         private const string PopupLeaveClass = "ko-pop--leave";
 
@@ -48,6 +49,11 @@ namespace ToyCarArena.UI
 
         // How long the start prompt takes to flash away (hud__start--leave) before it is taken off the screen.
         private const long StartLeaveDuration = 200;
+
+        // The joystick's disc and knob against how far the knob goes from the middle: the disc a little wider, so the
+        // knob pushed all the way still mostly sits on it, and the knob a thumb's size.
+        private const float StickBaseScale = 1.3f;
+        private const float StickKnobScale = 0.55f;
 
         // The KNOCKOUT! sticker: how long it springs in and then holds before it flies off, and how long that takes
         // (the transitions of ko-pop in ui_screens), in milliseconds.
@@ -97,6 +103,10 @@ namespace ToyCarArena.UI
         private VisualElement start;
         private IVisualElementScheduledItem startBob;
         private IVisualElementScheduledItem startWatch;
+        private VisualElement stick;
+        private VisualElement stickBase;
+        private VisualElement stickKnob;
+        private bool isStickShown;
 
         public HudView(HudControls controls)
         {
@@ -121,6 +131,9 @@ namespace ToyCarArena.UI
             knockoutLabel = Root.Q<Label>("ko");
             popupLayer = Root.Q<VisualElement>("ko-layer");
             start = Root.Q<VisualElement>("start");
+            stick = Root.Q<VisualElement>("stick");
+            stickBase = Root.Q<VisualElement>("stick-base");
+            stickKnob = Root.Q<VisualElement>("stick-knob");
             ViewModel.PlayerKnockout += ShowKnockout;
             ViewModel.CarOut += OnCarOut;
 
@@ -136,6 +149,7 @@ namespace ToyCarArena.UI
             RefreshBoost();
             Root.schedule.Execute(Refresh).Every(RefreshInterval);
             Root.schedule.Execute(RefreshBoost).Every(BoostRefreshInterval);
+            Root.schedule.Execute(RefreshStick).Every(BoostRefreshInterval);
         }
 
         public override void Dispose()
@@ -366,6 +380,49 @@ namespace ToyCarArena.UI
                     Pulse(boostButton, BoostPopClass);
                 }
             }
+        }
+
+        /// <summary>
+        /// Draws the joystick where the player's driver says a finger steers with it, following the finger every frame:
+        /// the disc on its centre, which the finger drags along past its edge, and the knob under the finger. Once the
+        /// finger lets go, both shrink away where they were.
+        /// </summary>
+        private void RefreshStick()
+        {
+            var isShown = controls.IsJoystickShown;
+            if (isShown) {
+                var panel = stick.panel;
+                if (panel == null) {
+                    return;
+                }
+
+                var center = ToStick(panel, controls.JoystickCenter);
+                var radius = Vector2.Distance(center,
+                    ToStick(panel, controls.JoystickCenter + Vector2.right * controls.JoystickRadius));
+                Place(stickBase, center, radius * StickBaseScale);
+                Place(stickKnob, ToStick(panel, controls.JoystickKnob), radius * StickKnobScale);
+            }
+
+            if (isShown != isStickShown) {
+                isStickShown = isShown;
+                stick.EnableInClassList(StickShownClass, isShown);
+            }
+        }
+
+        // A point in screen pixels from the bottom-left corner, as the input reports it, in the joystick layer's own.
+        private Vector2 ToStick(IPanel panel, Vector2 screenPosition)
+        {
+            var panelPoint = RuntimePanelUtils.ScreenToPanel(panel,
+                new Vector2(screenPosition.x, Screen.height - screenPosition.y));
+            return stick.WorldToLocal(panelPoint);
+        }
+
+        private static void Place(VisualElement element, Vector2 center, float radius)
+        {
+            element.style.left = center.x - radius;
+            element.style.top = center.y - radius;
+            element.style.width = radius * 2f;
+            element.style.height = radius * 2f;
         }
 
         private void OnBoostPointerDown(PointerDownEvent evt)
