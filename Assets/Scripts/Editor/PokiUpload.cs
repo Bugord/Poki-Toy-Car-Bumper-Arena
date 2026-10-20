@@ -11,8 +11,8 @@ namespace ToyCarArena.Editor
 {
     /// <summary>
     /// Uploads <c>Builds/WebGL</c> to Poki for Developers from the Editor, as <c>Tools/upload-poki.sh</c> does: the same
-    /// checks, the version named after the build's product name, version and build number (<c>Toy Car Bumper Arena v0.1.0 (36)</c>,
-    /// <c>Toy Car Bumper Arena v0.1.0 (36) dev</c> for a development build, which carries the cheat console: test it, never release it;
+    /// checks, the version named after the build's product name, version and build number (<c>Bonk Arena v0.1.0 (36)</c>,
+    /// <c>Bonk Arena v0.1.0 (36) dev</c> for a development build, which carries the cheat console: test it, never release it;
     /// the number is from the build's <c>build.json</c>, see <see cref="BuildNumber"/>) and the commit built in the
     /// notes. Poki's CLI runs in a console window of its own, so the Editor is not blocked. It signs in with the upload
     /// token in <c>UserSettings/poki-upload-token.txt</c> (ignored by git), or else opens the browser to sign in.

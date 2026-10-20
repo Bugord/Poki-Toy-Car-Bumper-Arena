@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Uploads Builds/WebGL to Poki for Developers as a new version named after the build's product name, version and build
 # number (Player Settings > Product Name and Version, and the commit count of the commit built, from the build's
-# build.json: e.g. Toy Car Bumper Arena v0.1.0 (36), or
-# Toy Car Bumper Arena v0.1.0 (36) dev for a development build, which has the cheat console:
+# build.json: e.g. Bonk Arena v0.1.0 (36), or
+# Bonk Arena v0.1.0 (36) dev for a development build, which has the cheat console:
 # test it, never release it), with the commit built and its message as notes (see Docs/poki-upload.md).
 # Checks the build first: it must exist, be uncompressed and carry its build number. Build it with
 # Tools/build-webgl.sh [--development]. It signs in with the upload token in POKI_UPLOAD_TOKEN, or else in

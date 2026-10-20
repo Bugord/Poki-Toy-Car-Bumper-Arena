@@ -7,7 +7,7 @@ namespace ToyCarArena.Audio
     /// the mix is tuned in one place and the code names sounds rather than clips. No audio mixer: a handful of 2D
     /// sounds over one music track needs only levels, and the mixer would add to the build.
     /// </summary>
-    [CreateAssetMenu(fileName = "data_audio_library", menuName = "Toy Car Arena/Audio Library")]
+    [CreateAssetMenu(fileName = "data_audio_library", menuName = "Bonk Arena/Audio Library")]
     public sealed class AudioLibrary : ScriptableObject
     {
         [Header("Mix")]
