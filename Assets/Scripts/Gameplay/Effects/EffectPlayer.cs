@@ -52,20 +52,26 @@ namespace ToyCarArena.Gameplay.Effects
         private Material dust;
 
         [Header("Shapes")]
+        [Tooltip("Every shape's size is multiplied by this, so all the effects grow or shrink together; speeds and " +
+            "spreads stay as they are")]
+        [Min(0.1f)]
+        [SerializeField]
+        private float sizeScale = 1.25f;
+
         [Tooltip("Outline of a puff or a chunk, as a share of its size")]
         [Range(0f, 0.5f)]
         [SerializeField]
-        private float solidOutline = 0.22f;
+        private float solidOutline = 0.34f;
 
         [Tooltip("Outline of a star or a speed line, as a share of its size")]
         [Range(0f, 0.2f)]
         [SerializeField]
-        private float flatOutline = 0.07f;
+        private float flatOutline = 0.11f;
 
         [Tooltip("Outline of an impact ring, as a share of its radius")]
         [Range(0f, 0.2f)]
         [SerializeField]
-        private float ringOutline = 0.05f;
+        private float ringOutline = 0.08f;
 
         [Tooltip("Downward pull on stars, hopping dust and chunks, in metres per second squared; above the real " +
             "one, so they drop with a cartoon snap")]
@@ -342,7 +348,7 @@ namespace ToyCarArena.Gameplay.Effects
 
             var ringRadius = Mathf.Lerp(hitRingRadius.x, hitRingRadius.y, power) * scale;
             ref var ring = ref Add(Shape.Ring, white, OnFloor(point), ringRadius, hitRingLife);
-            ring.StartSize = ringRadius * 0.25f;
+            ring.StartSize = ring.Size * 0.25f;
 
             var puffs = Mathf.RoundToInt(Mathf.Lerp(hitPuffs.x, hitPuffs.y, power));
             var puffSize = Mathf.Lerp(hitPuffSize.x, hitPuffSize.y, power) * scale;
@@ -652,7 +658,7 @@ namespace ToyCarArena.Gameplay.Effects
                 Fill = fill,
                 Position = position,
                 Axis = Vector3.forward,
-                Size = size,
+                Size = size * sizeScale,
                 Life = Mathf.Max(0.01f, life),
                 Hold = 0.5f,
             };
