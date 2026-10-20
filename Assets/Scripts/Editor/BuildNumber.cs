@@ -10,7 +10,7 @@ namespace ToyCarArena.Editor
     /// <summary>
     /// The build number: how many commits HEAD has (<c>git rev-list --count HEAD</c>), so it goes up with every commit
     /// and a local and a CI build of the same commit get the same one; with the commit's short hash, since two branches
-    /// can reach the same count. The upload names the version after it (<c>Toy Car Bumper Arena v0.1.0 (12)</c>). A CI
+    /// can reach the same count. The upload names the version after it (<c>Bonk Arena v0.1.0 (12)</c>). A CI
     /// build that cannot run git passes <c>-buildNumber</c> and <c>-buildCommit</c>, which win over git. A shallow clone
     /// has only part of the history, so its count is wrong and the build fails instead.
     /// </summary>

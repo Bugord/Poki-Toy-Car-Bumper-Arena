@@ -4,7 +4,7 @@ namespace ToyCarArena.App
 {
     /// <summary>
     /// Which build this is: the build number (the commit count of the commit it was built from, as in the name of its
-    /// upload to Poki, <c>Toy Car Bumper Arena v0.1.0 (12)</c>) and that commit's short hash.
+    /// upload to Poki, <c>Bonk Arena v0.1.0 (12)</c>) and that commit's short hash.
     /// <c>ToyCarArena.Editor.WebGLBuild</c> writes them to <c>Resources/data_build_info.txt</c> for the build only
     /// (ignored by git, deleted after the build), so in the Editor there are none. Logged at startup, so a player's
     /// console log says which build it came from.
@@ -27,8 +27,8 @@ namespace ToyCarArena.App
         public static string Commit { get; private set; } = "";
 
         /// <summary>
-        /// The upload's name with the commit: <c>Toy Car Bumper Arena v0.1.0 (12) dev, commit abc1234</c>, or
-        /// <c>Toy Car Bumper Arena v0.1.0 (editor)</c>.
+        /// The upload's name with the commit: <c>Bonk Arena v0.1.0 (12) dev, commit abc1234</c>, or
+        /// <c>Bonk Arena v0.1.0 (editor)</c>.
         /// </summary>
         public static string Label
         {
