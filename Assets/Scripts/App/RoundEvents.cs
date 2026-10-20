@@ -23,6 +23,10 @@ namespace ToyCarArena.App
     /// steered with, and <c>controls / move-0-3, move-3-10, move-10plus, never / first-move</c>, seconds from the cars
     /// standing on the arena to it (the round waits for the player's first steer or boost, so mostly the wait)</item>
     /// <item><c>result / 0-15 … 60-75 / time</c>: seconds on the arena, in buckets of 15</item>
+    /// <item>by round, R as above, since the time and the cause of a fall differ most between the first round and the
+    /// later ones: <c>result / cars-N-rR / cars</c>, the cars in the round (the difficulty brings fewer early on, so a
+    /// place reads against it), <c>result / early, mid, late, full-rR / round-time</c>, seconds on the arena (under 15,
+    /// under 30, under 60, 60 and more; no more numbers fit), and <c>result / pushed, fell-rR / round-out-cause</c></item>
     /// <item><c>result / play-again / visible</c>, then <c>interact</c> when pressed</item>
     /// </list>
     /// </summary>
@@ -69,9 +73,12 @@ namespace ToyCarArena.App
 
             platform.Measure(ResultCategory, $"knockouts-{result.Knockouts}-{tag}", "knockouts");
             platform.Measure(ResultCategory, TimeBucketOf(result.Seconds, duration), "time");
+            platform.Measure(ResultCategory, $"cars-{result.CarCount}-{tag}", "cars");
+            platform.Measure(ResultCategory, $"{TimeSpanOf(result.Seconds)}-{tag}", "round-time");
             if (result.Outcome == RoundOutcome.Out) {
                 var cause = result.KnockedOutBy == RoundResult.Nobody ? "fell" : "pushed";
                 platform.Measure(ResultCategory, cause, "out-cause");
+                platform.Measure(ResultCategory, $"{cause}-{tag}", "round-out-cause");
             }
 
             platform.Measure(ResultCategory, BoostBucketOf(driver.Boosts), "boosts");
@@ -91,6 +98,12 @@ namespace ToyCarArena.App
             var seconds = driver.FirstMoveTime;
             var move = seconds < 0f ? "never" : seconds < 3f ? "move-0-3" : seconds < 10f ? "move-3-10" : "move-10plus";
             platform.Measure(ControlsCategory, move, "first-move");
+        }
+
+        // In words, so the round still fits beside it: a time bucket's two numbers would make three.
+        private static string TimeSpanOf(float seconds)
+        {
+            return seconds < 15f ? "early" : seconds < 30f ? "mid" : seconds < 60f ? "late" : "full";
         }
 
         private static string BoostBucketOf(int boosts)

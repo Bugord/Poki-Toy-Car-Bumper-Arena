@@ -1,4 +1,5 @@
 using ToyCarArena.Gameplay.Cars;
+using ToyCarArena.Gameplay.Round;
 using UnityEngine;
 
 namespace ToyCarArena.Gameplay.Bots
@@ -17,7 +18,7 @@ namespace ToyCarArena.Gameplay.Bots
     {
         private readonly GameTuning tuning;
         private readonly GameTuning.BotSettings settings;
-        private readonly BotDifficulty difficulty;
+        private readonly RoundDifficulty difficulty;
         private readonly Car player;
         private readonly System.Random random;
 
@@ -41,7 +42,7 @@ namespace ToyCarArena.Gameplay.Bots
         private bool isEscaping;
         private bool mayEscapeBoost;
 
-        public Bot(Car car, GameTuning.BotPersonality personality, GameTuning tuning, BotDifficulty difficulty,
+        public Bot(Car car, GameTuning.BotPersonality personality, GameTuning tuning, RoundDifficulty difficulty,
             Car player, int seed)
         {
             this.Car = car;
@@ -104,16 +105,16 @@ namespace ToyCarArena.Gameplay.Bots
         /// make the rounds swing wildly. While it pushes its target the bot stops looking ahead, or it would turn back
         /// before the target got to the edge; pushing, it is slow enough to stop at the margin.
         /// <para>
-        /// The target the bot sees as it was at its last look (<see cref="BotDifficulty.ReactionTime"/>), carried on
-        /// along the way it was going, and its heading is a little off (<see cref="BotDifficulty.AimError"/>): a player
-        /// who turns sharply gets away. At the player's car it drives at <see cref="BotDifficulty.PlayerPace"/>, and at
+        /// The target the bot sees as it was at its last look (<see cref="RoundDifficulty.ReactionTime"/>), carried on
+        /// along the way it was going, and its heading is a little off (<see cref="RoundDifficulty.AimError"/>): a player
+        /// who turns sharply gets away. At the player's car it drives at <see cref="RoundDifficulty.PlayerPace"/>, and at
         /// the others at full throttle, so the bots' own fights stay as busy.
         /// </para>
         /// <para>
         /// The boost is the player's: a bot that has pushed its target for a moment
-        /// (<see cref="BotDifficulty.BoostDelay"/>) boosts into it, unless the boost would carry the bot itself past the
+        /// (<see cref="RoundDifficulty.BoostDelay"/>) boosts into it, unless the boost would carry the bot itself past the
         /// margin; and a bot already past the margin and still sliding out may boost back towards the middle
-        /// (<see cref="BotDifficulty.EscapeBoostChance"/>), as a player saves a car on the edge.
+        /// (<see cref="RoundDifficulty.EscapeBoostChance"/>), as a player saves a car on the edge.
         /// </para>
         /// </summary>
         public void Steer(float arenaRadius, float deltaTime)

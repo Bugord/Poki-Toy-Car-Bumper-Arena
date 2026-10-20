@@ -46,17 +46,20 @@ namespace ToyCarArena.Gameplay.Round
         private readonly Car carPrefab;
         private readonly Transform carParent;
         private readonly ArenaFloor floor;
+        private readonly RoundDifficulty difficulty;
         private readonly List<Car> cars = new();
 
         private float elapsed;
 
-        public ArenaRound(GameTuning tuning, IObjectResolver resolver, Car carPrefab, Transform carParent, ArenaFloor floor)
+        public ArenaRound(GameTuning tuning, IObjectResolver resolver, Car carPrefab, Transform carParent, ArenaFloor floor,
+            RoundDifficulty difficulty)
         {
             this.tuning = tuning;
             this.resolver = resolver;
             this.carPrefab = carPrefab;
             this.carParent = carParent;
             this.floor = floor;
+            this.difficulty = difficulty;
         }
 
         public IReadOnlyList<Car> Cars => cars;
@@ -114,7 +117,8 @@ namespace ToyCarArena.Gameplay.Round
 
         /// <summary>
         /// Puts the cars on the arena, still: nobody drives, the clock and the crumbling edge wait for
-        /// <see cref="Begin"/>, so the arena can show before the player is ready.
+        /// <see cref="Begin"/>, so the arena can show before the player is ready. The player and as many bots as the
+        /// round's difficulty brings: few in a visit's first rounds.
         /// </summary>
         public void Place()
         {
@@ -123,7 +127,7 @@ namespace ToyCarArena.Gameplay.Round
             }
 
             IsPlaced = true;
-            Spawn(1 + tuning.Bots.Count);
+            Spawn(1 + difficulty.BotCount);
             Player = cars[0];
             CarsLeft = cars.Count;
         }

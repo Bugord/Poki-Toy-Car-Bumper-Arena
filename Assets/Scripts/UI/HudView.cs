@@ -355,13 +355,13 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>
-        /// Shows the boost button once the screen is a touch screen (from the visit's second round on), the charge growing from its middle as the boost
+        /// Shows the boost button once the screen is a touch screen, the charge growing from its middle as the boost
         /// cools down, and pops it when the boost is ready again.
         /// </summary>
         private void RefreshBoost()
         {
             if (!isBoostShown) {
-                if (!ViewModel.OffersBoostButton || !controls.CheckTouchScreen()) {
+                if (!controls.CheckTouchScreen()) {
                     return;
                 }
 

@@ -22,6 +22,9 @@ namespace ToyCarArena.Gameplay.Cars
     /// car rolls to a stop, so a click on the result screen does not steer it, and boost does nothing.
     /// Before the round begins it only watches for the player's first steer or boost (<see cref="HasActed"/>), which the
     /// first round of a visit waits for.
+    /// Near the edge it takes away the part of the steer that points off the arena, as much as the round's
+    /// <see cref="RoundDifficulty.EdgeAssist"/> says, so a new player who steers too far stops at the edge instead of
+    /// driving off it, and a boost there does not throw it off either; a hit still pushes the car off.
     /// It also notes how the player plays the round (<see cref="FirstInput"/>, <see cref="FirstMoveTime"/>,
     /// <see cref="Boosts"/>), so the analytics can tell a player who never found the controls from one who was bored.
     /// </summary>
@@ -32,10 +35,14 @@ namespace ToyCarArena.Gameplay.Cars
         private readonly ArenaCamera arenaCamera;
         private readonly ArenaRound round;
         private readonly IOnScreenControls onScreenControls;
+        private readonly RoundDifficulty difficulty;
 
         // The joystick's centre: where the finger touched, pulled along when the finger goes past the radius.
         private int joystickDragId;
         private Vector2 joystickCenter;
+
+        // Where the player last steered, before the edge assist; zero when they did not.
+        private Vector3 steer;
 
         private bool isDriving;
         private bool isJoystickShown;
@@ -66,13 +73,14 @@ namespace ToyCarArena.Gameplay.Cars
         public int Boosts { get; private set; }
 
         public PlayerDriver(IInputService input, GameTuning tuning, ArenaCamera arenaCamera, ArenaRound round,
-            IOnScreenControls onScreenControls)
+            IOnScreenControls onScreenControls, RoundDifficulty difficulty)
         {
             this.input = input;
             this.tuning = tuning;
             this.arenaCamera = arenaCamera;
             this.round = round;
             this.onScreenControls = onScreenControls;
+            this.difficulty = difficulty;
         }
 
         public void Initialize()
@@ -124,7 +132,7 @@ namespace ToyCarArena.Gameplay.Cars
             }
 
             var move = Vector2.ClampMagnitude(input.CurrentMoveInput, 1f);
-            car.Movement.Drive(arenaCamera.ScreenToGroundDirection(move), move.magnitude);
+            Drive(car, arenaCamera.ScreenToGroundDirection(move), move.magnitude);
             return false;
         }
 
@@ -139,9 +147,36 @@ namespace ToyCarArena.Gameplay.Cars
             }
 
             var car = round.Player;
-            if (round.IsRunning && !car.IsOut && car.Movement.TryBoost()) {
+            if (round.IsRunning && !car.IsOut && TryBoost(car)) {
                 Boosts++;
             }
+        }
+
+        /// <summary>
+        /// Fires the car's boost, but near the edge without the part of it that points off the arena, by the round's
+        /// edge assist: a boost carries the car far past where the steer could stop it, so one fired off the edge
+        /// would undo the assist. One left pointing mostly off is not fired, and its cooldown is kept.
+        /// </summary>
+        private bool TryBoost(Car car)
+        {
+            var outward = Outward(car, out var share);
+            if (difficulty.EdgeAssist > 0f && share > 0f) {
+                // Where the car would boost: as it is driven, or along its nose when it is not.
+                var way = steer != Vector3.zero ? steer : car.transform.forward;
+                way.y = 0f;
+                way.Normalize();
+                var off = Vector3.Dot(way, outward);
+                if (off > 0f) {
+                    way -= outward * (off * difficulty.EdgeAssist);
+                    if (way.magnitude < 0.3f) {
+                        return false;
+                    }
+
+                    car.Movement.Drive(way, 1f);
+                }
+            }
+
+            return car.Movement.TryBoost();
         }
 
         // A steer that starts the round counts as the round's first, at its very start.
@@ -175,7 +210,7 @@ namespace ToyCarArena.Gameplay.Cars
         private void FollowPointer(Car car, Vector2 screenPosition)
         {
             if (!arenaCamera.TryScreenToGround(screenPosition, out var target)) {
-                car.Movement.Drive(Vector3.zero, 0f);
+                Drive(car, Vector3.zero, 0f);
                 return;
             }
 
@@ -183,7 +218,7 @@ namespace ToyCarArena.Gameplay.Cars
             var offset = target - car.Position;
             offset.y = 0f;
             var throttle = Mathf.InverseLerp(controls.PointerStopRadius, controls.PointerSlowRadius, offset.magnitude);
-            car.Movement.Drive(offset, throttle);
+            Drive(car, offset, throttle);
         }
 
         private void SteerByJoystick(Car car, PointerDrag drag)
@@ -203,8 +238,51 @@ namespace ToyCarArena.Gameplay.Cars
 
             var stick = offset / radius;
             var throttle = Mathf.InverseLerp(controls.JoystickDeadZone, 1f, stick.magnitude);
-            car.Movement.Drive(arenaCamera.ScreenToGroundDirection(stick), throttle);
+            Drive(car, arenaCamera.ScreenToGroundDirection(stick), throttle);
             onScreenControls.ShowJoystick(joystickCenter, joystickCenter + offset, radius);
+        }
+
+        /// <summary>
+        /// Drives the car, less off the arena the closer it is to the edge, by the round's edge assist: what is left is
+        /// the steer along the edge, at as much throttle as it keeps of the steer, so steering straight off stops the
+        /// car and steering past the edge slides it along.
+        /// </summary>
+        private void Drive(Car car, Vector3 heading, float throttle)
+        {
+            heading.y = 0f;
+            steer = throttle > 0f ? heading : Vector3.zero;
+            if (difficulty.EdgeAssist > 0f && heading.sqrMagnitude > 0.0001f) {
+                var outward = Outward(car, out var share);
+                share *= difficulty.EdgeAssist;
+                heading.Normalize();
+                var off = Vector3.Dot(heading, outward);
+                if (off > 0f && share > 0f) {
+                    heading -= outward * (off * share);
+                    throttle *= heading.magnitude;
+                }
+            }
+
+            car.Movement.Drive(heading, throttle);
+        }
+
+        /// <returns>The way off the arena from the car, flat, or zero at the very middle.</returns>
+        /// <param name="share">How near the edge the car is for the edge assist: 0 farther in than
+        /// <see cref="GameTuning.ControlSettings.EdgeAssistMargin"/>, 1 at
+        /// <see cref="GameTuning.ControlSettings.EdgeAssistStop"/> and beyond.</param>
+        private Vector3 Outward(Car car, out float share)
+        {
+            var position = car.Position;
+            position.y = 0f;
+            var fromMiddle = position.magnitude;
+            if (fromMiddle < 0.01f) {
+                share = 0f;
+                return Vector3.zero;
+            }
+
+            var radius = round.ArenaRadius;
+            var controls = tuning.Controls;
+            share = Mathf.InverseLerp(radius - controls.EdgeAssistMargin, radius - controls.EdgeAssistStop, fromMiddle);
+            return position / fromMiddle;
         }
 
         private void SetJoystickShown(bool isShown)

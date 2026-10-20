@@ -171,11 +171,26 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float pointerSlowRadius = 4f;
 
+            [Tooltip("From this far inside the edge, in metres, the round's edge assist takes the steer off the arena " +
+                "away, more the closer the car gets; far enough for a car at top speed to brake to a stop")]
+            [Min(0f)]
+            [SerializeField]
+            private float edgeAssistMargin = 5f;
+
+            [Tooltip("This far inside the edge, in metres, the edge assist takes all of the steer off the arena it " +
+                "takes: a car steered straight off creeps up to here and stops, so it must be short of the margin and " +
+                "keep the car's nose (half its length, about 1.3 m) on the arena")]
+            [Min(0f)]
+            [SerializeField]
+            private float edgeAssistStop = 2f;
+
             public TouchSteering TouchSteering => touchSteering;
             public float JoystickRadius => joystickRadius;
             public float JoystickDeadZone => joystickDeadZone;
             public float PointerStopRadius => pointerStopRadius;
             public float PointerSlowRadius => pointerSlowRadius;
+            public float EdgeAssistMargin => edgeAssistMargin;
+            public float EdgeAssistStop => edgeAssistStop;
         }
 
         /// <summary>
@@ -222,11 +237,6 @@ namespace ToyCarArena.Gameplay
         [Serializable]
         public sealed class BotSettings
         {
-            [Tooltip("Bots in a round, beside the player (5 to 7 in the brief)")]
-            [Range(5, 7)]
-            [SerializeField]
-            private int count = 6;
-
             [Tooltip("Seconds between picks of a new target")]
             [Min(0f)]
             [SerializeField]
@@ -329,22 +339,23 @@ namespace ToyCarArena.Gameplay
             private float grudgeTime = 4f;
 
             [Header("Difficulty")]
-            [Tooltip("The first round of a visit: slow at the player, slow to react and to boost")]
+            [Tooltip("The first round of a visit: few bots, slow at the player, slow to react and to boost, and the " +
+                "player's car kept from driving off the edge")]
             [SerializeField]
-            private DifficultySettings easy = new(playerPace: 0.8f, playerWeight: -0.6f, playerGrace: 12f,
-                maxPlayerHunters: 1, reactionTime: new Vector2(0.3f, 0.45f), aimError: 10f,
-                boostDelay: new Vector2(0.8f, 2f), escapeBoostChance: 0.3f);
+            private DifficultySettings easy = new(bots: 3, playerPace: 0.6f, playerWeight: -0.6f, playerGrace: 10f,
+                maxPlayerHunters: 1, reactionTime: new Vector2(0.4f, 0.6f), aimError: 15f,
+                boostDelay: new Vector2(1.2f, 2.5f), escapeBoostChance: 0.3f, edgeAssist: 1f);
 
             [Tooltip("Where the difficulty settles after the ramp")]
             [SerializeField]
-            private DifficultySettings normal = new(playerPace: 1f, playerWeight: -0.15f, playerGrace: 6f,
+            private DifficultySettings normal = new(bots: 6, playerPace: 1f, playerWeight: 0.05f, playerGrace: 2f,
                 maxPlayerHunters: 2, reactionTime: new Vector2(0.12f, 0.2f), aimError: 3f,
-                boostDelay: new Vector2(0.3f, 1.2f), escapeBoostChance: 0.5f);
+                boostDelay: new Vector2(0.3f, 1.2f), escapeBoostChance: 0.5f, edgeAssist: 0.3f);
 
             [Tooltip("Rounds from easy to normal: round 1 is easy, round 1 + this is normal, the ones between blend")]
             [Min(0)]
             [SerializeField]
-            private int rampRounds = 4;
+            private int rampRounds = 6;
 
             [Tooltip("Rounds lost in a row from which the bots ease off")]
             [Min(1)]
@@ -360,11 +371,11 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Furthest a losing streak steps the bots back towards easy, as a share of the way")]
             [Range(0f, 1f)]
             [SerializeField]
-            private float maxStreakEase = 0.5f;
+            private float maxStreakEase = 0.75f;
 
             [Header("Personalities")]
-            [Tooltip("The personalities of a round's bots: the first as many as there are bots, shuffled among them " +
-                "each round; a short list repeats from its start")]
+            [Tooltip("The personalities of a round's bots: the first as many as there are bots this round, shuffled " +
+                "among them each round; a short list repeats from its start")]
             [SerializeField]
             private BotPersonality[] mix =
             {
@@ -397,7 +408,6 @@ namespace ToyCarArena.Gameplay
             private PersonalitySettings clumsy = new(caution: 0.6f, playerWeight: 0f, edgeWeight: 1f,
                 opportunism: 1f, boostDelay: 1f, aimError: 2.5f, escapeBoost: 0.6f);
 
-            public int Count => count;
             public float RetargetInterval => retargetInterval;
             public float RetargetJitter => retargetJitter;
             public float EdgeMargin => edgeMargin;
@@ -437,14 +447,21 @@ namespace ToyCarArena.Gameplay
         }
 
         /// <summary>
-        /// How hard the bots play the player at one end of the difficulty ramp. Only what the player feels changes:
-        /// how fast and how often the bots come for the player's car, how quickly they see a dodge, how well they aim,
-        /// and how readily they boost. Staying on the arena never gets slower, or the bots would fall off on their own
-        /// and the rounds swing wildly; and the bots fight each other at full pace, so the arena stays busy.
+        /// How hard a round is at one end of the difficulty ramp. Only what the player feels changes: how many bots
+        /// there are, how fast and how often they come for the player's car, how quickly they see a dodge, how well they
+        /// aim, how readily they boost, and how much the player's car is kept from driving off the edge. Staying on the
+        /// arena never gets slower for the bots, or they would fall off on their own and the rounds swing wildly; and
+        /// the bots fight each other at full pace, so the arena stays busy.
         /// </summary>
         [Serializable]
         public sealed class DifficultySettings
         {
+            [Tooltip("Bots in the round, beside the player; fewer early on, so a new player lasts long enough to push " +
+                "a car off and has fewer cars to beat")]
+            [Range(1, 7)]
+            [SerializeField]
+            private int bots = 6;
+
             [Tooltip("Throttle a bot drives at the player's car with, from 0 to 1; below 1 the player outruns it and " +
                 "its hits push less")]
             [Range(0f, 1f)]
@@ -490,13 +507,22 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float escapeBoostChance = 0.5f;
 
+            [Tooltip("Share of the player's steer off the arena taken away near the edge (from the controls' edge " +
+                "assist margin in), so a new player who steers too far stops at the edge instead of driving off it; " +
+                "hits still push the car off. 0 leaves the steer alone, 1 never drives off")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float edgeAssist;
+
             public DifficultySettings()
             {
             }
 
-            public DifficultySettings(float playerPace, float playerWeight, float playerGrace, int maxPlayerHunters,
-                Vector2 reactionTime, float aimError, Vector2 boostDelay, float escapeBoostChance)
+            public DifficultySettings(int bots, float playerPace, float playerWeight, float playerGrace,
+                int maxPlayerHunters, Vector2 reactionTime, float aimError, Vector2 boostDelay, float escapeBoostChance,
+                float edgeAssist)
             {
+                this.bots = bots;
                 this.playerPace = playerPace;
                 this.playerWeight = playerWeight;
                 this.playerGrace = playerGrace;
@@ -505,8 +531,10 @@ namespace ToyCarArena.Gameplay
                 this.aimError = aimError;
                 this.boostDelay = boostDelay;
                 this.escapeBoostChance = escapeBoostChance;
+                this.edgeAssist = edgeAssist;
             }
 
+            public int Bots => bots;
             public float PlayerPace => playerPace;
             public float PlayerWeight => playerWeight;
             public float PlayerGrace => playerGrace;
@@ -515,6 +543,7 @@ namespace ToyCarArena.Gameplay
             public float AimError => aimError;
             public Vector2 BoostDelay => boostDelay;
             public float EscapeBoostChance => escapeBoostChance;
+            public float EdgeAssist => edgeAssist;
         }
 
         /// <summary>

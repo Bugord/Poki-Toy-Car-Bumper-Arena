@@ -13,8 +13,8 @@ namespace ToyCarArena.UI
     /// player are passed on as they happen, since the car's chip leaving the HUD and the KNOCKOUT! sticker belong to the
     /// moment the car falls.
     /// <para>
-    /// The visit's first round keeps the touch screen to steering alone: no boost button, so a new player learns to drive
-    /// and push first, and the button comes with the second round.
+    /// The boost button is there from the visit's first round on: the boost is the one way to dodge a hit and to save
+    /// the car at the edge, and the first test on Poki showed touch players losing the first round without it.
     /// </para>
     /// </summary>
     public sealed class HudViewModel : ViewModel, IPayloadReceiver<ArenaRound>
@@ -31,19 +31,7 @@ namespace ToyCarArena.UI
         /// </summary>
         public event Action<int> CarOut;
 
-        private readonly ISessionProgress progress;
         private ArenaRound round;
-
-        public HudViewModel(ISessionProgress progress)
-        {
-            this.progress = progress;
-        }
-
-        /// <summary>
-        /// Whether the boost button belongs on a touch screen this round: from the visit's second round on. Taken as
-        /// the round comes in, since the session moves on to the next round while this one's HUD still shows.
-        /// </summary>
-        public bool OffersBoostButton { get; private set; }
 
         /// <summary>
         /// Seconds left in the round.
@@ -95,7 +83,6 @@ namespace ToyCarArena.UI
         {
             Unsubscribe();
             round = payload;
-            OffersBoostButton = progress.Round > 1;
             if (round != null) {
                 round.CarOut += OnCarOut;
                 round.KnockedOut += OnKnockedOut;

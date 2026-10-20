@@ -16,7 +16,7 @@ namespace ToyCarArena.Gameplay.Bots
     /// player does: into a car it pushes, and back from the edge (<see cref="Bot.Steer"/>). Once the round is over the
     /// bots roll to a stop, as the player's car does.
     /// <para>
-    /// How hard the bots play the player is the round's <see cref="BotDifficulty"/>, from the player's progress in this
+    /// How hard the bots play the player is the round's <see cref="RoundDifficulty"/>, from the player's progress in this
     /// visit: nobody picks the player for the first seconds of a round (longer early on), only so many bots chase the
     /// player at once, and only one bot at a time holds a grudge against the player, so a new player is never mobbed.
     /// The bots' personalities come from <see cref="GameTuning.BotSettings.Mix"/>, shuffled each round.
@@ -31,7 +31,7 @@ namespace ToyCarArena.Gameplay.Bots
     {
         private readonly GameTuning tuning;
         private readonly ArenaRound round;
-        private readonly BotDifficulty difficulty;
+        private readonly RoundDifficulty difficulty;
         private readonly List<Bot> bots = new();
 
         private bool isDriving;
@@ -39,11 +39,11 @@ namespace ToyCarArena.Gameplay.Bots
         // The one bot whose grudge against the player is counted, while it is after the player.
         private Bot playerGrudge;
 
-        public BotDriver(GameTuning tuning, ArenaRound round, ISessionProgress progress)
+        public BotDriver(GameTuning tuning, ArenaRound round, RoundDifficulty difficulty)
         {
             this.tuning = tuning;
             this.round = round;
-            this.difficulty = new BotDifficulty(tuning.Bots, progress);
+            this.difficulty = difficulty;
             this.Seed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
         }
 

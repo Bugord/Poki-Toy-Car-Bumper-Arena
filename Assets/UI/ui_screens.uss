@@ -778,9 +778,9 @@
 }
 
 /* The start prompt of a visit's first round, while the cars wait for the player's first steer or boost (HudView shows
-   it): TAP TO START or CLICK TO START, outlined, and under it a dark plate with how to drive: a joystick and DRAG TO
-   DRIVE on a touch screen (hud__start--touch), a mouse, HOLD TO DRIVE, the SPACE key and BOOST on a desktop
-   (hud__start--desktop), the desktop's only word on the boost. Nothing dims the arena: the player's car and the HUD
+   it): TAP TO START or CLICK TO START, outlined, and under it a dark plate with how to drive: a joystick, DRAG TO
+   DRIVE, an orange dot like the boost button and BOOST on a touch screen (hud__start--touch), a mouse, HOLD TO DRIVE,
+   the SPACE key and BOOST on a desktop (hud__start--desktop). Nothing dims the arena: the player's car and the HUD
    stay as in play. On a narrow screen it sits in the sky under the HUD, over the arena's far edge; on a wide one
    (hud__start--wide) inside the ring of cars, between the far bots and the player's car. It springs in once the curtain
    is up (hud__start--enter, taken off once it is laid out), bobs (hud__start--bob, toggled by HudView, the knob and
@@ -888,6 +888,17 @@
 
 .hud__start-key {
     margin-left: 44px;
+}
+
+/* The boost button in small: an orange disc with a white rim, as the ready button at the bottom right. */
+.hud__start-boost-dot {
+    width: 56px;
+    height: 56px;
+    margin-left: 44px;
+    border-width: 6px;
+    border-color: var(--white);
+    border-radius: 28px;
+    background-color: var(--orange);
 }
 
 /* The joystick: a white ring with its knob swinging side to side as the prompt bobs. */

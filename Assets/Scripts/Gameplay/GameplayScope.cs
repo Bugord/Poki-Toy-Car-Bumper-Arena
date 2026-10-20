@@ -77,6 +77,10 @@ namespace ToyCarArena.Gameplay
             builder.RegisterComponent(arenaCamera);
             builder.RegisterComponent(arenaFloor);
 
+            // Read from the session's progress once, as the scene is built: the round's cars, the bots and the player's
+            // driver share it, and the session moves on before the next scene is.
+            builder.Register<RoundDifficulty>(Lifetime.Singleton);
+
             // The cars go under this scope's object: with no parent given they would land in DontDestroyOnLoad, where
             // the injector builds them, and outlive the scene.
             builder.RegisterEntryPoint<ArenaRound>().AsSelf().WithParameter(carPrefab).WithParameter(transform);
