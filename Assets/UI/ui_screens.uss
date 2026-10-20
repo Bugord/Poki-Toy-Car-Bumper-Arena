@@ -730,6 +730,183 @@
     transition-duration: 0.05s;
 }
 
+/* The start prompt of a visit's first round, while the cars wait for the player's first steer or boost (HudView shows
+   it): TAP TO START or CLICK TO START, outlined, and under it a dark plate with how to drive: a joystick and DRAG TO
+   DRIVE on a touch screen (hud__start--touch), a mouse, HOLD TO DRIVE, the SPACE key and BOOST on a desktop
+   (hud__start--desktop), the desktop's only word on the boost. Nothing dims the arena: the player's car and the HUD
+   stay as in play. On a narrow screen it sits in the sky under the HUD, over the arena's far edge; on a wide one
+   (hud__start--wide) inside the ring of cars, between the far bots and the player's car. It springs in once the curtain
+   is up (hud__start--enter, taken off once it is laid out), bobs (hud__start--bob, toggled by HudView, the knob and
+   the mouse swinging with it), and flashes away as the round begins (hud__start--leave). */
+.hud__start {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 390px;
+    align-items: center;
+    transition-property: scale, opacity;
+    transition-duration: 0.35s, 0.2s;
+    transition-timing-function: ease-out-back, linear;
+    transition-delay: 0.3s;
+}
+
+.hud__start--shown {
+    display: flex;
+}
+
+.hud__start--wide {
+    top: 780px;
+}
+
+.hud__start--enter {
+    scale: 0.5 0.5;
+    opacity: 0;
+}
+
+.hud__start--leave {
+    scale: 1.2 1.2;
+    opacity: 0;
+    transition-duration: 0.15s;
+    transition-timing-function: ease-in;
+    transition-delay: 0s;
+}
+
+.hud__start-prompt {
+    align-items: center;
+    transition-property: scale;
+    transition-duration: 0.6s;
+    transition-timing-function: ease-in-out;
+}
+
+.hud__start--bob .hud__start-prompt {
+    scale: 1.06 1.06;
+}
+
+.hud__start-text {
+    margin: 0;
+    padding: 0;
+    font-size: 108px;
+    color: var(--white);
+    -unity-text-outline-width: 16px;
+    -unity-text-outline-color: var(--navy);
+    text-shadow: 0 14px 0 rgb(29, 43, 79);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.hud__start-hint {
+    display: none;
+    flex-direction: row;
+    align-items: center;
+    margin-top: 24px;
+    padding: 16px 40px 20px 26px;
+    border-radius: 999px;
+    background-color: rgba(29, 43, 79, 0.75);
+    transition-property: translate, opacity;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-out;
+    transition-delay: 0.42s;
+}
+
+.hud__start--touch .hud__start-hint--touch {
+    display: flex;
+}
+
+.hud__start--desktop .hud__start-hint--desktop {
+    display: flex;
+}
+
+.hud__start--enter .hud__start-hint {
+    translate: 0 40px;
+    opacity: 0;
+}
+
+.hud__start--leave .hud__start-hint {
+    transition-delay: 0s;
+}
+
+.hud__start-hint-text {
+    margin: 0 0 0 20px;
+    padding: 0 0 4px 0;
+    font-size: 40px;
+    letter-spacing: 2px;
+    color: var(--white);
+    white-space: nowrap;
+}
+
+.hud__start-boost-text {
+    margin-left: 16px;
+}
+
+.hud__start-key {
+    margin-left: 44px;
+}
+
+/* The joystick: a white ring with its knob swinging side to side as the prompt bobs. */
+.hud__start-stick {
+    width: 72px;
+    height: 72px;
+    border-width: 6px;
+    border-color: var(--white);
+    border-radius: 36px;
+    background-color: rgba(255, 255, 255, 0.18);
+}
+
+.hud__start-stick-knob {
+    position: absolute;
+    left: 15px;
+    top: 15px;
+    width: 30px;
+    height: 30px;
+    border-radius: 15px;
+    background-color: var(--white);
+    translate: -16px 0;
+    transition-property: translate;
+    transition-duration: 0.6s;
+    transition-timing-function: ease-in-out;
+}
+
+.hud__start--bob .hud__start-stick-knob {
+    translate: 16px 0;
+}
+
+/* The mouse: a white outline with its left button orange, swaying as the prompt bobs. */
+.hud__start-mouse {
+    width: 46px;
+    height: 64px;
+    border-width: 6px;
+    border-color: var(--white);
+    border-radius: 23px;
+    translate: -8px 0;
+    transition-property: translate;
+    transition-duration: 0.6s;
+    transition-timing-function: ease-in-out;
+}
+
+.hud__start--bob .hud__start-mouse {
+    translate: 8px 0;
+}
+
+.hud__start-mouse-button {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 14px;
+    height: 22px;
+    border-top-left-radius: 16px;
+    background-color: var(--orange);
+}
+
+.hud__start-mouse-line {
+    position: absolute;
+    left: 14px;
+    top: 0;
+    width: 6px;
+    height: 22px;
+    background-color: var(--white);
+}
+
 /* The round's result: the title near the top, tilted over the dimmed arena, a line under it, the card with the place
    and the time on the arena, and PLAY AGAIN at the bottom with the free height between them. Only the top spacer gives
    way when a screen is too short. While round-over--enter is on (RoundOverView takes it off once the screen shows),
