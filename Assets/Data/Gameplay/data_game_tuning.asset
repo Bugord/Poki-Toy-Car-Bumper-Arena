@@ -23,6 +23,10 @@ MonoBehaviour:
     grip: 6
     bumpForce: 0.5
     maxBumpSpeed: 18
+    playerBumpMultiplier: 1.3
+    hitStagger: 0.5
+    staggerGrip: 0.2
+    playerStaggerScale: 0.4
   controls:
     touchSteering: 0
     joystickRadius: 0.1
@@ -56,8 +60,8 @@ MonoBehaviour:
     grudgeTime: 4
     easy:
       playerPace: 0.8
-      playerWeight: -0.6
-      playerGrace: 12
+      playerWeight: -0.2
+      playerGrace: 4
       maxPlayerHunters: 1
       reactionTime: {x: 0.3, y: 0.45}
       aimError: 10
@@ -65,8 +69,8 @@ MonoBehaviour:
       escapeBoostChance: 0.3
     normal:
       playerPace: 1
-      playerWeight: -0.15
-      playerGrace: 6
+      playerWeight: 0.05
+      playerGrace: 2
       maxPlayerHunters: 2
       reactionTime: {x: 0.12, y: 0.2}
       aimError: 3
