@@ -14,6 +14,12 @@ namespace ToyCarArena.Gameplay.Round
     /// on a car that falls below <see cref="GameTuning.RoundSettings.FallHeight"/> is out. The round finishes when the
     /// player is out, when the player is the last car left, or when time runs out. It runs once: the next round is a
     /// freshly loaded scene. Who drives the cars is not its business; it only says which one is the player's.
+    /// <para>
+    /// A car that falls within <see cref="GameTuning.RoundSettings.KnockoutCreditWindow"/> of another car driving into
+    /// it was knocked out by that car (<see cref="KnockedOut"/>): the brief's "I pushed him off", which the HUD, the
+    /// result screen and the player's best count. A car that drove off on its own, or slid off long after a hit, was
+    /// knocked out by nobody.
+    /// </para>
     /// </summary>
     public sealed class ArenaRound : ITickable
     {
@@ -21,6 +27,13 @@ namespace ToyCarArena.Gameplay.Round
         /// Raised for each car that falls off, the player's included, before the round finishes on it.
         /// </summary>
         public event Action<Car> CarOut;
+
+        /// <summary>
+        /// Raised for each car that falls off soon enough after another car drove into it, with that car: the one
+        /// knocked out first, then who gets the credit. Right after <see cref="CarOut"/> for the same car; bots knocked
+        /// out by bots and the player knocked out by a bot included.
+        /// </summary>
+        public event Action<Car, Car> KnockedOut;
 
         /// <summary>
         /// Raised once, when the round is decided.
@@ -68,6 +81,17 @@ namespace ToyCarArena.Gameplay.Round
         public int CarsLeft { get; private set; }
 
         /// <summary>
+        /// Cars the player has knocked out this round.
+        /// </summary>
+        public int PlayerKnockouts { get; private set; }
+
+        /// <summary>
+        /// The car that knocked the player out, null while the player is on the arena or after a fall with no one to
+        /// credit.
+        /// </summary>
+        public Car PlayerKnockedOutBy { get; private set; }
+
+        /// <summary>
         /// How far from the middle the arena reaches now, in metres. The one place the bots read the edge from: it
         /// shrinks as the edge crumbles, and a ring counts as gone as soon as it starts to shake, so the bots get off it.
         /// </summary>
@@ -96,9 +120,22 @@ namespace ToyCarArena.Gameplay.Round
 
             foreach (var car in cars) {
                 if (!car.IsOut && car.Position.y < tuning.Round.FallHeight) {
+                    var knockedOutBy = FindKnocker(car);
                     car.TakeOut();
                     CarsLeft--;
                     CarOut?.Invoke(car);
+
+                    if (knockedOutBy != null) {
+                        if (knockedOutBy == Player) {
+                            PlayerKnockouts++;
+                        }
+
+                        if (car == Player) {
+                            PlayerKnockedOutBy = knockedOutBy;
+                        }
+
+                        KnockedOut?.Invoke(car, knockedOutBy);
+                    }
                 }
             }
 
@@ -114,10 +151,34 @@ namespace ToyCarArena.Gameplay.Round
             }
         }
 
+        /// <summary>
+        /// The car's place in the round: 0 for the player, 1..N for the bots, as <see cref="CarLook.Apply"/> painted
+        /// them; -1 for a car not in the round.
+        /// </summary>
+        public int IndexOf(Car car)
+        {
+            return car != null ? cars.IndexOf(car) : -1;
+        }
+
         private void Finish(RoundOutcome outcome, int place)
         {
             IsRunning = false;
-            Finished?.Invoke(new RoundResult(outcome, place, cars.Count, elapsed));
+            var knockedOutBy = PlayerKnockedOutBy != null ? IndexOf(PlayerKnockedOutBy) : RoundResult.Nobody;
+            Finished?.Invoke(new RoundResult(outcome, place, cars.Count, elapsed, PlayerKnockouts, knockedOutBy));
+        }
+
+        /// <summary>
+        /// The car a falling car was knocked out by: the last one that drove into it, if that was recent enough for the
+        /// fall to be its doing.
+        /// </summary>
+        private Car FindKnocker(Car car)
+        {
+            var hitBy = car.LastHitBy;
+            if (hitBy == null || hitBy == car) {
+                return null;
+            }
+
+            return Time.time - car.LastHitTime <= tuning.Round.KnockoutCreditWindow ? hitBy : null;
         }
 
         /// <summary>

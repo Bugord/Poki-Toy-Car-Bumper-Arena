@@ -39,22 +39,87 @@ MonoBehaviour:
     retargetJitter: 0.5
     edgeMargin: 1.5
     lookAhead: 0.25
-    caution: {x: 0.6, y: 1.4}
     pushDistance: 3.5
     pushAngle: 45
     aimBehind: 1.5
     aimLead: 0.3
     distanceWeight: 1
     edgeWeight: 0.6
-    playerWeight: -0.15
-    playerGrace: 6
+    maxPlayerWeight: 0.25
     crowdPenalty: 0.4
     pickNoise: 0.5
-    boostDelay: {x: 0.3, y: 1.2}
-    escapeBoostChance: 0.5
+    stickWeight: 0.3
+    opportunityWeight: 0.35
+    opportunityTime: 1
+    grudgeWeight: 0.4
+    grudgeTime: 4
+    easy:
+      playerPace: 0.8
+      playerWeight: -0.6
+      playerGrace: 12
+      maxPlayerHunters: 1
+      reactionTime: {x: 0.3, y: 0.45}
+      aimError: 10
+      boostDelay: {x: 0.8, y: 2}
+      escapeBoostChance: 0.3
+    normal:
+      playerPace: 1
+      playerWeight: -0.15
+      playerGrace: 6
+      maxPlayerHunters: 2
+      reactionTime: {x: 0.12, y: 0.2}
+      aimError: 3
+      boostDelay: {x: 0.3, y: 1.2}
+      escapeBoostChance: 0.5
+    rampRounds: 4
+    streakStart: 2
+    streakEase: 0.25
+    maxStreakEase: 0.5
+    mix:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 0
+    - 1
+    - 2
+    bully:
+      caution: 0.75
+      playerWeight: 0.35
+      edgeWeight: 1
+      opportunism: 1
+      boostDelay: 0.5
+      aimError: 1
+      escapeBoost: 1
+    careful:
+      caution: 1.3
+      playerWeight: 0
+      edgeWeight: 0.6
+      opportunism: 0.5
+      boostDelay: 1.3
+      aimError: 0.7
+      escapeBoost: 1.5
+    opportunist:
+      caution: 1
+      playerWeight: -0.1
+      edgeWeight: 1.4
+      opportunism: 3
+      boostDelay: 0.8
+      aimError: 1
+      escapeBoost: 1
+    clumsy:
+      caution: 0.6
+      playerWeight: 0
+      edgeWeight: 1
+      opportunism: 1
+      boostDelay: 1
+      aimError: 2.5
+      escapeBoost: 0.6
   round:
     duration: 75
     resultDelay: 1.5
+    outResultDelay: 1
+    knockoutCreditWindow: 2.5
     fallHeight: -3
     removeHeight: -25
   arena:

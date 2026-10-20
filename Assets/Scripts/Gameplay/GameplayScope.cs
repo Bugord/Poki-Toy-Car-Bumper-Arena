@@ -72,6 +72,9 @@ namespace ToyCarArena.Gameplay
             builder.RegisterEntryPoint<ArenaCrumble>().AsSelf();
             if (isStandalone) {
                 builder.RegisterEntryPoint<StandaloneRound>();
+                // From Boot the session's progress lives in the app scope; on its own the scene reloads itself every
+                // round, so StandaloneRound keeps it across the reloads.
+                builder.RegisterInstance(StandaloneRound.Session, typeof(SessionProgress)).As(typeof(ISessionProgress));
             }
 
             builder.RegisterBuildCallback(InjectScene);
