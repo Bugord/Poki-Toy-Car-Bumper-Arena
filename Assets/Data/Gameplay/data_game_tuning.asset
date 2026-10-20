@@ -33,13 +33,14 @@ MonoBehaviour:
     joystickDeadZone: 0.2
     pointerStopRadius: 1
     pointerSlowRadius: 4
+    edgeAssistMargin: 5
+    edgeAssistStop: 2
   boost:
     impulse: 10
     duration: 0.3
     bumpMultiplier: 1.5
     cooldown: 3
   bots:
-    count: 6
     retargetInterval: 2
     retargetJitter: 0.5
     edgeMargin: 1.5
@@ -59,15 +60,18 @@ MonoBehaviour:
     grudgeWeight: 0.4
     grudgeTime: 4
     easy:
-      playerPace: 0.8
-      playerWeight: -0.2
-      playerGrace: 4
+      bots: 3
+      playerPace: 0.6
+      playerWeight: -0.6
+      playerGrace: 10
       maxPlayerHunters: 1
-      reactionTime: {x: 0.3, y: 0.45}
-      aimError: 10
-      boostDelay: {x: 0.8, y: 2}
+      reactionTime: {x: 0.4, y: 0.6}
+      aimError: 15
+      boostDelay: {x: 1.2, y: 2.5}
       escapeBoostChance: 0.3
+      edgeAssist: 1
     normal:
+      bots: 6
       playerPace: 1
       playerWeight: 0.05
       playerGrace: 2
@@ -76,10 +80,11 @@ MonoBehaviour:
       aimError: 3
       boostDelay: {x: 0.3, y: 1.2}
       escapeBoostChance: 0.5
-    rampRounds: 4
+      edgeAssist: 0.3
+    rampRounds: 6
     streakStart: 2
     streakEase: 0.25
-    maxStreakEase: 0.5
+    maxStreakEase: 0.75
     mix:
     - 0
     - 1
