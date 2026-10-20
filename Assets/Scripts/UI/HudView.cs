@@ -32,8 +32,22 @@ namespace ToyCarArena.UI
         private const string BoostPressedClass = "hud__boost--pressed";
         private const string KnockoutShownClass = "hud__ko--shown";
         private const string KnockoutPopClass = "hud__ko--pop";
+        private const string StartShownClass = "hud__start--shown";
+        private const string StartEnterClass = "hud__start--enter";
+        private const string StartLeaveClass = "hud__start--leave";
+        private const string StartBobClass = "hud__start--bob";
+        private const string StartWideClass = "hud__start--wide";
+        private const string StartTouchClass = "hud__start--touch";
+        private const string StartDesktopClass = "hud__start--desktop";
         private const string PopupStartClass = "ko-pop--start";
         private const string PopupLeaveClass = "ko-pop--leave";
+
+        // The start prompt bobs: each toggle eases it a little bigger or back (hud__start-prompt's transition), so a bob
+        // takes twice this, as SMUP's TAP TO START.
+        private const long StartBobInterval = 600;
+
+        // How long the start prompt takes to flash away (hud__start--leave) before it is taken off the screen.
+        private const long StartLeaveDuration = 200;
 
         // The KNOCKOUT! sticker: how long it springs in and then holds before it flies off, and how long that takes
         // (the transitions of ko-pop in ui_screens), in milliseconds.
@@ -80,6 +94,9 @@ namespace ToyCarArena.UI
         private VisualElement popupLayer;
         private int shownKnockouts;
         private int popupCount;
+        private VisualElement start;
+        private IVisualElementScheduledItem startBob;
+        private IVisualElementScheduledItem startWatch;
 
         public HudView(HudControls controls)
         {
@@ -103,12 +120,17 @@ namespace ToyCarArena.UI
             knockoutBadge = Root.Q<VisualElement>("ko-badge");
             knockoutLabel = Root.Q<Label>("ko");
             popupLayer = Root.Q<VisualElement>("ko-layer");
+            start = Root.Q<VisualElement>("start");
             ViewModel.PlayerKnockout += ShowKnockout;
             ViewModel.CarOut += OnCarOut;
 
             // On the press, not the release: a boost is all about the moment.
             boostButton.RegisterCallback<PointerDownEvent>(OnBoostPointerDown);
             controls.SetBoostButton(boostButton);
+
+            if (ViewModel.IsWaitingForPlayer) {
+                ShowStart();
+            }
 
             Refresh();
             RefreshBoost();
@@ -125,6 +147,8 @@ namespace ToyCarArena.UI
                 boostButton.UnregisterCallback<PointerDownEvent>(OnBoostPointerDown);
                 controls.ReleaseBoostButton(boostButton);
             }
+
+            Root?.UnregisterCallback<GeometryChangedEvent>(OnResized);
 
             base.Dispose();
         }
@@ -164,6 +188,60 @@ namespace ToyCarArena.UI
                 knockoutBadge.EnableInClassList(KnockoutShownClass, knockouts > 0);
                 Pulse(knockoutBadge, KnockoutPopClass);
             }
+        }
+
+        /// <summary>
+        /// Shows the start prompt while the cars wait for the player: TAP TO START and how to steer on a touch screen,
+        /// CLICK TO START, how to steer and the boost key on a desktop. It springs in once the curtain is up, bobs, and
+        /// flashes away the moment the round begins. A touch while it shows begins the round, so it never has to turn
+        /// from the desktop one into the touch one.
+        /// </summary>
+        private void ShowStart()
+        {
+            var isTouch = controls.CheckTouchScreen();
+            start.EnableInClassList(StartTouchClass, isTouch);
+            start.EnableInClassList(StartDesktopClass, !isTouch);
+            var text = isTouch ? "TAP TO START" : "CLICK TO START";
+            Root.Q<Label>("start-text").text = text;
+            Root.Q<Label>("start-text-face").text = text;
+
+            // Inside the ring of cars on a wide screen; on a narrow one the ring is too tight and it goes over the arena.
+            Root.RegisterCallback<GeometryChangedEvent>(OnResized);
+            OnResized(null);
+
+            // The transition needs the prompt laid out small first; once it is, it springs to its size.
+            void OnLaidOut(GeometryChangedEvent evt)
+            {
+                start.UnregisterCallback<GeometryChangedEvent>(OnLaidOut);
+                start.RemoveFromClassList(StartEnterClass);
+            }
+
+            start.AddToClassList(StartShownClass);
+            start.AddToClassList(StartEnterClass);
+            start.RegisterCallback<GeometryChangedEvent>(OnLaidOut);
+
+            startBob = Root.schedule.Execute(() => start.ToggleInClassList(StartBobClass)).Every(StartBobInterval);
+            startWatch = Root.schedule.Execute(WatchStart).Every(BoostRefreshInterval);
+        }
+
+        private void WatchStart()
+        {
+            if (ViewModel.IsWaitingForPlayer) {
+                return;
+            }
+
+            startWatch.Pause();
+            startBob.Pause();
+            Root.UnregisterCallback<GeometryChangedEvent>(OnResized);
+            start.RemoveFromClassList(StartBobClass);
+            start.AddToClassList(StartLeaveClass);
+            start.schedule.Execute(() => start.RemoveFromClassList(StartShownClass)).StartingIn(StartLeaveDuration);
+        }
+
+        private void OnResized(GeometryChangedEvent evt)
+        {
+            var size = Root.layout.size;
+            start.EnableInClassList(StartWideClass, size.x >= size.y);
         }
 
         /// <summary>
@@ -263,13 +341,13 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>
-        /// Shows the boost button once the screen is a touch screen, the charge growing from its middle as the boost
+        /// Shows the boost button once the screen is a touch screen (from the visit's second round on), the charge growing from its middle as the boost
         /// cools down, and pops it when the boost is ready again.
         /// </summary>
         private void RefreshBoost()
         {
             if (!isBoostShown) {
-                if (!controls.CheckTouchScreen()) {
+                if (!ViewModel.OffersBoostButton || !controls.CheckTouchScreen()) {
                     return;
                 }
 

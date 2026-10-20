@@ -25,6 +25,29 @@
             </ui:VisualElement>
             <ui:Label name="ko" text="KO 0" picking-mode="Ignore" class="hud__ko-text" />
         </ui:VisualElement>
+        <ui:VisualElement name="start" picking-mode="Ignore" class="hud__start">
+            <ui:VisualElement picking-mode="Ignore" class="stroke hud__start-prompt">
+                <ui:Label name="start-text" text="TAP TO START" picking-mode="Ignore" class="hud__start-text" />
+                <ui:Label name="start-text-face" text="TAP TO START" picking-mode="Ignore" class="hud__start-text stroke__face" />
+            </ui:VisualElement>
+            <ui:VisualElement picking-mode="Ignore" class="hud__start-hint hud__start-hint--touch">
+                <ui:VisualElement picking-mode="Ignore" class="hud__start-stick">
+                    <ui:VisualElement picking-mode="Ignore" class="hud__start-stick-knob" />
+                </ui:VisualElement>
+                <ui:Label text="DRAG TO DRIVE" picking-mode="Ignore" class="hud__start-hint-text" />
+            </ui:VisualElement>
+            <ui:VisualElement picking-mode="Ignore" class="hud__start-hint hud__start-hint--desktop">
+                <ui:VisualElement picking-mode="Ignore" class="hud__start-mouse">
+                    <ui:VisualElement picking-mode="Ignore" class="hud__start-mouse-button" />
+                    <ui:VisualElement picking-mode="Ignore" class="hud__start-mouse-line" />
+                </ui:VisualElement>
+                <ui:Label text="HOLD TO DRIVE" picking-mode="Ignore" class="hud__start-hint-text" />
+                <ui:VisualElement picking-mode="Ignore" class="key hud__start-key">
+                    <ui:Label text="SPACE" picking-mode="Ignore" class="key__text" />
+                </ui:VisualElement>
+                <ui:Label text="BOOST" picking-mode="Ignore" class="hud__start-hint-text hud__start-boost-text" />
+            </ui:VisualElement>
+        </ui:VisualElement>
         <ui:VisualElement name="ko-layer" picking-mode="Ignore" class="hud__popups" />
         <ui:VisualElement name="boost-button" class="hud__boost">
             <ui:VisualElement name="boost-charge" picking-mode="Ignore" class="hud__boost-charge" />

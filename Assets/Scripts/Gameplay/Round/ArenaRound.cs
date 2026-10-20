@@ -10,8 +10,9 @@ using VContainer.Unity;
 namespace ToyCarArena.Gameplay.Round
 {
     /// <summary>
-    /// One round on the arena: <see cref="Begin"/> puts the cars on the spawn circle, facing the middle, and from then
-    /// on a car that falls below <see cref="GameTuning.RoundSettings.FallHeight"/> is out. The round finishes when the
+    /// One round on the arena: <see cref="Place"/> puts the cars on the spawn circle, facing the middle, where they wait
+    /// for the player; <see cref="Begin"/> starts the clock, and from then on a car that falls below
+    /// <see cref="GameTuning.RoundSettings.FallHeight"/> is out. The round finishes when the
     /// player is out, when the player is the last car left, or when time runs out. It runs once: the next round is a
     /// freshly loaded scene. Who drives the cars is not its business; it only says which one is the player's.
     /// <para>
@@ -47,7 +48,6 @@ namespace ToyCarArena.Gameplay.Round
         private readonly ArenaFloor floor;
         private readonly List<Car> cars = new();
 
-        private bool hasBegun;
         private float elapsed;
 
         public ArenaRound(GameTuning tuning, IObjectResolver resolver, Car carPrefab, Transform carParent, ArenaFloor floor)
@@ -62,14 +62,29 @@ namespace ToyCarArena.Gameplay.Round
         public IReadOnlyList<Car> Cars => cars;
 
         /// <summary>
-        /// The player's car, null before the round begins.
+        /// The player's car, null before the cars are placed.
         /// </summary>
         public Car Player { get; private set; }
+
+        /// <summary>
+        /// The cars are on the arena (<see cref="Place"/>), whether the round has begun or not.
+        /// </summary>
+        public bool IsPlaced { get; private set; }
+
+        /// <summary>
+        /// <see cref="Begin"/> has been called: the round runs, or ran and is over.
+        /// </summary>
+        public bool HasBegun { get; private set; }
 
         /// <summary>
         /// Between <see cref="Begin"/> and <see cref="Finished"/>.
         /// </summary>
         public bool IsRunning { get; private set; }
+
+        /// <summary>
+        /// <see cref="Finished"/> has been raised.
+        /// </summary>
+        public bool IsFinished { get; private set; }
 
         public float TimeLeft => Mathf.Max(0f, tuning.Round.Duration - elapsed);
 
@@ -97,16 +112,36 @@ namespace ToyCarArena.Gameplay.Round
         /// </summary>
         public float ArenaRadius => floor.Radius;
 
-        public void Begin()
+        /// <summary>
+        /// Puts the cars on the arena, still: nobody drives, the clock and the crumbling edge wait for
+        /// <see cref="Begin"/>, so the arena can show before the player is ready.
+        /// </summary>
+        public void Place()
         {
-            if (hasBegun) {
+            if (IsPlaced) {
                 throw new InvalidOperationException("A round runs once; load the scene again for the next one.");
             }
 
-            hasBegun = true;
+            IsPlaced = true;
             Spawn(1 + tuning.Bots.Count);
             Player = cars[0];
             CarsLeft = cars.Count;
+        }
+
+        /// <summary>
+        /// Starts the round, placing the cars first if they are not on the arena yet.
+        /// </summary>
+        public void Begin()
+        {
+            if (HasBegun) {
+                throw new InvalidOperationException("A round runs once; load the scene again for the next one.");
+            }
+
+            if (!IsPlaced) {
+                Place();
+            }
+
+            HasBegun = true;
             IsRunning = true;
         }
 
@@ -164,6 +199,7 @@ namespace ToyCarArena.Gameplay.Round
         private void Finish(RoundOutcome outcome, int place)
         {
             IsRunning = false;
+            IsFinished = true;
             var knockedOutBy = PlayerKnockedOutBy != null ? IndexOf(PlayerKnockedOutBy) : RoundResult.Nobody;
             Finished?.Invoke(new RoundResult(outcome, place, cars.Count, elapsed, PlayerKnockouts, knockedOutBy));
         }

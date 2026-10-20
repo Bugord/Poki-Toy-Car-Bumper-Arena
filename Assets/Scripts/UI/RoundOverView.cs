@@ -27,13 +27,15 @@ namespace ToyCarArena.UI
         private const string BestNewClass = "best--new";
 
         private readonly IAudioService audioService;
+        private readonly HudControls controls;
 
         private Button playAgainButton;
         private bool isPlayAgainPressed;
 
-        public RoundOverView(IAudioService audioService)
+        public RoundOverView(IAudioService audioService, HudControls controls)
         {
             this.audioService = audioService;
+            this.controls = controls;
         }
 
         protected override void OnAttached()
@@ -50,7 +52,7 @@ namespace ToyCarArena.UI
 
             // The key hint is for a keyboard; a phone or a tablet has none to press.
             Root.Q<VisualElement>("hint").style.display =
-                Application.isMobilePlatform ? DisplayStyle.None : DisplayStyle.Flex;
+                controls.CheckTouchScreen() ? DisplayStyle.None : DisplayStyle.Flex;
 
             ShowTitle();
             ShowPlace();

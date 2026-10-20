@@ -12,6 +12,10 @@ namespace ToyCarArena.UI
     /// on demand, so the view polls instead of subscribing to every change. A car going out and a knock-out by the
     /// player are passed on as they happen, since the car's chip leaving the HUD and the KNOCKOUT! sticker belong to the
     /// moment the car falls.
+    /// <para>
+    /// The visit's first round keeps the touch screen to steering alone: no boost button, so a new player learns to drive
+    /// and push first, and the button comes with the second round.
+    /// </para>
     /// </summary>
     public sealed class HudViewModel : ViewModel, IPayloadReceiver<ArenaRound>
     {
@@ -27,7 +31,19 @@ namespace ToyCarArena.UI
         /// </summary>
         public event Action<int> CarOut;
 
+        private readonly ISessionProgress progress;
         private ArenaRound round;
+
+        public HudViewModel(ISessionProgress progress)
+        {
+            this.progress = progress;
+        }
+
+        /// <summary>
+        /// Whether the boost button belongs on a touch screen this round: from the visit's second round on. Taken as
+        /// the round comes in, since the session moves on to the next round while this one's HUD still shows.
+        /// </summary>
+        public bool OffersBoostButton { get; private set; }
 
         /// <summary>
         /// Seconds left in the round.
@@ -62,6 +78,12 @@ namespace ToyCarArena.UI
         public bool IsBoostReady => round != null && round.IsRunning && round.Player.Movement.IsBoostReady;
 
         /// <summary>
+        /// Whether the cars stand waiting for the player's first steer or boost to begin the round: the start prompt
+        /// shows meanwhile.
+        /// </summary>
+        public bool IsWaitingForPlayer => round != null && round.IsPlaced && !round.HasBegun;
+
+        /// <summary>
         /// Whether the car with this index is still on the arena.
         /// </summary>
         public bool IsCarIn(int index)
@@ -73,6 +95,7 @@ namespace ToyCarArena.UI
         {
             Unsubscribe();
             round = payload;
+            OffersBoostButton = progress.Round > 1;
             if (round != null) {
                 round.CarOut += OnCarOut;
                 round.KnockedOut += OnKnockedOut;

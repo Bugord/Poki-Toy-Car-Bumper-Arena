@@ -20,7 +20,8 @@ namespace ToyCarArena.App
     /// <item><c>result / pushed, fell / out-cause</c> when the player is out: pushed off by a car, or drove off alone</item>
     /// <item><c>result / boosts-0, boosts-1-2, boosts-3plus / boosts</c></item>
     /// <item>first round only: <c>controls / keyboard, mouse, touch, gamepad, none / input</c>, what the player first
-    /// steered with, and <c>controls / move-0-3, move-3-10, move-10plus, never / first-move</c>, seconds before it</item>
+    /// steered with, and <c>controls / move-0-3, move-3-10, move-10plus, never / first-move</c>, seconds from the cars
+    /// standing on the arena to it (the round waits for the player's first steer or boost, so mostly the wait)</item>
     /// <item><c>result / 0-15 … 60-75 / time</c>: seconds on the arena, in buckets of 15</item>
     /// <item><c>result / play-again / visible</c>, then <c>interact</c> when pressed</item>
     /// </list>
