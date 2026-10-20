@@ -8,7 +8,7 @@ namespace ToyCarArena.Gameplay
     /// brief asks, so the feel is tuned in one place. The values are starting points; each step of the brief tunes its
     /// own section. Code reads them through the properties and never keeps its own copy of a number.
     /// </summary>
-    [CreateAssetMenu(fileName = "data_game_tuning", menuName = "Toy Car Arena/Game Tuning")]
+    [CreateAssetMenu(fileName = "data_game_tuning", menuName = "Bonk Arena/Game Tuning")]
     public sealed class GameTuning : ScriptableObject
     {
         [SerializeField]
