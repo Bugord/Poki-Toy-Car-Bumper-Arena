@@ -83,10 +83,12 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float grip = 6f;
 
-            [Tooltip("Extra impulse on a hit, per metre per second of closing speed, on top of the physics")]
+            [Tooltip("Extra push a car gets from a hit, on top of the physics: metres per second for every metre per " +
+                "second the other car drove into it, times the other's mass over its own, so the faster and heavier " +
+                "car wins; a boosted hitter multiplies it by the boost's bump multiplier")]
             [Min(0f)]
             [SerializeField]
-            private float bumpForce = 1f;
+            private float bumpForce = 0.5f;
 
             public float MaxSpeed => maxSpeed;
             public float Acceleration => acceleration;
@@ -145,12 +147,14 @@ namespace ToyCarArena.Gameplay
         [Serializable]
         public sealed class BoostSettings
         {
-            [Tooltip("Speed added at once, in metres per second")]
+            [Tooltip("Speed added at once, in metres per second, towards where the car is steering (along its nose " +
+                "when it is not); the top speed is raised by as much while the boost lasts")]
             [Min(0f)]
             [SerializeField]
             private float impulse = 12f;
 
-            [Tooltip("Seconds the boost lasts, during which the top speed is raised and hits push harder")]
+            [Tooltip("Seconds the boost lasts, during which the car holds its line at the raised top speed and its hits " +
+                "push harder")]
             [Min(0f)]
             [SerializeField]
             private float duration = 0.4f;
@@ -269,6 +273,12 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private Vector2 boostDelay = new(0.3f, 1.2f);
 
+            [Tooltip("Chance a bot pushed out past the edge margin and still sliding outward boosts back towards the " +
+                "middle, rolled once each time; 0 never saves itself, 1 always does when the boost is ready")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float escapeBoostChance = 0.5f;
+
             public int Count => count;
             public float RetargetInterval => retargetInterval;
             public float RetargetJitter => retargetJitter;
@@ -286,6 +296,7 @@ namespace ToyCarArena.Gameplay
             public float CrowdPenalty => crowdPenalty;
             public float PickNoise => pickNoise;
             public Vector2 BoostDelay => boostDelay;
+            public float EscapeBoostChance => escapeBoostChance;
         }
 
         /// <summary>
@@ -294,7 +305,7 @@ namespace ToyCarArena.Gameplay
         [Serializable]
         public sealed class RoundSettings
         {
-            [Tooltip("Seconds a round lasts at most (60 to 90 in the brief); the arena is gone by then")]
+            [Tooltip("Seconds a round lasts at most (60 to 90 in the brief); the edge has crumbled to its smallest by then")]
             [Range(60f, 90f)]
             [SerializeField]
             private float duration = 75f;
@@ -340,7 +351,7 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float spawnHeight = 0.05f;
 
-            [Tooltip("The edge stops crumbling at this radius, in metres")]
+            [Tooltip("The edge stops crumbling at this radius, in metres: the solid middle of the floor")]
             [Min(1f)]
             [SerializeField]
             private float minRadius = 5f;
@@ -353,17 +364,18 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Seconds between two crumbles of the edge")]
             [Min(0.1f)]
             [SerializeField]
-            private float crumbleInterval = 6f;
+            private float crumbleInterval = 11f;
 
-            [Tooltip("Metres of radius each crumble takes")]
+            [Tooltip("Metres of radius each crumble takes, about: the floor between the radius and the smallest radius " +
+                "is cut into whole rings as close to this wide as fit; 0 never crumbles")]
             [Min(0f)]
             [SerializeField]
-            private float crumbleStep = 1.5f;
+            private float crumbleStep = 2f;
 
             [Tooltip("Seconds a crumbling piece shakes before it falls, so a car on it can get away")]
             [Min(0f)]
             [SerializeField]
-            private float crumbleWarning = 1.5f;
+            private float crumbleWarning = 2f;
 
             [Tooltip("Room the camera leaves around the arena, in metres, so a car at the edge is in view in any " +
                 "screen shape")]

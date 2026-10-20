@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace ToyCarArena.Gameplay.Input
@@ -8,6 +9,11 @@ namespace ToyCarArena.Gameplay.Input
     /// </summary>
     public interface IOnScreenControls
     {
+        /// <summary>
+        /// Raised when the on-screen boost button is pressed.
+        /// </summary>
+        event Action BoostPressed;
+
         /// <param name="screenPosition">In screen pixels from the bottom-left corner, as the Input System reports them.</param>
         bool IsControlAt(Vector2 screenPosition);
     }

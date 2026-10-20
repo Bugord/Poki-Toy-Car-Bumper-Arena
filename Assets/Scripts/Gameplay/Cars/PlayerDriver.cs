@@ -1,3 +1,4 @@
+using System;
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Input;
 using ToyCarArena.Gameplay.Round;
@@ -14,10 +15,11 @@ namespace ToyCarArena.Gameplay.Cars
     /// <item>a finger is a joystick that appears where it touched, or drives the car towards itself like the mouse
     /// (<see cref="GameTuning.ControlSettings.TouchSteering"/>).</item>
     /// </list>
-    /// A drag wins over the keys while it lasts. Once the round is over the car rolls to a stop, so a click on the
-    /// result screen does not steer it.
+    /// A drag wins over the keys while it lasts. Boost (Space, the right mouse button, a gamepad's south button or the
+    /// boost button on a touch screen) fires the car's boost towards where it is steered. Once the round is over the
+    /// car rolls to a stop, so a click on the result screen does not steer it, and boost does nothing.
     /// </summary>
-    public sealed class PlayerDriver : ITickable
+    public sealed class PlayerDriver : ITickable, IInitializable, IDisposable
     {
         private readonly IInputService input;
         private readonly GameTuning tuning;
@@ -36,6 +38,16 @@ namespace ToyCarArena.Gameplay.Cars
             this.tuning = tuning;
             this.arenaCamera = arenaCamera;
             this.round = round;
+        }
+
+        public void Initialize()
+        {
+            input.BoostPressed += OnBoostPressed;
+        }
+
+        public void Dispose()
+        {
+            input.BoostPressed -= OnBoostPressed;
         }
 
         public void Tick()
@@ -64,6 +76,16 @@ namespace ToyCarArena.Gameplay.Cars
 
             var move = Vector2.ClampMagnitude(input.CurrentMoveInput, 1f);
             car.Movement.Drive(arenaCamera.ScreenToGroundDirection(move), move.magnitude);
+        }
+
+        // A press while the boost cools down is dropped, not kept for later: a boost that fires on its own a moment
+        // after the press would throw the car somewhere the player no longer means.
+        private void OnBoostPressed()
+        {
+            var car = round.Player;
+            if (round.IsRunning && !car.IsOut) {
+                car.Movement.TryBoost();
+            }
         }
 
         private void FollowPointer(Car car, Vector2 screenPosition)

@@ -21,7 +21,7 @@ MonoBehaviour:
     mass: 1
     centerOfMassHeight: 0.3
     grip: 6
-    bumpForce: 1
+    bumpForce: 0.5
   controls:
     touchSteering: 0
     joystickRadius: 0.1
@@ -51,6 +51,7 @@ MonoBehaviour:
     crowdPenalty: 0.4
     pickNoise: 0.5
     boostDelay: {x: 0.3, y: 1.2}
+    escapeBoostChance: 0.5
   round:
     duration: 75
     resultDelay: 1.5
@@ -62,7 +63,7 @@ MonoBehaviour:
     spawnHeight: 0.05
     minRadius: 5
     crumbleDelay: 15
-    crumbleInterval: 6
-    crumbleStep: 1.5
-    crumbleWarning: 1.5
+    crumbleInterval: 11
+    crumbleStep: 2
+    crumbleWarning: 2
     viewMargin: 1.5

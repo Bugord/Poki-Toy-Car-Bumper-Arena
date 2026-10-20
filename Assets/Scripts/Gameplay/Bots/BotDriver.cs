@@ -12,7 +12,8 @@ namespace ToyCarArena.Gameplay.Bots
     /// good pick depends on what the other bots are after. A pick weighs every car still in by how near it is, how
     /// close to the edge it is (easy to push off), whether it is the player's, how many bots already chase it, and a
     /// little chance. Nobody picks the player for the first seconds of a round, so a new player has time to find
-    /// their car. Once the round is over the bots roll to a stop, as the player's car does.
+    /// their car. Each bot boosts on its own, as the player does: into a car it pushes, and back from the edge
+    /// (<see cref="Bot.Steer"/>). Once the round is over the bots roll to a stop, as the player's car does.
     /// </summary>
     public sealed class BotDriver : ITickable
     {
@@ -68,7 +69,7 @@ namespace ToyCarArena.Gameplay.Bots
         {
             foreach (var car in round.Cars) {
                 if (car != round.Player) {
-                    bots.Add(new Bot(car, tuning.Bots));
+                    bots.Add(new Bot(car, tuning));
                 }
             }
         }

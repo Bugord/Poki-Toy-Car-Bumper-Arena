@@ -419,6 +419,75 @@
     background-color: var(--white);
 }
 
+/* The boost button, on a touch screen only (HudView shows it once the screen is one): a round white sticker at the
+   bottom right, under the right thumb, while the left one steers. The charge is an orange disc in it that grows from
+   the middle as the boost cools down (HudView scales it); once it fills the button, the button turns orange, its label
+   white with a navy stroke, and it pops (hud__boost--pop for a moment). Pressed, it sinks onto its drop. */
+.hud__boost {
+    display: none;
+    position: absolute;
+    right: 64px;
+    bottom: 96px;
+    width: 300px;
+    height: 300px;
+    align-items: center;
+    justify-content: center;
+    border-width: 9px;
+    border-bottom-width: 20px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+    opacity: 0.85;
+    transition-property: scale, translate, opacity;
+    transition-duration: 0.15s;
+    transition-timing-function: ease-out;
+}
+
+.hud__boost--shown {
+    display: flex;
+}
+
+/* Centred in the button's fill, which the thicker bottom border makes 282 x 271. */
+.hud__boost-charge {
+    position: absolute;
+    left: 23px;
+    top: 17px;
+    width: 236px;
+    height: 236px;
+    border-radius: 118px;
+    background-color: var(--orange);
+}
+
+.hud__boost-text {
+    margin: 0;
+    padding: 0 0 6px 0;
+    font-size: 72px;
+    color: var(--navy);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.hud__boost--ready {
+    background-color: var(--orange);
+    opacity: 1;
+}
+
+.hud__boost--ready .hud__boost-text {
+    color: var(--white);
+    -unity-text-outline-width: 14px;
+    -unity-text-outline-color: var(--navy);
+}
+
+.hud__boost--pop {
+    scale: 1.12 1.12;
+    transition-duration: 0.05s;
+}
+
+.hud__boost--pressed {
+    translate: 0 11px;
+    transition-duration: 0.05s;
+}
+
 /* The round's result: the title near the top, tilted over the dimmed arena, a line under it, the card with the place
    and the time on the arena, and PLAY AGAIN at the bottom with the free height between them. Only the top spacer gives
    way when a screen is too short. While round-over--enter is on (RoundOverView takes it off once the screen shows),

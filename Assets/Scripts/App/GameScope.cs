@@ -1,4 +1,5 @@
 using Bugord.App;
+using ToyCarArena.Gameplay.Input;
 using ToyCarArena.UI;
 using UIKit.Runtime.Integrations.VContainer;
 using UniState;
@@ -17,6 +18,8 @@ namespace ToyCarArena.App
         {
             builder.Register<LevelScene>(Lifetime.Singleton);
             builder.Register<ScreenCurtain>(Lifetime.Singleton);
+            // Here and not in the arena's scope: the HUD is an app screen; the arena's input finds it in this parent.
+            builder.Register<HudControls>(Lifetime.Singleton).AsSelf().As<IOnScreenControls>();
 
             builder.RegisterScreen<CurtainViewModel, CurtainView>();
             builder.RegisterScreen<HudViewModel, HudView>();
