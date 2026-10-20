@@ -19,6 +19,12 @@ namespace ToyCarArena.App
     /// out before the result. The first round loads the arena itself; a restart comes here with a fresh one already
     /// loaded under the curtain.
     /// <para>
+    /// The first round of a visit waits for the player: the cars stand on the arena under the HUD's start prompt until
+    /// the player first steers or boosts (<see cref="PlayerDriver.HasActed"/>), and only then does the round begin and
+    /// the platform hear gameplayStart, so nothing plays before the player is there. A later round comes from PLAY
+    /// AGAIN, which is that input, and begins at once.
+    /// </para>
+    /// <para>
     /// The decided round moves the session on (<see cref="SessionProgress"/>, before the next arena is built from it) and
     /// is held against the player's bests, and the round's analytics go out (<see cref="RoundEvents"/>).
     /// </para>
@@ -51,6 +57,7 @@ namespace ToyCarArena.App
 
             var round = levelScene.Resolve<ArenaRound>();
             var tuning = levelScene.Resolve<GameTuning>();
+            var driver = levelScene.Resolve<PlayerDriver>();
             var finished = new UniTaskCompletionSource<RoundResult>();
             void OnFinished(RoundResult result) => finished.TrySetResult(result);
 
@@ -58,14 +65,29 @@ namespace ToyCarArena.App
             ScreenHandle<HudViewModel> hud = null;
             var isPlaying = false;
             var roundNumber = progress.Round;
-            try {
+            var waitsForPlayer = roundNumber == 1;
+
+            void BeginRound()
+            {
                 round.Begin();
                 platform.GameplayStart();
                 platform.MeasureRoundStart(roundNumber);
                 isPlaying = true;
+            }
+
+            try {
+                round.Place();
+                if (!waitsForPlayer) {
+                    BeginRound();
+                }
 
                 hud = await navigator.OpenAsync<HudViewModel, ArenaRound>(round, token);
                 await curtain.Hide();
+
+                if (waitsForPlayer) {
+                    await UniTask.WaitUntil(() => driver.HasActed, cancellationToken: token);
+                    BeginRound();
+                }
 
                 var result = await finished.Task.AttachExternalCancellation(token);
                 platform.GameplayStop();
@@ -73,7 +95,7 @@ namespace ToyCarArena.App
 
                 progress.Record(result);
                 var record = bests.Record(result);
-                platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, levelScene.Resolve<PlayerDriver>());
+                platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, driver);
 
                 var delay = result.Outcome == RoundOutcome.Out ? tuning.Round.OutResultDelay : tuning.Round.ResultDelay;
                 await UniTask.Delay(TimeSpan.FromSeconds(delay), cancellationToken: token);

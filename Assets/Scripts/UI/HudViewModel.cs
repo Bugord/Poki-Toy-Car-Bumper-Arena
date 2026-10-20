@@ -62,6 +62,12 @@ namespace ToyCarArena.UI
         public bool IsBoostReady => round != null && round.IsRunning && round.Player.Movement.IsBoostReady;
 
         /// <summary>
+        /// Whether the cars stand waiting for the player's first steer or boost to begin the round: the start prompt
+        /// shows meanwhile.
+        /// </summary>
+        public bool IsWaitingForPlayer => round != null && round.IsPlaced && !round.HasBegun;
+
+        /// <summary>
         /// Whether the car with this index is still on the arena.
         /// </summary>
         public bool IsCarIn(int index)

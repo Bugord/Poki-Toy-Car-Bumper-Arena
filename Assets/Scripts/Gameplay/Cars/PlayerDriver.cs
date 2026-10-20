@@ -18,6 +18,8 @@ namespace ToyCarArena.Gameplay.Cars
     /// A drag wins over the keys while it lasts. Boost (Space, the right mouse button, a gamepad's south button or the
     /// boost button on a touch screen) fires the car's boost towards where it is steered. Once the round is over the
     /// car rolls to a stop, so a click on the result screen does not steer it, and boost does nothing.
+    /// Before the round begins it only watches for the player's first steer or boost (<see cref="HasActed"/>), which the
+    /// first round of a visit waits for.
     /// It also notes how the player plays the round (<see cref="FirstInput"/>, <see cref="FirstMoveTime"/>,
     /// <see cref="Boosts"/>), so the analytics can tell a player who never found the controls from one who was bored.
     /// </summary>
@@ -34,13 +36,23 @@ namespace ToyCarArena.Gameplay.Cars
 
         private bool isDriving;
 
+        // Seconds the cars have stood waiting for the player before the round began.
+        private float waitTime;
+
+        /// <summary>
+        /// Whether the player has steered or pressed boost since the cars were placed: the round can begin, the player
+        /// is there.
+        /// </summary>
+        public bool HasActed { get; private set; }
+
         /// <summary>
         /// What the player first steered with this round, null until they steer.
         /// </summary>
         public InputMethod? FirstInput { get; private set; }
 
         /// <summary>
-        /// Seconds into the round of the player's first steer, or a negative number until they steer.
+        /// Seconds from the cars standing on the arena to the player's first steer, or a negative number until they
+        /// steer: into the round, plus the wait for the player before a round that waits for one.
         /// </summary>
         public float FirstMoveTime { get; private set; } = -1f;
 
@@ -71,6 +83,11 @@ namespace ToyCarArena.Gameplay.Cars
 
         public void Tick()
         {
+            if (IsWaiting) {
+                WatchForFirstInput();
+                return;
+            }
+
             var car = round.Player;
             if (!round.IsRunning || car.IsOut) {
                 if (isDriving) {
@@ -99,19 +116,45 @@ namespace ToyCarArena.Gameplay.Cars
 
         // A press while the boost cools down is dropped, not kept for later: a boost that fires on its own a moment
         // after the press would throw the car somewhere the player no longer means.
+        // The press that starts the round only starts it: a boost before the round would throw the car off its place.
         private void OnBoostPressed()
         {
+            if (IsWaiting) {
+                HasActed = true;
+                return;
+            }
+
             var car = round.Player;
             if (round.IsRunning && !car.IsOut && car.Movement.TryBoost()) {
                 Boosts++;
             }
         }
 
+        // A steer that starts the round counts as the round's first, at its very start.
         private void OnMoveUsed(InputMethod method)
         {
-            if (FirstInput == null && round.IsRunning && !round.Player.IsOut) {
+            if (!round.IsPlaced || round.IsFinished || round.Player.IsOut) {
+                return;
+            }
+
+            HasActed = true;
+            if (FirstInput == null) {
                 FirstInput = method;
-                FirstMoveTime = round.Elapsed;
+                FirstMoveTime = waitTime + round.Elapsed;
+            }
+        }
+
+        private bool IsWaiting => round.IsPlaced && !round.HasBegun;
+
+        /// <summary>
+        /// Notices the player's first steer while the cars wait: a key or stick held, or a finger or the mouse that
+        /// comes down (which also reports it as <see cref="IInputService.MoveUsed"/>). The car is not driven yet.
+        /// </summary>
+        private void WatchForFirstInput()
+        {
+            waitTime += Time.deltaTime;
+            if (input.TryGetDrag(out _) || input.CurrentMoveInput != Vector2.zero) {
+                HasActed = true;
             }
         }
 
