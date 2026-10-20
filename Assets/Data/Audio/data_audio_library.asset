@@ -20,62 +20,69 @@ MonoBehaviour:
   arenaMusic: {fileID: 8300000, guid: fbacf6be6f7f47a1b2a841132ece45ee, type: 3}
   hitLight:
     clips:
-    - {fileID: 8300000, guid: cccc45d70d8b445496bed4b9d1d1e279, type: 3}
-    - {fileID: 8300000, guid: f615e4e083314bef80385ad44605976e, type: 3}
+    - {fileID: 8300000, guid: efe82c3994d54c1e89ce239c6a302ca2, type: 3}
+    - {fileID: 8300000, guid: ecf689c9312241f29e014ca06cafb593, type: 3}
+    - {fileID: 8300000, guid: 6060e90603264f01b9abb45b68421009, type: 3}
     volume: 0.6
     pitchJitter: 0.1
   hitHeavy:
     clips:
-    - {fileID: 8300000, guid: ab85b43233d84357b4d7539142814bfb, type: 3}
+    - {fileID: 8300000, guid: b515345234444342b89bf668afed52c7, type: 3}
+    - {fileID: 8300000, guid: bdf22ba45de4432fb25f0b7870397a25, type: 3}
+    - {fileID: 8300000, guid: e76ba6d94fc04ecda1c54aae01c147a1, type: 3}
     volume: 0.9
     pitchJitter: 0.06
   boost:
     clips:
-    - {fileID: 8300000, guid: daebca60785343e68f87340ba7402ee2, type: 3}
-    volume: 0.6
+    - {fileID: 8300000, guid: 67832059b40a448aa8ba080aafef4c65, type: 3}
+    - {fileID: 8300000, guid: c822b978ad734dd88c1e85a1defde0b2, type: 3}
+    volume: 0.5
     pitchJitter: 0.05
   knockout:
     clips:
-    - {fileID: 8300000, guid: 9112977a4e044c768627a5d38a8f855c, type: 3}
+    - {fileID: 8300000, guid: 25e53a554ae746ce9ea99c5cd3fe3225, type: 3}
+    - {fileID: 8300000, guid: 54c1f5a71e8747bca04c2a5f03c6cba5, type: 3}
     volume: 0.55
     pitchJitter: 0.05
   knockoutPlayer:
     clips:
-    - {fileID: 8300000, guid: a01028f72ce545e2b6f64b9127012983, type: 3}
-    volume: 0.6
+    - {fileID: 8300000, guid: d8b13536369a490c877303437b466eac, type: 3}
+    volume: 0.7
     pitchJitter: 0
   knockoutCredit:
     clips:
-    - {fileID: 8300000, guid: c74eb009ad8348d585edd13e5d832083, type: 3}
+    - {fileID: 8300000, guid: b02fe5e8179c4573892ccd4600cdf4cd, type: 3}
     volume: 0.8
     pitchJitter: 0
   crumbleWarning:
     clips:
-    - {fileID: 8300000, guid: b72aca60be7c471bb6fe30d0b9f4008d, type: 3}
-    volume: 0.55
+    - {fileID: 8300000, guid: 23c9a021bedb4a1a9cce3c419fa73d88, type: 3}
+    - {fileID: 8300000, guid: ec0e7c36d5834285b0c8d00d24576016, type: 3}
+    volume: 0.5
     pitchJitter: 0.05
   crumbleFall:
     clips:
-    - {fileID: 8300000, guid: f71f3377e6dc496ca26f8b54611b0600, type: 3}
+    - {fileID: 8300000, guid: b03c5f7ff7034bd793235ebc13b141a4, type: 3}
+    - {fileID: 8300000, guid: 3013228ede62494d87f8322ca2de7bfd, type: 3}
     volume: 0.8
     pitchJitter: 0.05
   countdownTick:
     clips:
-    - {fileID: 8300000, guid: baa30b4ce6774f4fbc02169a705ceacf, type: 3}
-    volume: 0.6
+    - {fileID: 8300000, guid: 8affd8419eeb4049908737983249602d, type: 3}
+    volume: 0.8
     pitchJitter: 0
   win:
     clips:
-    - {fileID: 8300000, guid: 0013efc55dd24808a0fff61ab18a6f46, type: 3}
+    - {fileID: 8300000, guid: a3d78c893df1431b80740cb1c807a2b1, type: 3}
     volume: 0.9
     pitchJitter: 0
   lose:
     clips:
-    - {fileID: 8300000, guid: 5cf783616fb243988147682d2c27e96e, type: 3}
+    - {fileID: 8300000, guid: 575025d74f9149459a43db9dd85f4f9b, type: 3}
     volume: 0.9
     pitchJitter: 0
   uiClick:
     clips:
-    - {fileID: 8300000, guid: 9f2071fae7c54950b23c97bfd664bfbb, type: 3}
-    volume: 0.6
+    - {fileID: 8300000, guid: 61cb6dfe0a114e77a3f97959ea1af18f, type: 3}
+    volume: 0.7
     pitchJitter: 0.04

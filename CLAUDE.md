@@ -40,7 +40,8 @@ Assets/
   Data/<Kind>/            ScriptableObject-данные: Data/Gameplay/data_game_tuning.asset, Data/Audio/data_audio_library.asset,
                           Data/Physics/phys_car
   Art/Models|Textures|Materials/   модели Kenney (FBX), атлас colormap, материалы
-  Audio/Sfx|Music/        sfx_*.wav, music_*.wav: синтезированные моно-заглушки, пока нет звуков Kenney
+  Audio/Sfx|Music/        sfx_*_NN.ogg из Kenney Impact Sounds, Interface Sounds и Music Jingles (импорт в моно);
+                          music_arena_loop.wav пока синтезированная заглушка: музыкальных петель у Kenney нет
   Prefabs/<Kind>/         Prefabs/Cars/Car.prefab
   UI/                     ui_theme.tss (палитра, шрифт), ui_screens.uss, Screens/*.uxml, Fonts/ (Lilita One),
                           data_screen_catalog и ui_panel_settings (заданы у GameScope в Boot)
