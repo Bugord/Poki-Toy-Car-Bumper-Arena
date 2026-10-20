@@ -317,6 +317,8 @@ namespace ToyCarArena.Gameplay.Effects
         /// </summary>
         private void OnFinished(RoundResult result)
         {
+            // The round's last moments play out at full speed, and nothing slowed is left under the result.
+            hitStop.Release();
             var library = audioService.Library;
             pendingJingle = result.Outcome == RoundOutcome.Out ? library.Lose : library.Win;
             jingleTime = Time.unscaledTime + jingleDelay;

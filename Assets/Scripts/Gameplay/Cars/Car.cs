@@ -11,8 +11,9 @@ namespace ToyCarArena.Gameplay.Cars
     /// <para>
     /// A hit by another car gets an extra push on top of the physics (<see cref="GameTuning.CarSettings.BumpForce"/>),
     /// so the brief's "the faster and heavier, the harder the push" reads clearly: the push grows with how fast the
-    /// other car drove into this one and with its mass, and a boosted hitter pushes harder still. Each car pushes only
-    /// itself, from its own collision report, so the car that rams wins: it gets back only what the physics gives.
+    /// other car drove into this one and with its mass, and a boosted hitter pushes harder still, up to
+    /// <see cref="GameTuning.CarSettings.MaxBumpSpeed"/>. Each car pushes only itself, from its own collision report,
+    /// so the car that rams wins: it gets back only what the physics gives.
     /// </para>
     /// </summary>
     [RequireComponent(typeof(CarMovement))]
@@ -119,10 +120,20 @@ namespace ToyCarArena.Gameplay.Cars
             var otherApproach = Mathf.Max(0f, Vector3.Dot(otherVelocity, normal));
             var strength = Mathf.Max(0f, Vector3.Dot(otherVelocity - velocity, normal));
 
+            // The push grows with how fast the other car drove into this one, but never past how fast the two closed
+            // in: a car tapped from behind by a slightly faster one is barely pushed, and a contact lost and found again
+            // while one car pushes another does not kick it again at full speed.
             var isOtherBoosting = other.Movement.IsBoosting;
             var multiplier = isOtherBoosting ? boostSettings.BumpMultiplier : 1f;
-            var push = carSettings.BumpForce * otherApproach * multiplier * other.Movement.Mass / Movement.Mass;
-            Movement.Push(normal * push);
+            var drive = Mathf.Min(otherApproach, strength);
+            var push = carSettings.BumpForce * drive * multiplier * other.Movement.Mass / Movement.Mass;
+            // The solver has already bounced the car; the push only tops that up to the most a hit may leave a car
+            // going, so a boosted hit or a heavy car cannot fling a car across the arena.
+            var speedAway = Vector3.Dot(Movement.Velocity, normal);
+            push = Mathf.Min(push, Mathf.Max(0f, carSettings.MaxBumpSpeed - speedAway));
+            if (push > 0f) {
+                Movement.Push(normal * push);
+            }
 
             if (otherApproach > 0f) {
                 LastHitBy = other;

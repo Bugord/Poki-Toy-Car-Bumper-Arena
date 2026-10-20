@@ -22,6 +22,7 @@ MonoBehaviour:
     centerOfMassHeight: 0.3
     grip: 6
     bumpForce: 0.5
+    maxBumpSpeed: 18
   controls:
     touchSteering: 0
     joystickRadius: 0.1
@@ -29,8 +30,8 @@ MonoBehaviour:
     pointerStopRadius: 1
     pointerSlowRadius: 4
   boost:
-    impulse: 12
-    duration: 0.4
+    impulse: 10
+    duration: 0.3
     bumpMultiplier: 1.5
     cooldown: 3
   bots:

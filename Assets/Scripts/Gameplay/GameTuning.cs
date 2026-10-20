@@ -84,11 +84,19 @@ namespace ToyCarArena.Gameplay
             private float grip = 6f;
 
             [Tooltip("Extra push a car gets from a hit, on top of the physics: metres per second for every metre per " +
-                "second the other car drove into it, times the other's mass over its own, so the faster and heavier " +
-                "car wins; a boosted hitter multiplies it by the boost's bump multiplier")]
+                "second the other car drove into it (no more than the two closed in at), times the other's mass over " +
+                "its own, so the faster and heavier car wins; a boosted hitter multiplies it by the boost's bump " +
+                "multiplier")]
             [Min(0f)]
             [SerializeField]
             private float bumpForce = 0.5f;
+
+            [Tooltip("Fastest the extra push of a hit leaves a car going away from the hitter, in metres per second, " +
+                "whatever the speeds and masses, so no hit flings a car across the arena; the physics' own bounce is " +
+                "never cut. A car hit at this speed along its nose slides about 13 m, across it about 3 m")]
+            [Min(0f)]
+            [SerializeField]
+            private float maxBumpSpeed = 18f;
 
             public float MaxSpeed => maxSpeed;
             public float Acceleration => acceleration;
@@ -99,6 +107,7 @@ namespace ToyCarArena.Gameplay
             public float CenterOfMassHeight => centerOfMassHeight;
             public float Grip => grip;
             public float BumpForce => bumpForce;
+            public float MaxBumpSpeed => maxBumpSpeed;
         }
 
         /// <summary>
@@ -151,13 +160,14 @@ namespace ToyCarArena.Gameplay
                 "when it is not); the top speed is raised by as much while the boost lasts")]
             [Min(0f)]
             [SerializeField]
-            private float impulse = 12f;
+            private float impulse = 10f;
 
             [Tooltip("Seconds the boost lasts, during which the car holds its line at the raised top speed and its hits " +
-                "push harder")]
+                "push harder. It cannot be steered meanwhile and is braked off afterwards, so keep it short: the boost " +
+                "back from the edge of the last, 5 m disc must stop short of the far edge")]
             [Min(0f)]
             [SerializeField]
-            private float duration = 0.4f;
+            private float duration = 0.3f;
 
             [Tooltip("What a hit's push is multiplied by during the boost")]
             [Min(1f)]

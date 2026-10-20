@@ -83,6 +83,9 @@ namespace ToyCarArena.Gameplay.Cars
         private void Awake()
         {
             body = GetComponent<Rigidbody>();
+            // A car standing still must never sleep: the edge crumbles away under it (ArenaFloor swaps its collider for
+            // a smaller one), and a sleeping body would hang in the air over the gap.
+            body.sleepThreshold = 0f;
             if (arenaMask == 0) {
                 arenaMask = LayerMask.GetMask("Arena");
             }

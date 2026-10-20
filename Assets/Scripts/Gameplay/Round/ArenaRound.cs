@@ -139,9 +139,10 @@ namespace ToyCarArena.Gameplay.Round
                 }
             }
 
-            // Cars that fell on the same frame as the player still count as behind it.
+            // Cars that fell on the same frame as the player still count as behind it; but a car out never places first,
+            // not even when the last of the others fell with it.
             if (Player.IsOut) {
-                Finish(RoundOutcome.Out, CarsLeft + 1);
+                Finish(RoundOutcome.Out, cars.Count > 1 ? Mathf.Max(2, CarsLeft + 1) : 1);
             }
             else if (cars.Count > 1 && CarsLeft == 1) {
                 Finish(RoundOutcome.Won, 1);

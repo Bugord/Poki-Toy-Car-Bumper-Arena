@@ -158,7 +158,10 @@ namespace ToyCarArena.Gameplay.Bots
 
             Car best = null;
             var bestScore = float.NegativeInfinity;
-            foreach (var car in round.Cars) {
+            // By index: a foreach over the read-only list would box its enumerator on every pick.
+            var cars = round.Cars;
+            for (var i = 0; i < cars.Count; i++) {
+                var car = cars[i];
                 if (car == bot.Car || car.IsOut || (isPlayerSpared && car == player)) {
                     continue;
                 }

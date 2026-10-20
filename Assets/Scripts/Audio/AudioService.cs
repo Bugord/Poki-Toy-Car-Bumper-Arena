@@ -100,8 +100,11 @@ namespace ToyCarArena.Audio
 
         public void Dispose()
         {
-            // Null when the app is quitting and the object went first.
+            // Null when the app is quitting and the object went first. Switched off at once, since Destroy waits for the
+            // end of the frame: the Game scene played on its own reloads itself, and the next scene's service would
+            // otherwise hear a second audio listener for that frame.
             if (root != null) {
+                root.SetActive(false);
                 Object.Destroy(root);
             }
         }
