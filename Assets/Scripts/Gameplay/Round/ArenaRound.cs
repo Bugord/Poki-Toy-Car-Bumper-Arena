@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Bugord.Core;
+using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Cars;
 using UnityEngine;
 using VContainer;
@@ -30,17 +31,19 @@ namespace ToyCarArena.Gameplay.Round
         private readonly IObjectResolver resolver;
         private readonly Car carPrefab;
         private readonly Transform carParent;
+        private readonly ArenaFloor floor;
         private readonly List<Car> cars = new();
 
         private bool hasBegun;
         private float elapsed;
 
-        public ArenaRound(GameTuning tuning, IObjectResolver resolver, Car carPrefab, Transform carParent)
+        public ArenaRound(GameTuning tuning, IObjectResolver resolver, Car carPrefab, Transform carParent, ArenaFloor floor)
         {
             this.tuning = tuning;
             this.resolver = resolver;
             this.carPrefab = carPrefab;
             this.carParent = carParent;
+            this.floor = floor;
         }
 
         public IReadOnlyList<Car> Cars => cars;
@@ -65,10 +68,10 @@ namespace ToyCarArena.Gameplay.Round
         public int CarsLeft { get; private set; }
 
         /// <summary>
-        /// How far from the middle the arena reaches now, in metres. The one place the bots read the edge from: the
-        /// crumbling edge (step 5 of the brief) will shrink it, until then it is the starting radius.
+        /// How far from the middle the arena reaches now, in metres. The one place the bots read the edge from: it
+        /// shrinks as the edge crumbles, and a ring counts as gone as soon as it starts to shake, so the bots get off it.
         /// </summary>
-        public float ArenaRadius => tuning.Arena.Radius;
+        public float ArenaRadius => floor.Radius;
 
         public void Begin()
         {

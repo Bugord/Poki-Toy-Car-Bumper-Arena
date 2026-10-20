@@ -251,6 +251,7 @@ MonoBehaviour:
   autoInjectGameObjects: []
   tuning: {fileID: 11400000, guid: d3ac6d0d1668c84439c54712e09fbaca, type: 2}
   arenaCamera: {fileID: 1867175643}
+  arenaFloor: {fileID: 1674820966}
   carPrefab: {fileID: 9129053375818311994, guid: 222cdabef3973de4db083cc9179a4027, type: 3}
 --- !u!4 &1404793206
 Transform:

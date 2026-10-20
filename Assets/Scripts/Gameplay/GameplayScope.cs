@@ -24,6 +24,10 @@ namespace ToyCarArena.Gameplay
         [SerializeField]
         private ArenaCamera arenaCamera;
 
+        [Tooltip("The arena's floor, whose edge crumbles away ring by ring over a round")]
+        [SerializeField]
+        private ArenaFloor arenaFloor;
+
         [Tooltip("The car every driver gets, the player's and the bots', placed by the round")]
         [SerializeField]
         private Car carPrefab;
@@ -34,6 +38,7 @@ namespace ToyCarArena.Gameplay
             // GetType() reads garbage and VContainer fails later with an empty type name.
             Require(tuning, nameof(tuning));
             Require(arenaCamera, nameof(arenaCamera));
+            Require(arenaFloor, nameof(arenaFloor));
             Require(carPrefab, nameof(carPrefab));
 
             // No parent means no Boot, so no app scope to bring the kit's storage and logging, nor app states to play
@@ -48,17 +53,23 @@ namespace ToyCarArena.Gameplay
             // "VContainerException:  is not assignable from ToyCarArena.Gameplay.GameTuning". Development builds are fine.
             builder.RegisterInstance(tuning, typeof(GameTuning));
 
-            // Nothing is drawn over the game yet; the HUD with the boost button will take its own presses.
-            builder.Register<IOnScreenControls, NoOnScreenControls>(Lifetime.Singleton);
+            // From Boot the HUD's buttons come from the app scope (the HUD is an app screen); on its own the scene has no
+            // HUD, so nothing is drawn over the game.
+            if (isStandalone) {
+                builder.Register<IOnScreenControls, NoOnScreenControls>(Lifetime.Singleton);
+            }
+
             builder.RegisterEntryPoint<InputService>().As<IInputService>();
 
             builder.RegisterComponent(arenaCamera);
+            builder.RegisterComponent(arenaFloor);
 
             // The cars go under this scope's object: with no parent given they would land in DontDestroyOnLoad, where
             // the injector builds them, and outlive the scene.
             builder.RegisterEntryPoint<ArenaRound>().AsSelf().WithParameter(carPrefab).WithParameter(transform);
             builder.RegisterEntryPoint<PlayerDriver>();
             builder.RegisterEntryPoint<BotDriver>();
+            builder.RegisterEntryPoint<ArenaCrumble>().AsSelf();
             if (isStandalone) {
                 builder.RegisterEntryPoint<StandaloneRound>();
             }
