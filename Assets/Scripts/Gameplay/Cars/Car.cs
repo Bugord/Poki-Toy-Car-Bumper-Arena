@@ -148,6 +148,28 @@ namespace ToyCarArena.Gameplay.Cars
             Hit?.Invoke(new CarHit(other, point, normal, strength, isHitter, Movement.IsBoosting, isOtherBoosting));
         }
 
+        /// <summary>
+        /// Keeps the credit for a long push: a car shoved all the way to the edge in one contact was last hit by the
+        /// pusher however long the push took, so the knockout window counts from the end of the push, not its start.
+        /// </summary>
+        private void OnCollisionStay(Collision collision)
+        {
+            var otherBody = collision.rigidbody;
+            if (IsOut || otherBody == null || !otherBody.TryGetComponent<Car>(out var other) || other.IsOut) {
+                return;
+            }
+
+            var away = Flat(Position - other.Position);
+            if (away.sqrMagnitude < 0.0001f) {
+                return;
+            }
+
+            if (Vector3.Dot(other.Movement.Velocity, away.normalized) > 0f) {
+                LastHitBy = other;
+                LastHitTime = Time.time;
+            }
+        }
+
         private static Vector3 Flat(Vector3 vector)
         {
             return new Vector3(vector.x, 0f, vector.z);
