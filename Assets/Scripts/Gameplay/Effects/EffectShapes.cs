@@ -7,8 +7,9 @@ namespace ToyCarArena.Gameplay.Effects
     /// The shapes the effects are drawn with, built in code as <see cref="Cars.CarLook"/> builds the player's marker:
     /// no textures, nothing to import, a few hundred vertices in all. Each mesh has two parts, the navy outline
     /// (submesh <see cref="OutlinePart"/>) and the flat fill (<see cref="FillPart"/>), so every effect has the thick
-    /// outline of the screens' stickers. A solid shape (a puff, a chunk) gets its outline as a slightly larger copy turned
-    /// inside out, which only shows round the silhouette; a flat shape gets a slightly wider copy just behind it.
+    /// outline of the screens' stickers. A solid shape (a puff, a chunk) gets its outline as a slightly larger copy
+    /// turned inside out, which only shows round the silhouette; a flat shape gets a slightly wider copy just behind
+    /// it.
     /// </summary>
     internal static class EffectShapes
     {
@@ -66,9 +67,9 @@ namespace ToyCarArena.Gameplay.Effects
         }
 
         /// <summary>
-        /// A flat star of 1 unit across with <paramref name="points"/> tips, its valleys at <paramref name="innerRatio"/>
-        /// of the tips' radius; it faces -Z, the camera's side when it takes the camera's rotation. Its outline is
-        /// <paramref name="outline"/> units wide.
+        /// A flat star of 1 unit across with <paramref name="points"/> tips, its valleys at
+        /// <paramref name="innerRatio"/> of the tips' radius; it faces -Z, the camera's side when it takes the camera's
+        /// rotation. Its outline is <paramref name="outline"/> units wide.
         /// </summary>
         public static Mesh Star(int points, float innerRatio, float outline)
         {
@@ -100,8 +101,8 @@ namespace ToyCarArena.Gameplay.Effects
         }
 
         /// <summary>
-        /// A speed line, 1 unit long along +Z and <paramref name="width"/> wide at its round head, tapering to a point at
-        /// its tail; it lies flat, facing +Y. The outline is <paramref name="outline"/> units wide.
+        /// A speed line, 1 unit long along +Z and <paramref name="width"/> wide at its round head, tapering to a point
+        /// at its tail; it lies flat, facing +Y. The outline is <paramref name="outline"/> units wide.
         /// </summary>
         public static Mesh Streak(float width, float outline)
         {

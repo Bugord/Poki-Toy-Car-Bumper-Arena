@@ -15,6 +15,16 @@
             <ui:VisualElement name="pips" picking-mode="Ignore" class="hud__pips" />
             <ui:Label name="cars" text="0 LEFT" picking-mode="Ignore" class="hud__cars-text" />
         </ui:VisualElement>
+        <ui:VisualElement name="ko-badge" picking-mode="Ignore" class="pill hud__ko">
+            <ui:VisualElement picking-mode="Ignore" class="ko-star">
+                <ui:VisualElement picking-mode="Ignore" class="ko-star__back" />
+                <ui:VisualElement picking-mode="Ignore" class="ko-star__back ko-star__turned" />
+                <ui:VisualElement picking-mode="Ignore" class="ko-star__front" />
+                <ui:VisualElement picking-mode="Ignore" class="ko-star__front ko-star__turned" />
+            </ui:VisualElement>
+            <ui:Label name="ko" text="KO 0" picking-mode="Ignore" class="hud__ko-text" />
+        </ui:VisualElement>
+        <ui:VisualElement name="ko-layer" picking-mode="Ignore" class="hud__popups" />
         <ui:VisualElement name="boost-button" class="hud__boost">
             <ui:VisualElement name="boost-charge" picking-mode="Ignore" class="hud__boost-charge" />
             <ui:VisualElement picking-mode="Ignore" class="stroke hud__boost-label">

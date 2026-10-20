@@ -8,6 +8,11 @@ namespace ToyCarArena.Gameplay.Arena
     /// further, so the whole arena (<see cref="GameTuning.ArenaSettings.Radius"/> and the view margin) fits the screen
     /// in any shape: a phone held upright needs it much further than a wide window. Also turns screen points and
     /// screen directions into the arena's ground plane, for steering.
+    /// <para>
+    /// It also shakes on a big hit (<see cref="Shake"/>): a small offset across the view on top of the fitted place,
+    /// fading out, on the unscaled clock so it goes on through a hit-stop. Steering ignores the shake, so the car does
+    /// not wobble with the picture.
+    /// </para>
     /// </summary>
     [RequireComponent(typeof(Camera))]
     public sealed class ArenaCamera : MonoBehaviour
@@ -18,11 +23,32 @@ namespace ToyCarArena.Gameplay.Arena
         // The arena is centred on the world origin, its floor at height 0.
         private static readonly Plane Ground = new(Vector3.up, Vector3.zero);
 
+        [Header("Shake")]
+        [Tooltip("Farthest the camera moves across its view at the strongest shake, in metres")]
+        [Min(0f)]
+        [SerializeField]
+        private float shakeDistance = 1.2f;
+
+        [Tooltip("How fast the camera jiggles while it shakes, in jolts per second")]
+        [Min(0f)]
+        [SerializeField]
+        private float shakeFrequency = 22f;
+
+        [Tooltip("How much of the strongest shake dies down per second")]
+        [Min(0.01f)]
+        [SerializeField]
+        private float shakeDecay = 2.5f;
+
         private GameTuning.ArenaSettings settings;
         private Camera view;
         private int fittedWidth;
         private int fittedHeight;
         private float fittedRadius;
+        private Vector3 fittedPosition;
+        // How hard the camera shakes now, 0 to 1; the offset grows with its square, so small shakes stay small.
+        private float shake;
+        private Vector3 shakeOffset;
+        private float shakeSeed;
 
         public Camera Camera => view;
 
@@ -35,6 +61,8 @@ namespace ToyCarArena.Gameplay.Arena
         private void Awake()
         {
             view = GetComponent<Camera>();
+            fittedPosition = transform.position;
+            shakeSeed = Random.Range(0f, 100f);
         }
 
         private void LateUpdate()
@@ -46,6 +74,17 @@ namespace ToyCarArena.Gameplay.Arena
                 fittedRadius = radius;
                 Fit(radius);
             }
+
+            transform.position = fittedPosition + Shaken();
+        }
+
+        /// <summary>
+        /// Shakes the camera by <paramref name="amount"/>, from 0 (none) to 1 (the most it shakes); a shake on top of
+        /// another adds to it, up to the most.
+        /// </summary>
+        public void Shake(float amount)
+        {
+            shake = Mathf.Clamp01(shake + Mathf.Max(0f, amount));
         }
 
         /// <summary>
@@ -54,6 +93,7 @@ namespace ToyCarArena.Gameplay.Arena
         public bool TryScreenToGround(Vector2 screenPosition, out Vector3 point)
         {
             var ray = view.ScreenPointToRay(screenPosition);
+            ray.origin -= shakeOffset;
             if (Ground.Raycast(ray, out var distance)) {
                 point = ray.GetPoint(distance);
                 return true;
@@ -97,7 +137,25 @@ namespace ToyCarArena.Gameplay.Arena
                     Mathf.Abs(Vector3.Dot(point, up)) / tanVertical - depth);
             }
 
-            transform.position = -forward * distance;
+            fittedPosition = -forward * distance;
+        }
+
+        /// <summary>
+        /// This frame's offset of the shake, across the view, and the shake dying down a step.
+        /// </summary>
+        private Vector3 Shaken()
+        {
+            if (shake <= 0f) {
+                shakeOffset = Vector3.zero;
+                return shakeOffset;
+            }
+
+            var time = Time.unscaledTime * shakeFrequency;
+            var across = Mathf.PerlinNoise(shakeSeed, time) * 2f - 1f;
+            var up = Mathf.PerlinNoise(shakeSeed + 37f, time) * 2f - 1f;
+            shakeOffset = (transform.right * across + transform.up * up) * (shakeDistance * shake * shake);
+            shake = Mathf.Max(0f, shake - shakeDecay * Time.unscaledDeltaTime);
+            return shakeOffset;
         }
     }
 }

@@ -1,4 +1,5 @@
 using Bugord.Core;
+using ToyCarArena.Audio;
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Bots;
 using ToyCarArena.Gameplay.Cars;
@@ -32,6 +33,10 @@ namespace ToyCarArena.Gameplay
         [SerializeField]
         private Car carPrefab;
 
+        [Tooltip("Sounds and music for the scene played on its own; from Boot the app's audio plays")]
+        [SerializeField]
+        private AudioLibrary audioLibrary;
+
         protected override void Configure(IContainerBuilder builder)
         {
             // Checked here: in the WebGL player a missing reference does not throw where it is used, a null instance's
@@ -40,6 +45,7 @@ namespace ToyCarArena.Gameplay
             Require(arenaCamera, nameof(arenaCamera));
             Require(arenaFloor, nameof(arenaFloor));
             Require(carPrefab, nameof(carPrefab));
+            Require(audioLibrary, nameof(audioLibrary));
 
             // No parent means no Boot, so no app scope to bring the kit's storage and logging, nor app states to play
             // the round.
@@ -59,6 +65,13 @@ namespace ToyCarArena.Gameplay
                 builder.Register<IOnScreenControls, NoOnScreenControls>(Lifetime.Singleton);
             }
 
+            // From Boot the audio is the app's, so the music goes on across the rounds' reloads; on its own the scene
+            // brings its own, which starts over with each round.
+            if (isStandalone) {
+                builder.RegisterInstance(audioLibrary, typeof(AudioLibrary));
+                builder.RegisterEntryPoint<AudioService>().As<IAudioService>();
+            }
+
             builder.RegisterEntryPoint<InputService>().As<IInputService>();
 
             builder.RegisterComponent(arenaCamera);
@@ -74,7 +87,8 @@ namespace ToyCarArena.Gameplay
                 builder.RegisterEntryPoint<StandaloneRound>();
                 // From Boot the session's progress lives in the app scope; on its own the scene reloads itself every
                 // round, so StandaloneRound keeps it across the reloads.
-                builder.RegisterInstance(StandaloneRound.Session, typeof(SessionProgress)).As(typeof(ISessionProgress));
+                builder.RegisterInstance(StandaloneRound.Session, typeof(SessionProgress))
+                    .As(typeof(ISessionProgress));
             }
 
             builder.RegisterBuildCallback(InjectScene);

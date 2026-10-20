@@ -15,6 +15,10 @@
    - button: a sticker button; button--green is the one to press, button--big the tall one. Its first child is always
      button__face, the coloured face over the darker band along its bottom; button__label is its text over the face.
    - key: a keyboard key cap (the SPACE hint).
+   - ko-star: the knock-out star, eight gold points in a navy outline (two squares, one turned, over two bigger navy
+     ones); ko-star--big is the one on the KNOCKOUT! sticker.
+   - best: a small chip with the player's best (BEST #2); best--new is the gold NEW BEST! sticker.
+   - car-color--N: the body colour of car N of the round (0 the player, 1..N the bots), as CarLook paints it.
 
    A sticker's hard drop is a thicker navy bottom border: 9 px of outline and the drop under it (20 in all on pills,
    25 on cards). That border would squash the bottom corners of the fill inside it, so PillShape redraws such an
@@ -249,6 +253,90 @@
     -unity-text-align: middle-center;
 }
 
+.ko-star {
+    flex-shrink: 0;
+    width: 56px;
+    height: 56px;
+}
+
+.ko-star__back,
+.ko-star__front {
+    position: absolute;
+}
+
+.ko-star__back {
+    left: 8px;
+    top: 8px;
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    background-color: var(--navy);
+}
+
+.ko-star__front {
+    left: 15px;
+    top: 15px;
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+    background-color: var(--gold);
+}
+
+.ko-star__turned {
+    rotate: 45deg;
+}
+
+.ko-star--big {
+    width: 124px;
+    height: 124px;
+}
+
+.ko-star--big > .ko-star__back {
+    left: 18px;
+    top: 18px;
+    width: 88px;
+    height: 88px;
+    border-radius: 12px;
+}
+
+.ko-star--big > .ko-star__front {
+    left: 33px;
+    top: 33px;
+    width: 58px;
+    height: 58px;
+    border-radius: 8px;
+}
+
+/* Hidden until the view gives it best--shown. NEW BEST! springs in after the card (round-over--enter). */
+.best {
+    display: none;
+    margin: 0;
+    padding: 4px 22px 8px 22px;
+    border-radius: 999px;
+    background-color: var(--soft);
+    font-size: 36px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+    transition-property: scale;
+    transition-duration: 0.35s;
+    transition-timing-function: ease-out-back;
+    transition-delay: 0.35s;
+}
+
+.best--shown {
+    display: flex;
+}
+
+.best--new {
+    border-width: 6px;
+    border-color: var(--navy);
+    background-color: var(--gold);
+    color: var(--navy);
+    rotate: -4deg;
+}
+
 /* The opaque cover while the arena scene loads. It takes every click and touch, so nothing under it is pressed. */
 .curtain {
     position: absolute;
@@ -419,6 +507,80 @@
     background-color: var(--white);
 }
 
+/* The player's knock-outs: a small white pill with the star under the car plate, there from the first knock-out on
+   (HudView sets hud__ko--shown), popping at each one. */
+.hud__ko {
+    display: none;
+    height: 108px;
+    margin-top: 20px;
+    padding: 0 36px 0 24px;
+    transition-property: scale;
+    transition-duration: 0.2s;
+    transition-timing-function: ease-out;
+}
+
+.hud__ko--shown {
+    display: flex;
+}
+
+.hud__ko--pop {
+    scale: 1.25 1.25;
+    transition-duration: 0.05s;
+}
+
+.hud__ko-text {
+    margin: 0 0 0 14px;
+    padding: 0 0 6px 0;
+    font-size: 60px;
+    color: var(--navy);
+    -unity-text-align: middle-left;
+    white-space: nowrap;
+}
+
+/* KNOCKOUT! when the player knocks a car out (HudView builds one per knock-out and places it over where the car went
+   over the edge): the star and the word on a tilted sticker that springs in from small (ko-pop--start, taken off once
+   it is laid out), holds, and flies up as it fades (ko-pop--leave). The outer ko-pop is centred on its point. */
+.hud__popups {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.ko-pop {
+    position: absolute;
+    translate: -50% -50%;
+}
+
+.ko-pop__sticker {
+    flex-direction: row;
+    align-items: center;
+    transition-property: scale, translate, opacity;
+    transition-duration: 0.3s, 0.3s, 0.12s;
+    transition-timing-function: ease-out-back, ease-out, linear;
+}
+
+.ko-pop--start .ko-pop__sticker {
+    scale: 0.2 0.2;
+    opacity: 0;
+}
+
+.ko-pop--leave .ko-pop__sticker {
+    scale: 1.15 1.15;
+    translate: 0 -160px;
+    opacity: 0;
+    transition-duration: 0.35s;
+    transition-timing-function: ease-in;
+}
+
+.ko-pop__text {
+    margin: 0 0 0 16px;
+    padding: 0;
+    font-size: 120px;
+    color: var(--gold);
+}
+
 /* The boost button, on a touch screen only (HudView shows it once the screen is one): a round white sticker at the
    bottom right, under the right thumb, while the left one steers. The charge is an orange disc in it that grows from
    the middle as the boost cools down (HudView scales it); once it fills the button, the button turns orange, its label
@@ -565,6 +727,40 @@
     white-space: nowrap;
 }
 
+/* After a fall with a car to blame, the subtitle is PUSHED OFF BY and that car in its colour on a white badge. */
+.round-over__by {
+    display: none;
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: center;
+    margin-top: 26px;
+}
+
+.round-over__by--shown {
+    display: flex;
+}
+
+.round-over__by-text {
+    margin: 0;
+}
+
+.round-over__by-badge {
+    align-items: center;
+    justify-content: center;
+    width: 104px;
+    height: 104px;
+    margin-left: 22px;
+    border-width: 7px;
+    border-color: var(--navy);
+    border-radius: 52px;
+    background-color: var(--white);
+    rotate: 10deg;
+}
+
+.round-over__by-car {
+    margin: 0;
+}
+
 .round-over__card {
     flex-shrink: 0;
     margin-top: 64px;
@@ -611,8 +807,15 @@
     white-space: nowrap;
 }
 
+/* OF N CARS, and the best place beside it. */
 .round-over__of {
+    flex-direction: row;
+    align-items: center;
     margin-top: 26px;
+}
+
+.round-over__place-best {
+    margin-left: 24px;
 }
 
 .round-over__time-label {
@@ -624,13 +827,28 @@
     margin-left: 26px;
 }
 
-.round-over__time-value {
+/* The time on the arena and the knock-outs, right in their insets. */
+.round-over__value {
     margin: 0;
     padding: 0;
     font-size: 72px;
     color: var(--navy);
     -unity-text-align: middle-right;
     white-space: nowrap;
+}
+
+/* The knock-outs, in an inset like the time's: the star, KNOCKOUTS, and the count with the best beside it. */
+.round-over__ko {
+    margin-top: 20px;
+}
+
+.round-over__ko-score {
+    flex-direction: row;
+    align-items: center;
+}
+
+.round-over__ko-best {
+    margin-right: 24px;
 }
 
 .round-over__spacer {
@@ -688,9 +906,46 @@
     opacity: 0;
 }
 
+.round-over--enter .best--new {
+    scale: 0 0;
+}
+
 .round-over--enter .round-over__actions {
     translate: 0 240px;
     opacity: 0;
+}
+
+/* The car colours, late in the file so they win over the white of a pip__body they are put on. */
+.car-color--0 {
+    background-color: var(--green);
+}
+
+.car-color--1 {
+    background-color: var(--red);
+}
+
+.car-color--2 {
+    background-color: var(--blue);
+}
+
+.car-color--3 {
+    background-color: var(--gold);
+}
+
+.car-color--4 {
+    background-color: var(--purple);
+}
+
+.car-color--5 {
+    background-color: var(--orange);
+}
+
+.car-color--6 {
+    background-color: var(--pink);
+}
+
+.car-color--7 {
+    background-color: var(--charcoal);
 }
 
 /* Last, so the face of a stroke wins over every rule above that gives its text an outline or a drop: the outline is

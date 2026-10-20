@@ -18,13 +18,31 @@
             <ui:Label text="TIME UP!" picking-mode="Ignore" class="display round-over__title-text stroke__face" />
         </ui:VisualElement>
         <ui:Label name="subtitle" text="STILL ON THE ARENA" picking-mode="Ignore" class="round-over__subtitle" />
+        <ui:VisualElement name="knocked-by" picking-mode="Ignore" class="round-over__by">
+            <ui:Label text="PUSHED OFF BY" picking-mode="Ignore" class="round-over__subtitle round-over__by-text" />
+            <ui:VisualElement picking-mode="Ignore" class="round-over__by-badge">
+                <ui:VisualElement picking-mode="Ignore" class="pip round-over__by-car">
+                    <ui:VisualElement picking-mode="Ignore" class="pip__wheel pip__wheel--front-left" />
+                    <ui:VisualElement picking-mode="Ignore" class="pip__wheel pip__wheel--front-right" />
+                    <ui:VisualElement picking-mode="Ignore" class="pip__wheel pip__wheel--back-left" />
+                    <ui:VisualElement picking-mode="Ignore" class="pip__wheel pip__wheel--back-right" />
+                    <ui:VisualElement name="by-car-body" picking-mode="Ignore" class="pip__body">
+                        <ui:VisualElement picking-mode="Ignore" class="pip__glass" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
         <ui:VisualElement picking-mode="Ignore" class="card round-over__card">
             <ui:VisualElement name="place" picking-mode="Ignore" class="round-over__place">
                 <ui:Label text="YOUR PLACE" picking-mode="Ignore" class="caption" />
                 <ui:VisualElement name="place-pill" picking-mode="Ignore" class="round-over__place-pill">
                     <ui:Label name="place-value" text="#1" picking-mode="Ignore" class="round-over__place-value" />
                 </ui:VisualElement>
-                <ui:Label name="place-of" text="OF 1 CARS" picking-mode="Ignore" class="caption round-over__of" />
+                <ui:VisualElement picking-mode="Ignore" class="round-over__of">
+                    <ui:Label name="place-of" text="OF 1 CARS" picking-mode="Ignore" class="caption" />
+                    <ui:Label name="place-best" text="BEST #1" picking-mode="Ignore"
+                        class="best round-over__place-best" />
+                </ui:VisualElement>
                 <ui:VisualElement picking-mode="Ignore" class="rule" />
             </ui:VisualElement>
             <ui:VisualElement picking-mode="Ignore" class="inset">
@@ -35,7 +53,22 @@
                     </ui:VisualElement>
                     <ui:Label text="TIME ON ARENA" picking-mode="Ignore" class="caption round-over__time-caption" />
                 </ui:VisualElement>
-                <ui:Label name="time-value" text="0:00" picking-mode="Ignore" class="round-over__time-value" />
+                <ui:Label name="time-value" text="0:00" picking-mode="Ignore" class="round-over__value" />
+            </ui:VisualElement>
+            <ui:VisualElement picking-mode="Ignore" class="inset round-over__ko">
+                <ui:VisualElement picking-mode="Ignore" class="round-over__time-label">
+                    <ui:VisualElement picking-mode="Ignore" class="ko-star">
+                        <ui:VisualElement picking-mode="Ignore" class="ko-star__back" />
+                        <ui:VisualElement picking-mode="Ignore" class="ko-star__back ko-star__turned" />
+                        <ui:VisualElement picking-mode="Ignore" class="ko-star__front" />
+                        <ui:VisualElement picking-mode="Ignore" class="ko-star__front ko-star__turned" />
+                    </ui:VisualElement>
+                    <ui:Label text="KNOCKOUTS" picking-mode="Ignore" class="caption round-over__time-caption" />
+                </ui:VisualElement>
+                <ui:VisualElement picking-mode="Ignore" class="round-over__ko-score">
+                    <ui:Label name="ko-best" text="NEW BEST!" picking-mode="Ignore" class="best round-over__ko-best" />
+                    <ui:Label name="ko-value" text="0" picking-mode="Ignore" class="round-over__value" />
+                </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement picking-mode="Ignore" class="round-over__spacer" />

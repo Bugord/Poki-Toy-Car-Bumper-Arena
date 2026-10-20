@@ -27,6 +27,30 @@ namespace ToyCarArena.UI
         private const string BoostReadyClass = "hud__boost--ready";
         private const string BoostPopClass = "hud__boost--pop";
         private const string BoostPressedClass = "hud__boost--pressed";
+        private const string KnockoutShownClass = "hud__ko--shown";
+        private const string KnockoutPopClass = "hud__ko--pop";
+        private const string PopupStartClass = "ko-pop--start";
+        private const string PopupLeaveClass = "ko-pop--leave";
+
+        // The KNOCKOUT! sticker: how long it springs in and then holds before it flies off, and how long that takes
+        // (the transitions of ko-pop in ui_screens), in milliseconds.
+        private const long PopupEnterDuration = 300;
+        private const long PopupHoldDuration = 800;
+        private const long PopupLeaveDuration = 350;
+
+        // How far the sticker's centre keeps from the sides of the screen, from the top (under the time pill, the car
+        // plate and the KO badge) and from the bottom (over the boost button), in reference pixels, so it is always
+        // whole and covers none of the HUD.
+        private const float PopupSideMargin = 400f;
+        private const float PopupTopMargin = 560f;
+        private const float PopupBottomMargin = 480f;
+
+        // The sticker sits this far above the point where the car went over the edge, in reference pixels, so the car
+        // still shows under it.
+        private const float PopupLift = 110f;
+
+        // The tilt of the sticker, in degrees, every other one the other way so two at once do not look alike.
+        private const float PopupTilt = 7f;
 
         private static readonly string[] WheelClasses = {
             "pip__wheel--front-left", "pip__wheel--front-right", "pip__wheel--back-left", "pip__wheel--back-right",
@@ -47,6 +71,11 @@ namespace ToyCarArena.UI
         private VisualElement boostCharge;
         private bool isBoostShown;
         private bool isBoostShownReady;
+        private VisualElement knockoutBadge;
+        private Label knockoutLabel;
+        private VisualElement popupLayer;
+        private int shownKnockouts;
+        private int popupCount;
 
         public HudView(HudControls controls)
         {
@@ -67,6 +96,10 @@ namespace ToyCarArena.UI
             carsLabel = Root.Q<Label>("cars");
             boostButton = Root.Q<VisualElement>("boost-button");
             boostCharge = Root.Q<VisualElement>("boost-charge");
+            knockoutBadge = Root.Q<VisualElement>("ko-badge");
+            knockoutLabel = Root.Q<Label>("ko");
+            popupLayer = Root.Q<VisualElement>("ko-layer");
+            ViewModel.PlayerKnockout += ShowKnockout;
 
             // On the press, not the release: a boost is all about the moment.
             boostButton.RegisterCallback<PointerDownEvent>(OnBoostPointerDown);
@@ -80,6 +113,8 @@ namespace ToyCarArena.UI
 
         public override void Dispose()
         {
+            ViewModel.PlayerKnockout -= ShowKnockout;
+
             if (boostButton != null) {
                 boostButton.UnregisterCallback<PointerDownEvent>(OnBoostPointerDown);
                 controls.ReleaseBoostButton(boostButton);
@@ -120,6 +155,111 @@ namespace ToyCarArena.UI
                 shownCarCount = carCount;
                 ShowCars(carsLeft, carCount);
             }
+
+            // The badge stays away until the first knock-out, so the HUD starts with only the time and the cars.
+            var knockouts = ViewModel.Knockouts;
+            if (knockouts != shownKnockouts) {
+                shownKnockouts = knockouts;
+                knockoutLabel.text = $"KO {knockouts}";
+                knockoutBadge.EnableInClassList(KnockoutShownClass, knockouts > 0);
+                Pulse(knockoutBadge, KnockoutPopClass);
+            }
+        }
+
+        /// <summary>
+        /// Pops a KNOCKOUT! sticker up over the point where the car the player knocked out went over the edge, kept
+        /// clear of the screen's sides and the HUD: it springs in, holds, and flies up and away.
+        /// </summary>
+        private void ShowKnockout(Vector3 worldPosition)
+        {
+            var panel = popupLayer.panel;
+            if (panel == null) {
+                return;
+            }
+
+            var size = popupLayer.layout.size;
+            // With no camera (or no layout yet) it goes in the middle, under the HUD.
+            var point = new Vector2(size.x * 0.5f, PopupTopMargin);
+            var camera = Camera.main;
+            if (camera != null) {
+                var panelPoint = RuntimePanelUtils.CameraTransformWorldToPanel(panel, worldPosition, camera);
+                point = popupLayer.WorldToLocal(panelPoint) + Vector2.down * PopupLift;
+            }
+
+            point.x = Mathf.Clamp(point.x, PopupSideMargin, Mathf.Max(PopupSideMargin, size.x - PopupSideMargin));
+            point.y = Mathf.Clamp(point.y, PopupTopMargin, Mathf.Max(PopupTopMargin, size.y - PopupBottomMargin));
+
+            var popup = CreatePopup(popupCount++ % 2 == 0 ? -PopupTilt : PopupTilt);
+            popup.style.left = point.x;
+            popup.style.top = point.y;
+            popupLayer.Add(popup);
+
+            // The transition needs the sticker laid out small first; once it is, it springs to its size.
+            void OnLaidOut(GeometryChangedEvent evt)
+            {
+                popup.UnregisterCallback<GeometryChangedEvent>(OnLaidOut);
+                popup.RemoveFromClassList(PopupStartClass);
+            }
+
+            popup.RegisterCallback<GeometryChangedEvent>(OnLaidOut);
+            popup.schedule.Execute(() => popup.AddToClassList(PopupLeaveClass))
+                .StartingIn(PopupEnterDuration + PopupHoldDuration);
+            popup.schedule.Execute(popup.RemoveFromHierarchy)
+                .StartingIn(PopupEnterDuration + PopupHoldDuration + PopupLeaveDuration);
+        }
+
+        // The sticker: the knock-out star and KNOCKOUT! in gold, outlined (.stroke in ui_screens). The outer element
+        // holds the place, centred on it; the inner one springs, tilts and flies.
+        private static VisualElement CreatePopup(float tilt)
+        {
+            var popup = new VisualElement { pickingMode = PickingMode.Ignore };
+            popup.AddToClassList("ko-pop");
+            popup.AddToClassList(PopupStartClass);
+
+            var sticker = new VisualElement { pickingMode = PickingMode.Ignore };
+            sticker.AddToClassList("ko-pop__sticker");
+            sticker.style.rotate = new Rotate(tilt);
+            popup.Add(sticker);
+
+            sticker.Add(CreateStar("ko-star--big"));
+
+            var text = new VisualElement { pickingMode = PickingMode.Ignore };
+            text.AddToClassList("stroke");
+            foreach (var isFace in new[] { false, true }) {
+                var label = new Label("KNOCKOUT!") { pickingMode = PickingMode.Ignore };
+                label.AddToClassList("display");
+                label.AddToClassList("ko-pop__text");
+                if (isFace) {
+                    label.AddToClassList("stroke__face");
+                }
+
+                text.Add(label);
+            }
+
+            sticker.Add(text);
+            return popup;
+        }
+
+        // The knock-out star, eight points, built from two navy squares under two gold ones, each pair a plain one and
+        // one turned by 45 degrees (ko-star in ui_screens), so the build carries no image for it.
+        private static VisualElement CreateStar(string sizeClass)
+        {
+            var star = new VisualElement { pickingMode = PickingMode.Ignore };
+            star.AddToClassList("ko-star");
+            star.AddToClassList(sizeClass);
+            foreach (var layer in new[] { "ko-star__back", "ko-star__front" }) {
+                foreach (var isTurned in new[] { false, true }) {
+                    var square = new VisualElement { pickingMode = PickingMode.Ignore };
+                    square.AddToClassList(layer);
+                    if (isTurned) {
+                        square.AddToClassList("ko-star__turned");
+                    }
+
+                    star.Add(square);
+                }
+            }
+
+            return star;
         }
 
         /// <summary>

@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Generic;
 using ToyCarArena.Gameplay.Cars;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 namespace ToyCarArena.Gameplay.Effects
 {
@@ -69,8 +67,8 @@ namespace ToyCarArena.Gameplay.Effects
         [SerializeField]
         private float ringOutline = 0.05f;
 
-        [Tooltip("Downward pull on stars, hopping dust and chunks, in metres per second squared; above the real one, so " +
-            "they drop with a cartoon snap")]
+        [Tooltip("Downward pull on stars, hopping dust and chunks, in metres per second squared; above the real " +
+            "one, so they drop with a cartoon snap")]
         [Min(0f)]
         [SerializeField]
         private float gravity = 18f;
@@ -289,6 +287,13 @@ namespace ToyCarArena.Gameplay.Effects
 
         private void Awake()
         {
+            // Drawing with a missing material logs an error every frame; without effects the game still plays.
+            if (outline == null || white == null || gold == null || dust == null) {
+                Debug.LogError($"{nameof(EffectPlayer)} in {gameObject.scene.name} is missing a material; no effects.");
+                enabled = false;
+                return;
+            }
+
             puff = Keep(EffectShapes.Puff(12, 8, solidOutline));
             chunk = Keep(EffectShapes.Chunk(solidOutline));
             star = Keep(EffectShapes.Star(5, 0.5f, flatOutline));
@@ -310,7 +315,7 @@ namespace ToyCarArena.Gameplay.Effects
         /// <summary>
         /// Two cars hitting at <paramref name="point"/>: a burst of stars, an impact ring on the floor and a few puffs,
         /// all bigger the stronger the hit (<paramref name="power"/> 0 to 1), and a white flash for a heavy one.
-        /// <paramref name="normal"/> is the way the hit pushed, on the floor.
+        /// <paramref name="normal"/> is the way the car that was hit is pushed, on the floor.
         /// </summary>
         public void PlayHit(Vector3 point, Vector3 normal, float power, bool isHeavy, bool isBoosted)
         {
@@ -323,8 +328,8 @@ namespace ToyCarArena.Gameplay.Effects
             var starSpeed = Mathf.Lerp(hitStarSpeed.x, hitStarSpeed.y, power) * scale;
             for (var i = 0; i < stars; i++) {
                 // Spread round the point, up and out, the way of the push a little more often.
-                var out_ = Around((i + Random.value * 0.6f) / stars) + normal * 0.5f;
-                var direction = (out_.normalized + Vector3.up * Random.Range(0.6f, 1.3f)).normalized;
+                var outward = Around((i + Random.value * 0.6f) / stars) + normal * 0.5f;
+                var direction = (outward.normalized + Vector3.up * Random.Range(0.6f, 1.3f)).normalized;
                 ref var shape = ref Add(isBoosted && i % 2 == 1 ? Shape.Sparkle : Shape.Star, gold, origin,
                     starSize * Random.Range(0.75f, 1.1f), hitStarLife * Random.Range(0.8f, 1.2f));
                 shape.Velocity = direction * (starSpeed * Random.Range(0.7f, 1.1f));
@@ -359,7 +364,8 @@ namespace ToyCarArena.Gameplay.Effects
         }
 
         /// <summary>
-        /// A car firing its boost: puffs blown out of its back, and speed lines and dust behind it while the boost lasts.
+        /// A car firing its boost: puffs blown out of its back, and speed lines and dust behind it while the boost
+        /// lasts.
         /// </summary>
         public void PlayBoost(Car car)
         {
@@ -389,9 +395,9 @@ namespace ToyCarArena.Gameplay.Effects
 
         /// <summary>
         /// A car going over the edge at <paramref name="point"/>: a splash of puffs and stars thrown up, bigger for the
-        /// player's car, with gold sparkles round it when the player knocked the car out.
+        /// player's car.
         /// </summary>
-        public void PlayKnockout(Vector3 point, bool isPlayer, bool isCredited)
+        public void PlayKnockout(Vector3 point, bool isPlayer)
         {
             var scale = isPlayer ? playerKnockoutScale : 1f;
 
@@ -400,22 +406,22 @@ namespace ToyCarArena.Gameplay.Effects
             poof.Hold = 0.3f;
 
             for (var i = 0; i < knockoutPuffs; i++) {
-                var out_ = Around((i + Random.value * 0.5f) / knockoutPuffs);
+                var outward = Around((i + Random.value * 0.5f) / knockoutPuffs);
                 var speed = Random.Range(knockoutSpeed.x, knockoutSpeed.y) * scale;
-                ref var shape = ref Add(Shape.Puff, white, point + out_ * 0.5f,
+                ref var shape = ref Add(Shape.Puff, white, point + outward * 0.5f,
                     Random.Range(knockoutPuffSize.x, knockoutPuffSize.y) * scale, Random.Range(0.6f, 0.9f));
-                shape.Velocity = out_ * (speed * 0.45f) + Vector3.up * speed;
+                shape.Velocity = outward * (speed * 0.45f) + Vector3.up * speed;
                 shape.Gravity = gravity * 0.5f;
                 shape.Drag = 1.5f;
                 shape.Hold = 0.45f;
             }
 
             for (var i = 0; i < knockoutStars; i++) {
-                var out_ = Around((i + Random.value * 0.5f) / knockoutStars);
+                var outward = Around((i + Random.value * 0.5f) / knockoutStars);
                 var speed = Random.Range(knockoutSpeed.x, knockoutSpeed.y) * scale;
                 ref var shape = ref Add(Shape.Star, gold, point + Vector3.up * 0.5f,
                     knockoutStarSize * scale * Random.Range(0.8f, 1.1f), Random.Range(0.7f, 1f));
-                shape.Velocity = out_ * (speed * 0.6f) + Vector3.up * (speed * 1.2f);
+                shape.Velocity = outward * (speed * 0.6f) + Vector3.up * (speed * 1.2f);
                 shape.Gravity = gravity * 0.6f;
                 shape.Drag = 1f;
                 shape.Angle = Random.Range(0f, 360f);
@@ -423,15 +429,19 @@ namespace ToyCarArena.Gameplay.Effects
                 shape.Hold = 0.6f;
             }
 
-            if (!isCredited) {
-                return;
-            }
+        }
 
+        /// <summary>
+        /// The player's knock-out, over the splash at <paramref name="point"/>: a ring of gold sparkles bursting out
+        /// one after another.
+        /// </summary>
+        public void PlayKnockoutCredit(Vector3 point)
+        {
             for (var i = 0; i < creditSparkles; i++) {
-                var out_ = Around((float)i / creditSparkles);
-                ref var shape = ref Add(Shape.Sparkle, gold, point + Vector3.up * 1.5f + out_ * 0.8f,
+                var outward = Around((float)i / creditSparkles);
+                ref var shape = ref Add(Shape.Sparkle, gold, point + Vector3.up * 1.5f + outward * 0.8f,
                     knockoutStarSize * Random.Range(0.7f, 1f), 0.7f);
-                shape.Velocity = out_ * 5f + Vector3.up * 2f;
+                shape.Velocity = outward * 5f + Vector3.up * 2f;
                 shape.Drag = 3f;
                 shape.Angle = Random.Range(-15f, 15f);
                 shape.Delay = 0.05f * i;
@@ -448,19 +458,20 @@ namespace ToyCarArena.Gameplay.Effects
         {
             var spots = Spots(inner, outer, clumpSpacing);
             for (var i = 0; i < spots; i++) {
-                var out_ = Around((i + Random.Range(-0.4f, 0.4f)) / spots);
-                var position = OnRing(out_, inner, outer);
+                var outward = Around((i + Random.Range(-0.4f, 0.4f)) / spots);
+                var position = OnRing(outward, inner, outer);
                 var delay = Random.Range(0f, duration * 0.85f);
 
                 ref var clump = ref Add(Shape.Puff, dust, position, Random.Range(clumpSize.x, clumpSize.y),
                     Random.Range(0.45f, 0.7f));
-                clump.Velocity = Vector3.up * Random.Range(clumpHop.x, clumpHop.y) + out_ * Random.Range(0f, 0.8f);
+                clump.Velocity = Vector3.up * Random.Range(clumpHop.x, clumpHop.y) + outward * Random.Range(0f, 0.8f);
                 clump.Gravity = gravity * 0.5f;
                 clump.Delay = delay;
                 clump.Hold = 0.5f;
 
                 ref var bit = ref Add(Shape.Chunk, dust, position, clumpSize.x * 0.6f, 0.5f);
-                bit.Velocity = Vector3.up * Random.Range(clumpHop.x, clumpHop.y) * 1.2f + out_ * Random.Range(0.5f, 1.5f);
+                bit.Velocity = Vector3.up * (Random.Range(clumpHop.x, clumpHop.y) * 1.2f)
+                    + outward * Random.Range(0.5f, 1.5f);
                 bit.Gravity = gravity;
                 bit.Axis = Random.onUnitSphere;
                 bit.Spin = Random.Range(-500f, 500f);
@@ -476,19 +487,19 @@ namespace ToyCarArena.Gameplay.Effects
         {
             var spots = Spots(inner, outer, fallSpacing);
             for (var i = 0; i < spots; i++) {
-                var out_ = Around((i + Random.Range(-0.3f, 0.3f)) / spots);
-                var position = OnRing(out_, inner, outer);
+                var outward = Around((i + Random.Range(-0.3f, 0.3f)) / spots);
+                var position = OnRing(outward, inner, outer);
 
                 ref var cloud = ref Add(Shape.Puff, dust, position, Random.Range(fallPuffSize.x, fallPuffSize.y),
                     Random.Range(0.6f, 0.9f));
-                cloud.Velocity = Vector3.up * Random.Range(1f, 2.5f) + out_ * Random.Range(0.5f, 2f);
+                cloud.Velocity = Vector3.up * Random.Range(1f, 2.5f) + outward * Random.Range(0.5f, 2f);
                 cloud.Gravity = -1f;
                 cloud.Drag = 2f;
                 cloud.Delay = Random.Range(0f, 0.1f);
                 cloud.Hold = 0.4f;
 
                 ref var bit = ref Add(Shape.Chunk, dust, position, Random.Range(fallChunkSize.x, fallChunkSize.y), 1f);
-                bit.Velocity = out_ * Random.Range(1f, 3f) + Vector3.up * Random.Range(2f, 5f);
+                bit.Velocity = outward * Random.Range(1f, 3f) + Vector3.up * Random.Range(2f, 5f);
                 bit.Gravity = gravity;
                 bit.Axis = Random.onUnitSphere;
                 bit.Spin = Random.Range(-400f, 400f);

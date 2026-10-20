@@ -1,11 +1,16 @@
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using ToyCarArena.Audio;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace ToyCarArena.UI
 {
+    /// <summary>
+    /// The result screen: the title, how the player went out and by whom, the place and the knock-outs against the
+    /// player's bests, the time on the arena, and PLAY AGAIN.
+    /// </summary>
     public sealed class RoundOverView : FadingView<RoundOverViewModel>
     {
         // How long after the screen shows its parts start to move in: long enough for them to be laid out where they
@@ -17,8 +22,23 @@ namespace ToyCarArena.UI
         private const string EnterClass = "round-over--enter";
         private const string ConfettiShownClass = "round-over__confetti--shown";
         private const string PlacePillClass = "round-over__place-pill";
+        private const string KnockedByShownClass = "round-over__by--shown";
+        private const string BestShownClass = "best--shown";
+        private const string BestNewClass = "best--new";
+        private const string CarColorClass = "car-color--";
+
+        // The highest car colour in ui_screens (car-color--0 to 7), as many as CarLook has swatches.
+        private const int LastCarColor = 7;
+
+        private readonly IAudioService audioService;
 
         private Button playAgainButton;
+        private bool isPlayAgainPressed;
+
+        public RoundOverView(IAudioService audioService)
+        {
+            this.audioService = audioService;
+        }
 
         protected override void OnAttached()
         {
@@ -39,6 +59,7 @@ namespace ToyCarArena.UI
             ShowTitle();
             ShowPlace();
             ShowTime();
+            ShowKnockouts();
         }
 
         public override async UniTask ShowAsync(CancellationToken token)
@@ -59,7 +80,7 @@ namespace ToyCarArena.UI
         {
             var (title, subtitle) = ViewModel.Outcome switch {
                 RoundOutcome.Won => ("YOU WIN!", "LAST CAR STANDING!"),
-                RoundOutcome.Out => ("KNOCKED OUT", "PUSHED OFF THE ARENA"),
+                RoundOutcome.Out => ("KNOCKED OUT", "FELL OFF THE ARENA"),
                 _ => ("TIME UP!", "STILL ON THE ARENA"),
             };
 
@@ -70,7 +91,18 @@ namespace ToyCarArena.UI
                 label.EnableInClassList(OutClass, ViewModel.Outcome == RoundOutcome.Out);
             }
 
-            Root.Q<Label>("subtitle").text = subtitle;
+            // Knocked out by a car, the subtitle names it by its colour instead: someone to beat next round.
+            var knockedOutBy = ViewModel.Outcome == RoundOutcome.Out ? ViewModel.KnockedOutBy : RoundResult.Nobody;
+            var isKnockedByCar = knockedOutBy != RoundResult.Nobody;
+            var subtitleLabel = Root.Q<Label>("subtitle");
+            subtitleLabel.text = subtitle;
+            subtitleLabel.style.display = isKnockedByCar ? DisplayStyle.None : DisplayStyle.Flex;
+            Root.Q<VisualElement>("knocked-by").EnableInClassList(KnockedByShownClass, isKnockedByCar);
+            if (isKnockedByCar) {
+                var color = Mathf.Clamp(knockedOutBy, 0, LastCarColor);
+                Root.Q<VisualElement>("by-car-body").AddToClassList(CarColorClass + color);
+            }
+
             Root.Q<VisualElement>("confetti").EnableInClassList(ConfettiShownClass, ViewModel.Outcome == RoundOutcome.Won);
         }
 
@@ -93,6 +125,28 @@ namespace ToyCarArena.UI
             if (tier != null) {
                 Root.Q<VisualElement>("place-pill").AddToClassList($"{PlacePillClass}--{tier}");
             }
+
+            var bestText = ViewModel.BestPlace > 0 ? $"BEST #{ViewModel.BestPlace}" : null;
+            ShowBest(Root.Q<Label>("place-best"), hasPlace && ViewModel.IsBestPlace, hasPlace ? bestText : null);
+        }
+
+        private void ShowKnockouts()
+        {
+            Root.Q<Label>("ko-value").text = ViewModel.Knockouts.ToString();
+            var bestText = ViewModel.BestKnockouts > 0 ? $"BEST {ViewModel.BestKnockouts}" : null;
+            ShowBest(Root.Q<Label>("ko-best"), ViewModel.IsBestKnockouts, bestText);
+        }
+
+        /// <summary>
+        /// The chip beside a number: NEW BEST! when the round beat the player's best, else the best to beat, else
+        /// nothing (no best yet).
+        /// </summary>
+        private static void ShowBest(Label chip, bool isNew, string bestText)
+        {
+            var text = isNew ? "NEW BEST!" : bestText;
+            chip.text = text ?? "";
+            chip.EnableInClassList(BestShownClass, text != null);
+            chip.EnableInClassList(BestNewClass, isNew);
         }
 
         private void ShowTime()
@@ -112,10 +166,15 @@ namespace ToyCarArena.UI
 
         private void PlayAgain()
         {
-            // A key held down in the round, or a tap that ended it, must not skip the screen before it is up.
-            if (IsShown) {
-                ViewModel.PlayAgain();
+            // A key held down in the round, or a tap that ended it, must not skip the screen before it is up; a second
+            // press while the curtain comes down changes nothing, so it does not click either.
+            if (!IsShown || isPlayAgainPressed) {
+                return;
             }
+
+            isPlayAgainPressed = true;
+            audioService.PlayUiClick();
+            ViewModel.PlayAgain();
         }
     }
 }
