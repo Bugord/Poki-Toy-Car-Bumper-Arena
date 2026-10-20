@@ -139,7 +139,7 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         private void PaintBody(int index)
         {
-            var swatch = swatches[Mathf.Clamp(index, 0, swatches.Length - 1) % swatches.Length];
+            var swatch = SwatchOf(index);
             if (swatch == bodySwatch) {
                 return;
             }
@@ -160,6 +160,20 @@ namespace ToyCarArena.Gameplay.Cars
             }
 
             ownBody.uv = uvs;
+        }
+
+        /// <summary>
+        /// The swatch of the car with this index. Past the last one the bots start over from the first bot's, so no bot
+        /// ever wears the player's colour (CarColor in the UI counts the same way).
+        /// </summary>
+        private Vector2Int SwatchOf(int index)
+        {
+            if (index < swatches.Length) {
+                return swatches[Mathf.Max(0, index)];
+            }
+
+            var botSwatches = swatches.Length - 1;
+            return botSwatches > 0 ? swatches[1 + (index - 1) % botSwatches] : swatches[0];
         }
 
         private void SetMarker(bool isPlayer)

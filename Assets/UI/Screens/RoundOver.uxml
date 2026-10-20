@@ -21,7 +21,7 @@
         <ui:VisualElement name="knocked-by" picking-mode="Ignore" class="round-over__by">
             <ui:Label text="PUSHED OFF BY" picking-mode="Ignore" class="round-over__subtitle round-over__by-text" />
             <ui:VisualElement picking-mode="Ignore" class="round-over__by-badge">
-                <ui:VisualElement picking-mode="Ignore" class="pip round-over__by-car">
+                <ui:VisualElement picking-mode="Ignore" class="pip">
                     <ui:VisualElement picking-mode="Ignore" class="pip__wheel pip__wheel--front-left" />
                     <ui:VisualElement picking-mode="Ignore" class="pip__wheel pip__wheel--front-right" />
                     <ui:VisualElement picking-mode="Ignore" class="pip__wheel pip__wheel--back-left" />

@@ -7,15 +7,17 @@
    "Toy Car Arena UI" (its stage sizes are the reference pixels used here).
 
    The palette, as variables every style sheet of the panel can use (var(--navy)). Translucent colours cannot be built
-   from them, so they are written out where used: rgba(29, 43, 79, 0.6) dims a screen, 0.75 is a plate under white text.
+   from them, so they are written out where used: rgba(29, 43, 79, 0.6) dims a screen.
    - navy: outlines, drops, text on white; white: cards, pills, text on the game
    - soft: a panel inside a card, a place past the podium, a white button's face under the pointer; shade: a white
      button's face shade; muted: captions and secondary text
    - red: the last seconds, a knock-out; gold: a win, first place, the stopwatch; silver, bronze: second and third place
    - green/green-shade/green-hover: the primary button
    - confetti: red, blue, green, orange, purple and gold
-   - the cars' bodies (car-color in ui_screens): green, red, blue, gold, purple, orange, pink and charcoal, as CarLook
-     paints them from the atlas */
+   - car-*: the cars' bodies (car-color--N in ui_screens), in the order of CarLook's swatches on the car prefab: green
+     (the player), red, blue, yellow, purple, orange, pink and dark. Each is the atlas colour (tex_toy_car_kit_colormap)
+     at the middle of the part of its swatch the body's UVs sit on, the right half, which shades down the swatch. On the
+     arena light and shade make the body a little lighter or darker than this flat colour. */
 :root {
     -unity-font-definition: url("/Assets/UI/Fonts/font_lilita_one.asset");
     color: #1d2b4f;
@@ -35,6 +37,13 @@
     --blue: #38b6ff;
     --orange: #ff9f1c;
     --purple: #b06cff;
-    --pink: #ff7eb6;
-    --charcoal: #4a5063;
+
+    --car-green: #3fa87a;
+    --car-red: #e65f48;
+    --car-blue: #5f74cb;
+    --car-yellow: #ffb54a;
+    --car-purple: #7e56ce;
+    --car-orange: #ff8644;
+    --car-pink: #ca77eb;
+    --car-dark: #3f3f46;
 }

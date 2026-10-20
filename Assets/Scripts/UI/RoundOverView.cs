@@ -25,10 +25,6 @@ namespace ToyCarArena.UI
         private const string KnockedByShownClass = "round-over__by--shown";
         private const string BestShownClass = "best--shown";
         private const string BestNewClass = "best--new";
-        private const string CarColorClass = "car-color--";
-
-        // The highest car colour in ui_screens (car-color--0 to 7), as many as CarLook has swatches.
-        private const int LastCarColor = 7;
 
         private readonly IAudioService audioService;
 
@@ -99,8 +95,7 @@ namespace ToyCarArena.UI
             subtitleLabel.style.display = isKnockedByCar ? DisplayStyle.None : DisplayStyle.Flex;
             Root.Q<VisualElement>("knocked-by").EnableInClassList(KnockedByShownClass, isKnockedByCar);
             if (isKnockedByCar) {
-                var color = Mathf.Clamp(knockedOutBy, 0, LastCarColor);
-                Root.Q<VisualElement>("by-car-body").AddToClassList(CarColorClass + color);
+                Root.Q<VisualElement>("by-car-body").AddToClassList(CarColor.ClassOf(knockedOutBy));
             }
 
             Root.Q<VisualElement>("confetti").EnableInClassList(ConfettiShownClass, ViewModel.Outcome == RoundOutcome.Won);
