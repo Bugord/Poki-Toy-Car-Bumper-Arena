@@ -36,6 +36,9 @@ namespace ToyCarArena.Gameplay.Cars
         private float boostEndTime = float.NegativeInfinity;
         private float boostReadyTime;
 
+        // Knocked off balance by a hit until this time (Time.time); see Stagger.
+        private float staggerEndTime = float.NegativeInfinity;
+
         /// <summary>
         /// Whether the wheels are on the arena; only then does the car steer, and only then can it boost.
         /// </summary>
@@ -55,6 +58,12 @@ namespace ToyCarArena.Gameplay.Cars
         /// Whether a boost is running: the car holds its line at the raised top speed and its hits push harder.
         /// </summary>
         public bool IsBoosting => Time.time < boostEndTime;
+
+        /// <summary>
+        /// Whether a hit has knocked the car off balance: it does not drive or turn and keeps only a little grip, so the
+        /// push of the hit carries it. A boost overrides it.
+        /// </summary>
+        public bool IsStaggered => Time.time < staggerEndTime && !IsBoosting;
 
         /// <summary>
         /// Whether the cooldown since the last boost is over. The car also has to be on the arena to boost.
@@ -130,6 +139,8 @@ namespace ToyCarArena.Gameplay.Cars
 
             body.linearVelocity = velocity + boostDirection * boostSettings.Impulse;
             boostEndTime = Time.time + boostSettings.Duration;
+            // A boost is the way to catch the car after a hit, so it ends being off balance.
+            staggerEndTime = float.NegativeInfinity;
             boostReadyTime = Time.time + boostSettings.Cooldown;
             Boosted?.Invoke();
             return true;
@@ -141,6 +152,15 @@ namespace ToyCarArena.Gameplay.Cars
         public void Push(Vector3 velocityChange)
         {
             body.linearVelocity += velocityChange;
+        }
+
+        /// <summary>
+        /// Knocks the car off balance for <paramref name="seconds"/>, or keeps it so if it already is for longer: the
+        /// push of a hit carries it, and the driver cannot steer straight back.
+        /// </summary>
+        public void Stagger(float seconds)
+        {
+            staggerEndTime = Mathf.Max(staggerEndTime, Time.time + seconds);
         }
 
         /// <summary>
@@ -173,7 +193,10 @@ namespace ToyCarArena.Gameplay.Cars
         private void Steer(float deltaTime)
         {
             var forward = FlatForward();
-            Turn(forward, deltaTime);
+            var isStaggered = IsStaggered;
+            // Off balance, the car rolls on as if the driver let go, and slides with little grip.
+            var drive = isStaggered ? 0f : throttle;
+            Turn(forward, drive, deltaTime);
 
             // The speed is kept along the nose, or along the boost's line while it lasts (see TryBoost).
             float targetSpeed;
@@ -184,8 +207,8 @@ namespace ToyCarArena.Gameplay.Cars
             }
             else {
                 // Facing away from the heading, the car turns first and speeds up as it comes round.
-                var alignment = throttle > 0f ? Mathf.Clamp01(Vector3.Dot(forward, direction)) : 0f;
-                targetSpeed = settings.MaxSpeed * throttle * alignment;
+                var alignment = drive > 0f ? Mathf.Clamp01(Vector3.Dot(forward, direction)) : 0f;
+                targetSpeed = settings.MaxSpeed * drive * alignment;
             }
 
             var right = Vector3.Cross(Vector3.up, axis);
@@ -195,7 +218,8 @@ namespace ToyCarArena.Gameplay.Cars
             var newAxisSpeed = Mathf.MoveTowards(axisSpeed, targetSpeed, rate * deltaTime);
 
             var sideSpeed = Vector3.Dot(velocity, right);
-            var newSideSpeed = sideSpeed * Mathf.Exp(-settings.Grip * deltaTime);
+            var grip = settings.Grip * (isStaggered ? settings.StaggerGrip : 1f);
+            var newSideSpeed = sideSpeed * Mathf.Exp(-grip * deltaTime);
 
             body.linearVelocity = velocity + axis * (newAxisSpeed - axisSpeed) + right * (newSideSpeed - sideSpeed);
         }
@@ -205,11 +229,11 @@ namespace ToyCarArena.Gameplay.Cars
         /// so it never swings past. A hit's spin dies down at the same rate. While a boost lasts the car turns to face
         /// the boost's line, which is where it was heading when the boost fired.
         /// </summary>
-        private void Turn(Vector3 forward, float deltaTime)
+        private void Turn(Vector3 forward, float drive, float deltaTime)
         {
             var targetRate = 0f;
             var isBoosting = IsBoosting;
-            if (throttle > 0f || isBoosting) {
+            if (drive > 0f || isBoosting) {
                 var heading = isBoosting ? boostDirection : direction;
                 var angle = Vector3.SignedAngle(forward, heading, Vector3.up);
                 var stoppingRate = Mathf.Sqrt(2f * settings.TurnAcceleration * Mathf.Abs(angle));

@@ -201,6 +201,7 @@ namespace ToyCarArena.Gameplay.Round
                 // back there; placing the body itself keeps the cars apart.
                 car.Movement.Place(position, rotation);
                 car.name = i == 0 ? "Player Car" : $"Bot Car {i}";
+                car.IsPlayer = i == 0;
                 car.GetComponent<CarLook>().Apply(i);
                 cars.Add(car);
             }

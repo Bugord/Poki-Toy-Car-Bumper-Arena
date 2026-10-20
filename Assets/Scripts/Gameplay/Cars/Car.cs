@@ -13,7 +13,10 @@ namespace ToyCarArena.Gameplay.Cars
     /// so the brief's "the faster and heavier, the harder the push" reads clearly: the push grows with how fast the
     /// other car drove into this one and with its mass, and a boosted hitter pushes harder still, up to
     /// <see cref="GameTuning.CarSettings.MaxBumpSpeed"/>. Each car pushes only itself, from its own collision report,
-    /// so the car that rams wins: it gets back only what the physics gives.
+    /// so the car that rams wins: it gets back only what the physics gives. The hit car is also knocked off balance for
+    /// a moment (<see cref="CarMovement.Stagger"/>), so the push carries it rather than dying down in its grip. The
+    /// player's hits push harder and the player is knocked off balance for less, so the player's shoves are the ones
+    /// that send cars off.
     /// </para>
     /// </summary>
     [RequireComponent(typeof(CarMovement))]
@@ -39,6 +42,11 @@ namespace ToyCarArena.Gameplay.Cars
         /// Whether the car has fallen off and left the round.
         /// </summary>
         public bool IsOut { get; private set; }
+
+        /// <summary>
+        /// Whether the player drives this car; set by the round when it places the car.
+        /// </summary>
+        public bool IsPlayer { get; set; }
 
         public Vector3 Position => transform.position;
 
@@ -124,7 +132,8 @@ namespace ToyCarArena.Gameplay.Cars
             // in: a car tapped from behind by a slightly faster one is barely pushed, and a contact lost and found again
             // while one car pushes another does not kick it again at full speed.
             var isOtherBoosting = other.Movement.IsBoosting;
-            var multiplier = isOtherBoosting ? boostSettings.BumpMultiplier : 1f;
+            var multiplier = (isOtherBoosting ? boostSettings.BumpMultiplier : 1f)
+                * (other.IsPlayer ? carSettings.PlayerBumpMultiplier : 1f);
             var drive = Mathf.Min(otherApproach, strength);
             var push = carSettings.BumpForce * drive * multiplier * other.Movement.Mass / Movement.Mass;
             // The solver has already bounced the car; the push only tops that up to the most a hit may leave a car
@@ -133,6 +142,16 @@ namespace ToyCarArena.Gameplay.Cars
             push = Mathf.Min(push, Mathf.Max(0f, carSettings.MaxBumpSpeed - speedAway));
             if (push > 0f) {
                 Movement.Push(normal * push);
+            }
+
+            // Off balance for longer the harder the other car drove in, up to a hit at full speed.
+            var stagger = carSettings.HitStagger * Mathf.Clamp01(drive * multiplier / Mathf.Max(0.01f, carSettings.MaxSpeed));
+            if (IsPlayer) {
+                stagger *= carSettings.PlayerStaggerScale;
+            }
+
+            if (stagger > 0f) {
+                Movement.Stagger(stagger);
             }
 
             if (otherApproach > 0f) {

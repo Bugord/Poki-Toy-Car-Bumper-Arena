@@ -98,6 +98,30 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float maxBumpSpeed = 18f;
 
+            [Tooltip("How much harder the player's hits push than a bot's, so the player's shove is the one that " +
+                "sends cars flying and the knock-outs read as the player's")]
+            [Min(0f)]
+            [SerializeField]
+            private float playerBumpMultiplier = 1.3f;
+
+            [Tooltip("Seconds a car is knocked off balance by a hit at full speed (shorter for a slower hit, no longer " +
+                "for a boosted one): it lets go of the throttle and its grip drops, so the push carries it instead of " +
+                "dying down at once and the hit car cannot drive straight back; a boost ends it")]
+            [Min(0f)]
+            [SerializeField]
+            private float hitStagger = 0.5f;
+
+            [Tooltip("Share of the grip a car keeps while knocked off balance")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float staggerGrip = 0.2f;
+
+            [Tooltip("Share of the time off balance the player's car gets, so a hit on the player still pushes it but " +
+                "takes the controls away only briefly")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float playerStaggerScale = 0.4f;
+
             public float MaxSpeed => maxSpeed;
             public float Acceleration => acceleration;
             public float Braking => braking;
@@ -108,6 +132,10 @@ namespace ToyCarArena.Gameplay
             public float Grip => grip;
             public float BumpForce => bumpForce;
             public float MaxBumpSpeed => maxBumpSpeed;
+            public float PlayerBumpMultiplier => playerBumpMultiplier;
+            public float HitStagger => hitStagger;
+            public float StaggerGrip => staggerGrip;
+            public float PlayerStaggerScale => playerStaggerScale;
         }
 
         /// <summary>
