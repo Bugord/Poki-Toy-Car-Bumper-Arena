@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -21,8 +20,12 @@ namespace ToyCarArena.UI
         private const string UrgentClass = "hud__timer--urgent";
         private const string BeatClass = "hud__timer--beat";
         private const string PopClass = "hud__cars--pop";
-        private const string PipClass = "pip";
-        private const string PipOutClass = "pip--out";
+        private const string CountPunchClass = "hud__cars-count--punch";
+        private const string ChipSlotClass = "hud__chip-slot";
+        private const string ChipSlotClosingClass = "hud__chip-slot--closing";
+        private const string ChipClass = "hud__chip";
+        private const string ChipHopClass = "hud__chip--hop";
+        private const string ChipFallClass = "hud__chip--fall";
         private const string BoostShownClass = "hud__boost--shown";
         private const string BoostReadyClass = "hud__boost--ready";
         private const string BoostPopClass = "hud__boost--pop";
@@ -38,11 +41,16 @@ namespace ToyCarArena.UI
         private const long PopupHoldDuration = 800;
         private const long PopupLeaveDuration = 350;
 
-        // How far the sticker's centre keeps from the sides of the screen, from the top (under the time pill, the car
-        // plate and the KO badge) and from the bottom (over the boost button), in reference pixels, so it is always
-        // whole and covers none of the HUD.
+        // A car's chip leaving the stack (the transitions of hud__chip in ui_screens), in milliseconds: it hops up,
+        // then falls as it shrinks away while the chips after it close up, and its place goes once it is gone.
+        private const long ChipHopDuration = 150;
+        private const long ChipLeaveDuration = 400;
+
+        // How far the sticker's centre keeps from the sides of the screen, from the top (under the time pill, the cars
+        // pill and the KO badge, which end 458 px down) and from the bottom (over the boost button), in reference
+        // pixels, so it is always whole and covers none of the HUD.
         private const float PopupSideMargin = 400f;
-        private const float PopupTopMargin = 560f;
+        private const float PopupTopMargin = 572f;
         private const float PopupBottomMargin = 480f;
 
         // The sticker sits this far above the point where the car went over the edge, in reference pixels, so the car
@@ -52,21 +60,17 @@ namespace ToyCarArena.UI
         // The tilt of the sticker, in degrees, every other one the other way so two at once do not look alike.
         private const float PopupTilt = 7f;
 
-        private static readonly string[] WheelClasses = {
-            "pip__wheel--front-left", "pip__wheel--front-right", "pip__wheel--back-left", "pip__wheel--back-right",
-        };
-
         private readonly HudControls controls;
-        private readonly List<VisualElement> pips = new();
         private VisualElement timePill;
         private Label timeLabel;
         private Label timeFaceLabel;
-        private VisualElement carsPlate;
-        private VisualElement pipRow;
-        private Label carsLabel;
+        private VisualElement carsPill;
+        private VisualElement chipRow;
+        private Label carsLeftLabel;
+        // The place of each car's chip in the stack by the car's index, null once it has left (or before it is built).
+        private VisualElement[] chipSlots;
         private int shownSeconds = -1;
         private int shownCarsLeft = -1;
-        private int shownCarCount = -1;
         private VisualElement boostButton;
         private VisualElement boostCharge;
         private bool isBoostShown;
@@ -91,15 +95,16 @@ namespace ToyCarArena.UI
             timePill = Root.Q<VisualElement>("time-pill");
             timeLabel = Root.Q<Label>("time");
             timeFaceLabel = Root.Q<Label>("time-face");
-            carsPlate = Root.Q<VisualElement>("cars-plate");
-            pipRow = Root.Q<VisualElement>("pips");
-            carsLabel = Root.Q<Label>("cars");
+            carsPill = Root.Q<VisualElement>("cars-pill");
+            chipRow = Root.Q<VisualElement>("chips");
+            carsLeftLabel = Root.Q<Label>("cars-left");
             boostButton = Root.Q<VisualElement>("boost-button");
             boostCharge = Root.Q<VisualElement>("boost-charge");
             knockoutBadge = Root.Q<VisualElement>("ko-badge");
             knockoutLabel = Root.Q<Label>("ko");
             popupLayer = Root.Q<VisualElement>("ko-layer");
             ViewModel.PlayerKnockout += ShowKnockout;
+            ViewModel.CarOut += OnCarOut;
 
             // On the press, not the release: a boost is all about the moment.
             boostButton.RegisterCallback<PointerDownEvent>(OnBoostPointerDown);
@@ -114,6 +119,7 @@ namespace ToyCarArena.UI
         public override void Dispose()
         {
             ViewModel.PlayerKnockout -= ShowKnockout;
+            ViewModel.CarOut -= OnCarOut;
 
             if (boostButton != null) {
                 boostButton.UnregisterCallback<PointerDownEvent>(OnBoostPointerDown);
@@ -143,18 +149,12 @@ namespace ToyCarArena.UI
                 }
             }
 
-            var carsLeft = ViewModel.CarsLeft;
-            var carCount = ViewModel.CarCount;
-            if (carsLeft != shownCarsLeft || carCount != shownCarCount) {
-                // A car going out is news; the first count and a new round are not.
-                if (carCount == shownCarCount && carsLeft < shownCarsLeft) {
-                    Pulse(carsPlate, PopClass);
-                }
-
-                shownCarsLeft = carsLeft;
-                shownCarCount = carCount;
-                ShowCars(carsLeft, carCount);
+            // The chips are built once the round has its cars; a car going out is shown as it happens (OnCarOut).
+            if (chipSlots == null) {
+                BuildChips();
             }
+
+            ShowCarsLeft();
 
             // The badge stays away until the first knock-out, so the HUD starts with only the time and the cars.
             var knockouts = ViewModel.Knockouts;
@@ -297,49 +297,103 @@ namespace ToyCarArena.UI
             Pulse(boostButton, BoostPressedClass);
         }
 
-        private void ShowCars(int carsLeft, int carCount)
+        /// <summary>
+        /// Stacks a chip in its colour for each car still on the arena, overlapping: the bots in their order, then the
+        /// player's in front of them on the right, with the white ring of its marker on the arena. A car already out (a
+        /// HUD opened late) gets none: the stack only ever shows the cars still in.
+        /// </summary>
+        private void BuildChips()
         {
-            while (pips.Count < carCount) {
-                var pip = CreatePip();
-                pips.Add(pip);
-                pipRow.Add(pip);
+            var carCount = ViewModel.CarCount;
+            if (carCount == 0) {
+                return;
             }
 
-            while (pips.Count > carCount) {
-                pips[pips.Count - 1].RemoveFromHierarchy();
-                pips.RemoveAt(pips.Count - 1);
+            chipSlots = new VisualElement[carCount];
+            var playerIndex = ViewModel.PlayerIndex;
+            for (var index = 0; index < carCount; index++) {
+                if (index != playerIndex) {
+                    AddChip(index, false);
+                }
             }
 
-            // The cars still in come first, so the dim ones gather at the end as the round goes on.
-            for (var i = 0; i < pips.Count; i++) {
-                pips[i].EnableInClassList(PipOutClass, i >= carsLeft);
-            }
-
-            carsLabel.text = $"{carsLeft} LEFT";
+            AddChip(playerIndex, true);
         }
 
-        // A little car seen from above: four wheels under a body with a windscreen, drawn by ui_screens alone, so the
-        // build carries no image for it.
-        private static VisualElement CreatePip()
+        private void AddChip(int index, bool isPlayer)
         {
-            var pip = new VisualElement { pickingMode = PickingMode.Ignore };
-            pip.AddToClassList(PipClass);
-
-            foreach (var wheelClass in WheelClasses) {
-                var wheel = new VisualElement { pickingMode = PickingMode.Ignore };
-                wheel.AddToClassList("pip__wheel");
-                wheel.AddToClassList(wheelClass);
-                pip.Add(wheel);
+            if (!ViewModel.IsCarIn(index)) {
+                return;
             }
 
-            var body = new VisualElement { pickingMode = PickingMode.Ignore };
-            body.AddToClassList("pip__body");
-            var glass = new VisualElement { pickingMode = PickingMode.Ignore };
-            glass.AddToClassList("pip__glass");
-            body.Add(glass);
-            pip.Add(body);
+            var slot = CreateChip(index, isPlayer);
+            chipSlots[index] = slot;
+            chipRow.Add(slot);
+        }
 
-            return pip;
+        /// <summary>
+        /// Takes the car's chip out of the stack: it hops up spinning, then falls as it shrinks away, while the chips
+        /// after it close up; the count punches and the pill pops.
+        /// </summary>
+        private void OnCarOut(int index)
+        {
+            ShowCarsLeft();
+            Pulse(carsLeftLabel, CountPunchClass);
+            Pulse(carsPill, PopClass);
+
+            if (chipSlots == null || index < 0 || index >= chipSlots.Length || chipSlots[index] == null) {
+                return;
+            }
+
+            var slot = chipSlots[index];
+            chipSlots[index] = null;
+            var chip = slot.Q<VisualElement>(className: ChipClass);
+            chip.AddToClassList(ChipHopClass);
+            slot.schedule.Execute(() => {
+                chip.RemoveFromClassList(ChipHopClass);
+                chip.AddToClassList(ChipFallClass);
+                slot.AddToClassList(ChipSlotClosingClass);
+            }).StartingIn(ChipHopDuration);
+            // Closed up, its place takes no room, so taking it away moves nothing.
+            slot.schedule.Execute(slot.RemoveFromHierarchy).StartingIn(ChipLeaveDuration);
+        }
+
+        private void ShowCarsLeft()
+        {
+            var carsLeft = ViewModel.CarsLeft;
+            if (carsLeft != shownCarsLeft) {
+                shownCarsLeft = carsLeft;
+                carsLeftLabel.text = carsLeft.ToString();
+            }
+        }
+
+        // A car's chip: a round sticker in the car's colour with a little white car seen from above in it, all drawn
+        // by ui_screens, so the build carries no image for it. The chip sits in a place of its own in the stack, which
+        // narrows to nothing as the chip leaves, so the chips after it slide over while the chip keeps its round shape.
+        private static VisualElement CreateChip(int index, bool isPlayer)
+        {
+            var slot = new VisualElement { pickingMode = PickingMode.Ignore };
+            slot.AddToClassList(ChipSlotClass);
+
+            var chip = new VisualElement { pickingMode = PickingMode.Ignore };
+            chip.AddToClassList(ChipClass);
+            chip.AddToClassList(CarColor.ClassOf(index));
+            slot.Add(chip);
+
+            if (isPlayer) {
+                var ring = new VisualElement { pickingMode = PickingMode.Ignore };
+                ring.AddToClassList("hud__chip-ring");
+                chip.Add(ring);
+            }
+
+            var car = new VisualElement { pickingMode = PickingMode.Ignore };
+            car.AddToClassList("hud__chip-car");
+            var glass = new VisualElement { pickingMode = PickingMode.Ignore };
+            glass.AddToClassList("hud__chip-glass");
+            car.Add(glass);
+            chip.Add(car);
+
+            return slot;
         }
 
         // Scales the element up for a moment; taking the class off again lets its transition ease it back.
