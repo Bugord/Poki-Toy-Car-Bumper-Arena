@@ -4,10 +4,15 @@ using VContainer;
 namespace ToyCarArena.Gameplay.Arena
 {
     /// <summary>
-    /// The fixed camera over the arena. It keeps the angle it has in the scene and moves along its view, nearer or
-    /// further, so the whole arena (<see cref="GameTuning.ArenaSettings.Radius"/> and the view margin) fits the screen
-    /// in any shape: a phone held upright needs it much further than a wide window. Also turns screen points and
-    /// screen directions into the arena's ground plane, for steering.
+    /// The camera over the arena. It keeps the angle it has in the scene and moves along its view, nearer or further,
+    /// so the whole arena (<see cref="GameTuning.ArenaSettings.Radius"/> and the view margin) fits the screen in any
+    /// shape: a phone held upright needs it much further than a wide window. Also turns screen points and screen
+    /// directions into the arena's ground plane, for steering.
+    /// <para>
+    /// As the edge crumbles away it closes in on what is left of the floor (<see cref="ArenaFloor.SolidRadius"/>), so
+    /// the last cars fighting on the small middle stay big enough to read. It eases in once a ring has fallen, not while
+    /// it shakes, so a car on a shaking ring stays in view.
+    /// </para>
     /// <para>
     /// It also shakes on a big hit (<see cref="Shake"/>): a small offset across the view on top of the fitted place,
     /// fading out, on the unscaled clock so it goes on through a hit-stop. Steering ignores the shake, so the car does
@@ -22,6 +27,18 @@ namespace ToyCarArena.Gameplay.Arena
 
         // The arena is centred on the world origin, its floor at height 0.
         private static readonly Plane Ground = new(Vector3.up, Vector3.zero);
+
+        [Header("Zoom")]
+        [Tooltip("Share of the floor's shrinking the camera follows: 0 keeps the whole starting arena in view, 1 frames " +
+            "only what is left of the floor")]
+        [Range(0f, 1f)]
+        [SerializeField]
+        private float zoomShare = 0.85f;
+
+        [Tooltip("Seconds the camera takes, about, to close in after a ring of the edge falls")]
+        [Min(0.01f)]
+        [SerializeField]
+        private float zoomTime = 0.8f;
 
         [Header("Shake")]
         [Tooltip("Farthest the camera moves across its view at the strongest shake, in metres")]
@@ -40,11 +57,16 @@ namespace ToyCarArena.Gameplay.Arena
         private float shakeDecay = 2.5f;
 
         private GameTuning.ArenaSettings settings;
+        private ArenaFloor floor;
         private Camera view;
         private int fittedWidth;
         private int fittedHeight;
-        private float fittedRadius;
-        private Vector3 fittedPosition;
+        // The distance along the view that fits an arena of radius 1; every distance in the fit grows with the
+        // radius, so a closer or wider view is this times the radius in view.
+        private float unitDistance;
+        // The radius the camera frames now, easing to the target as the floor shrinks; 0 until the first frame.
+        private float viewRadius;
+        private float zoomSpeed;
         // How hard the camera shakes now, 0 to 1; the offset grows with its square, so small shakes stay small.
         private float shake;
         private Vector3 shakeOffset;
@@ -53,29 +75,31 @@ namespace ToyCarArena.Gameplay.Arena
         public Camera Camera => view;
 
         [Inject]
-        private void Construct(GameTuning tuning)
+        private void Construct(GameTuning tuning, ArenaFloor floor)
         {
             this.settings = tuning.Arena;
+            this.floor = floor;
         }
 
         private void Awake()
         {
             view = GetComponent<Camera>();
-            fittedPosition = transform.position;
             shakeSeed = Random.Range(0f, 100f);
         }
 
         private void LateUpdate()
         {
-            var radius = settings.Radius + settings.ViewMargin;
-            if (view.pixelWidth != fittedWidth || view.pixelHeight != fittedHeight || radius != fittedRadius) {
+            if (view.pixelWidth != fittedWidth || view.pixelHeight != fittedHeight) {
                 fittedWidth = view.pixelWidth;
                 fittedHeight = view.pixelHeight;
-                fittedRadius = radius;
-                Fit(radius);
+                unitDistance = FitDistance(1f);
             }
 
-            transform.position = fittedPosition + Shaken();
+            var target = Mathf.Lerp(settings.Radius, floor.SolidRadius, zoomShare) + settings.ViewMargin;
+            viewRadius = viewRadius > 0f
+                ? Mathf.SmoothDamp(viewRadius, target, ref zoomSpeed, zoomTime)
+                : target;
+            transform.position = -transform.forward * (unitDistance * viewRadius) + Shaken();
         }
 
         /// <summary>
@@ -117,7 +141,7 @@ namespace ToyCarArena.Gameplay.Arena
         /// The nearest distance from the arena's centre along the view at which every point of its rim is inside the
         /// view on all four sides.
         /// </summary>
-        private void Fit(float radius)
+        private float FitDistance(float radius)
         {
             var rotation = transform.rotation;
             var forward = rotation * Vector3.forward;
@@ -137,7 +161,7 @@ namespace ToyCarArena.Gameplay.Arena
                     Mathf.Abs(Vector3.Dot(point, up)) / tanVertical - depth);
             }
 
-            fittedPosition = -forward * distance;
+            return distance;
         }
 
         /// <summary>
