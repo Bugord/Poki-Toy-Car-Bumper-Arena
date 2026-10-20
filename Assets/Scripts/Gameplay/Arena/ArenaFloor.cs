@@ -111,6 +111,12 @@ namespace ToyCarArena.Gameplay.Arena
         public float Radius { get; private set; }
 
         /// <summary>
+        /// How far from the middle the floor still is, in metres: out to the outer edge of the rings that have not
+        /// fallen, a shaking one too. The camera frames this, so it closes in only once a ring has gone.
+        /// </summary>
+        public float SolidRadius { get; private set; }
+
+        /// <summary>
         /// Rings that can crumble, numbered from the outside in; none when the edge does not crumble.
         /// </summary>
         public int RingCount => rings.Length;
@@ -120,6 +126,7 @@ namespace ToyCarArena.Gameplay.Arena
         {
             this.settings = tuning.Arena;
             this.Radius = settings.Radius;
+            this.SolidRadius = settings.Radius;
         }
 
         private void Awake()
@@ -309,6 +316,7 @@ namespace ToyCarArena.Gameplay.Arena
             if (ring != colliderRing) {
                 colliderRing = ring;
                 floorCollider.sharedMesh = colliderMeshes[ring];
+                SolidRadius = ring < rings.Length ? rings[ring].Outer : innerRadius;
             }
         }
 
