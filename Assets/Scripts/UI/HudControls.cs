@@ -8,10 +8,11 @@ using UnityEngine.UIElements;
 namespace ToyCarArena.UI
 {
     /// <summary>
-    /// The HUD's buttons as the gameplay input sees them. The HUD is an app screen and the input lives in the arena's
+    /// The HUD's controls as the gameplay input sees them. The HUD is an app screen and the input lives in the arena's
     /// scope, which is loaded anew every round, so this sits in the app scope between the two: the HUD hands it its
     /// boost button and its presses, and the arena's <see cref="InputService"/> resolves it from the parent scope as its
-    /// <see cref="IOnScreenControls"/>, so a finger on the button boosts and does not steer.
+    /// <see cref="IOnScreenControls"/>, so a finger on the button boosts and does not steer. The other way, the player's
+    /// driver hands it the joystick a finger steers with, and the HUD draws it from here.
     /// </summary>
     public sealed class HudControls : IOnScreenControls
     {
@@ -22,6 +23,21 @@ namespace ToyCarArena.UI
 
         private VisualElement boostButton;
         private bool isTouchSeen;
+
+        /// <summary>
+        /// Whether a finger steers with the joystick now, and so the HUD draws it.
+        /// </summary>
+        public bool IsJoystickShown { get; private set; }
+
+        /// <summary>
+        /// The joystick's centre, its knob and how far the knob goes, in screen pixels from the bottom-left corner;
+        /// kept from the last frame it was shown.
+        /// </summary>
+        public Vector2 JoystickCenter { get; private set; }
+
+        public Vector2 JoystickKnob { get; private set; }
+
+        public float JoystickRadius { get; private set; }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
@@ -76,6 +92,19 @@ namespace ToyCarArena.UI
         public void PressBoost()
         {
             BoostPressed?.Invoke();
+        }
+
+        public void ShowJoystick(Vector2 center, Vector2 knob, float radius)
+        {
+            IsJoystickShown = true;
+            JoystickCenter = center;
+            JoystickKnob = knob;
+            JoystickRadius = radius;
+        }
+
+        public void HideJoystick()
+        {
+            IsJoystickShown = false;
         }
 
         public bool IsControlAt(Vector2 screenPosition)

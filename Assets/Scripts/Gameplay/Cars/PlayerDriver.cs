@@ -13,7 +13,9 @@ namespace ToyCarArena.Gameplay.Cars
     /// <item>the move keys or a gamepad stick point where the car should go, up being away from the camera;</item>
     /// <item>the mouse, held down, drives the car towards the cursor and stops it there;</item>
     /// <item>a finger is a joystick that appears where it touched, or drives the car towards itself like the mouse
-    /// (<see cref="GameTuning.ControlSettings.TouchSteering"/>).</item>
+    /// (<see cref="GameTuning.ControlSettings.TouchSteering"/>). The joystick is drawn under the finger while it
+    /// steers (<see cref="IOnScreenControls.ShowJoystick"/>), so the player sees where its middle is and how hard they
+    /// push.</item>
     /// </list>
     /// A drag wins over the keys while it lasts. Boost (Space, the right mouse button, a gamepad's south button or the
     /// boost button on a touch screen) fires the car's boost towards where it is steered. Once the round is over the
@@ -29,12 +31,14 @@ namespace ToyCarArena.Gameplay.Cars
         private readonly GameTuning tuning;
         private readonly ArenaCamera arenaCamera;
         private readonly ArenaRound round;
+        private readonly IOnScreenControls onScreenControls;
 
         // The joystick's centre: where the finger touched, pulled along when the finger goes past the radius.
         private int joystickDragId;
         private Vector2 joystickCenter;
 
         private bool isDriving;
+        private bool isJoystickShown;
 
         // Seconds the cars have stood waiting for the player before the round began.
         private float waitTime;
@@ -61,12 +65,14 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public int Boosts { get; private set; }
 
-        public PlayerDriver(IInputService input, GameTuning tuning, ArenaCamera arenaCamera, ArenaRound round)
+        public PlayerDriver(IInputService input, GameTuning tuning, ArenaCamera arenaCamera, ArenaRound round,
+            IOnScreenControls onScreenControls)
         {
             this.input = input;
             this.tuning = tuning;
             this.arenaCamera = arenaCamera;
             this.round = round;
+            this.onScreenControls = onScreenControls;
         }
 
         public void Initialize()
@@ -79,13 +85,21 @@ namespace ToyCarArena.Gameplay.Cars
         {
             input.MoveUsed -= OnMoveUsed;
             input.BoostPressed -= OnBoostPressed;
+            // The HUD outlives the arena: a joystick left shown would stay on the next round's screen.
+            SetJoystickShown(false);
         }
 
         public void Tick()
         {
+            SetJoystickShown(Steer());
+        }
+
+        /// <returns>True while a finger steers by the joystick, which is drawn under it then.</returns>
+        private bool Steer()
+        {
             if (IsWaiting) {
                 WatchForFirstInput();
-                return;
+                return false;
             }
 
             var car = round.Player;
@@ -95,23 +109,23 @@ namespace ToyCarArena.Gameplay.Cars
                     car.Movement.Drive(Vector3.zero, 0f);
                 }
 
-                return;
+                return false;
             }
 
             isDriving = true;
             if (input.TryGetDrag(out var drag)) {
                 if (drag.IsMouse || tuning.Controls.TouchSteering == GameTuning.TouchSteering.FollowFinger) {
                     FollowPointer(car, drag.Position);
-                }
-                else {
-                    SteerByJoystick(car, drag);
+                    return false;
                 }
 
-                return;
+                SteerByJoystick(car, drag);
+                return true;
             }
 
             var move = Vector2.ClampMagnitude(input.CurrentMoveInput, 1f);
             car.Movement.Drive(arenaCamera.ScreenToGroundDirection(move), move.magnitude);
+            return false;
         }
 
         // A press while the boost cools down is dropped, not kept for later: a boost that fires on its own a moment
@@ -190,6 +204,16 @@ namespace ToyCarArena.Gameplay.Cars
             var stick = offset / radius;
             var throttle = Mathf.InverseLerp(controls.JoystickDeadZone, 1f, stick.magnitude);
             car.Movement.Drive(arenaCamera.ScreenToGroundDirection(stick), throttle);
+            onScreenControls.ShowJoystick(joystickCenter, joystickCenter + offset, radius);
+        }
+
+        private void SetJoystickShown(bool isShown)
+        {
+            if (!isShown && isJoystickShown) {
+                onScreenControls.HideJoystick();
+            }
+
+            isJoystickShown = isShown;
         }
     }
 }
