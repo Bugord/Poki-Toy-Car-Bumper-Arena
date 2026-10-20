@@ -83,10 +83,44 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float grip = 6f;
 
-            [Tooltip("Extra impulse on a hit, per metre per second of closing speed, on top of the physics")]
+            [Tooltip("Extra push a car gets from a hit, on top of the physics: metres per second for every metre per " +
+                "second the other car drove into it (no more than the two closed in at), times the other's mass over " +
+                "its own, so the faster and heavier car wins; a boosted hitter multiplies it by the boost's bump " +
+                "multiplier")]
             [Min(0f)]
             [SerializeField]
-            private float bumpForce = 1f;
+            private float bumpForce = 0.5f;
+
+            [Tooltip("Fastest the extra push of a hit leaves a car going away from the hitter, in metres per second, " +
+                "whatever the speeds and masses, so no hit flings a car across the arena; the physics' own bounce is " +
+                "never cut. A car hit at this speed along its nose slides about 13 m, across it about 3 m")]
+            [Min(0f)]
+            [SerializeField]
+            private float maxBumpSpeed = 18f;
+
+            [Tooltip("How much harder the player's hits push than a bot's, so the player's shove is the one that " +
+                "sends cars flying and the knock-outs read as the player's")]
+            [Min(0f)]
+            [SerializeField]
+            private float playerBumpMultiplier = 1.3f;
+
+            [Tooltip("Seconds a car is knocked off balance by a hit at full speed (shorter for a slower hit, no longer " +
+                "for a boosted one): it lets go of the throttle and its grip drops, so the push carries it instead of " +
+                "dying down at once and the hit car cannot drive straight back; a boost ends it")]
+            [Min(0f)]
+            [SerializeField]
+            private float hitStagger = 0.5f;
+
+            [Tooltip("Share of the grip a car keeps while knocked off balance")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float staggerGrip = 0.2f;
+
+            [Tooltip("Share of the time off balance the player's car gets, so a hit on the player still pushes it but " +
+                "takes the controls away only briefly")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float playerStaggerScale = 0.4f;
 
             public float MaxSpeed => maxSpeed;
             public float Acceleration => acceleration;
@@ -97,6 +131,11 @@ namespace ToyCarArena.Gameplay
             public float CenterOfMassHeight => centerOfMassHeight;
             public float Grip => grip;
             public float BumpForce => bumpForce;
+            public float MaxBumpSpeed => maxBumpSpeed;
+            public float PlayerBumpMultiplier => playerBumpMultiplier;
+            public float HitStagger => hitStagger;
+            public float StaggerGrip => staggerGrip;
+            public float PlayerStaggerScale => playerStaggerScale;
         }
 
         /// <summary>
@@ -145,15 +184,18 @@ namespace ToyCarArena.Gameplay
         [Serializable]
         public sealed class BoostSettings
         {
-            [Tooltip("Speed added at once, in metres per second")]
+            [Tooltip("Speed added at once, in metres per second, towards where the car is steering (along its nose " +
+                "when it is not); the top speed is raised by as much while the boost lasts")]
             [Min(0f)]
             [SerializeField]
-            private float impulse = 12f;
+            private float impulse = 10f;
 
-            [Tooltip("Seconds the boost lasts, during which the top speed is raised and hits push harder")]
+            [Tooltip("Seconds the boost lasts, during which the car holds its line at the raised top speed and its hits " +
+                "push harder. It cannot be steered meanwhile and is braked off afterwards, so keep it short: the boost " +
+                "back from the edge of the last, 5 m disc must stop short of the far edge")]
             [Min(0f)]
             [SerializeField]
-            private float duration = 0.4f;
+            private float duration = 0.3f;
 
             [Tooltip("What a hit's push is multiplied by during the boost")]
             [Min(1f)]
@@ -172,7 +214,10 @@ namespace ToyCarArena.Gameplay
         }
 
         /// <summary>
-        /// The bots: pick a target, speed up at it, stay away from the edge.
+        /// The bots: pick a target, speed up at it, stay away from the edge. How hard they play the player comes from
+        /// <see cref="Easy"/> and <see cref="Normal"/>, blended by the round of the visit and the player's losing streak,
+        /// so a new player wins early and keeps pressing "play again"; each bot's character is one of four
+        /// personalities, a few multipliers over the numbers here, so the bots do not all drive alike.
         /// </summary>
         [Serializable]
         public sealed class BotSettings
@@ -198,16 +243,11 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float edgeMargin = 1.5f;
 
-            [Tooltip("Seconds ahead a bot foresees where its speed takes it; heading past the edge margin by then, it " +
-                "turns back towards the middle before it gets there")]
+            [Tooltip("Seconds ahead a bot foresees where its speed takes it, times its personality's caution; heading " +
+                "past the edge margin by then, it turns back towards the middle before it gets there")]
             [Min(0f)]
             [SerializeField]
             private float lookAhead = 0.25f;
-
-            [Tooltip("Least and most a bot's look-ahead is multiplied by, picked at random for each bot: low is bold " +
-                "and pushes cars further out, high is careful")]
-            [SerializeField]
-            private Vector2 caution = new(0.6f, 1.4f);
 
             [Tooltip("A bot with its target right in front of its nose and this close, in metres (centre to centre), " +
                 "is pushing it: it stops looking ahead and keeps pushing up to the edge margin; 0 never commits")]
@@ -231,27 +271,22 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float aimLead = 0.3f;
 
+            [Header("Target picks")]
             [Tooltip("How much a target's distance counts against it in a pick, per arena diameter away")]
             [Min(0f)]
             [SerializeField]
             private float distanceWeight = 1f;
 
             [Tooltip("How much a target counts for being out near the edge, where it is easy to push off: this for a " +
-                "car right at the edge, nothing for one in the middle")]
+                "car right at the edge, nothing for one in the middle; times the personality's edge weight")]
             [Min(0f)]
             [SerializeField]
             private float edgeWeight = 0.6f;
 
-            [Tooltip("What the player's car counts for in a pick, beside the others; below 0 the bots pick on the " +
-                "player less, so a new player is not mobbed")]
+            [Tooltip("Most the player's car can count for in a pick, whatever the difficulty and the personality add " +
+                "up to, so even the bully does not hunt the player alone")]
             [SerializeField]
-            private float playerWeight = -0.15f;
-
-            [Tooltip("Seconds from the start of a round during which no bot picks the player's car, so a new player " +
-                "has time to find their car and the controls before anyone comes for them")]
-            [Min(0f)]
-            [SerializeField]
-            private float playerGrace = 6f;
+            private float maxPlayerWeight = 0.25f;
 
             [Tooltip("What a target counts against it for each other bot already after it, so the bots spread out " +
                 "instead of mobbing one car")]
@@ -265,27 +300,291 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float pickNoise = 0.5f;
 
-            [Tooltip("Shortest and longest delay before a bot boosts once its target is ahead, in seconds")]
+            [Tooltip("What the bot's current target counts for in a pick, so a bot keeps after one car long enough " +
+                "for its intent to be read and dodged")]
+            [Min(0f)]
             [SerializeField]
-            private Vector2 boostDelay = new(0.3f, 1.2f);
+            private float stickWeight = 0.3f;
+
+            [Tooltip("What a car hit within the opportunity time and sliding outward counts for in a pick, times the " +
+                "personality's opportunism: a car on its way off is the easiest to finish")]
+            [Min(0f)]
+            [SerializeField]
+            private float opportunityWeight = 0.35f;
+
+            [Tooltip("Seconds after a car is hit during which it counts as an opportunity")]
+            [Min(0f)]
+            [SerializeField]
+            private float opportunityTime = 1f;
+
+            [Tooltip("What the car that last hit a bot counts for in that bot's picks; only one bot at a time holds " +
+                "such a grudge against the player")]
+            [Min(0f)]
+            [SerializeField]
+            private float grudgeWeight = 0.4f;
+
+            [Tooltip("Seconds a bot holds a grudge against the car that hit it")]
+            [Min(0f)]
+            [SerializeField]
+            private float grudgeTime = 4f;
+
+            [Header("Difficulty")]
+            [Tooltip("The first round of a visit: slow at the player, slow to react and to boost")]
+            [SerializeField]
+            private DifficultySettings easy = new(playerPace: 0.8f, playerWeight: -0.6f, playerGrace: 12f,
+                maxPlayerHunters: 1, reactionTime: new Vector2(0.3f, 0.45f), aimError: 10f,
+                boostDelay: new Vector2(0.8f, 2f), escapeBoostChance: 0.3f);
+
+            [Tooltip("Where the difficulty settles after the ramp")]
+            [SerializeField]
+            private DifficultySettings normal = new(playerPace: 1f, playerWeight: -0.15f, playerGrace: 6f,
+                maxPlayerHunters: 2, reactionTime: new Vector2(0.12f, 0.2f), aimError: 3f,
+                boostDelay: new Vector2(0.3f, 1.2f), escapeBoostChance: 0.5f);
+
+            [Tooltip("Rounds from easy to normal: round 1 is easy, round 1 + this is normal, the ones between blend")]
+            [Min(0)]
+            [SerializeField]
+            private int rampRounds = 4;
+
+            [Tooltip("Rounds lost in a row from which the bots ease off")]
+            [Min(1)]
+            [SerializeField]
+            private int streakStart = 2;
+
+            [Tooltip("Share of the way back to easy the bots step for each round lost in a row, counting from the " +
+                "streak start")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float streakEase = 0.25f;
+
+            [Tooltip("Furthest a losing streak steps the bots back towards easy, as a share of the way")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float maxStreakEase = 0.5f;
+
+            [Header("Personalities")]
+            [Tooltip("The personalities of a round's bots: the first as many as there are bots, shuffled among them " +
+                "each round; a short list repeats from its start")]
+            [SerializeField]
+            private BotPersonality[] mix =
+            {
+                BotPersonality.Bully,
+                BotPersonality.Careful,
+                BotPersonality.Opportunist,
+                BotPersonality.Clumsy,
+                BotPersonality.Bully,
+                BotPersonality.Careful,
+                BotPersonality.Opportunist,
+            };
+
+            [Tooltip("Comes for the player and boosts early, bold at the edge")]
+            [SerializeField]
+            private PersonalitySettings bully = new(caution: 0.75f, playerWeight: 0.35f, edgeWeight: 1f,
+                opportunism: 1f, boostDelay: 0.5f, aimError: 1f, escapeBoost: 1f);
+
+            [Tooltip("Keeps to the middle, picks cars near it and saves itself on the edge")]
+            [SerializeField]
+            private PersonalitySettings careful = new(caution: 1.3f, playerWeight: 0f, edgeWeight: 0.6f,
+                opportunism: 0.5f, boostDelay: 1.3f, aimError: 0.7f, escapeBoost: 1.5f);
+
+            [Tooltip("Goes for cars that were just hit and slide outward, the moment any car is hit")]
+            [SerializeField]
+            private PersonalitySettings opportunist = new(caution: 1f, playerWeight: -0.1f, edgeWeight: 1.4f,
+                opportunism: 3f, boostDelay: 0.8f, aimError: 1f, escapeBoost: 1f);
+
+            [Tooltip("Aims wide and is bold at the edge, now and then going off on its own")]
+            [SerializeField]
+            private PersonalitySettings clumsy = new(caution: 0.6f, playerWeight: 0f, edgeWeight: 1f,
+                opportunism: 1f, boostDelay: 1f, aimError: 2.5f, escapeBoost: 0.6f);
 
             public int Count => count;
             public float RetargetInterval => retargetInterval;
             public float RetargetJitter => retargetJitter;
             public float EdgeMargin => edgeMargin;
             public float LookAhead => lookAhead;
-            public Vector2 Caution => caution;
             public float PushDistance => pushDistance;
             public float PushAngle => pushAngle;
             public float AimBehind => aimBehind;
             public float AimLead => aimLead;
             public float DistanceWeight => distanceWeight;
             public float EdgeWeight => edgeWeight;
-            public float PlayerWeight => playerWeight;
-            public float PlayerGrace => playerGrace;
+            public float MaxPlayerWeight => maxPlayerWeight;
             public float CrowdPenalty => crowdPenalty;
             public float PickNoise => pickNoise;
+            public float StickWeight => stickWeight;
+            public float OpportunityWeight => opportunityWeight;
+            public float OpportunityTime => opportunityTime;
+            public float GrudgeWeight => grudgeWeight;
+            public float GrudgeTime => grudgeTime;
+            public DifficultySettings Easy => easy;
+            public DifficultySettings Normal => normal;
+            public int RampRounds => rampRounds;
+            public int StreakStart => streakStart;
+            public float StreakEase => streakEase;
+            public float MaxStreakEase => maxStreakEase;
+            public BotPersonality[] Mix => mix;
+
+            public PersonalitySettings Personality(BotPersonality personality)
+            {
+                return personality switch
+                {
+                    BotPersonality.Bully => bully,
+                    BotPersonality.Careful => careful,
+                    BotPersonality.Opportunist => opportunist,
+                    _ => clumsy,
+                };
+            }
+        }
+
+        /// <summary>
+        /// How hard the bots play the player at one end of the difficulty ramp. Only what the player feels changes:
+        /// how fast and how often the bots come for the player's car, how quickly they see a dodge, how well they aim,
+        /// and how readily they boost. Staying on the arena never gets slower, or the bots would fall off on their own
+        /// and the rounds swing wildly; and the bots fight each other at full pace, so the arena stays busy.
+        /// </summary>
+        [Serializable]
+        public sealed class DifficultySettings
+        {
+            [Tooltip("Throttle a bot drives at the player's car with, from 0 to 1; below 1 the player outruns it and " +
+                "its hits push less")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float playerPace = 1f;
+
+            [Tooltip("What the player's car counts for in a pick, beside the others; below 0 the bots pick on the " +
+                "player less, so a new player is not mobbed")]
+            [SerializeField]
+            private float playerWeight = -0.15f;
+
+            [Tooltip("Seconds from the start of a round during which no bot picks the player's car, so a new player " +
+                "has time to find their car and the controls before anyone comes for them")]
+            [Min(0f)]
+            [SerializeField]
+            private float playerGrace = 6f;
+
+            [Tooltip("Most bots after the player's car at once")]
+            [Min(0)]
+            [SerializeField]
+            private int maxPlayerHunters = 2;
+
+            [Tooltip("Shortest and longest time, in seconds, between two looks of a bot at its target: in between it " +
+                "steers by where it last saw the target going, so a sharp turn dodges it")]
+            [SerializeField]
+            private Vector2 reactionTime = new(0.12f, 0.2f);
+
+            [Tooltip("Most a bot's heading at its target is off, in degrees, picked again at each look; times the " +
+                "personality's aim error")]
+            [Range(0f, 45f)]
+            [SerializeField]
+            private float aimError = 3f;
+
+            [Tooltip("Shortest and longest delay before a bot boosts once its target is ahead, in seconds; times the " +
+                "personality's boost delay")]
+            [SerializeField]
+            private Vector2 boostDelay = new(0.3f, 1.2f);
+
+            [Tooltip("Chance a bot pushed out past the edge margin and still sliding outward boosts back towards the " +
+                "middle, rolled once each time, times the personality's escape boost; 0 never saves itself, 1 always " +
+                "does when the boost is ready")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float escapeBoostChance = 0.5f;
+
+            public DifficultySettings()
+            {
+            }
+
+            public DifficultySettings(float playerPace, float playerWeight, float playerGrace, int maxPlayerHunters,
+                Vector2 reactionTime, float aimError, Vector2 boostDelay, float escapeBoostChance)
+            {
+                this.playerPace = playerPace;
+                this.playerWeight = playerWeight;
+                this.playerGrace = playerGrace;
+                this.maxPlayerHunters = maxPlayerHunters;
+                this.reactionTime = reactionTime;
+                this.aimError = aimError;
+                this.boostDelay = boostDelay;
+                this.escapeBoostChance = escapeBoostChance;
+            }
+
+            public float PlayerPace => playerPace;
+            public float PlayerWeight => playerWeight;
+            public float PlayerGrace => playerGrace;
+            public int MaxPlayerHunters => maxPlayerHunters;
+            public Vector2 ReactionTime => reactionTime;
+            public float AimError => aimError;
             public Vector2 BoostDelay => boostDelay;
+            public float EscapeBoostChance => escapeBoostChance;
+        }
+
+        /// <summary>
+        /// One bot personality, as multipliers over <see cref="BotSettings"/> and the difficulty (1 changes nothing),
+        /// so the character stays the same while the difficulty ramps, and a player notices "that one always comes for
+        /// me".
+        /// </summary>
+        [Serializable]
+        public sealed class PersonalitySettings
+        {
+            [Tooltip("Times the look-ahead at the edge and the room a boost is given: low is bold and pushes cars " +
+                "further out, but now and then follows them off; high stays well inside")]
+            [Min(0.1f)]
+            [SerializeField]
+            private float caution = 1f;
+
+            [Tooltip("Added to what the player's car counts for in a pick, up to the most it can count for")]
+            [SerializeField]
+            private float playerWeight;
+
+            [Tooltip("Times the edge weight of a pick: low picks cars near the bot in the middle, high goes for cars " +
+                "out by the edge")]
+            [Min(0f)]
+            [SerializeField]
+            private float edgeWeight = 1f;
+
+            [Tooltip("Times the weight of a car just hit and sliding outward; above 1 the bot also looks for a new " +
+                "target the moment any car is hit")]
+            [Min(0f)]
+            [SerializeField]
+            private float opportunism = 1f;
+
+            [Tooltip("Times the delay before a bot boosts into a car it pushes")]
+            [Min(0f)]
+            [SerializeField]
+            private float boostDelay = 1f;
+
+            [Tooltip("Times the aim error")]
+            [Min(0f)]
+            [SerializeField]
+            private float aimError = 1f;
+
+            [Tooltip("Times the chance of a boost back from the edge, up to always")]
+            [Min(0f)]
+            [SerializeField]
+            private float escapeBoost = 1f;
+
+            public PersonalitySettings()
+            {
+            }
+
+            public PersonalitySettings(float caution, float playerWeight, float edgeWeight, float opportunism,
+                float boostDelay, float aimError, float escapeBoost)
+            {
+                this.caution = caution;
+                this.playerWeight = playerWeight;
+                this.edgeWeight = edgeWeight;
+                this.opportunism = opportunism;
+                this.boostDelay = boostDelay;
+                this.aimError = aimError;
+                this.escapeBoost = escapeBoost;
+            }
+
+            public float Caution => caution;
+            public float PlayerWeight => playerWeight;
+            public float EdgeWeight => edgeWeight;
+            public float Opportunism => opportunism;
+            public float BoostDelay => boostDelay;
+            public float AimError => aimError;
+            public float EscapeBoost => escapeBoost;
         }
 
         /// <summary>
@@ -294,15 +593,27 @@ namespace ToyCarArena.Gameplay
         [Serializable]
         public sealed class RoundSettings
         {
-            [Tooltip("Seconds a round lasts at most (60 to 90 in the brief); the arena is gone by then")]
+            [Tooltip("Seconds a round lasts at most (60 to 90 in the brief); the edge has crumbled to its smallest by then")]
             [Range(60f, 90f)]
             [SerializeField]
             private float duration = 75f;
 
-            [Tooltip("Seconds between the last car falling and the result screen")]
+            [Tooltip("Seconds between the last car falling and the result screen, after a win or the time running out")]
             [Min(0f)]
             [SerializeField]
             private float resultDelay = 1.5f;
+
+            [Tooltip("Seconds between the player's fall and the result screen: shorter than after a win, since a fall " +
+                "reads at once and the brief wants a lost round back in play within about 3 seconds")]
+            [Min(0f)]
+            [SerializeField]
+            private float outResultDelay = 1f;
+
+            [Tooltip("A car that falls off within this many seconds of another car driving into it was knocked out by " +
+                "that car: the player's KNOCKOUT! and knock-out count, and who knocked the player out")]
+            [Min(0f)]
+            [SerializeField]
+            private float knockoutCreditWindow = 2.5f;
 
             [Tooltip("A car below this height, in metres, is out")]
             [SerializeField]
@@ -314,6 +625,8 @@ namespace ToyCarArena.Gameplay
 
             public float Duration => duration;
             public float ResultDelay => resultDelay;
+            public float OutResultDelay => outResultDelay;
+            public float KnockoutCreditWindow => knockoutCreditWindow;
             public float FallHeight => fallHeight;
             public float RemoveHeight => removeHeight;
         }
@@ -340,7 +653,7 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float spawnHeight = 0.05f;
 
-            [Tooltip("The edge stops crumbling at this radius, in metres")]
+            [Tooltip("The edge stops crumbling at this radius, in metres: the solid middle of the floor")]
             [Min(1f)]
             [SerializeField]
             private float minRadius = 5f;
@@ -353,17 +666,18 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Seconds between two crumbles of the edge")]
             [Min(0.1f)]
             [SerializeField]
-            private float crumbleInterval = 6f;
+            private float crumbleInterval = 11f;
 
-            [Tooltip("Metres of radius each crumble takes")]
+            [Tooltip("Metres of radius each crumble takes, about: the floor between the radius and the smallest radius " +
+                "is cut into whole rings as close to this wide as fit; 0 never crumbles")]
             [Min(0f)]
             [SerializeField]
-            private float crumbleStep = 1.5f;
+            private float crumbleStep = 2f;
 
             [Tooltip("Seconds a crumbling piece shakes before it falls, so a car on it can get away")]
             [Min(0f)]
             [SerializeField]
-            private float crumbleWarning = 1.5f;
+            private float crumbleWarning = 2f;
 
             [Tooltip("Room the camera leaves around the arena, in metres, so a car at the edge is in view in any " +
                 "screen shape")]
@@ -386,6 +700,17 @@ namespace ToyCarArena.Gameplay
         {
             Joystick,
             FollowFinger,
+        }
+
+        /// <summary>
+        /// What drives a bot, beside the difficulty: see <see cref="BotSettings.Mix"/>.
+        /// </summary>
+        public enum BotPersonality
+        {
+            Bully,
+            Careful,
+            Opportunist,
+            Clumsy,
         }
     }
 }

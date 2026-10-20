@@ -7,7 +7,7 @@
    - screen: a full-screen layer, white text over the game; screen--dimmed puts the navy dim under it.
    - card: the white rounded sticker the result sits on, navy text. inset: a flat soft panel inside a card. rule: a
      soft line across a card.
-   - pill: a white sticker pill, navy text. plate: a translucent navy pill under white text over the game.
+   - pill: a white sticker pill, navy text.
    - display: outlined title text. stroke: outlined text with the outline outside the letters, as the design draws
      it: the text twice, the second label (stroke__face) without outline and drop over the first.
    - caption: small muted spaced-out text.
@@ -15,6 +15,11 @@
    - button: a sticker button; button--green is the one to press, button--big the tall one. Its first child is always
      button__face, the coloured face over the darker band along its bottom; button__label is its text over the face.
    - key: a keyboard key cap (the SPACE hint).
+   - pip: a little car seen from above, wheels and all (the PUSHED OFF BY badge); its pip__body takes the colour.
+   - ko-star: the knock-out star, eight gold points in a navy outline (two squares, one turned, over two bigger navy
+     ones); ko-star--big is the one on the KNOCKOUT! sticker.
+   - best: a small chip with the player's best (BEST #2); best--new is the gold NEW BEST! sticker.
+   - car-color--N: the body colour of car N of the round (0 the player, 1..N the bots), as CarLook paints it.
 
    A sticker's hard drop is a thicker navy bottom border: 9 px of outline and the drop under it (20 in all on pills,
    25 on cards). That border would squash the bottom corners of the fill inside it, so PillShape redraws such an
@@ -76,14 +81,6 @@
     border-radius: 999px;
     background-color: var(--white);
     color: var(--navy);
-}
-
-.plate {
-    flex-direction: row;
-    align-items: center;
-    border-radius: 999px;
-    background-color: rgba(29, 43, 79, 0.75);
-    color: var(--white);
 }
 
 .display {
@@ -249,6 +246,90 @@
     -unity-text-align: middle-center;
 }
 
+.ko-star {
+    flex-shrink: 0;
+    width: 56px;
+    height: 56px;
+}
+
+.ko-star__back,
+.ko-star__front {
+    position: absolute;
+}
+
+.ko-star__back {
+    left: 8px;
+    top: 8px;
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    background-color: var(--navy);
+}
+
+.ko-star__front {
+    left: 15px;
+    top: 15px;
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+    background-color: var(--gold);
+}
+
+.ko-star__turned {
+    rotate: 45deg;
+}
+
+.ko-star--big {
+    width: 124px;
+    height: 124px;
+}
+
+.ko-star--big > .ko-star__back {
+    left: 18px;
+    top: 18px;
+    width: 88px;
+    height: 88px;
+    border-radius: 12px;
+}
+
+.ko-star--big > .ko-star__front {
+    left: 33px;
+    top: 33px;
+    width: 58px;
+    height: 58px;
+    border-radius: 8px;
+}
+
+/* Hidden until the view gives it best--shown. NEW BEST! springs in after the card (round-over--enter). */
+.best {
+    display: none;
+    margin: 0;
+    padding: 4px 22px 8px 22px;
+    border-radius: 999px;
+    background-color: var(--soft);
+    font-size: 36px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+    transition-property: scale;
+    transition-duration: 0.35s;
+    transition-timing-function: ease-out-back;
+    transition-delay: 0.35s;
+}
+
+.best--shown {
+    display: flex;
+}
+
+.best--new {
+    border-width: 6px;
+    border-color: var(--navy);
+    background-color: var(--gold);
+    color: var(--navy);
+    rotate: -4deg;
+}
+
 /* The opaque cover while the arena scene loads. It takes every click and touch, so nothing under it is pressed. */
 .curtain {
     position: absolute;
@@ -259,8 +340,8 @@
     background-color: var(--navy);
 }
 
-/* The HUD: the stopwatch pill at the top centre, 54 px from the edge, and under it the plate with a car per car in the
-   round. On a wide screen it stays in the middle, over the arena. */
+/* The HUD: the stopwatch pill at the top centre, 54 px from the edge, and under it the pill with a chip per car still
+   in the round. On a wide screen it stays in the middle, over the arena. */
 .hud {
     position: absolute;
     left: 0;
@@ -316,11 +397,15 @@
     transition-duration: 0.05s;
 }
 
-/* The cars left: one little car seen from above per car in the round (HudView builds them), dim once it is out, and
-   N LEFT after them. The plate pops when a car goes out. */
+/* The cars left: a white pill, lower than the time's so it does not compete with it, with a stack of overlapping round
+   chips, one per car still in (HudView builds them), each in the car's colour (car-color) with a little white car seen
+   from above in it, and the count and LEFT after them. The bots come first and the player's chip last, in front on the
+   right, with the white ring of its marker on the arena inside its outline. The pill pops when a car goes out
+   (hud__cars--pop) and the count punches (hud__cars-count--punch). */
 .hud__cars {
+    height: 116px;
     margin-top: 24px;
-    padding: 18px 36px 18px 28px;
+    padding: 0 38px 0 14px;
     transition-property: scale;
     transition-duration: 0.2s;
     transition-timing-function: ease-out;
@@ -331,28 +416,125 @@
     transition-duration: 0.05s;
 }
 
-.hud__pips {
+/* Every chip overlaps the one before it by 30 px; the row's padding gives the first one's overlap back. */
+.hud__chips {
     flex-direction: row;
     align-items: center;
+    padding-left: 30px;
+}
+
+/* A chip's place in the stack. The chip itself is laid over it, so when a car goes out its place narrows to nothing
+   (hud__chip-slot--closing: what is left is the overlap) and the chips after it slide over, while the chip keeps its
+   round shape. */
+.hud__chip-slot {
+    flex-shrink: 0;
+    width: 80px;
+    height: 80px;
+    margin-left: -30px;
+    transition-property: width;
+    transition-duration: 0.2s;
+    transition-timing-function: ease-out;
+}
+
+.hud__chip-slot--closing {
+    width: 30px;
+}
+
+/* Leaving, the chip hops up from the stack spinning (hud__chip--hop), then falls as it shrinks to nothing
+   (hud__chip--fall), as the effects on the arena vanish: 0.4 s in all (HudView times the two). */
+.hud__chip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80px;
+    height: 80px;
+    align-items: center;
+    justify-content: center;
+    border-width: 7px;
+    border-color: var(--navy);
+    border-radius: 40px;
+    transition-property: translate, rotate, scale;
+    transition-duration: 0.15s;
+    transition-timing-function: ease-out;
+}
+
+.hud__chip--hop {
+    translate: 0 -60px;
+    rotate: 100deg;
+    scale: 0.9 0.9;
+}
+
+.hud__chip--fall {
+    translate: 0 10px;
+    rotate: 200deg;
+    scale: 0 0;
+    transition-duration: 0.25s;
+    transition-timing-function: ease-in;
+}
+
+/* The player's chip: a white ring just inside its navy outline. */
+.hud__chip-ring {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    border-width: 6px;
+    border-color: var(--white);
+    border-radius: 33px;
+}
+
+.hud__chip-car {
+    width: 24px;
+    height: 36px;
+    border-width: 5px;
+    border-color: var(--navy);
+    border-radius: 8px;
+    background-color: var(--white);
+}
+
+.hud__chip-glass {
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    top: 4px;
+    height: 7px;
+    border-radius: 2px;
+    background-color: var(--navy);
+}
+
+.hud__cars-count {
+    margin: 0 0 0 18px;
+    padding: 0 0 6px 0;
+    font-size: 72px;
+    color: var(--navy);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+    transition-property: scale;
+    transition-duration: 0.2s;
+    transition-timing-function: ease-out;
+}
+
+.hud__cars-count--punch {
+    scale: 1.3 1.3;
+    transition-duration: 0.05s;
 }
 
 .hud__cars-text {
-    margin: 0 0 0 8px;
-    padding: 0;
-    font-size: 50px;
+    margin: 0 0 0 10px;
+    padding: 0 0 2px 0;
+    font-size: 44px;
     letter-spacing: 1px;
-    color: var(--white);
+    color: var(--navy);
     -unity-text-align: middle-left;
     white-space: nowrap;
 }
 
+/* The little car of the PUSHED OFF BY badge: four wheels under a body with a windscreen. */
 .pip {
     flex-shrink: 0;
     width: 52px;
     height: 68px;
-    margin-right: 14px;
-    transition-property: opacity;
-    transition-duration: 0.3s;
 }
 
 .pip__wheel {
@@ -405,17 +587,370 @@
     background-color: var(--navy);
 }
 
-.pip--out {
-    opacity: 0.3;
+/* The player's knock-outs: a small white pill with the star under the cars pill, there from the first knock-out on
+   (HudView sets hud__ko--shown), popping at each one. */
+.hud__ko {
+    display: none;
+    height: 108px;
+    margin-top: 20px;
+    padding: 0 36px 0 24px;
+    transition-property: scale;
+    transition-duration: 0.2s;
+    transition-timing-function: ease-out;
 }
 
-.pip--out .pip__body {
+.hud__ko--shown {
+    display: flex;
+}
+
+.hud__ko--pop {
+    scale: 1.25 1.25;
+    transition-duration: 0.05s;
+}
+
+.hud__ko-text {
+    margin: 0 0 0 14px;
+    padding: 0 0 6px 0;
+    font-size: 60px;
+    color: var(--navy);
+    -unity-text-align: middle-left;
+    white-space: nowrap;
+}
+
+/* KNOCKOUT! when the player knocks a car out (HudView builds one per knock-out and places it over where the car went
+   over the edge): the star and the word on a tilted sticker that springs in from small (ko-pop--start, taken off once
+   it is laid out), holds, and flies up as it fades (ko-pop--leave). The outer ko-pop is centred on its point. */
+.hud__popups {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.ko-pop {
+    position: absolute;
+    translate: -50% -50%;
+}
+
+.ko-pop__sticker {
+    flex-direction: row;
+    align-items: center;
+    transition-property: scale, translate, opacity;
+    transition-duration: 0.3s, 0.3s, 0.12s;
+    transition-timing-function: ease-out-back, ease-out, linear;
+}
+
+.ko-pop--start .ko-pop__sticker {
+    scale: 0.2 0.2;
+    opacity: 0;
+}
+
+.ko-pop--leave .ko-pop__sticker {
+    scale: 1.15 1.15;
+    translate: 0 -160px;
+    opacity: 0;
+    transition-duration: 0.35s;
+    transition-timing-function: ease-in;
+}
+
+.ko-pop__text {
+    margin: 0 0 0 16px;
+    padding: 0;
+    font-size: 120px;
+    color: var(--gold);
+}
+
+/* The joystick under a steering finger (HudView places and sizes both parts from the driver's joystick): a pale
+   see-through disc with a navy outline where the finger came down, and on it a white knob sticker with its navy drop
+   under the finger. They spring in as the finger starts to steer and shrink away as it lets go. The layer covers the
+   screen so both are placed in its pixels. */
+.hud__stick {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.hud__stick-base,
+.hud__stick-knob {
+    position: absolute;
+    border-radius: 999px;
+    border-color: var(--navy);
+    opacity: 0;
+    scale: 0.6 0.6;
+    transition-property: opacity, scale;
+    transition-duration: 0.12s;
+    transition-timing-function: ease-out;
+}
+
+.hud__stick-base {
+    border-width: 8px;
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.hud__stick-knob {
+    border-width: 8px;
+    border-bottom-width: 16px;
+    background-color: var(--white);
+}
+
+.hud__stick--shown .hud__stick-base {
+    opacity: 0.8;
+    scale: 1 1;
+    transition-timing-function: ease-out-back;
+}
+
+.hud__stick--shown .hud__stick-knob {
+    opacity: 1;
+    scale: 1 1;
+    transition-timing-function: ease-out-back;
+}
+
+/* The boost button, on a touch screen only (HudView shows it once the screen is one): a round white sticker at the
+   bottom right, under the right thumb, while the left one steers. The charge is an orange disc in it that grows from
+   the middle as the boost cools down (HudView scales it); once it fills the button, the button turns orange, its label
+   white with a navy stroke, and it pops (hud__boost--pop for a moment). Pressed, it sinks onto its drop. */
+.hud__boost {
+    display: none;
+    position: absolute;
+    right: 64px;
+    bottom: 96px;
+    width: 300px;
+    height: 300px;
+    align-items: center;
+    justify-content: center;
+    border-width: 9px;
+    border-bottom-width: 20px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+    opacity: 0.85;
+    transition-property: scale, translate, opacity;
+    transition-duration: 0.15s;
+    transition-timing-function: ease-out;
+}
+
+.hud__boost--shown {
+    display: flex;
+}
+
+/* Centred in the button's fill, which the thicker bottom border makes 282 x 271. */
+.hud__boost-charge {
+    position: absolute;
+    left: 23px;
+    top: 17px;
+    width: 236px;
+    height: 236px;
+    border-radius: 118px;
+    background-color: var(--orange);
+}
+
+.hud__boost-text {
+    margin: 0;
+    padding: 0 0 6px 0;
+    font-size: 72px;
+    color: var(--navy);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.hud__boost--ready {
+    background-color: var(--orange);
+    opacity: 1;
+}
+
+.hud__boost--ready .hud__boost-text {
+    color: var(--white);
+    -unity-text-outline-width: 14px;
+    -unity-text-outline-color: var(--navy);
+}
+
+.hud__boost--pop {
+    scale: 1.12 1.12;
+    transition-duration: 0.05s;
+}
+
+.hud__boost--pressed {
+    translate: 0 11px;
+    transition-duration: 0.05s;
+}
+
+/* The start prompt of a visit's first round, while the cars wait for the player's first steer or boost (HudView shows
+   it): TAP TO START or CLICK TO START, outlined, and under it a dark plate with how to drive: a joystick and DRAG TO
+   DRIVE on a touch screen (hud__start--touch), a mouse, HOLD TO DRIVE, the SPACE key and BOOST on a desktop
+   (hud__start--desktop), the desktop's only word on the boost. Nothing dims the arena: the player's car and the HUD
+   stay as in play. On a narrow screen it sits in the sky under the HUD, over the arena's far edge; on a wide one
+   (hud__start--wide) inside the ring of cars, between the far bots and the player's car. It springs in once the curtain
+   is up (hud__start--enter, taken off once it is laid out), bobs (hud__start--bob, toggled by HudView, the knob and
+   the mouse swinging with it), and flashes away as the round begins (hud__start--leave). */
+.hud__start {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 390px;
+    align-items: center;
+    transition-property: scale, opacity;
+    transition-duration: 0.35s, 0.2s;
+    transition-timing-function: ease-out-back, linear;
+    transition-delay: 0.3s;
+}
+
+.hud__start--shown {
+    display: flex;
+}
+
+.hud__start--wide {
+    top: 780px;
+}
+
+.hud__start--enter {
+    scale: 0.5 0.5;
+    opacity: 0;
+}
+
+.hud__start--leave {
+    scale: 1.2 1.2;
+    opacity: 0;
+    transition-duration: 0.15s;
+    transition-timing-function: ease-in;
+    transition-delay: 0s;
+}
+
+.hud__start-prompt {
+    align-items: center;
+    transition-property: scale;
+    transition-duration: 0.6s;
+    transition-timing-function: ease-in-out;
+}
+
+.hud__start--bob .hud__start-prompt {
+    scale: 1.06 1.06;
+}
+
+.hud__start-text {
+    margin: 0;
+    padding: 0;
+    font-size: 108px;
+    color: var(--white);
+    -unity-text-outline-width: 16px;
+    -unity-text-outline-color: var(--navy);
+    text-shadow: 0 14px 0 rgb(29, 43, 79);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.hud__start-hint {
+    display: none;
+    flex-direction: row;
+    align-items: center;
+    margin-top: 24px;
+    padding: 16px 40px 20px 26px;
+    border-radius: 999px;
+    background-color: rgba(29, 43, 79, 0.75);
+    transition-property: translate, opacity;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-out;
+    transition-delay: 0.42s;
+}
+
+.hud__start--touch .hud__start-hint--touch {
+    display: flex;
+}
+
+.hud__start--desktop .hud__start-hint--desktop {
+    display: flex;
+}
+
+.hud__start--enter .hud__start-hint {
+    translate: 0 40px;
+    opacity: 0;
+}
+
+.hud__start--leave .hud__start-hint {
+    transition-delay: 0s;
+}
+
+.hud__start-hint-text {
+    margin: 0 0 0 20px;
+    padding: 0 0 4px 0;
+    font-size: 40px;
+    letter-spacing: 2px;
+    color: var(--white);
+    white-space: nowrap;
+}
+
+.hud__start-boost-text {
+    margin-left: 16px;
+}
+
+.hud__start-key {
+    margin-left: 44px;
+}
+
+/* The joystick: a white ring with its knob swinging side to side as the prompt bobs. */
+.hud__start-stick {
+    width: 72px;
+    height: 72px;
+    border-width: 6px;
     border-color: var(--white);
-    background-color: rgba(0, 0, 0, 0);
+    border-radius: 36px;
+    background-color: rgba(255, 255, 255, 0.18);
 }
 
-.pip--out .pip__glass,
-.pip--out .pip__wheel {
+.hud__start-stick-knob {
+    position: absolute;
+    left: 15px;
+    top: 15px;
+    width: 30px;
+    height: 30px;
+    border-radius: 15px;
+    background-color: var(--white);
+    translate: -16px 0;
+    transition-property: translate;
+    transition-duration: 0.6s;
+    transition-timing-function: ease-in-out;
+}
+
+.hud__start--bob .hud__start-stick-knob {
+    translate: 16px 0;
+}
+
+/* The mouse: a white outline with its left button orange, swaying as the prompt bobs. */
+.hud__start-mouse {
+    width: 46px;
+    height: 64px;
+    border-width: 6px;
+    border-color: var(--white);
+    border-radius: 23px;
+    translate: -8px 0;
+    transition-property: translate;
+    transition-duration: 0.6s;
+    transition-timing-function: ease-in-out;
+}
+
+.hud__start--bob .hud__start-mouse {
+    translate: 8px 0;
+}
+
+.hud__start-mouse-button {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 14px;
+    height: 22px;
+    border-top-left-radius: 16px;
+    background-color: var(--orange);
+}
+
+.hud__start-mouse-line {
+    position: absolute;
+    left: 14px;
+    top: 0;
+    width: 6px;
+    height: 22px;
     background-color: var(--white);
 }
 
@@ -496,6 +1031,36 @@
     white-space: nowrap;
 }
 
+/* After a fall with a car to blame, the subtitle is PUSHED OFF BY and that car in its colour on a white badge. */
+.round-over__by {
+    display: none;
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: center;
+    margin-top: 26px;
+}
+
+.round-over__by--shown {
+    display: flex;
+}
+
+.round-over__by-text {
+    margin: 0;
+}
+
+.round-over__by-badge {
+    align-items: center;
+    justify-content: center;
+    width: 104px;
+    height: 104px;
+    margin-left: 22px;
+    border-width: 7px;
+    border-color: var(--navy);
+    border-radius: 52px;
+    background-color: var(--white);
+    rotate: 10deg;
+}
+
 .round-over__card {
     flex-shrink: 0;
     margin-top: 64px;
@@ -542,8 +1107,15 @@
     white-space: nowrap;
 }
 
+/* OF N CARS, and the best place beside it. */
 .round-over__of {
+    flex-direction: row;
+    align-items: center;
     margin-top: 26px;
+}
+
+.round-over__place-best {
+    margin-left: 24px;
 }
 
 .round-over__time-label {
@@ -555,13 +1127,28 @@
     margin-left: 26px;
 }
 
-.round-over__time-value {
+/* The time on the arena and the knock-outs, right in their insets. */
+.round-over__value {
     margin: 0;
     padding: 0;
     font-size: 72px;
     color: var(--navy);
     -unity-text-align: middle-right;
     white-space: nowrap;
+}
+
+/* The knock-outs, in an inset like the time's: the star, KNOCKOUTS, and the count with the best beside it. */
+.round-over__ko {
+    margin-top: 20px;
+}
+
+.round-over__ko-score {
+    flex-direction: row;
+    align-items: center;
+}
+
+.round-over__ko-best {
+    margin-right: 24px;
 }
 
 .round-over__spacer {
@@ -619,9 +1206,47 @@
     opacity: 0;
 }
 
+.round-over--enter .best--new {
+    scale: 0 0;
+}
+
 .round-over--enter .round-over__actions {
     translate: 0 240px;
     opacity: 0;
+}
+
+/* The car colours (CarColor in Scripts/UI picks the class), late in the file so they win over the white of a pip__body
+   they are put on. */
+.car-color--0 {
+    background-color: var(--car-green);
+}
+
+.car-color--1 {
+    background-color: var(--car-red);
+}
+
+.car-color--2 {
+    background-color: var(--car-blue);
+}
+
+.car-color--3 {
+    background-color: var(--car-yellow);
+}
+
+.car-color--4 {
+    background-color: var(--car-purple);
+}
+
+.car-color--5 {
+    background-color: var(--car-orange);
+}
+
+.car-color--6 {
+    background-color: var(--car-pink);
+}
+
+.car-color--7 {
+    background-color: var(--car-dark);
 }
 
 /* Last, so the face of a stroke wins over every rule above that gives its text an outline or a drop: the outline is

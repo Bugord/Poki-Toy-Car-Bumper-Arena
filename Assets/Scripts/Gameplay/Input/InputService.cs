@@ -7,11 +7,14 @@ namespace ToyCarArena.Gameplay.Input
 {
     /// <summary>
     /// Reads the move keys through the actions asset, and fingers and the mouse straight from their devices, so a drag
-    /// knows which finger it follows. Polled: the car's driver asks every frame.
+    /// knows which finger it follows. Polled: the car's driver asks every frame. Boost is a press, so it is an event:
+    /// the Boost action (Space, the right mouse button, a gamepad's south button) and the on-screen button both raise
+    /// <see cref="BoostPressed"/>.
     /// </summary>
     public sealed class InputService : IInputService, IInitializable, IDisposable
     {
         public event Action<InputMethod> MoveUsed;
+        public event Action BoostPressed;
 
         private readonly InputSystemActions inputSystemActions = new();
         private readonly IOnScreenControls onScreenControls;
@@ -155,10 +158,14 @@ namespace ToyCarArena.Gameplay.Input
         {
             inputSystemActions.Player.Enable();
             inputSystemActions.Player.Move.performed += OnMovePerformed;
+            inputSystemActions.Player.Boost.performed += OnBoostPerformed;
+            onScreenControls.BoostPressed += OnScreenBoostPressed;
         }
 
         public void Dispose()
         {
+            onScreenControls.BoostPressed -= OnScreenBoostPressed;
+            inputSystemActions.Player.Boost.performed -= OnBoostPerformed;
             inputSystemActions.Player.Move.performed -= OnMovePerformed;
             inputSystemActions.Player.Disable();
             inputSystemActions.Dispose();
@@ -175,6 +182,16 @@ namespace ToyCarArena.Gameplay.Input
                     MoveUsed?.Invoke(InputMethod.Gamepad);
                     break;
             }
+        }
+
+        private void OnBoostPerformed(InputAction.CallbackContext context)
+        {
+            BoostPressed?.Invoke();
+        }
+
+        private void OnScreenBoostPressed()
+        {
+            BoostPressed?.Invoke();
         }
     }
 }

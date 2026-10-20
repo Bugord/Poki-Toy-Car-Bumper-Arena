@@ -251,7 +251,9 @@ MonoBehaviour:
   autoInjectGameObjects: []
   tuning: {fileID: 11400000, guid: d3ac6d0d1668c84439c54712e09fbaca, type: 2}
   arenaCamera: {fileID: 1867175643}
+  arenaFloor: {fileID: 1674820966}
   carPrefab: {fileID: 9129053375818311994, guid: 222cdabef3973de4db083cc9179a4027, type: 3}
+  audioLibrary: {fileID: 11400000, guid: f401b36b1849431cb6ac97152243978d, type: 2}
 --- !u!4 &1404793206
 Transform:
   m_ObjectHideFlags: 0
@@ -403,7 +405,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1867175642}
   - component: {fileID: 1867175641}
-  - component: {fileID: 1867175640}
   - component: {fileID: 1867175643}
   m_Layer: 0
   m_Name: Main Camera
@@ -412,14 +413,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!81 &1867175640
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1867175639}
-  m_Enabled: 1
 --- !u!20 &1867175641
 Camera:
   m_ObjectHideFlags: 0
@@ -498,6 +491,67 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6672ddc21ea476646ae6857af45dda48, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Arena.ArenaCamera
+--- !u!1 &731205114
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 731205115}
+  - component: {fileID: 731205116}
+  - component: {fileID: 731205117}
+  m_Layer: 0
+  m_Name: Effects
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &731205115
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 731205114}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &731205116
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 731205114}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f9601e9bbbf4307b52da0bc2d3f9646, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Effects.EffectPlayer
+  outline: {fileID: 2100000, guid: 2188f4de211c4cd6a87711e1d492995f, type: 2}
+  white: {fileID: 2100000, guid: a840781ae3da4af180d61734c494e2bb, type: 2}
+  gold: {fileID: 2100000, guid: f1272fbc00e740799cb9b53fcf40d231, type: 2}
+  dust: {fileID: 2100000, guid: 810c1088978e4c588ac3dd9022c20084, type: 2}
+--- !u!114 &731205117
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 731205114}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 668cff9a8a5a4f25abb8a37b9227b594, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Effects.ArenaFeedback
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -506,3 +560,4 @@ SceneRoots:
   - {fileID: 1867175642}
   - {fileID: 477846442}
   - {fileID: 1674820964}
+  - {fileID: 731205115}

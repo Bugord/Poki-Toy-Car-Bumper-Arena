@@ -1,4 +1,5 @@
 using Bugord.Core;
+using ToyCarArena.Audio;
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Bots;
 using ToyCarArena.Gameplay.Cars;
@@ -24,9 +25,17 @@ namespace ToyCarArena.Gameplay
         [SerializeField]
         private ArenaCamera arenaCamera;
 
+        [Tooltip("The arena's floor, whose edge crumbles away ring by ring over a round")]
+        [SerializeField]
+        private ArenaFloor arenaFloor;
+
         [Tooltip("The car every driver gets, the player's and the bots', placed by the round")]
         [SerializeField]
         private Car carPrefab;
+
+        [Tooltip("Sounds and music for the scene played on its own; from Boot the app's audio plays")]
+        [SerializeField]
+        private AudioLibrary audioLibrary;
 
         protected override void Configure(IContainerBuilder builder)
         {
@@ -34,7 +43,9 @@ namespace ToyCarArena.Gameplay
             // GetType() reads garbage and VContainer fails later with an empty type name.
             Require(tuning, nameof(tuning));
             Require(arenaCamera, nameof(arenaCamera));
+            Require(arenaFloor, nameof(arenaFloor));
             Require(carPrefab, nameof(carPrefab));
+            Require(audioLibrary, nameof(audioLibrary));
 
             // No parent means no Boot, so no app scope to bring the kit's storage and logging, nor app states to play
             // the round.
@@ -48,19 +59,36 @@ namespace ToyCarArena.Gameplay
             // "VContainerException:  is not assignable from ToyCarArena.Gameplay.GameTuning". Development builds are fine.
             builder.RegisterInstance(tuning, typeof(GameTuning));
 
-            // Nothing is drawn over the game yet; the HUD with the boost button will take its own presses.
-            builder.Register<IOnScreenControls, NoOnScreenControls>(Lifetime.Singleton);
+            // From Boot the HUD's buttons come from the app scope (the HUD is an app screen); on its own the scene has no
+            // HUD, so nothing is drawn over the game.
+            if (isStandalone) {
+                builder.Register<IOnScreenControls, NoOnScreenControls>(Lifetime.Singleton);
+            }
+
+            // From Boot the audio is the app's, so the music goes on across the rounds' reloads; on its own the scene
+            // brings its own, which starts over with each round.
+            if (isStandalone) {
+                builder.RegisterInstance(audioLibrary, typeof(AudioLibrary));
+                builder.RegisterEntryPoint<AudioService>().As<IAudioService>();
+            }
+
             builder.RegisterEntryPoint<InputService>().As<IInputService>();
 
             builder.RegisterComponent(arenaCamera);
+            builder.RegisterComponent(arenaFloor);
 
             // The cars go under this scope's object: with no parent given they would land in DontDestroyOnLoad, where
             // the injector builds them, and outlive the scene.
             builder.RegisterEntryPoint<ArenaRound>().AsSelf().WithParameter(carPrefab).WithParameter(transform);
-            builder.RegisterEntryPoint<PlayerDriver>();
+            builder.RegisterEntryPoint<PlayerDriver>().AsSelf();
             builder.RegisterEntryPoint<BotDriver>();
+            builder.RegisterEntryPoint<ArenaCrumble>().AsSelf();
             if (isStandalone) {
                 builder.RegisterEntryPoint<StandaloneRound>();
+                // From Boot the session's progress lives in the app scope; on its own the scene reloads itself every
+                // round, so StandaloneRound keeps it across the reloads.
+                builder.RegisterInstance(StandaloneRound.Session, typeof(SessionProgress))
+                    .As(typeof(ISessionProgress));
             }
 
             builder.RegisterBuildCallback(InjectScene);

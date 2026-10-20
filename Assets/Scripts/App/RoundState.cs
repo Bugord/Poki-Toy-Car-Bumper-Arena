@@ -3,6 +3,7 @@ using System.Threading;
 using Bugord.App.Platform;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.Gameplay;
+using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
 using ToyCarArena.UI;
 using UIKit.Runtime.Abstractions;
@@ -13,9 +14,20 @@ namespace ToyCarArena.App
     /// <summary>
     /// Plays one round on the loaded arena: begins it, shows the HUD and lifts the curtain, and waits for the round to
     /// be decided. The platform hears gameplayStart as the round begins and gameplayStop the moment it is decided, the
-    /// player's fall included; the cars still on the arena go on for <see cref="GameTuning.RoundSettings.ResultDelay"/>,
-    /// so the last fall plays out before the result. The first round loads the arena itself; a restart comes here with
-    /// a fresh one already loaded under the curtain.
+    /// player's fall included; the cars still on the arena go on for <see cref="GameTuning.RoundSettings.ResultDelay"/>
+    /// (<see cref="GameTuning.RoundSettings.OutResultDelay"/> after a fall, which reads at once), so the last fall plays
+    /// out before the result. The first round loads the arena itself; a restart comes here with a fresh one already
+    /// loaded under the curtain.
+    /// <para>
+    /// The first round of a visit waits for the player: the cars stand on the arena under the HUD's start prompt until
+    /// the player first steers or boosts (<see cref="PlayerDriver.HasActed"/>), and only then does the round begin and
+    /// the platform hear gameplayStart, so nothing plays before the player is there. A later round comes from PLAY
+    /// AGAIN, which is that input, and begins at once.
+    /// </para>
+    /// <para>
+    /// The decided round moves the session on (<see cref="SessionProgress"/>, before the next arena is built from it) and
+    /// is held against the player's bests, and the round's analytics go out (<see cref="RoundEvents"/>).
+    /// </para>
     /// </summary>
     public sealed class RoundState : StateBase
     {
@@ -23,13 +35,18 @@ namespace ToyCarArena.App
         private readonly IScreenNavigator navigator;
         private readonly ScreenCurtain curtain;
         private readonly IGamePlatform platform;
+        private readonly SessionProgress progress;
+        private readonly PersonalBests bests;
 
-        public RoundState(LevelScene levelScene, IScreenNavigator navigator, ScreenCurtain curtain, IGamePlatform platform)
+        public RoundState(LevelScene levelScene, IScreenNavigator navigator, ScreenCurtain curtain, IGamePlatform platform,
+            SessionProgress progress, PersonalBests bests)
         {
             this.levelScene = levelScene;
             this.navigator = navigator;
             this.curtain = curtain;
             this.platform = platform;
+            this.progress = progress;
+            this.bests = bests;
         }
 
         public override async UniTask<StateTransitionInfo> Execute(CancellationToken token)
@@ -40,26 +57,49 @@ namespace ToyCarArena.App
 
             var round = levelScene.Resolve<ArenaRound>();
             var tuning = levelScene.Resolve<GameTuning>();
+            var driver = levelScene.Resolve<PlayerDriver>();
             var finished = new UniTaskCompletionSource<RoundResult>();
             void OnFinished(RoundResult result) => finished.TrySetResult(result);
 
             round.Finished += OnFinished;
             ScreenHandle<HudViewModel> hud = null;
             var isPlaying = false;
-            try {
+            var roundNumber = progress.Round;
+            var waitsForPlayer = roundNumber == 1;
+
+            void BeginRound()
+            {
                 round.Begin();
                 platform.GameplayStart();
+                platform.MeasureRoundStart(roundNumber);
                 isPlaying = true;
+            }
+
+            try {
+                round.Place();
+                if (!waitsForPlayer) {
+                    BeginRound();
+                }
 
                 hud = await navigator.OpenAsync<HudViewModel, ArenaRound>(round, token);
                 await curtain.Hide();
+
+                if (waitsForPlayer) {
+                    await UniTask.WaitUntil(() => driver.HasActed, cancellationToken: token);
+                    BeginRound();
+                }
 
                 var result = await finished.Task.AttachExternalCancellation(token);
                 platform.GameplayStop();
                 isPlaying = false;
 
-                await UniTask.Delay(TimeSpan.FromSeconds(tuning.Round.ResultDelay), cancellationToken: token);
-                return Transition.GoTo<ResultState, RoundResult>(result);
+                progress.Record(result);
+                var record = bests.Record(result);
+                platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, driver);
+
+                var delay = result.Outcome == RoundOutcome.Out ? tuning.Round.OutResultDelay : tuning.Round.ResultDelay;
+                await UniTask.Delay(TimeSpan.FromSeconds(delay), cancellationToken: token);
+                return Transition.GoTo<ResultState, RoundRecord>(record);
             }
             finally {
                 round.Finished -= OnFinished;

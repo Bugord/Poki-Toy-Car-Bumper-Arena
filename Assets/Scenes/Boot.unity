@@ -156,6 +156,7 @@ MonoBehaviour:
   panelSettings: {fileID: 11400000, guid: 9c53cf531d7052246ab3a4a0f2a4402f, type: 2}
   targetFrameRate: 60
   storagePrefix: toycararena
+  audioLibrary: {fileID: 11400000, guid: f401b36b1849431cb6ac97152243978d, type: 2}
 --- !u!4 &2030469846
 Transform:
   m_ObjectHideFlags: 0

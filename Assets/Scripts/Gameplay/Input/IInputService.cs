@@ -11,6 +11,12 @@ namespace ToyCarArena.Gameplay.Input
         event Action<InputMethod> MoveUsed;
 
         /// <summary>
+        /// Raised when the player presses boost: Space, the right mouse button (the left one steers), a gamepad's south
+        /// button, or the boost button on a touch screen.
+        /// </summary>
+        event Action BoostPressed;
+
+        /// <summary>
         /// The move keys (WASD, arrows) or a gamepad stick, up to 1 long; up is away from the camera.
         /// </summary>
         Vector2 CurrentMoveInput { get; }
