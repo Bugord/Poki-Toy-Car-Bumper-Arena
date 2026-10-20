@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using ToyCarArena.Gameplay.Input;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -16,12 +17,20 @@ namespace ToyCarArena.UI
     {
         public event Action BoostPressed;
 
+        // Read once: whether the browser's main pointer is a finger does not change while the game runs.
+        private readonly bool isTouchDevice = IsTouchDevice();
+
         private VisualElement boostButton;
         private bool isTouchSeen;
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+        [DllImport("__Internal")]
+        private static extern int JS_TouchScreen_IsPrimary();
+#endif
+
         /// <summary>
-        /// Whether the HUD's buttons belong on the screen: on a phone or a tablet, or once a finger has touched the
-        /// screen in this session (a tablet browser may say it is a desktop). A keyboard and a mouse have their own
+        /// Whether the player plays with a finger, so the screens show touch hints and the HUD its buttons: on a phone
+        /// or a tablet, or once a finger has touched the screen in this session. A keyboard and a mouse have their own
         /// keys for everything, so a desktop keeps the HUD clean. Polled by the HUD, which is how a touch is noticed.
         /// </summary>
         public bool CheckTouchScreen()
@@ -30,7 +39,7 @@ namespace ToyCarArena.UI
                 isTouchSeen = true;
             }
 
-            return isTouchSeen || Application.isMobilePlatform;
+            return isTouchSeen || isTouchDevice;
         }
 
         /// <summary>
@@ -49,6 +58,19 @@ namespace ToyCarArena.UI
             if (boostButton == button) {
                 boostButton = null;
             }
+        }
+
+        /// <summary>
+        /// Whether the device plays with a finger first. In the browser the page's primary pointer says so
+        /// (TouchScreen.jslib), which also catches an iPad, whose Safari tells the user agent it is a Mac.
+        /// </summary>
+        private static bool IsTouchDevice()
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            return JS_TouchScreen_IsPrimary() != 0 || Application.isMobilePlatform;
+#else
+            return Application.isMobilePlatform;
+#endif
         }
 
         public void PressBoost()
