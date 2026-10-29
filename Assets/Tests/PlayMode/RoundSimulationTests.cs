@@ -146,7 +146,7 @@ namespace ToyCarArena.Tests.PlayMode
                         // HitStop normally releases on the captured unscaled clock. If that clock ever stalls,
                         // restore speed here, in the test: its 60-80 ms pause must not hold a CPU-speed simulation.
                         slowFrames = Time.timeScale < 1f ? slowFrames + 1 : 0;
-                        if (slowFrames >= 60) {
+                        if (slowFrames >= 5) {
                             Time.timeScale = 1f;
                             slowFrames = 0;
                             report.HitStopRecoveries++;

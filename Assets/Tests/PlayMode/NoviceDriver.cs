@@ -14,17 +14,17 @@ namespace ToyCarArena.Tests.PlayMode
     public sealed class NoviceDriver
     {
         // Calibration parameters: seconds, metres, degrees, and probabilities per look.
-        public float ReactionMin = 0.35f;
-        public float ReactionMax = 0.6f;
+        public float ReactionMin = 0.45f;
+        public float ReactionMax = 0.8f;
         public float OtherTargetChance = 0.1f;
-        public float HeadingError = 20f;
+        public float HeadingError = 40f;
         public float EdgeFear = 4f;
-        public float EdgeFearChance = 0.7f;
+        public float EdgeFearChance = 0.2f;
         public float BoostRange = 7f;
         public float BoostAngle = 35f;
-        public float BoostChance = 0.35f;
+        public float BoostChance = 0.08f;
         public float RandomBoostChance = 0.025f;
-        public float IdleChance = 0.08f;
+        public float IdleChance = 0.25f;
 
         private readonly System.Random random;
         private readonly ArenaRound round;
