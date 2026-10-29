@@ -16,5 +16,10 @@ namespace ToyCarArena.Gameplay.Round
         /// Rounds in a row the player has lost (fallen off) up to this one; 0 after a win or a round survived.
         /// </summary>
         int LosingStreak { get; }
+
+        /// <summary>
+        /// The colour index of the rival to take revenge on next round, or <see cref="RoundResult.Nobody"/>.
+        /// </summary>
+        int Nemesis { get; }
     }
 }

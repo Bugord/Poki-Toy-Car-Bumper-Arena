@@ -115,9 +115,10 @@ namespace ToyCarArena.Gameplay.Bots
         /// (<see cref="RoundDifficulty.BoostDelay"/>) boosts into it, unless the boost would carry the bot itself past the
         /// margin; and a bot already past the margin and still sliding out may boost back towards the middle
         /// (<see cref="RoundDifficulty.EscapeBoostChance"/>), as a player saves a car on the edge.
+        /// In a duel the round's duel pace and escape chance take over, so the last bot can be softened separately.
         /// </para>
         /// </summary>
-        public void Steer(float arenaRadius, float deltaTime)
+        public void Steer(float arenaRadius, float deltaTime, bool isDuel)
         {
             retargetTimer -= deltaTime;
             sinceSeen += deltaTime;
@@ -132,7 +133,7 @@ namespace ToyCarArena.Gameplay.Bots
             if (position.sqrMagnitude > safeRadius * safeRadius || ahead.sqrMagnitude > safeRadius * safeRadius) {
                 pushTime = 0f;
                 Car.Movement.Drive(-position, 1f);
-                Escape(position, velocity, safeRadius);
+                Escape(position, velocity, safeRadius, isDuel);
                 return;
             }
 
@@ -153,7 +154,8 @@ namespace ToyCarArena.Gameplay.Bots
             var behind = Mathf.Min(settings.AimBehind, toTarget.magnitude * 0.5f);
             var aim = targetPosition - outward * behind;
             var heading = Quaternion.AngleAxis(aimError, Vector3.up) * (aim - position);
-            Car.Movement.Drive(heading, Target == player ? difficulty.PlayerPace : 1f);
+            var playerPace = isDuel ? difficulty.DuelPace : difficulty.PlayerPace;
+            Car.Movement.Drive(heading, Target == player ? playerPace : 1f);
 
             if (isPushing) {
                 Push(position, heading, safeRadius, deltaTime);
@@ -210,11 +212,12 @@ namespace ToyCarArena.Gameplay.Bots
         /// Heading back to the middle: once per escape the bot rolls whether it may boost, and it does once it is past
         /// the margin and still sliding outward, where turning round alone would come too late.
         /// </summary>
-        private void Escape(Vector3 position, Vector3 velocity, float safeRadius)
+        private void Escape(Vector3 position, Vector3 velocity, float safeRadius, bool isDuel)
         {
             if (!isEscaping) {
                 isEscaping = true;
-                mayEscapeBoost = Range(0f, 1f) < difficulty.EscapeBoostChance * Traits.EscapeBoost;
+                var chance = isDuel ? difficulty.DuelEscapeBoostChance : difficulty.EscapeBoostChance;
+                mayEscapeBoost = Range(0f, 1f) < chance * Traits.EscapeBoost;
             }
 
             var isSlidingOut = position.sqrMagnitude > safeRadius * safeRadius && Vector3.Dot(velocity, position) > 0f;

@@ -39,6 +39,11 @@ namespace ToyCarArena.UI
 
         public float JoystickRadius { get; private set; }
 
+        /// <summary>
+        /// The button starts on the right and changes sides only when a new steering finger comes down.
+        /// </summary>
+        public bool IsBoostOnLeft { get; private set; }
+
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
         private static extern int JS_TouchScreen_IsPrimary();
@@ -92,6 +97,13 @@ namespace ToyCarArena.UI
         public void PressBoost()
         {
             BoostPressed?.Invoke();
+        }
+
+        public void BeginTouchSteering(Vector2 screenPosition)
+        {
+            // A tap can begin and end between HUD refreshes, so polling the touchscreen alone could miss it.
+            isTouchSeen = true;
+            IsBoostOnLeft = screenPosition.x > Screen.width * 0.5f;
         }
 
         public void ShowJoystick(Vector2 center, Vector2 knob, float radius)

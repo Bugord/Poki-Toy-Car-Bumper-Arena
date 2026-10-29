@@ -661,6 +661,98 @@
     color: var(--gold);
 }
 
+.ko-pop--revenge .ko-pop__text {
+    color: var(--red);
+}
+
+.ko-pop--revenge .ko-star__front {
+    background-color: var(--orange);
+}
+
+/* Visit handles follow the bots; the inner sticker animates independently of its projected anchor. */
+.car-name {
+    position: absolute;
+    translate: -50% -100%;
+    align-items: center;
+}
+
+.car-name__sticker {
+    align-items: center;
+    border-radius: 24px;
+    background-color: var(--name-backdrop);
+    transition-property: scale, opacity;
+    transition-duration: 0.35s;
+    transition-timing-function: ease-out-back;
+}
+
+.car-name__text {
+    margin: 0;
+    padding: 0 14px 3px 14px;
+    font-size: 44px;
+    color: var(--white);
+    -unity-text-outline-width: 6px;
+    text-shadow: none;
+}
+
+.car-name__revenge {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 10px 0 10px;
+}
+
+.car-name__revenge-text {
+    margin: 0;
+    padding: 0;
+    font-size: 32px;
+    letter-spacing: 1px;
+    color: var(--orange);
+    -unity-text-outline-width: 5px;
+    text-shadow: none;
+}
+
+.car-name--revenge .car-name__text {
+    color: var(--red);
+}
+
+/* A tiny bullseye, built from concentric rings and a centre dot. */
+.revenge-target {
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    margin-right: 8px;
+    border-width: 4px;
+    border-color: var(--orange);
+    border-radius: 14px;
+    background-color: var(--navy);
+}
+
+.revenge-target__center {
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+    background-color: var(--red);
+}
+
+.car-name--enter .car-name__sticker {
+    scale: 0.2 0.2;
+    opacity: 0;
+}
+
+.car-name--pulse .car-name__sticker {
+    scale: 1.15 1.15;
+    transition-duration: 0.12s;
+}
+
+.car-name--leave .car-name__sticker {
+    scale: 0 0;
+    opacity: 0;
+    transition-duration: 0.4s;
+    transition-timing-function: ease-in;
+}
+
 /* The joystick under a steering finger (HudView places and sizes both parts from the driver's joystick): a pale
    see-through disc with a navy outline where the finger came down, and on it a white knob sticker with its navy drop
    under the finger. They spring in as the finger starts to steer and shrink away as it lets go. The layer covers the
@@ -709,14 +801,33 @@
 }
 
 /* The boost button, on a touch screen only (HudView shows it once the screen is one): a round white sticker at the
-   bottom right, under the right thumb, while the left one steers. The charge is an orange disc in it that grows from
+   bottom right by default, opposite each new steering touch. Its slot shrinks before switching sides so the ready
+   pop and pressed motion can stay on the button itself. The charge is an orange disc in it that grows from
    the middle as the boost cools down (HudView scales it); once it fills the button, the button turns orange, its label
    white with a navy stroke, and it pops (hud__boost--pop for a moment). Pressed, it sinks onto its drop. */
-.hud__boost {
-    display: none;
+.hud__boost-slot {
     position: absolute;
     right: 64px;
     bottom: 96px;
+    width: 300px;
+    height: 300px;
+    transition-property: scale, opacity;
+    transition-duration: 0.12s;
+    transition-timing-function: ease-out;
+}
+
+.hud__boost-slot--left {
+    left: 64px;
+    right: auto;
+}
+
+.hud__boost-slot--moving {
+    scale: 0 0;
+    opacity: 0;
+}
+
+.hud__boost {
+    display: none;
     width: 300px;
     height: 300px;
     align-items: center;
@@ -772,19 +883,24 @@
     transition-duration: 0.05s;
 }
 
+.hud__boost--hint-pulse {
+    scale: 1.08 1.08;
+    transition-duration: 0.3s;
+}
+
 .hud__boost--pressed {
     translate: 0 11px;
     transition-duration: 0.05s;
 }
 
 /* The start prompt of a visit's first round, while the cars wait for the player's first steer or boost (HudView shows
-   it): TAP TO START or CLICK TO START, outlined, and under it a dark plate with how to drive: a joystick, DRAG TO
-   DRIVE, an orange dot like the boost button and BOOST on a touch screen (hud__start--touch), a mouse, HOLD TO DRIVE,
+   it): TAP TO START or CLICK TO START, outlined, and under it a dark plate: an orange dot and TAP TO BOOST on a touch
+   screen (the full joystick demonstration sits separately in the thumb area), a mouse, HOLD TO DRIVE,
    the SPACE key and BOOST on a desktop (hud__start--desktop). Nothing dims the arena: the player's car and the HUD
    stay as in play. On a narrow screen it sits in the sky under the HUD, over the arena's far edge; on a wide one
    (hud__start--wide) inside the ring of cars, between the far bots and the player's car. It springs in once the curtain
-   is up (hud__start--enter, taken off once it is laid out), bobs (hud__start--bob, toggled by HudView, the knob and
-   the mouse swinging with it), and flashes away as the round begins (hud__start--leave). */
+   is up (hud__start--enter, taken off once it is laid out), bobs (hud__start--bob, toggled by HudView, with the mouse
+   swinging with it), and flashes away as the round begins (hud__start--leave). */
 .hud__start {
     display: none;
     position: absolute;
@@ -894,39 +1010,109 @@
 .hud__start-boost-dot {
     width: 56px;
     height: 56px;
-    margin-left: 44px;
+    margin-left: 0;
     border-width: 6px;
     border-color: var(--white);
     border-radius: 28px;
     background-color: var(--orange);
 }
 
-/* The joystick: a white ring with its knob swinging side to side as the prompt bobs. */
-.hud__start-stick {
+/* First-round touch teaching. HudView places the ghost in the lower third, animates its opacity/scale and draws the
+   disc and knob with the real joystick's classes. Only the capsule finger and captions are extra, all non-picking.
+   The joystick wrapper is translucent; the finger and caption stay opaque once the whole demonstration is shown. */
+.hud__ghost {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    scale: 0 0;
+}
+
+.hud__ghost-stick {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+}
+
+.hud__ghost-finger {
+    position: absolute;
+    border-radius: 999px;
+    border-width: 7px;
+    border-bottom-width: 14px;
+    border-color: var(--navy);
+    background-color: var(--white);
+    transform-origin: 50% 0%;
+}
+
+.hud__ghost-caption {
+    position: absolute;
+    left: -320px;
+    top: -266px;
+    width: 640px;
+    align-items: center;
+}
+
+.hud__teaching-text {
+    margin: 0;
+    padding: 0 0 8px 0;
+    font-size: 66px;
+    color: var(--white);
+    -unity-text-outline-width: 12px;
+    -unity-text-outline-color: var(--navy);
+    text-shadow: 0 8px 0 rgb(29, 43, 79);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.hud__tap-hint {
+    position: absolute;
+    width: 560px;
+    align-items: center;
+    opacity: 0;
+    scale: 0 0;
+}
+
+/* Lives inside the moving boost slot, so TAP! and its arrow always follow T5's chosen side. The arrow is two outlined
+   chevrons, with no image or font glyph. Scale is on the teaching sticker, independent of the button's ready pop. */
+.hud__boost-hint {
+    position: absolute;
+    left: 0;
+    top: -240px;
+    width: 300px;
+    height: 220px;
+    align-items: center;
+    opacity: 0;
+    scale: 0 0;
+}
+
+.hud__boost-hint-label {
+    padding: 4px 28px;
+    background-color: var(--orange);
+}
+
+.hud__boost-hint-arrow {
+    position: absolute;
+    left: 114px;
+    top: 120px;
     width: 72px;
     height: 72px;
-    border-width: 6px;
-    border-color: var(--white);
-    border-radius: 36px;
-    background-color: rgba(255, 255, 255, 0.18);
+    border-right-width: 16px;
+    border-bottom-width: 16px;
+    border-color: var(--navy);
+    rotate: 45deg;
 }
 
-.hud__start-stick-knob {
+.hud__boost-hint-arrow-fill {
     position: absolute;
-    left: 15px;
-    top: 15px;
-    width: 30px;
-    height: 30px;
-    border-radius: 15px;
-    background-color: var(--white);
-    translate: -16px 0;
-    transition-property: translate;
-    transition-duration: 0.6s;
-    transition-timing-function: ease-in-out;
-}
-
-.hud__start--bob .hud__start-stick-knob {
-    translate: 16px 0;
+    left: 8px;
+    top: 8px;
+    width: 56px;
+    height: 56px;
+    border-right-width: 8px;
+    border-bottom-width: 8px;
+    border-color: var(--orange);
 }
 
 /* The mouse: a white outline with its left button orange, swaying as the prompt bobs. */
@@ -1042,7 +1228,7 @@
     white-space: nowrap;
 }
 
-/* After a fall with a car to blame, the subtitle is PUSHED OFF BY and that car in its colour on a white badge. */
+/* After a fall with a car to blame: PUSHED OFF BY, that car in its colour on a white badge, and its visit handle. */
 .round-over__by {
     display: none;
     flex-shrink: 0;
@@ -1057,6 +1243,20 @@
 
 .round-over__by-text {
     margin: 0;
+    font-size: 44px;
+    letter-spacing: 1px;
+}
+
+.round-over__by-name {
+    margin-left: 18px;
+}
+
+.round-over__by-name-text {
+    margin: 0;
+    padding: 0;
+    font-size: 48px;
+    -unity-text-outline-width: 7px;
+    text-shadow: none;
 }
 
 .round-over__by-badge {
@@ -1079,6 +1279,25 @@
     transition-duration: 0.3s;
     transition-timing-function: ease-out;
     transition-delay: 0.05s;
+}
+
+/* On the card's top corner, clear of both record chips in its rows. Shares NEW BEST!'s delayed entrance. */
+.round-over__revenge {
+    position: absolute;
+    right: 12px;
+    top: -30px;
+    background-color: var(--red);
+    color: var(--white);
+    rotate: 5deg;
+}
+
+.round-over__revenge--enter {
+    scale: 0 0;
+}
+
+/* NEW BEST! starts at 0.35s after the card enters; REVENGE follows it when both were earned. */
+.round-over__revenge--second {
+    transition-delay: 0.55s;
 }
 
 .round-over__place {

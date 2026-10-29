@@ -22,12 +22,17 @@ namespace ToyCarArena.App
     /// <item>first round only: <c>controls / keyboard, mouse, touch, gamepad, none / input</c>, what the player first
     /// steered with, and <c>controls / move-0-3, move-3-10, move-10plus, never / first-move</c>, seconds from the cars
     /// standing on the arena to it (the round waits for the player's first steer or boost, so mostly the wait)</item>
+    /// <item>since v0.2.0, first round only: <c>controls / boost-button, tap, finger, key, mouse, gamepad, none /
+    /// boost-input</c>, how the first successful boost was fired</item>
     /// <item><c>result / 0-15 … 60-75 / time</c>: seconds on the arena, in buckets of 15</item>
     /// <item>by round, R as above, since the time and the cause of a fall differ most between the first round and the
     /// later ones: <c>result / cars-N-rR / cars</c>, the cars in the round (the difficulty brings fewer early on, so a
     /// place reads against it), <c>result / early, mid, late, full-rR / round-time</c>, seconds on the arena (under 15,
     /// under 30, under 60, 60 and more; no more numbers fit), and <c>result / pushed, fell-rR / round-out-cause</c></item>
+    /// <item>since v0.2.0: <c>result / fell-ring, boost, slide, drive-rR / fall-cause</c> when the player falls without
+    /// knockout credit: the floor gave way, a recent boost, an older hit, or driving off, in that order</item>
     /// <item><c>result / play-again / visible</c>, then <c>interact</c> when pressed</item>
+    /// <item>since v0.2.0, only with a marked rival present: <c>result / revenge-got, missed-rR / revenge</c></item>
     /// </list>
     /// </summary>
     public static class RoundEvents
@@ -75,10 +80,18 @@ namespace ToyCarArena.App
             platform.Measure(ResultCategory, TimeBucketOf(result.Seconds, duration), "time");
             platform.Measure(ResultCategory, $"cars-{result.CarCount}-{tag}", "cars");
             platform.Measure(ResultCategory, $"{TimeSpanOf(result.Seconds)}-{tag}", "round-time");
+            if (result.HadNemesis) {
+                var revenge = result.RevengeTaken ? "got" : "missed";
+                platform.Measure(ResultCategory, $"revenge-{revenge}-{tag}", "revenge");
+            }
             if (result.Outcome == RoundOutcome.Out) {
                 var cause = result.KnockedOutBy == RoundResult.Nobody ? "fell" : "pushed";
                 platform.Measure(ResultCategory, cause, "out-cause");
                 platform.Measure(ResultCategory, $"{cause}-{tag}", "round-out-cause");
+                if (result.KnockedOutBy == RoundResult.Nobody) {
+                    var fallCause = GameEvent.Clean(result.FallCause.ToString());
+                    platform.Measure(ResultCategory, $"fell-{fallCause}-{tag}", "fall-cause");
+                }
             }
 
             platform.Measure(ResultCategory, BoostBucketOf(driver.Boosts), "boosts");
@@ -94,6 +107,10 @@ namespace ToyCarArena.App
         {
             var input = driver.FirstInput;
             platform.Measure(ControlsCategory, input == null ? "none" : GameEvent.Clean(input.Value.ToString()), "input");
+
+            var boost = driver.FirstBoostInput;
+            var boostInput = boost == null ? "none" : GameEvent.Clean(boost.Value.ToString());
+            platform.Measure(ControlsCategory, $"boost-{boostInput}", "boost-input");
 
             var seconds = driver.FirstMoveTime;
             var move = seconds < 0f ? "never" : seconds < 3f ? "move-0-3" : seconds < 10f ? "move-3-10" : "move-10plus";

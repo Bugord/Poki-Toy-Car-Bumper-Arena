@@ -19,7 +19,8 @@ namespace ToyCarArena.Gameplay.Round
     /// A car that falls within <see cref="GameTuning.RoundSettings.KnockoutCreditWindow"/> of another car driving into
     /// it was knocked out by that car (<see cref="KnockedOut"/>): the brief's "I pushed him off", which the HUD, the
     /// result screen and the player's best count. A car that drove off on its own, or slid off long after a hit, was
-    /// knocked out by nobody.
+    /// knocked out by nobody. Player hits use <see cref="RoundDifficulty.PlayerKnockoutWindow"/>, so their credit can
+    /// be more forgiving without changing which bot knocked the player out.
     /// </para>
     /// </summary>
     public sealed class ArenaRound : ITickable
@@ -47,12 +48,15 @@ namespace ToyCarArena.Gameplay.Round
         private readonly Transform carParent;
         private readonly ArenaFloor floor;
         private readonly RoundDifficulty difficulty;
+        private readonly ISessionRoster roster;
+        private readonly int nemesisIndex;
         private readonly List<Car> cars = new();
 
         private float elapsed;
+        private FallCause playerFallCause;
 
         public ArenaRound(GameTuning tuning, IObjectResolver resolver, Car carPrefab, Transform carParent, ArenaFloor floor,
-            RoundDifficulty difficulty)
+            RoundDifficulty difficulty, ISessionProgress progress, ISessionRoster roster)
         {
             this.tuning = tuning;
             this.resolver = resolver;
@@ -60,6 +64,8 @@ namespace ToyCarArena.Gameplay.Round
             this.carParent = carParent;
             this.floor = floor;
             this.difficulty = difficulty;
+            this.roster = roster;
+            this.nemesisIndex = progress.Nemesis;
         }
 
         public IReadOnlyList<Car> Cars => cars;
@@ -68,6 +74,13 @@ namespace ToyCarArena.Gameplay.Round
         /// The player's car, null before the cars are placed.
         /// </summary>
         public Car Player { get; private set; }
+
+        /// <summary>
+        /// This round's marked rival, null if its colour is absent. Kept after a knockout so the HUD can name it.
+        /// </summary>
+        public Car Nemesis { get; private set; }
+
+        public bool RevengeTaken { get; private set; }
 
         /// <summary>
         /// The cars are on the arena (<see cref="Place"/>), whether the round has begun or not.
@@ -97,6 +110,11 @@ namespace ToyCarArena.Gameplay.Round
         public float Elapsed => elapsed;
 
         public int CarsLeft { get; private set; }
+
+        /// <summary>
+        /// Only the player and one bot remain: the final fight can be gentler without changing the earlier crowd.
+        /// </summary>
+        public bool IsDuel => Player != null && !Player.IsOut && CarsLeft == 2;
 
         /// <summary>
         /// Cars the player has knocked out this round.
@@ -129,6 +147,7 @@ namespace ToyCarArena.Gameplay.Round
             IsPlaced = true;
             Spawn(1 + difficulty.BotCount);
             Player = cars[0];
+            Nemesis = nemesisIndex > 0 && nemesisIndex < cars.Count ? cars[nemesisIndex] : null;
             CarsLeft = cars.Count;
         }
 
@@ -160,6 +179,10 @@ namespace ToyCarArena.Gameplay.Round
             foreach (var car in cars) {
                 if (!car.IsOut && car.Position.y < tuning.Round.FallHeight) {
                     var knockedOutBy = FindKnocker(car);
+                    if (car == Player && knockedOutBy == null) {
+                        playerFallCause = FindFallCause(car);
+                    }
+
                     car.TakeOut();
                     CarsLeft--;
                     CarOut?.Invoke(car);
@@ -167,6 +190,9 @@ namespace ToyCarArena.Gameplay.Round
                     if (knockedOutBy != null) {
                         if (knockedOutBy == Player) {
                             PlayerKnockouts++;
+                            if (car == Nemesis) {
+                                RevengeTaken = true;
+                            }
                         }
 
                         if (car == Player) {
@@ -205,7 +231,30 @@ namespace ToyCarArena.Gameplay.Round
             IsRunning = false;
             IsFinished = true;
             var knockedOutBy = PlayerKnockedOutBy != null ? IndexOf(PlayerKnockedOutBy) : RoundResult.Nobody;
-            Finished?.Invoke(new RoundResult(outcome, place, cars.Count, elapsed, PlayerKnockouts, knockedOutBy));
+            Finished?.Invoke(new RoundResult(outcome, place, cars.Count, elapsed, PlayerKnockouts, knockedOutBy,
+                playerFallCause, Nemesis != null, RevengeTaken));
+        }
+
+        /// <summary>
+        /// Explains a fall without knockout credit at the moment the car is taken out, before later events can change
+        /// its history. A ring giving way wins over a boost, which wins over sliding after an old hit.
+        /// </summary>
+        private FallCause FindFallCause(Car car)
+        {
+            var now = Time.time;
+            if (now - car.LastRingFallTime <= tuning.Round.RingFallWindow) {
+                return FallCause.Ring;
+            }
+
+            if (now - car.Movement.LastBoostTime <= tuning.Round.BoostFallWindow) {
+                return FallCause.Boost;
+            }
+
+            if (car.LastHitBy != null && car.LastHitBy != car && now - car.LastHitTime <= tuning.Round.SlideWindow) {
+                return FallCause.Slide;
+            }
+
+            return FallCause.Drive;
         }
 
         /// <summary>
@@ -219,7 +268,8 @@ namespace ToyCarArena.Gameplay.Round
                 return null;
             }
 
-            return Time.time - car.LastHitTime <= tuning.Round.KnockoutCreditWindow ? hitBy : null;
+            var window = hitBy.IsPlayer ? difficulty.PlayerKnockoutWindow : tuning.Round.KnockoutCreditWindow;
+            return Time.time - car.LastHitTime <= window ? hitBy : null;
         }
 
         /// <summary>
@@ -240,7 +290,7 @@ namespace ToyCarArena.Gameplay.Round
                 // The interpolated Rigidbody wakes up where the prefab was made, at the origin, and puts the transform
                 // back there; placing the body itself keeps the cars apart.
                 car.Movement.Place(position, rotation);
-                car.name = i == 0 ? "Player Car" : $"Bot Car {i}";
+                car.name = roster.NameOf(i);
                 car.IsPlayer = i == 0;
                 car.GetComponent<CarLook>().Apply(i);
                 cars.Add(car);

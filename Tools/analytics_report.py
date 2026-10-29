@@ -60,9 +60,12 @@ def summarise(data):
         "rounds": rounds(p),
         "outcome": other(o, r"result-(won|out|survived)-outcome"),
         "cause": other(o, r"result-(pushed|fell)-out-cause"),
+        "fall_cause": other(o, r"result-(fell-[a-z]+-r[0-9a-z]+)-fall-cause"),
+        "revenge": other(o, r"result-(revenge-[a-z]+-r[0-9a-z]+)-revenge"),
         "time": other(o, r"result-(\d+-\d+)-time"),
         "boosts": other(o, r"result-(boosts-[a-z0-9-]+?)-boosts"),
         "input": other(o, r"controls-([a-z]+)-input"),
+        "boost_input": other(o, r"controls-boost-(button|tap|finger|key|mouse|gamepad|none)-boost-input"),
         "first_move": other(o, r"controls-(move-[a-z0-9-]+|never)-first-move"),
         "place1": other(o, r"result-place-(\d+)-r1-place"),
         "ko1": other(o, r"result-knockouts-(\d+)-r1-knockouts"),
@@ -139,11 +142,14 @@ def report(version, previous):
         ("Время на арене", "time", sorted(keys_of("time"), key=lambda k: int(k.split("-")[0]))),
         ("Ускорения", "boosts", None),
         ("Чем рулили впервые", "input", None),
+        ("Чем впервые ускорились (с v0.2.0)", "boost_input", None),
         ("Первое движение, с после старта", "first_move", None),
         ("Место в 1-м раунде", "place1", sorted(keys_of("place1"), key=int)),
         ("Нокауты игрока в 1-м раунде", "ko1", sorted(keys_of("ko1"), key=int)),
         ("Машинок в раунде (с v0.2)", "cars", None),
         ("Длительность раунда (с v0.2)", "round_time", None),
+        ("Причина самовылета (с v0.2.0)", "fall_cause", None),
+        ("REVENGE (с v0.2.0)", "revenge", None),
     ):
         keys = order if order is not None else keys_of(key)
         if keys:

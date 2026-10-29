@@ -98,12 +98,6 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float maxBumpSpeed = 18f;
 
-            [Tooltip("How much harder the player's hits push than a bot's, so the player's shove is the one that " +
-                "sends cars flying and the knock-outs read as the player's")]
-            [Min(0f)]
-            [SerializeField]
-            private float playerBumpMultiplier = 1.3f;
-
             [Tooltip("Seconds a car is knocked off balance by a hit at full speed (shorter for a slower hit, no longer " +
                 "for a boosted one): it lets go of the throttle and its grip drops, so the push carries it instead of " +
                 "dying down at once and the hit car cannot drive straight back; a boost ends it")]
@@ -116,12 +110,6 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float staggerGrip = 0.2f;
 
-            [Tooltip("Share of the time off balance the player's car gets, so a hit on the player still pushes it but " +
-                "takes the controls away only briefly")]
-            [Range(0f, 1f)]
-            [SerializeField]
-            private float playerStaggerScale = 0.4f;
-
             public float MaxSpeed => maxSpeed;
             public float Acceleration => acceleration;
             public float Braking => braking;
@@ -132,10 +120,8 @@ namespace ToyCarArena.Gameplay
             public float Grip => grip;
             public float BumpForce => bumpForce;
             public float MaxBumpSpeed => maxBumpSpeed;
-            public float PlayerBumpMultiplier => playerBumpMultiplier;
             public float HitStagger => hitStagger;
             public float StaggerGrip => staggerGrip;
-            public float PlayerStaggerScale => playerStaggerScale;
         }
 
         /// <summary>
@@ -160,6 +146,38 @@ namespace ToyCarArena.Gameplay
             [Range(0f, 0.9f)]
             [SerializeField]
             private float joystickDeadZone = 0.2f;
+
+            [Tooltip("A steering touch released within this many seconds can boost, if it stayed within Tap Boost Slop")]
+            [Min(0f)]
+            [SerializeField]
+            private float tapBoostTime = 0.2f;
+
+            [Tooltip("Maximum distance from the touch's start for a tap boost, as a share of the screen's shorter side; " +
+                "moving out and back still counts as steering")]
+            [Range(0f, 0.5f)]
+            [SerializeField]
+            private float tapBoostSlop = 0.03f;
+
+            [Tooltip("Seconds a tap boost remembers the last nonzero steering direction after the finger lets go; " +
+                "afterwards it boosts along the car's nose")]
+            [Min(0f)]
+            [SerializeField]
+            private float tapBoostMemory = 0.5f;
+
+            [Tooltip("Seconds without steering in the visit's first round before the touch joystick reminder returns")]
+            [Min(0f)]
+            [SerializeField]
+            private float idleHintDelay = 3f;
+
+            [Tooltip("Maximum joystick reminders during the visit's first round, excluding the start demonstration")]
+            [Min(0)]
+            [SerializeField]
+            private int idleHintMax = 2;
+
+            [Tooltip("Distance to another car, centre to centre in metres, within which to suggest the first boost")]
+            [Min(0f)]
+            [SerializeField]
+            private float boostHintDistance = 6f;
 
             [Tooltip("Following the mouse or a finger, the car stops this close to it, in metres")]
             [Min(0f)]
@@ -187,6 +205,12 @@ namespace ToyCarArena.Gameplay
             public TouchSteering TouchSteering => touchSteering;
             public float JoystickRadius => joystickRadius;
             public float JoystickDeadZone => joystickDeadZone;
+            public float TapBoostTime => tapBoostTime;
+            public float TapBoostSlop => tapBoostSlop;
+            public float TapBoostMemory => tapBoostMemory;
+            public float IdleHintDelay => idleHintDelay;
+            public int IdleHintMax => idleHintMax;
+            public float BoostHintDistance => boostHintDistance;
             public float PointerStopRadius => pointerStopRadius;
             public float PointerSlowRadius => pointerSlowRadius;
             public float EdgeAssistMargin => edgeAssistMargin;
@@ -344,13 +368,17 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private DifficultySettings easy = new(bots: 3, playerPace: 0.6f, playerWeight: -0.6f, playerGrace: 10f,
                 maxPlayerHunters: 1, reactionTime: new Vector2(0.4f, 0.6f), aimError: 15f,
-                boostDelay: new Vector2(1.2f, 2.5f), escapeBoostChance: 0.3f, edgeAssist: 1f);
+                boostDelay: new Vector2(1.2f, 2.5f), escapeBoostChance: 0.3f, edgeAssist: 1f,
+                playerBump: 1.3f, playerStaggerScale: 0.4f, staggerFromPlayer: 1f, playerKnockoutWindow: 2.5f,
+                duelPace: 0.6f, duelEscapeBoostChance: 0.3f);
 
             [Tooltip("Where the difficulty settles after the ramp")]
             [SerializeField]
             private DifficultySettings normal = new(bots: 6, playerPace: 1f, playerWeight: 0.05f, playerGrace: 2f,
                 maxPlayerHunters: 2, reactionTime: new Vector2(0.12f, 0.2f), aimError: 3f,
-                boostDelay: new Vector2(0.3f, 1.2f), escapeBoostChance: 0.5f, edgeAssist: 0.3f);
+                boostDelay: new Vector2(0.3f, 1.2f), escapeBoostChance: 0.5f, edgeAssist: 0.3f,
+                playerBump: 1.3f, playerStaggerScale: 0.4f, staggerFromPlayer: 1f, playerKnockoutWindow: 2.5f,
+                duelPace: 1f, duelEscapeBoostChance: 0.5f);
 
             [Tooltip("Rounds from easy to normal: round 1 is easy, round 1 + this is normal, the ones between blend")]
             [Min(0)]
@@ -449,9 +477,10 @@ namespace ToyCarArena.Gameplay
         /// <summary>
         /// How hard a round is at one end of the difficulty ramp. Only what the player feels changes: how many bots
         /// there are, how fast and how often they come for the player's car, how quickly they see a dodge, how well they
-        /// aim, how readily they boost, and how much the player's car is kept from driving off the edge. Staying on the
-        /// arena never gets slower for the bots, or they would fall off on their own and the rounds swing wildly; and
-        /// the bots fight each other at full pace, so the arena stays busy.
+        /// aim, how readily they boost, how the player's hits carry cars off and earn knockouts, and how much the
+        /// player's car is kept from driving off the edge. Staying on the arena never gets slower for the bots, or they
+        /// would fall off on their own and the rounds swing wildly; and the bots fight each other at full pace, so the
+        /// arena stays busy.
         /// </summary>
         [Serializable]
         public sealed class DifficultySettings
@@ -514,13 +543,50 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float edgeAssist;
 
+            [Tooltip("How much harder the player's hits push than a bot's, so the player's shove is the one that " +
+                "sends cars flying and the knock-outs read as the player's")]
+            [Min(0f)]
+            [SerializeField]
+            private float playerBump = 1.3f;
+
+            [Tooltip("Share of the time off balance the player's car gets, so a hit on the player still pushes it but " +
+                "takes the controls away only briefly")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float playerStaggerScale = 0.4f;
+
+            [Tooltip("Times the time off balance after all other hit multipliers when the player drives into a car, " +
+                "up to the car's hit stagger times this; longer lets the player's shove carry the car further")]
+            [Min(0f)]
+            [SerializeField]
+            private float staggerFromPlayer = 1f;
+
+            [Tooltip("Seconds after the player's last hit during which a falling car counts as the player's knockout; " +
+                "bot hits keep the round's knockout credit window")]
+            [Min(0f)]
+            [SerializeField]
+            private float playerKnockoutWindow = 2.5f;
+
+            [Tooltip("Throttle the last bot drives at the player with when only those two cars remain; replaces " +
+                "player pace so the final duel can be gentler without slowing earlier fights")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float duelPace = 1f;
+
+            [Tooltip("Chance the last bot boosts back from the edge when only it and the player remain; replaces " +
+                "escape boost chance, still times the personality's escape boost, rolled once each escape")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float duelEscapeBoostChance = 0.5f;
+
             public DifficultySettings()
             {
             }
 
             public DifficultySettings(int bots, float playerPace, float playerWeight, float playerGrace,
                 int maxPlayerHunters, Vector2 reactionTime, float aimError, Vector2 boostDelay, float escapeBoostChance,
-                float edgeAssist)
+                float edgeAssist, float playerBump, float playerStaggerScale, float staggerFromPlayer,
+                float playerKnockoutWindow, float duelPace, float duelEscapeBoostChance)
             {
                 this.bots = bots;
                 this.playerPace = playerPace;
@@ -532,6 +598,12 @@ namespace ToyCarArena.Gameplay
                 this.boostDelay = boostDelay;
                 this.escapeBoostChance = escapeBoostChance;
                 this.edgeAssist = edgeAssist;
+                this.playerBump = playerBump;
+                this.playerStaggerScale = playerStaggerScale;
+                this.staggerFromPlayer = staggerFromPlayer;
+                this.playerKnockoutWindow = playerKnockoutWindow;
+                this.duelPace = duelPace;
+                this.duelEscapeBoostChance = duelEscapeBoostChance;
             }
 
             public int Bots => bots;
@@ -544,6 +616,12 @@ namespace ToyCarArena.Gameplay
             public Vector2 BoostDelay => boostDelay;
             public float EscapeBoostChance => escapeBoostChance;
             public float EdgeAssist => edgeAssist;
+            public float PlayerBump => playerBump;
+            public float PlayerStaggerScale => playerStaggerScale;
+            public float StaggerFromPlayer => staggerFromPlayer;
+            public float PlayerKnockoutWindow => playerKnockoutWindow;
+            public float DuelPace => duelPace;
+            public float DuelEscapeBoostChance => duelEscapeBoostChance;
         }
 
         /// <summary>
@@ -644,6 +722,24 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float knockoutCreditWindow = 2.5f;
 
+            [Tooltip("Seconds after the floor ring under the player falls away that a fall without knockout credit " +
+                "is attributed to that ring")]
+            [Min(0f)]
+            [SerializeField]
+            private float ringFallWindow = 2f;
+
+            [Tooltip("Seconds after a successful boost that a fall without knockout credit or a recent ring fall " +
+                "is attributed to the boost")]
+            [Min(0f)]
+            [SerializeField]
+            private float boostFallWindow = 1f;
+
+            [Tooltip("Seconds after another car's hit that a fall without knockout credit, a recent ring fall or " +
+                "a boost is attributed to sliding after the hit")]
+            [Min(0f)]
+            [SerializeField]
+            private float slideWindow = 6f;
+
             [Tooltip("A car below this height, in metres, is out")]
             [SerializeField]
             private float fallHeight = -3f;
@@ -656,6 +752,9 @@ namespace ToyCarArena.Gameplay
             public float ResultDelay => resultDelay;
             public float OutResultDelay => outResultDelay;
             public float KnockoutCreditWindow => knockoutCreditWindow;
+            public float RingFallWindow => ringFallWindow;
+            public float BoostFallWindow => boostFallWindow;
+            public float SlideWindow => slideWindow;
             public float FallHeight => fallHeight;
             public float RemoveHeight => removeHeight;
         }
