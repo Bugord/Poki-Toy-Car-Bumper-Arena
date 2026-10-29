@@ -22,6 +22,8 @@ namespace ToyCarArena.App
     /// <item>first round only: <c>controls / keyboard, mouse, touch, gamepad, none / input</c>, what the player first
     /// steered with, and <c>controls / move-0-3, move-3-10, move-10plus, never / first-move</c>, seconds from the cars
     /// standing on the arena to it (the round waits for the player's first steer or boost, so mostly the wait)</item>
+    /// <item>since v0.2.0, first round only: <c>controls / boost-button, tap, finger, key, mouse, gamepad, none /
+    /// boost-input</c>, how the first successful boost was fired</item>
     /// <item><c>result / 0-15 … 60-75 / time</c>: seconds on the arena, in buckets of 15</item>
     /// <item>by round, R as above, since the time and the cause of a fall differ most between the first round and the
     /// later ones: <c>result / cars-N-rR / cars</c>, the cars in the round (the difficulty brings fewer early on, so a
@@ -105,6 +107,10 @@ namespace ToyCarArena.App
         {
             var input = driver.FirstInput;
             platform.Measure(ControlsCategory, input == null ? "none" : GameEvent.Clean(input.Value.ToString()), "input");
+
+            var boost = driver.FirstBoostInput;
+            var boostInput = boost == null ? "none" : GameEvent.Clean(boost.Value.ToString());
+            platform.Measure(ControlsCategory, $"boost-{boostInput}", "boost-input");
 
             var seconds = driver.FirstMoveTime;
             var move = seconds < 0f ? "never" : seconds < 3f ? "move-0-3" : seconds < 10f ? "move-3-10" : "move-10plus";

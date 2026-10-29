@@ -30,6 +30,9 @@ namespace ToyCarArena.UI
         private const string BoostReadyClass = "hud__boost--ready";
         private const string BoostPopClass = "hud__boost--pop";
         private const string BoostPressedClass = "hud__boost--pressed";
+        private const string BoostLeftClass = "hud__boost-slot--left";
+        private const string BoostMovingClass = "hud__boost-slot--moving";
+        private const long BoostMoveDuration = 120;
         private const string KnockoutShownClass = "hud__ko--shown";
         private const string KnockoutPopClass = "hud__ko--pop";
         private const string StartShownClass = "hud__start--shown";
@@ -105,7 +108,10 @@ namespace ToyCarArena.UI
         private int shownSeconds = -1;
         private int shownCarsLeft = -1;
         private VisualElement boostButton;
+        private VisualElement boostSlot;
         private VisualElement boostCharge;
+        private bool isBoostOnLeft;
+        private bool isBoostMoving;
         private bool isBoostShown;
         private bool isBoostShownReady;
         private VisualElement knockoutBadge;
@@ -153,6 +159,7 @@ namespace ToyCarArena.UI
             chipRow = Root.Q<VisualElement>("chips");
             carsLeftLabel = Root.Q<Label>("cars-left");
             boostButton = Root.Q<VisualElement>("boost-button");
+            boostSlot = Root.Q<VisualElement>("boost-slot");
             boostCharge = Root.Q<VisualElement>("boost-charge");
             knockoutBadge = Root.Q<VisualElement>("ko-badge");
             knockoutLabel = Root.Q<Label>("ko");
@@ -617,6 +624,18 @@ namespace ToyCarArena.UI
                 boostButton.AddToClassList(BoostShownClass);
             }
 
+            if (!isBoostMoving && isBoostOnLeft != controls.IsBoostOnLeft) {
+                isBoostMoving = true;
+                boostSlot.AddToClassList(BoostMovingClass);
+                boostSlot.schedule.Execute(() => {
+                    // Use the latest drag's choice if another finger started steering while the button shrank.
+                    isBoostOnLeft = controls.IsBoostOnLeft;
+                    boostSlot.EnableInClassList(BoostLeftClass, isBoostOnLeft);
+                    boostSlot.RemoveFromClassList(BoostMovingClass);
+                    isBoostMoving = false;
+                }).StartingIn(BoostMoveDuration);
+            }
+
             var readiness = ViewModel.BoostReadiness;
             boostCharge.style.scale = new Scale(new Vector3(readiness, readiness, 1f));
 
@@ -676,7 +695,11 @@ namespace ToyCarArena.UI
         private void OnBoostPointerDown(PointerDownEvent evt)
         {
             evt.StopPropagation();
-            controls.PressBoost();
+            // Enhanced Touch owns touch presses, including the button, so the UI must not send the same boost twice.
+            if (evt.pointerType != UnityEngine.UIElements.PointerType.touch) {
+                controls.PressBoost();
+            }
+
             Pulse(boostButton, BoostPressedClass);
         }
 

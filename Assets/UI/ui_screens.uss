@@ -801,14 +801,33 @@
 }
 
 /* The boost button, on a touch screen only (HudView shows it once the screen is one): a round white sticker at the
-   bottom right, under the right thumb, while the left one steers. The charge is an orange disc in it that grows from
+   bottom right by default, opposite each new steering touch. Its slot shrinks before switching sides so the ready
+   pop and pressed motion can stay on the button itself. The charge is an orange disc in it that grows from
    the middle as the boost cools down (HudView scales it); once it fills the button, the button turns orange, its label
    white with a navy stroke, and it pops (hud__boost--pop for a moment). Pressed, it sinks onto its drop. */
-.hud__boost {
-    display: none;
+.hud__boost-slot {
     position: absolute;
     right: 64px;
     bottom: 96px;
+    width: 300px;
+    height: 300px;
+    transition-property: scale, opacity;
+    transition-duration: 0.12s;
+    transition-timing-function: ease-out;
+}
+
+.hud__boost-slot--left {
+    left: 64px;
+    right: auto;
+}
+
+.hud__boost-slot--moving {
+    scale: 0 0;
+    opacity: 0;
+}
+
+.hud__boost {
+    display: none;
     width: 300px;
     height: 300px;
     align-items: center;

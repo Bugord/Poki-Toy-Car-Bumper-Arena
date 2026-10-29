@@ -29,6 +29,9 @@ MonoBehaviour:
     touchSteering: 0
     joystickRadius: 0.1
     joystickDeadZone: 0.2
+    tapBoostTime: 0.2
+    tapBoostSlop: 0.03
+    tapBoostMemory: 0.5
     pointerStopRadius: 1
     pointerSlowRadius: 4
     edgeAssistMargin: 5

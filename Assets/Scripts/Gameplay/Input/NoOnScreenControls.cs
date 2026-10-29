@@ -25,6 +25,10 @@ namespace ToyCarArena.Gameplay.Input
         {
         }
 
+        public void BeginTouchSteering(Vector2 screenPosition)
+        {
+        }
+
         public void HideJoystick()
         {
         }

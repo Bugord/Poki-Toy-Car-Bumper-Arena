@@ -10,7 +10,7 @@ namespace ToyCarArena.Tests.PlayMode
     public sealed class SimulationInput : IInputService
     {
         public event Action<InputMethod> MoveUsed;
-        public event Action BoostPressed;
+        public event Action<BoostInputMethod> BoostPressed;
 
         public Vector2 CurrentMoveInput { get; private set; }
 
@@ -30,7 +30,11 @@ namespace ToyCarArena.Tests.PlayMode
 
         public void PressBoost()
         {
-            BoostPressed?.Invoke();
+            BoostPressed?.Invoke(BoostInputMethod.Key);
+        }
+
+        public void CancelTapBoost()
+        {
         }
     }
 }

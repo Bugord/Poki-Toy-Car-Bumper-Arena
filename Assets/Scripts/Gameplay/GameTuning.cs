@@ -147,6 +147,23 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float joystickDeadZone = 0.2f;
 
+            [Tooltip("A steering touch released within this many seconds can boost, if it stayed within Tap Boost Slop")]
+            [Min(0f)]
+            [SerializeField]
+            private float tapBoostTime = 0.2f;
+
+            [Tooltip("Maximum distance from the touch's start for a tap boost, as a share of the screen's shorter side; " +
+                "moving out and back still counts as steering")]
+            [Range(0f, 0.5f)]
+            [SerializeField]
+            private float tapBoostSlop = 0.03f;
+
+            [Tooltip("Seconds a tap boost remembers the last nonzero steering direction after the finger lets go; " +
+                "afterwards it boosts along the car's nose")]
+            [Min(0f)]
+            [SerializeField]
+            private float tapBoostMemory = 0.5f;
+
             [Tooltip("Following the mouse or a finger, the car stops this close to it, in metres")]
             [Min(0f)]
             [SerializeField]
@@ -173,6 +190,9 @@ namespace ToyCarArena.Gameplay
             public TouchSteering TouchSteering => touchSteering;
             public float JoystickRadius => joystickRadius;
             public float JoystickDeadZone => joystickDeadZone;
+            public float TapBoostTime => tapBoostTime;
+            public float TapBoostSlop => tapBoostSlop;
+            public float TapBoostMemory => tapBoostMemory;
             public float PointerStopRadius => pointerStopRadius;
             public float PointerSlowRadius => pointerSlowRadius;
             public float EdgeAssistMargin => edgeAssistMargin;
