@@ -36,8 +36,14 @@
                 <ui:Label name="by-name-face" picking-mode="Ignore" class="display round-over__by-name-text stroke__face" />
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement picking-mode="Ignore" class="card round-over__card">
+        <ui:VisualElement name="result-body" class="round-over__body">
+          <ui:VisualElement picking-mode="Ignore" class="card round-over__card">
             <ui:Label name="revenge" text="REVENGE!" picking-mode="Ignore" class="best best--new round-over__revenge" />
+            <ui:VisualElement class="result-tabs">
+                <ui:Button name="round-tab" text="YOUR ROUND" class="result-tab result-tab--selected" />
+                <ui:Button name="score-tab" text="SCOREBOARD" class="result-tab" />
+            </ui:VisualElement>
+            <ui:VisualElement name="round-details" picking-mode="Ignore" class="round-over__details">
             <ui:VisualElement name="place" picking-mode="Ignore" class="round-over__place">
                 <ui:Label text="YOUR PLACE" picking-mode="Ignore" class="caption" />
                 <ui:VisualElement name="place-pill" picking-mode="Ignore" class="round-over__place-pill">
@@ -75,6 +81,16 @@
                     <ui:Label name="ko-value" text="0" picking-mode="Ignore" class="round-over__value" />
                 </ui:VisualElement>
             </ui:VisualElement>
+            </ui:VisualElement>
+          </ui:VisualElement>
+          <ui:VisualElement name="scoreboard" picking-mode="Ignore" class="card scoreboard">
+            <ui:Label text="SCOREBOARD" class="scoreboard__title" picking-mode="Ignore" />
+            <ui:VisualElement class="scoreboard__header" picking-mode="Ignore">
+                <ui:Label text="PLACE" class="scoreboard__heading" picking-mode="Ignore" />
+                <ui:Label text="KO" class="scoreboard__heading" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:VisualElement name="scoreboard-rows" class="scoreboard__rows" picking-mode="Ignore" />
+          </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement picking-mode="Ignore" class="round-over__progress">
             <ui:VisualElement picking-mode="Ignore" class="round-over__xp-row">

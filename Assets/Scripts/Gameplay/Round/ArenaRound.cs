@@ -37,6 +37,9 @@ namespace ToyCarArena.Gameplay.Round
         /// </summary>
         public event Action<Car, Car> KnockedOut;
 
+        /// <summary>One complete elimination, after knockout credit is known; Nobody means a fall without credit.</summary>
+        public event Action<int, int> Eliminated;
+
         /// <summary>
         /// Raised once, when the round is decided.
         /// </summary>
@@ -56,6 +59,10 @@ namespace ToyCarArena.Gameplay.Round
 
         private float elapsed;
         private FallCause playerFallCause;
+        private IReadOnlyList<SessionPlayer> players;
+        private RoundStandings standings;
+
+        public IReadOnlyList<string> Names { get; private set; }
 
         public ArenaRound(GameTuning tuning, IObjectResolver resolver, Car carPrefab, Transform carParent, ArenaFloor floor,
             RoundDifficulty difficulty, ISessionProgress progress, ISessionRoster roster, CarCatalog catalog,
@@ -154,6 +161,14 @@ namespace ToyCarArena.Gameplay.Round
             }
 
             IsPlaced = true;
+            players = roster.ForRound(difficulty.BotCount);
+            var names = new string[1 + difficulty.BotCount];
+            names[0] = "YOU";
+            for (var index = 1; index < names.Length; index++) {
+                names[index] = players[index - 1].Name;
+            }
+            Names = Array.AsReadOnly(names);
+            standings = new RoundStandings(names.Length);
             Spawn(1 + difficulty.BotCount);
             Player = cars[0];
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -204,6 +219,9 @@ namespace ToyCarArena.Gameplay.Round
 
                     car.TakeOut();
                     CarsLeft--;
+                    var index = IndexOf(car);
+                    var by = knockedOutBy != null ? IndexOf(knockedOutBy) : RoundResult.Nobody;
+                    standings.RecordOut(index, by);
                     CarOut?.Invoke(car);
 
                     if (knockedOutBy != null) {
@@ -220,8 +238,11 @@ namespace ToyCarArena.Gameplay.Round
 
                         KnockedOut?.Invoke(car, knockedOutBy);
                     }
+                    Eliminated?.Invoke(index, by);
                 }
             }
+
+            standings.CompleteFrame();
 
             // Cars that fell on the same frame as the player still count as behind it; but a car out never places first,
             // not even when the last of the others fell with it.
@@ -245,13 +266,16 @@ namespace ToyCarArena.Gameplay.Round
             return car != null ? cars.IndexOf(car) : -1;
         }
 
+        /// <summary>The played occupant, even after the visit's roster has moved on.</summary>
+        public string NameOf(int index) => Names[index];
+
         private void Finish(RoundOutcome outcome, int place)
         {
             IsRunning = false;
             IsFinished = true;
             var knockedOutBy = PlayerKnockedOutBy != null ? IndexOf(PlayerKnockedOutBy) : RoundResult.Nobody;
             Finished?.Invoke(new RoundResult(outcome, place, cars.Count, elapsed, PlayerKnockouts, knockedOutBy,
-                playerFallCause, Nemesis != null, RevengeTaken));
+                playerFallCause, Nemesis != null, RevengeTaken, standings.Snapshot()));
         }
 
         /// <summary>
@@ -310,9 +334,9 @@ namespace ToyCarArena.Gameplay.Round
                 // The interpolated Rigidbody wakes up where the prefab was made, at the origin, and puts the transform
                 // back there; placing the body itself keeps the cars apart.
                 car.Movement.Place(position, rotation);
-                car.name = roster.NameOf(i);
+                car.name = NameOf(i);
                 car.IsPlayer = i == 0;
-                var entry = i == 0 ? catalog.Find(playerCar.SelectedCar) : roster.CarOf(i);
+                var entry = i == 0 ? catalog.Find(playerCar.SelectedCar) : players[i - 1].Car;
                 car.GetComponent<CarLook>().Apply(i, entry);
                 cars.Add(car);
             }

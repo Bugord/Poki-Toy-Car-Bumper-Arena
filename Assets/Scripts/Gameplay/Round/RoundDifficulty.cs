@@ -17,15 +17,12 @@ namespace ToyCarArena.Gameplay.Round
         public RoundDifficulty(GameTuning tuning, ISessionProgress progress)
         {
             var settings = tuning.Bots;
-            var ramp = settings.RampRounds > 0 ? Mathf.Clamp01((progress.Round - 1f) / settings.RampRounds) : 1f;
-            var streak = progress.LosingStreak - settings.StreakStart + 1;
-            var ease = streak > 0 ? Mathf.Min(settings.MaxStreakEase, settings.StreakEase * streak) : 0f;
-            this.Level = Mathf.Clamp01(ramp - ease);
+            this.Level = LevelFor(settings, progress);
 
             var easy = settings.Easy;
             var normal = settings.Normal;
             var level = this.Level;
-            this.BotCount = Mathf.RoundToInt(Mathf.Lerp(easy.Bots, normal.Bots, level));
+            this.BotCount = BotCountFor(tuning, progress);
             this.PlayerPace = Mathf.Lerp(easy.PlayerPace, normal.PlayerPace, level);
             this.PlayerWeight = Mathf.Lerp(easy.PlayerWeight, normal.PlayerWeight, level);
             this.PlayerGrace = Mathf.Lerp(easy.PlayerGrace, normal.PlayerGrace, level);
@@ -52,6 +49,18 @@ namespace ToyCarArena.Gameplay.Round
         /// Bots in the round, beside the player.
         /// </summary>
         public int BotCount { get; }
+
+        /// <summary>The lobby and arena use the same calculation, before and after scene loading.</summary>
+        public static int BotCountFor(GameTuning tuning, ISessionProgress progress) =>
+            Mathf.RoundToInt(Mathf.Lerp(tuning.Bots.Easy.Bots, tuning.Bots.Normal.Bots, LevelFor(tuning.Bots, progress)));
+
+        private static float LevelFor(GameTuning.BotSettings settings, ISessionProgress progress)
+        {
+            var ramp = settings.RampRounds > 0 ? Mathf.Clamp01((progress.Round - 1f) / settings.RampRounds) : 1f;
+            var streak = progress.LosingStreak - settings.StreakStart + 1;
+            var ease = streak > 0 ? Mathf.Min(settings.MaxStreakEase, settings.StreakEase * streak) : 0f;
+            return Mathf.Clamp01(ramp - ease);
+        }
 
         public float PlayerPace { get; }
         public float PlayerWeight { get; }

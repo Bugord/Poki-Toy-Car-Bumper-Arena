@@ -71,6 +71,8 @@ def summarise(data):
         "ko1": other(o, r"result-knockouts-(\d+)-r1-knockouts"),
         "again": i.get("result-play-again"),
         "garage": i.get("garage-button"),
+        "lobby": i.get("lobby-shown"),
+        "scoreboard": i.get("scoreboard-shown"),
         "levels": other(o, r"progress-level-(2|3|4|5|6|7|8|9|10|10plus)-level-up"),
         "unlocks": other(o, r"progress-([a-z]+(?:-[a-z]+)*)-unlock"),
         "equips": other(o, r"garage-([a-z]+(?:-[a-z]+)*)-equip"),
@@ -180,6 +182,10 @@ def report(version, previous):
 
     out += ["", "## GARAGE (нажали / показано, последний показ)", "", head, sep]
     out.append(line("garage-button", lambda s: f"{num(s['garage'], 'interacted')} / {num(s['garage'], 'seen')} ({pct(num(s['garage'], 'interacted'), num(s['garage'], 'seen'))})"))
+    out += ["", "## Лобби (показы)", "", head, sep]
+    out.append(line("lobby-shown", lambda s: str(num(s["lobby"], "seen"))))
+    out += ["", "## Таблица раунда (показы)", "", head, sep]
+    out.append(line("scoreboard-shown", lambda s: str(num(s["scoreboard"], "seen"))))
     print("\n".join(out))
 
 

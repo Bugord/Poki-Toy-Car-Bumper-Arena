@@ -1,6 +1,7 @@
 using System.Threading;
 using Bugord.App.Platform;
 using Cysharp.Threading.Tasks;
+using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Round;
 using ToyCarArena.UI;
 using UIKit.Runtime.Abstractions;
@@ -20,13 +21,20 @@ namespace ToyCarArena.App
         private readonly IScreenNavigator navigator;
         private readonly ScreenCurtain curtain;
         private readonly IGamePlatform platform;
+        private readonly ISessionRoster roster;
+        private readonly ISessionProgress progress;
+        private readonly GameTuning tuning;
 
-        public ResultState(LevelScene levelScene, IScreenNavigator navigator, ScreenCurtain curtain, IGamePlatform platform)
+        public ResultState(LevelScene levelScene, IScreenNavigator navigator, ScreenCurtain curtain, IGamePlatform platform,
+            ISessionRoster roster, ISessionProgress progress, GameTuning tuning)
         {
             this.levelScene = levelScene;
             this.navigator = navigator;
             this.curtain = curtain;
             this.platform = platform;
+            this.roster = roster;
+            this.progress = progress;
+            this.tuning = tuning;
         }
 
         public override async UniTask<StateTransitionInfo> Execute(CancellationToken token)
@@ -38,6 +46,8 @@ namespace ToyCarArena.App
                 await screen.ViewModel.WaitForResultAsync(token);
                 platform.MeasurePlayAgainPressed();
                 await curtain.Show(token);
+                curtain.ShowLobby(roster, RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis);
+                platform.MeasureLobbyShown();
             }
             catch {
                 await screen.CloseAsync();
@@ -47,6 +57,7 @@ namespace ToyCarArena.App
             // Under the curtain the screen's fade-out shows nowhere, so the next arena loads meanwhile: the brief wants
             // a lost round back in play within about 3 seconds.
             await UniTask.WhenAll(screen.CloseAsync(), levelScene.Load(token));
+            await curtain.Ready(token);
             return Transition.GoTo<RoundState>();
         }
     }

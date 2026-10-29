@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace ToyCarArena.UI
 {
@@ -22,6 +23,26 @@ namespace ToyCarArena.UI
         {
             var color = index < Count ? Mathf.Max(0, index) : 1 + (index - 1) % (Count - 1);
             return ClassPrefix + color;
+        }
+
+        /// <summary>The same car sticker in the arena HUD and the curtain's lobby.</summary>
+        public static VisualElement CreateChip(int index, bool isPlayer)
+        {
+            var chip = new VisualElement { pickingMode = PickingMode.Ignore };
+            chip.AddToClassList("hud__chip");
+            chip.AddToClassList(ClassOf(index));
+            if (isPlayer) {
+                var ring = new VisualElement { pickingMode = PickingMode.Ignore };
+                ring.AddToClassList("hud__chip-ring");
+                chip.Add(ring);
+            }
+            var car = new VisualElement { pickingMode = PickingMode.Ignore };
+            car.AddToClassList("hud__chip-car");
+            var glass = new VisualElement { pickingMode = PickingMode.Ignore };
+            glass.AddToClassList("hud__chip-glass");
+            car.Add(glass);
+            chip.Add(car);
+            return chip;
         }
     }
 }

@@ -177,3 +177,6 @@ MonoBehaviour:
     - 100
     - 120
     - 140
+  players:
+    leaveChance: 0.25
+    maxLeaves: 2

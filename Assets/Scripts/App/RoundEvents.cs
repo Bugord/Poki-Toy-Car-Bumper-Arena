@@ -57,6 +57,11 @@ namespace ToyCarArena.App
         // Seconds on the arena are counted in buckets this wide, the round's last bucket ending at its full length.
         private const int TimeBucket = 15;
 
+        public static void MeasureLobbyShown(this IGamePlatform platform) => platform.Measure("lobby", "shown", "visible");
+
+        public static void MeasureScoreboardShown(this IGamePlatform platform) =>
+            platform.Measure("scoreboard", "shown", "visible");
+
         public static void MeasureRoundStart(this IGamePlatform platform, int round)
         {
             platform.MeasureStart(RoundCategory, RoundBucket(round));

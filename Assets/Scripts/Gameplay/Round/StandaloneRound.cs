@@ -17,13 +17,15 @@ namespace ToyCarArena.Gameplay.Round
         private readonly ArenaRound round;
         private readonly GameTuning tuning;
         private readonly SessionProgress progress;
+        private readonly ISessionRoster sessionRoster;
         private readonly CancellationTokenSource lifetime = new();
 
-        public StandaloneRound(ArenaRound round, GameTuning tuning, SessionProgress progress)
+        public StandaloneRound(ArenaRound round, GameTuning tuning, SessionProgress progress, ISessionRoster sessionRoster)
         {
             this.round = round;
             this.tuning = tuning;
             this.progress = progress;
+            this.sessionRoster = sessionRoster;
         }
 
         /// <summary>
@@ -63,6 +65,8 @@ namespace ToyCarArena.Gameplay.Round
             Debug.Log($"Round {progress.Round} over: {result.Outcome}, #{result.Place} of {result.CarCount} after " +
                 $"{result.Seconds:0.0} s, {result.Knockouts} knocked out, knocked out by {result.KnockedOutBy}.");
             progress.Record(result);
+            sessionRoster.NextRound(result.CarCount - 1, RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis,
+                tuning.Players);
             RestartLater(result.Outcome, lifetime.Token).Forget();
         }
 

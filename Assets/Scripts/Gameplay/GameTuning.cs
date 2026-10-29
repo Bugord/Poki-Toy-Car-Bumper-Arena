@@ -34,6 +34,11 @@ namespace ToyCarArena.Gameplay
         [SerializeField]
         private ProgressSettings progress = new();
 
+        [Header("Players")]
+        [Tooltip("Visit roster turnover between rounds; cosmetics only")]
+        [SerializeField]
+        private PlayerSettings players = new();
+
         public CarSettings Car => car;
         public ControlSettings Controls => controls;
         public BoostSettings Boost => boost;
@@ -41,6 +46,24 @@ namespace ToyCarArena.Gameplay
         public RoundSettings Round => round;
         public ArenaSettings Arena => arena;
         public ProgressSettings Progress => progress;
+        public PlayerSettings Players => players;
+
+        [Serializable]
+        public sealed class PlayerSettings
+        {
+            [Tooltip("Chance for each player from the finished round to leave, except the revenge target")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float leaveChance = 0.25f;
+
+            [Tooltip("Maximum departures after one round")]
+            [Range(0, 6)]
+            [SerializeField]
+            private int maxLeaves = 2;
+
+            public float LeaveChance => leaveChance;
+            public int MaxLeaves => maxLeaves;
+        }
 
         /// <summary>
         /// Every round advances the garage; all reward amounts and level prices are tuned together here.
@@ -559,7 +582,7 @@ namespace ToyCarArena.Gameplay
         {
             [Tooltip("Bots in the round, beside the player; fewer early on, so a new player lasts long enough to push " +
                 "a car off and has fewer cars to beat")]
-            [Range(1, 7)]
+            [Range(1, 6)]
             [SerializeField]
             private int bots = 6;
 

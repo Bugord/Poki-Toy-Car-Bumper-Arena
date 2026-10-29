@@ -103,6 +103,14 @@ namespace ToyCarArena.Tests.PlayMode
 
             SceneManager.SetActiveScene(SceneManager.GetSceneByName("Game"));
             yield return null;
+            // Simulations pin difficulty to the measured round. Only the cosmetic roster advances on completion;
+            // input, BotDriver.Seed and the measured progress stay as configured by the scenario.
+            var container = GameScope().Container;
+            var tuning = container.Resolve<GameTuning>();
+            var progress = container.Resolve<ISessionProgress>();
+            var roster = container.Resolve<ISessionRoster>();
+            container.Resolve<ArenaRound>().Finished += result => roster.NextRound(result.CarCount - 1,
+                RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis, tuning.Players);
         }
 
         protected GameplayScope GameScope()

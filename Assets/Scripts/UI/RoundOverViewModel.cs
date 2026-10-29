@@ -15,16 +15,27 @@ namespace ToyCarArena.UI
     /// </summary>
     public sealed class RoundOverViewModel : ResultViewModel<bool>, IPayloadReceiver<RoundRecord>
     {
-        private readonly ISessionRoster roster;
         private readonly CarCatalog catalog;
         private readonly PlayerProgress progress;
         private readonly IScreenNavigator navigator;
         private readonly IGamePlatform platform;
+        private IReadOnlyList<string> names;
+        private bool scoreboardMeasured;
 
-        public RoundOverViewModel(ISessionRoster roster, CarCatalog catalog, PlayerProgress progress,
+        public IReadOnlyList<RoundStanding> Standings { get; private set; }
+        public string NameOf(int index) => names[index];
+
+        public void MeasureScoreboardShown()
+        {
+            if (!scoreboardMeasured) {
+                scoreboardMeasured = true;
+                platform.MeasureScoreboardShown();
+            }
+        }
+
+        public RoundOverViewModel(CarCatalog catalog, PlayerProgress progress,
             IScreenNavigator navigator, IGamePlatform platform)
         {
-            this.roster = roster;
             this.catalog = catalog;
             this.progress = progress;
             this.navigator = navigator;
@@ -71,7 +82,7 @@ namespace ToyCarArena.UI
             }
         }
 
-        public string KnockedOutByName => KnockedOutBy == RoundResult.Nobody ? "" : roster.NameOf(KnockedOutBy);
+        public string KnockedOutByName { get; private set; }
 
         public bool RevengeTaken { get; private set; }
 
@@ -117,6 +128,9 @@ namespace ToyCarArena.UI
         public void SetPayload(RoundRecord payload)
         {
             var result = payload.Result;
+            names = payload.Names;
+            Standings = result.Standings;
+            scoreboardMeasured = false;
             XpGain = payload.XpGain;
             Outcome = result.Outcome;
             Place = result.Place;
@@ -124,6 +138,7 @@ namespace ToyCarArena.UI
             Seconds = result.Seconds;
             Knockouts = result.Knockouts;
             KnockedOutBy = result.KnockedOutBy;
+            KnockedOutByName = payload.KnockedOutByName;
             RevengeTaken = result.RevengeTaken;
             BestPlace = payload.BestPlace;
             BestKnockouts = payload.BestKnockouts;

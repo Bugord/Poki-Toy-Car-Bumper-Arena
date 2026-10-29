@@ -1,5 +1,6 @@
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using ToyCarArena.Gameplay.Round;
 using UIKit.Runtime.Abstractions;
 
 namespace ToyCarArena.UI
@@ -38,5 +39,10 @@ namespace ToyCarArena.UI
             handle = null;
             return closing?.CloseAsync() ?? UniTask.CompletedTask;
         }
+
+        public void ShowLobby(ISessionRoster roster, int botCount, int nemesis) =>
+            handle.ViewModel.ShowLobby(roster, botCount, nemesis);
+
+        public UniTask Ready(CancellationToken token) => handle.ViewModel.Ready(token);
     }
 }

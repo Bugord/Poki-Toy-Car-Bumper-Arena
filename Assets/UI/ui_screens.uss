@@ -340,6 +340,120 @@
     background-color: var(--navy);
 }
 
+/* Lobby uses the same reference height in portrait and landscape (PanelSettings Expand). The seven seats fit in
+   one centred column; departed seats outside a smaller next round collapse out of that column. */
+.lobby {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 40px;
+}
+
+.lobby__title {
+    margin: 0 0 48px 0;
+    padding: 0;
+    font-size: 78px;
+    color: var(--gold);
+    -unity-text-outline-width: 10px;
+    text-shadow: 0 10px 0 rgb(29, 43, 79);
+}
+
+.lobby__title--ready { color: var(--green); }
+
+.lobby__rows {
+    width: 920px;
+    max-width: 100%;
+}
+
+.lobby__slot {
+    flex-shrink: 0;
+    height: 130px;
+    margin-bottom: 12px;
+}
+
+.lobby__row {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 130px;
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 24px;
+    border-width: 7px;
+    border-bottom-width: 14px;
+    border-color: var(--navy);
+    border-radius: 42px;
+    background-color: var(--white);
+}
+
+.lobby__row .hud__chip {
+    position: relative;
+    flex-shrink: 0;
+    margin-right: 22px;
+    transition-duration: 0s;
+}
+
+.lobby__name {
+    flex-grow: 1;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    font-size: 54px;
+    color: var(--navy);
+    -unity-text-outline-width: 4px;
+    -unity-text-outline-color: var(--white);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -unity-text-align: middle-left;
+}
+
+.lobby__name--revenge, .lobby__name--revenge > .stroke__face { color: var(--red); }
+
+.lobby__row .revenge-target {
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    margin-left: 12px;
+    margin-right: 12px;
+}
+
+.lobby__badge {
+    flex-shrink: 0;
+    width: 122px;
+    margin: 0 0 0 12px;
+    padding: 8px 0;
+    border-width: 5px;
+    border-bottom-width: 9px;
+    border-color: var(--navy);
+    border-radius: 22px;
+    background-color: var(--gold);
+    color: var(--navy);
+    font-size: 36px;
+    -unity-text-align: middle-center;
+}
+
+.lobby__row--left { background-color: var(--shade); }
+.lobby__row--left .hud__chip { background-color: var(--muted); }
+.lobby__row--left .lobby__name { color: var(--muted); }
+.lobby__badge--left { background-color: var(--silver); }
+
+.lobby__badge > .stroke__face {
+    width: auto;
+    margin: 0;
+    padding: 0;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.lobby__title > .stroke__face { margin: 0; }
+
 /* The HUD: the stopwatch pill at the top centre, 54 px from the edge, and under it the pill with a chip per car still
    in the round. On a wide screen it stays in the middle, over the arena. */
 .hud {
@@ -1861,3 +1975,240 @@
 .garage--landscape .garage__portrait {
     height: 200px;
 }
+/* Two sibling labels in a measured container, shared by the lobby and the social overlays. */
+.sticker-text { flex-shrink: 0; }
+.sticker-text__text {
+    flex-grow: 1;
+    margin: 0;
+    padding: 0;
+    white-space: nowrap;
+    -unity-text-align: middle-left;
+    -unity-text-outline-width: 3px;
+    -unity-text-outline-color: var(--navy);
+}
+
+/* IO1: explicit text geometry, and no label used as the parent of its own face. */
+.lobby__name {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+    min-width: 0;
+    height: 76px;
+    overflow: visible;
+}
+.lobby__name .sticker-text__text {
+    font-size: 54px;
+    color: var(--navy);
+    -unity-text-outline-width: 0;
+}
+.lobby__name--revenge .sticker-text__text { color: var(--red); }
+.lobby__row--left .lobby__name .sticker-text__text { color: var(--muted); }
+.lobby__badge {
+    height: 80px;
+    padding: 0;
+    justify-content: center;
+}
+.lobby__badge .sticker-text__text {
+    font-size: 36px;
+    color: var(--navy);
+    -unity-text-outline-width: 0;
+    -unity-text-align: middle-center;
+}
+.lobby__row .lobby__you-chip { border-color: var(--white); }
+.lobby__row .hud__chip-ring {
+    width: 66px;
+    height: 66px;
+    right: auto;
+    bottom: auto;
+}
+
+/* One short feed below the portrait pills; the wide layout uses the free top-left corner. */
+.feed {
+    position: absolute;
+    left: 24px;
+    top: 488px;
+    width: 660px;
+    height: 0;
+    visibility: hidden;
+}
+.feed--wide { top: 54px; }
+.feed__row {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 68px;
+    flex-direction: row;
+    align-items: center;
+    padding: 2px 12px;
+    border-width: 5px;
+    border-bottom-width: 9px;
+    border-color: var(--navy);
+    border-radius: 24px;
+    background-color: var(--name-backdrop);
+    color: var(--white);
+    font-size: 30px;
+}
+.feed__row--you { background-color: var(--white); color: var(--navy); }
+.feed__row .sticker-text__text { font-size: 30px; color: var(--white); }
+.feed__row--you .sticker-text__text { color: var(--navy); -unity-text-outline-width: 0; }
+.feed__row .hud__chip {
+    position: relative;
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    border-width: 4px;
+    border-radius: 21px;
+    margin-right: 8px;
+    transition-duration: 0s;
+}
+.feed__row .hud__chip-car { scale: 0.65 0.65; }
+.feed__name {
+    height: 48px;
+    min-width: 0;
+    flex-basis: 0;
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+.feed__name .sticker-text__text { overflow: hidden; text-overflow: ellipsis; }
+.feed__fell { height: 48px; margin-left: 14px; margin-right: 8px; }
+.feed__arrow {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    margin: 0 16px 0 10px;
+    border-top-width: 5px;
+    border-right-width: 5px;
+    border-color: var(--gold);
+    rotate: 45deg;
+}
+
+.emotion {
+    position: absolute;
+    width: 280px;
+    height: 90px;
+    align-items: stretch;
+    justify-content: center;
+    padding: 0 12px;
+    border-width: 6px;
+    border-bottom-width: 12px;
+    border-color: var(--navy);
+    border-radius: 30px;
+    background-color: var(--white);
+    color: var(--navy);
+    font-size: 42px;
+}
+.emotion__text { height: 68px; }
+.emotion__text .sticker-text__text { font-size: 42px; color: var(--navy); -unity-text-align: middle-center; -unity-text-outline-width: 0; }
+
+/* The result has one fixed-height body. Portrait swaps its contents; wide panels add a second column. XP and
+   actions stay in the same flow and the same positions whichever tab is selected. */
+.round-over__body {
+    flex-shrink: 0;
+    width: 981px;
+    height: 640px;
+    margin-top: 36px;
+}
+.round-over__body .round-over__card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 981px;
+    height: 640px;
+    margin-top: 0;
+    padding: 22px 32px 22px 32px;
+}
+.result-tabs {
+    flex-shrink: 0;
+    align-self: stretch;
+    flex-direction: row;
+    height: 58px;
+    margin-bottom: 10px;
+}
+.result-tab {
+    flex-grow: 1;
+    flex-basis: 0;
+    margin: 0 4px;
+    padding: 0;
+    border-width: 4px;
+    border-bottom-width: 8px;
+    border-color: var(--navy);
+    border-radius: 20px;
+    background-color: var(--soft);
+    color: var(--muted);
+    font-size: 32px;
+    -unity-text-align: middle-center;
+}
+.result-tab--selected { background-color: var(--gold); color: var(--navy); }
+.result-tab:hover { background-color: var(--shade); }
+.round-over__details { align-self: stretch; }
+.round-over__details .caption { font-size: 34px; }
+.round-over__details .round-over__place-pill { margin-top: 6px; padding: 0 40px 6px 40px; }
+.round-over__details .round-over__place-value { font-size: 88px; }
+.round-over__details .round-over__of { margin-top: 8px; }
+.round-over__details .rule { margin: 14px 0; }
+.round-over__details .inset { padding: 8px 24px; }
+.round-over__details .round-over__value { font-size: 56px; }
+.round-over__details .round-over__ko { margin-top: 14px; }
+.round-over__details .round-over__time-caption { margin-left: 18px; }
+.round-over__details .round-over__ko-best { margin-right: 16px; }
+.round-over__details .best { font-size: 28px; }
+
+.scoreboard {
+    display: none;
+    position: absolute;
+    left: 42px;
+    right: 42px;
+    top: 112px;
+    height: 490px;
+    width: auto;
+    margin: 0;
+    padding: 0;
+    border-width: 0;
+    border-radius: 0;
+    background-color: var(--white);
+    align-items: stretch;
+    color: var(--navy);
+}
+.scoreboard__title { display: none; height: 60px; margin: 0; padding: 0; font-size: 50px; color: var(--navy); -unity-text-align: middle-center; }
+.scoreboard__header { flex-direction: row; justify-content: space-between; height: 40px; flex-shrink: 0; padding: 0 14px; }
+.scoreboard__heading { margin: 0; padding: 0; font-size: 28px; color: var(--muted); }
+.scoreboard__rows { align-items: stretch; }
+.scoreboard__row {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    height: 58px;
+    margin-bottom: 4px;
+    padding: 0 12px;
+    border-width: 3px;
+    border-color: var(--white);
+    border-radius: 18px;
+    background-color: var(--soft);
+    color: var(--navy);
+    font-size: 36px;
+}
+.scoreboard__row--you { background-color: var(--gold); border-color: var(--navy); }
+.scoreboard__row .sticker-text__text { font-size: 36px; color: var(--navy); -unity-text-outline-width: 0; }
+.scoreboard__place { width: 86px; height: 50px; }
+.scoreboard__name { flex-grow: 1; flex-shrink: 1; flex-basis: 0; min-width: 0; height: 50px; margin-left: 14px; }
+.scoreboard__name .sticker-text__text { overflow: hidden; text-overflow: ellipsis; }
+.scoreboard__ko { width: 64px; height: 50px; }
+.scoreboard__ko .sticker-text__text { -unity-text-align: middle-right; }
+.scoreboard__row .hud__chip { position: relative; flex-shrink: 0; width: 48px; height: 48px; border-width: 4px; border-radius: 24px; transition-duration: 0s; }
+.scoreboard__row .hud__chip-car { scale: 0.7 0.7; }
+.scoreboard__row .hud__chip-ring { border-width: 4px; border-radius: 20px; }
+.round-over--landscape .round-over__body { width: 1851px; }
+.round-over--landscape .result-tabs { display: none; }
+.round-over--landscape .round-over__details { margin-top: 14px; }
+.round-over--landscape .scoreboard {
+    left: 1011px;
+    right: auto;
+    top: 0;
+    width: 840px;
+    height: 640px;
+    padding: 20px 28px;
+    border-width: 9px;
+    border-bottom-width: 25px;
+    border-radius: 58px;
+}
+.round-over--landscape .scoreboard__title { display: flex; }
