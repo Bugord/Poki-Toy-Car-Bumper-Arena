@@ -1,5 +1,7 @@
 using Bugord.App;
 using ToyCarArena.Audio;
+using ToyCarArena.Gameplay;
+using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Input;
 using ToyCarArena.Gameplay.Round;
 using ToyCarArena.UI;
@@ -22,6 +24,15 @@ namespace ToyCarArena.App
         [SerializeField]
         private AudioLibrary audioLibrary;
 
+        [Header("Progress")]
+        [Tooltip("The same tuning asset used by GameplayScope; progress survives the arena scene")]
+        [SerializeField]
+        private GameTuning tuning;
+
+        [Tooltip("Garage identities and the level at which each car unlocks")]
+        [SerializeField]
+        private CarCatalog carCatalog;
+
         protected override void ConfigureGame(IContainerBuilder builder)
         {
             // Checked here, as GameplayScope checks its own: in the WebGL player a missing reference fails much later,
@@ -30,6 +41,19 @@ namespace ToyCarArena.App
                 throw new MissingReferenceException($"{nameof(GameScope)} in {gameObject.scene.name} has no " +
                     $"{nameof(audioLibrary)}.");
             }
+
+            if (tuning == null) {
+                throw new MissingReferenceException($"{nameof(GameScope)} in {gameObject.scene.name} has no " +
+                    $"{nameof(tuning)}.");
+            }
+
+            if (carCatalog == null) {
+                throw new MissingReferenceException($"{nameof(GameScope)} in {gameObject.scene.name} has no " +
+                    $"{nameof(carCatalog)}.");
+            }
+
+            builder.RegisterInstance(tuning, typeof(GameTuning));
+            builder.RegisterInstance(carCatalog, typeof(CarCatalog));
 
             builder.Register<LevelScene>(Lifetime.Singleton);
             // Here, so the music goes on across the Game scene reloaded every round and the screens can click. The
@@ -44,10 +68,17 @@ namespace ToyCarArena.App
             builder.Register<SessionProgress>(Lifetime.Singleton).AsSelf().As<ISessionProgress>();
             builder.Register<SessionRoster>(Lifetime.Singleton).As<ISessionRoster>();
             builder.Register<PersonalBests>(Lifetime.Singleton);
+            builder.Register<PlayerProgress>(Lifetime.Singleton).AsSelf().As<IPlayerCar>();
+#if BUGORD_SUPERCONSOLE
+            if (Debug.isDebugBuild) {
+                builder.RegisterEntryPoint<ProgressDevConsole>();
+            }
+#endif
 
             builder.RegisterScreen<CurtainViewModel, CurtainView>();
             builder.RegisterScreen<HudViewModel, HudView>();
             builder.RegisterScreen<RoundOverViewModel, RoundOverView>();
+            builder.RegisterScreen<GarageViewModel, GarageView>();
 
             builder.RegisterState<RoundState>();
             builder.RegisterState<ResultState>();

@@ -161,3 +161,15 @@ MonoBehaviour:
     crumbleStep: 2
     crumbleWarning: 2
     viewMargin: 1.5
+  progress:
+    roundXp: 10
+    placeXp: 5
+    winXp: 15
+    knockoutXp: 10
+    levelXp:
+    - 40
+    - 60
+    - 80
+    - 100
+    - 120
+    - 140

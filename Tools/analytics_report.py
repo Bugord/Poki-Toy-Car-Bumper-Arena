@@ -2,7 +2,7 @@
 
 Запуск: python -I Tools/analytics_report.py <версия> [<прошлая версия>]   (версия без "v", например 0.2.0)
 Печатает Markdown: воронку по раундам (переход, победы, поражения, уходы посреди раунда), исходы, места и нокауты
-в 1-м раунде, время на арене, причины выбывания, ускорения, управление и кнопку PLAY AGAIN.
+в 1-м раунде, время на арене, причины выбывания, ускорения, управление, прогресс, гараж и выбор машинок.
 """
 import csv
 import re
@@ -70,6 +70,11 @@ def summarise(data):
         "place1": other(o, r"result-place-(\d+)-r1-place"),
         "ko1": other(o, r"result-knockouts-(\d+)-r1-knockouts"),
         "again": i.get("result-play-again"),
+        "garage": i.get("garage-button"),
+        "levels": other(o, r"progress-level-(2|3|4|5|6|7|8|9|10|10plus)-level-up"),
+        "unlocks": other(o, r"progress-([a-z]+(?:-[a-z]+)*)-unlock"),
+        "equips": other(o, r"garage-([a-z]+(?:-[a-z]+)*)-equip"),
+        "driven": other(o, r"result-car-([a-z]+(?:-[a-z]+)*-r(?:1|2|3|4plus))-car"),
         "progress": p,
     }
     # с v0.2: на раунд (R = 1, 2, 3, 4plus)
@@ -157,6 +162,24 @@ def report(version, previous):
 
     out += ["", "## PLAY AGAIN (нажали / показано, последний показ)", "", head, sep]
     out.append(line("result-play-again", lambda s: f"{num(s['again'], 'interacted')} / {num(s['again'], 'seen')} ({pct(num(s['again'], 'interacted'), num(s['again'], 'seen'))})"))
+
+    # Milestones count gameplays containing an event, as the rest of other-events above; they are not event totals.
+    for title, key in (
+        ("Новые уровни (визиты с level-up)", "levels"),
+        ("Открытия машинок (визиты с unlock)", "unlocks"),
+        ("Выбор машинок в гараже (визиты с equip)", "equips"),
+        ("На чём ездят по раундам (визиты с car)", "driven"),
+    ):
+        keys = keys_of(key)
+        if key == "levels":
+            keys.sort(key=lambda k: (k.endswith("plus"), int(k.removesuffix("plus"))))
+        out += table(title, cur, old, version, previous, keys,
+                     lambda s, k, field=key: str(s[field].get(k, 0)))
+        if not keys:
+            out.append(line("Нет событий в выгрузке", lambda s: "-"))
+
+    out += ["", "## GARAGE (нажали / показано, последний показ)", "", head, sep]
+    out.append(line("garage-button", lambda s: f"{num(s['garage'], 'interacted')} / {num(s['garage'], 'seen')} ({pct(num(s['garage'], 'interacted'), num(s['garage'], 'seen'))})"))
     print("\n".join(out))
 
 

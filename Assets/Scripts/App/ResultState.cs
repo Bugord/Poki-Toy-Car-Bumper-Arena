@@ -34,6 +34,7 @@ namespace ToyCarArena.App
             var screen = await navigator.OpenAsync<RoundOverViewModel, RoundRecord>(Payload, token);
             try {
                 platform.MeasurePlayAgainShown();
+                platform.MeasureGarageShown();
                 await screen.ViewModel.WaitForResultAsync(token);
                 platform.MeasurePlayAgainPressed();
                 await curtain.Show(token);

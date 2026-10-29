@@ -1,0 +1,28 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="garage" class="screen garage">
+        <Style src="../ui_screens.uss" />
+        <ui:VisualElement picking-mode="Ignore" class="stroke garage__title">
+            <ui:Label text="GARAGE" picking-mode="Ignore" class="display garage__title-text" />
+            <ui:Label text="GARAGE" picking-mode="Ignore" class="display garage__title-text stroke__face" />
+        </ui:VisualElement>
+        <ui:VisualElement picking-mode="Ignore" class="garage__progress">
+            <ui:VisualElement picking-mode="Ignore" class="pill round-over__level">
+                <ui:Label name="garage-level-value" picking-mode="Ignore" class="round-over__level-value" />
+            </ui:VisualElement>
+            <ui:VisualElement picking-mode="Ignore" class="round-over__xp-body">
+                <ui:VisualElement picking-mode="Ignore" class="pill round-over__xp-track">
+                    <ui:VisualElement picking-mode="Ignore" class="round-over__xp-clip">
+                        <ui:VisualElement name="garage-xp-fill" picking-mode="Ignore" class="round-over__xp-fill" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:Label name="garage-xp-value" picking-mode="Ignore" class="round-over__xp-next" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="garage-grid" picking-mode="Ignore" class="garage__grid" />
+        <ui:Label text="YOUR PICK DRIVES NEXT ROUND" picking-mode="Ignore" class="garage__hint" />
+        <ui:Button name="garage-back" class="button garage__back">
+            <ui:VisualElement picking-mode="Ignore" class="button__face" />
+            <ui:Label text="BACK" picking-mode="Ignore" class="button__label" />
+        </ui:Button>
+    </ui:VisualElement>
+</ui:UXML>

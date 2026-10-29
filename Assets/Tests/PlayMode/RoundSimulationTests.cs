@@ -10,6 +10,7 @@ using ToyCarArena.Audio;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Bots;
+using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Input;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
@@ -87,6 +88,7 @@ namespace ToyCarArena.Tests.PlayMode
             var input = new SimulationInput();
             var progress = new SimulationProgress();
             var audio = new SilentAudioService(LoadAudioLibrary());
+            var catalog = LoadCarCatalog();
             var report = new SimulationReport(runs, seed);
             var stopwatch = Stopwatch.StartNew();
 
@@ -95,6 +97,8 @@ namespace ToyCarArena.Tests.PlayMode
                 builder.AddBugordCore("simulation");
                 builder.Register<IOnScreenControls, NoOnScreenControls>(Lifetime.Singleton);
                 builder.RegisterInstance<ISessionProgress>(progress);
+                builder.RegisterInstance(catalog, typeof(CarCatalog));
+                builder.Register<IPlayerCar, FirstPlayerCar>(Lifetime.Singleton);
                 builder.Register<SessionRoster>(Lifetime.Singleton).As<ISessionRoster>();
                 builder.RegisterInstance<IAudioService>(audio);
                 builder.RegisterInstance<IInputService>(input);
@@ -179,6 +183,20 @@ namespace ToyCarArena.Tests.PlayMode
             }
 
             Time.timeScale = 1f;
+        }
+
+        private static CarCatalog LoadCarCatalog()
+        {
+#if UNITY_EDITOR
+            var catalog = AssetDatabase.LoadAssetAtPath<CarCatalog>("Assets/Data/Cars/data_car_catalog.asset");
+            if (catalog == null) {
+                throw new MissingReferenceException("Simulation needs the game's CarCatalog asset.");
+            }
+
+            return catalog;
+#else
+            throw new NotSupportedException("Run the simulation as editor PlayMode tests via Tools/simulate.sh.");
+#endif
         }
 
         private static AudioLibrary LoadAudioLibrary()

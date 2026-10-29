@@ -157,6 +157,8 @@ MonoBehaviour:
   targetFrameRate: 60
   storagePrefix: toycararena
   audioLibrary: {fileID: 11400000, guid: f401b36b1849431cb6ac97152243978d, type: 2}
+  tuning: {fileID: 11400000, guid: d3ac6d0d1668c84439c54712e09fbaca, type: 2}
+  carCatalog: {fileID: 11400000, guid: 8d5e13a8f906422baa7e47d99440e034, type: 2}
 --- !u!4 &2030469846
 Transform:
   m_ObjectHideFlags: 0

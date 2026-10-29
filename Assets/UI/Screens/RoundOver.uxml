@@ -76,15 +76,53 @@
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
+        <ui:VisualElement picking-mode="Ignore" class="round-over__progress">
+            <ui:VisualElement picking-mode="Ignore" class="round-over__xp-row">
+                <ui:VisualElement name="xp-level" picking-mode="Ignore" class="pill round-over__level">
+                    <ui:Label name="xp-level-value" text="LVL 1" picking-mode="Ignore" class="round-over__level-value" />
+                </ui:VisualElement>
+                <ui:VisualElement picking-mode="Ignore" class="round-over__xp-body">
+                    <ui:VisualElement name="xp-gain" picking-mode="Ignore" class="stroke round-over__xp-gain">
+                        <ui:Label text="+0 XP" picking-mode="Ignore" class="display round-over__xp-text" />
+                        <ui:Label text="+0 XP" picking-mode="Ignore" class="display round-over__xp-text stroke__face" />
+                    </ui:VisualElement>
+                    <ui:VisualElement picking-mode="Ignore" class="pill round-over__xp-track">
+                        <ui:VisualElement picking-mode="Ignore" class="round-over__xp-clip">
+                            <ui:VisualElement name="xp-fill" picking-mode="Ignore" class="round-over__xp-fill" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:Label name="xp-next" text="NEXT: SPEEDSTER" picking-mode="Ignore" class="round-over__xp-next" />
+                </ui:VisualElement>
+                <ui:VisualElement name="xp-car-badge" picking-mode="Ignore" class="pill round-over__car-badge">
+                    <ui:VisualElement name="xp-car-portrait" picking-mode="Ignore" class="car-portrait car-portrait--locked" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement picking-mode="Ignore" class="round-over__unlock-slot">
+                <ui:VisualElement name="xp-new-car" picking-mode="Ignore" class="best best--shown best--new round-over__new-car">
+                    <ui:VisualElement name="xp-new-car-portrait" picking-mode="Ignore" class="car-portrait round-over__new-car-portrait" />
+                    <ui:VisualElement picking-mode="Ignore" class="round-over__new-car-copy">
+                        <ui:Label name="xp-new-car-name" picking-mode="Ignore" class="round-over__new-car-name" />
+                        <ui:Label name="xp-ready" text="READY TO DRIVE!" picking-mode="Ignore" class="round-over__ready" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
         <ui:VisualElement picking-mode="Ignore" class="round-over__spacer" />
         <ui:VisualElement picking-mode="Ignore" class="round-over__actions">
-            <ui:Button name="play-again-button" class="button button--green button--big round-over__button">
-                <ui:VisualElement picking-mode="Ignore" class="button__face" />
-                <ui:VisualElement picking-mode="Ignore" class="stroke">
-                    <ui:Label text="PLAY AGAIN" picking-mode="Ignore" class="button__label" />
-                    <ui:Label text="PLAY AGAIN" picking-mode="Ignore" class="button__label stroke__face" />
-                </ui:VisualElement>
-            </ui:Button>
+            <ui:VisualElement picking-mode="Ignore" class="round-over__buttons">
+                <ui:Button name="garage-button" class="pill round-over__garage">
+                    <ui:VisualElement name="garage-portrait" picking-mode="Ignore" class="car-portrait round-over__garage-portrait" />
+                    <ui:Label text="GARAGE" picking-mode="Ignore" class="round-over__garage-label" />
+                    <ui:VisualElement name="garage-dot" picking-mode="Ignore" class="round-over__garage-dot" />
+                </ui:Button>
+                <ui:Button name="play-again-button" class="button button--green button--big round-over__button">
+                    <ui:VisualElement picking-mode="Ignore" class="button__face" />
+                    <ui:VisualElement picking-mode="Ignore" class="stroke">
+                        <ui:Label text="PLAY AGAIN" picking-mode="Ignore" class="button__label" />
+                        <ui:Label text="PLAY AGAIN" picking-mode="Ignore" class="button__label stroke__face" />
+                    </ui:VisualElement>
+                </ui:Button>
+            </ui:VisualElement>
             <ui:VisualElement name="hint" picking-mode="Ignore" class="round-over__hint">
                 <ui:Label text="OR PRESS" picking-mode="Ignore" class="round-over__hint-text" />
                 <ui:VisualElement picking-mode="Ignore" class="key">

@@ -129,6 +129,7 @@ GameObject:
   m_Component:
   - component: {fileID: 477846442}
   - component: {fileID: 477846441}
+  - component: {fileID: 477846443}
   m_Layer: 0
   m_Name: Directional Light
   m_TagString: Untagged
@@ -216,6 +217,150 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &477846443
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 477846440}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
+--- !u!1 &731205114
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 731205115}
+  - component: {fileID: 731205116}
+  - component: {fileID: 731205117}
+  m_Layer: 0
+  m_Name: Effects
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &731205115
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 731205114}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &731205116
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 731205114}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f9601e9bbbf4307b52da0bc2d3f9646, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Effects.EffectPlayer
+  outline: {fileID: 2100000, guid: 2188f4de211c4cd6a87711e1d492995f, type: 2}
+  white: {fileID: 2100000, guid: a840781ae3da4af180d61734c494e2bb, type: 2}
+  gold: {fileID: 2100000, guid: f1272fbc00e740799cb9b53fcf40d231, type: 2}
+  dust: {fileID: 2100000, guid: 810c1088978e4c588ac3dd9022c20084, type: 2}
+  sizeScale: 1.25
+  solidOutline: 0.34
+  flatOutline: 0.11
+  ringOutline: 0.08
+  gravity: 18
+  hitStars: {x: 3, y: 6}
+  hitStarSize: {x: 0.55, y: 0.95}
+  hitStarSpeed: {x: 3, y: 7}
+  hitStarLife: 0.5
+  hitRingRadius: {x: 1.1, y: 2.6}
+  hitRingLife: 0.3
+  hitPuffs: {x: 1, y: 4}
+  hitPuffSize: {x: 0.45, y: 0.85}
+  heavyFlashSize: 1.8
+  boostedScale: 1.35
+  boostPuffs: 5
+  boostPuffSize: {x: 0.45, y: 0.8}
+  boostPuffSpeed: 5
+  carRear: 1.3
+  streakSpacing: 1.4
+  streakLength: {x: 1.4, y: 2.2}
+  streakWidth: 0.16
+  streakOffset: {x: 0.6, y: 0.5}
+  streakLife: 0.25
+  trailDustSize: {x: 0.35, y: 0.55}
+  knockoutPuffs: 9
+  knockoutPuffSize: {x: 0.8, y: 1.5}
+  knockoutSpeed: {x: 4, y: 8}
+  knockoutStars: 6
+  knockoutStarSize: 1
+  playerKnockoutScale: 1.3
+  creditSparkles: 7
+  clumpSpacing: 2.5
+  clumpSize: {x: 0.35, y: 0.7}
+  clumpHop: {x: 2, y: 4}
+  fallSpacing: 2.2
+  fallPuffSize: {x: 0.9, y: 1.5}
+  fallChunkSize: {x: 0.3, y: 0.6}
+--- !u!114 &731205117
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 731205114}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 668cff9a8a5a4f25abb8a37b9227b594, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Effects.ArenaFeedback
+  minStrength: 1.5
+  heavyStrength: 9
+  fullStrength: 18
+  quietestHit: 0.35
+  botHitVolume: 0.6
+  hitStopDuration: {x: 0.06, y: 0.08}
+  hitStopTimeScale: 0.05
+  hitStopGap: 0.25
+  hitShake: 0.45
+  botHitShake: 0.35
+  boostedHitShake: 1.4
+  knockoutShake: {x: 0.3, y: 0.7}
+  ringFallShake: 0.3
+  botBoostVolume: 0.35
+  countdownSeconds: 10
+  jingleDelay: 0.6
 --- !u!1 &1404793204
 GameObject:
   m_ObjectHideFlags: 0
@@ -253,6 +398,7 @@ MonoBehaviour:
   arenaCamera: {fileID: 1867175643}
   arenaFloor: {fileID: 1674820966}
   carPrefab: {fileID: 9129053375818311994, guid: 222cdabef3973de4db083cc9179a4027, type: 3}
+  carCatalog: {fileID: 11400000, guid: 8d5e13a8f906422baa7e47d99440e034, type: 2}
   audioLibrary: {fileID: 11400000, guid: f401b36b1849431cb6ac97152243978d, type: 2}
 --- !u!4 &1404793206
 Transform:
@@ -395,6 +541,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 27e0e5882c08fb345a803e483b43d110, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Arena.ArenaFloor
+  blockLength: 7
+  minBlocks: 6
+  seam: 0.08
+  shakeDistance: 0.06
+  shakeAngle: 2.5
+  shakeFrequency: 14
+  shakeStart: 0.25
+  fallDrift: {x: 0.5, y: 2}
+  fallKick: 1.5
+  fallSpin: {x: 60, y: 200}
+  hideDepth: 25
 --- !u!1 &1867175639
 GameObject:
   m_ObjectHideFlags: 0
@@ -491,67 +648,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6672ddc21ea476646ae6857af45dda48, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Arena.ArenaCamera
---- !u!1 &731205114
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 731205115}
-  - component: {fileID: 731205116}
-  - component: {fileID: 731205117}
-  m_Layer: 0
-  m_Name: Effects
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &731205115
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 731205114}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &731205116
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 731205114}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0f9601e9bbbf4307b52da0bc2d3f9646, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Effects.EffectPlayer
-  outline: {fileID: 2100000, guid: 2188f4de211c4cd6a87711e1d492995f, type: 2}
-  white: {fileID: 2100000, guid: a840781ae3da4af180d61734c494e2bb, type: 2}
-  gold: {fileID: 2100000, guid: f1272fbc00e740799cb9b53fcf40d231, type: 2}
-  dust: {fileID: 2100000, guid: 810c1088978e4c588ac3dd9022c20084, type: 2}
---- !u!114 &731205117
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 731205114}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 668cff9a8a5a4f25abb8a37b9227b594, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Effects.ArenaFeedback
+  zoomShare: 0.85
+  zoomTime: 0.8
+  shakeDistance: 1.2
+  shakeFrequency: 22
+  shakeDecay: 2.5
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

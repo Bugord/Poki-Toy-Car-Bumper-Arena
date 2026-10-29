@@ -19,6 +19,12 @@ MonoBehaviour:
     popupOptions:
       cancelOnBackdropClick: 0
       cancelOnNavigationCancel: 0
+  - screenId: Garage
+    uxml: {fileID: 9197481963319205126, guid: bed2537274314fefa3ebe525122e1047, type: 3}
+    layer: 1
+    popupOptions:
+      cancelOnBackdropClick: 0
+      cancelOnNavigationCancel: 0
   - screenId: Hud
     uxml: {fileID: 9197481963319205126, guid: e41083b5aec8f4641afaa95b8d6afac9, type: 3}
     layer: 0
