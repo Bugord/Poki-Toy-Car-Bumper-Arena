@@ -588,6 +588,7 @@
 
 /* The player's chip: a white ring just inside its navy outline. */
 .hud__chip-ring {
+    display: none;
     position: absolute;
     left: 0;
     top: 0;
@@ -597,6 +598,8 @@
     border-color: var(--white);
     border-radius: 33px;
 }
+
+.hud__chip--player > .hud__chip-ring { display: flex; }
 
 .hud__chip-car {
     width: 24px;
@@ -1712,18 +1715,22 @@
     text-shadow: 0 0 0 rgba(0, 0, 0, 0);
 }
 
-/* Garage and reward portraits share the catalog's transparent player-colour images. */
+/* Two aligned layers: a neutral car and its separately tinted white body. */
 .car-portrait {
     width: 100%;
     height: 100%;
+}
+
+.car-portrait__layer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
     -unity-background-image-tint-color: var(--white);
-}
-
-.car-portrait--locked {
-    -unity-background-image-tint-color: var(--navy);
 }
 
 .round-over__xp-body {
@@ -1852,7 +1859,7 @@
 .garage__title-text {
     margin: 0;
     padding: 0;
-    font-size: 130px;
+    font-size: 116px;
     color: var(--gold);
 }
 
@@ -1861,7 +1868,65 @@
     flex-direction: row;
     align-items: center;
     width: 940px;
-    margin-bottom: 14px;
+    margin-bottom: 8px;
+}
+
+.garage__progress .round-over__level { width: 132px; height: 132px; }
+
+/* Eight colours fit in one row above either grid; selection changes scale without moving its neighbours. */
+.garage__colors {
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 940px;
+    height: 128px;
+    margin-bottom: 10px;
+}
+
+.garage__color {
+    flex-shrink: 0;
+    width: 92px;
+    height: 100px;
+    margin: 0;
+    padding: 0;
+    border-width: 7px;
+    border-bottom-width: 15px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    align-items: center;
+    justify-content: center;
+}
+
+.garage__color:hover,
+.garage__color:focus { scale: 1.08 1.08; }
+.garage__color--selected,
+.garage__color--selected:hover,
+.garage__color--selected:focus { scale: 1.18 1.18; }
+
+.garage__color-ring {
+    display: none;
+    position: absolute;
+    left: 1px;
+    right: 1px;
+    top: 1px;
+    bottom: 1px;
+    border-width: 5px;
+    border-color: var(--white);
+    border-radius: 999px;
+    align-items: center;
+    justify-content: center;
+}
+
+.garage__color--selected .garage__color-ring { display: flex; }
+.garage__color-check {
+    width: 25px;
+    height: 15px;
+    margin-bottom: 7px;
+    border-left-width: 6px;
+    border-bottom-width: 6px;
+    border-color: var(--white);
+    rotate: -45deg;
 }
 
 .garage__grid {
@@ -1877,8 +1942,8 @@
     align-items: center;
     justify-content: center;
     width: 456px;
-    height: 270px;
-    margin: 10px;
+    height: 252px;
+    margin: 8px 10px;
     padding: 4px 16px 6px 16px;
     border-width: 9px;
     border-bottom-width: 20px;
@@ -1899,7 +1964,7 @@
 
 .garage__portrait {
     flex-shrink: 0;
-    height: 128px;
+    height: 112px;
 }
 
 .garage__name {
@@ -2062,6 +2127,7 @@
     transition-duration: 0s;
 }
 .feed__row .hud__chip-car { scale: 0.65 0.65; }
+.feed__row .hud__chip-ring { border-width: 2px; border-radius: 16px; }
 .feed__name {
     height: 48px;
     min-width: 0;

@@ -18,6 +18,9 @@ namespace ToyCarArena.Gameplay.Round
         /// </summary>
         CarCatalog.Entry CarOf(int carIndex);
 
+        /// <summary>The slot's colour ID; 0 is the player's current selection, independently of seated names.</summary>
+        int ColorOf(int carIndex);
+
         bool Joined(int carIndex);
         string LeftNameOf(int carIndex);
         IReadOnlyList<SessionPlayer> ForRound(int botCount);

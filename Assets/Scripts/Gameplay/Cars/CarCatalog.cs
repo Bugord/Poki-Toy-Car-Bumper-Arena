@@ -66,12 +66,17 @@ namespace ToyCarArena.Gameplay.Cars
             [SerializeField]
             private Texture2D portrait;
 
+            [Tooltip("Visible white body paint, aligned with portrait; tinted separately by the UI")]
+            [SerializeField]
+            private Texture2D bodyPortrait;
+
             public string Id => id;
             public string DisplayName => displayName;
             public int UnlockLevel => unlockLevel;
             public GameObject Model => model;
             public Vector2Int BodySwatch => bodySwatch;
             public Texture2D Portrait => portrait;
+            public Texture2D BodyPortrait => bodyPortrait;
         }
     }
 }

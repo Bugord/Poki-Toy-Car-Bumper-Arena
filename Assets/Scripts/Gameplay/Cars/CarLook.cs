@@ -23,12 +23,11 @@ namespace ToyCarArena.Gameplay.Cars
         [SerializeField]
         private MeshFilter body;
 
-        [Tooltip("The swatch of each car's body by its index: the player first, then the bots. A car beyond the last " +
-            "one starts over from the first bot's")]
+        [Tooltip("Body swatches by colour ID: green, red, blue, yellow, purple, orange, pink, dark")]
         [SerializeField]
         private Vector2Int[] swatches =
         {
-            new(1, 1), // green, the player
+            new(1, 1), // green
             new(4, 1), // red
             new(5, 1), // blue
             new(2, 1), // yellow
@@ -83,17 +82,16 @@ namespace ToyCarArena.Gameplay.Cars
         private readonly System.Collections.Generic.List<Mesh> markerMeshes = new();
 
         /// <summary>
-        /// Paints the car for its place in the round: index 0 is the player's, with the marker; 1..N are bots.
+        /// Paints the chosen colour; only the index decides whether to show the player's marker.
         /// </summary>
-        public void Apply(int index, CarCatalog.Entry entry)
+        public void Apply(int index, CarCatalog.Entry entry, int colorId)
         {
             ReplaceModel(entry);
-            ownBody = CarModel.PaintBody(CarModel.FindBody(model, out _), entry.BodySwatch, SwatchOf(index));
+            ownBody = CarModel.PaintBody(CarModel.FindBody(model, out _), entry.BodySwatch, swatches[CarPaint.OrGreen(colorId)]);
             SetMarker(index == 0);
         }
 
         // Shared by the catalog's portrait renderer; the palette stays authored on the prefab.
-        public Vector2Int PlayerSwatch => swatches[0];
         public Material ModelMaterial => body.GetComponent<MeshRenderer>().sharedMaterial;
         public Quaternion ModelRotation => body.transform.localRotation;
 
@@ -167,20 +165,6 @@ namespace ToyCarArena.Gameplay.Cars
             foreach (var mesh in markerMeshes) {
                 Destroy(mesh);
             }
-        }
-
-        /// <summary>
-        /// The swatch of the car with this index. Past the last one the bots start over from the first bot's, so no bot
-        /// ever wears the player's colour (CarColor in the UI counts the same way).
-        /// </summary>
-        private Vector2Int SwatchOf(int index)
-        {
-            if (index < swatches.Length) {
-                return swatches[Mathf.Max(0, index)];
-            }
-
-            var botSwatches = swatches.Length - 1;
-            return botSwatches > 0 ? swatches[1 + (index - 1) % botSwatches] : swatches[0];
         }
 
         private void SetMarker(bool isPlayer)

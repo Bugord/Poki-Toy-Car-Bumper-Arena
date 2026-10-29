@@ -28,7 +28,7 @@ namespace ToyCarArena.UI
 
         /// <summary>
         /// Raised when a car falls off, the player's included, with its index in the round (0 the player, 1..N the
-        /// bots, as <see cref="CarLook"/> painted them).
+        /// bots, independently of their colours).
         /// </summary>
         public event Action<int> CarOut;
         public event Action<int, int> Eliminated;
@@ -71,6 +71,7 @@ namespace ToyCarArena.UI
         }
 
         public string NameOf(int index) => round.NameOf(index);
+        public int ColorOf(int index) => round.ColorOf(index);
 
         public Vector3 PositionOf(int index) => round.Cars[index].Position;
 
@@ -112,7 +113,7 @@ namespace ToyCarArena.UI
         public int CarCount => round?.Cars.Count ?? 0;
 
         /// <summary>
-        /// The index of the player's car; its colour and place on the HUD set it apart.
+        /// The index of the player's car; its white ring and place on the HUD set it apart.
         /// </summary>
         public int PlayerIndex => round?.Player != null ? round.IndexOf(round.Player) : 0;
 

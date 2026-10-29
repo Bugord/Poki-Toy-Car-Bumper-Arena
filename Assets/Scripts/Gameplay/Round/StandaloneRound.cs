@@ -38,7 +38,7 @@ namespace ToyCarArena.Gameplay.Round
 
         // Lazy: Unity's random API must run on the main thread, not in a static initializer during scene loading.
         private static SessionRoster roster;
-        public static SessionRoster Roster(CarCatalog catalog) => roster ??= new SessionRoster(catalog);
+        public static SessionRoster Roster(CarCatalog catalog) => roster ??= new SessionRoster(catalog, new FirstPlayerCar(catalog));
 
         public void Start()
         {
@@ -57,6 +57,7 @@ namespace ToyCarArena.Gameplay.Round
         private static void ResetSession()
         {
             Session = new SessionProgress();
+            roster?.Dispose();
             roster = null;
         }
 

@@ -24,6 +24,7 @@ namespace ToyCarArena.UI
         public IReadOnlyList<CarCatalog.Entry> Cars => catalog.Cars;
         public XpLevel Level => progress.At(progress.TotalXp);
         public string SelectedCar => progress.SelectedCar;
+        public int SelectedColor => progress.SelectedColor;
         public bool IsUnlocked(string id) => progress.IsUnlocked(id);
 
         public bool Select(string id)
@@ -37,5 +38,14 @@ namespace ToyCarArena.UI
         }
 
         public void Back() => SetResult(true);
+
+        public bool SelectColor(int id)
+        {
+            if (!progress.SelectColor(id)) {
+                return false;
+            }
+            platform.MeasureGarageColor(id);
+            return true;
+        }
     }
 }

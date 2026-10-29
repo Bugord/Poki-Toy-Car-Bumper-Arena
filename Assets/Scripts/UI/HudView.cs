@@ -980,7 +980,7 @@ namespace ToyCarArena.UI
                 return;
             }
 
-            var slot = CreateChip(index, isPlayer);
+            var slot = CreateChip(ViewModel.ColorOf(index), isPlayer);
             chipSlots[index] = slot;
             chipRow.Add(slot);
         }
@@ -1031,12 +1031,12 @@ namespace ToyCarArena.UI
         // A car's chip: a round sticker in the car's colour with a little white car seen from above in it, all drawn
         // by ui_screens, so the build carries no image for it. The chip sits in a place of its own in the stack, which
         // narrows to nothing as the chip leaves, so the chips after it slide over while the chip keeps its round shape.
-        private static VisualElement CreateChip(int index, bool isPlayer)
+        private static VisualElement CreateChip(int colorId, bool isPlayer)
         {
             var slot = new VisualElement { pickingMode = PickingMode.Ignore };
             slot.AddToClassList(ChipSlotClass);
 
-            slot.Add(CarColor.CreateChip(index, isPlayer));
+            slot.Add(CarColor.CreateChip(colorId, isPlayer));
 
             return slot;
         }

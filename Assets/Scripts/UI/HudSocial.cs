@@ -364,8 +364,8 @@ namespace ToyCarArena.UI
             private readonly StickerText second = new("");
             private readonly StickerText fell = new("FELL OFF");
             private readonly VisualElement arrow = new() { pickingMode = PickingMode.Ignore };
-            private int firstIndex;
-            private int secondIndex;
+            private int firstColor;
+            private int secondColor;
             public bool Active;
             public int Sequence;
             public float Started;
@@ -395,13 +395,15 @@ namespace ToyCarArena.UI
                 Y = -RowHeight;
                 var isKo = by != RoundResult.Nobody;
                 Root.EnableInClassList("feed__row--you", index == 0 || by == 0);
-                Recolor(firstChip, ref firstIndex, isKo ? by : index);
+                Recolor(firstChip, ref firstColor, model.ColorOf(isKo ? by : index));
+                CarColor.MarkPlayer(firstChip, (isKo ? by : index) == 0);
                 first.SetText(model.NameOf(isKo ? by : index));
                 arrow.style.display = secondChip.style.display = second.style.display =
                     isKo ? DisplayStyle.Flex : DisplayStyle.None;
                 fell.style.display = isKo ? DisplayStyle.None : DisplayStyle.Flex;
                 if (isKo) {
-                    Recolor(secondChip, ref secondIndex, index);
+                    Recolor(secondChip, ref secondColor, model.ColorOf(index));
+                    CarColor.MarkPlayer(secondChip, index == 0);
                     second.SetText(model.NameOf(index));
                 }
                 Root.style.display = DisplayStyle.Flex;
@@ -412,11 +414,11 @@ namespace ToyCarArena.UI
             /// <summary>
             /// Only the chip carries the car's colour: a name in blue or purple ink is lost on the dark pill.
             /// </summary>
-            private static void Recolor(VisualElement chip, ref int previous, int index)
+            private static void Recolor(VisualElement chip, ref int previous, int colorId)
             {
                 chip.RemoveFromClassList(CarColor.ClassOf(previous));
-                chip.AddToClassList(CarColor.ClassOf(index));
-                previous = index;
+                chip.AddToClassList(CarColor.ClassOf(colorId));
+                previous = colorId;
             }
         }
     }

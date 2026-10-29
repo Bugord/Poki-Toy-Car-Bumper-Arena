@@ -63,6 +63,7 @@ namespace ToyCarArena.Gameplay.Round
         private RoundStandings standings;
 
         public IReadOnlyList<string> Names { get; private set; }
+        public IReadOnlyList<int> Colors { get; private set; }
 
         public ArenaRound(GameTuning tuning, IObjectResolver resolver, Car carPrefab, Transform carParent, ArenaFloor floor,
             RoundDifficulty difficulty, ISessionProgress progress, ISessionRoster roster, CarCatalog catalog,
@@ -88,7 +89,7 @@ namespace ToyCarArena.Gameplay.Round
         public Car Player { get; private set; }
 
         /// <summary>
-        /// This round's marked rival, null if its colour is absent. Kept after a knockout so the HUD can name it.
+        /// This round's marked rival, null if its slot is absent. Kept after a knockout so the HUD can name it.
         /// </summary>
         public Car Nemesis { get; private set; }
 
@@ -163,11 +164,15 @@ namespace ToyCarArena.Gameplay.Round
             IsPlaced = true;
             players = roster.ForRound(difficulty.BotCount);
             var names = new string[1 + difficulty.BotCount];
+            var colors = new int[names.Length];
             names[0] = "YOU";
+            colors[0] = roster.ColorOf(0);
             for (var index = 1; index < names.Length; index++) {
                 names[index] = players[index - 1].Name;
+                colors[index] = players[index - 1].ColorId;
             }
             Names = Array.AsReadOnly(names);
+            Colors = Array.AsReadOnly(colors);
             standings = new RoundStandings(names.Length);
             Spawn(1 + difficulty.BotCount);
             Player = cars[0];
@@ -258,8 +263,7 @@ namespace ToyCarArena.Gameplay.Round
         }
 
         /// <summary>
-        /// The car's place in the round: 0 for the player, 1..N for the bots, as <see cref="CarLook.Apply"/> painted
-        /// them; -1 for a car not in the round.
+        /// The car's identity in the round: 0 for the player, 1..N for the bots; -1 for a car not in the round.
         /// </summary>
         public int IndexOf(Car car)
         {
@@ -268,6 +272,7 @@ namespace ToyCarArena.Gameplay.Round
 
         /// <summary>The played occupant, even after the visit's roster has moved on.</summary>
         public string NameOf(int index) => Names[index];
+        public int ColorOf(int index) => Colors[index];
 
         private void Finish(RoundOutcome outcome, int place)
         {
@@ -275,7 +280,7 @@ namespace ToyCarArena.Gameplay.Round
             IsFinished = true;
             var knockedOutBy = PlayerKnockedOutBy != null ? IndexOf(PlayerKnockedOutBy) : RoundResult.Nobody;
             Finished?.Invoke(new RoundResult(outcome, place, cars.Count, elapsed, PlayerKnockouts, knockedOutBy,
-                playerFallCause, Nemesis != null, RevengeTaken, standings.Snapshot()));
+                playerFallCause, Nemesis != null, RevengeTaken, standings.Snapshot(), Colors));
         }
 
         /// <summary>
@@ -337,7 +342,7 @@ namespace ToyCarArena.Gameplay.Round
                 car.name = NameOf(i);
                 car.IsPlayer = i == 0;
                 var entry = i == 0 ? catalog.Find(playerCar.SelectedCar) : players[i - 1].Car;
-                car.GetComponent<CarLook>().Apply(i, entry);
+                car.GetComponent<CarLook>().Apply(i, entry, ColorOf(i));
                 cars.Add(car);
             }
         }

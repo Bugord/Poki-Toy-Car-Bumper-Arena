@@ -129,7 +129,7 @@ namespace ToyCarArena.Tests.PlayMode
             var randomState = Random.state;
             try {
                 JsonUtility.FromJsonOverwrite("{\"cars\":[{\"id\":\"locked\",\"unlockLevel\":99}]}", catalog);
-                var roster = new SessionRoster(catalog);
+                using var roster = new SessionRoster(catalog, new FirstPlayerCar(catalog));
                 Assert.That(roster.NameOf(0), Is.EqualTo("YOU"));
                 Assert.That(JsonUtility.ToJson(Random.state), Is.EqualTo(JsonUtility.ToJson(randomState)));
                 var car = roster.CarOf(1);
@@ -189,6 +189,59 @@ namespace ToyCarArena.Tests.PlayMode
 
         private static RoundResult Result(RoundOutcome outcome, int place, int cars, int knockouts) =>
             new(outcome, place, cars, 20f, knockouts, RoundResult.Nobody, FallCause.None, false, false);
+
+        [Test]
+        public void ColorDefaultsToGreenWithoutSavingAnything()
+        {
+            Assert.That(progress.SelectedColor, Is.Zero);
+            Assert.That(storage.HasKey("car_color"), Is.False);
+        }
+
+        [TestCase(-1)]
+        [TestCase(8)]
+        [TestCase(int.MaxValue)]
+        public void InvalidStoredColorFallsBackToGreen(int id)
+        {
+            storage.SetInt("car_color", id);
+            Assert.That(new PlayerProgress(storage, tuning, catalog).SelectedColor, Is.Zero);
+        }
+
+        [TestCase(0)]
+        [TestCase(1)]
+        [TestCase(2)]
+        [TestCase(3)]
+        [TestCase(4)]
+        [TestCase(5)]
+        [TestCase(6)]
+        [TestCase(7)]
+        public void EveryColorIsFreeAndPersistsAtLevelOne(int id)
+        {
+            progress.SelectColor((id + 1) % CarPaint.Count);
+            Assert.That(progress.SelectColor(id), Is.True);
+            Assert.That(storage.GetInt("car_color"), Is.EqualTo(id));
+            Assert.That(new PlayerProgress(storage, tuning, catalog).SelectedColor, Is.EqualTo(id));
+            Assert.That(progress.TotalXp, Is.Zero);
+            Assert.That(progress.SelectedCar, Is.EqualTo("racer"));
+        }
+
+        [Test]
+        public void InvalidOrRepeatedColorDoesNotSaveOrNotify()
+        {
+            var changes = new List<int>();
+            progress.ColorChanged += changes.Add;
+            Assert.That(progress.SelectColor(0), Is.False);
+            Assert.That(progress.SelectColor(-1), Is.False);
+            Assert.That(progress.SelectColor(8), Is.False);
+            Assert.That(storage.HasKey("car_color"), Is.False);
+            Assert.That(changes, Is.Empty);
+            Assert.That(progress.SelectColor(4), Is.True);
+            Assert.That(progress.SelectColor(4), Is.False);
+            Assert.That(progress.SelectColor(8), Is.False);
+            Assert.That(changes, Is.EqualTo(new[] { 4 }));
+            Assert.That(storage.GetInt("car_color"), Is.EqualTo(4));
+            progress.Record(Result(RoundOutcome.Won, 1, 4, 3));
+            Assert.That(progress.SelectedColor, Is.EqualTo(4), "Auto-equipping a model keeps the colour.");
+        }
 
         private sealed class MemoryStorage : IKeyValueStorage
         {
