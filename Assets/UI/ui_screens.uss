@@ -883,19 +883,24 @@
     transition-duration: 0.05s;
 }
 
+.hud__boost--hint-pulse {
+    scale: 1.08 1.08;
+    transition-duration: 0.3s;
+}
+
 .hud__boost--pressed {
     translate: 0 11px;
     transition-duration: 0.05s;
 }
 
 /* The start prompt of a visit's first round, while the cars wait for the player's first steer or boost (HudView shows
-   it): TAP TO START or CLICK TO START, outlined, and under it a dark plate with how to drive: a joystick, DRAG TO
-   DRIVE, an orange dot like the boost button and BOOST on a touch screen (hud__start--touch), a mouse, HOLD TO DRIVE,
+   it): TAP TO START or CLICK TO START, outlined, and under it a dark plate: an orange dot and TAP TO BOOST on a touch
+   screen (the full joystick demonstration sits separately in the thumb area), a mouse, HOLD TO DRIVE,
    the SPACE key and BOOST on a desktop (hud__start--desktop). Nothing dims the arena: the player's car and the HUD
    stay as in play. On a narrow screen it sits in the sky under the HUD, over the arena's far edge; on a wide one
    (hud__start--wide) inside the ring of cars, between the far bots and the player's car. It springs in once the curtain
-   is up (hud__start--enter, taken off once it is laid out), bobs (hud__start--bob, toggled by HudView, the knob and
-   the mouse swinging with it), and flashes away as the round begins (hud__start--leave). */
+   is up (hud__start--enter, taken off once it is laid out), bobs (hud__start--bob, toggled by HudView, with the mouse
+   swinging with it), and flashes away as the round begins (hud__start--leave). */
 .hud__start {
     display: none;
     position: absolute;
@@ -1005,39 +1010,109 @@
 .hud__start-boost-dot {
     width: 56px;
     height: 56px;
-    margin-left: 44px;
+    margin-left: 0;
     border-width: 6px;
     border-color: var(--white);
     border-radius: 28px;
     background-color: var(--orange);
 }
 
-/* The joystick: a white ring with its knob swinging side to side as the prompt bobs. */
-.hud__start-stick {
+/* First-round touch teaching. HudView places the ghost in the lower third, animates its opacity/scale and draws the
+   disc and knob with the real joystick's classes. Only the capsule finger and captions are extra, all non-picking.
+   The joystick wrapper is translucent; the finger and caption stay opaque once the whole demonstration is shown. */
+.hud__ghost {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    scale: 0 0;
+}
+
+.hud__ghost-stick {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+}
+
+.hud__ghost-finger {
+    position: absolute;
+    border-radius: 999px;
+    border-width: 7px;
+    border-bottom-width: 14px;
+    border-color: var(--navy);
+    background-color: var(--white);
+    transform-origin: 50% 0%;
+}
+
+.hud__ghost-caption {
+    position: absolute;
+    left: -320px;
+    top: -266px;
+    width: 640px;
+    align-items: center;
+}
+
+.hud__teaching-text {
+    margin: 0;
+    padding: 0 0 8px 0;
+    font-size: 66px;
+    color: var(--white);
+    -unity-text-outline-width: 12px;
+    -unity-text-outline-color: var(--navy);
+    text-shadow: 0 8px 0 rgb(29, 43, 79);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.hud__tap-hint {
+    position: absolute;
+    width: 560px;
+    align-items: center;
+    opacity: 0;
+    scale: 0 0;
+}
+
+/* Lives inside the moving boost slot, so TAP! and its arrow always follow T5's chosen side. The arrow is two outlined
+   chevrons, with no image or font glyph. Scale is on the teaching sticker, independent of the button's ready pop. */
+.hud__boost-hint {
+    position: absolute;
+    left: 0;
+    top: -240px;
+    width: 300px;
+    height: 220px;
+    align-items: center;
+    opacity: 0;
+    scale: 0 0;
+}
+
+.hud__boost-hint-label {
+    padding: 4px 28px;
+    background-color: var(--orange);
+}
+
+.hud__boost-hint-arrow {
+    position: absolute;
+    left: 114px;
+    top: 120px;
     width: 72px;
     height: 72px;
-    border-width: 6px;
-    border-color: var(--white);
-    border-radius: 36px;
-    background-color: rgba(255, 255, 255, 0.18);
+    border-right-width: 16px;
+    border-bottom-width: 16px;
+    border-color: var(--navy);
+    rotate: 45deg;
 }
 
-.hud__start-stick-knob {
+.hud__boost-hint-arrow-fill {
     position: absolute;
-    left: 15px;
-    top: 15px;
-    width: 30px;
-    height: 30px;
-    border-radius: 15px;
-    background-color: var(--white);
-    translate: -16px 0;
-    transition-property: translate;
-    transition-duration: 0.6s;
-    transition-timing-function: ease-in-out;
-}
-
-.hud__start--bob .hud__start-stick-knob {
-    translate: 16px 0;
+    left: 8px;
+    top: 8px;
+    width: 56px;
+    height: 56px;
+    border-right-width: 8px;
+    border-bottom-width: 8px;
+    border-color: var(--orange);
 }
 
 /* The mouse: a white outline with its left button orange, swaying as the prompt bobs. */

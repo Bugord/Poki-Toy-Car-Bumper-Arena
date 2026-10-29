@@ -32,12 +32,8 @@
                 <ui:Label name="start-text-face" text="TAP TO START" picking-mode="Ignore" class="hud__start-text stroke__face" />
             </ui:VisualElement>
             <ui:VisualElement picking-mode="Ignore" class="hud__start-hint hud__start-hint--touch">
-                <ui:VisualElement picking-mode="Ignore" class="hud__start-stick">
-                    <ui:VisualElement picking-mode="Ignore" class="hud__start-stick-knob" />
-                </ui:VisualElement>
-                <ui:Label text="DRAG TO DRIVE" picking-mode="Ignore" class="hud__start-hint-text" />
                 <ui:VisualElement picking-mode="Ignore" class="hud__start-boost-dot" />
-                <ui:Label text="BOOST" picking-mode="Ignore" class="hud__start-hint-text hud__start-boost-text" />
+                <ui:Label text="TAP TO BOOST" picking-mode="Ignore" class="hud__start-hint-text hud__start-boost-text" />
             </ui:VisualElement>
             <ui:VisualElement picking-mode="Ignore" class="hud__start-hint hud__start-hint--desktop">
                 <ui:VisualElement picking-mode="Ignore" class="hud__start-mouse">
@@ -51,9 +47,26 @@
                 <ui:Label text="BOOST" picking-mode="Ignore" class="hud__start-hint-text hud__start-boost-text" />
             </ui:VisualElement>
         </ui:VisualElement>
+        <ui:VisualElement name="ghost" picking-mode="Ignore" class="hud__ghost hud__stick--shown">
+            <ui:VisualElement name="ghost-stick" picking-mode="Ignore" class="hud__ghost-stick">
+                <ui:VisualElement name="ghost-base" picking-mode="Ignore" class="hud__stick-base" />
+                <ui:VisualElement name="ghost-knob" picking-mode="Ignore" class="hud__stick-knob" />
+            </ui:VisualElement>
+            <ui:VisualElement name="ghost-finger" picking-mode="Ignore" class="hud__ghost-finger" />
+            <ui:VisualElement picking-mode="Ignore" class="stroke hud__ghost-caption">
+                <ui:Label text="DRAG TO DRIVE" picking-mode="Ignore" class="hud__teaching-text" />
+                <ui:Label text="DRAG TO DRIVE" picking-mode="Ignore" class="hud__teaching-text stroke__face" />
+            </ui:VisualElement>
+        </ui:VisualElement>
         <ui:VisualElement name="stick" picking-mode="Ignore" class="hud__stick">
             <ui:VisualElement name="stick-base" picking-mode="Ignore" class="hud__stick-base" />
             <ui:VisualElement name="stick-knob" picking-mode="Ignore" class="hud__stick-knob" />
+        </ui:VisualElement>
+        <ui:VisualElement name="tap-hint" picking-mode="Ignore" class="hud__tap-hint">
+            <ui:VisualElement picking-mode="Ignore" class="stroke">
+                <ui:Label text="TAP TO BOOST" picking-mode="Ignore" class="hud__teaching-text" />
+                <ui:Label text="TAP TO BOOST" picking-mode="Ignore" class="hud__teaching-text stroke__face" />
+            </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="ko-layer" picking-mode="Ignore" class="hud__popups" />
         <ui:VisualElement name="boost-slot" picking-mode="Ignore" class="hud__boost-slot">
@@ -62,6 +75,17 @@
                 <ui:VisualElement picking-mode="Ignore" class="stroke hud__boost-label">
                     <ui:Label text="BOOST" picking-mode="Ignore" class="hud__boost-text" />
                     <ui:Label text="BOOST" picking-mode="Ignore" class="hud__boost-text stroke__face" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="boost-hint" picking-mode="Ignore" class="hud__boost-hint">
+                <ui:VisualElement picking-mode="Ignore" class="pill hud__boost-hint-label">
+                    <ui:VisualElement picking-mode="Ignore" class="stroke">
+                        <ui:Label text="TAP!" picking-mode="Ignore" class="hud__teaching-text" />
+                        <ui:Label text="TAP!" picking-mode="Ignore" class="hud__teaching-text stroke__face" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement picking-mode="Ignore" class="hud__boost-hint-arrow">
+                    <ui:VisualElement picking-mode="Ignore" class="hud__boost-hint-arrow-fill" />
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>

@@ -71,6 +71,34 @@ namespace ToyCarArena.UI
         private const float StickBaseScale = 1.3f;
         private const float StickKnobScale = 0.55f;
 
+        // First-round touch teaching, in unscaled seconds and reference panel pixels. The ghost uses the real
+        // joystick's proportions, with an opaque capsule finger whose tip follows the knob right, up, left, down.
+        private const float GhostCycle = 2f;
+        private const float GhostOpacity = 0.9f;
+        private const float GhostMaxRadius = 120f;
+        private const float GhostTravel = 0.8f;
+        private const float GhostFingerWidthScale = 0.7f;
+        private const float GhostFingerLengthScale = 2.5f;
+        private const float GhostFingerTilt = -30f;
+        private const float GhostPortraitY = 0.8f;
+        private const float GhostWideX = 0.64f;
+        private const float GhostWideY = 0.84f;
+        private const float GhostHalfWidth = 340f;
+        private const float GhostCaptionLift = 280f;
+        private const float GhostCarClearance = 100f;
+        private const float TeachingEnterTime = 0.25f;
+        private const float TeachingLeaveTime = 0.16f;
+        private const float BoostHintInterval = 4f;
+        private const float BoostHintDuration = 2f;
+        private const float BoostHintPulsePeriod = 0.7f;
+        private const string BoostHintPulseClass = "hud__boost--hint-pulse";
+        private const float TapHintDuration = 1f;
+        private const float TapHintWidth = 560f;
+        private const float TapHintHeight = 110f;
+        private const float TapHintGap = 80f;
+        private const float TapHintLift = 150f;
+        private const float TeachingMargin = 24f;
+
         // The KNOCKOUT! sticker: how long it springs in and then holds before it flies off, and how long that takes
         // (the transitions of ko-pop in ui_screens), in milliseconds.
         private const long PopupEnterDuration = 300;
@@ -132,6 +160,30 @@ namespace ToyCarArena.UI
         private VisualElement stickBase;
         private VisualElement stickKnob;
         private bool isStickShown;
+        private VisualElement ghost;
+        private VisualElement ghostBase;
+        private VisualElement ghostKnob;
+        private VisualElement ghostFinger;
+        private VisualElement boostHint;
+        private VisualElement tapHint;
+        private float teachingTime;
+        private float idleSince;
+        private float seenTouchTime = float.NegativeInfinity;
+        private int idleHintCount;
+        private bool hasStartTouch;
+        private bool isIdleHintShown;
+        private bool isGhostShown;
+        private float ghostTime;
+        private float ghostProgress;
+        private Vector2 ghostPanelSize;
+        private Vector2 ghostCenter;
+        private bool isBoostHintShown;
+        private float boostHintTime;
+        private float nextBoostHintTime;
+        private float boostHintProgress;
+        private bool hasTapHint;
+        private float tapHintTime;
+        private float tapHintProgress;
 
         private struct NamePlacement
         {
@@ -169,6 +221,15 @@ namespace ToyCarArena.UI
             stick = Root.Q<VisualElement>("stick");
             stickBase = Root.Q<VisualElement>("stick-base");
             stickKnob = Root.Q<VisualElement>("stick-knob");
+            ghost = Root.Q<VisualElement>("ghost");
+            Root.Q<VisualElement>("ghost-stick").style.opacity = GhostOpacity;
+            ghostBase = Root.Q<VisualElement>("ghost-base");
+            ghostKnob = Root.Q<VisualElement>("ghost-knob");
+            ghostFinger = Root.Q<VisualElement>("ghost-finger");
+            ghostFinger.style.rotate = new Rotate(GhostFingerTilt);
+            boostHint = Root.Q<VisualElement>("boost-hint");
+            tapHint = Root.Q<VisualElement>("tap-hint");
+            teachingTime = idleSince = Time.unscaledTime;
             ViewModel.PlayerKnockout += ShowKnockout;
             ViewModel.CarOut += OnCarOut;
 
@@ -185,6 +246,7 @@ namespace ToyCarArena.UI
             Root.schedule.Execute(Refresh).Every(RefreshInterval);
             Root.schedule.Execute(RefreshBoost).Every(BoostRefreshInterval);
             Root.schedule.Execute(RefreshStick).Every(BoostRefreshInterval);
+            Root.schedule.Execute(RefreshTeaching).Every(BoostRefreshInterval);
             Root.schedule.Execute(RefreshNames).Every(BoostRefreshInterval);
         }
 
@@ -690,6 +752,182 @@ namespace ToyCarArena.UI
             element.style.top = center.y - radius;
             element.style.width = radius * 2f;
             element.style.height = radius * 2f;
+        }
+
+        /// <summary>
+        /// Touch demonstrations yield to actual input. A held steering finger has already found the joystick, even
+        /// at its dead centre, so idle starts after it lifts. Boosting counts only when it fires. Clocks are unscaled.
+        /// </summary>
+        private void RefreshTeaching()
+        {
+            var now = Time.unscaledTime;
+            var elapsed = Mathf.Max(0f, now - teachingTime);
+            teachingTime = now;
+            var enabled = IsShown && ViewModel.IsFirstRound && controls.CheckTouchScreen();
+
+            if (ViewModel.LastTouchTime > seenTouchTime) {
+                seenTouchTime = ViewModel.LastTouchTime;
+                hasStartTouch = true;
+                isIdleHintShown = false;
+                idleSince = now;
+            }
+
+            if (!enabled || !ViewModel.IsRunning || controls.IsJoystickShown) {
+                idleSince = now;
+                isIdleHintShown = false;
+            }
+            else if (ViewModel.LastSteerTime > idleSince) {
+                idleSince = ViewModel.LastSteerTime;
+                isIdleHintShown = false;
+            }
+            else if (!isIdleHintShown && idleHintCount < ViewModel.Controls.IdleHintMax &&
+                now - idleSince >= ViewModel.Controls.IdleHintDelay) {
+                isIdleHintShown = true;
+                idleHintCount++;
+            }
+
+            var showGhost = enabled && !controls.IsJoystickShown &&
+                ((ViewModel.IsWaitingForPlayer && !hasStartTouch) || isIdleHintShown);
+            if (showGhost && !isGhostShown) {
+                ghostTime = now;
+                ghostPanelSize = Vector2.zero;
+            }
+
+            isGhostShown = showGhost;
+            AnimateTeaching(ghost, ref ghostProgress, showGhost, elapsed);
+            if (ghostProgress > 0f) {
+                DrawGhost(now - ghostTime);
+            }
+
+            var canHintBoost = enabled && ViewModel.CanHintBoost;
+            if (!canHintBoost || now - boostHintTime >= BoostHintDuration) {
+                isBoostHintShown = false;
+            }
+
+            if (canHintBoost && !isBoostHintShown && now >= nextBoostHintTime) {
+                isBoostHintShown = true;
+                boostHintTime = now;
+                nextBoostHintTime = now + BoostHintInterval;
+                hasTapHint = false;
+            }
+
+            AnimateTeaching(boostHint, ref boostHintProgress, isBoostHintShown, elapsed);
+            boostButton.EnableInClassList(BoostHintPulseClass, isBoostHintShown &&
+                (now - boostHintTime) % BoostHintPulsePeriod < BoostHintPulsePeriod * 0.5f);
+
+            // If the hint starts while no finger steers, wait for one rather than spending its second off-screen.
+            if (isBoostHintShown && controls.IsJoystickShown && !hasTapHint) {
+                hasTapHint = true;
+                tapHintTime = now;
+            }
+
+            var showTap = canHintBoost && hasTapHint && controls.IsJoystickShown && now - tapHintTime < TapHintDuration;
+            AnimateTeaching(tapHint, ref tapHintProgress, showTap, elapsed);
+            if (showTap) {
+                PlaceTapHint();
+            }
+        }
+
+        private void DrawGhost(float age)
+        {
+            var size = Root.layout.size;
+            var radius = Mathf.Min(GhostMaxRadius, ViewModel.Controls.JoystickRadius * Mathf.Min(size.x, size.y));
+            // Keep the demonstration still as cars drive past; find a clear place again only on show or resize.
+            if (size != ghostPanelSize) {
+                ghostPanelSize = size;
+                ghostCenter = size.x >= size.y ? PlaceWideGhost(size, radius) :
+                    new Vector2(size.x * 0.5f, size.y * GhostPortraitY);
+            }
+
+            ghost.style.left = ghostCenter.x;
+            ghost.style.top = ghostCenter.y;
+            var angle = age / GhostCycle * Mathf.PI * 2f;
+            var knob = new Vector2(Mathf.Cos(angle), -Mathf.Sin(angle)) * (radius * GhostTravel);
+            Place(ghostBase, Vector2.zero, radius * StickBaseScale);
+            Place(ghostKnob, knob, radius * StickKnobScale);
+            // The capsule pivots on its top centre, so its rounded tip stays on the knob while its body points down
+            // and right. Opacity belongs to the joystick wrapper; the finger and caption keep their full white fill.
+            var fingerWidth = radius * GhostFingerWidthScale;
+            ghostFinger.style.left = knob.x - fingerWidth * 0.5f;
+            ghostFinger.style.top = knob.y;
+            ghostFinger.style.width = fingerWidth;
+            ghostFinger.style.height = radius * GhostFingerLengthScale;
+        }
+
+        // In landscape, prefer the lower area just right of centre. Check nearby places against the projected live
+        // cars and the boost slot, so the demonstration does not cover a car or the button in the starting roster.
+        private Vector2 PlaceWideGhost(Vector2 size, float radius)
+        {
+            var preferred = new Vector2(size.x * GhostWideX, size.y * GhostWideY);
+            var camera = Camera.main;
+            if (camera == null || ghost.panel == null) {
+                return preferred;
+            }
+
+            var best = preferred;
+            var fewestOverlaps = int.MaxValue;
+            // Reserve the capsule's bottom cap at the lowest point of the orbit, keeping the longer finger on-screen.
+            var fingerHalfWidth = radius * GhostFingerWidthScale * 0.5f;
+            var bottom = radius * GhostTravel + fingerHalfWidth +
+                (radius * GhostFingerLengthScale - fingerHalfWidth) * Mathf.Cos(GhostFingerTilt * Mathf.Deg2Rad);
+            var buttonBounds = new Rect(Root.WorldToLocal(boostSlot.worldBound.min), boostSlot.worldBound.size);
+            for (var row = 0; row < 2; row++) {
+                for (var column = 0; column < 4; column++) {
+                    var point = preferred + new Vector2(column * radius * 2f, row * radius);
+                    point.x = Mathf.Min(point.x, size.x - GhostHalfWidth - TeachingMargin);
+                    point.y = Mathf.Min(point.y, size.y - bottom - TeachingMargin);
+                    var bounds = Rect.MinMaxRect(point.x - GhostHalfWidth, point.y - GhostCaptionLift,
+                        point.x + GhostHalfWidth, point.y + bottom);
+                    var overlaps = bounds.Overlaps(buttonBounds) ? 1 : 0;
+                    bounds.xMin -= GhostCarClearance;
+                    bounds.xMax += GhostCarClearance;
+                    bounds.yMin -= GhostCarClearance;
+                    bounds.yMax += GhostCarClearance;
+                    for (var index = 0; index < ViewModel.CarCount; index++) {
+                        if (ViewModel.IsCarIn(index)) {
+                            var panelPoint = RuntimePanelUtils.CameraTransformWorldToPanel(ghost.panel,
+                                ViewModel.PositionOf(index), camera);
+                            if (bounds.Contains(Root.WorldToLocal(panelPoint))) {
+                                overlaps++;
+                            }
+                        }
+                    }
+
+                    if (overlaps < fewestOverlaps) {
+                        best = point;
+                        fewestOverlaps = overlaps;
+                    }
+
+                    if (overlaps == 0) {
+                        return point;
+                    }
+                }
+            }
+
+            return best;
+        }
+
+        private void PlaceTapHint()
+        {
+            var point = Root.WorldToLocal(stick.LocalToWorld(ToStick(stick.panel, controls.JoystickKnob)));
+            var size = Root.layout.size;
+            var x = point.x < size.x * 0.5f ? point.x + TapHintGap : point.x - TapHintGap - TapHintWidth;
+            tapHint.style.left = Mathf.Clamp(x, TeachingMargin, Mathf.Max(TeachingMargin,
+                size.x - TapHintWidth - TeachingMargin));
+            tapHint.style.top = Mathf.Clamp(point.y - TapHintLift, TeachingMargin, Mathf.Max(TeachingMargin,
+                size.y - TapHintHeight - TeachingMargin));
+        }
+
+        // A spring on the way in and a shrink on the way out, on the unscaled HUD clock, independent of hit-stop.
+        private static void AnimateTeaching(VisualElement element, ref float progress, bool shown, float elapsed,
+            float opacity = 1f)
+        {
+            progress = Mathf.MoveTowards(progress, shown ? 1f : 0f,
+                elapsed / (shown ? TeachingEnterTime : TeachingLeaveTime));
+            var back = progress - 1f;
+            var scale = shown ? 1f + 2.7f * back * back * back + 1.7f * back * back : progress;
+            element.style.scale = new Scale(new Vector3(scale, scale, 1f));
+            element.style.opacity = progress * opacity;
         }
 
         private void OnBoostPointerDown(PointerDownEvent evt)

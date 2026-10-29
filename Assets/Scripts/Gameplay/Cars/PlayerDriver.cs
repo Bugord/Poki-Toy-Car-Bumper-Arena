@@ -81,6 +81,18 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public int Boosts { get; private set; }
 
+        /// <summary>
+        /// Unscaled time of the last nonzero steer, before edge assist, so the HUD never mistakes braking at the edge
+        /// for a player who has not found the joystick. Negative infinity until the first steer.
+        /// </summary>
+        public float LastSteerTime => lastSteerTime;
+
+        /// <summary>
+        /// Unscaled time of the last touch input, including a boost pressed during cooldown. Events keep even touches
+        /// shorter than a HUD refresh, so a demonstration yields to the player's finger immediately.
+        /// </summary>
+        public float LastTouchTime { get; private set; } = float.NegativeInfinity;
+
         public PlayerDriver(IInputService input, GameTuning tuning, ArenaCamera arenaCamera, ArenaRound round,
             IOnScreenControls onScreenControls, RoundDifficulty difficulty)
         {
@@ -150,6 +162,10 @@ namespace ToyCarArena.Gameplay.Cars
         // The press that starts the round only starts it: a boost before the round would throw the car off its place.
         private void OnBoostPressed(BoostInputMethod method)
         {
+            if (method == BoostInputMethod.Button || method == BoostInputMethod.Finger || method == BoostInputMethod.Tap) {
+                LastTouchTime = Time.unscaledTime;
+            }
+
             if (IsWaiting) {
                 HasActed = true;
                 return;
@@ -203,6 +219,10 @@ namespace ToyCarArena.Gameplay.Cars
         // A steer that starts the round counts as the round's first, at its very start.
         private void OnMoveUsed(InputMethod method)
         {
+            if (method == InputMethod.Touch) {
+                LastTouchTime = Time.unscaledTime;
+            }
+
             if (!round.IsPlaced || round.IsFinished || round.Player.IsOut) {
                 return;
             }

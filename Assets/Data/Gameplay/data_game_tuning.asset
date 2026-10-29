@@ -32,6 +32,9 @@ MonoBehaviour:
     tapBoostTime: 0.2
     tapBoostSlop: 0.03
     tapBoostMemory: 0.5
+    idleHintDelay: 3
+    idleHintMax: 2
+    boostHintDistance: 6
     pointerStopRadius: 1
     pointerSlowRadius: 4
     edgeAssistMargin: 5

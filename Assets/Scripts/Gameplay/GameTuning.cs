@@ -164,6 +164,21 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float tapBoostMemory = 0.5f;
 
+            [Tooltip("Seconds without steering in the visit's first round before the touch joystick reminder returns")]
+            [Min(0f)]
+            [SerializeField]
+            private float idleHintDelay = 3f;
+
+            [Tooltip("Maximum joystick reminders during the visit's first round, excluding the start demonstration")]
+            [Min(0)]
+            [SerializeField]
+            private int idleHintMax = 2;
+
+            [Tooltip("Distance to another car, centre to centre in metres, within which to suggest the first boost")]
+            [Min(0f)]
+            [SerializeField]
+            private float boostHintDistance = 6f;
+
             [Tooltip("Following the mouse or a finger, the car stops this close to it, in metres")]
             [Min(0f)]
             [SerializeField]
@@ -193,6 +208,9 @@ namespace ToyCarArena.Gameplay
             public float TapBoostTime => tapBoostTime;
             public float TapBoostSlop => tapBoostSlop;
             public float TapBoostMemory => tapBoostMemory;
+            public float IdleHintDelay => idleHintDelay;
+            public int IdleHintMax => idleHintMax;
+            public float BoostHintDistance => boostHintDistance;
             public float PointerStopRadius => pointerStopRadius;
             public float PointerSlowRadius => pointerSlowRadius;
             public float EdgeAssistMargin => edgeAssistMargin;
