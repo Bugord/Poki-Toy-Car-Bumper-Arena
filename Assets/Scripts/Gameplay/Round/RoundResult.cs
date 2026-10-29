@@ -71,8 +71,14 @@ namespace ToyCarArena.Gameplay.Round
         /// </summary>
         public readonly FallCause FallCause;
 
+        /// <summary>The visit's marked rival was among this round's cars.</summary>
+        public readonly bool HadNemesis;
+
+        /// <summary>The player got knockout credit for the marked rival.</summary>
+        public readonly bool RevengeTaken;
+
         public RoundResult(RoundOutcome outcome, int place, int carCount, float seconds, int knockouts, int knockedOutBy,
-            FallCause fallCause)
+            FallCause fallCause, bool hadNemesis, bool revengeTaken)
         {
             Outcome = outcome;
             Place = place;
@@ -81,6 +87,8 @@ namespace ToyCarArena.Gameplay.Round
             Knockouts = knockouts;
             KnockedOutBy = knockedOutBy;
             FallCause = fallCause;
+            HadNemesis = hadNemesis;
+            RevengeTaken = revengeTaken;
         }
     }
 }

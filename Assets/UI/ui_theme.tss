@@ -8,7 +8,8 @@
 
    The palette, as variables every style sheet of the panel can use (var(--navy)). Translucent colours cannot be built
    from them, so they are written out where used: rgba(29, 43, 79, 0.6) dims a screen.
-   - navy: outlines, drops, text on white; white: cards, pills, text on the game
+   - navy: outlines, drops, text on white; white: cards, pills, text on the game; name-backdrop: translucent navy under
+     bot handles so they read against every part of the arena
    - soft: a panel inside a card, a place past the podium, a white button's face under the pointer; shade: a white
      button's face shade; muted: captions and secondary text
    - red: the last seconds, a knock-out; gold: a win, first place, the stopwatch; silver, bronze: second and third place
@@ -37,6 +38,7 @@
     --blue: #38b6ff;
     --orange: #ff9f1c;
     --purple: #b06cff;
+    --name-backdrop: rgba(29, 43, 79, 0.65);
 
     --car-green: #3fa87a;
     --car-red: #e65f48;

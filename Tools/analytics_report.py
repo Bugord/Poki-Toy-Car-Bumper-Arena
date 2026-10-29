@@ -61,6 +61,7 @@ def summarise(data):
         "outcome": other(o, r"result-(won|out|survived)-outcome"),
         "cause": other(o, r"result-(pushed|fell)-out-cause"),
         "fall_cause": other(o, r"result-(fell-[a-z]+-r[0-9a-z]+)-fall-cause"),
+        "revenge": other(o, r"result-(revenge-[a-z]+-r[0-9a-z]+)-revenge"),
         "time": other(o, r"result-(\d+-\d+)-time"),
         "boosts": other(o, r"result-(boosts-[a-z0-9-]+?)-boosts"),
         "input": other(o, r"controls-([a-z]+)-input"),
@@ -146,6 +147,7 @@ def report(version, previous):
         ("Машинок в раунде (с v0.2)", "cars", None),
         ("Длительность раунда (с v0.2)", "round_time", None),
         ("Причина самовылета (с v0.2.0)", "fall_cause", None),
+        ("REVENGE (с v0.2.0)", "revenge", None),
     ):
         keys = order if order is not None else keys_of(key)
         if keys:

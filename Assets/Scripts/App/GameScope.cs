@@ -42,6 +42,7 @@ namespace ToyCarArena.App
             // Here, so they outlive the Game scene reloaded every round: the bots read the progress as the scene is
             // built.
             builder.Register<SessionProgress>(Lifetime.Singleton).AsSelf().As<ISessionProgress>();
+            builder.Register<SessionRoster>(Lifetime.Singleton).As<ISessionRoster>();
             builder.Register<PersonalBests>(Lifetime.Singleton);
 
             builder.RegisterScreen<CurtainViewModel, CurtainView>();

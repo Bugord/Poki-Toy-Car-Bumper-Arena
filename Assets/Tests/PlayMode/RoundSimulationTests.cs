@@ -95,6 +95,7 @@ namespace ToyCarArena.Tests.PlayMode
                 builder.AddBugordCore("simulation");
                 builder.Register<IOnScreenControls, NoOnScreenControls>(Lifetime.Singleton);
                 builder.RegisterInstance<ISessionProgress>(progress);
+                builder.Register<SessionRoster>(Lifetime.Singleton).As<ISessionRoster>();
                 builder.RegisterInstance<IAudioService>(audio);
                 builder.RegisterInstance<IInputService>(input);
             }, "Simulation Scope");

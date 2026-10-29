@@ -48,13 +48,15 @@ namespace ToyCarArena.Gameplay.Round
         private readonly Transform carParent;
         private readonly ArenaFloor floor;
         private readonly RoundDifficulty difficulty;
+        private readonly ISessionRoster roster;
+        private readonly int nemesisIndex;
         private readonly List<Car> cars = new();
 
         private float elapsed;
         private FallCause playerFallCause;
 
         public ArenaRound(GameTuning tuning, IObjectResolver resolver, Car carPrefab, Transform carParent, ArenaFloor floor,
-            RoundDifficulty difficulty)
+            RoundDifficulty difficulty, ISessionProgress progress, ISessionRoster roster)
         {
             this.tuning = tuning;
             this.resolver = resolver;
@@ -62,6 +64,8 @@ namespace ToyCarArena.Gameplay.Round
             this.carParent = carParent;
             this.floor = floor;
             this.difficulty = difficulty;
+            this.roster = roster;
+            this.nemesisIndex = progress.Nemesis;
         }
 
         public IReadOnlyList<Car> Cars => cars;
@@ -70,6 +74,13 @@ namespace ToyCarArena.Gameplay.Round
         /// The player's car, null before the cars are placed.
         /// </summary>
         public Car Player { get; private set; }
+
+        /// <summary>
+        /// This round's marked rival, null if its colour is absent. Kept after a knockout so the HUD can name it.
+        /// </summary>
+        public Car Nemesis { get; private set; }
+
+        public bool RevengeTaken { get; private set; }
 
         /// <summary>
         /// The cars are on the arena (<see cref="Place"/>), whether the round has begun or not.
@@ -136,6 +147,7 @@ namespace ToyCarArena.Gameplay.Round
             IsPlaced = true;
             Spawn(1 + difficulty.BotCount);
             Player = cars[0];
+            Nemesis = nemesisIndex > 0 && nemesisIndex < cars.Count ? cars[nemesisIndex] : null;
             CarsLeft = cars.Count;
         }
 
@@ -178,6 +190,9 @@ namespace ToyCarArena.Gameplay.Round
                     if (knockedOutBy != null) {
                         if (knockedOutBy == Player) {
                             PlayerKnockouts++;
+                            if (car == Nemesis) {
+                                RevengeTaken = true;
+                            }
                         }
 
                         if (car == Player) {
@@ -217,7 +232,7 @@ namespace ToyCarArena.Gameplay.Round
             IsFinished = true;
             var knockedOutBy = PlayerKnockedOutBy != null ? IndexOf(PlayerKnockedOutBy) : RoundResult.Nobody;
             Finished?.Invoke(new RoundResult(outcome, place, cars.Count, elapsed, PlayerKnockouts, knockedOutBy,
-                playerFallCause));
+                playerFallCause, Nemesis != null, RevengeTaken));
         }
 
         /// <summary>
@@ -275,7 +290,7 @@ namespace ToyCarArena.Gameplay.Round
                 // The interpolated Rigidbody wakes up where the prefab was made, at the origin, and puts the transform
                 // back there; placing the body itself keeps the cars apart.
                 car.Movement.Place(position, rotation);
-                car.name = i == 0 ? "Player Car" : $"Bot Car {i}";
+                car.name = roster.NameOf(i);
                 car.IsPlayer = i == 0;
                 car.GetComponent<CarLook>().Apply(i);
                 cars.Add(car);

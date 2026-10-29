@@ -10,6 +10,7 @@ namespace ToyCarArena.Tests.PlayMode
     {
         public int Round { get; set; }
         public int LosingStreak { get; set; }
+        public int Nemesis => RoundResult.Nobody;
     }
 
     /// <summary>

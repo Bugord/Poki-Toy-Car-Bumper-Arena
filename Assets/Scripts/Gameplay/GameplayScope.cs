@@ -96,6 +96,7 @@ namespace ToyCarArena.Gameplay
                 // round, so StandaloneRound keeps it across the reloads.
                 builder.RegisterInstance(StandaloneRound.Session, typeof(SessionProgress))
                     .As(typeof(ISessionProgress));
+                builder.RegisterInstance(StandaloneRound.Roster, typeof(ISessionRoster));
             }
 
             builder.RegisterBuildCallback(InjectScene);

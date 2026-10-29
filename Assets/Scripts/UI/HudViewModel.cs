@@ -21,9 +21,9 @@ namespace ToyCarArena.UI
     {
         /// <summary>
         /// Raised when the player knocks a car out, with the point on the arena's edge where it went over: where the
-        /// KNOCKOUT! sticker goes.
+        /// KNOCKOUT! sticker goes; true for REVENGE! on the marked rival instead.
         /// </summary>
-        public event Action<Vector3> PlayerKnockout;
+        public event Action<Vector3, bool> PlayerKnockout;
 
         /// <summary>
         /// Raised when a car falls off, the player's included, with its index in the round (0 the player, 1..N the
@@ -31,7 +31,22 @@ namespace ToyCarArena.UI
         /// </summary>
         public event Action<int> CarOut;
 
+        private readonly ISessionRoster roster;
         private ArenaRound round;
+
+        public HudViewModel(ISessionRoster roster)
+        {
+            this.roster = roster;
+        }
+
+        public string NameOf(int index) => roster.NameOf(index);
+
+        public Vector3 PositionOf(int index) => round.Cars[index].Position;
+
+        public bool IsNemesis(int index) => round != null && round.Nemesis != null &&
+            round.IndexOf(round.Nemesis) == index;
+
+        public bool HasBegun => round != null && round.HasBegun;
 
         /// <summary>
         /// Seconds left in the round.
@@ -118,7 +133,7 @@ namespace ToyCarArena.UI
             // edge, under it, is still on the screen and tells which car it was.
             var position = car.Position;
             var flat = new Vector3(position.x, 0f, position.z);
-            PlayerKnockout?.Invoke(Vector3.ClampMagnitude(flat, round.ArenaRadius));
+            PlayerKnockout?.Invoke(Vector3.ClampMagnitude(flat, round.ArenaRadius), car == round.Nemesis);
         }
     }
 }

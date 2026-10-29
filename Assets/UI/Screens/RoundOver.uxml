@@ -31,8 +31,13 @@
                     </ui:VisualElement>
                 </ui:VisualElement>
             </ui:VisualElement>
+            <ui:VisualElement picking-mode="Ignore" class="stroke round-over__by-name">
+                <ui:Label name="by-name" picking-mode="Ignore" class="display round-over__by-name-text" />
+                <ui:Label name="by-name-face" picking-mode="Ignore" class="display round-over__by-name-text stroke__face" />
+            </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement picking-mode="Ignore" class="card round-over__card">
+            <ui:Label name="revenge" text="REVENGE!" picking-mode="Ignore" class="best best--new round-over__revenge" />
             <ui:VisualElement name="place" picking-mode="Ignore" class="round-over__place">
                 <ui:Label text="YOUR PLACE" picking-mode="Ignore" class="caption" />
                 <ui:VisualElement name="place-pill" picking-mode="Ignore" class="round-over__place-pill">

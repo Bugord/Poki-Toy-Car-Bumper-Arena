@@ -15,11 +15,21 @@ namespace ToyCarArena.Gameplay.Round
 
         public int LosingStreak { get; private set; }
 
+        public int Nemesis { get; private set; } = RoundResult.Nobody;
+
         /// <summary>
         /// Counts the round just decided: a fall adds to the losing streak, a win or a round survived ends it.
         /// </summary>
         public void Record(RoundResult result)
         {
+            // A new knockout gives the next round a new rival, even if the old one was beaten earlier this round.
+            if (result.Outcome == RoundOutcome.Out && result.KnockedOutBy != RoundResult.Nobody) {
+                Nemesis = result.KnockedOutBy;
+            }
+            else if (result.Outcome == RoundOutcome.Won || result.RevengeTaken) {
+                Nemesis = RoundResult.Nobody;
+            }
+
             this.LosingStreak = result.Outcome == RoundOutcome.Out ? LosingStreak + 1 : 0;
             this.Round = Round + 1;
         }

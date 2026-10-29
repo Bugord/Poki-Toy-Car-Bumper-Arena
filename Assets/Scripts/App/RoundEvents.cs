@@ -30,6 +30,7 @@ namespace ToyCarArena.App
     /// <item>since v0.2.0: <c>result / fell-ring, boost, slide, drive-rR / fall-cause</c> when the player falls without
     /// knockout credit: the floor gave way, a recent boost, an older hit, or driving off, in that order</item>
     /// <item><c>result / play-again / visible</c>, then <c>interact</c> when pressed</item>
+    /// <item>since v0.2.0, only with a marked rival present: <c>result / revenge-got, missed-rR / revenge</c></item>
     /// </list>
     /// </summary>
     public static class RoundEvents
@@ -77,6 +78,10 @@ namespace ToyCarArena.App
             platform.Measure(ResultCategory, TimeBucketOf(result.Seconds, duration), "time");
             platform.Measure(ResultCategory, $"cars-{result.CarCount}-{tag}", "cars");
             platform.Measure(ResultCategory, $"{TimeSpanOf(result.Seconds)}-{tag}", "round-time");
+            if (result.HadNemesis) {
+                var revenge = result.RevengeTaken ? "got" : "missed";
+                platform.Measure(ResultCategory, $"revenge-{revenge}-{tag}", "revenge");
+            }
             if (result.Outcome == RoundOutcome.Out) {
                 var cause = result.KnockedOutBy == RoundResult.Nobody ? "fell" : "pushed";
                 platform.Measure(ResultCategory, cause, "out-cause");

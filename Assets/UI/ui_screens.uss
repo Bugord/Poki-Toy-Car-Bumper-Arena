@@ -661,6 +661,98 @@
     color: var(--gold);
 }
 
+.ko-pop--revenge .ko-pop__text {
+    color: var(--red);
+}
+
+.ko-pop--revenge .ko-star__front {
+    background-color: var(--orange);
+}
+
+/* Visit handles follow the bots; the inner sticker animates independently of its projected anchor. */
+.car-name {
+    position: absolute;
+    translate: -50% -100%;
+    align-items: center;
+}
+
+.car-name__sticker {
+    align-items: center;
+    border-radius: 24px;
+    background-color: var(--name-backdrop);
+    transition-property: scale, opacity;
+    transition-duration: 0.35s;
+    transition-timing-function: ease-out-back;
+}
+
+.car-name__text {
+    margin: 0;
+    padding: 0 14px 3px 14px;
+    font-size: 44px;
+    color: var(--white);
+    -unity-text-outline-width: 6px;
+    text-shadow: none;
+}
+
+.car-name__revenge {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 10px 0 10px;
+}
+
+.car-name__revenge-text {
+    margin: 0;
+    padding: 0;
+    font-size: 32px;
+    letter-spacing: 1px;
+    color: var(--orange);
+    -unity-text-outline-width: 5px;
+    text-shadow: none;
+}
+
+.car-name--revenge .car-name__text {
+    color: var(--red);
+}
+
+/* A tiny bullseye, built from concentric rings and a centre dot. */
+.revenge-target {
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    margin-right: 8px;
+    border-width: 4px;
+    border-color: var(--orange);
+    border-radius: 14px;
+    background-color: var(--navy);
+}
+
+.revenge-target__center {
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+    background-color: var(--red);
+}
+
+.car-name--enter .car-name__sticker {
+    scale: 0.2 0.2;
+    opacity: 0;
+}
+
+.car-name--pulse .car-name__sticker {
+    scale: 1.15 1.15;
+    transition-duration: 0.12s;
+}
+
+.car-name--leave .car-name__sticker {
+    scale: 0 0;
+    opacity: 0;
+    transition-duration: 0.4s;
+    transition-timing-function: ease-in;
+}
+
 /* The joystick under a steering finger (HudView places and sizes both parts from the driver's joystick): a pale
    see-through disc with a navy outline where the finger came down, and on it a white knob sticker with its navy drop
    under the finger. They spring in as the finger starts to steer and shrink away as it lets go. The layer covers the
@@ -1042,7 +1134,7 @@
     white-space: nowrap;
 }
 
-/* After a fall with a car to blame, the subtitle is PUSHED OFF BY and that car in its colour on a white badge. */
+/* After a fall with a car to blame: PUSHED OFF BY, that car in its colour on a white badge, and its visit handle. */
 .round-over__by {
     display: none;
     flex-shrink: 0;
@@ -1057,6 +1149,20 @@
 
 .round-over__by-text {
     margin: 0;
+    font-size: 44px;
+    letter-spacing: 1px;
+}
+
+.round-over__by-name {
+    margin-left: 18px;
+}
+
+.round-over__by-name-text {
+    margin: 0;
+    padding: 0;
+    font-size: 48px;
+    -unity-text-outline-width: 7px;
+    text-shadow: none;
 }
 
 .round-over__by-badge {
@@ -1079,6 +1185,25 @@
     transition-duration: 0.3s;
     transition-timing-function: ease-out;
     transition-delay: 0.05s;
+}
+
+/* On the card's top corner, clear of both record chips in its rows. Shares NEW BEST!'s delayed entrance. */
+.round-over__revenge {
+    position: absolute;
+    right: 12px;
+    top: -30px;
+    background-color: var(--red);
+    color: var(--white);
+    rotate: 5deg;
+}
+
+.round-over__revenge--enter {
+    scale: 0 0;
+}
+
+/* NEW BEST! starts at 0.35s after the card enters; REVENGE follows it when both were earned. */
+.round-over__revenge--second {
+    transition-delay: 0.55s;
 }
 
 .round-over__place {
