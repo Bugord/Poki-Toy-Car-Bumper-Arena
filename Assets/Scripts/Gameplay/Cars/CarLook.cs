@@ -130,6 +130,9 @@ namespace ToyCarArena.Gameplay.Cars
             bounds = CarModel.BoundsIn(model, transform.worldToLocalMatrix);
             model.transform.localPosition = new Vector3(reference.center.x - bounds.center.x,
                 reference.min.y - bounds.min.y, reference.center.z - bounds.center.z);
+            if (TryGetComponent<CarShadow>(out var shadow)) {
+                shadow.Fit(new Vector2(bounds.size.x, bounds.size.z));
+            }
         }
 
         private void LateUpdate()
