@@ -29,12 +29,56 @@ namespace ToyCarArena.Gameplay
         [SerializeField]
         private ArenaSettings arena = new();
 
+        [Header("Progress")]
+        [Tooltip("Round rewards and the experience needed for each next player level")]
+        [SerializeField]
+        private ProgressSettings progress = new();
+
         public CarSettings Car => car;
         public ControlSettings Controls => controls;
         public BoostSettings Boost => boost;
         public BotSettings Bots => bots;
         public RoundSettings Round => round;
         public ArenaSettings Arena => arena;
+        public ProgressSettings Progress => progress;
+
+        /// <summary>
+        /// Every round advances the garage; all reward amounts and level prices are tuned together here.
+        /// </summary>
+        [Serializable]
+        public sealed class ProgressSettings
+        {
+            [Tooltip("XP for every completed round, whatever its outcome")]
+            [Min(0)]
+            [SerializeField]
+            private int roundXp = 10;
+
+            [Tooltip("XP for each car placed behind the player (car count minus place)")]
+            [Min(0)]
+            [SerializeField]
+            private int placeXp = 5;
+
+            [Tooltip("Extra XP for being the last car standing")]
+            [Min(0)]
+            [SerializeField]
+            private int winXp = 15;
+
+            [Tooltip("XP for each knockout credited to the player")]
+            [Min(0)]
+            [SerializeField]
+            private int knockoutXp = 10;
+
+            [Tooltip("XP from level 1 to 2, 2 to 3 and so on; the last price repeats for all later levels")]
+            [Min(1)]
+            [SerializeField]
+            private int[] levelXp = { 40, 60, 80, 100, 120, 140 };
+
+            public int RoundXp => roundXp;
+            public int PlaceXp => placeXp;
+            public int WinXp => winXp;
+            public int KnockoutXp => knockoutXp;
+            public int[] LevelXp => levelXp;
+        }
 
         /// <summary>
         /// How a car drives and how hard it pushes. A car's own data may scale these later, when the cars differ. The car

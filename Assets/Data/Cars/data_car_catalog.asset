@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a628b3904e245f9a0ae7bc160611224, type: 3}
+  m_Name: data_car_catalog
+  m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Cars.CarCatalog
+  cars:
+  - id: racer
+    displayName: RACER
+    unlockLevel: 1
+  - id: speedster
+    displayName: SPEEDSTER
+    unlockLevel: 2
+  - id: vintage
+    displayName: VINTAGE
+    unlockLevel: 3
+  - id: suv
+    displayName: SUV
+    unlockLevel: 4
+  - id: drag-racer
+    displayName: DRAGSTER
+    unlockLevel: 5
+  - id: truck
+    displayName: TRUCK
+    unlockLevel: 6
+  - id: monster-truck
+    displayName: MONSTER
+    unlockLevel: 7

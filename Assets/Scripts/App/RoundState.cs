@@ -37,9 +37,10 @@ namespace ToyCarArena.App
         private readonly IGamePlatform platform;
         private readonly SessionProgress progress;
         private readonly PersonalBests bests;
+        private readonly PlayerProgress playerProgress;
 
         public RoundState(LevelScene levelScene, IScreenNavigator navigator, ScreenCurtain curtain, IGamePlatform platform,
-            SessionProgress progress, PersonalBests bests)
+            SessionProgress progress, PersonalBests bests, PlayerProgress playerProgress)
         {
             this.levelScene = levelScene;
             this.navigator = navigator;
@@ -47,6 +48,7 @@ namespace ToyCarArena.App
             this.platform = platform;
             this.progress = progress;
             this.bests = bests;
+            this.playerProgress = playerProgress;
         }
 
         public override async UniTask<StateTransitionInfo> Execute(CancellationToken token)
@@ -95,7 +97,7 @@ namespace ToyCarArena.App
                 isPlaying = false;
 
                 progress.Record(result);
-                var record = bests.Record(result);
+                var record = bests.Record(result).WithXp(playerProgress.Record(result));
                 platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, driver);
 
                 var delay = result.Outcome == RoundOutcome.Out ? tuning.Round.OutResultDelay : tuning.Round.ResultDelay;

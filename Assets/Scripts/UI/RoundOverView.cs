@@ -9,7 +9,7 @@ namespace ToyCarArena.UI
 {
     /// <summary>
     /// The result screen: the title, how the player went out and by whom, the place and the knock-outs against the
-    /// player's bests, the time on the arena, and PLAY AGAIN.
+    /// player's bests, the time on the arena, saved XP and car unlocks, and PLAY AGAIN.
     /// </summary>
     public sealed class RoundOverView : FadingView<RoundOverViewModel>
     {
@@ -33,6 +33,7 @@ namespace ToyCarArena.UI
 
         private Button playAgainButton;
         private bool isPlayAgainPressed;
+        private RoundOverProgress xpProgress;
 
         public RoundOverView(IAudioService audioService, HudControls controls)
         {
@@ -60,6 +61,7 @@ namespace ToyCarArena.UI
             ShowPlace();
             ShowTime();
             ShowKnockouts();
+            xpProgress = new RoundOverProgress(Root, ViewModel);
             var revenge = Root.Q<Label>("revenge");
             revenge.AddToClassList(RevengeEnterClass);
             var hasNewBest = (ViewModel.CarCount > 1 && ViewModel.IsBestPlace) || ViewModel.IsBestKnockouts;
@@ -77,11 +79,23 @@ namespace ToyCarArena.UI
                 revenge.RemoveFromClassList(RevengeEnterClass);
             }).StartingIn(EnterDelay);
             await base.ShowAsync(token);
+            // The reward runs beside input; no part of it delays Play Again, Space or Enter.
+            xpProgress.Play(token);
+        }
+
+        public override async UniTask HideAsync(CancellationToken token)
+        {
+            xpProgress.Stop();
+            await base.HideAsync(token);
         }
 
         public override void Dispose()
         {
             Root?.UnregisterCallback<KeyDownEvent>(OnKeyDown);
+            xpProgress?.Dispose();
+            if (playAgainButton != null) {
+                playAgainButton.clicked -= PlayAgain;
+            }
             base.Dispose();
         }
 

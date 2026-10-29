@@ -1,19 +1,42 @@
+using System.Collections.Generic;
+using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
 using UIKit.Runtime.Abstractions;
 
 namespace ToyCarArena.UI
 {
     /// <summary>
-    /// The end of a round: how it went for the player, against the player's bests, and Play Again. The result is true
-    /// once the player asks for another round.
+    /// The end of a round: how it went against the player's bests, its saved XP reward, and Play Again. The result is
+    /// true once the player asks for another round, regardless of how much of the reward animation has played.
     /// </summary>
     public sealed class RoundOverViewModel : ResultViewModel<bool>, IPayloadReceiver<RoundRecord>
     {
         private readonly ISessionRoster roster;
+        private readonly CarCatalog catalog;
 
-        public RoundOverViewModel(ISessionRoster roster)
+        public RoundOverViewModel(ISessionRoster roster, CarCatalog catalog)
         {
             this.roster = roster;
+            this.catalog = catalog;
+        }
+
+        public XpGain XpGain { get; private set; }
+
+        public string NextCarText(int level)
+        {
+            var next = catalog.NextLocked(level);
+            return next == null ? "ALL CARS UNLOCKED" : $"NEXT: {next.DisplayName}";
+        }
+
+        /// <summary>Only cars earned by this reward appear, even if storage is edited while the screen is open.</summary>
+        public IEnumerable<CarCatalog.Entry> NewCarsAt(int level)
+        {
+            foreach (var id in XpGain.UnlockedCarIds) {
+                var car = catalog.Find(id);
+                if (car != null && car.UnlockLevel == level) {
+                    yield return car;
+                }
+            }
         }
 
         public string KnockedOutByName => KnockedOutBy == RoundResult.Nobody ? "" : roster.NameOf(KnockedOutBy);
@@ -62,6 +85,7 @@ namespace ToyCarArena.UI
         public void SetPayload(RoundRecord payload)
         {
             var result = payload.Result;
+            XpGain = payload.XpGain;
             Outcome = result.Outcome;
             Place = result.Place;
             CarCount = result.CarCount;
