@@ -27,9 +27,25 @@ namespace ToyCarArena.Gameplay.Cars
 
         private GameTuning.CarSettings settings;
         private GameTuning.BoostSettings boostSettings;
+        private GameTuning.ControlSettings controls;
         private Rigidbody body;
         private Vector3 direction;
         private float throttle;
+
+        // Set only for the player's next physics step. Zero share leaves every bot's movement unchanged.
+        private float edgeHoldRadius;
+        private float edgeHoldShare;
+        private float edgeHoldContactTime = float.NegativeInfinity;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        public Round.PlayerFallTelemetry FallTelemetry { get; set; }
+        public Vector3 DiagnosticDirection => direction;
+        public float DiagnosticThrottle => throttle;
+        public Vector3 DiagnosticPosition => body.position;
+        public float DiagnosticHoldLimit { get; private set; } = float.PositiveInfinity;
+        public float DiagnosticHoldRemoved { get; private set; }
+        public bool DiagnosticHoldSuppressed { get; private set; }
+#endif
 
         // The boost runs until boostEndTime, along boostDirection; the next one is ready at boostReadyTime (Time.time).
         private Vector3 boostDirection;
@@ -43,6 +59,12 @@ namespace ToyCarArena.Gameplay.Cars
         /// Whether the wheels are on the arena; only then does the car steer, and only then can it boost.
         /// </summary>
         public bool IsGrounded { get; private set; }
+
+        /// <summary>
+        /// Last successful ground probe, on the scaled physics clock. Fall-cause windows end here, before the time
+        /// spent dropping below the round's elimination height. Negative infinity until the car reaches the floor.
+        /// </summary>
+        public float LastGroundedTime { get; private set; } = float.NegativeInfinity;
 
         public Vector3 Velocity => body.linearVelocity;
 
@@ -92,6 +114,7 @@ namespace ToyCarArena.Gameplay.Cars
         {
             this.settings = tuning.Car;
             this.boostSettings = tuning.Boost;
+            this.controls = tuning.Controls;
         }
 
         private void Awake()
@@ -115,6 +138,17 @@ namespace ToyCarArena.Gameplay.Cars
             heading.y = 0f;
             direction = heading.sqrMagnitude > 0.0001f ? heading.normalized : Vector3.zero;
             throttle = direction == Vector3.zero ? 0f : Mathf.Clamp01(amount);
+        }
+
+        /// <summary>
+        /// Supplies the player's holding line before each movement FixedUpdate. The driver owns whether the round
+        /// is running; movement applies the speed limit after its acceleration/boost, before PhysX and StepVelocity.
+        /// </summary>
+        public void SetEdgeHold(float radius, float share, float lastContactTime)
+        {
+            this.edgeHoldRadius = radius;
+            this.edgeHoldShare = Mathf.Clamp01(share);
+            this.edgeHoldContactTime = lastContactTime;
         }
 
         /// <summary>
@@ -183,6 +217,11 @@ namespace ToyCarArena.Gameplay.Cars
 
         private void FixedUpdate()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            DiagnosticHoldLimit = float.PositiveInfinity;
+            DiagnosticHoldRemoved = 0f;
+            DiagnosticHoldSuppressed = false;
+#endif
             body.mass = settings.Mass;
             body.centerOfMass = new Vector3(0f, settings.CenterOfMassHeight, 0f);
 
@@ -190,10 +229,57 @@ namespace ToyCarArena.Gameplay.Cars
             IsGrounded = Physics.Raycast(body.position + up * GroundProbeHeight, -up, GroundProbeHeight + GroundProbeDepth,
                 arenaMask, QueryTriggerInteraction.Ignore);
             if (IsGrounded) {
+                LastGroundedTime = Time.time;
                 Steer(Time.fixedDeltaTime);
+                HoldAtEdge();
             }
 
             StepVelocity = body.linearVelocity;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            FallTelemetry?.Sample();
+#endif
+        }
+
+        /// <summary>
+        /// Removes only excess outward speed: tangential, inward and vertical motion are preserved. A shrinking
+        /// safe radius may leave the car past the holding line; a zero limit there never pulls it back inside.
+        /// Recent pressure and stagger leave the shove entirely to the existing physics and braking.
+        /// </summary>
+        private void HoldAtEdge()
+        {
+            if (edgeHoldShare <= 0f) {
+                return;
+            }
+
+            if (IsStaggered || Time.time - edgeHoldContactTime <= controls.EdgeHoldContactGrace) {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                DiagnosticHoldSuppressed = true;
+#endif
+                return;
+            }
+
+            var position = body.position;
+            position.y = 0f;
+            var distance = position.magnitude;
+            if (distance < 0.0001f) {
+                return;
+            }
+
+            var outward = position / distance;
+            var remaining = Mathf.Max(0f, edgeHoldRadius - controls.EdgeHoldMargin - distance);
+            var limit = Mathf.Sqrt(2f * controls.EdgeHoldBrake * remaining);
+            var velocity = body.linearVelocity;
+            var excess = Mathf.Max(0f, Vector3.Dot(velocity, outward) - limit);
+            // The share caps the extra braking rather than the part of the excess taken each step: at 50 steps a
+            // second any fixed part of it would add up to a full hold on Normal too.
+            var removed = Mathf.Min(excess, controls.EdgeHoldMaxBrake * edgeHoldShare * Time.fixedDeltaTime);
+            if (removed > 0f) {
+                body.linearVelocity = velocity - outward * removed;
+            }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            DiagnosticHoldLimit = limit;
+            DiagnosticHoldRemoved = removed;
+#endif
         }
 
         private void Steer(float deltaTime)

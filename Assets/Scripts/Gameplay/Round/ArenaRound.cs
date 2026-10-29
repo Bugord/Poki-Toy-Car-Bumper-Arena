@@ -138,6 +138,10 @@ namespace ToyCarArena.Gameplay.Round
         /// </summary>
         public float ArenaRadius => floor.Radius;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        public PlayerFallTelemetry FallTelemetry { get; private set; }
+#endif
+
         /// <summary>
         /// Puts the cars on the arena, still: nobody drives, the clock and the crumbling edge wait for
         /// <see cref="Begin"/>, so the arena can show before the player is ready. The player and as many bots as the
@@ -152,6 +156,10 @@ namespace ToyCarArena.Gameplay.Round
             IsPlaced = true;
             Spawn(1 + difficulty.BotCount);
             Player = cars[0];
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            FallTelemetry = new PlayerFallTelemetry(this, floor, Player);
+            Player.Movement.FallTelemetry = FallTelemetry;
+#endif
             Nemesis = nemesisIndex > 0 && nemesisIndex < cars.Count ? cars[nemesisIndex] : null;
             CarsLeft = cars.Count;
         }
@@ -187,6 +195,12 @@ namespace ToyCarArena.Gameplay.Round
                     if (car == Player && knockedOutBy == null) {
                         playerFallCause = FindFallCause(car);
                     }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    if (car == Player) {
+                        FallTelemetry.Complete(playerFallCause, knockedOutBy);
+                    }
+#endif
 
                     car.TakeOut();
                     CarsLeft--;
@@ -241,12 +255,13 @@ namespace ToyCarArena.Gameplay.Round
         }
 
         /// <summary>
-        /// Explains a fall without knockout credit at the moment the car is taken out, before later events can change
-        /// its history. A ring giving way wins over a boost, which wins over sliding after an old hit.
+        /// Explains a fall without knockout credit from the last ground contact, so the time spent falling below
+        /// FallHeight cannot age a boost or ring fall into Drive. Knockout credit still uses its existing clock.
+        /// A ring giving way wins over a boost, which wins over sliding after an old hit.
         /// </summary>
         private FallCause FindFallCause(Car car)
         {
-            var now = Time.time;
+            var now = float.IsNegativeInfinity(car.Movement.LastGroundedTime) ? Time.time : car.Movement.LastGroundedTime;
             if (now - car.LastRingFallTime <= tuning.Round.RingFallWindow) {
                 return FallCause.Ring;
             }
