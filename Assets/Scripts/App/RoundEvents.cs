@@ -33,6 +33,11 @@ namespace ToyCarArena.App
     /// knockout credit: the floor gave way, a recent boost, an older hit, or driving off, in that order</item>
     /// <item><c>result / play-again / visible</c>, then <c>interact</c> when pressed</item>
     /// <item>since v0.2.0, only with a marked rival present: <c>result / revenge-got, missed-rR / revenge</c></item>
+    /// <item><c>garage / button / visible, interact</c> and <c>garage / car-id / equip</c></item>
+    /// <item><c>progress / level-2..10, level-10plus / level-up</c> for each crossed level, and
+    /// <c>progress / car-id / unlock</c> from the saved reward</item>
+    /// <item><c>result / car-car-id-rR / car</c>: the car played, before an unlock auto-equips the next one;
+    /// catalog IDs contain no numbers, including drag-racer and monster-truck</item>
     /// </list>
     /// </summary>
     public static class RoundEvents
@@ -44,6 +49,7 @@ namespace ToyCarArena.App
 
         // Rounds past this one share one bucket: few sessions get there, and the event names stay few.
         private const int LastRoundBucket = 10;
+        private const int LastLevelBucket = 10;
 
         // Place and knockouts carry the round up to this one, the rest share a bucket: one more number fits in them.
         private const int LastTaggedRound = 4;
@@ -71,7 +77,7 @@ namespace ToyCarArena.App
             }
 
             platform.Measure(ResultCategory, GameEvent.Clean(result.Outcome.ToString()), "outcome");
-            var tag = round >= LastTaggedRound ? $"r{LastTaggedRound}plus" : $"r{Mathf.Max(1, round)}";
+            var tag = RoundTag(round);
             if (result.CarCount > 1) {
                 platform.Measure(ResultCategory, $"place-{result.Place}-{tag}", "place");
             }
@@ -137,6 +143,32 @@ namespace ToyCarArena.App
         {
             platform.MeasureInteract(ResultCategory, PlayAgain);
         }
+
+        public static void MeasureGarageShown(this IGamePlatform platform) => platform.MeasureVisible("garage", "button");
+
+        public static void MeasureGaragePressed(this IGamePlatform platform) => platform.MeasureInteract("garage", "button");
+
+        public static void MeasureGarageEquip(this IGamePlatform platform, string carId) =>
+            platform.Measure("garage", carId, "equip");
+
+        public static void MeasureRoundCar(this IGamePlatform platform, int round, string carId) =>
+            platform.Measure(ResultCategory, $"car-{carId}-{RoundTag(round)}", "car");
+
+        /// <summary>Sent from the saved reward, independently of how soon the result screen is dismissed.</summary>
+        public static void MeasureProgress(this IGamePlatform platform, XpGain gain)
+        {
+            for (var level = gain.Before.Level + 1; level <= gain.After.Level; level++) {
+                var bucket = level > LastLevelBucket ? "10plus" : level.ToString();
+                platform.Measure("progress", $"level-{bucket}", "level-up");
+            }
+
+            foreach (var id in gain.UnlockedCarIds) {
+                platform.Measure("progress", id, "unlock");
+            }
+        }
+
+        private static string RoundTag(int round) =>
+            round >= LastTaggedRound ? $"r{LastTaggedRound}plus" : $"r{Mathf.Max(1, round)}";
 
         private static string RoundBucket(int round)
         {

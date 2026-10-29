@@ -67,6 +67,8 @@ namespace ToyCarArena.App
             ScreenHandle<HudViewModel> hud = null;
             var isPlaying = false;
             var roundNumber = progress.Round;
+            // Record() may auto-equip a new unlock; analytics must name the car that actually played this round.
+            var playedCar = playerProgress.SelectedCar;
             var waitsForPlayer = roundNumber == 1;
 
             void BeginRound()
@@ -99,6 +101,8 @@ namespace ToyCarArena.App
                 progress.Record(result);
                 var record = bests.Record(result).WithXp(playerProgress.Record(result));
                 platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, driver);
+                platform.MeasureRoundCar(roundNumber, playedCar);
+                platform.MeasureProgress(record.XpGain);
 
                 var delay = result.Outcome == RoundOutcome.Out ? tuning.Round.OutResultDelay : tuning.Round.ResultDelay;
                 await UniTask.Delay(TimeSpan.FromSeconds(delay), cancellationToken: token);

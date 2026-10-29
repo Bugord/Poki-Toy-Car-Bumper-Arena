@@ -1478,13 +1478,17 @@
 }
 
 .round-over__unlock-slot {
-    height: 76px;
-    margin-top: 16px;
+    height: 120px;
+    margin-top: 24px;
     align-items: center;
     justify-content: center;
 }
 
 .round-over__new-car {
+    flex-direction: row;
+    align-items: center;
+    max-width: 981px;
+    height: 120px;
     font-size: 40px;
     border-bottom-width: 12px;
     transition-property: none;
@@ -1592,4 +1596,268 @@
     bottom: 0;
     -unity-text-outline-width: 0;
     text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+}
+
+/* Garage and reward portraits share the catalog's transparent player-colour images. */
+.car-portrait {
+    width: 100%;
+    height: 100%;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    -unity-background-image-tint-color: var(--white);
+}
+
+.car-portrait--locked {
+    -unity-background-image-tint-color: var(--navy);
+}
+
+.round-over__xp-body {
+    flex-basis: 0;
+    min-width: 0;
+}
+
+.round-over__car-badge {
+    flex-shrink: 0;
+    width: 160px;
+    height: 160px;
+    margin-left: 20px;
+    padding: 4px;
+}
+
+.round-over__ready {
+    margin: 0;
+    padding: 0;
+    font-size: 28px;
+    color: var(--navy);
+    -unity-text-align: middle-left;
+    visibility: hidden;
+}
+
+.round-over__new-car-portrait {
+    flex-shrink: 0;
+    width: 88px;
+    height: 88px;
+    margin-right: 16px;
+}
+
+.round-over__new-car-copy {
+    justify-content: center;
+}
+
+.round-over__new-car-name {
+    margin: 0;
+    padding: 0;
+    font-size: 40px;
+}
+
+.round-over__buttons {
+    width: 981px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.round-over__buttons .round-over__button {
+    width: 745px;
+    min-width: 0;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.round-over__garage {
+    flex-direction: column;
+    flex-shrink: 0;
+    width: 208px;
+    height: 208px;
+    margin: 0;
+    padding: 6px;
+}
+
+.round-over__garage:hover,
+.round-over__garage:focus {
+    background-color: var(--soft);
+}
+
+.round-over__garage:active {
+    translate: 0 8px;
+}
+
+.round-over__garage-portrait {
+    width: 132px;
+    height: 112px;
+}
+
+.round-over__garage-label {
+    margin: 0;
+    padding: 0;
+    font-size: 34px;
+    color: var(--navy);
+}
+
+.round-over__garage-dot {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 38px;
+    height: 38px;
+    border-width: 6px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--red);
+}
+
+.round-over--landscape .round-over__buttons {
+    width: 1240px;
+}
+
+.round-over--landscape .round-over__button {
+    width: 981px;
+}
+
+/* UIKit disables the screen under a popup; keep the existing result looking the same. */
+.round-over:disabled,
+.round-over:disabled .button,
+.round-over:disabled .round-over__garage {
+    opacity: 1;
+}
+
+.garage {
+    justify-content: center;
+    padding: 24px 0;
+    /* Popup leaves RoundOver drawn underneath. Only the transition fades this opaque cover. */
+    background-color: var(--navy);
+}
+
+.garage__title {
+    flex-shrink: 0;
+    margin-bottom: 16px;
+    rotate: -4deg;
+}
+
+.garage__title-text {
+    margin: 0;
+    padding: 0;
+    font-size: 130px;
+    color: var(--gold);
+}
+
+.garage__progress {
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: center;
+    width: 940px;
+    margin-bottom: 14px;
+}
+
+.garage__grid {
+    flex-shrink: 0;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 981px;
+}
+
+.garage__car {
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 456px;
+    height: 270px;
+    margin: 10px;
+    padding: 4px 16px 6px 16px;
+    border-width: 9px;
+    border-bottom-width: 20px;
+    border-color: var(--navy);
+    border-radius: 42px;
+    background-color: var(--white);
+    color: var(--navy);
+}
+
+.garage__car:hover,
+.garage__car:focus {
+    background-color: var(--soft);
+}
+
+.garage__car--selected {
+    border-color: var(--green);
+}
+
+.garage__portrait {
+    flex-shrink: 0;
+    height: 128px;
+}
+
+.garage__name {
+    flex-shrink: 0;
+    margin: 0 0 4px 0;
+    padding: 0;
+    font-size: 40px;
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.garage__status {
+    flex-shrink: 0;
+    height: 48px;
+    padding: 0 18px;
+    border-width: 5px;
+    border-bottom-width: 9px;
+    background-color: var(--soft);
+    font-size: 28px;
+}
+
+.garage__status Label {
+    margin: 0;
+    padding: 0;
+}
+
+.garage__car--selected .garage__status {
+    background-color: var(--green);
+}
+
+.garage__car--locked .garage__status {
+    background-color: var(--gold);
+}
+
+.garage__check {
+    display: none;
+    width: 20px;
+    height: 12px;
+    margin-right: 12px;
+    margin-bottom: 6px;
+    border-left-width: 6px;
+    border-bottom-width: 6px;
+    border-color: var(--navy);
+    rotate: -45deg;
+}
+
+.garage__car--selected .garage__check {
+    display: flex;
+}
+
+.garage__hint {
+    flex-shrink: 0;
+    margin: 12px 0;
+    padding: 0;
+    font-size: 32px;
+    color: var(--white);
+}
+
+.garage__back {
+    flex-shrink: 0;
+    font-size: 56px;
+}
+
+.garage--landscape .garage__grid {
+    width: 1800px;
+}
+
+.garage--landscape .garage__car {
+    width: 414px;
+    height: 350px;
+}
+
+.garage--landscape .garage__portrait {
+    height: 200px;
 }

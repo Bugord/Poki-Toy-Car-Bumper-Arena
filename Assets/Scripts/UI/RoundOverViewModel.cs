@@ -1,4 +1,8 @@
 using System.Collections.Generic;
+using System.Threading;
+using Bugord.App.Platform;
+using Cysharp.Threading.Tasks;
+using ToyCarArena.App;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
 using UIKit.Runtime.Abstractions;
@@ -13,14 +17,42 @@ namespace ToyCarArena.UI
     {
         private readonly ISessionRoster roster;
         private readonly CarCatalog catalog;
+        private readonly PlayerProgress progress;
+        private readonly IScreenNavigator navigator;
+        private readonly IGamePlatform platform;
 
-        public RoundOverViewModel(ISessionRoster roster, CarCatalog catalog)
+        public RoundOverViewModel(ISessionRoster roster, CarCatalog catalog, PlayerProgress progress,
+            IScreenNavigator navigator, IGamePlatform platform)
         {
             this.roster = roster;
             this.catalog = catalog;
+            this.progress = progress;
+            this.navigator = navigator;
+            this.platform = platform;
         }
 
         public XpGain XpGain { get; private set; }
+        public bool IsGarageOpen { get; private set; }
+        public bool HasNewCar => XpGain.UnlockedCarIds.Count > 0;
+        public CarCatalog.Entry SelectedCar => catalog.Find(progress.SelectedCar);
+        public CarCatalog.Entry NextCar(int level) => catalog.NextLocked(level);
+
+        /// <summary>The popup leaves this view attached and its reward animation running exactly once.</summary>
+        public async UniTask OpenGarage(CancellationToken token)
+        {
+            if (IsGarageOpen) {
+                return;
+            }
+
+            IsGarageOpen = true;
+            try {
+                platform.MeasureGaragePressed();
+                await navigator.RunAsync<GarageViewModel, bool>(token);
+            }
+            finally {
+                IsGarageOpen = false;
+            }
+        }
 
         public string NextCarText(int level)
         {

@@ -32,6 +32,8 @@ namespace ToyCarArena.UI
         private readonly HudControls controls;
 
         private Button playAgainButton;
+        private Button garageButton;
+        private CancellationTokenSource lifetime;
         private bool isPlayAgainPressed;
         private RoundOverProgress xpProgress;
 
@@ -47,11 +49,19 @@ namespace ToyCarArena.UI
             Root.focusable = true;
             Root.delegatesFocus = true;
             Root.RegisterCallback<KeyDownEvent>(OnKeyDown);
+            Root.RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
+            lifetime = new CancellationTokenSource();
 
             playAgainButton = Root.Q<Button>("play-again-button");
             playAgainButton.clicked += PlayAgain;
             // The button's look is the sticker button in ui_screens, not the theme's.
             playAgainButton.RemoveFromClassList(Button.ussClassName);
+            garageButton = Root.Q<Button>("garage-button");
+            garageButton.RemoveFromClassList(Button.ussClassName);
+            garageButton.clicked += OpenGarage;
+            RefreshGarage();
+            Root.Q<VisualElement>("garage-dot").style.display =
+                ViewModel.HasNewCar ? DisplayStyle.Flex : DisplayStyle.None;
 
             // The key hint is for a keyboard; a phone or a tablet has none to press.
             Root.Q<VisualElement>("hint").style.display =
@@ -92,11 +102,41 @@ namespace ToyCarArena.UI
         public override void Dispose()
         {
             Root?.UnregisterCallback<KeyDownEvent>(OnKeyDown);
+            Root?.UnregisterCallback<GeometryChangedEvent>(OnGeometryChanged);
+            lifetime?.Cancel();
+            lifetime?.Dispose();
             xpProgress?.Dispose();
             if (playAgainButton != null) {
                 playAgainButton.clicked -= PlayAgain;
             }
+            if (garageButton != null) {
+                garageButton.clicked -= OpenGarage;
+            }
             base.Dispose();
+        }
+
+        private void OnGeometryChanged(GeometryChangedEvent evt) =>
+            Root.EnableInClassList("round-over--landscape", evt.newRect.width > evt.newRect.height);
+
+        private void RefreshGarage() => Root.Q<VisualElement>("garage-portrait").style.backgroundImage =
+            new StyleBackground(ViewModel.SelectedCar?.Portrait);
+
+        private void OpenGarage()
+        {
+            if (!IsShown || isPlayAgainPressed || ViewModel.IsGarageOpen) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            ShowGarage(lifetime.Token).Forget();
+        }
+
+        private async UniTask ShowGarage(CancellationToken token)
+        {
+            await ViewModel.OpenGarage(token);
+            token.ThrowIfCancellationRequested();
+            RefreshGarage();
+            Root.Q<VisualElement>("garage-dot").style.display = DisplayStyle.None;
         }
 
         private void ShowTitle()
@@ -192,7 +232,7 @@ namespace ToyCarArena.UI
         {
             // A key held down in the round, or a tap that ended it, must not skip the screen before it is up; a second
             // press while the curtain comes down changes nothing, so it does not click either.
-            if (!IsShown || isPlayAgainPressed) {
+            if (!IsShown || isPlayAgainPressed || ViewModel.IsGarageOpen) {
                 return;
             }
 
