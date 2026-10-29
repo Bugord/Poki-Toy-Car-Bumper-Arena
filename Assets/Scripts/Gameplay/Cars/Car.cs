@@ -61,6 +61,11 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public float LastHitTime { get; private set; } = float.NegativeInfinity;
 
+        /// <summary>
+        /// When a floor ring last fell under this car, in <see cref="Time.time"/>, to recognise a fall with the floor.
+        /// </summary>
+        public float LastRingFallTime { get; private set; } = float.NegativeInfinity;
+
         [Inject]
         private void Construct(GameTuning tuning)
         {
@@ -88,6 +93,14 @@ namespace ToyCarArena.Gameplay.Cars
         {
             IsOut = true;
             Movement.Drive(Vector3.zero, 0f);
+        }
+
+        /// <summary>
+        /// Records the floor giving way while the car is over the falling ring, before the car can slide elsewhere.
+        /// </summary>
+        public void NoteRingFall()
+        {
+            LastRingFallTime = Time.time;
         }
 
         /// <summary>

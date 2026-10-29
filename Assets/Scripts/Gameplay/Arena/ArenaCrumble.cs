@@ -65,7 +65,21 @@ namespace ToyCarArena.Gameplay.Arena
 
             while (fallen < warned && time >= WarningTime(fallen) + settings.CrumbleWarning) {
                 floor.Drop(fallen);
-                RingFell?.Invoke(floor.RingInnerRadius(fallen), floor.RingOuterRadius(fallen));
+                var innerRadius = floor.RingInnerRadius(fallen);
+                var outerRadius = floor.RingOuterRadius(fallen);
+                foreach (var car in round.Cars) {
+                    if (car.IsOut) {
+                        continue;
+                    }
+
+                    var position = car.Position;
+                    var distance = new Vector2(position.x, position.z).magnitude;
+                    if (distance >= innerRadius && distance <= outerRadius) {
+                        car.NoteRingFall();
+                    }
+                }
+
+                RingFell?.Invoke(innerRadius, outerRadius);
                 fallen++;
             }
         }

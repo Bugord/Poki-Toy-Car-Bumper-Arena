@@ -130,6 +130,9 @@ MonoBehaviour:
     resultDelay: 1.5
     outResultDelay: 1
     knockoutCreditWindow: 2.5
+    ringFallWindow: 2
+    boostFallWindow: 1
+    slideWindow: 6
     fallHeight: -3
     removeHeight: -25
   arena:

@@ -644,6 +644,24 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float knockoutCreditWindow = 2.5f;
 
+            [Tooltip("Seconds after the floor ring under the player falls away that a fall without knockout credit " +
+                "is attributed to that ring")]
+            [Min(0f)]
+            [SerializeField]
+            private float ringFallWindow = 2f;
+
+            [Tooltip("Seconds after a successful boost that a fall without knockout credit or a recent ring fall " +
+                "is attributed to the boost")]
+            [Min(0f)]
+            [SerializeField]
+            private float boostFallWindow = 1f;
+
+            [Tooltip("Seconds after another car's hit that a fall without knockout credit, a recent ring fall or " +
+                "a boost is attributed to sliding after the hit")]
+            [Min(0f)]
+            [SerializeField]
+            private float slideWindow = 6f;
+
             [Tooltip("A car below this height, in metres, is out")]
             [SerializeField]
             private float fallHeight = -3f;
@@ -656,6 +674,9 @@ namespace ToyCarArena.Gameplay
             public float ResultDelay => resultDelay;
             public float OutResultDelay => outResultDelay;
             public float KnockoutCreditWindow => knockoutCreditWindow;
+            public float RingFallWindow => ringFallWindow;
+            public float BoostFallWindow => boostFallWindow;
+            public float SlideWindow => slideWindow;
             public float FallHeight => fallHeight;
             public float RemoveHeight => removeHeight;
         }

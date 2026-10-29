@@ -60,6 +60,11 @@ namespace ToyCarArena.Gameplay.Cars
         public bool IsBoosting => Time.time < boostEndTime;
 
         /// <summary>
+        /// The last successful boost, in <see cref="Time.time"/>, to tell a fall soon after a boost from driving off.
+        /// </summary>
+        public float LastBoostTime { get; private set; } = float.NegativeInfinity;
+
+        /// <summary>
         /// Whether a hit has knocked the car off balance: it does not drive or turn and keeps only a little grip, so the
         /// push of the hit carries it. A boost overrides it.
         /// </summary>
@@ -142,6 +147,7 @@ namespace ToyCarArena.Gameplay.Cars
             // A boost is the way to catch the car after a hit, so it ends being off balance.
             staggerEndTime = float.NegativeInfinity;
             boostReadyTime = Time.time + boostSettings.Cooldown;
+            LastBoostTime = Time.time;
             Boosted?.Invoke();
             return true;
         }
