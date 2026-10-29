@@ -37,9 +37,10 @@ namespace ToyCarArena.App
         private readonly IGamePlatform platform;
         private readonly SessionProgress progress;
         private readonly PersonalBests bests;
+        private readonly PlayerProgress playerProgress;
 
         public RoundState(LevelScene levelScene, IScreenNavigator navigator, ScreenCurtain curtain, IGamePlatform platform,
-            SessionProgress progress, PersonalBests bests)
+            SessionProgress progress, PersonalBests bests, PlayerProgress playerProgress)
         {
             this.levelScene = levelScene;
             this.navigator = navigator;
@@ -47,6 +48,7 @@ namespace ToyCarArena.App
             this.platform = platform;
             this.progress = progress;
             this.bests = bests;
+            this.playerProgress = playerProgress;
         }
 
         public override async UniTask<StateTransitionInfo> Execute(CancellationToken token)
@@ -65,6 +67,8 @@ namespace ToyCarArena.App
             ScreenHandle<HudViewModel> hud = null;
             var isPlaying = false;
             var roundNumber = progress.Round;
+            // Record() may auto-equip a new unlock; analytics must name the car that actually played this round.
+            var playedCar = playerProgress.SelectedCar;
             var waitsForPlayer = roundNumber == 1;
 
             void BeginRound()
@@ -95,8 +99,10 @@ namespace ToyCarArena.App
                 isPlaying = false;
 
                 progress.Record(result);
-                var record = bests.Record(result);
+                var record = bests.Record(result).WithXp(playerProgress.Record(result));
                 platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, driver);
+                platform.MeasureRoundCar(roundNumber, playedCar);
+                platform.MeasureProgress(record.XpGain);
 
                 var delay = result.Outcome == RoundOutcome.Out ? tuning.Round.OutResultDelay : tuning.Round.ResultDelay;
                 await UniTask.Delay(TimeSpan.FromSeconds(delay), cancellationToken: token);

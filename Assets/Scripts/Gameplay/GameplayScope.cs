@@ -33,6 +33,10 @@ namespace ToyCarArena.Gameplay
         [SerializeField]
         private Car carPrefab;
 
+        [Tooltip("Car catalog for Game opened without Boot; with a parent the parent's catalog is used")]
+        [SerializeField]
+        private CarCatalog carCatalog;
+
         [Tooltip("Sounds and music for the scene played on its own; from Boot the app's audio plays")]
         [SerializeField]
         private AudioLibrary audioLibrary;
@@ -52,6 +56,9 @@ namespace ToyCarArena.Gameplay
             var isStandalone = Parent == null;
             if (isStandalone) {
                 builder.AddBugordCore();
+                Require(carCatalog, nameof(carCatalog));
+                builder.RegisterInstance(carCatalog, typeof(CarCatalog));
+                builder.Register<IPlayerCar, FirstPlayerCar>(Lifetime.Singleton);
             }
 
             // The non-generic overload on purpose: in the release WebGL player (IL2CPP, faster-smaller code generation)
@@ -96,7 +103,7 @@ namespace ToyCarArena.Gameplay
                 // round, so StandaloneRound keeps it across the reloads.
                 builder.RegisterInstance(StandaloneRound.Session, typeof(SessionProgress))
                     .As(typeof(ISessionProgress));
-                builder.RegisterInstance(StandaloneRound.Roster, typeof(ISessionRoster));
+                builder.RegisterInstance(StandaloneRound.Roster(carCatalog), typeof(ISessionRoster));
             }
 
             builder.RegisterBuildCallback(InjectScene);

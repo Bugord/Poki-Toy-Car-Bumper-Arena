@@ -16,21 +16,12 @@ namespace ToyCarArena.Gameplay.Cars
     [DisallowMultipleComponent]
     public sealed class CarLook : MonoBehaviour
     {
-        // The atlas is a grid of swatches, eight across and four up, each 64 by 128 pixels.
-        private const float SwatchWidth = 1f / 8f;
-        private const float SwatchHeight = 1f / 4f;
-
         private const int RingSegments = 48;
 
         [Header("Body")]
         [Tooltip("The mesh of the car's body, the one that is painted in a single swatch of the atlas")]
         [SerializeField]
         private MeshFilter body;
-
-        [Tooltip("The swatch of the atlas the model's body is painted with: column 0 to 7 across, row 0 to 3 up from " +
-            "the bottom of the texture")]
-        [SerializeField]
-        private Vector2Int bodySwatch = new(1, 1);
 
         [Tooltip("The swatch of each car's body by its index: the player first, then the bots. A car beyond the last " +
             "one starts over from the first bot's")]
@@ -84,6 +75,7 @@ namespace ToyCarArena.Gameplay.Cars
         private Vector2 arrowBob = new(0.2f, 1.5f);
 
         private Mesh ownBody;
+        private GameObject model;
         private Car car;
         private Transform ring;
         private Transform arrow;
@@ -93,10 +85,53 @@ namespace ToyCarArena.Gameplay.Cars
         /// <summary>
         /// Paints the car for its place in the round: index 0 is the player's, with the marker; 1..N are bots.
         /// </summary>
-        public void Apply(int index)
+        public void Apply(int index, CarCatalog.Entry entry)
         {
-            PaintBody(index);
+            ReplaceModel(entry);
+            ownBody = CarModel.PaintBody(CarModel.FindBody(model, out _), entry.BodySwatch, SwatchOf(index));
             SetMarker(index == 0);
+        }
+
+        // Shared by the catalog's portrait renderer; the palette stays authored on the prefab.
+        public Vector2Int PlayerSwatch => swatches[0];
+        public Material ModelMaterial => body.GetComponent<MeshRenderer>().sharedMaterial;
+        public Quaternion ModelRotation => body.transform.localRotation;
+
+        private void ReplaceModel(CarCatalog.Entry entry)
+        {
+            if (entry == null || entry.Model == null) {
+                throw new MissingReferenceException("CarLook needs a catalog entry with a model. Run Tools > Cars > " +
+                    "Update Catalog to populate the catalog.");
+            }
+
+            // The original racer remains a hidden reference, including its wheel hierarchy. Its geometry defines
+            // the cosmetic length and floor level, without reading or changing any physics component.
+            var reference = CarModel.BoundsIn(body.gameObject, transform.worldToLocalMatrix);
+            body.gameObject.SetActive(false);
+            if (ownBody != null) {
+                Destroy(ownBody);
+                ownBody = null;
+            }
+
+            if (model != null) {
+                model.SetActive(false);
+                Destroy(model);
+            }
+
+            model = new GameObject("Catalog Model");
+            model.transform.SetParent(transform, false);
+            model.transform.localRotation = ModelRotation;
+            var instance = Instantiate(entry.Model, model.transform, false);
+            CarModel.SetMaterial(instance, ModelMaterial);
+            var bounds = CarModel.BoundsIn(model, transform.worldToLocalMatrix);
+            if (bounds.size.z <= Mathf.Epsilon) {
+                throw new System.InvalidOperationException($"Car model {entry.Id} has no length along Z.");
+            }
+
+            model.transform.localScale = Vector3.one * (reference.size.z / bounds.size.z);
+            bounds = CarModel.BoundsIn(model, transform.worldToLocalMatrix);
+            model.transform.localPosition = new Vector3(reference.center.x - bounds.center.x,
+                reference.min.y - bounds.min.y, reference.center.z - bounds.center.z);
         }
 
         private void LateUpdate()
@@ -132,34 +167,6 @@ namespace ToyCarArena.Gameplay.Cars
             foreach (var mesh in markerMeshes) {
                 Destroy(mesh);
             }
-        }
-
-        /// <summary>
-        /// Gives the body a mesh of its own with the body's UVs on the swatch of this car.
-        /// </summary>
-        private void PaintBody(int index)
-        {
-            var swatch = SwatchOf(index);
-            if (swatch == bodySwatch) {
-                return;
-            }
-
-            if (ownBody == null) {
-                ownBody = Instantiate(body.sharedMesh);
-                ownBody.name = body.sharedMesh.name;
-                body.sharedMesh = ownBody;
-            }
-
-            var uvs = ownBody.uv;
-            var shift = new Vector2((swatch.x - bodySwatch.x) * SwatchWidth, (swatch.y - bodySwatch.y) * SwatchHeight);
-            for (var i = 0; i < uvs.Length; i++) {
-                if (Mathf.FloorToInt(uvs[i].x / SwatchWidth) == bodySwatch.x
-                    && Mathf.FloorToInt(uvs[i].y / SwatchHeight) == bodySwatch.y) {
-                    uvs[i] += shift;
-                }
-            }
-
-            ownBody.uv = uvs;
         }
 
         /// <summary>
