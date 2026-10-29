@@ -16,21 +16,42 @@ MonoBehaviour:
   - id: racer
     displayName: RACER
     unlockLevel: 1
+    model: {fileID: 919132149155446097, guid: 12aa73caa9610704cb891db937a9e86b, type: 3}
+    bodySwatch: {x: 1, y: 1}
+    portrait: {fileID: 2800000, guid: 519ca8744112e844190c08d4a22aff52, type: 3}
   - id: speedster
     displayName: SPEEDSTER
     unlockLevel: 2
+    model: {fileID: 919132149155446097, guid: d42806c024c64f338e48ada2fe71d5ac, type: 3}
+    bodySwatch: {x: 4, y: 1}
+    portrait: {fileID: 2800000, guid: bba6558871ec2094f84908df465d2236, type: 3}
   - id: vintage
     displayName: VINTAGE
     unlockLevel: 3
+    model: {fileID: 919132149155446097, guid: d04652a51689421d84329bbf4d436dfb, type: 3}
+    bodySwatch: {x: 7, y: 1}
+    portrait: {fileID: 2800000, guid: c0bc374c425f3694c8094542e639ac10, type: 3}
   - id: suv
     displayName: SUV
     unlockLevel: 4
+    model: {fileID: 919132149155446097, guid: 280cc9b4b0fa4621b2a793e08a3e87bc, type: 3}
+    bodySwatch: {x: 7, y: 1}
+    portrait: {fileID: 2800000, guid: f10f5a8a2535bb243a45ec1e814bf54f, type: 3}
   - id: drag-racer
     displayName: DRAGSTER
     unlockLevel: 5
+    model: {fileID: 919132149155446097, guid: 5a1191f6d426430786b65f4135e02ce8, type: 3}
+    bodySwatch: {x: 3, y: 1}
+    portrait: {fileID: 2800000, guid: 6df8d2323eeea284db0b510a14c0ca64, type: 3}
   - id: truck
     displayName: TRUCK
     unlockLevel: 6
+    model: {fileID: 919132149155446097, guid: 839efd986cda409aa023b46ec2a8460f, type: 3}
+    bodySwatch: {x: 3, y: 1}
+    portrait: {fileID: 2800000, guid: 27a1a0c626b6f3c4eb183dfd9bdd66e0, type: 3}
   - id: monster-truck
     displayName: MONSTER
     unlockLevel: 7
+    model: {fileID: 919132149155446097, guid: e358a680688142da9386e942192be3fc, type: 3}
+    bodySwatch: {x: 7, y: 1}
+    portrait: {fileID: 2800000, guid: 80c2cc781a6dc1d40bfac8628d9188d7, type: 3}

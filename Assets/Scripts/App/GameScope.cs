@@ -68,7 +68,7 @@ namespace ToyCarArena.App
             builder.Register<SessionProgress>(Lifetime.Singleton).AsSelf().As<ISessionProgress>();
             builder.Register<SessionRoster>(Lifetime.Singleton).As<ISessionRoster>();
             builder.Register<PersonalBests>(Lifetime.Singleton);
-            builder.Register<PlayerProgress>(Lifetime.Singleton);
+            builder.Register<PlayerProgress>(Lifetime.Singleton).AsSelf().As<IPlayerCar>();
 #if BUGORD_SUPERCONSOLE
             if (Debug.isDebugBuild) {
                 builder.RegisterEntryPoint<ProgressDevConsole>();

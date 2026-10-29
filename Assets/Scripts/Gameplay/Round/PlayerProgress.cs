@@ -6,12 +6,13 @@ using ToyCarArena.Gameplay.Cars;
 namespace ToyCarArena.Gameplay.Round
 {
     /// <summary>
-    /// Keeps only total XP in storage: levels and available cars follow the tuning and catalog, so unlocks never
-    /// disagree with the saved experience. Lives in the app scope to survive arena reloads.
+    /// Saves total XP and the selected cosmetic car. Levels and available cars follow the tuning and catalog, so
+    /// unlocks never disagree with the saved experience. Lives in the app scope to survive arena reloads.
     /// </summary>
-    public sealed class PlayerProgress
+    public sealed class PlayerProgress : IPlayerCar
     {
         private const string TotalKey = "xp_total";
+        private const string SelectedKey = "car_selected";
 
         private readonly IKeyValueStorage storage;
         private readonly GameTuning.ProgressSettings settings;
@@ -37,6 +38,24 @@ namespace ToyCarArena.Gameplay.Round
         public int TotalXp => Math.Max(0, storage.GetInt(TotalKey));
         public int Level => At(TotalXp).Level;
         public CarCatalog.Entry NextCar => catalog.NextLocked(Level);
+
+        public string SelectedCar
+        {
+            get {
+                var saved = storage.GetString(SelectedKey);
+                return IsUnlocked(saved) ? saved : catalog.Cars[0].Id;
+            }
+        }
+
+        public bool Select(string id)
+        {
+            if (!IsUnlocked(id)) {
+                return false;
+            }
+
+            storage.SetString(SelectedKey, id);
+            return true;
+        }
 
         public bool IsUnlocked(string id)
         {
@@ -81,6 +100,10 @@ namespace ToyCarArena.Gameplay.Round
             }
 
             storage.SetInt(TotalKey, totalAfter);
+            if (unlocked.Count > 0) {
+                Select(unlocked[unlocked.Count - 1]);
+            }
+
             return new XpGain(totalBefore, totalAfter, roundXp, placeXp, winXp, knockoutXp, before, after,
                 unlocked.AsReadOnly());
         }

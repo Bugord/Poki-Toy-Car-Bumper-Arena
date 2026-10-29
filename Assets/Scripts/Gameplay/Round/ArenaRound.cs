@@ -49,6 +49,8 @@ namespace ToyCarArena.Gameplay.Round
         private readonly ArenaFloor floor;
         private readonly RoundDifficulty difficulty;
         private readonly ISessionRoster roster;
+        private readonly CarCatalog catalog;
+        private readonly IPlayerCar playerCar;
         private readonly int nemesisIndex;
         private readonly List<Car> cars = new();
 
@@ -56,7 +58,8 @@ namespace ToyCarArena.Gameplay.Round
         private FallCause playerFallCause;
 
         public ArenaRound(GameTuning tuning, IObjectResolver resolver, Car carPrefab, Transform carParent, ArenaFloor floor,
-            RoundDifficulty difficulty, ISessionProgress progress, ISessionRoster roster)
+            RoundDifficulty difficulty, ISessionProgress progress, ISessionRoster roster, CarCatalog catalog,
+            IPlayerCar playerCar)
         {
             this.tuning = tuning;
             this.resolver = resolver;
@@ -65,6 +68,8 @@ namespace ToyCarArena.Gameplay.Round
             this.floor = floor;
             this.difficulty = difficulty;
             this.roster = roster;
+            this.catalog = catalog;
+            this.playerCar = playerCar;
             this.nemesisIndex = progress.Nemesis;
         }
 
@@ -292,7 +297,8 @@ namespace ToyCarArena.Gameplay.Round
                 car.Movement.Place(position, rotation);
                 car.name = roster.NameOf(i);
                 car.IsPlayer = i == 0;
-                car.GetComponent<CarLook>().Apply(i);
+                var entry = i == 0 ? catalog.Find(playerCar.SelectedCar) : roster.CarOf(i);
+                car.GetComponent<CarLook>().Apply(i, entry);
                 cars.Add(car);
             }
         }

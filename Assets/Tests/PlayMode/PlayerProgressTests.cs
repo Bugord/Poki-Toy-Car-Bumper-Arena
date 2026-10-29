@@ -76,6 +76,7 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(reloaded.Level, Is.EqualTo(2));
             Assert.That(reloaded.IsUnlocked("speedster"), Is.True);
             Assert.That(reloaded.NextCar.Id, Is.EqualTo("vintage"));
+            Assert.That(reloaded.SelectedCar, Is.EqualTo("speedster"));
         }
 
         [Test]
@@ -94,7 +95,55 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(gain.After.Cost, Is.EqualTo(80));
             Assert.That(gain.UnlockedCarIds, Is.EqualTo(new[] { "speedster", "vintage" }));
             Assert.That(progress.NextCar, Is.Null);
+            Assert.That(progress.SelectedCar, Is.EqualTo("vintage"));
             Assert.That(progress.Record(Result(RoundOutcome.Out, 4, 4, 0)).UnlockedCarIds, Is.Empty);
+            Assert.That(progress.SelectedCar, Is.EqualTo("vintage"));
+        }
+
+        [Test]
+        public void SelectionOnlyAcceptsUnlockedCarsAndPersists()
+        {
+            Assert.That(progress.SelectedCar, Is.EqualTo("racer"));
+            Assert.That(progress.Select("speedster"), Is.False);
+            Assert.That(progress.Select("unknown"), Is.False);
+            Assert.That(storage.HasKey("car_selected"), Is.False);
+            storage.SetInt("xp_total", 100);
+            Assert.That(progress.Select("vintage"), Is.True);
+            Assert.That(new PlayerProgress(storage, tuning, catalog).SelectedCar, Is.EqualTo("vintage"));
+            Assert.That(progress.Select("unknown"), Is.False);
+            Assert.That(progress.SelectedCar, Is.EqualTo("vintage"));
+        }
+
+        [TestCase("unknown", 100)]
+        [TestCase("vintage", 0)]
+        public void InvalidSavedSelectionFallsBackToFirstCar(string id, int xp)
+        {
+            storage.SetString("car_selected", id);
+            storage.SetInt("xp_total", xp);
+            Assert.That(progress.SelectedCar, Is.EqualTo("racer"));
+        }
+
+        [Test]
+        public void BotCarCanBeLockedAndStaysWithItsNameWithoutMoreRandomDraws()
+        {
+            var randomState = Random.state;
+            try {
+                JsonUtility.FromJsonOverwrite("{\"cars\":[{\"id\":\"locked\",\"unlockLevel\":99}]}", catalog);
+                var roster = new SessionRoster(catalog);
+                Assert.That(roster.NameOf(0), Is.EqualTo("YOU"));
+                Assert.That(JsonUtility.ToJson(Random.state), Is.EqualTo(JsonUtility.ToJson(randomState)));
+                var car = roster.CarOf(1);
+                var name = roster.NameOf(1);
+                Assert.That(car.Id, Is.EqualTo("locked"));
+                Assert.That(progress.IsUnlocked(car.Id), Is.False);
+                var assignedState = Random.state;
+                Assert.That(roster.CarOf(1), Is.SameAs(car));
+                Assert.That(roster.NameOf(1), Is.EqualTo(name));
+                Assert.That(JsonUtility.ToJson(Random.state), Is.EqualTo(JsonUtility.ToJson(assignedState)));
+            }
+            finally {
+                Random.state = randomState;
+            }
         }
 
         [TestCase(0, 1, 0, 40)]

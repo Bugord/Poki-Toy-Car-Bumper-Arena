@@ -5,8 +5,7 @@ using UnityEngine;
 namespace ToyCarArena.Gameplay.Cars
 {
     /// <summary>
-    /// Stable save and analytics identities, independent of the cars spawned in a round. Model and portrait references
-    /// will belong to these entries when the garage gets its visuals.
+    /// Stable identities and cosmetic models, independent of the physics of cars spawned in a round.
     /// </summary>
     [CreateAssetMenu(fileName = "data_car_catalog", menuName = "Bonk Arena/Car Catalog")]
     public sealed class CarCatalog : ScriptableObject
@@ -57,11 +56,22 @@ namespace ToyCarArena.Gameplay.Cars
             [SerializeField]
             private int unlockLevel = 1;
 
-            // Future garage tasks add the model and portrait here, without changing the saved id.
+            [SerializeField]
+            private GameObject model;
+
+            [Tooltip("Body paint in the shared 8 by 4 atlas, counted from the bottom left")]
+            [SerializeField]
+            private Vector2Int bodySwatch;
+
+            [SerializeField]
+            private Texture2D portrait;
 
             public string Id => id;
             public string DisplayName => displayName;
             public int UnlockLevel => unlockLevel;
+            public GameObject Model => model;
+            public Vector2Int BodySwatch => bodySwatch;
+            public Texture2D Portrait => portrait;
         }
     }
 }

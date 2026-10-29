@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using ToyCarArena.Gameplay.Cars;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using VContainer.Unity;
@@ -35,7 +36,7 @@ namespace ToyCarArena.Gameplay.Round
 
         // Lazy: Unity's random API must run on the main thread, not in a static initializer during scene loading.
         private static SessionRoster roster;
-        public static SessionRoster Roster => roster ??= new SessionRoster();
+        public static SessionRoster Roster(CarCatalog catalog) => roster ??= new SessionRoster(catalog);
 
         public void Start()
         {
