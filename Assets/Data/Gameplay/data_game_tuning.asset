@@ -68,12 +68,12 @@ MonoBehaviour:
       boostDelay: {x: 1.2, y: 2.5}
       escapeBoostChance: 0.3
       edgeAssist: 1
-      playerBump: 1.3
+      playerBump: 2.2
       playerStaggerScale: 0.4
-      staggerFromPlayer: 1
-      playerKnockoutWindow: 2.5
-      duelPace: 0.6
-      duelEscapeBoostChance: 0.3
+      staggerFromPlayer: 2.5
+      playerKnockoutWindow: 4
+      duelPace: 0.2
+      duelEscapeBoostChance: 0
     normal:
       bots: 6
       playerPace: 1
