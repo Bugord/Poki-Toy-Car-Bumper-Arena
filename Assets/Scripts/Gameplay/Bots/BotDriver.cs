@@ -75,6 +75,7 @@ namespace ToyCarArena.Gameplay.Bots
 
             var deltaTime = Time.deltaTime;
             var radius = round.ArenaRadius;
+            var isDuel = round.IsDuel;
             foreach (var bot in bots) {
                 if (bot.Car.IsOut) {
                     continue;
@@ -84,7 +85,7 @@ namespace ToyCarArena.Gameplay.Bots
                     bot.SetTarget(PickTarget(bot, radius));
                 }
 
-                bot.Steer(radius, deltaTime);
+                bot.Steer(radius, deltaTime, isDuel);
             }
         }
 

@@ -19,7 +19,8 @@ namespace ToyCarArena.Gameplay.Round
     /// A car that falls within <see cref="GameTuning.RoundSettings.KnockoutCreditWindow"/> of another car driving into
     /// it was knocked out by that car (<see cref="KnockedOut"/>): the brief's "I pushed him off", which the HUD, the
     /// result screen and the player's best count. A car that drove off on its own, or slid off long after a hit, was
-    /// knocked out by nobody.
+    /// knocked out by nobody. Player hits use <see cref="RoundDifficulty.PlayerKnockoutWindow"/>, so their credit can
+    /// be more forgiving without changing which bot knocked the player out.
     /// </para>
     /// </summary>
     public sealed class ArenaRound : ITickable
@@ -98,6 +99,11 @@ namespace ToyCarArena.Gameplay.Round
         public float Elapsed => elapsed;
 
         public int CarsLeft { get; private set; }
+
+        /// <summary>
+        /// Only the player and one bot remain: the final fight can be gentler without changing the earlier crowd.
+        /// </summary>
+        public bool IsDuel => Player != null && !Player.IsOut && CarsLeft == 2;
 
         /// <summary>
         /// Cars the player has knocked out this round.
@@ -247,7 +253,8 @@ namespace ToyCarArena.Gameplay.Round
                 return null;
             }
 
-            return Time.time - car.LastHitTime <= tuning.Round.KnockoutCreditWindow ? hitBy : null;
+            var window = hitBy.IsPlayer ? difficulty.PlayerKnockoutWindow : tuning.Round.KnockoutCreditWindow;
+            return Time.time - car.LastHitTime <= window ? hitBy : null;
         }
 
         /// <summary>

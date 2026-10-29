@@ -23,10 +23,8 @@ MonoBehaviour:
     grip: 6
     bumpForce: 0.5
     maxBumpSpeed: 18
-    playerBumpMultiplier: 1.3
     hitStagger: 0.5
     staggerGrip: 0.2
-    playerStaggerScale: 0.4
   controls:
     touchSteering: 0
     joystickRadius: 0.1
@@ -70,6 +68,12 @@ MonoBehaviour:
       boostDelay: {x: 1.2, y: 2.5}
       escapeBoostChance: 0.3
       edgeAssist: 1
+      playerBump: 1.3
+      playerStaggerScale: 0.4
+      staggerFromPlayer: 1
+      playerKnockoutWindow: 2.5
+      duelPace: 0.6
+      duelEscapeBoostChance: 0.3
     normal:
       bots: 6
       playerPace: 1
@@ -81,6 +85,12 @@ MonoBehaviour:
       boostDelay: {x: 0.3, y: 1.2}
       escapeBoostChance: 0.5
       edgeAssist: 0.3
+      playerBump: 1.3
+      playerStaggerScale: 0.4
+      staggerFromPlayer: 1
+      playerKnockoutWindow: 2.5
+      duelPace: 1
+      duelEscapeBoostChance: 0.5
     rampRounds: 6
     streakStart: 2
     streakEase: 0.25
