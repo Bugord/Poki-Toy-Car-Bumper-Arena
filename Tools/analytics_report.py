@@ -77,6 +77,8 @@ def summarise(data):
         "unlocks": other(o, r"progress-([a-z]+(?:-[a-z]+)*)-unlock"),
         "equips": other(o, r"garage-([a-z]+(?:-[a-z]+)*)-equip"),
         "driven": other(o, r"result-car-([a-z]+(?:-[a-z]+)*-r(?:1|2|3|4plus))-car"),
+        "colors": other(o, r"garage-color-(green|red|blue|yellow|purple|orange|pink|dark)-color"),
+        "played_colors": other(o, r"result-color-((?:green|red|blue|yellow|purple|orange|pink|dark)-r(?:1|2|3|4plus))-color"),
         "progress": p,
     }
     # с v0.2: на раунд (R = 1, 2, 3, 4plus)
@@ -171,6 +173,8 @@ def report(version, previous):
         ("Открытия машинок (визиты с unlock)", "unlocks"),
         ("Выбор машинок в гараже (визиты с equip)", "equips"),
         ("На чём ездят по раундам (визиты с car)", "driven"),
+        ("Выбор цвета в гараже (визиты с color)", "colors"),
+        ("Цвет машинки по раундам (визиты с color)", "played_colors"),
     ):
         keys = keys_of(key)
         if key == "levels":

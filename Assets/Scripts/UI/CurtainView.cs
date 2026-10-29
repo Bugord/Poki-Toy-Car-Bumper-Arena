@@ -100,7 +100,7 @@ namespace ToyCarArena.UI
         {
             var sticker = Element("lobby__row");
             sticker.EnableInClassList("lobby__row--left", isLeft);
-            var chip = CarColor.CreateChip(row.Index, row.Index == 0);
+            var chip = CarColor.CreateChip(row.ColorId, row.Index == 0);
             chip.EnableInClassList("lobby__you-chip", row.Index == 0);
             sticker.Add(chip);
             var name = OutlinedText(isLeft ? row.LeftName : row.Name, "lobby__name");

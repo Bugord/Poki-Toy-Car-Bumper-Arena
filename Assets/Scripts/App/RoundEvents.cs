@@ -34,6 +34,8 @@ namespace ToyCarArena.App
     /// <item><c>result / play-again / visible</c>, then <c>interact</c> when pressed</item>
     /// <item>since v0.2.0, only with a marked rival present: <c>result / revenge-got, missed-rR / revenge</c></item>
     /// <item><c>garage / button / visible, interact</c> and <c>garage / car-id / equip</c></item>
+    /// <item><c>garage / color-name / color</c> on colour selection and
+    /// <c>result / color-name-rR / color</c> for the colour captured by the played round</item>
     /// <item><c>progress / level-2..10, level-10plus / level-up</c> for each crossed level, and
     /// <c>progress / car-id / unlock</c> from the saved reward</item>
     /// <item><c>result / car-car-id-rR / car</c>: the car played, before an unlock auto-equips the next one;
@@ -83,6 +85,7 @@ namespace ToyCarArena.App
 
             platform.Measure(ResultCategory, GameEvent.Clean(result.Outcome.ToString()), "outcome");
             var tag = RoundTag(round);
+            platform.Measure(ResultCategory, $"color-{CarPaint.NameOf(result.ColorOf(0))}-{tag}", "color");
             if (result.CarCount > 1) {
                 platform.Measure(ResultCategory, $"place-{result.Place}-{tag}", "place");
             }
@@ -155,6 +158,9 @@ namespace ToyCarArena.App
 
         public static void MeasureGarageEquip(this IGamePlatform platform, string carId) =>
             platform.Measure("garage", carId, "equip");
+
+        public static void MeasureGarageColor(this IGamePlatform platform, int colorId) =>
+            platform.Measure("garage", $"color-{CarPaint.NameOf(colorId)}", "color");
 
         public static void MeasureRoundCar(this IGamePlatform platform, int round, string carId) =>
             platform.Measure(ResultCategory, $"car-{carId}-{RoundTag(round)}", "car");

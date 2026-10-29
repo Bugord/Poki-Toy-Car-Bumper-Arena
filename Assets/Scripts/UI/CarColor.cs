@@ -1,3 +1,4 @@
+using ToyCarArena.Gameplay.Cars;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -9,33 +10,39 @@ namespace ToyCarArena.UI
     /// </summary>
     public static class CarColor
     {
-        private const string ClassPrefix = "car-color--";
+        private static readonly string[] Classes =
+        {
+            "car-color--0", "car-color--1", "car-color--2", "car-color--3",
+            "car-color--4", "car-color--5", "car-color--6", "car-color--7",
+        };
 
-        // As many colours as ui_screens has (car-color--0 to 7) and CarLook has swatches on the car prefab.
-        private const int Count = 8;
+        // Exact sRGB values of --car-* in ui_theme.tss, used for portrait tint interpolation too.
+        private static readonly Color32[] Tints =
+        {
+            new(0x3f, 0xa8, 0x7a, 255), new(0xe6, 0x5f, 0x48, 255),
+            new(0x5f, 0x74, 0xcb, 255), new(0xff, 0xb5, 0x4a, 255),
+            new(0x7e, 0x56, 0xce, 255), new(0xff, 0x86, 0x44, 255),
+            new(0xca, 0x77, 0xeb, 255), new(0x3f, 0x3f, 0x46, 255),
+        };
+
+        public static Color TintOf(int colorId) => Tints[CarPaint.OrGreen(colorId)];
+        public static Color Silhouette => new Color32(0x1d, 0x2b, 0x4f, 255);
 
         /// <summary>
-        /// The class of the car with this index in the round: 0 the player, 1..N the bots. Past the last colour the bots
-        /// start over from the first bot's, as <see cref="Gameplay.Cars.CarLook"/> paints them, so no bot ever wears
-        /// the player's colour.
+        /// The class of a colour ID, independent of slot, nickname or player marker.
         /// </summary>
-        public static string ClassOf(int index)
-        {
-            var color = index < Count ? Mathf.Max(0, index) : 1 + (index - 1) % (Count - 1);
-            return ClassPrefix + color;
-        }
+        public static string ClassOf(int colorId) => Classes[CarPaint.OrGreen(colorId)];
 
         /// <summary>The same car sticker in the arena HUD and the curtain's lobby.</summary>
-        public static VisualElement CreateChip(int index, bool isPlayer)
+        public static VisualElement CreateChip(int colorId, bool isPlayer)
         {
             var chip = new VisualElement { pickingMode = PickingMode.Ignore };
             chip.AddToClassList("hud__chip");
-            chip.AddToClassList(ClassOf(index));
-            if (isPlayer) {
-                var ring = new VisualElement { pickingMode = PickingMode.Ignore };
-                ring.AddToClassList("hud__chip-ring");
-                chip.Add(ring);
-            }
+            chip.AddToClassList(ClassOf(colorId));
+            MarkPlayer(chip, isPlayer);
+            var ring = new VisualElement { pickingMode = PickingMode.Ignore };
+            ring.AddToClassList("hud__chip-ring");
+            chip.Add(ring);
             var car = new VisualElement { pickingMode = PickingMode.Ignore };
             car.AddToClassList("hud__chip-car");
             var glass = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -44,5 +51,8 @@ namespace ToyCarArena.UI
             chip.Add(car);
             return chip;
         }
+
+        public static void MarkPlayer(VisualElement chip, bool isPlayer) =>
+            chip.EnableInClassList("hud__chip--player", isPlayer);
     }
 }

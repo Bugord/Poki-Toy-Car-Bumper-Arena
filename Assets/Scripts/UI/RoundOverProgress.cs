@@ -27,9 +27,9 @@ namespace ToyCarArena.UI
         private readonly Label nextCar;
         private readonly VisualElement newCar;
         private readonly Label newCarName;
-        private readonly VisualElement newCarPortrait;
+        private readonly CarPortrait newCarPortrait;
         private readonly VisualElement carBadge;
-        private readonly VisualElement portrait;
+        private readonly CarPortrait portrait;
         private readonly Label ready;
         private CancellationTokenSource animation;
 
@@ -43,9 +43,9 @@ namespace ToyCarArena.UI
             this.nextCar = root.Q<Label>("xp-next");
             this.newCar = root.Q<VisualElement>("xp-new-car");
             this.newCarName = root.Q<Label>("xp-new-car-name");
-            this.newCarPortrait = root.Q<VisualElement>("xp-new-car-portrait");
+            this.newCarPortrait = new CarPortrait(root.Q<VisualElement>("xp-new-car-portrait"));
             this.carBadge = root.Q<VisualElement>("xp-car-badge");
-            this.portrait = root.Q<VisualElement>("xp-car-portrait");
+            this.portrait = new CarPortrait(root.Q<VisualElement>("xp-car-portrait"));
             this.ready = root.Q<Label>("xp-ready");
 
             var before = viewModel.XpGain.Before;
@@ -76,6 +76,12 @@ namespace ToyCarArena.UI
         }
 
         public void Dispose() => Stop();
+
+        public void RefreshColor()
+        {
+            portrait.SetColor(viewModel.SelectedColor);
+            newCarPortrait.SetColor(viewModel.SelectedColor);
+        }
 
         private async UniTask Animate(CancellationToken token)
         {
@@ -117,23 +123,19 @@ namespace ToyCarArena.UI
             nextCar.text = viewModel.NextCarText(level);
             var car = viewModel.NextCar(level);
             carBadge.style.display = car == null ? DisplayStyle.None : DisplayStyle.Flex;
-            portrait.style.backgroundImage = new StyleBackground(car?.Portrait);
-            portrait.style.unityBackgroundImageTintColor = StyleKeyword.Null;
-            portrait.AddToClassList("car-portrait--locked");
+            portrait.Set(car, viewModel.SelectedColor, true);
         }
 
         private async UniTask ShowUnlocks(int level, CancellationToken token)
         {
             foreach (var car in viewModel.NewCarsAt(level)) {
                 carBadge.style.display = DisplayStyle.Flex;
-                portrait.style.backgroundImage = new StyleBackground(car.Portrait);
-                portrait.style.unityBackgroundImageTintColor = StyleKeyword.Null;
-                portrait.AddToClassList("car-portrait--locked");
-                // Let the palette's silhouette tint resolve before interpolating it to the original portrait.
+                portrait.Set(car, viewModel.SelectedColor, true);
+                // Give the silhouette a frame on screen before revealing its chosen colour.
                 await UniTask.Yield(PlayerLoopTiming.Update, token);
                 // Keep the latest unlock in its own sticker, so the goal badge can advance independently.
                 newCarName.text = $"NEW CAR! {car.DisplayName}";
-                newCarPortrait.style.backgroundImage = new StyleBackground(car.Portrait);
+                newCarPortrait.Set(car, viewModel.SelectedColor);
                 ready.style.visibility = Visibility.Visible;
                 await UniTask.WhenAll(Pop(newCar, token), Reveal(token), Bounce(carBadge, token));
                 await UniTask.Delay(UnlockPreviewHold, ignoreTimeScale: true, cancellationToken: token);
@@ -142,14 +144,13 @@ namespace ToyCarArena.UI
 
         private async UniTask Reveal(CancellationToken token)
         {
-            var from = portrait.resolvedStyle.unityBackgroundImageTintColor;
             for (var time = 0f; time < RevealDuration; time += Time.unscaledDeltaTime) {
-                portrait.style.unityBackgroundImageTintColor = Color.Lerp(from, Color.white, time / RevealDuration);
+                portrait.SetColor(viewModel.SelectedColor);
+                portrait.SetReveal(time / RevealDuration);
                 await UniTask.Yield(PlayerLoopTiming.Update, token);
             }
 
-            portrait.RemoveFromClassList("car-portrait--locked");
-            portrait.style.unityBackgroundImageTintColor = Color.white;
+            portrait.SetReveal(1f);
         }
 
         private async UniTask Fill(float from, float to, CancellationToken token)

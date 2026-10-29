@@ -35,6 +35,7 @@ namespace ToyCarArena.UI
 
         private Button playAgainButton;
         private Button garageButton;
+        private CarPortrait garagePortrait;
         private CancellationTokenSource lifetime;
         private bool isPlayAgainPressed;
         private RoundOverProgress xpProgress;
@@ -72,6 +73,7 @@ namespace ToyCarArena.UI
             garageButton = Root.Q<Button>("garage-button");
             garageButton.RemoveFromClassList(Button.ussClassName);
             garageButton.clicked += OpenGarage;
+            garagePortrait = new CarPortrait(Root.Q<VisualElement>("garage-portrait"));
             RefreshGarage();
             Root.Q<VisualElement>("garage-dot").style.display =
                 ViewModel.HasNewCar ? DisplayStyle.Flex : DisplayStyle.None;
@@ -163,7 +165,7 @@ namespace ToyCarArena.UI
                 var place = new StickerText(stillIn ? "IN" : "#" + standing.Place);
                 place.AddToClassList("scoreboard__place");
                 row.Add(place);
-                row.Add(CarColor.CreateChip(standing.Index, standing.Index == 0));
+                row.Add(CarColor.CreateChip(ViewModel.ColorOf(standing.Index), standing.Index == 0));
                 var name = new StickerText(ViewModel.NameOf(standing.Index));
                 name.AddToClassList("scoreboard__name");
                 row.Add(name);
@@ -211,8 +213,7 @@ namespace ToyCarArena.UI
             }
         }
 
-        private void RefreshGarage() => Root.Q<VisualElement>("garage-portrait").style.backgroundImage =
-            new StyleBackground(ViewModel.SelectedCar?.Portrait);
+        private void RefreshGarage() => garagePortrait.Set(ViewModel.SelectedCar, ViewModel.SelectedColor);
 
         private void OpenGarage()
         {
@@ -229,6 +230,7 @@ namespace ToyCarArena.UI
             await ViewModel.OpenGarage(token);
             token.ThrowIfCancellationRequested();
             RefreshGarage();
+            xpProgress.RefreshColor();
             Root.Q<VisualElement>("garage-dot").style.display = DisplayStyle.None;
         }
 
@@ -255,7 +257,7 @@ namespace ToyCarArena.UI
             subtitleLabel.style.display = isKnockedByCar ? DisplayStyle.None : DisplayStyle.Flex;
             Root.Q<VisualElement>("knocked-by").EnableInClassList(KnockedByShownClass, isKnockedByCar);
             if (isKnockedByCar) {
-                Root.Q<VisualElement>("by-car-body").AddToClassList(CarColor.ClassOf(knockedOutBy));
+                Root.Q<VisualElement>("by-car-body").AddToClassList(CarColor.ClassOf(ViewModel.ColorOf(knockedOutBy)));
                 Root.Q<Label>("by-name").text = ViewModel.KnockedOutByName;
                 Root.Q<Label>("by-name-face").text = ViewModel.KnockedOutByName;
             }

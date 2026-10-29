@@ -13,7 +13,8 @@ namespace ToyCarArena.UI
     {
         private const float BounceDuration = 0.3f;
         private readonly IAudioService audioService;
-        private readonly List<(CarCatalog.Entry Car, Button Button, Label Status)> cards = new();
+        private readonly List<(CarCatalog.Entry Car, Button Button, Label Status, CarPortrait Portrait)> cards = new();
+        private readonly Button[] colors = new Button[CarPaint.Count];
         private Button backButton;
         private bool isClosing;
         private CancellationTokenSource bounce;
@@ -39,6 +40,26 @@ namespace ToyCarArena.UI
             Root.Q<Label>("garage-level-value").text = $"LVL {level.Level}";
             Root.Q<VisualElement>("garage-xp-fill").style.width = Length.Percent(100f * level.Xp / level.Cost);
             Root.Q<Label>("garage-xp-value").text = $"{level.Xp} / {level.Cost} XP";
+            var colorRow = Root.Q<VisualElement>("garage-colors");
+            for (var id = 0; id < colors.Length; id++) {
+                var colorId = id;
+                var button = new Button {
+                    name = $"garage-color-{CarPaint.NameOf(id)}",
+                    tooltip = CarPaint.NameOf(id).ToUpperInvariant(),
+                };
+                button.RemoveFromClassList(Button.ussClassName);
+                button.AddToClassList("garage__color");
+                button.AddToClassList(CarColor.ClassOf(id));
+                var ring = new VisualElement { pickingMode = PickingMode.Ignore };
+                ring.AddToClassList("garage__color-ring");
+                var check = new VisualElement { pickingMode = PickingMode.Ignore };
+                check.AddToClassList("garage__color-check");
+                ring.Add(check);
+                button.Add(ring);
+                button.clicked += () => SelectColor(colorId, button);
+                colors[id] = button;
+                colorRow.Add(button);
+            }
             var grid = Root.Q<VisualElement>("garage-grid");
             foreach (var car in ViewModel.Cars) {
                 var button = new Button { name = $"garage-car-{car.Id}" };
@@ -47,8 +68,8 @@ namespace ToyCarArena.UI
                 var portrait = new VisualElement { pickingMode = PickingMode.Ignore };
                 portrait.AddToClassList("car-portrait");
                 portrait.AddToClassList("garage__portrait");
-                portrait.style.backgroundImage = new StyleBackground(car.Portrait);
-                portrait.EnableInClassList("car-portrait--locked", !ViewModel.IsUnlocked(car.Id));
+                var image = new CarPortrait(portrait);
+                image.Set(car, ViewModel.SelectedColor, !ViewModel.IsUnlocked(car.Id));
                 button.Add(portrait);
                 var name = new Label(car.DisplayName) { pickingMode = PickingMode.Ignore };
                 name.AddToClassList("garage__name");
@@ -63,7 +84,7 @@ namespace ToyCarArena.UI
                 statusRow.Add(status);
                 button.Add(statusRow);
                 button.clicked += () => Select(car, button);
-                cards.Add((car, button, status));
+                cards.Add((car, button, status, image));
                 grid.Add(button);
             }
 
@@ -75,14 +96,29 @@ namespace ToyCarArena.UI
 
         private void RefreshSelection()
         {
-            foreach (var (car, button, status) in cards) {
+            for (var id = 0; id < colors.Length; id++) {
+                colors[id].EnableInClassList("garage__color--selected", id == ViewModel.SelectedColor);
+            }
+            foreach (var (car, button, status, portrait) in cards) {
                 var selected = car.Id == ViewModel.SelectedCar;
                 var unlocked = ViewModel.IsUnlocked(car.Id);
                 button.EnableInClassList("garage__car--selected", selected);
                 button.EnableInClassList("garage__car--locked", !unlocked);
                 status.text = selected ? "IN USE" : unlocked ? "USE" : $"LVL {car.UnlockLevel}";
                 button.tooltip = unlocked ? car.DisplayName : $"UNLOCK AT LVL {car.UnlockLevel}";
+                portrait.SetColor(ViewModel.SelectedColor);
             }
+        }
+
+        private void SelectColor(int id, Button button)
+        {
+            if (!IsShown || isClosing || !ViewModel.SelectColor(id)) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            RefreshSelection();
+            StartBounce(button);
         }
 
         private void Select(CarCatalog.Entry car, Button button)
@@ -94,6 +130,11 @@ namespace ToyCarArena.UI
             audioService.PlayUiClick();
             ViewModel.Select(car.Id);
             RefreshSelection();
+            StartBounce(button);
+        }
+
+        private void StartBounce(VisualElement button)
+        {
             StopBounce();
             bouncingCard = button;
             bounce = new CancellationTokenSource();

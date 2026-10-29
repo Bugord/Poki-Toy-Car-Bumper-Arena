@@ -24,11 +24,11 @@ namespace ToyCarArena.UI
 
         public void ShowLobby(ISessionRoster roster, int botCount, int nemesis)
         {
-            var rows = new List<LobbyRow> { new(0, "YOU", null, false, false) };
+            var rows = new List<LobbyRow> { new(0, roster.ColorOf(0), "YOU", null, false, false) };
             for (var index = 1; index <= SessionRoster.MaxBots; index++) {
                 var left = roster.LeftNameOf(index);
                 if (index <= botCount || left != null) {
-                    rows.Add(new LobbyRow(index, index <= botCount ? roster.NameOf(index) : null, left,
+                    rows.Add(new LobbyRow(index, roster.ColorOf(index), index <= botCount ? roster.NameOf(index) : null, left,
                         roster.Joined(index), index == nemesis));
                 }
             }
@@ -52,14 +52,16 @@ namespace ToyCarArena.UI
     public readonly struct LobbyRow
     {
         public readonly int Index;
+        public readonly int ColorId;
         public readonly string Name;
         public readonly string LeftName;
         public readonly bool IsNew;
         public readonly bool IsNemesis;
 
-        public LobbyRow(int index, string name, string leftName, bool isNew, bool isNemesis)
+        public LobbyRow(int index, int colorId, string name, string leftName, bool isNew, bool isNemesis)
         {
             this.Index = index;
+            this.ColorId = colorId;
             this.Name = name;
             this.LeftName = leftName;
             this.IsNew = isNew;

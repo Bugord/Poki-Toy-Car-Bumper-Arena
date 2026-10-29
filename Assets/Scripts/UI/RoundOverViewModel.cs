@@ -20,10 +20,12 @@ namespace ToyCarArena.UI
         private readonly IScreenNavigator navigator;
         private readonly IGamePlatform platform;
         private IReadOnlyList<string> names;
+        private IReadOnlyList<int> colors;
         private bool scoreboardMeasured;
 
         public IReadOnlyList<RoundStanding> Standings { get; private set; }
         public string NameOf(int index) => names[index];
+        public int ColorOf(int index) => colors[index];
 
         public void MeasureScoreboardShown()
         {
@@ -46,6 +48,7 @@ namespace ToyCarArena.UI
         public bool IsGarageOpen { get; private set; }
         public bool HasNewCar => XpGain.UnlockedCarIds.Count > 0;
         public CarCatalog.Entry SelectedCar => catalog.Find(progress.SelectedCar);
+        public int SelectedColor => progress.SelectedColor;
         public CarCatalog.Entry NextCar(int level) => catalog.NextLocked(level);
 
         /// <summary>The popup leaves this view attached and its reward animation running exactly once.</summary>
@@ -106,7 +109,7 @@ namespace ToyCarArena.UI
         public int Knockouts { get; private set; }
 
         /// <summary>
-        /// The index of the car that knocked the player out, which tells its colour, or
+        /// The index of the car that knocked the player out, or
         /// <see cref="RoundResult.Nobody"/>.
         /// </summary>
         public int KnockedOutBy { get; private set; }
@@ -129,6 +132,7 @@ namespace ToyCarArena.UI
         {
             var result = payload.Result;
             names = payload.Names;
+            colors = result.Colors;
             Standings = result.Standings;
             scoreboardMeasured = false;
             XpGain = payload.XpGain;

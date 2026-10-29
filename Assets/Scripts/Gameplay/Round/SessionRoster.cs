@@ -9,24 +9,53 @@ namespace ToyCarArena.Gameplay.Round
     /// Seats visit players in coloured slots. Replacements change handles and cosmetic cars, never slot identity in
     /// a round. Names are dealt without reuse until the deck runs out.
     /// </summary>
-    public sealed class SessionRoster : ISessionRoster
+    public sealed class SessionRoster : ISessionRoster, IDisposable
     {
         public const int MaxBots = 6;
 
         private readonly CarCatalog catalog;
+        private readonly IPlayerCar playerCar;
+        private readonly int[] colors = new int[MaxBots];
+        private int playerColor;
         private readonly string[] deck = (string[])BotNames.All.Clone();
         private readonly SessionPlayer[] players = new SessionPlayer[MaxBots];
         private readonly bool[] joined = new bool[MaxBots];
         private readonly string[] left = new string[MaxBots];
         private int nextName = BotNames.All.Length;
 
-        public SessionRoster(CarCatalog catalog)
+        public SessionRoster(CarCatalog catalog, IPlayerCar playerCar)
         {
             this.catalog = catalog;
+            this.playerCar = playerCar;
+            this.playerColor = playerCar.SelectedColor;
+            for (var slot = 0; slot < MaxBots; slot++) {
+                colors[slot] = slot < playerColor ? slot : slot + 1;
+            }
+            playerCar.ColorChanged += OnColorChanged;
+        }
+
+        public void Dispose() => playerCar.ColorChanged -= OnColorChanged;
+
+        // Replace immutable occupants, so snapshots from the played round retain both name and colour.
+        private void OnColorChanged(int color)
+        {
+            for (var slot = 0; slot < colors.Length; slot++) {
+                if (colors[slot] != color) {
+                    continue;
+                }
+                colors[slot] = playerColor;
+                var player = players[slot];
+                if (player != null) {
+                    players[slot] = new SessionPlayer(player.Name, player.Car, playerColor);
+                }
+                break;
+            }
+            this.playerColor = color;
         }
 
         public string NameOf(int carIndex) => carIndex == 0 ? "YOU" : PlayerOf(carIndex).Name;
         public CarCatalog.Entry CarOf(int carIndex) => PlayerOf(carIndex).Car;
+        public int ColorOf(int carIndex) => carIndex == 0 ? playerColor : colors[Slot(carIndex)];
         public bool Joined(int carIndex) => carIndex > 0 && joined[Slot(carIndex)];
         public string LeftNameOf(int carIndex) => left[Slot(carIndex)];
 
@@ -96,7 +125,7 @@ namespace ToyCarArena.Gameplay.Round
             if (nextName == deck.Length) {
                 Refill();
             }
-            players[slot] = new SessionPlayer(deck[nextName++], catalog.Cars[Random.Range(0, catalog.Cars.Count)]);
+            players[slot] = new SessionPlayer(deck[nextName++], catalog.Cars[Random.Range(0, catalog.Cars.Count)], colors[slot]);
             joined[slot] = true;
         }
 
@@ -141,11 +170,13 @@ namespace ToyCarArena.Gameplay.Round
     {
         public string Name { get; }
         public CarCatalog.Entry Car { get; }
+        public int ColorId { get; }
 
-        public SessionPlayer(string name, CarCatalog.Entry car)
+        public SessionPlayer(string name, CarCatalog.Entry car, int colorId)
         {
             this.Name = name;
             this.Car = car;
+            this.ColorId = colorId;
         }
     }
 }

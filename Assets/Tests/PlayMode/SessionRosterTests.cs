@@ -13,6 +13,7 @@ namespace ToyCarArena.Tests.PlayMode
         private GameTuning tuning;
         private CarCatalog catalog;
         private SessionRoster roster;
+        private TestPlayerCar playerCar;
         private Random.State randomState;
 
         [SetUp]
@@ -23,13 +24,15 @@ namespace ToyCarArena.Tests.PlayMode
             tuning = ScriptableObject.CreateInstance<GameTuning>();
             catalog = ScriptableObject.CreateInstance<CarCatalog>();
             JsonUtility.FromJsonOverwrite("{\"cars\":[{\"id\":\"racer\"},{\"id\":\"truck\",\"unlockLevel\":99}]}", catalog);
-            roster = new SessionRoster(catalog);
+            playerCar = new TestPlayerCar();
+            roster = new SessionRoster(catalog, playerCar);
             Settings(1f, 2);
         }
 
         [TearDown]
         public void TearDown()
         {
+            roster.Dispose();
             Object.DestroyImmediate(tuning);
             Object.DestroyImmediate(catalog);
             Random.state = randomState;
@@ -133,6 +136,7 @@ namespace ToyCarArena.Tests.PlayMode
             for (var index = 1; index <= 6; index++) {
                 roster.NameOf(index);
                 roster.CarOf(index);
+                roster.ColorOf(index);
                 roster.Joined(index);
                 roster.LeftNameOf(index);
             }
@@ -170,5 +174,104 @@ namespace ToyCarArena.Tests.PlayMode
         private void Settings(float chance, int maximum) => JsonUtility.FromJsonOverwrite(
             "{\"players\":{\"leaveChance\":" + chance.ToString(System.Globalization.CultureInfo.InvariantCulture) +
             ",\"maxLeaves\":" + maximum + "}}", tuning);
+
+        [TestCase(0)]
+        [TestCase(1)]
+        [TestCase(2)]
+        [TestCase(3)]
+        [TestCase(4)]
+        [TestCase(5)]
+        [TestCase(6)]
+        [TestCase(7)]
+        public void InitialColorsAreOrderedUniqueAndSkipThePlayer(int selected)
+        {
+            roster.Dispose();
+            playerCar.SelectColor(selected);
+            roster = new SessionRoster(catalog, playerCar);
+            var expected = Enumerable.Range(0, CarPaint.Count).Where(id => id != selected).Take(6).ToArray();
+            Assert.That(roster.ForRound(6).Select(player => player.ColorId), Is.EqualTo(expected));
+            Assert.That(roster.ColorOf(0), Is.EqualTo(selected));
+            Assert.That(Enumerable.Range(1, 6).Select(roster.ColorOf), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void SlotColorsSurviveDeparturesShrinkingAndNewArrivals()
+        {
+            var colors = roster.ForRound(6).Select(player => player.ColorId).ToArray();
+            for (var round = 0; round < 20; round++) {
+                roster.NextRound(6, 3, 6, tuning.Players);
+                roster.NextRound(3, 6, 6, tuning.Players);
+                Assert.That(roster.ForRound(6).Select(player => player.ColorId), Is.EqualTo(colors));
+            }
+        }
+
+        [Test]
+        public void ChoosingABotsColorSwapsOnlyThatSlotEvenWhenAbsent()
+        {
+            var played = roster.ForRound(6);
+            var random = Random.state;
+            playerCar.SelectColor(6);
+            Assert.That(roster.ColorOf(0), Is.EqualTo(6));
+            Assert.That(roster.ColorOf(6), Is.Zero);
+            for (var index = 1; index <= 5; index++) {
+                Assert.That(roster.ForRound(6)[index - 1], Is.SameAs(played[index - 1]));
+            }
+            Assert.That(roster.NameOf(6), Is.EqualTo(played[5].Name));
+            Assert.That(roster.CarOf(6), Is.SameAs(played[5].Car));
+            Assert.That(Random.state, Is.EqualTo(random));
+
+            Settings(0f, 0);
+            roster.NextRound(6, 3, 6, tuning.Players);
+            playerCar.SelectColor(0);
+            roster.NextRound(3, 6, 6, tuning.Players);
+            Assert.That(roster.ColorOf(6), Is.EqualTo(6));
+            Assert.That(roster.NameOf(6), Is.EqualTo(played[5].Name));
+        }
+
+        [Test]
+        public void UnoccupiedSlotsAlsoSwapAndSpareColorLeavesBotsAlone()
+        {
+            playerCar.SelectColor(4); // Slot four has not been seated yet.
+            Assert.That(roster.ForRound(6)[3].ColorId, Is.Zero);
+            var before = roster.ForRound(6);
+            playerCar.SelectColor(7); // The eighth colour has no bot slot.
+            Assert.That(roster.ForRound(6), Is.EqualTo(before));
+            Assert.That(roster.ColorOf(0), Is.EqualTo(7));
+            playerCar.SelectColor(0);
+            Assert.That(roster.ColorOf(4), Is.EqualTo(7));
+            Assert.That(Enumerable.Range(0, 7).Select(roster.ColorOf).Distinct().Count(), Is.EqualTo(7));
+        }
+
+        [Test]
+        public void RoundAndResultSnapshotsKeepColorsThroughMultipleSelectionsAndDepartures()
+        {
+            var played = roster.ForRound(6);
+            var colors = System.Array.AsReadOnly(new[] { roster.ColorOf(0) }.Concat(played.Select(p => p.ColorId)).ToArray());
+            var result = new RoundResult(RoundOutcome.Out, 3, 7, 20f, 1, 2, FallCause.None, true, false,
+                colors: colors);
+            playerCar.SelectColor(2);
+            playerCar.SelectColor(3);
+            Assert.That(roster.ColorOf(2), Is.Zero);
+            Assert.That(roster.ColorOf(3), Is.EqualTo(2));
+            Assert.That(result.ColorOf(result.KnockedOutBy), Is.EqualTo(2));
+            Assert.That(result.ColorOf(0), Is.Zero);
+            roster.NextRound(6, 6, RoundResult.Nobody, tuning.Players);
+            Assert.That(played.Select(p => p.ColorId), Is.EqualTo(Enumerable.Range(1, 6)));
+            Assert.That(result.Colors, Is.EqualTo(Enumerable.Range(0, 7)));
+        }
+
+        private sealed class TestPlayerCar : IPlayerCar
+        {
+            public string SelectedCar => "racer";
+            public int SelectedColor { get; private set; }
+            public event System.Action<int> ColorChanged;
+
+            public bool SelectColor(int id)
+            {
+                SelectedColor = id;
+                ColorChanged?.Invoke(id);
+                return true;
+            }
+        }
     }
 }
