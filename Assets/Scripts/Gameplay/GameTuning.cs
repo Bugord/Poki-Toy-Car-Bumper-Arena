@@ -246,6 +246,30 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float edgeAssistStop = 2f;
 
+            [Tooltip("Distance inside the safe arena radius of the player's edge holding line, in metres; " +
+                "keeps half the car's length and a little reserve on the floor")]
+            [Min(0f)]
+            [SerializeField]
+            private float edgeHoldMargin = 1.5f;
+
+            [Tooltip("Braking in metres per second squared used to limit outward speed to " +
+                "sqrt(2 * brake * distance to the holding line), including during a boost")]
+            [Min(0f)]
+            [SerializeField]
+            private float edgeHoldBrake = 12f;
+
+            [Tooltip("The most outward speed the hold takes away per second, in metres per second squared, scaled " +
+                "by the round's edge assist: full on Easy, a fraction on Normal, so a hard car still slides off there")]
+            [Min(0f)]
+            [SerializeField]
+            private float edgeHoldMaxBrake = 80f;
+
+            [Tooltip("Seconds after another car last drove into or kept pushing the player during which edge " +
+                "holding yields to the shove; holding also yields while staggered")]
+            [Min(0f)]
+            [SerializeField]
+            private float edgeHoldContactGrace = 0.5f;
+
             public TouchSteering TouchSteering => touchSteering;
             public float JoystickRadius => joystickRadius;
             public float JoystickDeadZone => joystickDeadZone;
@@ -259,6 +283,10 @@ namespace ToyCarArena.Gameplay
             public float PointerSlowRadius => pointerSlowRadius;
             public float EdgeAssistMargin => edgeAssistMargin;
             public float EdgeAssistStop => edgeAssistStop;
+            public float EdgeHoldMargin => edgeHoldMargin;
+            public float EdgeHoldBrake => edgeHoldBrake;
+            public float EdgeHoldMaxBrake => edgeHoldMaxBrake;
+            public float EdgeHoldContactGrace => edgeHoldContactGrace;
         }
 
         /// <summary>
@@ -767,19 +795,19 @@ namespace ToyCarArena.Gameplay
             private float knockoutCreditWindow = 2.5f;
 
             [Tooltip("Seconds after the floor ring under the player falls away that a fall without knockout credit " +
-                "is attributed to that ring")]
+                "is attributed to that ring; measured at the last grounded step, not elimination")]
             [Min(0f)]
             [SerializeField]
             private float ringFallWindow = 2f;
 
             [Tooltip("Seconds after a successful boost that a fall without knockout credit or a recent ring fall " +
-                "is attributed to the boost")]
+                "is attributed to the boost; measured at the last grounded step, not elimination")]
             [Min(0f)]
             [SerializeField]
             private float boostFallWindow = 1f;
 
             [Tooltip("Seconds after another car's hit that a fall without knockout credit, a recent ring fall or " +
-                "a boost is attributed to sliding after the hit")]
+                "a boost is attributed to sliding after the hit; measured at the last grounded step, not elimination")]
             [Min(0f)]
             [SerializeField]
             private float slideWindow = 6f;

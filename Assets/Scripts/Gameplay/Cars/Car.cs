@@ -180,6 +180,11 @@ namespace ToyCarArena.Gameplay.Cars
                 LastHitTime = Time.time;
             }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Movement.FallTelemetry?.Contact(other, Vector3.Dot(otherVelocity, normal),
+                -Vector3.Dot(velocity, normal), otherApproach > 0f, true);
+#endif
+
             // A tie (both standing, or a head-on hit at the same speed) goes to one of the two cars, the same one on
             // both sides: a Unity object's hash is its instance id.
             var isHitter = Mathf.Abs(approach - otherApproach) > SameSpeed
@@ -208,6 +213,12 @@ namespace ToyCarArena.Gameplay.Cars
                 LastHitBy = other;
                 LastHitTime = Time.time;
             }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Movement.FallTelemetry?.Contact(other, Vector3.Dot(other.Movement.Velocity, away.normalized),
+                -Vector3.Dot(Movement.Velocity, away.normalized),
+                Vector3.Dot(other.Movement.Velocity, away.normalized) > 0f, false);
+#endif
         }
 
         private static Vector3 Flat(Vector3 vector)

@@ -4,79 +4,23 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Bugord.Core;
 using NUnit.Framework;
-using ToyCarArena.Audio;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Bots;
-using ToyCarArena.Gameplay.Cars;
-using ToyCarArena.Gameplay.Input;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using VContainer;
 using VContainer.Unity;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace ToyCarArena.Tests.PlayMode
 {
     /// <summary>
     /// Measures the actual Game scene with novice input; outcomes are observations, never pass/fail thresholds.
     /// </summary>
-    public sealed class RoundSimulationTests
+    public sealed class RoundSimulationTests : SimulationSceneFixture
     {
-        private LifetimeScope parentScope;
-        private Scene originalScene;
-        private float originalCaptureDeltaTime;
-        private float originalTimeScale;
-        private int originalTargetFrameRate;
-        private int originalVSyncCount;
-        private bool originalRunInBackground;
-        private UnityEngine.Random.State originalRandomState;
-
-        [SetUp]
-        public void SetUp()
-        {
-            this.originalScene = SceneManager.GetActiveScene();
-            this.originalCaptureDeltaTime = Time.captureDeltaTime;
-            this.originalTimeScale = Time.timeScale;
-            this.originalTargetFrameRate = Application.targetFrameRate;
-            this.originalVSyncCount = QualitySettings.vSyncCount;
-            this.originalRunInBackground = Application.runInBackground;
-            this.originalRandomState = UnityEngine.Random.state;
-
-            Time.timeScale = 1f;
-            Time.captureDeltaTime = 1f / 60f;
-            Application.targetFrameRate = -1;
-            QualitySettings.vSyncCount = 0;
-            Application.runInBackground = true;
-        }
-
-        [UnityTearDown]
-        public IEnumerator TearDown()
-        {
-            try {
-                yield return UnloadGame();
-            }
-            finally {
-                if (parentScope != null) {
-                    UnityEngine.Object.DestroyImmediate(parentScope.gameObject);
-                    parentScope = null;
-                }
-
-                Time.captureDeltaTime = originalCaptureDeltaTime;
-                Time.timeScale = originalTimeScale;
-                Application.targetFrameRate = originalTargetFrameRate;
-                QualitySettings.vSyncCount = originalVSyncCount;
-                Application.runInBackground = originalRunInBackground;
-                UnityEngine.Random.state = originalRandomState;
-            }
-        }
-
         [UnityTest]
         [Timeout(int.MaxValue)]
         public IEnumerator SimulateNoviceRounds()
@@ -87,22 +31,10 @@ namespace ToyCarArena.Tests.PlayMode
             var seed = int.Parse(Environment.GetEnvironmentVariable("SIM_SEED") ?? "1");
             var input = new SimulationInput();
             var progress = new SimulationProgress();
-            var audio = new SilentAudioService(LoadAudioLibrary());
-            var catalog = LoadCarCatalog();
             var report = new SimulationReport(runs, seed);
             var stopwatch = Stopwatch.StartNew();
 
-            // A plain parent supplies only gameplay dependencies; no app states, HUD or standalone scene reloader.
-            this.parentScope = LifetimeScope.Create(builder => {
-                builder.AddBugordCore("simulation");
-                builder.Register<IOnScreenControls, NoOnScreenControls>(Lifetime.Singleton);
-                builder.RegisterInstance<ISessionProgress>(progress);
-                builder.RegisterInstance(catalog, typeof(CarCatalog));
-                builder.Register<IPlayerCar, FirstPlayerCar>(Lifetime.Singleton);
-                builder.Register<SessionRoster>(Lifetime.Singleton).As<ISessionRoster>();
-                builder.RegisterInstance<IAudioService>(audio);
-                builder.RegisterInstance<IInputService>(input);
-            }, "Simulation Scope");
+            CreateParent(input, progress);
 
             foreach (var level in levels) {
                 progress.Round = level;
@@ -111,26 +43,8 @@ namespace ToyCarArena.Tests.PlayMode
                     var roundSeed = unchecked(seed + run);
                     UnityEngine.Random.InitState(roundSeed);
                     input.SetMove(Vector2.zero);
-                    using (LifetimeScope.EnqueueParent(parentScope)) {
-                        var loading = SceneManager.LoadSceneAsync("Game", LoadSceneMode.Additive);
-                        Assert.That(loading, Is.Not.Null, "Game scene did not start loading.");
-                        var loadStarted = Time.realtimeSinceStartupAsDouble;
-                        while (!loading.isDone) {
-                            Assert.That(Time.realtimeSinceStartupAsDouble - loadStarted, Is.LessThan(60d),
-                                "Game scene did not load within 60 real seconds.");
-                            yield return null;
-                        }
-                    }
-
-                    var scene = SceneManager.GetSceneByName("Game");
-                    Assert.That(scene.IsValid() && scene.isLoaded, Is.True, "Game scene was not loaded.");
-                    var scope = scene.GetRootGameObjects().Select(root => root.GetComponent<GameplayScope>())
-                        .FirstOrDefault(candidate => candidate != null);
-                    Assert.That(scope, Is.Not.Null, "Game scene has no GameplayScope.");
-                    SceneManager.SetActiveScene(scene);
-
-                    // As in LevelScene, let Start and the entry points initialize before placing the cars.
-                    yield return null;
+                    yield return LoadGame();
+                    var scope = GameScope();
                     var container = scope.Container;
                     var round = container.Resolve<ArenaRound>();
                     // BotDriver is registered as an entry point's interfaces, without AsSelf in the game.
@@ -169,48 +83,6 @@ namespace ToyCarArena.Tests.PlayMode
             Directory.CreateDirectory("Logs");
             File.WriteAllText("Logs/simulation-report.md", markdown);
             UnityEngine.Debug.Log(markdown);
-        }
-
-        private IEnumerator UnloadGame()
-        {
-            if (originalScene.IsValid() && originalScene.isLoaded) {
-                SceneManager.SetActiveScene(originalScene);
-            }
-
-            var scene = SceneManager.GetSceneByName("Game");
-            if (scene.IsValid() && scene.isLoaded) {
-                yield return SceneManager.UnloadSceneAsync(scene);
-            }
-
-            Time.timeScale = 1f;
-        }
-
-        private static CarCatalog LoadCarCatalog()
-        {
-#if UNITY_EDITOR
-            var catalog = AssetDatabase.LoadAssetAtPath<CarCatalog>("Assets/Data/Cars/data_car_catalog.asset");
-            if (catalog == null) {
-                throw new MissingReferenceException("Simulation needs the game's CarCatalog asset.");
-            }
-
-            return catalog;
-#else
-            throw new NotSupportedException("Run the simulation as editor PlayMode tests via Tools/simulate.sh.");
-#endif
-        }
-
-        private static AudioLibrary LoadAudioLibrary()
-        {
-#if UNITY_EDITOR
-            var library = AssetDatabase.LoadAssetAtPath<AudioLibrary>("Assets/Data/Audio/data_audio_library.asset");
-            if (library == null) {
-                throw new MissingReferenceException("Simulation needs the game's AudioLibrary asset.");
-            }
-
-            return library;
-#else
-            throw new NotSupportedException("Run the simulation as editor PlayMode tests via Tools/simulate.sh.");
-#endif
         }
 
         private static int ReadPositiveInt(string name, string fallback)

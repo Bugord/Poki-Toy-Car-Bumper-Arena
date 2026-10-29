@@ -39,6 +39,10 @@ MonoBehaviour:
     pointerSlowRadius: 4
     edgeAssistMargin: 5
     edgeAssistStop: 2
+    edgeHoldMargin: 1.5
+    edgeHoldBrake: 12
+    edgeHoldMaxBrake: 80
+    edgeHoldContactGrace: 0.5
   boost:
     impulse: 10
     duration: 0.3
