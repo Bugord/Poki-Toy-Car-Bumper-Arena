@@ -31,8 +31,8 @@ namespace ToyCarArena.UI
         /// bots, as <see cref="CarLook"/> painted them).
         /// </summary>
         public event Action<int> CarOut;
+        public event Action<int, int> Eliminated;
 
-        private readonly ISessionRoster roster;
         private ArenaRound round;
         private PlayerDriver driver;
 
@@ -58,7 +58,8 @@ namespace ToyCarArena.UI
                 }
 
                 var distanceSquared = Controls.BoostHintDistance * Controls.BoostHintDistance;
-                foreach (var car in round.Cars) {
+                for (var index = 0; index < round.Cars.Count; index++) {
+                    var car = round.Cars[index];
                     if (car != round.Player && !car.IsOut &&
                         (car.Position - round.Player.Position).sqrMagnitude < distanceSquared) {
                         return true;
@@ -69,14 +70,29 @@ namespace ToyCarArena.UI
             }
         }
 
-        public HudViewModel(ISessionRoster roster)
-        {
-            this.roster = roster;
-        }
-
-        public string NameOf(int index) => roster.NameOf(index);
+        public string NameOf(int index) => round.NameOf(index);
 
         public Vector3 PositionOf(int index) => round.Cars[index].Position;
+
+        public float LastBoostOf(int index) => round.Cars[index].Movement.LastBoostTime;
+        public float LastHitOf(int index) => round.Cars[index].LastHitTime;
+
+        // Observation only: these sources never steer a car or consume the bot driver's random sequence.
+        public bool IsNearEdge(int index)
+        {
+            var position = round.Cars[index].Position;
+            position.y = 0f;
+            return position.magnitude >= round.ArenaRadius * 0.85f;
+        }
+
+        public bool HasRecovered(int index)
+        {
+            var car = round.Cars[index];
+            var position = car.Position;
+            position.y = 0f;
+            return !car.IsOut && car.Movement.IsGrounded && !car.Movement.IsStaggered &&
+                (position.magnitude < round.ArenaRadius * 0.85f || Vector3.Dot(position, car.Movement.Velocity) <= 0f);
+        }
 
         public bool IsNemesis(int index) => round != null && round.Nemesis != null &&
             round.IndexOf(round.Nemesis) == index;
@@ -140,6 +156,7 @@ namespace ToyCarArena.UI
             if (round != null) {
                 round.CarOut += OnCarOut;
                 round.KnockedOut += OnKnockedOut;
+                round.Eliminated += OnEliminated;
             }
         }
 
@@ -154,6 +171,7 @@ namespace ToyCarArena.UI
             if (round != null) {
                 round.CarOut -= OnCarOut;
                 round.KnockedOut -= OnKnockedOut;
+                round.Eliminated -= OnEliminated;
             }
         }
 
@@ -161,6 +179,8 @@ namespace ToyCarArena.UI
         {
             CarOut?.Invoke(round.IndexOf(car));
         }
+
+        private void OnEliminated(int index, int by) => Eliminated?.Invoke(index, by);
 
         private void OnKnockedOut(Car car, Car knockedOutBy)
         {

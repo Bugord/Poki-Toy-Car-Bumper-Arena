@@ -125,6 +125,7 @@ namespace ToyCarArena.UI
         private const float PopupTilt = 7f;
 
         private readonly HudControls controls;
+        private HudSocial social;
         private VisualElement timePill;
         private Label timeLabel;
         private Label timeFaceLabel;
@@ -229,6 +230,7 @@ namespace ToyCarArena.UI
             ghostFinger.style.rotate = new Rotate(GhostFingerTilt);
             boostHint = Root.Q<VisualElement>("boost-hint");
             tapHint = Root.Q<VisualElement>("tap-hint");
+            social = new HudSocial(Root, ViewModel, stick, boostSlot, timePill, carsPill, knockoutBadge);
             teachingTime = idleSince = Time.unscaledTime;
             ViewModel.PlayerKnockout += ShowKnockout;
             ViewModel.CarOut += OnCarOut;
@@ -252,6 +254,7 @@ namespace ToyCarArena.UI
 
         public override void Dispose()
         {
+            social?.Dispose();
             ViewModel.PlayerKnockout -= ShowKnockout;
             ViewModel.CarOut -= OnCarOut;
 
@@ -442,6 +445,7 @@ namespace ToyCarArena.UI
         /// </summary>
         private void RefreshNames()
         {
+            social?.Tick(IsShown, carNames);
             if (carNames == null) {
                 BuildNames();
             }
@@ -487,6 +491,9 @@ namespace ToyCarArena.UI
                 if (shownKnockouts > 0) {
                     ClearPill(knockoutBadge, ref point, halfWidth, height);
                 }
+                if (social.IsFeedVisible) {
+                    ClearPill(social.Feed, ref point, halfWidth, height);
+                }
 
                 ref var placement = ref namePlacements[index];
                 placement.Anchor = point;
@@ -529,6 +536,9 @@ namespace ToyCarArena.UI
                 maxLift = LimitNameLift(carsPill, bounds, maxLift);
                 if (shownKnockouts > 0) {
                     maxLift = LimitNameLift(knockoutBadge, bounds, maxLift);
+                }
+                if (social.IsFeedVisible) {
+                    maxLift = LimitNameLift(social.Feed, bounds, maxLift);
                 }
 
                 maxLift = Mathf.Max(0f, maxLift);
@@ -1026,23 +1036,7 @@ namespace ToyCarArena.UI
             var slot = new VisualElement { pickingMode = PickingMode.Ignore };
             slot.AddToClassList(ChipSlotClass);
 
-            var chip = new VisualElement { pickingMode = PickingMode.Ignore };
-            chip.AddToClassList(ChipClass);
-            chip.AddToClassList(CarColor.ClassOf(index));
-            slot.Add(chip);
-
-            if (isPlayer) {
-                var ring = new VisualElement { pickingMode = PickingMode.Ignore };
-                ring.AddToClassList("hud__chip-ring");
-                chip.Add(ring);
-            }
-
-            var car = new VisualElement { pickingMode = PickingMode.Ignore };
-            car.AddToClassList("hud__chip-car");
-            var glass = new VisualElement { pickingMode = PickingMode.Ignore };
-            glass.AddToClassList("hud__chip-glass");
-            car.Add(glass);
-            chip.Add(car);
+            slot.Add(CarColor.CreateChip(index, isPlayer));
 
             return slot;
         }

@@ -99,7 +99,10 @@ namespace ToyCarArena.App
                 isPlaying = false;
 
                 progress.Record(result);
-                var record = bests.Record(result).WithXp(playerProgress.Record(result));
+                var record = bests.Record(result).WithXp(playerProgress.Record(result)).WithKnocker(
+                    result.KnockedOutBy == RoundResult.Nobody ? "" : round.NameOf(result.KnockedOutBy)).WithNames(round.Names);
+                levelScene.Resolve<ISessionRoster>().NextRound(result.CarCount - 1,
+                    RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis, tuning.Players);
                 platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, driver);
                 platform.MeasureRoundCar(roundNumber, playedCar);
                 platform.MeasureProgress(record.XpGain);

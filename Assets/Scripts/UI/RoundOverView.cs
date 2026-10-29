@@ -16,6 +16,8 @@ namespace ToyCarArena.UI
         // How long after the screen shows its parts start to move in: long enough for them to be laid out where they
         // start, or their transitions would have nothing to move from.
         private const long EnterDelay = 80;
+        private const float ScoreboardDelay = 0.2f;
+        private const float ScoreboardEnterDuration = 0.25f;
 
         private const string WonClass = "round-over__title--won";
         private const string OutClass = "round-over__title--out";
@@ -36,6 +38,16 @@ namespace ToyCarArena.UI
         private CancellationTokenSource lifetime;
         private bool isPlayAgainPressed;
         private RoundOverProgress xpProgress;
+        private Button roundTab;
+        private Button scoreTab;
+        private VisualElement details;
+        private VisualElement scoreboard;
+        private IVisualElementScheduledItem scoreboardAnimation;
+        private bool wantsScoreboard;
+        private bool isLandscape;
+        private bool isScoreboardShown;
+        private float scoreboardAllowedAt = float.PositiveInfinity;
+        private float scoreboardStarted;
 
         public RoundOverView(IAudioService audioService, HudControls controls)
         {
@@ -51,6 +63,7 @@ namespace ToyCarArena.UI
             Root.RegisterCallback<KeyDownEvent>(OnKeyDown);
             Root.RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
             lifetime = new CancellationTokenSource();
+            BuildScoreboard();
 
             playAgainButton = Root.Q<Button>("play-again-button");
             playAgainButton.clicked += PlayAgain;
@@ -91,11 +104,13 @@ namespace ToyCarArena.UI
             await base.ShowAsync(token);
             // The reward runs beside input; no part of it delays Play Again, Space or Enter.
             xpProgress.Play(token);
+            scoreboardAllowedAt = Time.unscaledTime + ScoreboardDelay;
         }
 
         public override async UniTask HideAsync(CancellationToken token)
         {
             xpProgress.Stop();
+            scoreboardAnimation?.Pause();
             await base.HideAsync(token);
         }
 
@@ -106,6 +121,11 @@ namespace ToyCarArena.UI
             lifetime?.Cancel();
             lifetime?.Dispose();
             xpProgress?.Dispose();
+            scoreboardAnimation?.Pause();
+            if (roundTab != null) {
+                roundTab.clicked -= ShowRoundTab;
+                scoreTab.clicked -= ShowScoreTab;
+            }
             if (playAgainButton != null) {
                 playAgainButton.clicked -= PlayAgain;
             }
@@ -115,8 +135,81 @@ namespace ToyCarArena.UI
             base.Dispose();
         }
 
-        private void OnGeometryChanged(GeometryChangedEvent evt) =>
-            Root.EnableInClassList("round-over--landscape", evt.newRect.width > evt.newRect.height);
+        private void OnGeometryChanged(GeometryChangedEvent evt)
+        {
+            isLandscape = evt.newRect.width > evt.newRect.height;
+            Root.EnableInClassList("round-over--landscape", isLandscape);
+            UpdateScoreboard();
+        }
+
+        private void BuildScoreboard()
+        {
+            details = Root.Q<VisualElement>("round-details");
+            scoreboard = Root.Q<VisualElement>("scoreboard");
+            roundTab = Root.Q<Button>("round-tab");
+            scoreTab = Root.Q<Button>("score-tab");
+            roundTab.RemoveFromClassList(Button.ussClassName);
+            scoreTab.RemoveFromClassList(Button.ussClassName);
+            roundTab.clicked += ShowRoundTab;
+            scoreTab.clicked += ShowScoreTab;
+            var rows = Root.Q<VisualElement>("scoreboard-rows");
+            foreach (var standing in ViewModel.Standings) {
+                var row = new VisualElement { pickingMode = PickingMode.Ignore };
+                row.AddToClassList("scoreboard__row");
+                row.EnableInClassList("scoreboard__row--you", standing.Index == 0);
+                // After the player is out, the round stops with others still driving: none of them has won, so they
+                // read as still in rather than as several winners.
+                var stillIn = ViewModel.Outcome == RoundOutcome.Out && standing.OutOrder == 0;
+                var place = new StickerText(stillIn ? "IN" : "#" + standing.Place);
+                place.AddToClassList("scoreboard__place");
+                row.Add(place);
+                row.Add(CarColor.CreateChip(standing.Index, standing.Index == 0));
+                var name = new StickerText(ViewModel.NameOf(standing.Index));
+                name.AddToClassList("scoreboard__name");
+                row.Add(name);
+                var knockouts = new StickerText(standing.Knockouts.ToString());
+                knockouts.AddToClassList("scoreboard__ko");
+                row.Add(knockouts);
+                rows.Add(row);
+            }
+            scoreboardAnimation = Root.schedule.Execute(UpdateScoreboard).Every(16);
+        }
+
+        private void ShowRoundTab() => ChooseTab(false);
+        private void ShowScoreTab() => ChooseTab(true);
+
+        private void ChooseTab(bool showScoreboard)
+        {
+            if (!IsShown || isPlayAgainPressed || ViewModel.IsGarageOpen || showScoreboard == wantsScoreboard) {
+                return;
+            }
+            audioService.PlayUiClick();
+            wantsScoreboard = showScoreboard;
+            UpdateScoreboard();
+        }
+
+        private void UpdateScoreboard()
+        {
+            var show = (isLandscape || wantsScoreboard) && Time.unscaledTime >= scoreboardAllowedAt;
+            details.style.display = !isLandscape && show ? DisplayStyle.None : DisplayStyle.Flex;
+            roundTab.EnableInClassList("result-tab--selected", !wantsScoreboard);
+            scoreTab.EnableInClassList("result-tab--selected", wantsScoreboard);
+            if (show != isScoreboardShown) {
+                isScoreboardShown = show;
+                scoreboard.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
+                if (show) {
+                    scoreboardStarted = Time.unscaledTime;
+                }
+            }
+            if (show) {
+                if (IsShown && !ViewModel.IsGarageOpen) {
+                    ViewModel.MeasureScoreboardShown();
+                }
+                var t = Mathf.Clamp01((Time.unscaledTime - scoreboardStarted) / ScoreboardEnterDuration);
+                scoreboard.style.opacity = t;
+                scoreboard.style.translate = new Translate(0f, 28f * (1f - t) * (1f - t));
+            }
+        }
 
         private void RefreshGarage() => Root.Q<VisualElement>("garage-portrait").style.backgroundImage =
             new StyleBackground(ViewModel.SelectedCar?.Portrait);

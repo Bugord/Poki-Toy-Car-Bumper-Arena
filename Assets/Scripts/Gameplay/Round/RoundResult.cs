@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace ToyCarArena.Gameplay.Round
 {
     /// <summary>
@@ -77,8 +80,10 @@ namespace ToyCarArena.Gameplay.Round
         /// <summary>The player got knockout credit for the marked rival.</summary>
         public readonly bool RevengeTaken;
 
+        public IReadOnlyList<RoundStanding> Standings { get; }
+
         public RoundResult(RoundOutcome outcome, int place, int carCount, float seconds, int knockouts, int knockedOutBy,
-            FallCause fallCause, bool hadNemesis, bool revengeTaken)
+            FallCause fallCause, bool hadNemesis, bool revengeTaken, IReadOnlyList<RoundStanding> standings = null)
         {
             Outcome = outcome;
             Place = place;
@@ -89,6 +94,7 @@ namespace ToyCarArena.Gameplay.Round
             FallCause = fallCause;
             HadNemesis = hadNemesis;
             RevengeTaken = revengeTaken;
+            Standings = standings ?? Array.Empty<RoundStanding>();
         }
     }
 }
