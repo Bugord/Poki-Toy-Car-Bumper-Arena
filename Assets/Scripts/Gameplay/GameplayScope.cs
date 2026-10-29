@@ -72,7 +72,10 @@ namespace ToyCarArena.Gameplay
                 builder.RegisterEntryPoint<AudioService>().As<IAudioService>();
             }
 
-            builder.RegisterEntryPoint<InputService>().As<IInputService>();
+            // A simulation brings its own input from the parent, so it still drives through PlayerDriver.
+            if (!builder.Exists(typeof(IInputService), includeInterfaceTypes: true, findParentScopes: true)) {
+                builder.RegisterEntryPoint<InputService>().As<IInputService>();
+            }
 
             builder.RegisterComponent(arenaCamera);
             builder.RegisterComponent(arenaFloor);

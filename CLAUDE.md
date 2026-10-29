@@ -37,6 +37,7 @@ Assets/
     Audio/                IAudioService + AudioService (пул AudioSource и музыка), AudioLibrary (звуки и уровни), Sound
     Editor/               ToyCarArena.Editor.asmdef: WebGLBuild, BuildNumber, SceneMenu, SuperConsoleLinker
   Scenes/                 Boot.unity (GameScope), Game.unity (GameplayScope в корне)
+  Tests/PlayMode/         headless-симуляция раундов с моделью новичка, отдельная тестовая сборка
   Data/<Kind>/            ScriptableObject-данные: Data/Gameplay/data_game_tuning.asset, Data/Audio/data_audio_library.asset,
                           Data/Physics/phys_car
   Art/Models|Textures|Materials/   модели Kenney (FBX), атлас colormap, материалы
@@ -51,6 +52,7 @@ Assets/
   link.xml                сборки, которые не трогает stripping
 External/bugord-kit/      сабмодуль кита
 Tools/build-webgl.sh      сборка релиза в batch mode
+Tools/simulate.sh         PlayMode-симуляция, отчёт Logs/simulation-report.md
 Tools/upload-poki.sh      выгрузка Builds/WebGL на Poki (+ poki-auth.js, обновляет вход CLI); poki.json это id игры
 Builds/  Library/  Temp/  Logs/  UserSettings/   не в git
 ```
@@ -79,7 +81,7 @@ Builds/  Library/  Temp/  Logs/  UserSettings/   не в git
   - **Сложность** (`RoundDifficulty` из `ISessionProgress`, синглтон `GameplayScope`, считается при загрузке сцены; её читают `ArenaRound`, `BotDriver` и `PlayerDriver`): блоки `Easy` и `Normal` смешиваются по уровню от 0 до 1. Первый раунд визита Easy, раунд `1 + RampRounds` (7-й) Normal. С `StreakStart` (2) поражений подряд уровень отступает к Easy на `StreakEase` за каждое, не больше `MaxStreakEase`. Рычаги: число ботов `Bots` (3 на Easy, 6 на Normal), помощь у края `EdgeAssist` (см. «Управление»), газ на машинку игрока `PlayerPace` (друг с другом боты дерутся на полном), `PlayerWeight`, `PlayerGrace` (столько секунд от начала раунда игрока не выбирают вовсе), `MaxPlayerHunters`, `ReactionTime`, `AimError`, `BoostDelay`, `EscapeBoostChance`. Цель брифа: новичок выигрывает первый раунд в 50% случаев и чаще, к пятому в 15–20%. На тесте v0.1.0 (Easy с 6 ботами) вышло 9% и 5%, поэтому в v0.2 Easy сильно ослаблен, см. `Analytics/v0.1.0/analysis.md`.
   - **Личности** это множители поверх общих чисел (`Bully`, `Careful`, `Opportunist`, `Clumsy`). Bully чаще выбирает игрока, рано ускоряется и смел у края. Careful держится середины и чаще спасается ускорением. Opportunist добивает ударенные машинки и пересматривает цель при каждом ударе. Clumsy мажет и изредка съезжает сам, но его `caution` и `escapeBoost` сильно не опускаем: самовылеты отнимают у игрока «это я его скинул». Набор задаёт `Bots.Mix` (берутся первые по числу ботов раунда: на 3 бота Bully, Careful и Opportunist, на 6 ботов 2 Bully, 2 Careful, Opportunist и Clumsy), каждый раунд он перемешивается.
   - Вся случайность ботов идёт от `BotDriver.Seed`, у каждого бота свой `System.Random`, чтобы headless-симуляция могла повторить раунд.
-  - Цифры прежней headless-симуляции (при игроке на уровне бота он выигрывает около 12% раундов, около 88% раундов решаются до конца таймера, боты сталкивают друг друга примерно 8 раз в минуту, машинка без управления вылетает примерно за 3,5 с) сняты до ускорения, осыпания, сложности и личностей. Их надо снять заново, нынешние числа сложности и личностей подобраны рассуждением.
+  - Headless-симуляция с моделью новичка: [Tools/simulate.sh](Tools/simulate.sh), PlayMode-тест грузит настоящую `Game` под родительским scope и подаёт ввод через `IInputService`, поэтому помощь у края и ускорение работают как в игре. `SIM_ROUNDS` (40), `SIM_LEVELS` (1,3,5,7), `SIM_SEED` (1) задают прогоны, номера раунда визита и базовый seed; серия поражений 0. Победы, места, KO, исходы, причины выбывания и время игрока по раунду — в `Logs/simulation-report.md` и логе. Параметры новичка в начале `NoviceDriver` пока требуют калибровки по Poki; время игрока не включает экран результата и рестарт.
 - **Управление** (`PlayerDriver` + `InputService`):
   - клавиши и стик задают направление относительно камеры;
   - мышь с зажатой кнопкой ведёт машинку к курсору;
@@ -103,6 +105,9 @@ git submodule update --init
 # Сборка релиза для Poki (редактор с этим проектом должен быть закрыт), отчёт в Builds/WebGL-report.txt
 Tools/build-webgl.sh
 Tools/build-webgl.sh --development
+
+# Симуляция новичка (редактор с этим проектом должен быть закрыт), отчёт в Logs/simulation-report.md
+SIM_ROUNDS=5 SIM_LEVELS=1,7 Tools/simulate.sh
 
 # Выгрузить последнюю сборку на Poki новой версией; --dry-run только проверяет и печатает имя и заметки
 Tools/upload-poki.sh
