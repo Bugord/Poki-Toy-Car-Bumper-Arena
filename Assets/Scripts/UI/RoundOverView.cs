@@ -25,6 +25,8 @@ namespace ToyCarArena.UI
         private const string KnockedByShownClass = "round-over__by--shown";
         private const string BestShownClass = "best--shown";
         private const string BestNewClass = "best--new";
+        private const string RevengeEnterClass = "round-over__revenge--enter";
+        private const string RevengeSecondClass = "round-over__revenge--second";
 
         private readonly IAudioService audioService;
         private readonly HudControls controls;
@@ -58,13 +60,22 @@ namespace ToyCarArena.UI
             ShowPlace();
             ShowTime();
             ShowKnockouts();
+            var revenge = Root.Q<Label>("revenge");
+            revenge.AddToClassList(RevengeEnterClass);
+            var hasNewBest = (ViewModel.CarCount > 1 && ViewModel.IsBestPlace) || ViewModel.IsBestKnockouts;
+            revenge.EnableInClassList(RevengeSecondClass, hasNewBest);
         }
 
         public override async UniTask ShowAsync(CancellationToken token)
         {
             // The title, the card and the button start small or low and spring into place while the screen fades in.
             Root.AddToClassList(EnterClass);
-            Root.schedule.Execute(() => Root?.RemoveFromClassList(EnterClass)).StartingIn(EnterDelay);
+            var revenge = Root.Q<Label>("revenge");
+            revenge.EnableInClassList(BestShownClass, ViewModel.RevengeTaken);
+            Root.schedule.Execute(() => {
+                Root?.RemoveFromClassList(EnterClass);
+                revenge.RemoveFromClassList(RevengeEnterClass);
+            }).StartingIn(EnterDelay);
             await base.ShowAsync(token);
         }
 
@@ -89,7 +100,7 @@ namespace ToyCarArena.UI
                 label.EnableInClassList(OutClass, ViewModel.Outcome == RoundOutcome.Out);
             }
 
-            // Knocked out by a car, the subtitle names it by its colour instead: someone to beat next round.
+            // Knocked out by a car, the subtitle names it by its visit handle and colour: someone to beat next round.
             var knockedOutBy = ViewModel.Outcome == RoundOutcome.Out ? ViewModel.KnockedOutBy : RoundResult.Nobody;
             var isKnockedByCar = knockedOutBy != RoundResult.Nobody;
             var subtitleLabel = Root.Q<Label>("subtitle");
@@ -98,6 +109,8 @@ namespace ToyCarArena.UI
             Root.Q<VisualElement>("knocked-by").EnableInClassList(KnockedByShownClass, isKnockedByCar);
             if (isKnockedByCar) {
                 Root.Q<VisualElement>("by-car-body").AddToClassList(CarColor.ClassOf(knockedOutBy));
+                Root.Q<Label>("by-name").text = ViewModel.KnockedOutByName;
+                Root.Q<Label>("by-name-face").text = ViewModel.KnockedOutByName;
             }
 
             Root.Q<VisualElement>("confetti").EnableInClassList(ConfettiShownClass, ViewModel.Outcome == RoundOutcome.Won);

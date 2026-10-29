@@ -18,6 +18,11 @@ namespace ToyCarArena.Gameplay.Input
         bool IsControlAt(Vector2 screenPosition);
 
         /// <summary>
+        /// Chooses the boost button's side opposite a new steering touch, once per drag, also in FollowFinger mode.
+        /// </summary>
+        void BeginTouchSteering(Vector2 screenPosition);
+
+        /// <summary>
         /// Draws the joystick a finger steers with, every frame it steers: its centre, where its knob is (the finger,
         /// at most <paramref name="radius"/> from the centre) and how far the knob goes, all in screen pixels from the
         /// bottom-left corner.

@@ -1,4 +1,5 @@
 using System;
+using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
 using UIKit.Runtime.Abstractions;
@@ -17,13 +18,13 @@ namespace ToyCarArena.UI
     /// the car at the edge, and the first test on Poki showed touch players losing the first round without it.
     /// </para>
     /// </summary>
-    public sealed class HudViewModel : ViewModel, IPayloadReceiver<ArenaRound>
+    public sealed class HudViewModel : ViewModel, IPayloadReceiver<HudRound>
     {
         /// <summary>
         /// Raised when the player knocks a car out, with the point on the arena's edge where it went over: where the
-        /// KNOCKOUT! sticker goes.
+        /// KNOCKOUT! sticker goes; true for REVENGE! on the marked rival instead.
         /// </summary>
-        public event Action<Vector3> PlayerKnockout;
+        public event Action<Vector3, bool> PlayerKnockout;
 
         /// <summary>
         /// Raised when a car falls off, the player's included, with its index in the round (0 the player, 1..N the
@@ -31,7 +32,56 @@ namespace ToyCarArena.UI
         /// </summary>
         public event Action<int> CarOut;
 
+        private readonly ISessionRoster roster;
         private ArenaRound round;
+        private PlayerDriver driver;
+
+        public GameTuning.ControlSettings Controls { get; private set; }
+
+        public bool IsFirstRound { get; private set; }
+
+        public bool IsRunning => round != null && round.IsRunning && !round.Player.IsOut;
+
+        public float LastSteerTime => driver?.LastSteerTime ?? float.NegativeInfinity;
+
+        public float LastTouchTime => driver?.LastTouchTime ?? float.NegativeInfinity;
+
+        /// <summary>
+        /// Suggest a boost only before the first successful one, when it can fire and another living car is nearby.
+        /// </summary>
+        public bool CanHintBoost
+        {
+            get
+            {
+                if (!IsFirstRound || !IsRunning || driver.Boosts > 0 || !IsBoostReady) {
+                    return false;
+                }
+
+                var distanceSquared = Controls.BoostHintDistance * Controls.BoostHintDistance;
+                foreach (var car in round.Cars) {
+                    if (car != round.Player && !car.IsOut &&
+                        (car.Position - round.Player.Position).sqrMagnitude < distanceSquared) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        public HudViewModel(ISessionRoster roster)
+        {
+            this.roster = roster;
+        }
+
+        public string NameOf(int index) => roster.NameOf(index);
+
+        public Vector3 PositionOf(int index) => round.Cars[index].Position;
+
+        public bool IsNemesis(int index) => round != null && round.Nemesis != null &&
+            round.IndexOf(round.Nemesis) == index;
+
+        public bool HasBegun => round != null && round.HasBegun;
 
         /// <summary>
         /// Seconds left in the round.
@@ -79,10 +129,14 @@ namespace ToyCarArena.UI
             return round != null && index >= 0 && index < round.Cars.Count && !round.Cars[index].IsOut;
         }
 
-        public void SetPayload(ArenaRound payload)
+        public void SetPayload(HudRound payload)
         {
             Unsubscribe();
-            round = payload;
+            round = payload.Round;
+            driver = payload.Driver;
+            Controls = payload.Controls;
+            // Capture it now: session progress already advances as this round finishes.
+            IsFirstRound = payload.IsFirstRound;
             if (round != null) {
                 round.CarOut += OnCarOut;
                 round.KnockedOut += OnKnockedOut;
@@ -118,7 +172,27 @@ namespace ToyCarArena.UI
             // edge, under it, is still on the screen and tells which car it was.
             var position = car.Position;
             var flat = new Vector3(position.x, 0f, position.z);
-            PlayerKnockout?.Invoke(Vector3.ClampMagnitude(flat, round.ArenaRadius));
+            PlayerKnockout?.Invoke(Vector3.ClampMagnitude(flat, round.ArenaRadius), car == round.Nemesis);
+        }
+    }
+
+    /// <summary>
+    /// The state hands the app-scoped HUD this arena's read-only sources together; the view never resolves services
+    /// from a child scope or keeps using the previous round's driver after a restart.
+    /// </summary>
+    public readonly struct HudRound
+    {
+        public ArenaRound Round { get; }
+        public PlayerDriver Driver { get; }
+        public GameTuning.ControlSettings Controls { get; }
+        public bool IsFirstRound { get; }
+
+        public HudRound(ArenaRound round, PlayerDriver driver, GameTuning.ControlSettings controls, bool isFirstRound)
+        {
+            Round = round;
+            Driver = driver;
+            Controls = controls;
+            IsFirstRound = isFirstRound;
         }
     }
 }

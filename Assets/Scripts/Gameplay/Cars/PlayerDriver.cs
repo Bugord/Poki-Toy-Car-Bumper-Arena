@@ -18,7 +18,9 @@ namespace ToyCarArena.Gameplay.Cars
     /// push.</item>
     /// </list>
     /// A drag wins over the keys while it lasts. Boost (Space, the right mouse button, a gamepad's south button or the
-    /// boost button on a touch screen) fires the car's boost towards where it is steered. Once the round is over the
+    /// boost button, a second finger or a short tap on a touch screen) fires the car's boost towards where it is
+    /// steered. A released tap remembers nonzero steering briefly, so letting go to tap keeps the intended boost line.
+    /// Once the round is over the
     /// car rolls to a stop, so a click on the result screen does not steer it, and boost does nothing.
     /// Before the round begins it only watches for the player's first steer or boost (<see cref="HasActed"/>), which the
     /// first round of a visit waits for.
@@ -43,6 +45,8 @@ namespace ToyCarArena.Gameplay.Cars
 
         // Where the player last steered, before the edge assist; zero when they did not.
         private Vector3 steer;
+        private Vector3 lastSteer;
+        private float lastSteerTime = float.NegativeInfinity;
 
         private bool isDriving;
         private bool isJoystickShown;
@@ -62,6 +66,11 @@ namespace ToyCarArena.Gameplay.Cars
         public InputMethod? FirstInput { get; private set; }
 
         /// <summary>
+        /// What fired the first successful boost this round; starting the round or pressing during cooldown does not count.
+        /// </summary>
+        public BoostInputMethod? FirstBoostInput { get; private set; }
+
+        /// <summary>
         /// Seconds from the cars standing on the arena to the player's first steer, or a negative number until they
         /// steer: into the round, plus the wait for the player before a round that waits for one.
         /// </summary>
@@ -71,6 +80,18 @@ namespace ToyCarArena.Gameplay.Cars
         /// Boosts the player's car fired this round.
         /// </summary>
         public int Boosts { get; private set; }
+
+        /// <summary>
+        /// Unscaled time of the last nonzero steer, before edge assist, so the HUD never mistakes braking at the edge
+        /// for a player who has not found the joystick. Negative infinity until the first steer.
+        /// </summary>
+        public float LastSteerTime => lastSteerTime;
+
+        /// <summary>
+        /// Unscaled time of the last touch input, including a boost pressed during cooldown. Events keep even touches
+        /// shorter than a HUD refresh, so a demonstration yields to the player's finger immediately.
+        /// </summary>
+        public float LastTouchTime { get; private set; } = float.NegativeInfinity;
 
         public PlayerDriver(IInputService input, GameTuning tuning, ArenaCamera arenaCamera, ArenaRound round,
             IOnScreenControls onScreenControls, RoundDifficulty difficulty)
@@ -139,16 +160,21 @@ namespace ToyCarArena.Gameplay.Cars
         // A press while the boost cools down is dropped, not kept for later: a boost that fires on its own a moment
         // after the press would throw the car somewhere the player no longer means.
         // The press that starts the round only starts it: a boost before the round would throw the car off its place.
-        private void OnBoostPressed()
+        private void OnBoostPressed(BoostInputMethod method)
         {
+            if (method == BoostInputMethod.Button || method == BoostInputMethod.Finger || method == BoostInputMethod.Tap) {
+                LastTouchTime = Time.unscaledTime;
+            }
+
             if (IsWaiting) {
                 HasActed = true;
                 return;
             }
 
             var car = round.Player;
-            if (round.IsRunning && !car.IsOut && TryBoost(car)) {
+            if (round.IsRunning && !car.IsOut && TryBoost(car, method)) {
                 Boosts++;
+                FirstBoostInput ??= method;
             }
         }
 
@@ -157,14 +183,21 @@ namespace ToyCarArena.Gameplay.Cars
         /// edge assist: a boost carries the car far past where the steer could stop it, so one fired off the edge
         /// would undo the assist. One left pointing mostly off is not fired, and its cooldown is kept.
         /// </summary>
-        private bool TryBoost(Car car)
+        private bool TryBoost(Car car, BoostInputMethod method)
         {
+            // Only a released tap uses memory: other controls keep their usual steering/nose boost.
+            var isTap = method == BoostInputMethod.Tap;
+            var heading = steer;
+            if (isTap && heading == Vector3.zero && Time.unscaledTime - lastSteerTime <= tuning.Controls.TapBoostMemory) {
+                heading = lastSteer;
+            }
+
+            var way = heading != Vector3.zero ? heading : car.transform.forward;
+            way.y = 0f;
+            way.Normalize();
             var outward = Outward(car, out var share);
+            var isAdjusted = false;
             if (difficulty.EdgeAssist > 0f && share > 0f) {
-                // Where the car would boost: as it is driven, or along its nose when it is not.
-                var way = steer != Vector3.zero ? steer : car.transform.forward;
-                way.y = 0f;
-                way.Normalize();
                 var off = Vector3.Dot(way, outward);
                 if (off > 0f) {
                     way -= outward * (off * difficulty.EdgeAssist);
@@ -172,8 +205,12 @@ namespace ToyCarArena.Gameplay.Cars
                         return false;
                     }
 
-                    car.Movement.Drive(way, 1f);
+                    isAdjusted = true;
                 }
+            }
+
+            if (isTap || isAdjusted) {
+                car.Movement.Drive(way, 1f);
             }
 
             return car.Movement.TryBoost();
@@ -182,11 +219,19 @@ namespace ToyCarArena.Gameplay.Cars
         // A steer that starts the round counts as the round's first, at its very start.
         private void OnMoveUsed(InputMethod method)
         {
+            if (method == InputMethod.Touch) {
+                LastTouchTime = Time.unscaledTime;
+            }
+
             if (!round.IsPlaced || round.IsFinished || round.Player.IsOut) {
                 return;
             }
 
             HasActed = true;
+            if (method == InputMethod.Touch && IsWaiting) {
+                input.CancelTapBoost();
+            }
+
             if (FirstInput == null) {
                 FirstInput = method;
                 FirstMoveTime = waitTime + round.Elapsed;
@@ -202,7 +247,14 @@ namespace ToyCarArena.Gameplay.Cars
         private void WatchForFirstInput()
         {
             waitTime += Time.deltaTime;
-            if (input.TryGetDrag(out _) || input.CurrentMoveInput != Vector2.zero) {
+            if (input.TryGetDrag(out var drag)) {
+                if (!drag.IsMouse) {
+                    input.CancelTapBoost();
+                }
+
+                HasActed = true;
+            }
+            else if (input.CurrentMoveInput != Vector2.zero) {
                 HasActed = true;
             }
         }
@@ -251,6 +303,11 @@ namespace ToyCarArena.Gameplay.Cars
         {
             heading.y = 0f;
             steer = throttle > 0f ? heading : Vector3.zero;
+            if (steer != Vector3.zero) {
+                lastSteer = steer;
+                lastSteerTime = Time.unscaledTime;
+            }
+
             if (difficulty.EdgeAssist > 0f && heading.sqrMagnitude > 0.0001f) {
                 var outward = Outward(car, out var share);
                 share *= difficulty.EdgeAssist;

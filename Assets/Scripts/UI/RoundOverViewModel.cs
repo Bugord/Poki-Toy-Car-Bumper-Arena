@@ -9,6 +9,17 @@ namespace ToyCarArena.UI
     /// </summary>
     public sealed class RoundOverViewModel : ResultViewModel<bool>, IPayloadReceiver<RoundRecord>
     {
+        private readonly ISessionRoster roster;
+
+        public RoundOverViewModel(ISessionRoster roster)
+        {
+            this.roster = roster;
+        }
+
+        public string KnockedOutByName => KnockedOutBy == RoundResult.Nobody ? "" : roster.NameOf(KnockedOutBy);
+
+        public bool RevengeTaken { get; private set; }
+
         public RoundOutcome Outcome { get; private set; }
 
         /// <summary>
@@ -57,6 +68,7 @@ namespace ToyCarArena.UI
             Seconds = result.Seconds;
             Knockouts = result.Knockouts;
             KnockedOutBy = result.KnockedOutBy;
+            RevengeTaken = result.RevengeTaken;
             BestPlace = payload.BestPlace;
             BestKnockouts = payload.BestKnockouts;
             IsBestPlace = payload.IsBestPlace;

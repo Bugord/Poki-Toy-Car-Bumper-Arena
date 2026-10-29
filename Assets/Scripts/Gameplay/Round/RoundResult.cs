@@ -16,6 +16,28 @@ namespace ToyCarArena.Gameplay.Round
     }
 
     /// <summary>
+    /// What preceded a player's fall when no car gets knockout credit. Checked in this order, so a floor collapse
+    /// takes priority over a boost or an old hit.
+    /// </summary>
+    public enum FallCause
+    {
+        /// <summary>The player stayed on the arena or another car gets knockout credit.</summary>
+        None,
+
+        /// <summary>The floor ring under the player fell away.</summary>
+        Ring,
+
+        /// <summary>The player boosted shortly before falling.</summary>
+        Boost,
+
+        /// <summary>Another car hit the player too long ago for knockout credit.</summary>
+        Slide,
+
+        /// <summary>No recent ring fall, boost or hit explains the fall.</summary>
+        Drive,
+    }
+
+    /// <summary>
     /// The end of a round as the result screen shows it: how it ended, the player's place (1 is the winner; a car out
     /// is placed behind every car still on the arena), how many cars started, how many of them the player knocked out
     /// and which car knocked the player out, if one did.
@@ -44,7 +66,19 @@ namespace ToyCarArena.Gameplay.Round
         /// </summary>
         public readonly int KnockedOutBy;
 
-        public RoundResult(RoundOutcome outcome, int place, int carCount, float seconds, int knockouts, int knockedOutBy)
+        /// <summary>
+        /// What preceded a fall with no knockout credit; None for a knockout, a win or a round survived.
+        /// </summary>
+        public readonly FallCause FallCause;
+
+        /// <summary>The visit's marked rival was among this round's cars.</summary>
+        public readonly bool HadNemesis;
+
+        /// <summary>The player got knockout credit for the marked rival.</summary>
+        public readonly bool RevengeTaken;
+
+        public RoundResult(RoundOutcome outcome, int place, int carCount, float seconds, int knockouts, int knockedOutBy,
+            FallCause fallCause, bool hadNemesis, bool revengeTaken)
         {
             Outcome = outcome;
             Place = place;
@@ -52,6 +86,9 @@ namespace ToyCarArena.Gameplay.Round
             Seconds = seconds;
             Knockouts = knockouts;
             KnockedOutBy = knockedOutBy;
+            FallCause = fallCause;
+            HadNemesis = hadNemesis;
+            RevengeTaken = revengeTaken;
         }
     }
 }

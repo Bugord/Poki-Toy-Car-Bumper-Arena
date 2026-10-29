@@ -72,7 +72,10 @@ namespace ToyCarArena.Gameplay
                 builder.RegisterEntryPoint<AudioService>().As<IAudioService>();
             }
 
-            builder.RegisterEntryPoint<InputService>().As<IInputService>();
+            // A simulation brings its own input from the parent, so it still drives through PlayerDriver.
+            if (!builder.Exists(typeof(IInputService), includeInterfaceTypes: true, findParentScopes: true)) {
+                builder.RegisterEntryPoint<InputService>().As<IInputService>();
+            }
 
             builder.RegisterComponent(arenaCamera);
             builder.RegisterComponent(arenaFloor);
@@ -93,6 +96,7 @@ namespace ToyCarArena.Gameplay
                 // round, so StandaloneRound keeps it across the reloads.
                 builder.RegisterInstance(StandaloneRound.Session, typeof(SessionProgress))
                     .As(typeof(ISessionProgress));
+                builder.RegisterInstance(StandaloneRound.Roster, typeof(ISessionRoster));
             }
 
             builder.RegisterBuildCallback(InjectScene);

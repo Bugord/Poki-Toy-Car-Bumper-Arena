@@ -1,4 +1,5 @@
 using System;
+using ToyCarArena.Gameplay.Round;
 using UnityEngine;
 using VContainer;
 
@@ -35,6 +36,7 @@ namespace ToyCarArena.Gameplay.Cars
         private GameTuning.RoundSettings settings;
         private GameTuning.CarSettings carSettings;
         private GameTuning.BoostSettings boostSettings;
+        private RoundDifficulty difficulty;
 
         public CarMovement Movement { get; private set; }
 
@@ -61,12 +63,18 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public float LastHitTime { get; private set; } = float.NegativeInfinity;
 
+        /// <summary>
+        /// When a floor ring last fell under this car, in <see cref="Time.time"/>, to recognise a fall with the floor.
+        /// </summary>
+        public float LastRingFallTime { get; private set; } = float.NegativeInfinity;
+
         [Inject]
-        private void Construct(GameTuning tuning)
+        private void Construct(GameTuning tuning, RoundDifficulty difficulty)
         {
             this.settings = tuning.Round;
             this.carSettings = tuning.Car;
             this.boostSettings = tuning.Boost;
+            this.difficulty = difficulty;
         }
 
         private void Awake()
@@ -88,6 +96,14 @@ namespace ToyCarArena.Gameplay.Cars
         {
             IsOut = true;
             Movement.Drive(Vector3.zero, 0f);
+        }
+
+        /// <summary>
+        /// Records the floor giving way while the car is over the falling ring, before the car can slide elsewhere.
+        /// </summary>
+        public void NoteRingFall()
+        {
+            LastRingFallTime = Time.time;
         }
 
         /// <summary>
@@ -133,7 +149,7 @@ namespace ToyCarArena.Gameplay.Cars
             // while one car pushes another does not kick it again at full speed.
             var isOtherBoosting = other.Movement.IsBoosting;
             var multiplier = (isOtherBoosting ? boostSettings.BumpMultiplier : 1f)
-                * (other.IsPlayer ? carSettings.PlayerBumpMultiplier : 1f);
+                * (other.IsPlayer ? difficulty.PlayerBump : 1f);
             var drive = Mathf.Min(otherApproach, strength);
             var push = carSettings.BumpForce * drive * multiplier * other.Movement.Mass / Movement.Mass;
             // The solver has already bounced the car; the push only tops that up to the most a hit may leave a car
@@ -144,10 +160,15 @@ namespace ToyCarArena.Gameplay.Cars
                 Movement.Push(normal * push);
             }
 
-            // Off balance for longer the harder the other car drove in, up to a hit at full speed.
+            // Off balance for longer the harder the other car drove in, capped at a hit at full speed before the
+            // difficulty scales the player's time and the time caused by the player's hits.
             var stagger = carSettings.HitStagger * Mathf.Clamp01(drive * multiplier / Mathf.Max(0.01f, carSettings.MaxSpeed));
             if (IsPlayer) {
-                stagger *= carSettings.PlayerStaggerScale;
+                stagger *= difficulty.PlayerStaggerScale;
+            }
+
+            if (other.IsPlayer) {
+                stagger *= difficulty.StaggerFromPlayer;
             }
 
             if (stagger > 0f) {

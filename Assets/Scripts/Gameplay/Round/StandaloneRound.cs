@@ -33,6 +33,10 @@ namespace ToyCarArena.Gameplay.Round
         /// </summary>
         public static SessionProgress Session { get; private set; } = new();
 
+        // Lazy: Unity's random API must run on the main thread, not in a static initializer during scene loading.
+        private static SessionRoster roster;
+        public static SessionRoster Roster => roster ??= new SessionRoster();
+
         public void Start()
         {
             round.Finished += OnFinished;
@@ -50,6 +54,7 @@ namespace ToyCarArena.Gameplay.Round
         private static void ResetSession()
         {
             Session = new SessionProgress();
+            roster = null;
         }
 
         private void OnFinished(RoundResult result)

@@ -9,7 +9,8 @@ namespace ToyCarArena.Gameplay.Round
     /// visit is easy, so a new player wins about half the time and wants another go; over
     /// <see cref="GameTuning.BotSettings.RampRounds"/> rounds it grows to normal, and a run of lost rounds steps it back
     /// part of the way, so a struggling player is not stuck losing. Read from the session's progress as the scene is
-    /// built, and fixed for the round, so nothing changes mid-round.
+    /// built, and fixed for the round. Duel settings take over when only the player and one bot remain: on the Poki
+    /// test 38% of newcomers lost to that last bot, so the final fight needs its own levers.
     /// </summary>
     public sealed class RoundDifficulty
     {
@@ -34,6 +35,12 @@ namespace ToyCarArena.Gameplay.Round
             this.BoostDelay = Vector2.Lerp(easy.BoostDelay, normal.BoostDelay, level);
             this.EscapeBoostChance = Mathf.Lerp(easy.EscapeBoostChance, normal.EscapeBoostChance, level);
             this.EdgeAssist = Mathf.Lerp(easy.EdgeAssist, normal.EdgeAssist, level);
+            this.PlayerBump = Mathf.Lerp(easy.PlayerBump, normal.PlayerBump, level);
+            this.PlayerStaggerScale = Mathf.Lerp(easy.PlayerStaggerScale, normal.PlayerStaggerScale, level);
+            this.StaggerFromPlayer = Mathf.Lerp(easy.StaggerFromPlayer, normal.StaggerFromPlayer, level);
+            this.PlayerKnockoutWindow = Mathf.Lerp(easy.PlayerKnockoutWindow, normal.PlayerKnockoutWindow, level);
+            this.DuelPace = Mathf.Lerp(easy.DuelPace, normal.DuelPace, level);
+            this.DuelEscapeBoostChance = Mathf.Lerp(easy.DuelEscapeBoostChance, normal.DuelEscapeBoostChance, level);
         }
 
         /// <summary>
@@ -59,5 +66,11 @@ namespace ToyCarArena.Gameplay.Round
         /// Share of the player's steer off the arena that is taken away near the edge, from 0 to 1.
         /// </summary>
         public float EdgeAssist { get; }
+        public float PlayerBump { get; }
+        public float PlayerStaggerScale { get; }
+        public float StaggerFromPlayer { get; }
+        public float PlayerKnockoutWindow { get; }
+        public float DuelPace { get; }
+        public float DuelEscapeBoostChance { get; }
     }
 }
