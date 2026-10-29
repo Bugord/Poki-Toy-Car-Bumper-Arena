@@ -468,6 +468,7 @@ GameObject:
   - component: {fileID: 5058133182158369765}
   - component: {fileID: 9129053375818311994}
   - component: {fileID: 4642534986577596277}
+  - component: {fileID: 9009975674460827140}
   m_Layer: 6
   m_Name: Car
   m_TagString: Untagged
@@ -576,7 +577,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Cars.CarLook
   body: {fileID: 1138314476950220024}
-  bodySwatch: {x: 1, y: 1}
   swatches:
   - {x: 1, y: 1}
   - {x: 4, y: 1}
@@ -594,3 +594,21 @@ MonoBehaviour:
   arrowSize: {x: 1.5, y: 1.7}
   arrowHeight: 2.7
   arrowBob: {x: 0.2, y: 1.5}
+--- !u!114 &9009975674460827140
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8950181487849744919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef2e787abadf22747a7dd51550994c2f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Cars.CarShadow
+  material: {fileID: 2100000, guid: c6961af94c7f3e347967a8311ca7d5cb, type: 2}
+  sizeScale: 1.7
+  fadeHeight: 3
+  minScale: 0.5
+  fadeTime: 0.15
+  lift: 0.015
