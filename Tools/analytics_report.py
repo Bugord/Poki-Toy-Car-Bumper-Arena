@@ -159,7 +159,7 @@ def report(version, previous):
         ("Нокауты игрока в 1-м раунде", "ko1", sorted(keys_of("ko1"), key=int)),
         ("Машинок в раунде (с v0.2)", "cars", None),
         ("Длительность раунда (с v0.2)", "round_time", None),
-        ("Причина самовылета (с v0.2.0)", "fall_cause", None),
+        ("Причина самовылета (с v0.2.0; ball: мяч арены tabletop)", "fall_cause", None),
         ("REVENGE (с v0.2.0)", "revenge", None),
     ):
         keys = order if order is not None else keys_of(key)

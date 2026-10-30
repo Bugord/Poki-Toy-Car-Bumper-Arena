@@ -47,10 +47,52 @@ namespace ToyCarArena.Gameplay.Arena
             [SerializeField]
             private Color background = new(0.53f, 0.81f, 0.92f, 1f);
 
+            [Tooltip("Props around the rim, outside the playable floor; empty leaves the arena bare")]
+            [SerializeField]
+            private DecorItem[] decor = Array.Empty<DecorItem>();
+
             public string Id => id;
             public string DisplayName => displayName;
             public Material FloorMaterial => floorMaterial;
             public Color Background => background;
+            public IReadOnlyList<DecorItem> Decor => decor;
+        }
+
+        /// <summary>One prop of an arena's surroundings, placed round the floor as <see cref="ArenaDecor"/> describes.</summary>
+        [Serializable]
+        public sealed class DecorItem
+        {
+            [Tooltip("The prop; its colours come from the material of its own pack")]
+            [SerializeField]
+            private GameObject model;
+
+            [Tooltip("Degrees round the arena: 0 straight behind it as the camera looks, 90 to the right of the screen, 180 in front")]
+            [SerializeField]
+            private float angle;
+
+            [Tooltip("Metres beyond the arena's radius to the prop's middle")]
+            [SerializeField]
+            private float distance = 3f;
+
+            [Tooltip("Metres of the prop's base above the floor's top; negative hangs below the rim")]
+            [SerializeField]
+            private float height;
+
+            [Tooltip("Multiplier of the model's own size")]
+            [Min(0.01f)]
+            [SerializeField]
+            private float scale = 1f;
+
+            [Tooltip("Extra turn in degrees from facing the arena's middle")]
+            [SerializeField]
+            private float yaw;
+
+            public GameObject Model => model;
+            public float Angle => angle;
+            public float Distance => distance;
+            public float Height => height;
+            public float Scale => scale;
+            public float Yaw => yaw;
         }
     }
 }

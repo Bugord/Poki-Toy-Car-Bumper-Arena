@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
@@ -32,25 +33,35 @@ namespace ToyCarArena.Gameplay.Bots
         private readonly GameTuning tuning;
         private readonly ArenaRound round;
         private readonly RoundDifficulty difficulty;
+        private readonly BallLane ballLane;
         private readonly List<Bot> bots = new();
 
+        private int seed;
         private bool isDriving;
 
         // The one bot whose grudge against the player is counted, while it is after the player.
         private Bot playerGrudge;
 
-        public BotDriver(GameTuning tuning, ArenaRound round, RoundDifficulty difficulty)
+        public BotDriver(GameTuning tuning, ArenaRound round, RoundDifficulty difficulty, BallLane ballLane)
         {
             this.tuning = tuning;
             this.round = round;
             this.difficulty = difficulty;
+            this.ballLane = ballLane;
             this.Seed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
         }
 
         /// <summary>
         /// What the bots' choices are drawn from; set it before the round begins to replay a round's choices.
         /// </summary>
-        public int Seed { get; set; }
+        public int Seed {
+            get => seed;
+            set {
+                seed = value;
+                // The Ball arena's chords come from the same seed, so a replayed round replays its balls.
+                ballLane.Seed = value;
+            }
+        }
 
         public void Tick()
         {
@@ -111,7 +122,7 @@ namespace ToyCarArena.Gameplay.Bots
             foreach (var car in round.Cars) {
                 car.Hit += OnHit;
                 if (car != round.Player) {
-                    bots.Add(new Bot(car, personalities[next++], tuning, difficulty, round.Player, random.Next()));
+                    bots.Add(new Bot(car, personalities[next++], tuning, difficulty, round.Player, random.Next(), ballLane));
                 }
             }
         }

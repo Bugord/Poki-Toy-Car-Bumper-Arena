@@ -361,6 +361,68 @@ MonoBehaviour:
   botBoostVolume: 0.35
   countdownSeconds: 10
   jingleDelay: 0.6
+--- !u!1 &1300601145
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1300601147}
+  - component: {fileID: 1300601146}
+  m_Layer: 0
+  m_Name: ArenaBall
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1300601146
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1300601145}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3d5716393d2fca4ca980c5b8b9906cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Arena.ArenaBall
+  segmentMaterials:
+  - {fileID: 2100000, guid: 15f21a855cdf60c4fbf58a463bb10e24, type: 2}
+  - {fileID: 2100000, guid: 6249608186406d540ac2148459414d68, type: 2}
+  - {fileID: 2100000, guid: dddf4f8c36a01e7459401bdaeef221c3, type: 2}
+  - {fileID: 2100000, guid: 6e28e009ab813814493521185f2d5910, type: 2}
+  outlineMaterial: {fileID: 2100000, guid: 29dbb77fdd0a73f43801379f3342b8c8, type: 2}
+  laneMaterial: {fileID: 2100000, guid: 2972b24b9fc8b1344ba0acc341313176, type: 2}
+  chevronMaterial: {fileID: 2100000, guid: fab9026fd0f6fb749b6c29df09dca2e3, type: 2}
+  shadowMaterial: {fileID: 2100000, guid: c4499ec9f34f6d946982052bb69fae6d, type: 2}
+  effects: {fileID: 731205116}
+  outlineScale: 0.07
+  laneDim: {r: 1, g: 0.78, b: 0.2, a: 0.18}
+  laneBright: {r: 1, g: 0.78, b: 0.2, a: 0.42}
+  lanePulse: 0.3
+  wobble: {x: 0.1, y: 0.25}
+  hitShake: {x: 0.6, y: 0.15}
+  hitVolume: {x: 0.9, y: 0.45}
+  rollVolume: 0.35
+--- !u!4 &1300601147
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1300601145}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1404793204
 GameObject:
   m_ObjectHideFlags: 0
@@ -400,6 +462,8 @@ MonoBehaviour:
   carPrefab: {fileID: 9129053375818311994, guid: 222cdabef3973de4db083cc9179a4027, type: 3}
   carCatalog: {fileID: 11400000, guid: 8d5e13a8f906422baa7e47d99440e034, type: 2}
   arenaCatalog: {fileID: 11400000, guid: 2fe3d4e7840d6c94a81609bfd78f968f, type: 2}
+  candyDecor: {fileID: 1684495028}
+  carouselDecor: {fileID: 1684495030}
   audioLibrary: {fileID: 11400000, guid: f401b36b1849431cb6ac97152243978d, type: 2}
 --- !u!4 &1404793206
 Transform:
@@ -553,6 +617,85 @@ MonoBehaviour:
   fallKick: 1.5
   fallSpin: {x: 60, y: 200}
   hideDepth: 25
+--- !u!1 &1684495027
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1684495029}
+  - component: {fileID: 1684495028}
+  - component: {fileID: 1684495030}
+  m_Layer: 0
+  m_Name: Candy
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1684495028
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1684495027}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8e90ee66b7f92d4fa83cb909a29bd5c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Arena.CandyDecor
+  outline: {fileID: 2100000, guid: a08f0c680e56cdc4983d34f535ff2853, type: 2}
+  caramel: {fileID: 2100000, guid: 9c49e093c22cc43408f1cf3a1fc2755e, type: 2}
+  caramelShine: {fileID: 2100000, guid: f9c40721168b08940a84e6cdc35a29f0, type: 2}
+  icing: {fileID: 2100000, guid: c1e353dd4b5e1d14eabf4ede451ab85c, type: 2}
+  sprinkleA: {fileID: 2100000, guid: c3e99ced2403039458ada4f4f71e1540, type: 2}
+  sprinkleB: {fileID: 2100000, guid: b80db016c79fce8408f08270d8102cee, type: 2}
+  lift: 0.008
+  outlineWidth: 0.16
+  wobble: 0.09
+  bumps: 5
+  sprinkles: 10
+--- !u!4 &1684495029
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1684495027}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1684495030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1684495027}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7766d3324d3eaef49b1fe1f2379f4ec7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Arena.CarouselDecor
+  outline: {fileID: 2100000, guid: 3796ff88e9f003f4db0a7a1745a4c047, type: 2}
+  wedgeA: {fileID: 2100000, guid: 04c268ebfbc0dde4cb0be66c6b3e6fe2, type: 2}
+  wedgeB: {fileID: 2100000, guid: 1efe1f1f16c524c46b34b414e067bf7e, type: 2}
+  arrow: {fileID: 2100000, guid: 6299d687aab143146a9462e64d9243de, type: 2}
+  arrowWarning: {fileID: 2100000, guid: 182c9f696e1f3e34cb0cb47761b28072, type: 2}
+  lift: 0.008
+  rimWidth: 0.22
+  hubRadius: 0.55
+  wedges: 8
+  arrows: 8
+  flashRate: 8
 --- !u!1 &1867175639
 GameObject:
   m_ObjectHideFlags: 0
@@ -663,3 +806,5 @@ SceneRoots:
   - {fileID: 477846442}
   - {fileID: 1674820964}
   - {fileID: 731205115}
+  - {fileID: 1684495029}
+  - {fileID: 1300601147}

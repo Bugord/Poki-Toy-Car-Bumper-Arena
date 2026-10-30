@@ -30,8 +30,9 @@ namespace ToyCarArena.App
     /// later ones: <c>result / cars-N-rR / cars</c>, the cars in the round (the difficulty brings fewer early on, so a
     /// place reads against it), <c>result / early, mid, late, full-rR / round-time</c>, seconds on the arena (under 15,
     /// under 30, under 60, 60 and more; no more numbers fit), and <c>result / pushed, fell-rR / round-out-cause</c></item>
-    /// <item>since v0.2.0: <c>result / fell-ring, boost, slide, drive-rR / fall-cause</c> when the player falls without
-    /// knockout credit: the floor gave way, a recent boost, an older hit, or driving off, in that order</item>
+    /// <item>since v0.2.0: <c>result / fell-ring, boost, ball, slide, drive-rR / fall-cause</c> when the player falls without
+    /// knockout credit: the floor gave way, a recent boost, the Ball arena's ball (no car pushed the player after it), an
+    /// older hit, or driving off, in that order</item>
     /// <item><c>result / play-again / visible</c>, then <c>interact</c> when pressed</item>
     /// <item>since v0.2.0, only with a marked rival present: <c>result / revenge-got, missed-rR / revenge</c></item>
     /// <item><c>garage / button / visible, interact</c> and <c>garage / car-id / equip</c></item>

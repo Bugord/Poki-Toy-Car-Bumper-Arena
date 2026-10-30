@@ -301,6 +301,11 @@ namespace ToyCarArena.Gameplay.Round
                 return FallCause.Boost;
             }
 
+            // A ball hit clears the hitter, so no car's push after it is blamed on the ball.
+            if (car.LastHitBy == null && now - car.LastHazardTime <= tuning.Round.SlideWindow) {
+                return FallCause.Ball;
+            }
+
             if (car.LastHitBy != null && car.LastHitBy != car && now - car.LastHitTime <= tuning.Round.SlideWindow) {
                 return FallCause.Slide;
             }
