@@ -873,12 +873,32 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private int unlockLevel = 1;
 
+            [Tooltip("What makes a round on this arena play differently; the first arena has none, so the first round " +
+                "of a visit teaches only the basics")]
+            [SerializeField]
+            private ArenaMechanic mechanic;
+
             [SerializeField]
             private ArenaSettings arena = new();
 
             public string Id => id;
             public int UnlockLevel => unlockLevel;
+            public ArenaMechanic Mechanic => mechanic;
             public ArenaSettings Arena => arena;
+        }
+
+        /// <summary>
+        /// The arena's own twist on a round. Its numbers are in the section of the same name.
+        /// </summary>
+        public enum ArenaMechanic
+        {
+            None,
+            /// <summary>Sticky caramel and slippery icing patches on the floor.</summary>
+            Candy,
+            /// <summary>The middle of the floor turns and carries the cars on it.</summary>
+            Carousel,
+            /// <summary>A big toy ball rolls across the arena now and then and knocks cars aside.</summary>
+            Ball,
         }
 
         /// <summary>

@@ -12,6 +12,7 @@ namespace ToyCarArena.Gameplay.Arena
     {
         public string Id { get; }
         public GameTuning.ArenaSettings Settings { get; }
+        public GameTuning.ArenaMechanic Mechanic { get; }
 
         /// <summary>The look of the arena, or null when the catalog has no entry for it: the scene's own stays.</summary>
         public ArenaCatalog.Entry Theme { get; }
@@ -22,6 +23,7 @@ namespace ToyCarArena.Gameplay.Arena
             foreach (var map in tuning.Maps) {
                 if (map.Id == Id) {
                     Settings = map.Arena;
+                    Mechanic = map.Mechanic;
                     break;
                 }
             }

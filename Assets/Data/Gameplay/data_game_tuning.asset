@@ -158,6 +158,7 @@ MonoBehaviour:
   maps:
   - id: sandbox
     unlockLevel: 1
+    mechanic: 0
     arena:
       radius: 15
       spawnRadius: 0.6
@@ -170,6 +171,7 @@ MonoBehaviour:
       viewMargin: 1.5
   - id: tabletop
     unlockLevel: 2
+    mechanic: 3
     arena:
       radius: 12
       spawnRadius: 0.6
@@ -182,6 +184,7 @@ MonoBehaviour:
       viewMargin: 1.5
   - id: candy
     unlockLevel: 4
+    mechanic: 1
     arena:
       radius: 15
       spawnRadius: 0.6
@@ -194,6 +197,7 @@ MonoBehaviour:
       viewMargin: 1.5
   - id: playroom
     unlockLevel: 6
+    mechanic: 2
     arena:
       radius: 18
       spawnRadius: 0.6
