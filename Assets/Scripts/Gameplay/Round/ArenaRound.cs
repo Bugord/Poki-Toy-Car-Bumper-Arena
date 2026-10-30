@@ -50,6 +50,7 @@ namespace ToyCarArena.Gameplay.Round
         private readonly Car carPrefab;
         private readonly Transform carParent;
         private readonly ArenaFloor floor;
+        private readonly GameTuning.ArenaSettings arena;
         private readonly RoundDifficulty difficulty;
         private readonly ISessionRoster roster;
         private readonly CarCatalog catalog;
@@ -66,14 +67,15 @@ namespace ToyCarArena.Gameplay.Round
         public IReadOnlyList<int> Colors { get; private set; }
 
         public ArenaRound(GameTuning tuning, IObjectResolver resolver, Car carPrefab, Transform carParent, ArenaFloor floor,
-            RoundDifficulty difficulty, ISessionProgress progress, ISessionRoster roster, CarCatalog catalog,
-            IPlayerCar playerCar)
+            GameTuning.ArenaSettings arena, RoundDifficulty difficulty, ISessionProgress progress, ISessionRoster roster,
+            CarCatalog catalog, IPlayerCar playerCar)
         {
             this.tuning = tuning;
             this.resolver = resolver;
             this.carPrefab = carPrefab;
             this.carParent = carParent;
             this.floor = floor;
+            this.arena = arena;
             this.difficulty = difficulty;
             this.roster = roster;
             this.catalog = catalog;
@@ -326,8 +328,8 @@ namespace ToyCarArena.Gameplay.Round
         /// </summary>
         private void Spawn(int count)
         {
-            var radius = tuning.Arena.Radius * tuning.Arena.SpawnRadius;
-            var height = tuning.Arena.SpawnHeight;
+            var radius = arena.Radius * arena.SpawnRadius;
+            var height = arena.SpawnHeight;
             for (var i = 0; i < count; i++) {
                 var angle = -Mathf.PI * 0.5f + i * Mathf.PI * 2f / count;
                 var outward = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));

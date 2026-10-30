@@ -1,4 +1,5 @@
 using Bugord.App.Platform;
+using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
@@ -38,6 +39,8 @@ namespace ToyCarArena.App
     /// <c>result / color-name-rR / color</c> for the colour captured by the played round</item>
     /// <item><c>progress / level-2..10, level-10plus / level-up</c> for each crossed level, and
     /// <c>progress / car-id / unlock</c> from the saved reward</item>
+    /// <item><c>result / map-arena-id-rR / map</c>: the arena of the round, and <c>progress / map-arena-id / unlock</c>
+    /// for each arena a crossed level opened</item>
     /// <item><c>result / car-car-id-rR / car</c>: the car played, before an unlock auto-equips the next one;
     /// catalog IDs contain no numbers, including drag-racer and monster-truck</item>
     /// </list>
@@ -164,6 +167,17 @@ namespace ToyCarArena.App
 
         public static void MeasureRoundCar(this IGamePlatform platform, int round, string carId) =>
             platform.Measure(ResultCategory, $"car-{carId}-{RoundTag(round)}", "car");
+
+        public static void MeasureRoundMap(this IGamePlatform platform, int round, string mapId) =>
+            platform.Measure(ResultCategory, $"map-{mapId}-{RoundTag(round)}", "map");
+
+        /// <summary>The arenas the levels of this reward opened, from the tuning, as the cars are.</summary>
+        public static void MeasureMapUnlocks(this IGamePlatform platform, XpGain gain, GameTuning tuning)
+        {
+            foreach (var id in ArenaRotation.OpenedBetween(tuning, gain.Before.Level, gain.After.Level)) {
+                platform.Measure("progress", $"map-{id}", "unlock");
+            }
+        }
 
         /// <summary>Sent from the saved reward, independently of how soon the result screen is dismissed.</summary>
         public static void MeasureProgress(this IGamePlatform platform, XpGain gain)

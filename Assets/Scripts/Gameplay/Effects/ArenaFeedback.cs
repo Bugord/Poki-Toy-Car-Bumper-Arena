@@ -129,13 +129,13 @@ namespace ToyCarArena.Gameplay.Effects
 
         [Inject]
         private void Construct(ArenaRound round, ArenaCrumble crumble, ArenaCamera arenaCamera,
-            IAudioService audioService, GameTuning tuning)
+            IAudioService audioService, GameTuning.ArenaSettings arenaSettings)
         {
             this.round = round;
             this.crumble = crumble;
             this.arenaCamera = arenaCamera;
             this.audioService = audioService;
-            this.arenaSettings = tuning.Arena;
+            this.arenaSettings = arenaSettings;
         }
 
         private void Awake()

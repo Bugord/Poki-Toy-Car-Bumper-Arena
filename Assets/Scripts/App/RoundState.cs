@@ -3,6 +3,7 @@ using System.Threading;
 using Bugord.App.Platform;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.Gameplay;
+using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
 using ToyCarArena.UI;
@@ -38,9 +39,10 @@ namespace ToyCarArena.App
         private readonly SessionProgress progress;
         private readonly PersonalBests bests;
         private readonly PlayerProgress playerProgress;
+        private readonly IArenaRotation arenaRotation;
 
         public RoundState(LevelScene levelScene, IScreenNavigator navigator, ScreenCurtain curtain, IGamePlatform platform,
-            SessionProgress progress, PersonalBests bests, PlayerProgress playerProgress)
+            SessionProgress progress, PersonalBests bests, PlayerProgress playerProgress, IArenaRotation arenaRotation)
         {
             this.levelScene = levelScene;
             this.navigator = navigator;
@@ -49,6 +51,7 @@ namespace ToyCarArena.App
             this.progress = progress;
             this.bests = bests;
             this.playerProgress = playerProgress;
+            this.arenaRotation = arenaRotation;
         }
 
         public override async UniTask<StateTransitionInfo> Execute(CancellationToken token)
@@ -69,6 +72,8 @@ namespace ToyCarArena.App
             var roundNumber = progress.Round;
             // Record() may auto-equip a new unlock; analytics must name the car that actually played this round.
             var playedCar = playerProgress.SelectedCar;
+            // The arena the loaded scene was built for, before the rotation moves on to the next one.
+            var playedMap = levelScene.Resolve<ArenaMap>().Id;
             var waitsForPlayer = roundNumber == 1;
 
             void BeginRound()
@@ -76,6 +81,7 @@ namespace ToyCarArena.App
                 round.Begin();
                 platform.GameplayStart();
                 platform.MeasureRoundStart(roundNumber);
+                arenaRotation.MarkSeen(playedMap);
                 isPlaying = true;
             }
 
@@ -101,11 +107,14 @@ namespace ToyCarArena.App
                 progress.Record(result);
                 var record = bests.Record(result).WithXp(playerProgress.Record(result)).WithKnocker(
                     result.KnockedOutBy == RoundResult.Nobody ? "" : round.NameOf(result.KnockedOutBy)).WithNames(round.Names);
+                arenaRotation.Next(record.XpGain.After.Level);
                 levelScene.Resolve<ISessionRoster>().NextRound(result.CarCount - 1,
                     RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis, tuning.Players);
                 platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, driver);
                 platform.MeasureRoundCar(roundNumber, playedCar);
                 platform.MeasureProgress(record.XpGain);
+                platform.MeasureRoundMap(roundNumber, playedMap);
+                platform.MeasureMapUnlocks(record.XpGain, tuning);
 
                 var delay = result.Outcome == RoundOutcome.Out ? tuning.Round.OutResultDelay : tuning.Round.ResultDelay;
                 await UniTask.Delay(TimeSpan.FromSeconds(delay), cancellationToken: token);

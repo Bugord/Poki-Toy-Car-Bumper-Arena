@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace ToyCarArena.Gameplay
@@ -26,8 +27,10 @@ namespace ToyCarArena.Gameplay
         [SerializeField]
         private RoundSettings round = new();
 
+        [Header("Maps")]
+        [Tooltip("Arenas in rotation order; the first is the visit's first round, the rest open with the player's level")]
         [SerializeField]
-        private ArenaSettings arena = new();
+        private MapSettings[] maps = Array.Empty<MapSettings>();
 
         [Header("Progress")]
         [Tooltip("Round rewards and the experience needed for each next player level")]
@@ -44,7 +47,7 @@ namespace ToyCarArena.Gameplay
         public BoostSettings Boost => boost;
         public BotSettings Bots => bots;
         public RoundSettings Round => round;
-        public ArenaSettings Arena => arena;
+        public IReadOnlyList<MapSettings> Maps => maps;
         public ProgressSettings Progress => progress;
         public PlayerSettings Players => players;
 
@@ -852,6 +855,30 @@ namespace ToyCarArena.Gameplay
             public float SlideWindow => slideWindow;
             public float FallHeight => fallHeight;
             public float RemoveHeight => removeHeight;
+        }
+
+        /// <summary>
+        /// One arena of the rotation: the numbers of its round and the level that opens it. Its look is in the
+        /// <c>ArenaCatalog</c>, by the same id.
+        /// </summary>
+        [Serializable]
+        public sealed class MapSettings
+        {
+            [Tooltip("Permanent identity shared with the arena catalog, storage and analytics; letters only")]
+            [SerializeField]
+            private string id;
+
+            [Tooltip("First player level at which this arena comes up in the rotation")]
+            [Min(1)]
+            [SerializeField]
+            private int unlockLevel = 1;
+
+            [SerializeField]
+            private ArenaSettings arena = new();
+
+            public string Id => id;
+            public int UnlockLevel => unlockLevel;
+            public ArenaSettings Arena => arena;
         }
 
         /// <summary>

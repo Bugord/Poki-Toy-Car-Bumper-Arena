@@ -15,12 +15,14 @@ namespace ToyCarArena.Tests.PlayMode
     {
         private readonly int runs;
         private readonly int seed;
+        private readonly string map;
         private readonly Dictionary<int, List<RoundResult>> levels = new();
 
         public int HitStopRecoveries { get; set; }
 
-        public SimulationReport(int runs, int seed)
+        public SimulationReport(int runs, int seed, string map)
         {
+            this.map = map;
             this.runs = runs;
             this.seed = seed;
         }
@@ -42,6 +44,7 @@ namespace ToyCarArena.Tests.PlayMode
             text.AppendLine();
             text.AppendLine($"Прогонов на уровень: {runs}. Seed = {seed} + индекс прогона (с 0), одинаковые seeds на уровнях. " +
                 "Серия поражений: 0. Шаг captureDeltaTime: 1/60 с; физический шаг из проекта.");
+            text.AppendLine($"Арена: {map} (SIM_MAP).");
             text.AppendLine($"Реальное время с загрузками сцен: {Number(realSeconds)} с. " +
                 $"Восстановлений зависшего hit-stop: {HitStopRecoveries}.");
             text.AppendLine("Модель пока не откалибрована по живым игрокам. PhysX не гарантирует побитовую повторяемость.");

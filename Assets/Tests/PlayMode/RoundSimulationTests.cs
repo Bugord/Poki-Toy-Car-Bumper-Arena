@@ -31,7 +31,7 @@ namespace ToyCarArena.Tests.PlayMode
             var seed = int.Parse(Environment.GetEnvironmentVariable("SIM_SEED") ?? "1");
             var input = new SimulationInput();
             var progress = new SimulationProgress();
-            var report = new SimulationReport(runs, seed);
+            var report = new SimulationReport(runs, seed, SimMap);
             var stopwatch = Stopwatch.StartNew();
 
             CreateParent(input, progress);

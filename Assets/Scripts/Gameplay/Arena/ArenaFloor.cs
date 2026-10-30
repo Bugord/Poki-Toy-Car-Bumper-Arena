@@ -83,6 +83,7 @@ namespace ToyCarArena.Gameplay.Arena
 
         private readonly List<Mesh> meshes = new();
 
+        private ArenaMap map;
         private GameTuning.ArenaSettings settings;
         private MeshCollider floorCollider;
         private Ring[] rings = new Ring[0];
@@ -122,9 +123,10 @@ namespace ToyCarArena.Gameplay.Arena
         public int RingCount => rings.Length;
 
         [Inject]
-        private void Construct(GameTuning tuning)
+        private void Construct(ArenaMap map)
         {
-            this.settings = tuning.Arena;
+            this.map = map;
+            this.settings = map.Settings;
             this.Radius = settings.Radius;
             this.SolidRadius = settings.Radius;
         }
@@ -144,6 +146,11 @@ namespace ToyCarArena.Gameplay.Arena
             var halfSeam = ringCount > 0 ? seam * 0.5f : 0f;
 
             var template = GetComponent<MeshRenderer>();
+            // Before the rings are built: their blocks copy the template's material.
+            if (map.HasTheme) {
+                template.sharedMaterial = map.FloorMaterial;
+            }
+
             rings = new Ring[ringCount];
             colliderMeshes = new Mesh[ringCount + 1];
             for (var i = 0; i < ringCount; i++) {

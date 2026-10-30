@@ -72,15 +72,20 @@ namespace ToyCarArena.Tests.PlayMode
             }
         }
 
-        protected void CreateParent(SimulationInput input, SimulationProgress progress)
+        protected void CreateParent(SimulationInput input, SimulationProgress progress, string map = null)
         {
             var catalog = LoadCarCatalog();
+            var arenas = LoadArenaCatalog();
             var audio = new SilentAudioService(LoadAudioLibrary());
             parentScope = LifetimeScope.Create(builder => {
                 builder.AddBugordCore("simulation");
                 builder.Register<IOnScreenControls, NoOnScreenControls>(Lifetime.Singleton);
                 builder.RegisterInstance<ISessionProgress>(progress);
                 builder.RegisterInstance(catalog, typeof(CarCatalog));
+                builder.RegisterInstance(arenas, typeof(ArenaCatalog));
+                // A simulation measures one arena, the first unless SIM_MAP names another, and never rotates.
+                builder.RegisterInstance(new FixedArenaRotation(map ?? SimMap), typeof(FixedArenaRotation))
+                    .As(typeof(IArenaRotation));
                 builder.Register<IPlayerCar, FirstPlayerCar>(Lifetime.Singleton);
                 builder.Register<SessionRoster>(Lifetime.Singleton).As<ISessionRoster>();
                 builder.RegisterInstance<IAudioService>(audio);
@@ -135,6 +140,29 @@ namespace ToyCarArena.Tests.PlayMode
             }
 
             Time.timeScale = 1f;
+        }
+
+        /// <summary>The arena a simulation plays on: the SIM_MAP environment variable, else the first (sandbox).</summary>
+        protected static string SimMap
+        {
+            get {
+                var id = Environment.GetEnvironmentVariable("SIM_MAP");
+                return string.IsNullOrWhiteSpace(id) ? "sandbox" : id.Trim();
+            }
+        }
+
+        protected static ArenaCatalog LoadArenaCatalog()
+        {
+#if UNITY_EDITOR
+            var catalog = AssetDatabase.LoadAssetAtPath<ArenaCatalog>("Assets/Data/Arenas/data_arena_catalog.asset");
+            if (catalog == null) {
+                throw new MissingReferenceException("Simulation needs the game's ArenaCatalog asset.");
+            }
+
+            return catalog;
+#else
+            throw new NotSupportedException("Run the simulation as editor PlayMode tests via Tools/simulate.sh.");
+#endif
         }
 
         protected static CarCatalog LoadCarCatalog()

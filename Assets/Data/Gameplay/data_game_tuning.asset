@@ -155,16 +155,55 @@ MonoBehaviour:
     slideWindow: 6
     fallHeight: -3
     removeHeight: -25
-  arena:
-    radius: 15
-    spawnRadius: 0.6
-    spawnHeight: 0.05
-    minRadius: 5
-    crumbleDelay: 15
-    crumbleInterval: 11
-    crumbleStep: 2
-    crumbleWarning: 2
-    viewMargin: 1.5
+  maps:
+  - id: sandbox
+    unlockLevel: 1
+    arena:
+      radius: 15
+      spawnRadius: 0.6
+      spawnHeight: 0.05
+      minRadius: 5
+      crumbleDelay: 15
+      crumbleInterval: 11
+      crumbleStep: 2
+      crumbleWarning: 2
+      viewMargin: 1.5
+  - id: tabletop
+    unlockLevel: 2
+    arena:
+      radius: 12
+      spawnRadius: 0.6
+      spawnHeight: 0.05
+      minRadius: 5
+      crumbleDelay: 12
+      crumbleInterval: 10
+      crumbleStep: 2
+      crumbleWarning: 2
+      viewMargin: 1.5
+  - id: candy
+    unlockLevel: 4
+    arena:
+      radius: 15
+      spawnRadius: 0.6
+      spawnHeight: 0.05
+      minRadius: 5
+      crumbleDelay: 10
+      crumbleInterval: 8
+      crumbleStep: 2
+      crumbleWarning: 2
+      viewMargin: 1.5
+  - id: playroom
+    unlockLevel: 6
+    arena:
+      radius: 18
+      spawnRadius: 0.6
+      spawnHeight: 0.05
+      minRadius: 5
+      crumbleDelay: 10
+      crumbleInterval: 9
+      crumbleStep: 2
+      crumbleWarning: 2
+      viewMargin: 1.5
   progress:
     roundXp: 10
     placeXp: 5

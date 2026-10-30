@@ -38,9 +38,9 @@ namespace ToyCarArena.Gameplay.Arena
         private int warned;
         private int fallen;
 
-        public ArenaCrumble(GameTuning tuning, ArenaRound round, ArenaFloor floor)
+        public ArenaCrumble(GameTuning.ArenaSettings settings, ArenaRound round, ArenaFloor floor)
         {
-            this.settings = tuning.Arena;
+            this.settings = settings;
             this.round = round;
             this.floor = floor;
         }

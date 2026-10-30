@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 704b38d2608881d48be8f5ce8ef713a6, type: 3}
+  m_Name: data_arena_catalog
+  m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Arena.ArenaCatalog
+  arenas:
+  - id: sandbox
+    displayName: SANDBOX
+    floorMaterial: {fileID: 0}
+    background: {r: 0, g: 0, b: 0, a: 0}
+  - id: tabletop
+    displayName: TABLETOP
+    floorMaterial: {fileID: 0}
+    background: {r: 0, g: 0, b: 0, a: 0}
+  - id: candy
+    displayName: CANDY
+    floorMaterial: {fileID: 0}
+    background: {r: 0, g: 0, b: 0, a: 0}
+  - id: playroom
+    displayName: PLAYROOM
+    floorMaterial: {fileID: 0}
+    background: {r: 0, g: 0, b: 0, a: 0}

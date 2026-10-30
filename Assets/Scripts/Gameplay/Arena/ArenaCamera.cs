@@ -56,6 +56,7 @@ namespace ToyCarArena.Gameplay.Arena
         [SerializeField]
         private float shakeDecay = 2.5f;
 
+        private ArenaMap map;
         private GameTuning.ArenaSettings settings;
         private ArenaFloor floor;
         private Camera view;
@@ -75,15 +76,20 @@ namespace ToyCarArena.Gameplay.Arena
         public Camera Camera => view;
 
         [Inject]
-        private void Construct(GameTuning tuning, ArenaFloor floor)
+        private void Construct(ArenaMap map, ArenaFloor floor)
         {
-            this.settings = tuning.Arena;
+            this.map = map;
+            this.settings = map.Settings;
             this.floor = floor;
         }
 
         private void Awake()
         {
             view = GetComponent<Camera>();
+            if (map.HasTheme) {
+                view.backgroundColor = map.Theme.Background;
+            }
+
             shakeSeed = Random.Range(0f, 100f);
         }
 

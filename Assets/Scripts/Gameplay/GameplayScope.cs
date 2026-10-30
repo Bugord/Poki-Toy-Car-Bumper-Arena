@@ -37,6 +37,10 @@ namespace ToyCarArena.Gameplay
         [SerializeField]
         private CarCatalog carCatalog;
 
+        [Tooltip("Arena catalog for Game opened without Boot; with a parent the parent's catalog is used")]
+        [SerializeField]
+        private ArenaCatalog arenaCatalog;
+
         [Tooltip("Sounds and music for the scene played on its own; from Boot the app's audio plays")]
         [SerializeField]
         private AudioLibrary audioLibrary;
@@ -59,6 +63,11 @@ namespace ToyCarArena.Gameplay
                 Require(carCatalog, nameof(carCatalog));
                 builder.RegisterInstance(carCatalog, typeof(CarCatalog));
                 builder.Register<IPlayerCar, FirstPlayerCar>(Lifetime.Singleton);
+                // On its own the scene plays the first arena round after round: there is no level to open the others.
+                Require(arenaCatalog, nameof(arenaCatalog));
+                builder.RegisterInstance(arenaCatalog, typeof(ArenaCatalog));
+                builder.RegisterInstance(new FixedArenaRotation(tuning.Maps[0].Id), typeof(FixedArenaRotation))
+                    .As(typeof(IArenaRotation));
             }
 
             // The non-generic overload on purpose: in the release WebGL player (IL2CPP, faster-smaller code generation)
@@ -83,6 +92,11 @@ namespace ToyCarArena.Gameplay
             if (!builder.Exists(typeof(IInputService), includeInterfaceTypes: true, findParentScopes: true)) {
                 builder.RegisterEntryPoint<InputService>().As<IInputService>();
             }
+
+            // The arena of this scene, from the rotation of the app scope (or the fixed one of a scene on its own, or of a
+            // simulation): chosen once, as the scene is built. Each reader takes what it needs from it.
+            builder.Register<ArenaMap>(Lifetime.Singleton);
+            builder.Register(resolver => resolver.Resolve<ArenaMap>().Settings, Lifetime.Singleton);
 
             builder.RegisterComponent(arenaCamera);
             builder.RegisterComponent(arenaFloor);

@@ -399,6 +399,7 @@ MonoBehaviour:
   arenaFloor: {fileID: 1674820966}
   carPrefab: {fileID: 9129053375818311994, guid: 222cdabef3973de4db083cc9179a4027, type: 3}
   carCatalog: {fileID: 11400000, guid: 8d5e13a8f906422baa7e47d99440e034, type: 2}
+  arenaCatalog: {fileID: 11400000, guid: 2fe3d4e7840d6c94a81609bfd78f968f, type: 2}
   audioLibrary: {fileID: 11400000, guid: f401b36b1849431cb6ac97152243978d, type: 2}
 --- !u!4 &1404793206
 Transform:
