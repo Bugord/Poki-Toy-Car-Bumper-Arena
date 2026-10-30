@@ -365,6 +365,38 @@
 
 .lobby__title--ready { color: var(--green); }
 
+/* The arena of the coming round, a compact pill between the title and the seven seats (about 150 px with its margins). */
+.lobby__arena {
+    flex-direction: row;
+    align-items: center;
+    height: 96px;
+    margin: -20px 0 36px 0;
+    padding: 0 30px;
+    border-width: 6px;
+    border-bottom-width: 12px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+}
+.lobby__arena-label { height: 52px; margin-right: 16px; }
+.lobby__arena-label .sticker-text__text {
+    font-size: 36px;
+    color: var(--muted);
+    -unity-text-outline-width: 0;
+}
+.lobby__arena-name { height: 66px; }
+.lobby__arena-name .sticker-text__text {
+    font-size: 54px;
+    color: var(--navy);
+    -unity-text-outline-width: 0;
+}
+.lobby__arena .lobby__badge {
+    width: 100px;
+    height: 62px;
+    margin-left: 18px;
+}
+.lobby__arena .lobby__badge .sticker-text__text { font-size: 30px; }
+
 .lobby__rows {
     width: 920px;
     max-width: 100%;

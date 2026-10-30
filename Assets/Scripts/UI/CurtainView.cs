@@ -16,6 +16,8 @@ namespace ToyCarArena.UI
         private VisualElement lobby;
         private Label title;
         private Label titleFace;
+        private VisualElement arenaLine;
+        private VisualElement arenaBadge;
         private IVisualElementScheduledItem animation;
 
         protected override float FadeDuration => 0.25f;
@@ -25,6 +27,7 @@ namespace ToyCarArena.UI
             lobby = Root.Q<VisualElement>("lobby");
             title = Root.Q<Label>("lobby-title");
             titleFace = Root.Q<Label>("lobby-title-face");
+            arenaLine = Root.Q<VisualElement>("lobby-arena");
             ViewModel.LobbyShown += ShowLobby;
             if (ViewModel.Rows != null) {
                 ShowLobby();
@@ -44,6 +47,7 @@ namespace ToyCarArena.UI
             container.Clear();
             rows.Clear();
             lobby.style.display = DisplayStyle.Flex;
+            BuildArenaLine();
             foreach (var row in ViewModel.Rows) {
                 var slot = Element("lobby__slot");
                 var incoming = row.Name != null ? CreateRow(row, false) : null;
@@ -63,9 +67,32 @@ namespace ToyCarArena.UI
             animation = Root.schedule.Execute(UpdateLobby).Every(16);
         }
 
+        private void BuildArenaLine()
+        {
+            arenaLine.Clear();
+            arenaBadge = null;
+            var named = !string.IsNullOrEmpty(ViewModel.ArenaName);
+            arenaLine.style.display = named ? DisplayStyle.Flex : DisplayStyle.None;
+            if (!named) {
+                return;
+            }
+            arenaLine.Add(OutlinedText("ARENA", "lobby__arena-label"));
+            arenaLine.Add(OutlinedText(ViewModel.ArenaName, "lobby__arena-name"));
+            if (ViewModel.ArenaIsNew) {
+                arenaBadge = OutlinedText("NEW", "lobby__badge");
+                arenaLine.Add(arenaBadge);
+            }
+        }
+
         private void UpdateLobby()
         {
             var time = (float)(Time.realtimeSinceStartupAsDouble - ViewModel.StartedAt);
+            if (arenaBadge != null) {
+                // The tag lands after the pill itself, with the same overshoot as the rows.
+                var t = ViewModel.IsReady ? 1f : Mathf.Clamp01((time - 0.15f) / EnterDuration);
+                var shifted = t - 1f;
+                arenaBadge.style.scale = new Scale(Vector3.one * (1f + 2.70158f * shifted * shifted * shifted + 1.70158f * shifted * shifted));
+            }
             var text = ViewModel.IsReady ? "READY!" : "FINDING PLAYERS" + new string('.', 1 + (int)(time / 0.18f) % 3);
             title.text = text;
             titleFace.text = text;

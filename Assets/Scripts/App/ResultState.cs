@@ -2,6 +2,7 @@ using System.Threading;
 using Bugord.App.Platform;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.Gameplay;
+using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Round;
 using ToyCarArena.UI;
 using UIKit.Runtime.Abstractions;
@@ -24,10 +25,15 @@ namespace ToyCarArena.App
         private readonly ISessionRoster roster;
         private readonly ISessionProgress progress;
         private readonly GameTuning tuning;
+        private readonly IArenaRotation arenaRotation;
+        private readonly ArenaCatalog arenaCatalog;
 
         public ResultState(LevelScene levelScene, IScreenNavigator navigator, ScreenCurtain curtain, IGamePlatform platform,
-            ISessionRoster roster, ISessionProgress progress, GameTuning tuning)
+            ISessionRoster roster, ISessionProgress progress, GameTuning tuning, IArenaRotation arenaRotation,
+            ArenaCatalog arenaCatalog)
         {
+            this.arenaRotation = arenaRotation;
+            this.arenaCatalog = arenaCatalog;
             this.levelScene = levelScene;
             this.navigator = navigator;
             this.curtain = curtain;
@@ -46,7 +52,10 @@ namespace ToyCarArena.App
                 await screen.ViewModel.WaitForResultAsync(token);
                 platform.MeasurePlayAgainPressed();
                 await curtain.Show(token);
-                curtain.ShowLobby(roster, RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis);
+                // RoundState already moved the rotation on, so Current is the arena of the round this lobby leads to.
+                var arena = arenaCatalog.Find(arenaRotation.Current);
+                curtain.ShowLobby(roster, RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis,
+                    arena?.DisplayName, arena != null && arenaRotation.IsNew(arena.Id));
                 platform.MeasureLobbyShown();
             }
             catch {
