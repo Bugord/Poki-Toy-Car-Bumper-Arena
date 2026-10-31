@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using Bugord.App.Localization;
 using Cysharp.Threading.Tasks;
+using ToyCarArena.Gameplay.Cars;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -38,6 +40,10 @@ namespace ToyCarArena.UI
         private readonly Label ready;
         private readonly List<Waypoint> stops = new();
         private readonly List<Segment> segments = new();
+        private readonly List<CarPortrait> trackCars = new();
+        private readonly LiveText text = new();
+        private CarCatalog.Entry shownCar;
+        private int shownLevel;
         private CancellationTokenSource animation;
         private string rankClass;
 
@@ -56,8 +62,11 @@ namespace ToyCarArena.UI
 
             var reward = viewModel.XpGain;
             SetLevel(reward.Before.Level);
-            gain.text = $"+{reward.Total} XP";
-            total.text = $"{reward.Before.Xp} / {reward.Before.Cost} XP";
+            text.Set(gain, () => Strings.Format("result.xp_gain", reward.Total));
+            text.Set(total, () => Strings.Format("result.xp_total", reward.Before.Xp, reward.Before.Cost));
+            text.Set(ready, () => Strings.Get("result.drives_next"));
+            text.Set(newCarName, () => shownCar == null ? "" : Strings.Format("result.new_car", GameText.Car(shownCar)));
+            text.Set(rankLabel, () => Strings.Format("result.rank_level", PlayerRank.NameOf(shownLevel), shownLevel));
             BuildTrack(root.Q<VisualElement>("xp-track"), reward.Before.Level);
 
             SetScale(levelBadge, 0f);
@@ -87,11 +96,18 @@ namespace ToyCarArena.UI
             animation = null;
         }
 
-        public void Dispose() => Stop();
+        public void Dispose()
+        {
+            Stop();
+            text.Dispose();
+        }
 
         public void RefreshColor()
         {
             newCarPortrait.SetColor(viewModel.SelectedColor);
+            foreach (var car in trackCars) {
+                car.SetColor(viewModel.SelectedColor);
+            }
         }
 
         /// <summary>
@@ -155,10 +171,14 @@ namespace ToyCarArena.UI
                 node.Add(Text(level.ToString(), "track__level"));
             }
             else if (reward.Car != null) {
-                // A plain silhouette, as in the design: the car itself is the NEW CAR! sticker's to show.
-                var silhouette = new VisualElement { pickingMode = PickingMode.Ignore };
-                silhouette.AddToClassList("track__car");
-                node.Add(silhouette);
+                // The car itself in the player's colour, so the stop reads as the car it gives, not a placeholder.
+                var portrait = new VisualElement { pickingMode = PickingMode.Ignore };
+                portrait.AddToClassList("car-portrait");
+                portrait.AddToClassList("track__car");
+                node.Add(portrait);
+                var car = new CarPortrait(portrait);
+                car.Set(reward.Car, viewModel.SelectedColor);
+                trackCars.Add(car);
             }
             else {
                 var map = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -170,8 +190,13 @@ namespace ToyCarArena.UI
             if (name != null) {
                 var caption = new VisualElement { pickingMode = PickingMode.Ignore };
                 caption.AddToClassList("track__caption");
-                caption.Add(Text($"LVL {level}", "track__caption-level"));
-                caption.Add(Text(name, "track__caption-name"));
+                var levelCaption = Text("", "track__caption-level");
+                text.Set(levelCaption, () => GameText.Level(level));
+                caption.Add(levelCaption);
+                var nameCaption = Text("", "track__caption-name");
+                text.Set(nameCaption, () => reward.IsRank ? Strings.Format("result.rank_stop", PlayerRank.NameOf(level))
+                    : reward.Car != null ? GameText.Car(reward.Car) : GameText.Arena(reward.Arena));
+                caption.Add(nameCaption);
                 node.Add(caption);
             }
 
@@ -223,7 +248,7 @@ namespace ToyCarArena.UI
                 await UniTask.WhenAll(Bounce(levelBadge, token), Reach(level, token));
             }
 
-            total.text = $"{reward.After.Xp} / {reward.After.Cost} XP";
+            text.Set(total, () => Strings.Format("result.xp_total", reward.After.Xp, reward.After.Cost));
             await Fill(from, level + (float)reward.After.Xp / reward.After.Cost, token);
         }
 
@@ -241,7 +266,8 @@ namespace ToyCarArena.UI
             await UniTask.WhenAll(celebrations);
 
             foreach (var car in viewModel.NewCarsAt(level)) {
-                newCarName.text = $"NEW CAR! {car.DisplayName}";
+                shownCar = car;
+                text.Set(newCarName, () => Strings.Format("result.new_car", GameText.Car(shownCar)));
                 newCarPortrait.Set(car, viewModel.SelectedColor);
                 ready.style.visibility = Visibility.Visible;
                 await Pop(newCar, token);
@@ -252,7 +278,8 @@ namespace ToyCarArena.UI
         private void SetLevel(int level)
         {
             levelLabel.text = level.ToString();
-            rankLabel.text = $"{PlayerRank.NameOf(level)} · LEVEL {level}";
+            shownLevel = level;
+            text.Set(rankLabel, () => Strings.Format("result.rank_level", PlayerRank.NameOf(shownLevel), shownLevel));
             if (rankClass != null) {
                 levelBadge.RemoveFromClassList(rankClass);
             }

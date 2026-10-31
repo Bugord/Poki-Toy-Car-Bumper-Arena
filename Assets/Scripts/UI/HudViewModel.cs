@@ -76,7 +76,8 @@ namespace ToyCarArena.UI
             }
         }
 
-        public string NameOf(int index) => round.NameOf(index);
+        // The round keeps the player as YOU; only the screen shows it in the player's language.
+        public string NameOf(int index) => index == 0 ? GameText.You : round.NameOf(index);
         public int LevelOf(int index) => round.LevelOf(index);
         public int ColorOf(int index) => round.ColorOf(index);
 

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading;
+using Bugord.App.Localization;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.Audio;
 using ToyCarArena.Gameplay.Cars;
@@ -21,6 +22,7 @@ namespace ToyCarArena.UI
         private Button closeButton;
         private Button settingsButton;
         private CancellationTokenSource lifetime;
+        private readonly LiveText text = new();
         private Button playButton;
         private CarPortrait preview;
         private bool isClosing;
@@ -81,7 +83,8 @@ namespace ToyCarArena.UI
                 var image = new CarPortrait(portrait);
                 image.Set(car, ViewModel.SelectedColor, !ViewModel.IsUnlocked(car.Id));
                 button.Add(portrait);
-                var name = new Label(car.DisplayName) { pickingMode = PickingMode.Ignore };
+                var name = new Label { pickingMode = PickingMode.Ignore };
+                text.Set(name, () => GameText.Car(car));
                 name.AddToClassList("garage__name");
                 button.Add(name);
                 var statusRow = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -99,6 +102,8 @@ namespace ToyCarArena.UI
             }
 
             RefreshSelection();
+            // The settings popup can change the language over the garage.
+            text.OnChanged(RefreshSelection);
         }
 
         private void OnGeometryChanged(GeometryChangedEvent evt) =>
@@ -108,8 +113,8 @@ namespace ToyCarArena.UI
         {
             var selectedCar = ViewModel.SelectedEntry;
             preview.Set(selectedCar, ViewModel.SelectedColor);
-            Root.Q<Label>("garage-preview-name").text = selectedCar?.DisplayName;
-            Root.Q<Label>("garage-preview-name-face").text = selectedCar?.DisplayName;
+            Root.Q<Label>("garage-preview-name").text = GameText.Car(selectedCar);
+            Root.Q<Label>("garage-preview-name-face").text = GameText.Car(selectedCar);
             for (var id = 0; id < colors.Length; id++) {
                 colors[id].EnableInClassList("garage__color--selected", id == ViewModel.SelectedColor);
             }
@@ -118,8 +123,9 @@ namespace ToyCarArena.UI
                 var unlocked = ViewModel.IsUnlocked(car.Id);
                 button.EnableInClassList("garage__car--selected", selected);
                 button.EnableInClassList("garage__car--locked", !unlocked);
-                status.text = selected ? "IN USE" : unlocked ? "USE" : $"LVL {car.UnlockLevel}";
-                button.tooltip = unlocked ? car.DisplayName : $"UNLOCK AT LVL {car.UnlockLevel}";
+                status.text = selected ? Strings.Get("garage.in_use") : unlocked ? Strings.Get("garage.use")
+                    : GameText.Level(car.UnlockLevel);
+                button.tooltip = unlocked ? GameText.Car(car) : Strings.Format("garage.unlock_at", car.UnlockLevel);
                 portrait.SetColor(ViewModel.SelectedColor);
             }
         }
@@ -252,6 +258,7 @@ namespace ToyCarArena.UI
             }
             lifetime?.Cancel();
             lifetime?.Dispose();
+            text.Dispose();
             cards.Clear();
             base.Dispose();
         }

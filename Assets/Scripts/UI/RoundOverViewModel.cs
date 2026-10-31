@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading;
+using Bugord.App.Localization;
 using Bugord.App.Platform;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.App;
@@ -107,13 +108,13 @@ namespace ToyCarArena.UI
             var rewards = new SortedDictionary<int, TrackStop>();
             foreach (var car in catalog.Cars) {
                 if (car.UnlockLevel > from && !rewards.ContainsKey(car.UnlockLevel)) {
-                    rewards[car.UnlockLevel] = new TrackStop(car.UnlockLevel, car.DisplayName, car, null, false);
+                    rewards[car.UnlockLevel] = new TrackStop(car.UnlockLevel, GameText.Car(car), car, null, false);
                 }
             }
             foreach (var map in tuning.Maps) {
                 var arena = arenaCatalog.Find(map.Id);
                 if (map.UnlockLevel > from && arena != null && !rewards.ContainsKey(map.UnlockLevel)) {
-                    rewards[map.UnlockLevel] = new TrackStop(map.UnlockLevel, arena.DisplayName, null, arena, false);
+                    rewards[map.UnlockLevel] = new TrackStop(map.UnlockLevel, GameText.Arena(arena), null, arena, false);
                 }
             }
 
@@ -134,7 +135,7 @@ namespace ToyCarArena.UI
             }
             stops.Sort((a, b) => a.Level.CompareTo(b.Level));
             if (rank > 0) {
-                stops.Add(new TrackStop(rank, PlayerRank.NextRankName(from) + " RANK", null, null, true));
+                stops.Add(new TrackStop(rank, Strings.Format("result.rank_stop", PlayerRank.NextRankName(from)), null, null, true));
             }
             return stops;
         }

@@ -1,3 +1,4 @@
+using Bugord.App.Localization;
 using Bugord.App;
 using ToyCarArena.Audio;
 using ToyCarArena.Gameplay;
@@ -38,6 +39,11 @@ namespace ToyCarArena.App
         [SerializeField]
         private ArenaCatalog arenaCatalog;
 
+        [Header("Localization")]
+        [Tooltip("The string table: a key, a translator's note and a column per language")]
+        [SerializeField]
+        private TextAsset strings;
+
         protected override void ConfigureGame(IContainerBuilder builder)
         {
             // Checked here, as GameplayScope checks its own: in the WebGL player a missing reference fails much later,
@@ -62,6 +68,14 @@ namespace ToyCarArena.App
                     $"{nameof(arenaCatalog)}.");
             }
 
+            if (strings == null) {
+                throw new MissingReferenceException($"{nameof(GameScope)} in {gameObject.scene.name} has no " +
+                    $"{nameof(strings)}.");
+            }
+
+            // Loaded now, so the screens built before the boot tasks read English; the saved or platform language is
+            // chosen once the platform is up.
+            builder.AddLocalization(strings);
             builder.RegisterInstance(tuning, typeof(GameTuning));
             builder.RegisterInstance(carCatalog, typeof(CarCatalog));
             builder.RegisterInstance(arenaCatalog, typeof(ArenaCatalog));

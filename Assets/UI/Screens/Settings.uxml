@@ -3,8 +3,16 @@
         <Style src="../ui_screens.uss" />
         <ui:VisualElement class="card settings__card">
             <ui:VisualElement picking-mode="Ignore" class="stroke settings__title">
-                <ui:Label text="SETTINGS" picking-mode="Ignore" class="display settings__title-text" />
-                <ui:Label text="SETTINGS" picking-mode="Ignore" class="display settings__title-text stroke__face" />
+                <ui:Label text="SETTINGS" picking-mode="Ignore" class="display settings__title-text">
+                    <Bindings>
+                        <Bugord.App.Localization.LocalizedText property="text" key="settings.title" />
+                    </Bindings>
+                </ui:Label>
+                <ui:Label text="SETTINGS" picking-mode="Ignore" class="display settings__title-text stroke__face">
+                    <Bindings>
+                        <Bugord.App.Localization.LocalizedText property="text" key="settings.title" />
+                    </Bindings>
+                </ui:Label>
             </ui:VisualElement>
             <ui:VisualElement class="settings__toggles">
                 <ui:VisualElement class="settings__column">
@@ -18,7 +26,11 @@
                         </ui:VisualElement>
                         <ui:VisualElement picking-mode="Ignore" class="settings__slash" />
                     </ui:Button>
-                    <ui:Label text="MUSIC" picking-mode="Ignore" class="caption settings__caption" />
+                    <ui:Label text="MUSIC" picking-mode="Ignore" class="caption settings__caption">
+                        <Bindings>
+                            <Bugord.App.Localization.LocalizedText property="text" key="settings.music" />
+                        </Bindings>
+                    </ui:Label>
                 </ui:VisualElement>
                 <ui:VisualElement class="settings__column settings__column--second">
                     <ui:Button name="sound-toggle" class="settings__toggle">
@@ -28,14 +40,26 @@
                         </ui:VisualElement>
                         <ui:VisualElement picking-mode="Ignore" class="settings__slash" />
                     </ui:Button>
-                    <ui:Label text="SOUND" picking-mode="Ignore" class="caption settings__caption" />
+                    <ui:Label text="SOUND" picking-mode="Ignore" class="caption settings__caption">
+                        <Bindings>
+                            <Bugord.App.Localization.LocalizedText property="text" key="settings.sound" />
+                        </Bindings>
+                    </ui:Label>
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:Button name="settings-back" class="button button--green settings__back">
                 <ui:VisualElement picking-mode="Ignore" class="button__face" />
                 <ui:VisualElement picking-mode="Ignore" class="stroke">
-                    <ui:Label text="BACK" picking-mode="Ignore" class="button__label" />
-                    <ui:Label text="BACK" picking-mode="Ignore" class="button__label stroke__face" />
+                    <ui:Label text="BACK" picking-mode="Ignore" class="button__label">
+                        <Bindings>
+                            <Bugord.App.Localization.LocalizedText property="text" key="common.back" />
+                        </Bindings>
+                    </ui:Label>
+                    <ui:Label text="BACK" picking-mode="Ignore" class="button__label stroke__face">
+                        <Bindings>
+                            <Bugord.App.Localization.LocalizedText property="text" key="common.back" />
+                        </Bindings>
+                    </ui:Label>
                 </ui:VisualElement>
             </ui:Button>
         </ui:VisualElement>

@@ -35,7 +35,7 @@ namespace ToyCarArena.UI
         {
             ArenaName = arenaName;
             ArenaIsNew = arenaIsNew;
-            var rows = new List<LobbyRow> { new(0, roster.ColorOf(0), "YOU", roster.LevelOf(0), null, false, false) };
+            var rows = new List<LobbyRow> { new(0, roster.ColorOf(0), GameText.You, roster.LevelOf(0), null, false, false) };
             for (var index = 1; index <= SessionRoster.MaxBots; index++) {
                 var left = roster.LeftNameOf(index);
                 if (index <= botCount || left != null) {

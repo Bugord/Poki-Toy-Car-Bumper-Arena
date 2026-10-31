@@ -1649,12 +1649,10 @@
 
 .track__node--rank .track__level { font-size: 50px; }
 
-/* A car still to come: a plain navy silhouette. */
+/* A car still to come: its portrait in the player's colour. */
 .track__car {
-    width: 61px;
-    height: 33px;
-    border-radius: 14px;
-    background-color: var(--navy);
+    width: 92px;
+    height: 92px;
 }
 
 .track__map {
@@ -1986,6 +1984,34 @@
 
 .round-over--landscape .round-over__button {
     width: 981px;
+}
+
+/* On a wide screen the unlock is the round's news: a bigger sticker with a bigger car. */
+.round-over--landscape .round-over__unlock-slot {
+    height: 180px;
+}
+
+.round-over--landscape .round-over__new-car {
+    max-width: 1240px;
+    height: 180px;
+    padding-left: 36px;
+    padding-right: 44px;
+    font-size: 60px;
+    border-bottom-width: 16px;
+}
+
+.round-over--landscape .round-over__new-car-portrait {
+    width: 140px;
+    height: 140px;
+    margin-right: 24px;
+}
+
+.round-over--landscape .round-over__new-car-name {
+    font-size: 60px;
+}
+
+.round-over--landscape .round-over__ready {
+    font-size: 34px;
 }
 
 /* UIKit disables the screen under a popup; keep the existing result looking the same. */

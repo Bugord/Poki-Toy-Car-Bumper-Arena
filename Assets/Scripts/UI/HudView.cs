@@ -1,3 +1,4 @@
+using Bugord.App.Localization;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -326,7 +327,7 @@ namespace ToyCarArena.UI
             var isTouch = controls.CheckTouchScreen();
             start.EnableInClassList(StartTouchClass, isTouch);
             start.EnableInClassList(StartDesktopClass, !isTouch);
-            var text = isTouch ? "TAP TO START" : "CLICK TO START";
+            var text = Strings.Get(isTouch ? "hud.tap_to_start" : "hud.click_to_start");
             Root.Q<Label>("start-text").text = text;
             Root.Q<Label>("start-text-face").text = text;
 
@@ -427,7 +428,7 @@ namespace ToyCarArena.UI
 
             sticker.Add(CreateStar("ko-star--big"));
 
-            sticker.Add(CreateOutlinedText(isRevenge ? "REVENGE!" : "KNOCKOUT!", "ko-pop__text"));
+            sticker.Add(CreateOutlinedText(Strings.Get(isRevenge ? "hud.revenge_taken" : "hud.knockout"), "ko-pop__text"));
             return popup;
         }
 
@@ -647,7 +648,7 @@ namespace ToyCarArena.UI
                     center.AddToClassList("revenge-target__center");
                     target.Add(center);
                     heading.Add(target);
-                    heading.Add(CreateOutlinedText("REVENGE", "car-name__revenge-text"));
+                    heading.Add(CreateOutlinedText(Strings.Get("hud.revenge"), "car-name__revenge-text"));
                     sticker.Add(heading);
                 }
 

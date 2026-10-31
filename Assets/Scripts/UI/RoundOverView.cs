@@ -1,4 +1,5 @@
 using System.Threading;
+using Bugord.App.Localization;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.Audio;
 using ToyCarArena.Gameplay.Round;
@@ -71,6 +72,8 @@ namespace ToyCarArena.UI
                 controls.CheckTouchScreen() ? DisplayStyle.None : DisplayStyle.Flex;
 
             ShowTitle();
+            // The settings popup can change the language over this screen: the code-set text follows it.
+            Strings.Changed += ShowTitle;
             Root.Q<Label>("revenge").EnableInClassList(BestShownClass, ViewModel.RevengeTaken);
             xpProgress = new RoundOverProgress(Root, ViewModel);
         }
@@ -98,6 +101,7 @@ namespace ToyCarArena.UI
         {
             Root?.UnregisterCallback<KeyDownEvent>(OnKeyDown);
             Root?.UnregisterCallback<GeometryChangedEvent>(OnGeometryChanged);
+            Strings.Changed -= ShowTitle;
             lifetime?.Cancel();
             lifetime?.Dispose();
             xpProgress?.Dispose();
@@ -168,9 +172,9 @@ namespace ToyCarArena.UI
         private void ShowTitle()
         {
             var (title, subtitle) = ViewModel.Outcome switch {
-                RoundOutcome.Won => ("YOU WIN!", "LAST CAR STANDING!"),
-                RoundOutcome.Out => ("KNOCKED OUT", "FELL OFF THE ARENA"),
-                _ => ("TIME UP!", "STILL ON THE ARENA"),
+                RoundOutcome.Won => (Strings.Get("result.won"), Strings.Get("result.won_subtitle")),
+                RoundOutcome.Out => (Strings.Get("result.out"), Strings.Get("result.out_subtitle")),
+                _ => (Strings.Get("result.time_up"), Strings.Get("result.time_up_subtitle")),
             };
 
             // The title is the same text twice (the outline under, the face over it, see .stroke in ui_screens).

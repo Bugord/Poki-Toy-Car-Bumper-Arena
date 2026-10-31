@@ -55,7 +55,7 @@ namespace ToyCarArena.App
                 // RoundState already moved the rotation on, so Current is the arena of the round this lobby leads to.
                 var arena = arenaCatalog.Find(arenaRotation.Current);
                 curtain.ShowLobby(roster, RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis,
-                    arena?.DisplayName, arena != null && arenaRotation.IsNew(arena.Id));
+                    GameText.Arena(arena), arena != null && arenaRotation.IsNew(arena.Id));
                 platform.MeasureLobbyShown();
             }
             catch {
