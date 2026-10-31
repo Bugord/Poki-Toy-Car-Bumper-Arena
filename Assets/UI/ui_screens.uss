@@ -357,7 +357,8 @@
 .lobby__title {
     margin: 0 0 48px 0;
     padding: 0;
-    font-size: 78px;
+    font-size: 112px;
+    rotate: -3deg;
     color: var(--gold);
     -unity-text-outline-width: 10px;
     text-shadow: 0 10px 0 rgb(29, 43, 79);
@@ -404,25 +405,25 @@
 
 .lobby__slot {
     flex-shrink: 0;
-    height: 130px;
+    height: 122px;
     margin-bottom: 12px;
 }
 
+/* Seats are quiet translucent strips on the navy curtain; only the player's own is brighter. */
 .lobby__row {
     position: absolute;
     left: 0;
     right: 0;
     top: 0;
-    height: 130px;
+    height: 122px;
     flex-direction: row;
     align-items: center;
-    padding: 10px 24px;
-    border-width: 7px;
-    border-bottom-width: 14px;
-    border-color: var(--navy);
-    border-radius: 42px;
-    background-color: var(--white);
+    padding: 0 36px 0 22px;
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.08);
 }
+
+.lobby__row--you { background-color: rgba(255, 255, 255, 0.18); }
 
 .lobby__row .hud__chip {
     position: relative;
@@ -471,7 +472,7 @@
     -unity-text-align: middle-center;
 }
 
-.lobby__row--left { background-color: var(--shade); }
+.lobby__row--left { background-color: rgba(255, 255, 255, 0.04); }
 .lobby__row--left .hud__chip { background-color: var(--muted); }
 .lobby__row--left .lobby__name { color: var(--muted); }
 .lobby__badge--left { background-color: var(--silver); }
@@ -2167,12 +2168,57 @@
     overflow: visible;
 }
 .lobby__name .sticker-text__text {
-    font-size: 54px;
-    color: var(--navy);
+    font-size: 56px;
+    color: var(--white);
     -unity-text-outline-width: 0;
 }
 .lobby__name--revenge .sticker-text__text { color: var(--red); }
-.lobby__row--left .lobby__name .sticker-text__text { color: var(--muted); }
+.lobby__row--left .lobby__name .sticker-text__text { color: var(--silver); opacity: 0.6; }
+
+/* Loading bar and a tip at the bottom of the curtain: the arena loads behind it. */
+.lobby__loading {
+    position: absolute;
+    left: 140px;
+    right: 140px;
+    bottom: 300px;
+    align-items: stretch;
+}
+
+.lobby__bar {
+    height: 50px;
+    border-width: 8px;
+    border-color: rgb(14, 22, 48);
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.15);
+    overflow: hidden;
+}
+
+.lobby__bar-fill {
+    width: 0;
+    height: 100%;
+    background-color: var(--green);
+}
+
+.lobby__loading-text {
+    margin: 26px 0 0 0;
+    padding: 0;
+    font-size: 40px;
+    color: var(--silver);
+    -unity-text-align: middle-center;
+}
+
+.lobby__tip {
+    position: absolute;
+    bottom: 110px;
+    margin: 0;
+    padding: 14px 40px 18px 40px;
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.1);
+    font-size: 40px;
+    color: var(--white);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
 .lobby__badge {
     height: 80px;
     padding: 0;
