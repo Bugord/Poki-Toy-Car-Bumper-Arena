@@ -65,7 +65,7 @@ namespace ToyCarArena.Gameplay.Bots
 
         public void Tick()
         {
-            if (!round.IsRunning) {
+            if (!round.IsBotsPlaying) {
                 if (isDriving) {
                     isDriving = false;
                     foreach (var bot in bots) {
@@ -133,7 +133,7 @@ namespace ToyCarArena.Gameplay.Bots
         /// </summary>
         private void OnHit(CarHit hit)
         {
-            if (hit.IsHitter || !round.IsRunning) {
+            if (hit.IsHitter || !round.IsBotsPlaying) {
                 return;
             }
 

@@ -117,6 +117,12 @@ namespace ToyCarArena.Gameplay.Round
         /// </summary>
         public bool IsFinished { get; private set; }
 
+        /// <summary>
+        /// Whether the bots drive: while the round runs, and on after the player is out, so the arena behind the result
+        /// screen goes on like a match of players rather than freezing. Nothing they do then counts: the result is out.
+        /// </summary>
+        public bool IsBotsPlaying => IsRunning || (IsFinished && Player != null && Player.IsOut);
+
         public float TimeLeft => Mathf.Max(0f, tuning.Round.Duration - elapsed);
 
         /// <summary>
@@ -206,6 +212,10 @@ namespace ToyCarArena.Gameplay.Round
         public void Tick()
         {
             if (!IsRunning) {
+                if (IsBotsPlaying) {
+                    TakeOutFallen();
+                }
+
                 return;
             }
 
@@ -275,6 +285,18 @@ namespace ToyCarArena.Gameplay.Round
         /// <summary>The played occupant, even after the visit's roster has moved on.</summary>
         public string NameOf(int index) => Names[index];
         public int ColorOf(int index) => Colors[index];
+
+        /// <summary>
+        /// After the round, a bot that falls is only out of the bots' play: no standings, knockouts or events.
+        /// </summary>
+        private void TakeOutFallen()
+        {
+            foreach (var car in cars) {
+                if (!car.IsOut && car.Position.y < tuning.Round.FallHeight) {
+                    car.TakeOut();
+                }
+            }
+        }
 
         private void Finish(RoundOutcome outcome, int place)
         {
