@@ -19,6 +19,8 @@ namespace ToyCarArena.UI
         private readonly List<(CarCatalog.Entry Car, Button Button, Label Status, CarPortrait Portrait)> cards = new();
         private readonly Button[] colors = new Button[CarPaint.Count];
         private Button closeButton;
+        private Button settingsButton;
+        private CancellationTokenSource lifetime;
         private Button playButton;
         private CarPortrait preview;
         private bool isClosing;
@@ -43,6 +45,10 @@ namespace ToyCarArena.UI
             playButton = Root.Q<Button>("garage-play");
             playButton.RemoveFromClassList(Button.ussClassName);
             playButton.clicked += NextMatch;
+            settingsButton = Root.Q<Button>("settings-button");
+            settingsButton.RemoveFromClassList(Button.ussClassName);
+            settingsButton.clicked += OpenSettings;
+            lifetime = new CancellationTokenSource();
             preview = new CarPortrait(Root.Q<VisualElement>("garage-preview"));
             var colorRow = Root.Q<VisualElement>("garage-colors");
             for (var id = 0; id < colors.Length; id++) {
@@ -179,9 +185,19 @@ namespace ToyCarArena.UI
             Back();
         }
 
+        private void OpenSettings()
+        {
+            if (!IsShown || isClosing || ViewModel.IsSettingsOpen) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            ViewModel.OpenSettings(lifetime.Token).Forget();
+        }
+
         private void Back()
         {
-            if (!IsShown || isClosing) {
+            if (!IsShown || isClosing || ViewModel.IsSettingsOpen) {
                 return;
             }
 
@@ -192,7 +208,7 @@ namespace ToyCarArena.UI
 
         private void NextMatch()
         {
-            if (!IsShown || isClosing) {
+            if (!IsShown || isClosing || ViewModel.IsSettingsOpen) {
                 return;
             }
 
@@ -231,6 +247,11 @@ namespace ToyCarArena.UI
             if (playButton != null) {
                 playButton.clicked -= NextMatch;
             }
+            if (settingsButton != null) {
+                settingsButton.clicked -= OpenSettings;
+            }
+            lifetime?.Cancel();
+            lifetime?.Dispose();
             cards.Clear();
             base.Dispose();
         }

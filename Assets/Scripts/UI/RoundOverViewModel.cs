@@ -67,6 +67,24 @@ namespace ToyCarArena.UI
             }
         }
 
+        public bool IsSettingsOpen { get; private set; }
+
+        /// <summary>The settings popup over this screen, which stays attached under it.</summary>
+        public async UniTask OpenSettings(CancellationToken token)
+        {
+            if (IsSettingsOpen) {
+                return;
+            }
+
+            IsSettingsOpen = true;
+            try {
+                await navigator.RunAsync<SettingsViewModel, bool>(token);
+            }
+            finally {
+                IsSettingsOpen = false;
+            }
+        }
+
         /// <summary>Only cars earned by this reward appear, even if storage is edited while the screen is open.</summary>
         public IEnumerable<CarCatalog.Entry> NewCarsAt(int level)
         {

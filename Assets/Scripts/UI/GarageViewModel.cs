@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Threading;
 using Bugord.App.Platform;
+using Cysharp.Threading.Tasks;
 using ToyCarArena.App;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
@@ -16,12 +18,33 @@ namespace ToyCarArena.UI
         private readonly PlayerProgress progress;
         private readonly CarCatalog catalog;
         private readonly IGamePlatform platform;
+        private readonly IScreenNavigator navigator;
 
-        public GarageViewModel(PlayerProgress progress, CarCatalog catalog, IGamePlatform platform)
+        public GarageViewModel(PlayerProgress progress, CarCatalog catalog, IGamePlatform platform,
+            IScreenNavigator navigator)
         {
             this.progress = progress;
             this.catalog = catalog;
             this.platform = platform;
+            this.navigator = navigator;
+        }
+
+        public bool IsSettingsOpen { get; private set; }
+
+        /// <summary>The settings popup over this screen, which stays attached under it.</summary>
+        public async UniTask OpenSettings(CancellationToken token)
+        {
+            if (IsSettingsOpen) {
+                return;
+            }
+
+            IsSettingsOpen = true;
+            try {
+                await navigator.RunAsync<SettingsViewModel, bool>(token);
+            }
+            finally {
+                IsSettingsOpen = false;
+            }
         }
 
         public IReadOnlyList<CarCatalog.Entry> Cars => catalog.Cars;

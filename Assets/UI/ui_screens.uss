@@ -2134,6 +2134,216 @@
 
 .garage__close-bar--turned { rotate: -45deg; }
 
+/* The settings gear, a round white sticker in a top corner of the result (right) and the garage (left). */
+.gear-button {
+    position: absolute;
+    top: 40px;
+    width: 120px;
+    height: 120px;
+    margin: 0;
+    padding: 0;
+    border-width: 8px;
+    border-bottom-width: 16px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+    background-image: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.gear-button:hover,
+.gear-button:focus { background-color: var(--soft); }
+.gear-button:active { translate: 0 8px; }
+.round-over__settings { right: 40px; }
+.garage__settings { left: 40px; }
+
+.gear {
+    width: 68px;
+    height: 68px;
+}
+
+.gear__tooth {
+    position: absolute;
+    left: 24px;
+    top: 0;
+    width: 20px;
+    height: 68px;
+    border-radius: 5px;
+    background-color: var(--navy);
+}
+
+.gear__tooth--45 { rotate: 45deg; }
+.gear__tooth--90 { rotate: 90deg; }
+.gear__tooth--135 { rotate: 135deg; }
+
+.gear__hub {
+    position: absolute;
+    left: 9px;
+    top: 9px;
+    width: 50px;
+    height: 50px;
+    border-radius: 999px;
+    background-color: var(--navy);
+    align-items: center;
+    justify-content: center;
+}
+
+.gear__hole {
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background-color: var(--white);
+}
+
+/* Settings: a card with two round toggles, white while on and grey with a red slash while off. */
+.settings {
+    justify-content: center;
+}
+
+.settings__card {
+    width: 900px;
+}
+
+.settings__title {
+    flex-shrink: 0;
+    margin-bottom: 30px;
+}
+
+.settings__title-text {
+    margin: 0;
+    padding: 0;
+    font-size: 104px;
+    color: var(--gold);
+}
+
+.settings__toggles {
+    flex-direction: row;
+    justify-content: center;
+}
+
+.settings__column {
+    align-items: center;
+}
+
+.settings__column--second {
+    margin-left: 60px;
+}
+
+.settings__toggle {
+    width: 210px;
+    height: 222px;
+    margin: 0;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    border-width: 11px;
+    border-bottom-width: 22px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+    background-image: none;
+}
+
+.settings__toggle:hover,
+.settings__toggle:focus { background-color: var(--soft); }
+.settings__toggle--off,
+.settings__toggle--off:hover,
+.settings__toggle--off:focus { background-color: var(--shade); }
+.settings__toggle:active { translate: 0 10px; }
+
+.settings__slash {
+    display: none;
+    position: absolute;
+    width: 150px;
+    height: 26px;
+    border-width: 5px;
+    border-color: var(--navy);
+    border-radius: 13px;
+    background-color: var(--red);
+    rotate: -45deg;
+}
+
+.settings__toggle--off .settings__slash { display: flex; }
+
+.settings__caption {
+    margin-top: 18px;
+    font-size: 40px;
+}
+
+.settings__back {
+    align-self: stretch;
+    min-width: 0;
+    margin-top: 40px;
+}
+
+/* A beamed pair of notes, from elements as every icon here. */
+.note {
+    width: 84px;
+    height: 94px;
+}
+
+.note__head {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 38px;
+    height: 32px;
+    border-radius: 999px;
+    background-color: var(--navy);
+}
+
+.note__head--second { left: 44px; }
+
+.note__stem {
+    position: absolute;
+    left: 28px;
+    top: 6px;
+    width: 9px;
+    height: 74px;
+    background-color: var(--navy);
+}
+
+.note__stem--second {
+    left: 73px;
+    top: 0;
+}
+
+.note__beam {
+    position: absolute;
+    left: 28px;
+    top: 0;
+    width: 54px;
+    height: 18px;
+    background-color: var(--navy);
+    rotate: -7deg;
+}
+
+/* A speaker: a box and a cone made of the box's right border fanned out by transparent top and bottom borders. */
+.speaker {
+    flex-direction: row;
+    align-items: center;
+}
+
+.speaker__box {
+    width: 30px;
+    height: 40px;
+    border-radius: 6px;
+    background-color: var(--navy);
+}
+
+.speaker__cone {
+    width: 0;
+    height: 0;
+    margin-left: -6px;
+    border-top-width: 40px;
+    border-bottom-width: 40px;
+    border-right-width: 46px;
+    border-top-color: rgba(0, 0, 0, 0);
+    border-bottom-color: rgba(0, 0, 0, 0);
+    border-right-color: var(--navy);
+}
+
 .garage--landscape .garage__grid {
     width: 1800px;
 }

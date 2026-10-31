@@ -29,6 +29,7 @@ namespace ToyCarArena.UI
 
         private Button playAgainButton;
         private Button garageButton;
+        private Button settingsButton;
         private CarPortrait garagePortrait;
         private CancellationTokenSource lifetime;
         private bool isPlayAgainPressed;
@@ -56,6 +57,9 @@ namespace ToyCarArena.UI
             garageButton = Root.Q<Button>("garage-button");
             garageButton.RemoveFromClassList(Button.ussClassName);
             garageButton.clicked += OpenGarage;
+            settingsButton = Root.Q<Button>("settings-button");
+            settingsButton.RemoveFromClassList(Button.ussClassName);
+            settingsButton.clicked += OpenSettings;
             garagePortrait = new CarPortrait(Root.Q<VisualElement>("garage-portrait"));
             RefreshGarage();
             Root.Q<VisualElement>("garage-dot").style.display =
@@ -99,6 +103,9 @@ namespace ToyCarArena.UI
             if (garageButton != null) {
                 garageButton.clicked -= OpenGarage;
             }
+            if (settingsButton != null) {
+                settingsButton.clicked -= OpenSettings;
+            }
             base.Dispose();
         }
 
@@ -109,9 +116,19 @@ namespace ToyCarArena.UI
 
         private void RefreshGarage() => garagePortrait.Set(ViewModel.SelectedCar, ViewModel.SelectedColor);
 
+        private void OpenSettings()
+        {
+            if (!IsShown || isPlayAgainPressed || ViewModel.IsGarageOpen || ViewModel.IsSettingsOpen) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            ViewModel.OpenSettings(lifetime.Token).Forget();
+        }
+
         private void OpenGarage()
         {
-            if (!IsShown || isPlayAgainPressed || ViewModel.IsGarageOpen) {
+            if (!IsShown || isPlayAgainPressed || ViewModel.IsGarageOpen || ViewModel.IsSettingsOpen) {
                 return;
             }
 
@@ -176,7 +193,7 @@ namespace ToyCarArena.UI
         {
             // A key held down in the round, or a tap that ended it, must not skip the screen before it is up; a second
             // press while the curtain comes down changes nothing, so it does not click either.
-            if (!IsShown || isPlayAgainPressed || ViewModel.IsGarageOpen) {
+            if (!IsShown || isPlayAgainPressed || ViewModel.IsGarageOpen || ViewModel.IsSettingsOpen) {
                 return;
             }
 
