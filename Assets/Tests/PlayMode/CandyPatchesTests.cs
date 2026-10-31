@@ -12,7 +12,7 @@ using VContainer;
 namespace ToyCarArena.Tests.PlayMode
 {
     /// <summary>
-    /// The Candy arena's patches in the real Game scene: they lie clear of the spawn circle, caramel slows a car and
+    /// The Candy arena's patches in the real Game scene: they lie on the floor, clear of the hole and the starting places, caramel slows a car and
     /// icing makes it slide, and the arenas without the mechanic have no patches at all.
     /// </summary>
     public sealed class CandyPatchesTests : SimulationSceneFixture
@@ -26,23 +26,39 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator PatchesLieClearOfTheSpawnCircleAndReachPastTheSolidDisc()
+        public IEnumerator PatchesLieOnTheRingBandClearOfTheHoleAndTheSpawnContour()
         {
             yield return Load("candy");
             var patches = Patches();
-            var arena = GameScope().Container.Resolve<GameTuning.ArenaSettings>();
-            var spawn = arena.Radius * arena.SpawnRadius;
+            var container = GameScope().Container;
+            var floor = container.Resolve<ArenaFloor>();
+            var arena = container.Resolve<GameTuning.ArenaSettings>();
             Assert.That(patches.Count, Is.EqualTo(6));
             Assert.That(Enumerable.Range(0, 6).Count(patches.IsCaramel), Is.EqualTo(3), "Three caramel, three icing.");
+
+            // The hole at its widest: the two waves that widen it have fallen.
+            var spawns = Enumerable.Range(0, 7).Select(index => {
+                Assert.That(floor.TryGetSpawn(index, 7, out var spot), Is.True);
+                return spot;
+            }).ToArray();
+            var inner = 0;
             for (var i = 0; i < patches.Count; i++) {
-                var distance = patches.CenterOf(i).magnitude;
+                var center = new Vector3(patches.CenterOf(i).x, 0f, patches.CenterOf(i).y);
                 var radius = patches.RadiusOf(i);
-                // A car is about 2.6 m long, and starts nose to the middle on the circle.
-                var clear = distance + radius < spawn - 1.3f || distance - radius > spawn + 1.3f;
-                Assert.That(clear, Is.True, $"Patch {i} lies over the spawn circle.");
-                Assert.That(distance + radius, Is.GreaterThan(arena.MinRadius), $"Patch {i} lies inside the final disc.");
-                Assert.That(distance + radius, Is.LessThanOrEqualTo(arena.Radius), $"Patch {i} lies off the floor.");
+                Assert.That(floor.DistanceToEdge(center), Is.GreaterThanOrEqualTo(radius - 0.4f),
+                    $"Patch {i} reaches into a void or the rim.");
+                foreach (var spawn in spawns) {
+                    // A car is about 2.6 m long.
+                    Assert.That(Vector3.Distance(center, spawn), Is.GreaterThan(radius + 1.3f),
+                        $"Patch {i} lies over a starting place.");
+                }
+
+                if (center.magnitude < arena.CoreSize - 3f) {
+                    inner++;
+                }
             }
+
+            Assert.That(inner, Is.EqualTo(3), "Half the patches lie on the inner part of the band.");
         }
 
         [UnityTest]
@@ -57,7 +73,7 @@ namespace ToyCarArena.Tests.PlayMode
 
             var caramel = Enumerable.Range(0, patches.Count).First(patches.IsCaramel);
             var icing = Enumerable.Range(0, patches.Count).First(index => !patches.IsCaramel(index));
-            var plain = PlainSpot(patches, container.Resolve<IArenaSurface>());
+            var plain = PlainSpot(patches, container.Resolve<IArenaSurface>(), container.Resolve<IArenaEdge>(), round.Cars);
 
             // Top speed: drive east for a moment from the middle of a caramel patch and of plain floor.
             var plainTop = 0f;
@@ -94,20 +110,28 @@ namespace ToyCarArena.Tests.PlayMode
 
         private static Vector3 At(Vector2 spot) => new(spot.x, 0.05f, spot.y);
 
-        /// <summary>A spot with plain floor for five metres east and two to each side, away from the idle cars.</summary>
-        private static Vector2 PlainSpot(CandyPatches patches, IArenaSurface surface)
+        /// <summary>
+        /// A spot with plain floor for five metres east and two to each side, a car's length from any void and clear of
+        /// the idle cars.
+        /// </summary>
+        private static Vector2 PlainSpot(CandyPatches patches, IArenaSurface surface, IArenaEdge edge,
+            System.Collections.Generic.IReadOnlyList<Car> cars)
         {
-            for (var x = -6f; x <= 2f; x += 0.5f) {
-                for (var z = -6f; z <= 6f; z += 0.5f) {
+            for (var x = -12f; x <= 6f; x += 0.5f) {
+                for (var z = -10f; z <= 10f; z += 0.5f) {
                     var clear = true;
                     for (var step = -2f; step <= 5f && clear; step += 0.5f) {
                         for (var side = -2f; side <= 2f && clear; side += 2f) {
-                            clear = surface.Sample(new Vector3(x + step, 0f, z + side)).Speed == 1f
-                                && surface.Sample(new Vector3(x + step, 0f, z + side)).Grip == 1f;
+                            var point = new Vector3(x + step, 0f, z + side);
+                            // Over solid floor, a car's length from any void.
+                            clear = surface.Sample(point).Speed == 1f && surface.Sample(point).Grip == 1f
+                                && edge.DistanceToEdge(point) > 1.5f
+                                && cars.All(car => Vector2.Distance(new Vector2(point.x, point.z),
+                                    new Vector2(car.Position.x, car.Position.z)) > 4f);
                         }
                     }
 
-                    if (clear && new Vector2(x + 5f, z).magnitude < 7f) {
+                    if (clear) {
                         return new Vector2(x, z);
                     }
                 }

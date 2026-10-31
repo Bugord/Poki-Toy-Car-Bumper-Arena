@@ -52,6 +52,10 @@ MonoBehaviour:
     retargetInterval: 2
     retargetJitter: 0.5
     edgeMargin: 1.5
+    pitProbe: 9
+    pitSamples: 5
+    pitSideHold: 1
+    pitInward: 0.5
     lookAhead: 0.25
     pushDistance: 3.5
     pushAngle: 45
@@ -169,45 +173,93 @@ MonoBehaviour:
       crumbleStep: 2
       crumbleWarning: 2
       viewMargin: 1.5
+      shape: 0
+      pattern: 0
+      halfSize: {x: 10.5, y: 10.5}
+      cornerRadius: 3
+      coreSize: 5.5
+      holeSize: {x: 2, y: 3.5}
+      pits: {x: 8.5, y: 3}
+      pitHalfLength: 4.5
+      tilesPerSide: 3
+      waves: 8
+      spawnInset: 5.2
+      spawnClear: 0
   - id: tabletop
     unlockLevel: 2
     mechanic: 3
     arena:
-      radius: 12
+      radius: 13.6
       spawnRadius: 0.6
       spawnHeight: 0.05
       minRadius: 5
-      crumbleDelay: 12
-      crumbleInterval: 10
+      crumbleDelay: 13
+      crumbleInterval: 11.5
       crumbleStep: 2
       crumbleWarning: 2
       viewMargin: 1.5
+      shape: 1
+      pattern: 1
+      halfSize: {x: 10.5, y: 10.5}
+      cornerRadius: 3
+      coreSize: 5.5
+      holeSize: {x: 2, y: 3.5}
+      pits: {x: 8.5, y: 3}
+      pitHalfLength: 4.5
+      tilesPerSide: 3
+      waves: 8
+      spawnInset: 5.2
+      spawnClear: 0
   - id: candy
     unlockLevel: 4
     mechanic: 1
     arena:
-      radius: 15
+      radius: 17.32
       spawnRadius: 0.6
       spawnHeight: 0.05
       minRadius: 5
-      crumbleDelay: 10
-      crumbleInterval: 8
+      crumbleDelay: 13
+      crumbleInterval: 6.5
       crumbleStep: 2
       crumbleWarning: 2
       viewMargin: 1.5
+      shape: 2
+      pattern: 2
+      halfSize: {x: 15, y: 15}
+      cornerRadius: 3
+      coreSize: 12
+      holeSize: {x: 2, y: 3.5}
+      pits: {x: 8.5, y: 3}
+      pitHalfLength: 4.5
+      tilesPerSide: 4
+      waves: 8
+      spawnInset: 7
+      spawnClear: 0
   - id: playroom
     unlockLevel: 6
     mechanic: 2
     arena:
-      radius: 18
+      radius: 21.5
       spawnRadius: 0.6
       spawnHeight: 0.05
       minRadius: 5
-      crumbleDelay: 10
-      crumbleInterval: 9
+      crumbleDelay: 12
+      crumbleInterval: 4.7
       crumbleStep: 2
       crumbleWarning: 2
       viewMargin: 1.5
+      shape: 3
+      pattern: 3
+      halfSize: {x: 14.5, y: 21.5}
+      cornerRadius: 3
+      coreSize: 5
+      holeSize: {x: 2, y: 3.5}
+      pits: {x: 8.5, y: 3}
+      pitHalfLength: 4.5
+      tilesPerSide: 6
+      waves: 11
+      spawnInset: 4
+      spawnClear: 8.5
   progress:
     roundXp: 10
     placeXp: 5

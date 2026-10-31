@@ -39,8 +39,9 @@ namespace ToyCarArena.Gameplay.Arena
     }
 
     /// <summary>
-    /// A wave of tiles that shake and fall together. For the effects it carries the band of distances from the middle its
-    /// tiles lie in, which is what a round floor's rings are; a floor of another shape will say more.
+    /// A wave of tiles that shake and fall together. For the effects it carries where they are: the band of distances from
+    /// the middle its tiles lie in, which is what a round floor's rings are, and for any other floor the spots over its
+    /// tiles (<see cref="Spots"/>), which the effects use instead of a band.
     /// </summary>
     public readonly struct CrumbleWave
     {
@@ -48,11 +49,18 @@ namespace ToyCarArena.Gameplay.Arena
         public readonly float Inner;
         public readonly float Outer;
 
-        public CrumbleWave(int index, float inner, float outer)
+        /// <summary>
+        /// Spots over the wave's tiles, each (x, z, outward x, outward z): where dust goes up and which way it drifts.
+        /// Null for a ring, whose band says it.
+        /// </summary>
+        public readonly Vector4[] Spots;
+
+        public CrumbleWave(int index, float inner, float outer, Vector4[] spots = null)
         {
             this.Index = index;
             this.Inner = inner;
             this.Outer = outer;
+            this.Spots = spots;
         }
     }
 

@@ -138,6 +138,10 @@ namespace ToyCarArena.Gameplay.Arena
         private float stageTime;
         private float speed;
         private float edgeLength;
+
+        // Half the length of the lane drawn on the floor and how far its middle is along the line from the origin.
+        private float laneHalf;
+        private float laneShift;
         private Vector3 position;
         private float height;
         private float fallSpeed;
@@ -227,7 +231,13 @@ namespace ToyCarArena.Gameplay.Arena
             var normal = new Vector3(-direction.z, 0f, direction.x);
             var offset = ((float)random.NextDouble() * 2f - 1f) * settings.MaxOffset * extent;
             var origin = normal * offset;
-            edgeLength = edge.SolidHalfChord(origin, direction);
+            // The line through the floor runs from its farthest solid point behind the origin to the farthest ahead. They are
+            // the same on a round floor; on a square one the foot of the perpendicular is not the middle of the chord. A gap
+            // in the chord (a fallen corner) is no matter: the ball drops through it, as it does off any edge.
+            edge.SolidChord(origin, direction, out var behind, out var ahead);
+            edgeLength = Mathf.Max(behind, ahead);
+            laneHalf = (behind + ahead) * 0.5f;
+            laneShift = (ahead - behind) * 0.5f;
 
             speed = Mathf.Lerp(settings.EasySpeed, settings.Speed, difficulty.Level);
             stage = Stage.Warning;
@@ -417,14 +427,15 @@ namespace ToyCarArena.Gameplay.Arena
         private void ShowLane(Vector3 origin, Vector3 direction, Vector3 normal)
         {
             laneRoot.gameObject.SetActive(true);
-            laneRoot.SetPositionAndRotation(origin + Vector3.up * 0.04f, Quaternion.LookRotation(direction, Vector3.up));
-            laneQuad.localScale = new Vector3(settings.Radius * 2f, 1f, edgeLength * 2f);
+            laneRoot.SetPositionAndRotation(origin + direction * laneShift + Vector3.up * 0.04f,
+                Quaternion.LookRotation(direction, Vector3.up));
+            laneQuad.localScale = new Vector3(settings.Radius * 2f, 1f, laneHalf * 2f);
 
             chevronVertices.Clear();
             chevronTriangles.Clear();
-            var count = Mathf.Max(1, Mathf.FloorToInt((edgeLength * 2f - 1f) / ChevronSpacing));
+            var count = Mathf.Max(1, Mathf.FloorToInt((laneHalf * 2f - 1f) / ChevronSpacing));
             for (var i = 0; i < count; i++) {
-                var z = -edgeLength + ChevronSpacing * (i + 0.5f) + (edgeLength * 2f - count * ChevronSpacing) * 0.5f;
+                var z = -laneHalf + ChevronSpacing * (i + 0.5f) + (laneHalf * 2f - count * ChevronSpacing) * 0.5f;
                 AddChevron(z);
             }
 

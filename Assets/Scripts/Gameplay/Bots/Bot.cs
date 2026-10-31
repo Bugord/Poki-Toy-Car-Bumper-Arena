@@ -45,6 +45,10 @@ namespace ToyCarArena.Gameplay.Bots
         private float ballSeenFor;
         private float ballReaction;
 
+        // The side a bot goes round a pit on (+1 or -1 along the rim) and for how many more seconds it keeps it.
+        private float pitSide = 1f;
+        private float pitHold;
+
         // Heading back to the middle, and whether this escape may still boost (rolled once as it starts).
         private bool isEscaping;
         private bool mayEscapeBoost;
@@ -163,12 +167,18 @@ namespace ToyCarArena.Gameplay.Bots
             Look();
             var targetPosition = seenPosition + seenVelocity * (sinceSeen + settings.AimLead);
             var toTarget = targetPosition - position;
-            // A target at the very middle has no outward side; the bot then just drives through it.
-            var outward = targetPosition.sqrMagnitude > 0.0001f ? targetPosition.normalized : toTarget.normalized;
+            // The side of the target facing the middle is the side away from the nearest void (the rim, a pit, a hole).
+            // A target with no preferred way out (the middle of a round floor) is just driven through.
+            var inwardOfTarget = edge.Inward(targetPosition);
+            var outward = inwardOfTarget.sqrMagnitude > 0.0001f ? -inwardOfTarget.normalized : toTarget.normalized;
             // Halved close up, so the aim closes in on the target instead of circling the point behind it.
             var behind = Mathf.Min(settings.AimBehind, toTarget.magnitude * 0.5f);
             var aim = targetPosition - outward * behind;
             var heading = Quaternion.AngleAxis(aimError, Vector3.up) * (aim - position);
+            if (!isPushing) {
+                heading = GoRoundPits(edge, position, heading, margin, deltaTime);
+            }
+
             var playerPace = isDuel ? difficulty.DuelPace : difficulty.PlayerPace;
             Car.Movement.Drive(heading, Target == player ? playerPace : 1f);
 
@@ -178,6 +188,16 @@ namespace ToyCarArena.Gameplay.Bots
             else {
                 pushTime = 0f;
             }
+        }
+
+        /// <summary>
+        /// Bends the line to the target round a pit or a hole in the way, keeping the side it chose for a moment.
+        /// </summary>
+        private Vector3 GoRoundPits(IArenaEdge edge, Vector3 position, Vector3 heading, float margin, float deltaTime)
+        {
+            pitHold -= deltaTime;
+            return PitDetour.Bend(edge, position, heading, margin, settings.PitProbe, settings.PitSamples,
+                settings.PitInward, settings.PitSideHold, ref pitSide, ref pitHold);
         }
 
         /// <summary>

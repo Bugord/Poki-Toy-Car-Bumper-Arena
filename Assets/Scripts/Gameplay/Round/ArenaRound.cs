@@ -329,18 +329,29 @@ namespace ToyCarArena.Gameplay.Round
         }
 
         /// <summary>
-        /// Spreads the cars evenly round the spawn circle, the first one nearest the camera, all facing the middle.
+        /// Spreads the cars evenly round the spawn circle (or the contour of a floor that is not round), the first one nearest
+        /// the camera, all facing the middle.
         /// </summary>
         private void Spawn(int count)
         {
             var radius = arena.Radius * arena.SpawnRadius;
             var height = arena.SpawnHeight;
             for (var i = 0; i < count; i++) {
-                var angle = -Mathf.PI * 0.5f + i * Mathf.PI * 2f / count;
-                var outward = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
-                // At the very middle (a radius of 0) a car faces away from the camera.
-                var facing = radius > 0f ? -outward : Vector3.forward;
-                var position = outward * radius + Vector3.up * height;
+                Vector3 position;
+                Vector3 facing;
+                if (edge.TryGetSpawn(i, count, out var spot)) {
+                    // A floor that is not round has a contour of its own, clear of its pits.
+                    position = spot + Vector3.up * height;
+                    facing = spot.sqrMagnitude > 0.0001f ? -spot.normalized : Vector3.forward;
+                }
+                else {
+                    var angle = -Mathf.PI * 0.5f + i * Mathf.PI * 2f / count;
+                    var outward = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+                    // At the very middle (a radius of 0) a car faces away from the camera.
+                    facing = radius > 0f ? -outward : Vector3.forward;
+                    position = outward * radius + Vector3.up * height;
+                }
+
                 var rotation = Quaternion.LookRotation(facing);
                 var car = resolver.InstantiateInjected(carPrefab, position, rotation, carParent);
                 // The interpolated Rigidbody wakes up where the prefab was made, at the origin, and puts the transform

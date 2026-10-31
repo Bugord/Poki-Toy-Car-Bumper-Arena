@@ -14,7 +14,8 @@ namespace ToyCarArena.Gameplay.Arena
     /// The blocks are only seen. The one collider is the layout's, as wide as the waves still in place, swapped for a
     /// smaller one when a wave falls: a car never catches on a seam between two blocks, no collider moves while a block
     /// shakes, and a car on a falling block has nothing under it and falls with it.
-    /// The floor is also the <see cref="IArenaEdge"/> of the arena, answered by the layout's edge field.
+    /// The floor is also the <see cref="IArenaEdge"/> of the arena: the exact formulas of <see cref="CircleEdge"/> for a
+    /// round floor, a <see cref="GridEdge"/> of signed distances for any other shape, which its layout keeps up to date.
     /// </summary>
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider))]
     public sealed class ArenaFloor : MonoBehaviour, IArenaEdge
@@ -81,7 +82,7 @@ namespace ToyCarArena.Gameplay.Arena
         private ArenaMap map;
         private GameTuning.ArenaSettings settings;
         private MeshCollider floorCollider;
-        private CircleEdge edge;
+        private IArenaEdge edge;
         private ArenaLayout layout;
         private WaveBlocks[] waves = new WaveBlocks[0];
         private WaveState[] states = new WaveState[0];
@@ -114,19 +115,28 @@ namespace ToyCarArena.Gameplay.Arena
         public Vector3 ClampToFloor(Vector3 position) => edge.ClampToFloor(position);
         public float SolidHalfChord(Vector3 origin, Vector3 direction) => edge.SolidHalfChord(origin, direction);
 
+        public void SolidChord(Vector3 origin, Vector3 direction, out float behind, out float ahead) =>
+            edge.SolidChord(origin, direction, out behind, out ahead);
+
+        public IReadOnlyList<Vector3> Outline(bool solid) => edge.Outline(solid);
+
+        public bool TryGetSpawn(int index, int count, out Vector3 position) => edge.TryGetSpawn(index, count, out position);
+
         [Inject]
         private void Construct(ArenaMap map)
         {
             this.map = map;
             this.settings = map.Settings;
             // Made here, not in Awake: the arena's readers hold the floor from the moment the scope is built.
-            this.edge ??= new CircleEdge(settings.Radius);
+            this.edge ??= map.Shape == null ? new CircleEdge(settings.Radius) : new GridEdge(map.Shape);
         }
 
         private void Awake()
         {
             floorCollider = GetComponent<MeshCollider>();
-            layout = new CircleLayout(settings, edge, blockLength, minBlocks, seam);
+            layout = map.Shape == null
+                ? new CircleLayout(settings, (CircleEdge)edge, blockLength, minBlocks, seam)
+                : new TiledLayout(map.Shape, (GridEdge)edge, seam);
 
             var template = GetComponent<MeshRenderer>();
             // Before the blocks are built: they copy the template's material.

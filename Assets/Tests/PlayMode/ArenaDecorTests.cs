@@ -51,7 +51,11 @@ namespace ToyCarArena.Tests.PlayMode
             foreach (var piece in theme.Pedestal) {
                 var top = piece.BaseHeight + (piece.Shape == ArenaCatalog.PieceShape.Model ? 0f : piece.Size.y);
                 Assert.That(top, Is.LessThan(0f), $"{map}: a pedestal piece pokes through the floor");
-                if (top > -1f) {
+                if (top > -1f && piece.Shape == ArenaCatalog.PieceShape.Outline) {
+                    // The core's own outline is inside the floor's; a bigger scale would reach past the rim.
+                    Assert.That(piece.Size.x, Is.LessThanOrEqualTo(1f), $"{map}: the top of the pedestal is wider than the core");
+                }
+                else if (top > -1f) {
                     var half = piece.Shape == ArenaCatalog.PieceShape.Box
                         ? Mathf.Sqrt(piece.Size.x * piece.Size.x + piece.Size.z * piece.Size.z) * 0.5f
                         : piece.Size.x * 0.5f;

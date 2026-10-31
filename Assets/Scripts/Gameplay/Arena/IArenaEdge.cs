@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace ToyCarArena.Gameplay.Arena
@@ -88,5 +89,24 @@ namespace ToyCarArena.Gameplay.Arena
         /// the floor with <paramref name="origin"/> at its middle (the foot of the perpendicular from the arena's middle).
         /// </summary>
         float SolidHalfChord(Vector3 origin, Vector3 direction);
+
+        /// <summary>
+        /// How far the solid floor reaches along the line through <paramref name="origin"/> in
+        /// <paramref name="direction"/>, behind and ahead of <paramref name="origin"/>, in metres: to the farthest solid
+        /// point each way, so a floor with a gap in it still gives the span the line crosses. Zero on a side with no floor.
+        /// </summary>
+        void SolidChord(Vector3 origin, Vector3 direction, out float behind, out float ahead);
+
+        /// <summary>
+        /// The corners of the outline of the safe or the solid floor, for the camera to fit; null for a round floor, whose
+        /// extent says everything. Valid until the next <see cref="Changed"/>.
+        /// </summary>
+        IReadOnlyList<Vector3> Outline(bool solid);
+
+        /// <summary>
+        /// Where the car <paramref name="index"/> of <paramref name="count"/> starts on a floor that has a contour of its
+        /// own; false on a round floor, where the cars stand on a circle.
+        /// </summary>
+        bool TryGetSpawn(int index, int count, out Vector3 position);
     }
 }

@@ -429,59 +429,59 @@ MonoBehaviour:
     fogStart: 10
     fogEnd: 160
     pedestal:
-    - shape: 0
+    - shape: 3
       model: {fileID: 0}
       material: {fileID: 2100000, guid: cedcab4799b0f2e4baf4f7e7d8b49b11, type: 2}
-      size: {x: 14, y: 8, z: 14}
+      size: {x: 1, y: 8, z: 1}
       offset: {x: 0, y: 0}
       baseHeight: -8.55
       yaw: 0
-    - shape: 0
+    - shape: 3
       model: {fileID: 0}
       material: {fileID: 2100000, guid: ca3d577219d843440be02cead177beb5, type: 2}
-      size: {x: 14.7, y: 1.2, z: 14.7}
+      size: {x: 1.03, y: 1.2, z: 1.03}
       offset: {x: 0, y: 0}
       baseHeight: -9.75
       yaw: 0
-    - shape: 0
+    - shape: 3
       model: {fileID: 0}
       material: {fileID: 2100000, guid: 8e66be6f4f0d41d42bbfc789f54f0e89, type: 2}
-      size: {x: 22, y: 8, z: 22}
+      size: {x: 1.25, y: 8, z: 1.25}
       offset: {x: 0, y: 0}
       baseHeight: -16.55
       yaw: 0
-    - shape: 0
+    - shape: 3
       model: {fileID: 0}
       material: {fileID: 2100000, guid: cedcab4799b0f2e4baf4f7e7d8b49b11, type: 2}
-      size: {x: 22.7, y: 1.2, z: 22.7}
+      size: {x: 1.28, y: 1.2, z: 1.28}
       offset: {x: 0, y: 0}
       baseHeight: -17.75
       yaw: 0
-    - shape: 0
+    - shape: 3
       model: {fileID: 0}
       material: {fileID: 2100000, guid: ca3d577219d843440be02cead177beb5, type: 2}
-      size: {x: 32, y: 8, z: 32}
+      size: {x: 1.55, y: 8, z: 1.55}
       offset: {x: 0, y: 0}
       baseHeight: -24.55
       yaw: 0
-    - shape: 0
+    - shape: 3
       model: {fileID: 0}
       material: {fileID: 2100000, guid: cedcab4799b0f2e4baf4f7e7d8b49b11, type: 2}
-      size: {x: 32.7, y: 1.2, z: 32.7}
+      size: {x: 1.58, y: 1.2, z: 1.58}
       offset: {x: 0, y: 0}
       baseHeight: -25.75
       yaw: 0
-    - shape: 0
+    - shape: 3
       model: {fileID: 0}
       material: {fileID: 2100000, guid: 8e66be6f4f0d41d42bbfc789f54f0e89, type: 2}
-      size: {x: 44, y: 8, z: 44}
+      size: {x: 1.9, y: 8, z: 1.9}
       offset: {x: 0, y: 0}
       baseHeight: -32.55
       yaw: 0
-    - shape: 0
+    - shape: 3
       model: {fileID: 0}
       material: {fileID: 2100000, guid: ca3d577219d843440be02cead177beb5, type: 2}
-      size: {x: 44.7, y: 1.2, z: 44.7}
+      size: {x: 1.93, y: 1.2, z: 1.93}
       offset: {x: 0, y: 0}
       baseHeight: -33.75
       yaw: 0

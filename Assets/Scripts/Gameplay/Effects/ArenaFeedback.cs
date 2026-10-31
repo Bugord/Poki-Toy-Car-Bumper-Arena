@@ -328,13 +328,25 @@ namespace ToyCarArena.Gameplay.Effects
 
         private void OnWaveWarning(CrumbleWave wave)
         {
-            effects.PlayRingWarning(wave.Inner, wave.Outer, arenaSettings.CrumbleWarning);
+            if (wave.Spots != null) {
+                effects.PlayTileWarning(wave.Spots, arenaSettings.CrumbleWarning);
+            }
+            else {
+                effects.PlayRingWarning(wave.Inner, wave.Outer, arenaSettings.CrumbleWarning);
+            }
+
             audioService.Play(audioService.Library.CrumbleWarning);
         }
 
         private void OnWaveFell(CrumbleWave wave)
         {
-            effects.PlayRingFall(wave.Inner, wave.Outer);
+            if (wave.Spots != null) {
+                effects.PlayTileFall(wave.Spots);
+            }
+            else {
+                effects.PlayRingFall(wave.Inner, wave.Outer);
+            }
+
             audioService.Play(audioService.Library.CrumbleFall);
             arenaCamera.Shake(ringFallShake);
         }

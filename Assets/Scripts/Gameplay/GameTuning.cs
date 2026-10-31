@@ -393,6 +393,30 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float edgeMargin = 1.5f;
 
+            [Header("Pits")]
+            [Tooltip("How far ahead along its line to the target, in metres, a bot looks for a pit or a hole that would " +
+                "swallow it; 0 never goes round")]
+            [Min(0f)]
+            [SerializeField]
+            private float pitProbe = 9f;
+
+            [Tooltip("How many points along that line a bot samples the floor at")]
+            [Range(2, 8)]
+            [SerializeField]
+            private int pitSamples = 5;
+
+            [Tooltip("Seconds a bot keeps the side it chose to go round a pit, so it does not dither at the middle")]
+            [Min(0f)]
+            [SerializeField]
+            private float pitSideHold = 1f;
+
+            [Tooltip("How much of the way round a pit goes inward, away from the pit, beside along its rim: 0 hugs the " +
+                "rim, 1 as much inward as along")]
+            [Min(0f)]
+            [SerializeField]
+            private float pitInward = 0.5f;
+
+            [Header("Aim")]
             [Tooltip("Seconds ahead a bot foresees where its speed takes it, times its personality's caution; heading " +
                 "past the edge margin by then, it turns back towards the middle before it gets there")]
             [Min(0f)]
@@ -555,6 +579,10 @@ namespace ToyCarArena.Gameplay
             public float RetargetInterval => retargetInterval;
             public float RetargetJitter => retargetJitter;
             public float EdgeMargin => edgeMargin;
+            public float PitProbe => pitProbe;
+            public int PitSamples => pitSamples;
+            public float PitSideHold => pitSideHold;
+            public float PitInward => pitInward;
             public float LookAhead => lookAhead;
             public float PushDistance => pushDistance;
             public float PushAngle => pushAngle;
@@ -975,6 +1003,74 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float viewMargin = 1.5f;
 
+            [Header("Shape")]
+            [Tooltip("The outline of the floor. Circle is a disc inside rings (Radius and the crumble numbers above); " +
+                "the others are cut into tiles from the numbers below, and Radius then says the circle that holds the " +
+                "whole floor (props are placed outside it)")]
+            [SerializeField]
+            private ArenaShapeKind shape = ArenaShapeKind.Circle;
+
+            [Tooltip("How the floor crumbles: Rings from the edge in, Strips side by side with the corners first, " +
+                "Scatter tiles at random along the edge (and the hole widens), Segments one by one round the rim. Each " +
+                "shape supports one pattern")]
+            [SerializeField]
+            private CrumblePattern pattern = CrumblePattern.Rings;
+
+            [Tooltip("Half the floor's width (X) and length (Z, away from the camera) in metres: both sides of a square, " +
+                "the flats of a hexagon (X, the distance from the middle to a flat), the width and the whole length of " +
+                "a stadium")]
+            [SerializeField]
+            private Vector2 halfSize = new(10.5f, 10.5f);
+
+            [Tooltip("Radius of the rounded corners of a square, in metres")]
+            [Min(0f)]
+            [SerializeField]
+            private float cornerRadius = 3f;
+
+            [Tooltip("The part that never crumbles: half its width in metres (a square's half side, the distance from " +
+                "the middle to the outer flat of a hexagon's ring, a stadium's half width)")]
+            [Min(1f)]
+            [SerializeField]
+            private float coreSize = 5.5f;
+
+            [Tooltip("The hole in the middle of a hexagon: its distance to a flat at the start of the round (X) and once " +
+                "it has widened to the most (Y), in metres")]
+            [SerializeField]
+            private Vector2 holeSize = new(2f, 3.5f);
+
+            [Tooltip("The two pits of a stadium, left and right of the middle: distance from the middle to the near edge " +
+                "of a pit (X) and width of a pit (Y), in metres; 0 width has none")]
+            [SerializeField]
+            private Vector2 pits = new(8.5f, 3f);
+
+            [Tooltip("Half the length of a pit along Z, in metres")]
+            [Min(0f)]
+            [SerializeField]
+            private float pitHalfLength = 4.5f;
+
+            [Tooltip("Tiles along one side of the outer layer: blocks along a side strip of a square, tiles along a flat of " +
+                "a hexagon, wedges round a cap of a stadium")]
+            [Range(1, 12)]
+            [SerializeField]
+            private int tilesPerSide = 3;
+
+            [Tooltip("How many waves the tiles crumble in when the pattern scatters or cuts them (Scatter, Segments); " +
+                "the other patterns have their own")]
+            [Range(2, 20)]
+            [SerializeField]
+            private int waves = 8;
+
+            [Tooltip("The cars start on the contour this far in from the rim, in metres, on a floor that is not a circle")]
+            [Min(0f)]
+            [SerializeField]
+            private float spawnInset = 5.2f;
+
+            [Tooltip("The cars do not start within this distance of the middle, in metres (a turntable there), nor within " +
+                "two metres of a pit")]
+            [Min(0f)]
+            [SerializeField]
+            private float spawnClear;
+
             public float Radius => radius;
             public float SpawnRadius => spawnRadius;
             public float SpawnHeight => spawnHeight;
@@ -984,6 +1080,44 @@ namespace ToyCarArena.Gameplay
             public float CrumbleStep => crumbleStep;
             public float CrumbleWarning => crumbleWarning;
             public float ViewMargin => viewMargin;
+            public ArenaShapeKind Shape => shape;
+            public CrumblePattern Pattern => pattern;
+            public Vector2 HalfSize => halfSize;
+            public float CornerRadius => cornerRadius;
+            public float CoreSize => coreSize;
+            public Vector2 HoleSize => holeSize;
+            public Vector2 Pits => pits;
+            public float PitHalfLength => pitHalfLength;
+            public int TilesPerSide => tilesPerSide;
+            public int Waves => waves;
+            public float SpawnInset => spawnInset;
+            public float SpawnClear => spawnClear;
+        }
+
+        /// <summary>The outline of an arena's floor.</summary>
+        public enum ArenaShapeKind
+        {
+            /// <summary>A disc inside rings.</summary>
+            Circle,
+            /// <summary>A square with rounded corners, like a board.</summary>
+            RoundedSquare,
+            /// <summary>A hexagon with a hole in the middle that widens as the round goes on.</summary>
+            HexDonut,
+            /// <summary>Two half discs joined by straight sides, with a pit left and right of the middle.</summary>
+            Stadium,
+        }
+
+        /// <summary>The order the pieces of the floor crumble in.</summary>
+        public enum CrumblePattern
+        {
+            /// <summary>Rings from the edge in.</summary>
+            Rings,
+            /// <summary>The corners, then the sides one after another.</summary>
+            Strips,
+            /// <summary>Tiles at random along the edge, and the hole widens.</summary>
+            Scatter,
+            /// <summary>Pieces one after another round the rim, layer by layer.</summary>
+            Segments,
         }
 
         /// <summary>
@@ -1075,6 +1209,29 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float outerRadius = 2.1f;
 
+            [Header("On a donut floor")]
+            [Tooltip("Distance of the three inner patches from the middle on a floor with a hole, in metres, along the " +
+                "directions of the hexagon's flats. They lie between the hole and the spawn contour")]
+            [Min(0f)]
+            [SerializeField]
+            private float ringInnerDistance = 5.2f;
+
+            [Tooltip("Radius of an inner patch on a floor with a hole, in metres")]
+            [Min(0.5f)]
+            [SerializeField]
+            private float ringInnerRadius = 1.4f;
+
+            [Tooltip("Distance of the three outer patches from the middle on a floor with a hole, in metres. They lie " +
+                "beyond the spawn contour and reach into the crumbling edge")]
+            [Min(0f)]
+            [SerializeField]
+            private float ringOuterDistance = 11.4f;
+
+            [Tooltip("Radius of an outer patch on a floor with a hole, in metres")]
+            [Min(0.5f)]
+            [SerializeField]
+            private float ringOuterRadius = 1.6f;
+
             public float CaramelSpeed => caramelSpeed;
             public float CaramelAcceleration => caramelAcceleration;
             public float CaramelGrip => caramelGrip;
@@ -1090,6 +1247,10 @@ namespace ToyCarArena.Gameplay
             public float InnerRadius => innerRadius;
             public float OuterDistance => outerDistance;
             public float OuterRadius => outerRadius;
+            public float RingInnerDistance => ringInnerDistance;
+            public float RingInnerRadius => ringInnerRadius;
+            public float RingOuterDistance => ringOuterDistance;
+            public float RingOuterRadius => ringOuterRadius;
         }
 
         /// <summary>

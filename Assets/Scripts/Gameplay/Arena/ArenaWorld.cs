@@ -54,6 +54,7 @@ namespace ToyCarArena.Gameplay.Arena
 
             var cylinder = Keep(BuildCylinder());
             var box = Keep(BuildBox());
+            var outline = map.Shape != null ? Keep(BuildOutline(map.Shape)) : null;
 
             if (theme.GroundMaterial != null) {
                 var ground = CreateSolid("Ground", cylinder, theme.GroundMaterial, root);
@@ -64,11 +65,11 @@ namespace ToyCarArena.Gameplay.Arena
             var behind = Vector3.ProjectOnPlane(arenaCamera.transform.forward, Vector3.up).normalized;
             var right = Vector3.Cross(Vector3.up, behind);
             foreach (var piece in theme.Pedestal) {
-                Place(piece, cylinder, box, behind, right, root);
+                Place(piece, cylinder, box, outline, behind, right, root);
             }
 
             foreach (var piece in theme.GroundPieces) {
-                Place(piece, cylinder, box, behind, right, root);
+                Place(piece, cylinder, box, outline, behind, right, root);
             }
         }
 
@@ -83,8 +84,8 @@ namespace ToyCarArena.Gameplay.Arena
             meshes.Clear();
         }
 
-        private static void Place(ArenaCatalog.WorldPiece piece, Mesh cylinder, Mesh box, Vector3 behind, Vector3 right,
-            Transform root)
+        private static void Place(ArenaCatalog.WorldPiece piece, Mesh cylinder, Mesh box, Mesh outline, Vector3 behind,
+            Vector3 right, Transform root)
         {
             var position = right * piece.Offset.x + behind * piece.Offset.y + Vector3.up * piece.BaseHeight;
             var rotation = Quaternion.Euler(0f, piece.Yaw, 0f);
@@ -98,6 +99,18 @@ namespace ToyCarArena.Gameplay.Arena
             }
 
             if (piece.Material == null) {
+                return;
+            }
+
+            if (piece.Shape == ArenaCatalog.PieceShape.Outline) {
+                // The core's outline, scaled about the middle; a round floor has none.
+                if (outline == null) {
+                    return;
+                }
+
+                var extruded = CreateSolid(piece.Shape.ToString(), outline, piece.Material, root);
+                extruded.SetPositionAndRotation(position, rotation);
+                extruded.localScale = new Vector3(piece.Size.x, piece.Size.y, piece.Size.x);
                 return;
             }
 
@@ -163,6 +176,51 @@ namespace ToyCarArena.Gameplay.Arena
             }
 
             return Assemble("World Cylinder", vertices, normals, triangles);
+        }
+
+        /// <summary>
+        /// The faces of the floor's core as a solid of height 1 whose base is at the origin: a top, and a wall along every
+        /// edge the core does not share with itself, the rim and the walls of a hole alike. The base is left open.
+        /// </summary>
+        private static Mesh BuildOutline(ArenaShape shape)
+        {
+            var builder = new FloorMeshBuilder();
+            for (var f = 0; f < shape.FaceCount; f++) {
+                if (shape.GroupOf(f) != ArenaShape.Core) {
+                    continue;
+                }
+
+                var ids = shape.Face(f);
+                var a = Up(shape.Vertices[ids[0]]);
+                for (var i = 1; i + 1 < ids.Length; i++) {
+                    builder.AddTriangle(a, Up(shape.Vertices[ids[i]]), Up(shape.Vertices[ids[i + 1]]), Vector3.up);
+                }
+            }
+
+            for (var e = 0; e < shape.EdgeA.Length; e++) {
+                var inA = shape.EdgeFaceA[e] >= 0 && shape.GroupOf(shape.EdgeFaceA[e]) == ArenaShape.Core;
+                var inB = shape.EdgeFaceB[e] >= 0 && shape.GroupOf(shape.EdgeFaceB[e]) == ArenaShape.Core;
+                if (inA == inB) {
+                    continue;
+                }
+
+                var from = shape.Vertices[inA ? shape.EdgeA[e] : shape.EdgeB[e]];
+                var to = shape.Vertices[inA ? shape.EdgeB[e] : shape.EdgeA[e]];
+                var direction = to - from;
+                var normal = new Vector3(direction.y, 0f, -direction.x).normalized;
+                builder.AddQuad(Up(from), Up(to), Up(to) + Vector3.down, Up(from) + Vector3.down,
+                    normal, normal, normal, normal);
+            }
+
+            var mesh = builder.ToMesh("World Outline");
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        // A point of the floor at the top of the unit solid.
+        private static Vector3 Up(Vector2 flat)
+        {
+            return new Vector3(flat.x, 1f, flat.y);
         }
 
         /// <summary>A box of width and depth 1 whose base is at the origin and whose height is 1.</summary>

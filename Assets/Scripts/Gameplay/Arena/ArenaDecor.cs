@@ -44,7 +44,8 @@ namespace ToyCarArena.Gameplay.Arena
                 }
 
                 var outward = Quaternion.Euler(0f, item.Angle, 0f) * behind;
-                var position = outward * (map.Settings.Radius + item.Distance) + Vector3.up * item.Height;
+                // Beyond the rim in that direction, which on a floor that is not round is not the same all the way round.
+                var position = outward * (map.RimRadius(outward) + item.Distance) + Vector3.up * item.Height;
                 // Yaw 0 turns the prop's front to the arena's middle.
                 var rotation = Quaternion.LookRotation(-outward, Vector3.up) * Quaternion.Euler(0f, item.Yaw, 0f)
                     * Quaternion.Euler(item.Pitch, 0f, 0f);

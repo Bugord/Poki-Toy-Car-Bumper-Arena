@@ -10,12 +10,13 @@ namespace ToyCarArena.Tests.PlayMode
 {
     /// <summary>
     /// Loads the real Game scene under a parent whose rotation is fixed, and checks that the arena of the rotation is the
-    /// one the floor, camera and settings readers are built for.
+    /// one the floor, camera and settings readers are built for. The rings of the round floor are checked here; the tiled
+    /// floors of the other arenas are in <see cref="ShapedArenaTests"/>.
     /// </summary>
     public sealed class ArenaSceneTests : SimulationSceneFixture
     {
         [UnityTest]
-        public IEnumerator SceneIsBuiltForTheArenaOfTheRotation([Values("sandbox", "tabletop", "playroom")] string map)
+        public IEnumerator SceneIsBuiltForTheArenaOfTheRotation([Values("sandbox", "tabletop", "candy", "playroom")] string map)
         {
             CreateParent(new SimulationInput(), new SimulationProgress(), map);
             yield return LoadGame();
@@ -30,11 +31,14 @@ namespace ToyCarArena.Tests.PlayMode
 
             Assert.That(container.Resolve<ArenaMap>().Id, Is.EqualTo(map));
             Assert.That(container.Resolve<GameTuning.ArenaSettings>(), Is.SameAs(expected));
-            Assert.That(container.Resolve<ArenaFloor>().SafeExtent, Is.EqualTo(expected.Radius));
+            var arenaMap = container.Resolve<ArenaMap>();
+            var extent = arenaMap.Shape == null ? expected.Radius : arenaMap.Shape.FullExtent;
+            Assert.That(container.Resolve<ArenaFloor>().SafeExtent, Is.EqualTo(extent).Within(0.01f));
+            Assert.That(arenaMap.Shape == null, Is.EqualTo(expected.Shape == GameTuning.ArenaShapeKind.Circle));
         }
 
         [UnityTest]
-        public IEnumerator FloorMovesTheEdgeAsWavesShakeAndFall([Values("sandbox", "candy")] string map)
+        public IEnumerator FloorMovesTheEdgeAsWavesShakeAndFall([Values("sandbox")] string map)
         {
             CreateParent(new SimulationInput(), new SimulationProgress(), map);
             yield return LoadGame();

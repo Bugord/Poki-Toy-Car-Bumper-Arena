@@ -100,6 +100,12 @@ namespace ToyCarArena.Gameplay.Arena
             Cylinder,
             Box,
             Model,
+            /// <summary>
+            /// The part of the floor that never crumbles, extruded: its outline with its holes, so a pedestal under a donut
+            /// or a stadium has the same hole in it. Size is the scale of the outline (X), the height (Y); a floor that
+            /// is a circle has no such piece.
+            /// </summary>
+            Outline,
         }
 
         /// <summary>
@@ -109,7 +115,8 @@ namespace ToyCarArena.Gameplay.Arena
         [Serializable]
         public sealed class WorldPiece
         {
-            [Tooltip("Cylinder or Box for a plain solid in the material below, Model for a prop with its own colours")]
+            [Tooltip("Cylinder or Box for a plain solid in the material below, Outline for the floor's own core extruded, Model " +
+                "for a prop with its own colours")]
             [SerializeField]
             private PieceShape shape;
 
@@ -122,7 +129,7 @@ namespace ToyCarArena.Gameplay.Arena
             private Material material;
 
             [Tooltip("Metres: width, height and depth of a box; across, height and across of a cylinder; for a model, X is " +
-                "its size multiplier")]
+                "its size multiplier; for an outline X is the scale of the core's outline and Y the height")]
             [SerializeField]
             private Vector3 size = Vector3.one;
 

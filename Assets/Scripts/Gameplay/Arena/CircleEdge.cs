@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace ToyCarArena.Gameplay.Arena
@@ -90,6 +91,23 @@ namespace ToyCarArena.Gameplay.Arena
         {
             var offset = FromMiddle(origin);
             return Mathf.Sqrt(Mathf.Max(0f, solid * solid - offset * offset));
+        }
+
+        public void SolidChord(Vector3 origin, Vector3 direction, out float behind, out float ahead)
+        {
+            behind = SolidHalfChord(origin, direction);
+            ahead = behind;
+        }
+
+        public IReadOnlyList<Vector3> Outline(bool solid)
+        {
+            return null;
+        }
+
+        public bool TryGetSpawn(int index, int count, out Vector3 position)
+        {
+            position = default;
+            return false;
         }
 
         private static float FromMiddle(Vector3 position)

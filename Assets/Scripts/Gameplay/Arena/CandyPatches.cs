@@ -159,6 +159,11 @@ namespace ToyCarArena.Gameplay.Arena
             var parent = new GameObject("Candy Patches").transform;
             parent.SetParent(decor.transform, false);
 
+            if (map.Shape != null) {
+                BuildOnDonut(random, flip, parent);
+                return;
+            }
+
             for (var slot = 0; slot < Slots; slot++) {
                 var inner = slot % 3 == 1;
                 var distance = inner ? settings.InnerDistance : settings.OuterDistance;
@@ -166,6 +171,28 @@ namespace ToyCarArena.Gameplay.Arena
                 var angle = turn + slot * Mathf.PI * 2f / Slots;
                 var center = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * distance;
                 var patch = new Patch(center, radius, (slot + flip) % 2 == 0,
+                    (float)(random.NextDouble() * Mathf.PI * 2d));
+                patches.Add(patch);
+                BuildVisual(patch, parent, random);
+            }
+        }
+
+        /// <summary>
+        /// The layout on a floor with a hole: six patches in the directions of the hexagon's flats, alternately inner (in
+        /// the band between the hole and the cars' starting contour) and outer (beyond the contour, reaching into the
+        /// crumbling rim), the whole turned by a multiple of sixty degrees. The distances are tuned so that none lies in
+        /// the hole or on the contour, and a patch that loses its floor vanishes as everywhere.
+        /// </summary>
+        private void BuildOnDonut(System.Random random, int flip, Transform parent)
+        {
+            var turn = random.Next(Slots);
+            for (var slot = 0; slot < Slots; slot++) {
+                var inner = slot % 2 == 0;
+                var distance = inner ? settings.RingInnerDistance : settings.RingOuterDistance;
+                var radius = inner ? settings.RingInnerRadius : settings.RingOuterRadius;
+                var angle = (slot + turn) * Mathf.PI * 2f / Slots;
+                var center = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * distance;
+                var patch = new Patch(center, radius, (slot / 2 + flip + slot % 2) % 2 == 0,
                     (float)(random.NextDouble() * Mathf.PI * 2d));
                 patches.Add(patch);
                 BuildVisual(patch, parent, random);
