@@ -1,3 +1,4 @@
+using ToyCarArena.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
 using VContainer.Unity;
@@ -49,6 +50,7 @@ namespace ToyCarArena.Gameplay.Arena
 
                 var instance = Object.Instantiate(item.Model, position, rotation, root);
                 instance.transform.localScale = Vector3.one * item.Scale;
+                Outline.Apply(instance);
                 foreach (var renderer in instance.GetComponentsInChildren<Renderer>()) {
                     renderer.shadowCastingMode = ShadowCastingMode.Off;
                     renderer.receiveShadows = false;
