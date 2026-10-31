@@ -234,7 +234,6 @@ namespace ToyCarArena.Gameplay.Arena
             // The turn happens before the walk, on the spot, while the claws snap and the new footprints show.
             stage = Stage.Walking;
             hitCars.Clear();
-            Version++;
         }
 
         private void Walk(float deltaTime)
@@ -253,6 +252,9 @@ namespace ToyCarArena.Gameplay.Arena
                 stage = Stage.Pausing;
                 pauseTime = 0f;
                 PlanNextLeg();
+                // The new chord is a new threat from now, while the crab stands and shows its footprints: the bots take their
+                // reaction time during the pause, not as it sets off.
+                Version++;
             }
         }
 

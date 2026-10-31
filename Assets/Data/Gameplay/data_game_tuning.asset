@@ -309,7 +309,7 @@ MonoBehaviour:
     push: 8
     stagger: 0.5
     easyPlayerShare: 0.5
-    turnPause: 0.7
+    turnPause: 1
     edgeInset: 2.2
     minWalk: 6
     hitHeight: 1.5

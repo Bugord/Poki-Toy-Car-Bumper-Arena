@@ -17,7 +17,7 @@ namespace ToyCarArena.Tests.PlayMode
         public IEnumerator OtherVariantsHaveNoCrab()
         {
             yield return Load("sandbox", "rake");
-            Round.Begin();
+            BeginRound();
             yield return Until(() => Round.Elapsed > Tuning.Crab.Delay + 2f, 20f, "The round never ran.");
             var crab = Container.Resolve<ArenaCrab>();
             Assert.That(crab.IsAnnounced, Is.False);
@@ -29,7 +29,7 @@ namespace ToyCarArena.Tests.PlayMode
         {
             yield return Load("sandbox", "molds");
             var crab = Container.Resolve<ArenaCrab>();
-            Round.Begin();
+            BeginRound();
             Assert.That(Hazards.All.Count, Is.EqualTo(1));
 
             yield return Until(() => crab.IsAnnounced, 20f, "The crab never appeared.");
@@ -52,7 +52,7 @@ namespace ToyCarArena.Tests.PlayMode
                 "A car the crab has left behind is out of its way.");
 
             yield return Until(() => crab.IsWalking, 10f, "The crab never set out.");
-            Assert.That(crab.Version, Is.GreaterThan(version), "A walk is a new threat for the bots.");
+            Assert.That(crab.Version, Is.EqualTo(version), "The threat was announced when the crab appeared, not as it set out.");
             Assert.That(Round.Elapsed, Is.GreaterThanOrEqualTo(Tuning.Crab.Delay - 0.1f));
 
             yield return Until(() => !float.IsNegativeInfinity(car.LastHazardTime), 10f, "The crab never touched the car.");
@@ -68,7 +68,7 @@ namespace ToyCarArena.Tests.PlayMode
         {
             yield return Load("sandbox", "molds");
             var crab = Container.Resolve<ArenaCrab>();
-            Round.Begin();
+            BeginRound();
             var legs = 0;
             var version = 0;
             var end = Time.time + 40f;

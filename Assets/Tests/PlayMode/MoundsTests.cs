@@ -41,7 +41,7 @@ namespace ToyCarArena.Tests.PlayMode
         public IEnumerator OtherVariantsHaveNoMounds()
         {
             yield return Load("sandbox", "rake");
-            Round.Begin();
+            BeginRound();
             var mounds = Container.Resolve<ArenaMounds>();
             yield return Until(() => Round.Elapsed > Tuning.Mounds.Delay + Tuning.Mounds.Warning + 2f, 30f, "The round never ran.");
             Assert.That(mounds.ActiveCount, Is.EqualTo(0));
@@ -55,7 +55,7 @@ namespace ToyCarArena.Tests.PlayMode
             var mounds = Container.Resolve<ArenaMounds>();
             var surface = Container.Resolve<IArenaSurface>();
             var settings = Tuning.Mounds;
-            Round.Begin();
+            BeginRound();
             Assert.That(Hazards.All.Count, Is.EqualTo(1));
 
             yield return Until(() => mounds.ActiveCount > 0, 20f, "No mound was announced.");

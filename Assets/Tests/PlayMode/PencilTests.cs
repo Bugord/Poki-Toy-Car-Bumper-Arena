@@ -18,7 +18,7 @@ namespace ToyCarArena.Tests.PlayMode
         public IEnumerator OtherVariantsHaveNoPencil()
         {
             yield return Load("tabletop", "cloth");
-            Round.Begin();
+            BeginRound();
             var pencil = Container.Resolve<ArenaPencil>();
             yield return Until(() => Round.Elapsed > Tuning.Pencil.Delay + 2f, 20f, "The round never ran.");
             Assert.That(pencil.IsActive, Is.False);
@@ -29,7 +29,7 @@ namespace ToyCarArena.Tests.PlayMode
         {
             yield return Load("tabletop", "notebook");
             var pencil = Container.Resolve<ArenaPencil>();
-            Round.Begin();
+            BeginRound();
             Assert.That(Hazards.All.Count, Is.EqualTo(1));
 
             yield return Until(() => pencil.IsActive, 20f, "No pencil was announced.");

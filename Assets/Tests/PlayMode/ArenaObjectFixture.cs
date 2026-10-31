@@ -21,6 +21,8 @@ namespace ToyCarArena.Tests.PlayMode
     /// </summary>
     public abstract class ArenaObjectFixture : SimulationSceneFixture
     {
+        private BotDriver botDriver;
+
         protected ArenaRound Round { get; private set; }
         protected ArenaHazards Hazards { get; private set; }
         protected GameTuning Tuning { get; private set; }
@@ -43,9 +45,18 @@ namespace ToyCarArena.Tests.PlayMode
             // The objects are built on the first tick after the cars stand.
             yield return null;
             yield return null;
-            // The bots stand still: the driver never creates them once it believes it already drives. Set only now, as a
-            // tick before the round begins would take it back.
+            this.botDriver = botDriver;
+        }
+
+        /// <summary>
+        /// Begins the round with the bots standing still: the driver never creates them once it believes it already drives.
+        /// Done here, right before <see cref="ArenaRound.Begin"/>, because a tick of the driver before the round runs takes
+        /// the belief back.
+        /// </summary>
+        protected void BeginRound()
+        {
             typeof(BotDriver).GetField("isDriving", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(botDriver, true);
+            Round.Begin();
         }
 
         /// <summary>Waits, in game time, until <paramref name="condition"/> holds; fails after <paramref name="seconds"/>.</summary>

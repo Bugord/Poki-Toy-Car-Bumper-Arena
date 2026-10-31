@@ -1540,7 +1540,7 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Seconds the crab stands and snaps its claws at the end of a walk before it turns back")]
             [Min(0f)]
             [SerializeField]
-            private float turnPause = 0.7f;
+            private float turnPause = 1f;
 
             [Tooltip("The crab turns back this far, in metres, short of the safe edge, so it rarely walks off")]
             [Min(0f)]

@@ -18,7 +18,7 @@ namespace ToyCarArena.Tests.PlayMode
         public IEnumerator OtherVariantsHaveNoTop()
         {
             yield return Load("tabletop", "board");
-            Round.Begin();
+            BeginRound();
             var top = Container.Resolve<ArenaTop>();
             yield return Until(() => Round.Elapsed > Tuning.Top.Delay + 2f, 20f, "The round never ran.");
             Assert.That(top.IsWandering, Is.False);
@@ -43,7 +43,7 @@ namespace ToyCarArena.Tests.PlayMode
             var car = Round.Cars[1];
             ParkOthers(car);
             Stand(car, home + Vector3.forward * 1.0f);
-            Round.Begin();
+            BeginRound();
             var hurtBefore = false;
             while (Round.Elapsed < Tuning.Top.Delay - 0.2f) {
                 Stand(car, home + Vector3.forward * 1.0f);
@@ -58,9 +58,7 @@ namespace ToyCarArena.Tests.PlayMode
             // The car that stood at its feet is flung the moment it starts to wander.
             var before = top.Position;
             yield return Until(() => !float.IsNegativeInfinity(car.LastHazardTime), 6f, "The top never flung the car.");
-            var others = "";
-            foreach (var other in Round.Cars) { others += $" [{other.name} {other.Position} out={other.IsOut}]"; }
-            Assert.That(car.LastHitBy, Is.Null, $"A top fling is nobody's hit. hit={car.LastHitTime} hazard={car.LastHazardTime} now={Time.time} car={car.name} {car.Position}{others}");
+            Assert.That(car.LastHitBy, Is.Null, "A top fling is nobody's hit.");
             var speed = Flat(car.Movement.Velocity).magnitude;
             Assert.That(speed, Is.GreaterThan(3f), $"The car should be flung away: v={car.Movement.Velocity} car={car.Position} top={top.Position} dt={Time.time - car.LastHazardTime}");
             Assert.That(Flat(top.Position - before).magnitude, Is.GreaterThanOrEqualTo(0f));
@@ -72,7 +70,7 @@ namespace ToyCarArena.Tests.PlayMode
         {
             yield return Load("tabletop", "cloth");
             var top = Container.Resolve<ArenaTop>();
-            Round.Begin();
+            BeginRound();
             yield return Until(() => top.IsWandering, 10f, "The top never started to wander.");
             var start = top.Position;
             var farthest = 0f;
