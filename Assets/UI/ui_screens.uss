@@ -1542,10 +1542,38 @@
 /* The level track, as in the design: round stops joined by bars that tuck under the next stop, the captions hanging
    under the stops. A reached stop turns into a gold disc with a navy tick; the current level is gold from the start. */
 .track {
-    flex-direction: row;
-    align-items: center;
     margin-top: 26px;
     padding: 0 30px 96px 30px;
+}
+
+/* The bars' row and, laid exactly over it, the stops' row (RoundOverProgress.BuildTrack). Every bar and every gap
+   grows from nothing by the same share, and every bar reaches 14 px under each stop, so the two rows line up. */
+.track__row {
+    flex-direction: row;
+    align-items: center;
+    height: 127px;
+}
+
+.track__row--nodes {
+    position: absolute;
+    left: 30px;
+    right: 30px;
+    top: 0;
+}
+
+.track__slot {
+    flex-shrink: 0;
+    width: 105px;
+}
+
+.track__slot--rank {
+    width: 127px;
+}
+
+.track__gap {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 39px;
 }
 
 .track__node {
@@ -1665,12 +1693,13 @@
     rotate: -45deg;
 }
 
-/* No end caps: the bar starts at the stop before and runs under the next one, which is drawn after it. */
+/* No end caps: the bar runs under both its stops, which are drawn over it. */
 .track__segment {
     flex-grow: 1;
+    flex-basis: 0;
     height: 33px;
-    min-width: 39px;
-    margin-right: -10px;
+    min-width: 67px;
+    margin: 0 -14px;
     border-top-width: 7px;
     border-bottom-width: 7px;
     border-color: var(--navy);
@@ -1679,10 +1708,10 @@
     transform-origin: 0 50%;
 }
 
-/* Toward the next rank: a row of pale dots. */
+/* Toward the next rank: a row of pale dots, kept clear of the stops by padding so the margins match the other bars. */
 .track__segment--dotted {
     height: 11px;
-    margin: 0 11px;
+    padding: 0 25px;
     border-width: 0;
     background-color: rgba(0, 0, 0, 0);
     flex-direction: row;

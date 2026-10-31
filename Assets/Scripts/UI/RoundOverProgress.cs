@@ -94,15 +94,44 @@ namespace ToyCarArena.UI
             newCarPortrait.SetColor(viewModel.SelectedColor);
         }
 
+        /// <summary>
+        /// Two rows laid out alike: the bars underneath, with an empty slot the size of each stop, and the stops over
+        /// them with an empty gap for each bar. Each bar runs under both its stops, as in the design; in one row the
+        /// stop before a bar would be drawn under it.
+        /// </summary>
         private void BuildTrack(VisualElement track, int from)
         {
-            stops.Add(CreateStop(track, from, null, null, true));
+            var bars = Row(track, "track__row");
+            var nodes = Row(track, "track__row--nodes");
+            Slot(bars, false);
+            stops.Add(CreateStop(nodes, from, null, null, true));
             foreach (var trackStop in viewModel.TrackStops()) {
                 var segment = new Segment(trackStop.IsRank);
-                track.Add(segment.Root);
+                bars.Add(segment.Root);
                 segments.Add(segment);
-                stops.Add(CreateStop(track, trackStop.Level, trackStop.Name, trackStop, false));
+                var gap = new VisualElement { pickingMode = PickingMode.Ignore };
+                gap.AddToClassList("track__gap");
+                nodes.Add(gap);
+                Slot(bars, trackStop.IsRank);
+                stops.Add(CreateStop(nodes, trackStop.Level, trackStop.Name, trackStop, false));
             }
+        }
+
+        private static VisualElement Row(VisualElement track, string className)
+        {
+            var row = new VisualElement { pickingMode = PickingMode.Ignore };
+            row.AddToClassList("track__row");
+            row.AddToClassList(className);
+            track.Add(row);
+            return row;
+        }
+
+        private static void Slot(VisualElement bars, bool isRank)
+        {
+            var slot = new VisualElement { pickingMode = PickingMode.Ignore };
+            slot.AddToClassList("track__slot");
+            slot.EnableInClassList("track__slot--rank", isRank);
+            bars.Add(slot);
         }
 
         private Waypoint CreateStop(VisualElement track, int level, string name, TrackStop reward, bool isCurrent)
