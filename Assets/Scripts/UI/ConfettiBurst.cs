@@ -16,6 +16,7 @@ namespace ToyCarArena.UI
         private const float Gravity = 2600f;
         private const float Drag = 1.6f;
         private const float ShrinkTime = 0.35f;
+        private const float MaxSpread = 360f;
 
         private static readonly Color[] Colors = {
             new(1f, 0.302f, 0.302f),
@@ -47,7 +48,8 @@ namespace ToyCarArena.UI
         public async UniTask Play(VisualElement source, CancellationToken token)
         {
             await UniTask.WaitUntil(() => source.panel != null && source.worldBound.width > 0f, cancellationToken: token);
-            Launch(layer.WorldToLocal(source.worldBound.center), source.worldBound.width * 0.5f);
+            // The title spans the screen so long translations fit; the burst keeps to about the words' width.
+            Launch(layer.WorldToLocal(source.worldBound.center), Mathf.Min(source.worldBound.width * 0.5f, MaxSpread));
             layer.style.display = DisplayStyle.Flex;
             for (var time = 0f; time < Duration; time += Time.unscaledDeltaTime) {
                 Step(time, Mathf.Min(Time.unscaledDeltaTime, 0.05f));

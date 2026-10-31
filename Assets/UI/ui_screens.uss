@@ -1152,7 +1152,11 @@
     transition-delay: 0s;
 }
 
+/* The prompt and the goal span the screen less a margin, so a long translation shrinks to fit instead of running off
+   a portrait screen. */
 .hud__start-prompt {
+    align-self: stretch;
+    margin: 0 40px;
     align-items: center;
     transition-property: scale;
     transition-duration: 0.6s;
@@ -1164,6 +1168,9 @@
 }
 
 .hud__start-goal {
+    align-self: stretch;
+    margin-left: 60px;
+    margin-right: 60px;
     align-items: center;
     margin-bottom: 18px;
     rotate: -3deg;
@@ -1172,6 +1179,8 @@
 .hud__start-goal-text {
     margin: 0;
     padding: 0;
+    align-self: stretch;
+    -unity-text-auto-size: best-fit 40px 76px;
     font-size: 76px;
     color: var(--gold);
     -unity-text-outline-width: 14px;
@@ -1182,8 +1191,10 @@
 }
 
 .hud__start-text {
+    align-self: stretch;
     margin: 0;
     padding: 0;
+    -unity-text-auto-size: best-fit 56px 108px;
     font-size: 108px;
     color: var(--white);
     -unity-text-outline-width: 16px;
@@ -1402,6 +1413,9 @@
 
 .round-over__title {
     flex-shrink: 0;
+    align-self: stretch;
+    margin-left: 40px;
+    margin-right: 40px;
     rotate: -3deg;
     transition-property: scale, opacity;
     transition-duration: 0.35s;
@@ -1409,8 +1423,12 @@
 }
 
 .round-over__title-text {
+    align-self: stretch;
     margin: 0;
     padding: 0;
+    -unity-text-auto-size: best-fit 80px 171px;
+    -unity-text-align: middle-center;
+    white-space: nowrap;
     font-size: 171px;
 }
 
@@ -1448,8 +1466,10 @@
 
 .round-over__subtitle {
     flex-shrink: 0;
-    margin: 34px 0 0 0;
+    align-self: stretch;
+    margin: 34px 40px 0 40px;
     padding: 0;
+    -unity-text-auto-size: best-fit 28px 52px;
     font-size: 52px;
     letter-spacing: 2px;
     color: var(--white);
