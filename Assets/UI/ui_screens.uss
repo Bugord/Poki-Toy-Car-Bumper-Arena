@@ -1708,15 +1708,20 @@
     transform-origin: 0 50%;
 }
 
-/* Toward the next rank: a row of pale dots, kept clear of the stops by padding so the margins match the other bars. */
+/* Toward the next rank: a row of pale dots. The bar keeps the same margins and no padding, as every bar must take the
+   same share of the width as the gap over it; the dots' own margins keep them clear of the stops. */
 .track__segment--dotted {
     height: 11px;
-    padding: 0 25px;
     border-width: 0;
     background-color: rgba(0, 0, 0, 0);
+}
+
+.track__dots {
+    flex-grow: 1;
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
+    margin: 0 22px;
 }
 
 .track__dot {

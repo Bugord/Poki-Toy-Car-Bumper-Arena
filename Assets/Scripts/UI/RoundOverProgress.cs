@@ -334,7 +334,7 @@ namespace ToyCarArena.UI
         /// </summary>
         private sealed class Segment
         {
-            private const int Dots = 5;
+            private const int Dots = 4;
 
             private readonly VisualElement fill;
 
@@ -344,12 +344,16 @@ namespace ToyCarArena.UI
                 Root.AddToClassList("track__segment");
                 Root.EnableInClassList("track__segment--dotted", isDotted);
                 if (isDotted) {
-                    // USS has no dotted border, so the dots are elements.
+                    // USS has no dotted border, so the dots are elements, in a row of their own: padding on the bar
+                    // would add to its share of the width and pull the two rows of the track apart.
+                    var dots = new VisualElement { pickingMode = PickingMode.Ignore };
+                    dots.AddToClassList("track__dots");
                     for (var i = 0; i < Dots; i++) {
                         var dot = new VisualElement { pickingMode = PickingMode.Ignore };
                         dot.AddToClassList("track__dot");
-                        Root.Add(dot);
+                        dots.Add(dot);
                     }
+                    Root.Add(dots);
                     return;
                 }
 
