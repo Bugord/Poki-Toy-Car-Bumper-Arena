@@ -17,7 +17,7 @@ namespace ToyCarArena.UI
         private const float LeftEnd = 0.24f;
         // The scene load reports no progress, so the bar eases towards most of the way and fills the rest on READY!.
         private const float LoadingShare = 0.9f;
-        private const float LoadingTime = 0.35f;
+        private const float LoadingTime = CurtainViewModel.LobbyDuration / 3f;
         private const float FillSpeed = 4f;
 
         private static readonly string[] Tips = {

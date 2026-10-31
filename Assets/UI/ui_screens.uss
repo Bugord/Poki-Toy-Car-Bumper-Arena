@@ -786,9 +786,11 @@
     bottom: 0;
 }
 
+/* Scaled down as a whole: the sticker's own scale is its animation. */
 .ko-pop {
     position: absolute;
     translate: -50% -50%;
+    scale: 0.65 0.65;
 }
 
 .ko-pop__sticker {
@@ -966,7 +968,7 @@
 .hud__boost-slot {
     position: absolute;
     right: 64px;
-    bottom: 96px;
+    bottom: 220px;
     width: 300px;
     height: 300px;
     transition-property: scale, opacity;
@@ -1347,8 +1349,9 @@
     color: var(--red);
 }
 
-/* Confetti round YOU WIN! (pieces placed in RoundOver.uxml from the title's top left corner), shown on a win only. */
-.round-over__confetti {
+/* Confetti of a win, over the whole screen (ConfettiBurst moves each piece; its top left is offset so that it turns
+   about its centre). */
+.confetti-layer {
     position: absolute;
     left: 0;
     top: 0;
@@ -1357,21 +1360,15 @@
     display: none;
 }
 
-.round-over__confetti--shown {
-    display: flex;
-}
-
 .confetti {
     position: absolute;
+    left: -12px;
+    top: -23px;
     width: 24px;
     height: 46px;
     border-width: 5px;
     border-color: var(--navy);
     border-radius: 6px;
-    transition-property: scale;
-    transition-duration: 0.4s;
-    transition-timing-function: ease-out-back;
-    transition-delay: 0.15s;
 }
 
 .round-over__subtitle {
@@ -1784,10 +1781,6 @@
 .round-over--enter .round-over__title {
     scale: 0.4 0.4;
     opacity: 0;
-}
-
-.round-over--enter .confetti {
-    scale: 0 0;
 }
 
 .round-over--enter .best--new {

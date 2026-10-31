@@ -2,18 +2,7 @@
     <ui:VisualElement name="round-over" class="screen round-over">
         <Style src="../ui_screens.uss" />
         <ui:VisualElement picking-mode="Ignore" class="round-over__spacer-top" />
-        <ui:VisualElement picking-mode="Ignore" class="stroke round-over__title">
-            <ui:VisualElement name="confetti" picking-mode="Ignore" class="round-over__confetti">
-                <ui:VisualElement picking-mode="Ignore" class="confetti" style="left: -150px; top: -40px; rotate: -24deg; background-color: #ff4d4d;" />
-                <ui:VisualElement picking-mode="Ignore" class="confetti" style="left: -60px; top: -120px; rotate: 18deg; background-color: #38b6ff;" />
-                <ui:VisualElement picking-mode="Ignore" class="confetti" style="left: 90px; top: -150px; rotate: -40deg; background-color: #5bd34a;" />
-                <ui:VisualElement picking-mode="Ignore" class="confetti" style="left: 260px; top: -110px; rotate: 30deg; background-color: #ff9f1c;" />
-                <ui:VisualElement picking-mode="Ignore" class="confetti" style="left: 430px; top: -150px; rotate: -14deg; background-color: #b06cff;" />
-                <ui:VisualElement picking-mode="Ignore" class="confetti" style="left: 610px; top: -110px; rotate: 36deg; background-color: #38b6ff;" />
-                <ui:VisualElement picking-mode="Ignore" class="confetti" style="left: 760px; top: -40px; rotate: -30deg; background-color: #5bd34a;" />
-                <ui:VisualElement picking-mode="Ignore" class="confetti" style="left: 840px; top: 120px; rotate: 20deg; background-color: #ffc93c;" />
-                <ui:VisualElement picking-mode="Ignore" class="confetti" style="left: -210px; top: 140px; rotate: 40deg; background-color: #b06cff;" />
-            </ui:VisualElement>
+        <ui:VisualElement name="title" picking-mode="Ignore" class="stroke round-over__title">
             <ui:Label text="TIME UP!" picking-mode="Ignore" class="display round-over__title-text" />
             <ui:Label text="TIME UP!" picking-mode="Ignore" class="display round-over__title-text stroke__face" />
         </ui:VisualElement>

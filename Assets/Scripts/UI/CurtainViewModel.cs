@@ -14,8 +14,11 @@ namespace ToyCarArena.UI
     /// </summary>
     public sealed class CurtainViewModel : ViewModel, IPopup
     {
-        public const float LobbyDuration = 0.5f;
-        private const float MaxExtraDelay = 0.3f;
+        /// <summary>
+        /// How long the lobby shows at the least, from when it is shown: long enough to read who is in the match, even
+        /// when the arena loads faster.
+        /// </summary>
+        public const float LobbyDuration = 1.6f;
 
         public event Action LobbyShown;
         public IReadOnlyList<LobbyRow> Rows { get; private set; }
@@ -46,10 +49,10 @@ namespace ToyCarArena.UI
             LobbyShown?.Invoke();
         }
 
-        /// <summary>Loading and the old screen's fade have finished. The lobby adds at most 300 ms after them.</summary>
+        /// <summary>Loading and the old screen's fade have finished; READY! waits for the lobby's least time.</summary>
         public async UniTask Ready(CancellationToken token)
         {
-            var deadline = Math.Min(StartedAt + LobbyDuration, Time.realtimeSinceStartupAsDouble + MaxExtraDelay);
+            var deadline = StartedAt + LobbyDuration;
             while (Time.realtimeSinceStartupAsDouble < deadline) {
                 await UniTask.Yield(PlayerLoopTiming.Update, token);
             }

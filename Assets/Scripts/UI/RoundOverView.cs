@@ -20,7 +20,8 @@ namespace ToyCarArena.UI
         private const string WonClass = "round-over__title--won";
         private const string OutClass = "round-over__title--out";
         private const string EnterClass = "round-over--enter";
-        private const string ConfettiShownClass = "round-over__confetti--shown";
+        // The title's spring in (round-over__title in ui_screens) before the confetti bursts out of it, in milliseconds.
+        private const int ConfettiDelay = 200;
         private const string KnockedByShownClass = "round-over__by--shown";
         private const string BestShownClass = "best--shown";
 
@@ -79,6 +80,9 @@ namespace ToyCarArena.UI
             // The title and the buttons start small or low and spring into place while the screen fades in.
             Root.AddToClassList(EnterClass);
             Root.schedule.Execute(() => Root?.RemoveFromClassList(EnterClass)).StartingIn(EnterDelay);
+            if (ViewModel.Outcome == RoundOutcome.Won) {
+                Celebrate(lifetime.Token).Forget();
+            }
             await base.ShowAsync(token);
             // The reward runs beside input; no part of it delays NEXT MATCH, Space or Enter.
             xpProgress.Play(token);
@@ -112,6 +116,17 @@ namespace ToyCarArena.UI
         private void OnGeometryChanged(GeometryChangedEvent evt)
         {
             Root.EnableInClassList("round-over--landscape", evt.newRect.width > evt.newRect.height);
+        }
+
+        private async UniTaskVoid Celebrate(CancellationToken token)
+        {
+            var confetti = new ConfettiBurst(Root);
+            if (await UniTask.Delay(ConfettiDelay, DelayType.UnscaledDeltaTime, cancellationToken: token)
+                    .SuppressCancellationThrow()) {
+                return;
+            }
+
+            await confetti.Play(Root.Q<VisualElement>("title"), token).SuppressCancellationThrow();
         }
 
         private void RefreshGarage() => garagePortrait.Set(ViewModel.SelectedCar, ViewModel.SelectedColor);
@@ -178,7 +193,6 @@ namespace ToyCarArena.UI
                 Root.Q<Label>("by-name-face").text = ViewModel.KnockedOutByName;
             }
 
-            Root.Q<VisualElement>("confetti").EnableInClassList(ConfettiShownClass, ViewModel.Outcome == RoundOutcome.Won);
         }
 
         private void OnKeyDown(KeyDownEvent evt)
