@@ -64,6 +64,9 @@ namespace ToyCarArena.Gameplay.Round
         private RoundStandings standings;
 
         public IReadOnlyList<string> Names { get; private set; }
+
+        /// <summary>The levels shown by the names, by index (0 the player's), fixed when the cars were placed.</summary>
+        public IReadOnlyList<int> Levels { get; private set; }
         public IReadOnlyList<int> Colors { get; private set; }
 
         public ArenaRound(GameTuning tuning, IObjectResolver resolver, Car carPrefab, Transform carParent, IArenaEdge edge,
@@ -117,6 +120,12 @@ namespace ToyCarArena.Gameplay.Round
         /// </summary>
         public bool IsFinished { get; private set; }
 
+        /// <summary>
+        /// Whether the bots drive: while the round runs, and on after the player is out, so the arena behind the result
+        /// screen goes on like a match of players rather than freezing. Nothing they do then counts: the result is out.
+        /// </summary>
+        public bool IsBotsPlaying => IsRunning || (IsFinished && Player != null && Player.IsOut);
+
         public float TimeLeft => Mathf.Max(0f, tuning.Round.Duration - elapsed);
 
         /// <summary>
@@ -167,13 +176,17 @@ namespace ToyCarArena.Gameplay.Round
             players = roster.ForRound(difficulty.BotCount);
             var names = new string[1 + difficulty.BotCount];
             var colors = new int[names.Length];
+            var levels = new int[names.Length];
             names[0] = "YOU";
             colors[0] = roster.ColorOf(0);
+            levels[0] = roster.LevelOf(0);
             for (var index = 1; index < names.Length; index++) {
                 names[index] = players[index - 1].Name;
                 colors[index] = players[index - 1].ColorId;
+                levels[index] = players[index - 1].Level;
             }
             Names = Array.AsReadOnly(names);
+            Levels = Array.AsReadOnly(levels);
             Colors = Array.AsReadOnly(colors);
             standings = new RoundStandings(names.Length);
             Spawn(1 + difficulty.BotCount);
@@ -206,6 +219,10 @@ namespace ToyCarArena.Gameplay.Round
         public void Tick()
         {
             if (!IsRunning) {
+                if (IsBotsPlaying) {
+                    TakeOutFallen();
+                }
+
                 return;
             }
 
@@ -274,7 +291,20 @@ namespace ToyCarArena.Gameplay.Round
 
         /// <summary>The played occupant, even after the visit's roster has moved on.</summary>
         public string NameOf(int index) => Names[index];
+        public int LevelOf(int index) => Levels[index];
         public int ColorOf(int index) => Colors[index];
+
+        /// <summary>
+        /// After the round, a bot that falls is only out of the bots' play: no standings, knockouts or events.
+        /// </summary>
+        private void TakeOutFallen()
+        {
+            foreach (var car in cars) {
+                if (!car.IsOut && car.Position.y < tuning.Round.FallHeight) {
+                    car.TakeOut();
+                }
+            }
+        }
 
         private void Finish(RoundOutcome outcome, int place)
         {

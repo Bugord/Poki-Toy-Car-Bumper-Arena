@@ -1,3 +1,4 @@
+using Bugord.App.Localization;
 namespace ToyCarArena.UI
 {
     /// <summary>
@@ -21,7 +22,8 @@ namespace ToyCarArena.UI
             return tier;
         }
 
-        public static string NameOf(int level) => Names[TierOf(level)];
+        /// <summary>The rank's name in the player's language; <see cref="ClassOf"/> keeps the English one.</summary>
+        public static string NameOf(int level) => Strings.Get("rank." + Names[TierOf(level)].ToLowerInvariant());
 
         /// <summary>The level the next rank starts at, or 0 past the last one.</summary>
         public static int NextRankLevel(int level)
@@ -33,7 +35,7 @@ namespace ToyCarArena.UI
         public static string NextRankName(int level)
         {
             var tier = TierOf(level);
-            return tier + 1 < Names.Length ? Names[tier + 1] : null;
+            return tier + 1 < Names.Length ? Strings.Get("rank." + Names[tier + 1].ToLowerInvariant()) : null;
         }
 
         /// <summary>The badge class for the level, level-badge--rookie and the rest (ui_screens).</summary>

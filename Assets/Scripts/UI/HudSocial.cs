@@ -1,4 +1,5 @@
 using System;
+using Bugord.App.Localization;
 using Bugord.App.UI;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
@@ -16,11 +17,12 @@ namespace ToyCarArena.UI
         private const float SpeechGap = 4f;
         private const float EventChance = 0.55f;
         private const float RecoveryDelay = 0.65f;
-        private static readonly string[] WinLines = { "GG", "EZ", "BYE!", "NICE!" };
-        private static readonly string[] OutLines = { "NOOO!", "OOPS", "GG", "HEY!" };
-        private static readonly string[] CloseLines = { "PHEW!", "CLOSE!" };
-        private static readonly string[] HelloLines = { "HI!", "GL HF", "LET'S GO" };
-        private static readonly string[] RivalLines = { "AGAIN!", "LOL" };
+        // String table keys: the bots speak short gamer slang in the player's language.
+        private static readonly string[] WinLines = { "social.gg", "social.ez", "social.bye", "social.nice" };
+        private static readonly string[] OutLines = { "social.nooo", "social.oops", "social.gg", "social.hey" };
+        private static readonly string[] CloseLines = { "social.phew", "social.close" };
+        private static readonly string[] HelloLines = { "social.hi", "social.glhf", "social.lets_go" };
+        private static readonly string[] RivalLines = { "social.again", "social.lol" };
 
         private readonly HudViewModel model;
         private readonly VisualElement root;
@@ -242,7 +244,7 @@ namespace ToyCarArena.UI
             var position = model.PositionOf(index);
             position.y = 0f;
             available.Position = position;
-            available.Text.SetText(lines[Random.Range(0, lines.Length)]);
+            available.Text.SetText(Strings.Get(lines[Random.Range(0, lines.Length)]));
             available.Root.style.display = DisplayStyle.Flex;
             available.Root.style.visibility = Visibility.Hidden;
             nextSpeech[index] = now + SpeechGap;
@@ -362,7 +364,7 @@ namespace ToyCarArena.UI
             private readonly VisualElement secondChip = CarColor.CreateChip(0, false);
             private readonly StickerText first = new("");
             private readonly StickerText second = new("");
-            private readonly StickerText fell = new("FELL OFF");
+            private readonly StickerText fell = new(Strings.Get("hud.fell_off"));
             private readonly VisualElement arrow = new() { pickingMode = PickingMode.Ignore };
             private int firstColor;
             private int secondColor;

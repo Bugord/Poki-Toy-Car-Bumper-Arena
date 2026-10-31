@@ -13,6 +13,14 @@ namespace ToyCarArena.Gameplay.Round
     {
         public const int MaxBots = 6;
 
+        // A seated player's level, a look only (difficulty never reads it): mostly within a few levels of the player's,
+        // now and then a veteran far above.
+        private const int LevelBelow = 2;
+        private const int LevelAbove = 3;
+        private const float VeteranChance = 0.12f;
+        private const int VeteranMin = 10;
+        private const int VeteranMax = 40;
+
         private readonly CarCatalog catalog;
         private readonly IPlayerCar playerCar;
         private readonly int[] colors = new int[MaxBots];
@@ -46,7 +54,7 @@ namespace ToyCarArena.Gameplay.Round
                 colors[slot] = playerColor;
                 var player = players[slot];
                 if (player != null) {
-                    players[slot] = new SessionPlayer(player.Name, player.Car, playerColor);
+                    players[slot] = new SessionPlayer(player.Name, player.Car, playerColor, player.Level);
                 }
                 break;
             }
@@ -56,6 +64,7 @@ namespace ToyCarArena.Gameplay.Round
         public string NameOf(int carIndex) => carIndex == 0 ? "YOU" : PlayerOf(carIndex).Name;
         public CarCatalog.Entry CarOf(int carIndex) => PlayerOf(carIndex).Car;
         public int ColorOf(int carIndex) => carIndex == 0 ? playerColor : colors[Slot(carIndex)];
+        public int LevelOf(int carIndex) => carIndex == 0 ? playerCar.Level : PlayerOf(carIndex).Level;
         public bool Joined(int carIndex) => carIndex > 0 && joined[Slot(carIndex)];
         public string LeftNameOf(int carIndex) => left[Slot(carIndex)];
 
@@ -125,8 +134,17 @@ namespace ToyCarArena.Gameplay.Round
             if (nextName == deck.Length) {
                 Refill();
             }
-            players[slot] = new SessionPlayer(deck[nextName++], catalog.Cars[Random.Range(0, catalog.Cars.Count)], colors[slot]);
+            var car = catalog.Cars[Random.Range(0, catalog.Cars.Count)];
+            players[slot] = new SessionPlayer(deck[nextName++], car, colors[slot], LevelNear(playerCar.Level));
             joined[slot] = true;
+        }
+
+        private static int LevelNear(int level)
+        {
+            if (Random.value < VeteranChance) {
+                return level + Random.Range(VeteranMin, VeteranMax + 1);
+            }
+            return Math.Max(1, level + Random.Range(-LevelBelow, LevelAbove + 1));
         }
 
         private void Refill()
@@ -171,12 +189,14 @@ namespace ToyCarArena.Gameplay.Round
         public string Name { get; }
         public CarCatalog.Entry Car { get; }
         public int ColorId { get; }
+        public int Level { get; }
 
-        public SessionPlayer(string name, CarCatalog.Entry car, int colorId)
+        public SessionPlayer(string name, CarCatalog.Entry car, int colorId, int level)
         {
             this.Name = name;
             this.Car = car;
             this.ColorId = colorId;
+            this.Level = level;
         }
     }
 }

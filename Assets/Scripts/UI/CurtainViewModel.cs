@@ -14,8 +14,11 @@ namespace ToyCarArena.UI
     /// </summary>
     public sealed class CurtainViewModel : ViewModel, IPopup
     {
-        public const float LobbyDuration = 0.5f;
-        private const float MaxExtraDelay = 0.3f;
+        /// <summary>
+        /// How long the lobby shows at the least, from when it is shown: long enough to read who is in the match, even
+        /// when the arena loads faster.
+        /// </summary>
+        public const float LobbyDuration = 1.6f;
 
         public event Action LobbyShown;
         public IReadOnlyList<LobbyRow> Rows { get; private set; }
@@ -32,12 +35,13 @@ namespace ToyCarArena.UI
         {
             ArenaName = arenaName;
             ArenaIsNew = arenaIsNew;
-            var rows = new List<LobbyRow> { new(0, roster.ColorOf(0), "YOU", null, false, false) };
+            var rows = new List<LobbyRow> { new(0, roster.ColorOf(0), GameText.You, roster.LevelOf(0), null, false, false) };
             for (var index = 1; index <= SessionRoster.MaxBots; index++) {
                 var left = roster.LeftNameOf(index);
                 if (index <= botCount || left != null) {
-                    rows.Add(new LobbyRow(index, roster.ColorOf(index), index <= botCount ? roster.NameOf(index) : null, left,
-                        roster.Joined(index), index == nemesis));
+                    var isSeated = index <= botCount;
+                    rows.Add(new LobbyRow(index, roster.ColorOf(index), isSeated ? roster.NameOf(index) : null,
+                        isSeated ? roster.LevelOf(index) : 0, left, roster.Joined(index), index == nemesis));
                 }
             }
             Rows = rows.AsReadOnly();
@@ -46,10 +50,10 @@ namespace ToyCarArena.UI
             LobbyShown?.Invoke();
         }
 
-        /// <summary>Loading and the old screen's fade have finished. The lobby adds at most 300 ms after them.</summary>
+        /// <summary>Loading and the old screen's fade have finished; READY! waits for the lobby's least time.</summary>
         public async UniTask Ready(CancellationToken token)
         {
-            var deadline = Math.Min(StartedAt + LobbyDuration, Time.realtimeSinceStartupAsDouble + MaxExtraDelay);
+            var deadline = StartedAt + LobbyDuration;
             while (Time.realtimeSinceStartupAsDouble < deadline) {
                 await UniTask.Yield(PlayerLoopTiming.Update, token);
             }
@@ -62,15 +66,18 @@ namespace ToyCarArena.UI
         public readonly int Index;
         public readonly int ColorId;
         public readonly string Name;
+        /// <summary>The seated player's level, 0 for a row that only leaves.</summary>
+        public readonly int Level;
         public readonly string LeftName;
         public readonly bool IsNew;
         public readonly bool IsNemesis;
 
-        public LobbyRow(int index, int colorId, string name, string leftName, bool isNew, bool isNemesis)
+        public LobbyRow(int index, int colorId, string name, int level, string leftName, bool isNew, bool isNemesis)
         {
             this.Index = index;
             this.ColorId = colorId;
             this.Name = name;
+            this.Level = level;
             this.LeftName = leftName;
             this.IsNew = isNew;
             this.IsNemesis = isNemesis;

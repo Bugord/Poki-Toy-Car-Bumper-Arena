@@ -264,6 +264,7 @@ namespace ToyCarArena.Tests.PlayMode
         {
             public string SelectedCar => "racer";
             public int SelectedColor { get; private set; }
+            public int Level => 1;
             public event System.Action<int> ColorChanged;
 
             public bool SelectColor(int id)

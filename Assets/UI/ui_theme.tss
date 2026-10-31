@@ -28,6 +28,8 @@
     --white: #ffffff;
     --soft: #eef3fb;
     --shade: #c7d3ea;
+    --track: #dfe5ef;
+    --pick: #e3f3ff;
     --muted: #5b6b8c;
     --red: #ff4d4d;
     --gold: #ffc93c;

@@ -9,6 +9,9 @@ namespace ToyCarArena.Gameplay.Cars
     {
         string SelectedCar { get; }
         int SelectedColor { get; }
+
+        /// <summary>The player's level; visit bots are seated with levels around it.</summary>
+        int Level { get; }
         bool SelectColor(int id);
         event Action<int> ColorChanged;
     }
@@ -22,6 +25,7 @@ namespace ToyCarArena.Gameplay.Cars
 
         public string SelectedCar { get; }
         public int SelectedColor => 0;
+        public int Level => 1;
         public bool SelectColor(int id) => false;
         public event Action<int> ColorChanged { add { } remove { } }
     }

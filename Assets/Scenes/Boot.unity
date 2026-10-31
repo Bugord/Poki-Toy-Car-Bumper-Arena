@@ -160,6 +160,7 @@ MonoBehaviour:
   tuning: {fileID: 11400000, guid: d3ac6d0d1668c84439c54712e09fbaca, type: 2}
   carCatalog: {fileID: 11400000, guid: 8d5e13a8f906422baa7e47d99440e034, type: 2}
   arenaCatalog: {fileID: 11400000, guid: 2fe3d4e7840d6c94a81609bfd78f968f, type: 2}
+  strings: {fileID: 4900000, guid: 25606cacdbcb4bb6961e9a6fae3377b7, type: 3}
 --- !u!4 &2030469846
 Transform:
   m_ObjectHideFlags: 0

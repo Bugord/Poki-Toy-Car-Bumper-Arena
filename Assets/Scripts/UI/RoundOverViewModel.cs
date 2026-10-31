@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading;
+using Bugord.App.Localization;
 using Bugord.App.Platform;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.App;
@@ -107,13 +108,13 @@ namespace ToyCarArena.UI
             var rewards = new SortedDictionary<int, TrackStop>();
             foreach (var car in catalog.Cars) {
                 if (car.UnlockLevel > from && !rewards.ContainsKey(car.UnlockLevel)) {
-                    rewards[car.UnlockLevel] = new TrackStop(car.UnlockLevel, car.DisplayName, car, null, false);
+                    rewards[car.UnlockLevel] = new TrackStop(car.UnlockLevel, GameText.Car(car), car, null, false);
                 }
             }
             foreach (var map in tuning.Maps) {
                 var arena = arenaCatalog.Find(map.Id);
                 if (map.UnlockLevel > from && arena != null && !rewards.ContainsKey(map.UnlockLevel)) {
-                    rewards[map.UnlockLevel] = new TrackStop(map.UnlockLevel, arena.DisplayName, null, arena, false);
+                    rewards[map.UnlockLevel] = new TrackStop(map.UnlockLevel, GameText.Arena(arena), null, arena, false);
                 }
             }
 
@@ -125,8 +126,16 @@ namespace ToyCarArena.UI
                 }
                 stops.Add(reward);
             }
+            // Once the rewards run out, plain levels keep the track full, the next ones first, so the round's XP
+            // still fills a bar that moves.
+            for (var level = from + 1; stops.Count < TrackRewards && (rank == 0 || level < rank); level++) {
+                if (!rewards.ContainsKey(level)) {
+                    stops.Add(new TrackStop(level, null, null, null, false));
+                }
+            }
+            stops.Sort((a, b) => a.Level.CompareTo(b.Level));
             if (rank > 0) {
-                stops.Add(new TrackStop(rank, PlayerRank.NextRankName(from) + " RANK", null, null, true));
+                stops.Add(new TrackStop(rank, Strings.Format("result.rank_stop", PlayerRank.NextRankName(from)), null, null, true));
             }
             return stops;
         }
@@ -156,7 +165,10 @@ namespace ToyCarArena.UI
         public void PlayAgain() => SetResult(true);
     }
 
-    /// <summary>A stop on the level track: the level and what it opens, one of a car, an arena or a rank.</summary>
+    /// <summary>
+    /// A stop on the level track: the level and what it opens, one of a car, an arena or a rank, or nothing (a plain
+    /// level, with no name).
+    /// </summary>
     public sealed class TrackStop
     {
         public TrackStop(int level, string name, CarCatalog.Entry car, ArenaCatalog.Entry arena, bool isRank)
