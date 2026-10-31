@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Bugord.Core.Storage;
 using UnityEngine;
 using VContainer.Unity;
 using Object = UnityEngine.Object;
@@ -11,14 +12,19 @@ namespace ToyCarArena.Audio
     /// The game's <see cref="IAudioService"/>: a few audio sources on one object of its own for the sound effects, taken
     /// in turn and the oldest one cut when all are busy, and one more for the music. The object outlives scene loads and
     /// carries the only audio listener, so nothing goes quiet while the Game scene is swapped under the curtain, and the
-    /// music does not start over each round. Timing is unscaled: a hit-stop slows the game, not the sound.
+    /// music does not start over each round. Timing is unscaled: a hit-stop slows the game, not the sound. Music and
+    /// sound effects are muted apart (the settings popup), saved with the kit's storage as in SMUP; muted music keeps
+    /// playing silently, so switching it back on does not start the track over.
     /// </summary>
     public sealed class AudioService : IAudioService, ITickable, IDisposable
     {
         // How fast the music's level follows the duck under a jingle, in shares of its full level per second.
         private const float DuckSpeed = 4f;
+        private const string MusicMutedKey = "audio.music.muted";
+        private const string SoundMutedKey = "audio.sound.muted";
 
         private readonly AudioLibrary library;
+        private readonly IKeyValueStorage storage;
         private readonly GameObject root;
         private readonly AudioSource[] voices;
         private readonly float[] voiceStartTimes;
@@ -26,11 +32,13 @@ namespace ToyCarArena.Audio
         private readonly Dictionary<Sound, float> startTimes = new();
 
         private bool isMusicOn;
+        private bool isSoundMuted;
         private float duckEndTime;
 
-        public AudioService(AudioLibrary library)
+        public AudioService(AudioLibrary library, IKeyValueStorage storage)
         {
             this.library = library;
+            this.storage = storage;
 
             this.root = new GameObject("Audio");
             Object.DontDestroyOnLoad(root);
@@ -43,6 +51,7 @@ namespace ToyCarArena.Audio
             }
 
             this.music = CreateSource(true);
+            Apply(storage.GetBool(MusicMutedKey), storage.GetBool(SoundMutedKey));
         }
 
         public AudioLibrary Library => library;
@@ -51,6 +60,24 @@ namespace ToyCarArena.Audio
         {
             get => AudioListener.pause;
             set => AudioListener.pause = value;
+        }
+
+        public bool IsMusicMuted
+        {
+            get => music.mute;
+            set {
+                storage.SetBool(MusicMutedKey, value);
+                music.mute = value;
+            }
+        }
+
+        public bool IsSoundMuted
+        {
+            get => isSoundMuted;
+            set {
+                storage.SetBool(SoundMutedKey, value);
+                Apply(IsMusicMuted, value);
+            }
         }
 
         public void Play(Sound sound, float volume = 1f)
@@ -152,6 +179,15 @@ namespace ToyCarArena.Audio
             }
 
             return oldest;
+        }
+
+        private void Apply(bool isMusicMuted, bool isSoundMuted)
+        {
+            this.isSoundMuted = isSoundMuted;
+            music.mute = isMusicMuted;
+            foreach (var voice in voices) {
+                voice.mute = isSoundMuted;
+            }
         }
 
         private float MusicLevel()

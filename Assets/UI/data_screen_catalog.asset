@@ -37,3 +37,9 @@ MonoBehaviour:
     popupOptions:
       cancelOnBackdropClick: 0
       cancelOnNavigationCancel: 0
+  - screenId: Settings
+    uxml: {fileID: 9197481963319205126, guid: 36f9a2e65b9345c3ad923e4d184c91b4, type: 3}
+    layer: 1
+    popupOptions:
+      cancelOnBackdropClick: 0
+      cancelOnNavigationCancel: 0

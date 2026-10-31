@@ -357,7 +357,8 @@
 .lobby__title {
     margin: 0 0 48px 0;
     padding: 0;
-    font-size: 78px;
+    font-size: 112px;
+    rotate: -3deg;
     color: var(--gold);
     -unity-text-outline-width: 10px;
     text-shadow: 0 10px 0 rgb(29, 43, 79);
@@ -404,25 +405,25 @@
 
 .lobby__slot {
     flex-shrink: 0;
-    height: 130px;
+    height: 122px;
     margin-bottom: 12px;
 }
 
+/* Seats are quiet translucent strips on the navy curtain; only the player's own is brighter. */
 .lobby__row {
     position: absolute;
     left: 0;
     right: 0;
     top: 0;
-    height: 130px;
+    height: 122px;
     flex-direction: row;
     align-items: center;
-    padding: 10px 24px;
-    border-width: 7px;
-    border-bottom-width: 14px;
-    border-color: var(--navy);
-    border-radius: 42px;
-    background-color: var(--white);
+    padding: 0 36px 0 22px;
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.08);
 }
+
+.lobby__row--you { background-color: rgba(255, 255, 255, 0.18); }
 
 .lobby__row .hud__chip {
     position: relative;
@@ -471,7 +472,7 @@
     -unity-text-align: middle-center;
 }
 
-.lobby__row--left { background-color: var(--shade); }
+.lobby__row--left { background-color: rgba(255, 255, 255, 0.04); }
 .lobby__row--left .hud__chip { background-color: var(--muted); }
 .lobby__row--left .lobby__name { color: var(--muted); }
 .lobby__badge--left { background-color: var(--silver); }
@@ -486,8 +487,9 @@
 
 .lobby__title > .stroke__face { margin: 0; }
 
-/* The HUD: the stopwatch pill at the top centre, 54 px from the edge, and under it the pill with a chip per car still
-   in the round. On a wide screen it stays in the middle, over the arena. */
+/* The HUD: one white bar at the top centre, 54 px from the edge: the stopwatch, a chip per car still in the round with
+   their count, and from the first knock-out the player's KOs, each part split off by a short rule. On a wide screen it
+   stays in the middle, over the arena. Each part keeps its own name, so the name tags and the feed keep clear of it. */
 .hud {
     position: absolute;
     left: 0;
@@ -498,10 +500,31 @@
     padding-top: 54px;
 }
 
-.hud__timer {
+.hud__bar {
+    flex-shrink: 0;
     height: 136px;
-    min-width: 320px;
-    padding: 0 46px 0 24px;
+    padding: 0 30px 0 12px;
+}
+
+.hud__section {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    height: 100%;
+    border-radius: 999px;
+}
+
+.hud__sep {
+    flex-shrink: 0;
+    width: 8px;
+    height: 64px;
+    margin: 0 22px 0 18px;
+    border-radius: 4px;
+    background-color: var(--shade);
+}
+
+.hud__timer {
+    padding: 0 16px 0 12px;
     transition-property: scale;
     transition-duration: 0.15s;
     transition-timing-function: ease-out;
@@ -509,14 +532,14 @@
 
 /* The time, wide enough for any m:ss so the pill does not change width every second. */
 .hud__time {
-    min-width: 150px;
-    margin-left: 18px;
+    min-width: 130px;
+    margin-left: 14px;
 }
 
 .hud__time-text {
     margin: 0;
     padding: 0 0 6px 0;
-    font-size: 88px;
+    font-size: 76px;
     color: var(--navy);
     -unity-text-align: middle-center;
     white-space: nowrap;
@@ -543,15 +566,13 @@
     transition-duration: 0.05s;
 }
 
-/* The cars left: a white pill, lower than the time's so it does not compete with it, with a stack of overlapping round
+/* The cars left: the middle of the bar, a stack of overlapping round
    chips, one per car still in (HudView builds them), each in the car's colour (car-color) with a little white car seen
-   from above in it, and the count and LEFT after them. The bots come first and the player's chip last, in front on the
+   from above in it, and the count after them. The bots come first and the player's chip last, in front on the
    right, with the white ring of its marker on the arena inside its outline. The pill pops when a car goes out
    (hud__cars--pop) and the count punches (hud__cars-count--punch). */
 .hud__cars {
-    height: 116px;
-    margin-top: 24px;
-    padding: 0 38px 0 14px;
+    padding: 0;
     transition-property: scale;
     transition-duration: 0.2s;
     transition-timing-function: ease-out;
@@ -653,9 +674,9 @@
 }
 
 .hud__cars-count {
-    margin: 0 0 0 18px;
+    margin: 0 0 0 14px;
     padding: 0 0 6px 0;
-    font-size: 72px;
+    font-size: 68px;
     color: var(--navy);
     -unity-text-align: middle-center;
     white-space: nowrap;
@@ -667,16 +688,6 @@
 .hud__cars-count--punch {
     scale: 1.3 1.3;
     transition-duration: 0.05s;
-}
-
-.hud__cars-text {
-    margin: 0 0 0 10px;
-    padding: 0 0 2px 0;
-    font-size: 44px;
-    letter-spacing: 1px;
-    color: var(--navy);
-    -unity-text-align: middle-left;
-    white-space: nowrap;
 }
 
 /* The little car of the PUSHED OFF BY badge: four wheels under a body with a windscreen. */
@@ -740,9 +751,7 @@
    (HudView sets hud__ko--shown), popping at each one. */
 .hud__ko {
     display: none;
-    height: 108px;
-    margin-top: 20px;
-    padding: 0 36px 0 24px;
+    padding: 0;
     transition-property: scale;
     transition-duration: 0.2s;
     transition-timing-function: ease-out;
@@ -758,9 +767,9 @@
 }
 
 .hud__ko-text {
-    margin: 0 0 0 14px;
+    margin: 0 0 0 12px;
     padding: 0 0 6px 0;
-    font-size: 60px;
+    font-size: 68px;
     color: var(--navy);
     -unity-text-align: middle-left;
     white-space: nowrap;
@@ -1055,7 +1064,7 @@
     position: absolute;
     left: 0;
     right: 0;
-    top: 390px;
+    top: 250px;
     align-items: center;
     transition-property: scale, opacity;
     transition-duration: 0.35s, 0.2s;
@@ -1421,209 +1430,19 @@
     rotate: 10deg;
 }
 
-.round-over__card {
-    flex-shrink: 0;
-    margin-top: 48px;
-    padding: 30px 40px 34px 40px;
-    transition-property: translate, opacity;
-    transition-duration: 0.3s;
-    transition-timing-function: ease-out;
-    transition-delay: 0.05s;
-}
-
-/* On the card's top corner, clear of both record chips in its rows. Shares NEW BEST!'s delayed entrance. */
+/* REVENGE! under the title, after a round the player knocked out the bot marked for it. Shares the stickers' entrance. */
 .round-over__revenge {
-    position: absolute;
-    right: 12px;
-    top: -30px;
+    flex-shrink: 0;
+    margin-top: 30px;
     background-color: var(--red);
     color: var(--white);
     rotate: 5deg;
-}
-
-.round-over__revenge--enter {
-    scale: 0 0;
-}
-
-/* NEW BEST! starts at 0.35s after the card enters; REVENGE follows it when both were earned. */
-.round-over__revenge--second {
-    transition-delay: 0.55s;
-}
-
-.round-over__place {
-    align-self: stretch;
-    align-items: center;
-}
-
-/* The place on a flat tilted pill: gold, silver or bronze on the podium, soft past it (RoundOverView). */
-.round-over__place-pill {
-    margin-top: 12px;
-    padding: 0 56px 10px 56px;
-    border-width: 7px;
-    border-color: var(--navy);
-    border-radius: 999px;
-    background-color: var(--soft);
-    rotate: -2deg;
-}
-
-.round-over__place-pill--gold {
-    background-color: var(--gold);
-}
-
-.round-over__place-pill--silver {
-    background-color: var(--silver);
-}
-
-.round-over__place-pill--bronze {
-    background-color: var(--bronze);
-}
-
-.round-over__place-value {
-    margin: 0;
-    padding: 0;
-    font-size: 104px;
-    color: var(--navy);
-    -unity-text-align: middle-center;
-    white-space: nowrap;
-}
-
-/* OF N CARS, and the best place beside it. */
-.round-over__of {
-    flex-direction: row;
-    align-items: center;
-    margin-top: 16px;
-}
-
-.round-over__place-best {
-    margin-left: 24px;
-}
-
-.round-over__time-label {
-    flex-direction: row;
-    align-items: center;
-}
-
-.round-over__time-caption {
-    margin-left: 26px;
-}
-
-/* The time on the arena and the knock-outs, right in their insets. */
-.round-over__value {
-    margin: 0;
-    padding: 0;
-    font-size: 72px;
-    color: var(--navy);
-    -unity-text-align: middle-right;
-    white-space: nowrap;
-}
-
-/* The knock-outs, in an inset like the time's: the star, KNOCKOUTS, and the count with the best beside it. */
-.round-over__ko {
-    margin-top: 20px;
-}
-
-.round-over__ko-score {
-    flex-direction: row;
-    align-items: center;
-}
-
-.round-over__ko-best {
-    margin-right: 24px;
 }
 
 .round-over__spacer {
     flex-grow: 1;
     flex-shrink: 0;
     min-height: 40px;
-}
-
-/* Compact only this card to reserve a real layout slot for XP, including its unlock sticker. The panel's Expand
-   scaling keeps landscape at least 1920 reference pixels high too; no absolute reward can cover the card or button. */
-.round-over__card .rule {
-    margin: 22px 0;
-}
-
-.round-over__card .inset {
-    padding: 12px 28px 16px 28px;
-}
-
-.round-over__progress {
-    flex-shrink: 0;
-    width: 981px;
-    margin-top: 32px;
-}
-
-.round-over__xp-row {
-    flex-direction: row;
-    align-items: center;
-}
-
-.round-over__level {
-    flex-shrink: 0;
-    width: 160px;
-    height: 160px;
-    background-color: var(--gold);
-    rotate: -5deg;
-}
-
-.round-over__level-value {
-    margin: 0;
-    padding: 0;
-    font-size: 44px;
-    -unity-text-align: middle-center;
-    white-space: nowrap;
-}
-
-.round-over__xp-body {
-    flex-grow: 1;
-    margin-left: 28px;
-    align-items: stretch;
-}
-
-.round-over__xp-gain {
-    align-self: center;
-    margin-bottom: 8px;
-}
-
-.round-over__xp-text {
-    margin: 0;
-    padding: 0;
-    font-size: 64px;
-    color: var(--gold);
-    -unity-text-outline-width: 8px;
-    text-shadow: 0 8px 0 rgb(29, 43, 79);
-}
-
-.round-over__xp-track {
-    height: 60px;
-    background-color: var(--soft);
-}
-
-.round-over__xp-clip {
-    position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 999px;
-    overflow: hidden;
-}
-
-.round-over__xp-fill {
-    width: 0;
-    height: 100%;
-    border-radius: 999px;
-    background-color: var(--gold);
-}
-
-.round-over__xp-next {
-    margin: 12px 0 0 0;
-    padding: 0;
-    font-size: 36px;
-    color: var(--white);
-    -unity-text-align: middle-center;
-    text-shadow: 0 5px 0 rgb(29, 43, 79);
-    white-space: nowrap;
 }
 
 .round-over__unlock-slot {
@@ -1643,7 +1462,291 @@
     transition-property: none;
 }
 
-/* PLAY AGAIN and, where there is a keyboard, the key that presses it. The entrance moves this wrapper, not the
+/* The level card: the player's level badge, the XP the round gave and how far the level is, over the level track
+   (RoundOverProgress builds its stops). The meta goal is the one thing on the result besides the buttons. */
+.level-card {
+    flex-shrink: 0;
+    margin: 24px 0 44px 0;
+    padding: 28px 40px 10px 40px;
+    align-items: stretch;
+    transition-property: translate, opacity;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-out;
+    transition-delay: 0.05s;
+}
+
+.level-card__head {
+    flex-direction: row;
+    align-items: center;
+}
+
+.level-card__gain {
+    margin-left: 28px;
+}
+
+.level-card__rank {
+    font-size: 34px;
+    -unity-text-align: middle-left;
+}
+
+.level-card__xp {
+    margin: 0;
+    padding: 0;
+    font-size: 64px;
+    color: var(--green-shade);
+    -unity-text-align: middle-left;
+}
+
+.level-card__total {
+    margin-left: auto;
+    font-size: 34px;
+}
+
+/* A level badge: the number on a rounded sticker in its rank's colour (PlayerRank): white, bronze, silver, gold, and
+   pink for legend, since the panel draws no gradient. */
+.level-badge {
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    min-width: 60px;
+    height: 50px;
+    padding: 0 10px;
+    border-width: 5px;
+    border-bottom-width: 9px;
+    border-color: var(--navy);
+    border-radius: 16px;
+    background-color: var(--white);
+    color: var(--navy);
+}
+
+.level-badge--big {
+    min-width: 132px;
+    height: 116px;
+    padding: 0 18px;
+    border-width: 8px;
+    border-bottom-width: 16px;
+    border-radius: 30px;
+}
+
+.level-badge__value {
+    margin: 0;
+    padding: 0;
+    font-size: 30px;
+    -unity-text-align: middle-center;
+}
+
+.level-badge--big .level-badge__value {
+    font-size: 70px;
+}
+
+/* The level track, as in the design: round stops joined by bars that tuck under the next stop, the captions hanging
+   under the stops. A reached stop turns into a gold disc with a navy tick; the current level is gold from the start. */
+.track {
+    margin-top: 26px;
+    padding: 0 30px 96px 30px;
+}
+
+/* The bars' row and, laid exactly over it, the stops' row (RoundOverProgress.BuildTrack). Every bar and every gap
+   grows from nothing by the same share, and every bar reaches 14 px under each stop, so the two rows line up. */
+.track__row {
+    flex-direction: row;
+    align-items: center;
+    height: 127px;
+}
+
+.track__row--nodes {
+    position: absolute;
+    left: 30px;
+    right: 30px;
+    top: 0;
+}
+
+.track__slot {
+    flex-shrink: 0;
+    width: 105px;
+}
+
+.track__slot--rank {
+    width: 127px;
+}
+
+.track__gap {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 39px;
+}
+
+.track__node {
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 105px;
+    height: 105px;
+    border-width: 8px;
+    border-bottom-width: 14px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+    color: var(--navy);
+}
+
+.track__node--rank {
+    width: 127px;
+    height: 127px;
+}
+
+.track__node--reached {
+    background-color: var(--gold);
+}
+
+/* After the stop's own colours, so the next-rank stop wears its rank. */
+.level-badge--rookie { background-color: var(--white); }
+.level-badge--bronze { background-color: #e8a46a; }
+.level-badge--silver { background-color: #d7e0ee; }
+.level-badge--gold { background-color: var(--gold); }
+.level-badge--legend { background-color: #ff7aa8; }
+
+.track__level {
+    margin: 0;
+    padding: 0 0 4px 0;
+    font-size: 44px;
+    -unity-text-align: middle-center;
+}
+
+.track__node--rank .track__level { font-size: 50px; }
+
+/* A car still to come: a plain navy silhouette. */
+.track__car {
+    width: 61px;
+    height: 33px;
+    border-radius: 14px;
+    background-color: var(--navy);
+}
+
+.track__map {
+    width: 55px;
+    height: 55px;
+    border-width: 7px;
+    border-color: var(--navy);
+    border-radius: 999px;
+}
+
+.track__caption {
+    position: absolute;
+    top: 100%;
+    left: -60px;
+    width: 224px;
+    margin-top: 11px;
+    align-items: center;
+}
+
+.track__node--rank .track__caption {
+    left: -49px;
+}
+
+.track__caption-level {
+    margin: 0;
+    padding: 0;
+    font-size: 28px;
+    color: var(--muted);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.track__caption-name {
+    margin: 0;
+    padding: 0;
+    font-size: 30px;
+    color: var(--navy);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+/* Covers the stop's whole outline: the node's border sits outside this child's box. */
+.track__reach {
+    display: none;
+    position: absolute;
+    left: -8px;
+    top: -8px;
+    right: -8px;
+    bottom: -14px;
+    align-items: center;
+    justify-content: center;
+    border-width: 8px;
+    border-bottom-width: 14px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--gold);
+}
+
+.track__node--done .track__reach {
+    display: flex;
+}
+
+.track__tick-mark {
+    width: 36px;
+    height: 19px;
+    margin-top: -10px;
+    border-left-width: 11px;
+    border-bottom-width: 11px;
+    border-color: var(--navy);
+    rotate: -45deg;
+}
+
+/* No end caps: the bar runs under both its stops, which are drawn over it. */
+.track__segment {
+    flex-grow: 1;
+    flex-basis: 0;
+    height: 33px;
+    min-width: 67px;
+    margin: 0 -14px;
+    border-top-width: 7px;
+    border-bottom-width: 7px;
+    border-color: var(--navy);
+    background-color: var(--soft);
+    overflow: hidden;
+    transform-origin: 0 50%;
+}
+
+/* Toward the next rank: a row of pale dots. The bar keeps the same margins and no padding, as every bar must take the
+   same share of the width as the gap over it; the dots' own margins keep them clear of the stops. */
+.track__segment--dotted {
+    height: 11px;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.track__dots {
+    flex-grow: 1;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0 22px;
+}
+
+.track__dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 999px;
+    background-color: var(--silver);
+}
+
+/* As far in from each end as the bar runs under its stops. */
+.track__fill-area {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    top: 0;
+    bottom: 0;
+}
+
+.track__fill {
+    width: 0;
+    height: 100%;
+    background-color: var(--gold);
+}
+
+/* NEXT MATCH and, where there is a keyboard, the key that presses it. The entrance moves this wrapper, not the
    button, whose own translate is its press. */
 .round-over__actions {
     flex-shrink: 0;
@@ -1687,13 +1790,13 @@
     scale: 0 0;
 }
 
-.round-over--enter .round-over__card {
-    translate: 0 120px;
-    opacity: 0;
-}
-
 .round-over--enter .best--new {
     scale: 0 0;
+}
+
+.round-over--enter .level-card {
+    translate: 0 120px;
+    opacity: 0;
 }
 
 .round-over--enter .round-over__actions {
@@ -1763,19 +1866,6 @@
     background-position: center;
     background-repeat: no-repeat;
     -unity-background-image-tint-color: var(--white);
-}
-
-.round-over__xp-body {
-    flex-basis: 0;
-    min-width: 0;
-}
-
-.round-over__car-badge {
-    flex-shrink: 0;
-    width: 160px;
-    height: 160px;
-    margin-left: 20px;
-    padding: 4px;
 }
 
 .round-over__ready {
@@ -1895,15 +1985,43 @@
     color: var(--gold);
 }
 
-.garage__progress {
+/* The car the player drives next, large and in the chosen colour; the grid below is where it is changed. */
+.garage__preview {
     flex-shrink: 0;
     flex-direction: row;
     align-items: center;
+    justify-content: center;
     width: 940px;
+    height: 180px;
     margin-bottom: 8px;
 }
 
-.garage__progress .round-over__level { width: 132px; height: 132px; }
+.garage__preview-car {
+    flex-shrink: 0;
+    width: 280px;
+    height: 180px;
+}
+
+.garage__preview-copy {
+    flex-shrink: 0;
+    margin-left: 24px;
+    align-items: flex-start;
+}
+
+.garage__preview-caption {
+    margin: 0;
+    padding: 0;
+    font-size: 34px;
+    color: var(--soft);
+}
+
+.garage__preview-name {
+    margin: 0;
+    padding: 0;
+    font-size: 84px;
+    color: var(--white);
+    white-space: nowrap;
+}
 
 /* Eight colours fit in one row above either grid; selection changes scale without moving its neighbours. */
 .garage__colors {
@@ -2047,17 +2165,254 @@
     display: flex;
 }
 
-.garage__hint {
+.garage__play {
     flex-shrink: 0;
-    margin: 12px 0;
-    padding: 0;
-    font-size: 32px;
-    color: var(--white);
+    margin-top: 20px;
 }
 
-.garage__back {
+/* Back to the result, top right; Esc does the same. */
+.garage__close {
+    position: absolute;
+    top: 40px;
+    right: 40px;
+    width: 120px;
+    height: 120px;
+    margin: 0;
+    padding: 0;
+    border-width: 8px;
+    border-bottom-width: 16px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+    background-image: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.garage__close:hover,
+.garage__close:focus { background-color: var(--soft); }
+.garage__close:active { translate: 0 8px; }
+
+.garage__close-bar {
+    position: absolute;
+    width: 56px;
+    height: 14px;
+    border-radius: 7px;
+    background-color: var(--navy);
+    rotate: 45deg;
+}
+
+.garage__close-bar--turned { rotate: -45deg; }
+
+/* The settings gear, a round white sticker at the top right of the result and beside the garage's close button: the
+   top left corner is where Poki's inspector and the browser chrome sit. */
+.gear-button {
+    position: absolute;
+    top: 40px;
+    width: 120px;
+    height: 120px;
+    margin: 0;
+    padding: 0;
+    border-width: 8px;
+    border-bottom-width: 16px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+    background-image: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.gear-button:hover,
+.gear-button:focus { background-color: var(--soft); }
+.gear-button:active { translate: 0 8px; }
+.round-over__settings { right: 40px; }
+.garage__settings { right: 184px; }
+
+.gear {
+    width: 68px;
+    height: 68px;
+}
+
+.gear__tooth {
+    position: absolute;
+    left: 24px;
+    top: 0;
+    width: 20px;
+    height: 68px;
+    border-radius: 5px;
+    background-color: var(--navy);
+}
+
+.gear__tooth--45 { rotate: 45deg; }
+.gear__tooth--90 { rotate: 90deg; }
+.gear__tooth--135 { rotate: 135deg; }
+
+.gear__hub {
+    position: absolute;
+    left: 9px;
+    top: 9px;
+    width: 50px;
+    height: 50px;
+    border-radius: 999px;
+    background-color: var(--navy);
+    align-items: center;
+    justify-content: center;
+}
+
+.gear__hole {
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background-color: var(--white);
+}
+
+/* Settings: a card with two round toggles, white while on and grey with a red slash while off. */
+.settings {
+    justify-content: center;
+}
+
+.settings__card {
+    width: 900px;
+}
+
+.settings__title {
     flex-shrink: 0;
-    font-size: 56px;
+    margin-bottom: 30px;
+}
+
+.settings__title-text {
+    margin: 0;
+    padding: 0;
+    font-size: 104px;
+    color: var(--gold);
+}
+
+.settings__toggles {
+    flex-direction: row;
+    justify-content: center;
+}
+
+.settings__column {
+    align-items: center;
+}
+
+.settings__column--second {
+    margin-left: 60px;
+}
+
+.settings__toggle {
+    width: 210px;
+    height: 222px;
+    margin: 0;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    border-width: 11px;
+    border-bottom-width: 22px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+    background-image: none;
+}
+
+.settings__toggle:hover,
+.settings__toggle:focus { background-color: var(--soft); }
+.settings__toggle--off,
+.settings__toggle--off:hover,
+.settings__toggle--off:focus { background-color: var(--shade); }
+.settings__toggle:active { translate: 0 10px; }
+
+.settings__slash {
+    display: none;
+    position: absolute;
+    width: 150px;
+    height: 26px;
+    border-width: 5px;
+    border-color: var(--navy);
+    border-radius: 13px;
+    background-color: var(--red);
+    rotate: -45deg;
+}
+
+.settings__toggle--off .settings__slash { display: flex; }
+
+.settings__caption {
+    margin-top: 18px;
+    font-size: 40px;
+}
+
+.settings__back {
+    align-self: stretch;
+    min-width: 0;
+    margin-top: 40px;
+}
+
+/* A beamed pair of notes, from elements as every icon here. */
+.note {
+    width: 84px;
+    height: 94px;
+}
+
+.note__head {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 38px;
+    height: 32px;
+    border-radius: 999px;
+    background-color: var(--navy);
+}
+
+.note__head--second { left: 44px; }
+
+.note__stem {
+    position: absolute;
+    left: 28px;
+    top: 6px;
+    width: 9px;
+    height: 74px;
+    background-color: var(--navy);
+}
+
+.note__stem--second {
+    left: 73px;
+    top: 0;
+}
+
+.note__beam {
+    position: absolute;
+    left: 28px;
+    top: 0;
+    width: 54px;
+    height: 18px;
+    background-color: var(--navy);
+    rotate: -7deg;
+}
+
+/* A speaker: a box and a cone made of the box's right border fanned out by transparent top and bottom borders. */
+.speaker {
+    flex-direction: row;
+    align-items: center;
+}
+
+.speaker__box {
+    width: 30px;
+    height: 40px;
+    border-radius: 6px;
+    background-color: var(--navy);
+}
+
+.speaker__cone {
+    width: 0;
+    height: 0;
+    margin-left: -24px;
+    border-top-width: 42px;
+    border-bottom-width: 42px;
+    border-right-width: 60px;
+    border-top-color: rgba(0, 0, 0, 0);
+    border-bottom-color: rgba(0, 0, 0, 0);
+    border-right-color: var(--navy);
 }
 
 .garage--landscape .garage__grid {
@@ -2094,12 +2449,57 @@
     overflow: visible;
 }
 .lobby__name .sticker-text__text {
-    font-size: 54px;
-    color: var(--navy);
+    font-size: 56px;
+    color: var(--white);
     -unity-text-outline-width: 0;
 }
 .lobby__name--revenge .sticker-text__text { color: var(--red); }
-.lobby__row--left .lobby__name .sticker-text__text { color: var(--muted); }
+.lobby__row--left .lobby__name .sticker-text__text { color: var(--silver); opacity: 0.6; }
+
+/* A loading bar under the seats (in the flow, so seven seats on a 1920 high panel never run into it) and a tip at the
+   bottom of the curtain: the arena loads behind it. */
+.lobby__loading {
+    flex-shrink: 0;
+    width: 800px;
+    margin-top: 44px;
+    align-items: stretch;
+}
+
+.lobby__bar {
+    height: 50px;
+    border-width: 8px;
+    border-color: rgb(14, 22, 48);
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.15);
+    overflow: hidden;
+}
+
+.lobby__bar-fill {
+    width: 0;
+    height: 100%;
+    background-color: var(--green);
+}
+
+.lobby__loading-text {
+    margin: 26px 0 0 0;
+    padding: 0;
+    font-size: 40px;
+    color: var(--silver);
+    -unity-text-align: middle-center;
+}
+
+.lobby__tip {
+    position: absolute;
+    bottom: 110px;
+    margin: 0;
+    padding: 14px 40px 18px 40px;
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.1);
+    font-size: 40px;
+    color: var(--white);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
 .lobby__badge {
     height: 80px;
     padding: 0;
@@ -2123,7 +2523,7 @@
 .feed {
     position: absolute;
     left: 24px;
-    top: 488px;
+    top: 240px;
     width: 660px;
     height: 0;
     visibility: hidden;
@@ -2198,115 +2598,3 @@
 .emotion__text { height: 68px; }
 .emotion__text .sticker-text__text { font-size: 42px; color: var(--navy); -unity-text-align: middle-center; -unity-text-outline-width: 0; }
 
-/* The result has one fixed-height body. Portrait swaps its contents; wide panels add a second column. XP and
-   actions stay in the same flow and the same positions whichever tab is selected. */
-.round-over__body {
-    flex-shrink: 0;
-    width: 981px;
-    height: 640px;
-    margin-top: 36px;
-}
-.round-over__body .round-over__card {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 981px;
-    height: 640px;
-    margin-top: 0;
-    padding: 22px 32px 22px 32px;
-}
-.result-tabs {
-    flex-shrink: 0;
-    align-self: stretch;
-    flex-direction: row;
-    height: 58px;
-    margin-bottom: 10px;
-}
-.result-tab {
-    flex-grow: 1;
-    flex-basis: 0;
-    margin: 0 4px;
-    padding: 0;
-    border-width: 4px;
-    border-bottom-width: 8px;
-    border-color: var(--navy);
-    border-radius: 20px;
-    background-color: var(--soft);
-    color: var(--muted);
-    font-size: 32px;
-    -unity-text-align: middle-center;
-}
-.result-tab--selected { background-color: var(--gold); color: var(--navy); }
-.result-tab:hover { background-color: var(--shade); }
-.round-over__details { align-self: stretch; }
-.round-over__details .caption { font-size: 34px; }
-.round-over__details .round-over__place-pill { margin-top: 6px; padding: 0 40px 6px 40px; }
-.round-over__details .round-over__place-value { font-size: 88px; }
-.round-over__details .round-over__of { margin-top: 8px; }
-.round-over__details .rule { margin: 14px 0; }
-.round-over__details .inset { padding: 8px 24px; }
-.round-over__details .round-over__value { font-size: 56px; }
-.round-over__details .round-over__ko { margin-top: 14px; }
-.round-over__details .round-over__time-caption { margin-left: 18px; }
-.round-over__details .round-over__ko-best { margin-right: 16px; }
-.round-over__details .best { font-size: 28px; }
-
-.scoreboard {
-    display: none;
-    position: absolute;
-    left: 42px;
-    right: 42px;
-    top: 112px;
-    height: 490px;
-    width: auto;
-    margin: 0;
-    padding: 0;
-    border-width: 0;
-    border-radius: 0;
-    background-color: var(--white);
-    align-items: stretch;
-    color: var(--navy);
-}
-.scoreboard__title { display: none; height: 60px; margin: 0; padding: 0; font-size: 50px; color: var(--navy); -unity-text-align: middle-center; }
-.scoreboard__header { flex-direction: row; justify-content: space-between; height: 40px; flex-shrink: 0; padding: 0 14px; }
-.scoreboard__heading { margin: 0; padding: 0; font-size: 28px; color: var(--muted); }
-.scoreboard__rows { align-items: stretch; }
-.scoreboard__row {
-    flex-direction: row;
-    align-items: center;
-    flex-shrink: 0;
-    height: 58px;
-    margin-bottom: 4px;
-    padding: 0 12px;
-    border-width: 3px;
-    border-color: var(--white);
-    border-radius: 18px;
-    background-color: var(--soft);
-    color: var(--navy);
-    font-size: 36px;
-}
-.scoreboard__row--you { background-color: var(--gold); border-color: var(--navy); }
-.scoreboard__row .sticker-text__text { font-size: 36px; color: var(--navy); -unity-text-outline-width: 0; }
-.scoreboard__place { width: 86px; height: 50px; }
-.scoreboard__name { flex-grow: 1; flex-shrink: 1; flex-basis: 0; min-width: 0; height: 50px; margin-left: 14px; }
-.scoreboard__name .sticker-text__text { overflow: hidden; text-overflow: ellipsis; }
-.scoreboard__ko { width: 64px; height: 50px; }
-.scoreboard__ko .sticker-text__text { -unity-text-align: middle-right; }
-.scoreboard__row .hud__chip { position: relative; flex-shrink: 0; width: 48px; height: 48px; border-width: 4px; border-radius: 24px; transition-duration: 0s; }
-.scoreboard__row .hud__chip-car { scale: 0.7 0.7; }
-.scoreboard__row .hud__chip-ring { border-width: 4px; border-radius: 20px; }
-.round-over--landscape .round-over__body { width: 1851px; }
-.round-over--landscape .result-tabs { display: none; }
-.round-over--landscape .round-over__details { margin-top: 14px; }
-.round-over--landscape .scoreboard {
-    left: 1011px;
-    right: auto;
-    top: 0;
-    width: 840px;
-    height: 640px;
-    padding: 20px 28px;
-    border-width: 9px;
-    border-bottom-width: 25px;
-    border-radius: 58px;
-}
-.round-over--landscape .scoreboard__title { display: flex; }

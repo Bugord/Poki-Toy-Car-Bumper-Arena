@@ -92,6 +92,7 @@ namespace ToyCarArena.App
             builder.RegisterScreen<HudViewModel, HudView>();
             builder.RegisterScreen<RoundOverViewModel, RoundOverView>();
             builder.RegisterScreen<GarageViewModel, GarageView>();
+            builder.RegisterScreen<SettingsViewModel, SettingsView>();
 
             builder.RegisterState<RoundState>();
             builder.RegisterState<ResultState>();
