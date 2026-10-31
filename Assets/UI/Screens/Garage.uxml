@@ -2,13 +2,25 @@
     <ui:VisualElement name="garage" class="screen garage">
         <Style src="../ui_screens.uss" />
         <ui:VisualElement picking-mode="Ignore" class="stroke garage__title">
-            <ui:Label text="GARAGE" picking-mode="Ignore" class="display garage__title-text" />
-            <ui:Label text="GARAGE" picking-mode="Ignore" class="display garage__title-text stroke__face" />
+            <ui:Label text="GARAGE" picking-mode="Ignore" class="display garage__title-text">
+                <Bindings>
+                    <Bugord.App.Localization.LocalizedText property="text" key="garage.title" />
+                </Bindings>
+            </ui:Label>
+            <ui:Label text="GARAGE" picking-mode="Ignore" class="display garage__title-text stroke__face">
+                <Bindings>
+                    <Bugord.App.Localization.LocalizedText property="text" key="garage.title" />
+                </Bindings>
+            </ui:Label>
         </ui:VisualElement>
         <ui:VisualElement picking-mode="Ignore" class="garage__preview">
             <ui:VisualElement name="garage-preview" picking-mode="Ignore" class="car-portrait garage__preview-car" />
             <ui:VisualElement picking-mode="Ignore" class="garage__preview-copy">
-                <ui:Label text="DRIVING NEXT" picking-mode="Ignore" class="garage__preview-caption" />
+                <ui:Label text="DRIVING NEXT" picking-mode="Ignore" class="garage__preview-caption">
+                    <Bindings>
+                        <Bugord.App.Localization.LocalizedText property="text" key="garage.driving_next" />
+                    </Bindings>
+                </ui:Label>
                 <ui:VisualElement picking-mode="Ignore" class="stroke">
                     <ui:Label name="garage-preview-name" picking-mode="Ignore" class="display garage__preview-name" />
                     <ui:Label name="garage-preview-name-face" picking-mode="Ignore" class="display garage__preview-name stroke__face" />
@@ -20,8 +32,16 @@
         <ui:Button name="garage-play" class="button button--green button--big garage__play">
             <ui:VisualElement picking-mode="Ignore" class="button__face" />
             <ui:VisualElement picking-mode="Ignore" class="stroke">
-                <ui:Label text="NEXT MATCH" picking-mode="Ignore" class="button__label" />
-                <ui:Label text="NEXT MATCH" picking-mode="Ignore" class="button__label stroke__face" />
+                <ui:Label text="NEXT MATCH" picking-mode="Ignore" class="button__label">
+                    <Bindings>
+                        <Bugord.App.Localization.LocalizedText property="text" key="common.next_match" />
+                    </Bindings>
+                </ui:Label>
+                <ui:Label text="NEXT MATCH" picking-mode="Ignore" class="button__label stroke__face">
+                    <Bindings>
+                        <Bugord.App.Localization.LocalizedText property="text" key="common.next_match" />
+                    </Bindings>
+                </ui:Label>
             </ui:VisualElement>
         </ui:Button>
         <ui:Button name="settings-button" class="pill gear-button garage__settings">

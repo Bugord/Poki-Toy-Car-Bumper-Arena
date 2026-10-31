@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Bugord.App.Localization;
 using Bugord.App.UI;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -17,16 +18,18 @@ namespace ToyCarArena.UI
         private const float LeftEnd = 0.24f;
         // The scene load reports no progress, so the bar eases towards most of the way and fills the rest on READY!.
         private const float LoadingShare = 0.9f;
-        private const float LoadingTime = 0.35f;
+        private const float LoadingTime = CurtainViewModel.LobbyDuration / 3f;
         private const float FillSpeed = 4f;
 
         private static readonly string[] Tips = {
-            "TIP: BOOST RIGHT BEFORE YOU HIT",
-            "TIP: BOOST AWAY FROM THE EDGE",
-            "TIP: PUSH THEM TOWARD THE EDGE",
-            "TIP: THE EDGE CRUMBLES AWAY",
-            "TIP: STAY NEAR THE MIDDLE",
+            "lobby.tip.boost_hit",
+            "lobby.tip.boost_edge",
+            "lobby.tip.push_edge",
+            "lobby.tip.crumble",
+            "lobby.tip.middle",
         };
+
+        private static readonly string[] Dots = { ".", "..", "..." };
 
         private readonly List<(VisualElement slot, VisualElement incoming, VisualElement outgoing)> rows = new();
         private VisualElement lobby;
@@ -72,7 +75,7 @@ namespace ToyCarArena.UI
             BuildArenaLine();
             fill = 0f;
             fillTime = 0f;
-            Root.Q<Label>("lobby-tip").text = Tips[Random.Range(0, Tips.Length)];
+            Root.Q<Label>("lobby-tip").text = Strings.Get(Tips[Random.Range(0, Tips.Length)]);
             foreach (var row in ViewModel.Rows) {
                 var slot = Element("lobby__slot");
                 var incoming = row.Name != null ? CreateRow(row, false) : null;
@@ -101,10 +104,10 @@ namespace ToyCarArena.UI
             if (!named) {
                 return;
             }
-            arenaLine.Add(OutlinedText("ARENA", "lobby__arena-label"));
+            arenaLine.Add(OutlinedText(Strings.Get("lobby.arena"), "lobby__arena-label"));
             arenaLine.Add(OutlinedText(ViewModel.ArenaName, "lobby__arena-name"));
             if (ViewModel.ArenaIsNew) {
-                arenaBadge = OutlinedText("NEW", "lobby__badge");
+                arenaBadge = OutlinedText(Strings.Get("common.new"), "lobby__badge");
                 arenaLine.Add(arenaBadge);
             }
         }
@@ -118,7 +121,7 @@ namespace ToyCarArena.UI
                 var shifted = t - 1f;
                 arenaBadge.style.scale = new Scale(Vector3.one * (1f + 2.70158f * shifted * shifted * shifted + 1.70158f * shifted * shifted));
             }
-            var text = ViewModel.IsReady ? "READY!" : "MATCH FOUND!";
+            var text = Strings.Get(ViewModel.IsReady ? "lobby.ready" : "lobby.match_found");
             title.text = text;
             titleFace.text = text;
             title.EnableInClassList("lobby__title--ready", ViewModel.IsReady);
@@ -127,7 +130,8 @@ namespace ToyCarArena.UI
             fill = Mathf.MoveTowards(fill, target, FillSpeed * Mathf.Max(0f, time - fillTime));
             fillTime = time;
             barFill.style.width = Length.Percent(100f * fill);
-            loadingText.text = ViewModel.IsReady ? "READY TO ROLL!" : "LOADING ARENA" + new string('.', 1 + (int)(time / 0.18f) % 3);
+            loadingText.text = ViewModel.IsReady ? Strings.Get("lobby.ready_to_roll")
+                : Strings.Get("lobby.loading") + Dots[(int)(time / 0.18f) % Dots.Length];
 
             for (var i = 0; i < rows.Count; i++) {
                 var (slot, incoming, outgoing) = rows[i];
@@ -161,6 +165,9 @@ namespace ToyCarArena.UI
             var chip = CarColor.CreateChip(row.ColorId, row.Index == 0);
             chip.EnableInClassList("lobby__you-chip", row.Index == 0);
             sticker.Add(chip);
+            if (!isLeft && row.Level > 0) {
+                sticker.Add(HudView.CreateLevelBadge(row.Level, "lobby__level"));
+            }
             var name = OutlinedText(isLeft ? row.LeftName : row.Name, "lobby__name");
             name.EnableInClassList("lobby__name--revenge", row.IsNemesis && !isLeft);
             sticker.Add(name);
@@ -170,7 +177,7 @@ namespace ToyCarArena.UI
                 sticker.Add(target);
             }
             if (isLeft || row.IsNew) {
-                var badge = OutlinedText(isLeft ? "LEFT" : "NEW", "lobby__badge");
+                var badge = OutlinedText(Strings.Get(isLeft ? "lobby.left" : "common.new"), "lobby__badge");
                 badge.EnableInClassList("lobby__badge--left", isLeft);
                 sticker.Add(badge);
             }

@@ -1,3 +1,4 @@
+using Bugord.App.Localization;
 using Bugord.App;
 using ToyCarArena.Audio;
 using ToyCarArena.Gameplay;
@@ -5,6 +6,7 @@ using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Input;
 using ToyCarArena.Gameplay.Round;
+using ToyCarArena.Rendering;
 using ToyCarArena.UI;
 using UIKit.Runtime.Integrations.VContainer;
 using UniState;
@@ -38,6 +40,21 @@ namespace ToyCarArena.App
         [SerializeField]
         private ArenaCatalog arenaCatalog;
 
+        [Header("Rendering")]
+        [Tooltip("On a touch device the 3D scene renders with its shorter side at most this many pixels (render scale " +
+                 "is lowered to fit); phones have the weakest GPUs and the most pixels. 0 = no limit")]
+        [SerializeField]
+        private float touchMaxShortSide = 900f;
+
+        [Tooltip("The same for a desktop: the shorter side of the 3D scene at most this many pixels. 0 = no limit")]
+        [SerializeField]
+        private float desktopMaxShortSide = 1080f;
+
+        [Header("Localization")]
+        [Tooltip("The string table: a key, a translator's note and a column per language")]
+        [SerializeField]
+        private TextAsset strings;
+
         protected override void ConfigureGame(IContainerBuilder builder)
         {
             // Checked here, as GameplayScope checks its own: in the WebGL player a missing reference fails much later,
@@ -62,6 +79,14 @@ namespace ToyCarArena.App
                     $"{nameof(arenaCatalog)}.");
             }
 
+            if (strings == null) {
+                throw new MissingReferenceException($"{nameof(GameScope)} in {gameObject.scene.name} has no " +
+                    $"{nameof(strings)}.");
+            }
+
+            // Loaded now, so the screens built before the boot tasks read English; the saved or platform language is
+            // chosen once the platform is up.
+            builder.AddLocalization(strings);
             builder.RegisterInstance(tuning, typeof(GameTuning));
             builder.RegisterInstance(carCatalog, typeof(CarCatalog));
             builder.RegisterInstance(arenaCatalog, typeof(ArenaCatalog));
@@ -81,11 +106,18 @@ namespace ToyCarArena.App
             // The arena of the next round is chosen before its scene is built, so it lives here too.
             builder.Register<ArenaRotation>(Lifetime.Singleton).As<IArenaRotation>();
             builder.Register<PersonalBests>(Lifetime.Singleton);
+            // The 3D scene's render scale follows the screen; the UI is drawn on top at full resolution.
+            builder.RegisterEntryPoint<RenderScaler>().AsSelf()
+                .WithParameter("touchMaxShortSide", touchMaxShortSide)
+                .WithParameter("desktopMaxShortSide", desktopMaxShortSide);
             builder.Register<PlayerProgress>(Lifetime.Singleton).AsSelf().As<IPlayerCar>();
 #if BUGORD_SUPERCONSOLE
             if (Debug.isDebugBuild) {
                 builder.RegisterEntryPoint<ProgressDevConsole>();
             }
+#endif
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            builder.RegisterEntryPoint<PerfDevTools>();
 #endif
 
             builder.RegisterScreen<CurtainViewModel, CurtainView>();

@@ -34,6 +34,7 @@ MonoBehaviour:
     tapBoostMemory: 0.5
     idleHintDelay: 3
     idleHintMax: 2
+    ghostStickRounds: 5
     boostHintDistance: 6
     pointerStopRadius: 1
     pointerSlowRadius: 4

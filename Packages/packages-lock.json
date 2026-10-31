@@ -36,11 +36,11 @@
       "hash": "2e993ff18f28c931602a07292df0b0804eebef99"
     },
     "com.superconsole.runtime": {
-      "version": "https://github.com/Bugord/Super-Console.git?path=Assets/SuperConsole#v0.6.1",
+      "version": "https://github.com/Bugord/Super-Console.git?path=Assets/SuperConsole#v1.0.3",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "43f6596aaa38269c2491533f0606ef33752c2ecc"
+      "hash": "2ff82e975441fde6a65c134d7d91637e77365676"
     },
     "com.unity.burst": {
       "version": "2.0.0",

@@ -1,3 +1,4 @@
+using Bugord.App.Localization;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -28,6 +29,7 @@ namespace ToyCarArena.UI
         private const string ChipFallClass = "hud__chip--fall";
         private const string BoostShownClass = "hud__boost--shown";
         private const string BoostReadyClass = "hud__boost--ready";
+        private const string BoostDesktopClass = "hud__boost--desktop";
         private const string BoostPopClass = "hud__boost--pop";
         private const string BoostPressedClass = "hud__boost--pressed";
         private const string BoostLeftClass = "hud__boost-slot--left";
@@ -75,6 +77,8 @@ namespace ToyCarArena.UI
         // joystick's proportions, with an opaque capsule finger whose tip follows the knob right, up, left, down.
         private const float GhostCycle = 2f;
         private const float GhostOpacity = 0.9f;
+        // After the first round the ghost only reminds where the joystick is, fainter and without its caption.
+        private const float GhostLaterOpacity = 0.5f;
         private const float GhostMaxRadius = 120f;
         private const float GhostTravel = 0.8f;
         private const float GhostFingerWidthScale = 0.7f;
@@ -223,7 +227,12 @@ namespace ToyCarArena.UI
             stickBase = Root.Q<VisualElement>("stick-base");
             stickKnob = Root.Q<VisualElement>("stick-knob");
             ghost = Root.Q<VisualElement>("ghost");
-            Root.Q<VisualElement>("ghost-stick").style.opacity = GhostOpacity;
+            Root.Q<VisualElement>("ghost-stick").style.opacity = ViewModel.IsFirstRound ? GhostOpacity : GhostLaterOpacity;
+            Root.Q<VisualElement>(className: "hud__ghost-caption").style.display =
+                ViewModel.IsFirstRound ? DisplayStyle.Flex : DisplayStyle.None;
+            // The side the player plays on carries over from the round before, without the button moving at the start.
+            isBoostOnLeft = controls.IsBoostOnLeft;
+            boostSlot.EnableInClassList(BoostLeftClass, isBoostOnLeft);
             ghostBase = Root.Q<VisualElement>("ghost-base");
             ghostKnob = Root.Q<VisualElement>("ghost-knob");
             ghostFinger = Root.Q<VisualElement>("ghost-finger");
@@ -239,6 +248,9 @@ namespace ToyCarArena.UI
             boostButton.RegisterCallback<PointerDownEvent>(OnBoostPointerDown);
             controls.SetBoostButton(boostButton);
 
+            // The very first start also says what to do: everyone else off the arena.
+            Root.Q<VisualElement>("start-goal").style.display =
+                ViewModel.IsNewPlayer ? DisplayStyle.Flex : DisplayStyle.None;
             if (ViewModel.IsWaitingForPlayer) {
                 ShowStart();
             }
@@ -316,7 +328,7 @@ namespace ToyCarArena.UI
             var isTouch = controls.CheckTouchScreen();
             start.EnableInClassList(StartTouchClass, isTouch);
             start.EnableInClassList(StartDesktopClass, !isTouch);
-            var text = isTouch ? "TAP TO START" : "CLICK TO START";
+            var text = Strings.Get(isTouch ? "hud.tap_to_start" : "hud.click_to_start");
             Root.Q<Label>("start-text").text = text;
             Root.Q<Label>("start-text-face").text = text;
 
@@ -417,8 +429,20 @@ namespace ToyCarArena.UI
 
             sticker.Add(CreateStar("ko-star--big"));
 
-            sticker.Add(CreateOutlinedText(isRevenge ? "REVENGE!" : "KNOCKOUT!", "ko-pop__text"));
+            sticker.Add(CreateOutlinedText(Strings.Get(isRevenge ? "hud.revenge_taken" : "hud.knockout"), "ko-pop__text"));
             return popup;
+        }
+
+        internal static VisualElement CreateLevelBadge(int level, string className)
+        {
+            var badge = new VisualElement { pickingMode = PickingMode.Ignore };
+            badge.AddToClassList("level-badge");
+            badge.AddToClassList(PlayerRank.ClassOf(level));
+            badge.AddToClassList(className);
+            var value = new Label(level.ToString()) { pickingMode = PickingMode.Ignore };
+            value.AddToClassList("level-badge__value");
+            badge.Add(value);
+            return badge;
         }
 
         private static VisualElement CreateOutlinedText(string value, string textClass)
@@ -625,11 +649,16 @@ namespace ToyCarArena.UI
                     center.AddToClassList("revenge-target__center");
                     target.Add(center);
                     heading.Add(target);
-                    heading.Add(CreateOutlinedText("REVENGE", "car-name__revenge-text"));
+                    heading.Add(CreateOutlinedText(Strings.Get("hud.revenge"), "car-name__revenge-text"));
                     sticker.Add(heading);
                 }
 
-                sticker.Add(CreateOutlinedText(ViewModel.NameOf(index), "car-name__text"));
+                // The bot's level on a small badge in its rank's colour, before the handle, as a player's would be.
+                var line = new VisualElement { pickingMode = PickingMode.Ignore };
+                line.AddToClassList("car-name__line");
+                line.Add(CreateLevelBadge(ViewModel.LevelOf(index), "car-name__level"));
+                line.Add(CreateOutlinedText(ViewModel.NameOf(index), "car-name__text"));
+                sticker.Add(line);
                 nameLayer.Add(tag);
                 carNames[index] = tag;
             }
@@ -682,19 +711,18 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>
-        /// Shows the boost button once the screen is a touch screen, the charge growing from its middle as the boost
-        /// cools down, and pops it when the boost is ready again.
+        /// Shows the boost button, the charge growing from its middle as the boost cools down, and pops it when the
+        /// boost is ready again. Without a touch screen it is a smaller gauge with the key that boosts: a mouse player
+        /// sees when the boost is back and what to press.
         /// </summary>
         private void RefreshBoost()
         {
             if (!isBoostShown) {
-                if (!controls.CheckTouchScreen()) {
-                    return;
-                }
-
                 isBoostShown = true;
                 boostButton.AddToClassList(BoostShownClass);
             }
+
+            boostButton.EnableInClassList(BoostDesktopClass, !controls.CheckTouchScreen());
 
             if (!isBoostMoving && isBoostOnLeft != controls.IsBoostOnLeft) {
                 isBoostMoving = true;
@@ -773,7 +801,12 @@ namespace ToyCarArena.UI
             var now = Time.unscaledTime;
             var elapsed = Mathf.Max(0f, now - teachingTime);
             teachingTime = now;
-            var enabled = IsShown && ViewModel.IsFirstRound && controls.CheckTouchScreen();
+            var isTouch = IsShown && controls.CheckTouchScreen();
+            var enabled = isTouch && ViewModel.IsFirstRound;
+            // The visit's first rounds keep the ghost wherever no finger steers: it yields to a touch and comes back
+            // once the finger lifts.
+            var keepsGhost = isTouch && ViewModel.RoundNumber <= ViewModel.Controls.GhostStickRounds &&
+                (ViewModel.IsRunning || ViewModel.IsWaitingForPlayer);
 
             if (ViewModel.LastTouchTime > seenTouchTime) {
                 seenTouchTime = ViewModel.LastTouchTime;
@@ -796,8 +829,8 @@ namespace ToyCarArena.UI
                 idleHintCount++;
             }
 
-            var showGhost = enabled && !controls.IsJoystickShown &&
-                ((ViewModel.IsWaitingForPlayer && !hasStartTouch) || isIdleHintShown);
+            var showGhost = !controls.IsJoystickShown &&
+                (keepsGhost || (enabled && ((ViewModel.IsWaitingForPlayer && !hasStartTouch) || isIdleHintShown)));
             if (showGhost && !isGhostShown) {
                 ghostTime = now;
                 ghostPanelSize = Vector2.zero;
@@ -845,7 +878,8 @@ namespace ToyCarArena.UI
             // Keep the demonstration still as cars drive past; find a clear place again only on show or resize.
             if (size != ghostPanelSize) {
                 ghostPanelSize = size;
-                ghostCenter = size.x >= size.y ? PlaceWideGhost(size, radius) :
+                ghostCenter = controls.HasJoystickPlace && !ViewModel.IsFirstRound ? PlaceGhostAtThumb(size, radius) :
+                    size.x >= size.y ? PlaceWideGhost(size, radius) :
                     new Vector2(size.x * 0.5f, size.y * GhostPortraitY);
             }
 
@@ -862,6 +896,24 @@ namespace ToyCarArena.UI
             ghostFinger.style.top = knob.y;
             ghostFinger.style.width = fingerWidth;
             ghostFinger.style.height = radius * GhostFingerLengthScale;
+        }
+
+        /// <summary>
+        /// Where the player's thumb last steered, kept on screen with room for the finger: after the first round the
+        /// ghost marks where the joystick comes up, on the side the player plays on.
+        /// </summary>
+        private Vector2 PlaceGhostAtThumb(Vector2 size, float radius)
+        {
+            var center = controls.JoystickCenter;
+            var panelPoint = RuntimePanelUtils.ScreenToPanel(Root.panel, new Vector2(center.x, Screen.height - center.y));
+            var point = Root.WorldToLocal(panelPoint);
+            var fingerHalfWidth = radius * GhostFingerWidthScale * 0.5f;
+            var bottom = radius * GhostTravel + fingerHalfWidth +
+                (radius * GhostFingerLengthScale - fingerHalfWidth) * Mathf.Cos(GhostFingerTilt * Mathf.Deg2Rad);
+            var reach = radius * StickBaseScale + TeachingMargin;
+            point.x = Mathf.Clamp(point.x, reach, Mathf.Max(reach, size.x - reach));
+            point.y = Mathf.Clamp(point.y, reach, Mathf.Max(reach, size.y - bottom - TeachingMargin));
+            return point;
         }
 
         // In landscape, prefer the lower area just right of centre. Check nearby places against the projected live

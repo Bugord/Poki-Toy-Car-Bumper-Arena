@@ -1,0 +1,84 @@
+key,context,en,fr,it,de,es,tr,pt,ru
+common.you,"The player in the lobby, the feed and lists",YOU,TOI,TU,DU,TÚ,SEN,VOCÊ,ТЫ
+common.back,Back button,BACK,RETOUR,INDIETRO,ZURÜCK,ATRÁS,GERİ,VOLTAR,НАЗАД
+common.next_match,Big green button that starts the next round,NEXT MATCH,SUIVANT,AVANTI,WEITER,SIGUIENTE,DEVAM,PRÓXIMA,ДАЛЬШЕ
+common.new,Small gold badge: a new player or arena; max ~5 chars,NEW,NEUF,NUOVO,NEU,NUEVO,YENİ,NOVO,НОВЫЙ
+common.level_short,"Level caption with its number, e.g. LVL 5; short",LVL {0},NIV. {0},LIV. {0},LVL {0},NIV. {0},SV. {0},NÍV. {0},УР. {0}
+common.space,Space bar key cap,SPACE,ESPACE,SPAZIO,LEERTASTE,ESPACIO,BOŞLUK,ESPAÇO,ПРОБЕЛ
+hud.tap_to_start,Start prompt on a touch screen,TAP TO START,TOUCHE POUR JOUER,TOCCA PER INIZIARE,TIPPEN ZUM START,TOCA PARA EMPEZAR,BAŞLAMAK İÇİN DOKUN,TOQUE PARA COMEÇAR,"НАЖМИ, ЧТОБЫ НАЧАТЬ"
+hud.click_to_start,Start prompt with a mouse,CLICK TO START,CLIQUE POUR JOUER,CLICCA PER INIZIARE,KLICKEN ZUM START,HAZ CLIC PARA EMPEZAR,BAŞLAMAK İÇİN TIKLA,CLIQUE PARA COMEÇAR,"КЛИКНИ, ЧТОБЫ НАЧАТЬ"
+hud.goal,First launch goal over the start prompt,PUSH EVERYONE OFF!,POUSSE-LES TOUS !,BUTTALI TUTTI GIÙ!,SCHIEB ALLE RUNTER!,¡ÉCHALOS A TODOS!,HERKESİ DÜŞÜR!,DERRUBE TODOS!,СТОЛКНИ ВСЕХ!
+hud.tap_to_boost,Touch hint: tap to boost,TAP TO BOOST,TOUCHE : TURBO,TOCCA: TURBO,TIPPEN: BOOST,TOCA: TURBO,DOKUN: HIZLAN,TOQUE: TURBO,ТАП — УСКОРЕНИЕ
+hud.hold_to_drive,Mouse hint: hold the button to drive,HOLD TO DRIVE,MAINTIENS POUR ROULER,TIENI PREMUTO E GUIDA,HALTEN ZUM FAHREN,MANTÉN PARA CONDUCIR,SÜRMEK İÇİN BASILI TUT,SEGURE PARA DIRIGIR,"ЗАЖМИ, ЧТОБЫ ЕХАТЬ"
+hud.boost,Boost button and key hint; max ~7 chars,BOOST,TURBO,TURBO,BOOST,TURBO,HIZ,TURBO,РЫВОК
+hud.tap,Arrow sticker over the boost button,TAP!,TOUCHE !,TOCCA!,TIPP!,¡TOCA!,DOKUN!,TOQUE!,ЖМИ!
+hud.drag_to_drive,Ghost joystick caption,DRAG TO DRIVE,GLISSE POUR ROULER,TRASCINA PER GUIDARE,ZIEHEN ZUM FAHREN,ARRASTRA PARA CONDUCIR,SÜRMEK İÇİN KAYDIR,ARRASTE PARA DIRIGIR,ВЕДИ ПАЛЬЦЕМ
+hud.knockout,Sticker when the player knocks a car off,KNOCKOUT!,K.-O. !,K.O.!,K.O.!,¡K.O.!,NAKAVT!,NOCAUTE!,НОКАУТ!
+hud.revenge_taken,Sticker when the player knocks off the bot that beat them,REVENGE!,VENGEANCE !,VENDETTA!,RACHE!,¡VENGANZA!,İNTİKAM!,VINGANÇA!,МЕСТЬ!
+hud.revenge,Small heading over the rival bot name,REVENGE,VENGEANCE,VENDETTA,RACHE,VENGANZA,İNTİKAM,VINGANÇA,МЕСТЬ
+hud.fell_off,Feed line: the car fell by itself,FELL OFF,EST TOMBÉ,È CADUTO,GEFALLEN,SE CAYÓ,DÜŞTÜ,CAIU,УПАЛ
+social.gg,Bot chat bubble,GG,GG,GG,GG,GG,GG,GG,GG
+social.ez,Bot chat bubble: too easy,EZ,EZ,EZ,EZ,EZ,EZ,EZ,ИЗИ
+social.bye,Bot chat bubble,BYE!,CIAO !,CIAO!,TSCHAU!,¡CHAO!,BAY BAY!,FLW!,ПОКЕДА!
+social.nice,Bot chat bubble,NICE!,STYLÉ !,TOP!,NICE!,¡GUAY!,HELAL!,BRABO!,КРАСАВА!
+social.nooo,Bot chat bubble after falling,NOOO!,NOOON !,NOOO!,NEIIN!,¡NOOO!,HAYIIR!,NÃOOO!,НЕЕЕТ!
+social.oops,Bot chat bubble,OOPS,OUPS,OPS,UPS,UPS,EYVAH!,VISH!,УПС
+social.hey,Bot chat bubble,HEY!,HÉ !,OH!,HEY!,¡EH!,HOOP!,Ô!,ЭЙ!
+social.phew,Bot chat bubble after a close save,PHEW!,OUF !,FIU!,PUH!,¡UF!,OH BE!,UFA!,ФУХ!
+social.close,Bot chat bubble after a close save,CLOSE!,CHAUD !,PER UN PELO!,KNAPP!,¡CASI!,KIL PAYI!,QUASE!,ЕЛЕ-ЕЛЕ!
+social.hi,Bot chat bubble at the start,HI!,SALUT !,CIAO!,SERVUS!,¡HOLA!,SELAM!,OI!,ХАЙ!
+social.glhf,"Bot chat bubble at the start: good luck, have fun",GL HF,BON JEU,GL HF,GL HF,SUERTE,BOL ŞANS,BOA!,УДАЧИ
+social.lets_go,Bot chat bubble at the start,LET'S GO,GO !,DAJE!,LOS!,¡VAMOS!,HADİ!,BORA!,ПОГНАЛИ
+social.again,Bot chat bubble: knocked the player off again,AGAIN!,ENCORE !,ANCORA!,NOCHMAL!,¡OTRA!,YİNE!,DE NOVO!,ОПЯТЬ!
+social.lol,Bot chat bubble,LOL,MDR,LOL,LOL,JAJA,LOL,KKKK,ЛОЛ
+lobby.match_found,Lobby title while the arena loads,MATCH FOUND!,MATCH TROUVÉ !,SFIDA TROVATA!,MATCH GEFUNDEN!,¡PARTIDA LISTA!,MAÇ BULUNDU!,PARTIDA ACHADA!,МАТЧ НАЙДЕН!
+lobby.ready,Lobby title once loaded,READY!,PRÊTS !,PRONTI!,BEREIT!,¡LISTOS!,HAZIR!,PRONTOS!,ГОТОВО!
+lobby.loading,Loading bar text; dots are added after it,LOADING ARENA,CHARGEMENT DE L'ARÈNE,CARICAMENTO ARENA,ARENA LÄDT,CARGANDO ARENA,ARENA YÜKLENİYOR,CARREGANDO ARENA,ЗАГРУЗКА АРЕНЫ
+lobby.ready_to_roll,Loading bar text once loaded,READY TO ROLL!,C'EST PARTI !,SI PARTE!,LOS GEHT’S!,¡A RODAR!,HAYDİ GAZLA!,BORA RODAR!,ПОЕХАЛИ!
+lobby.arena,Label before the arena name,ARENA,ARÈNE,ARENA,ARENA,ARENA,ARENA,ARENA,АРЕНА
+lobby.left,Grey badge: the player left; max ~6 chars,LEFT,PARTI,USCITO,WEG,SALIÓ,ÇIKTI,SAIU,УШЁЛ
+lobby.tip.boost_hit,Loading tip,TIP: BOOST RIGHT BEFORE YOU HIT,ASTUCE : TURBO JUSTE AVANT LE CHOC,CONSIGLIO: TURBO PRIMA DELLO SCONTRO,TIPP: BOOST KURZ VOR DEM AUFPRALL,CONSEJO: TURBO JUSTO ANTES DEL GOLPE,İPUCU: ÇARPMADAN HEMEN ÖNCE HIZLAN,DICA: TURBO LOGO ANTES DE BATER,СОВЕТ: УСКОРЯЙСЯ ПЕРЕД УДАРОМ
+lobby.tip.boost_edge,Loading tip,TIP: BOOST AWAY FROM THE EDGE,ASTUCE : TURBO POUR FUIR LE BORD,CONSIGLIO: TURBO PER ALLONTANARTI DAL BORDO,TIPP: BOOST WEG VOM RAND,CONSEJO: TURBO PARA ALEJARTE DEL BORDE,İPUCU: KENARDAN UZAKLAŞMAK İÇİN HIZLAN,DICA: TURBO PARA FUGIR DA BORDA,СОВЕТ: УСКОРЯЙСЯ ПРОЧЬ ОТ КРАЯ
+lobby.tip.push_edge,Loading tip,TIP: PUSH THEM TOWARD THE EDGE,ASTUCE : POUSSE-LES VERS LE BORD,CONSIGLIO: SPINGILI VERSO IL BORDO,TIPP: SCHIEB SIE ZUM RAND,CONSEJO: EMPÚJALOS HACIA EL BORDE,İPUCU: ONLARI KENARA İT,DICA: EMPURRE-OS PARA A BORDA,СОВЕТ: ТОЛКАЙ ИХ К КРАЮ
+lobby.tip.crumble,Loading tip,TIP: THE EDGE CRUMBLES AWAY,ASTUCE : LE BORD SE DÉSAGRÈGE,CONSIGLIO: IL BORDO SI SGRETOLA,TIPP: DER RAND BRÖCKELT AB,CONSEJO: EL BORDE SE DESMORONA,İPUCU: KENAR UFALANIR,DICA: A BORDA DESMORONA,СОВЕТ: КРАЙ ОСЫПАЕТСЯ
+lobby.tip.middle,Loading tip,TIP: STAY NEAR THE MIDDLE,ASTUCE : RESTE PRÈS DU CENTRE,CONSIGLIO: RESTA VICINO AL CENTRO,TIPP: BLEIB NAHE DER MITTE,CONSEJO: QUÉDATE CERCA DEL CENTRO,İPUCU: ORTAYA YAKIN KAL,DICA: FIQUE PERTO DO CENTRO,СОВЕТ: ДЕРЖИСЬ БЛИЖЕ К ЦЕНТРУ
+result.won,Result title on a win,YOU WIN!,GAGNÉ !,HAI VINTO!,GEWONNEN!,¡GANASTE!,KAZANDIN!,VOCÊ VENCEU!,ПОБЕДА!
+result.won_subtitle,Result subtitle on a win,LAST CAR STANDING!,DERNIÈRE VOITURE EN PISTE !,L'ULTIMA AUTO RIMASTA!,LETZTES AUTO IM SPIEL!,¡EL ÚLTIMO EN PIE!,AYAKTA KALAN SON ARABA!,O ÚLTIMO DE PÉ!,ПОСЛЕДНЯЯ НА АРЕНЕ!
+result.out,Result title when knocked out; long titles get smaller,KNOCKED OUT,ÉLIMINÉ,ELIMINATO,RAUSGEFLOGEN,ELIMINADO,ELENDİN,ELIMINADO,ВЫБИТ
+result.out_subtitle,Result subtitle when the player fell by themselves,FELL OFF THE ARENA,TOMBÉ DE L'ARÈNE,CADUTO DALL'ARENA,VON DER ARENA GEFALLEN,TE CAÍSTE DE LA ARENA,ARENADAN DÜŞTÜN,CAIU DA ARENA,УПАЛ С АРЕНЫ
+result.time_up,Result title when time ran out,TIME UP!,TEMPS ÉCOULÉ !,TEMPO SCADUTO!,ZEIT UM!,¡TIEMPO!,SÜRE BİTTİ!,ACABOU O TEMPO!,ВРЕМЯ ВЫШЛО!
+result.time_up_subtitle,Result subtitle when time ran out,STILL ON THE ARENA,ENCORE SUR L'ARÈNE,ANCORA NELL'ARENA,NOCH IN DER ARENA,SIGUES EN LA ARENA,HÂLÂ ARENADASIN,AINDA NA ARENA,ЕЩЁ НА АРЕНЕ
+result.pushed_by,Before the name of the bot that knocked the player off,PUSHED OFF BY,POUSSÉ PAR,SPINTO DA,RUNTERGESCHUBST VON,TE EMPUJÓ,SENİ İTEN,EMPURRADO POR,ТЕБЯ СТОЛКНУЛ
+result.or_press,Before the SPACE key cap under NEXT MATCH,OR PRESS,OU APPUIE SUR,O PREMI,ODER DRÜCKE,O PULSA,YA DA BAS,OU APERTE,ИЛИ НАЖМИ
+result.car,Round garage button caption; max ~6 chars,CAR,AUTO,AUTO,AUTO,COCHE,ARABA,CARRO,АВТО
+result.new_car,Unlock sticker with the car name,NEW CAR! {0},NOUVELLE VOITURE ! {0},NUOVA AUTO! {0},NEUES AUTO! {0},¡NUEVO COCHE! {0},YENİ ARABA! {0},CARRO NOVO! {0},НОВАЯ МАШИНА! {0}
+result.drives_next,Under the unlock sticker,DRIVES NEXT MATCH,AU PROCHAIN MATCH,NELLA PROSSIMA SFIDA,IM NÄCHSTEN MATCH,EN LA PRÓXIMA PARTIDA,SONRAKİ MAÇTA,NA PRÓXIMA PARTIDA,В СЛЕДУЮЩЕМ МАТЧЕ
+result.xp_gain,XP earned this round,+{0} XP,+{0} XP,+{0} XP,+{0} XP,+{0} XP,+{0} XP,+{0} XP,+{0} ОПЫТА
+result.xp_total,XP in the level and its price,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} ОПЫТА
+result.rank_level,"Rank name and level, e.g. BRONZE · LEVEL 12",{0} · LEVEL {1},{0} · NIVEAU {1},{0} · LIVELLO {1},{0} · LEVEL {1},{0} · NIVEL {1},{0} · SEVİYE {1},{0} · NÍVEL {1},{0} · УРОВЕНЬ {1}
+result.rank_stop,"Track caption of the next rank, e.g. SILVER RANK",{0} RANK,RANG {0},GRADO {0},RANG {0},RANGO {0},{0} RÜTBESİ,RANKING {0},РАНГ {0}
+rank.rookie,Rank name,ROOKIE,DÉBUTANT,RECLUTA,ANFÄNGER,NOVATO,ÇAYLAK,NOVATO,НОВИЧОК
+rank.bronze,Rank name,BRONZE,BRONZE,BRONZO,BRONZE,BRONCE,BRONZ,BRONZE,БРОНЗА
+rank.silver,Rank name,SILVER,ARGENT,ARGENTO,SILBER,PLATA,GÜMÜŞ,PRATA,СЕРЕБРО
+rank.gold,Rank name,GOLD,OR,ORO,GOLD,ORO,ALTIN,OURO,ЗОЛОТО
+rank.legend,Rank name,LEGEND,LÉGENDE,LEGGENDA,LEGENDE,LEYENDA,EFSANE,LENDA,ЛЕГЕНДА
+garage.title,Garage screen title,GARAGE,GARAGE,GARAGE,GARAGE,GARAJE,GARAJ,GARAGEM,ГАРАЖ
+garage.driving_next,Over the selected car,DRIVING NEXT,PROCHAINE COURSE,PROSSIMA GUIDA,ALS NÄCHSTES,SIGUIENTE,SIRADAKİ,PRÓXIMO,СЛЕДУЮЩАЯ
+garage.in_use,Selected car card status,IN USE,CHOISIE,IN USO,AKTIV,EN USO,SEÇİLİ,EM USO,ВЫБРАНА
+garage.use,Unlocked car card status,USE,CHOISIR,USA,NUTZEN,USAR,SEÇ,USAR,ВЫБРАТЬ
+garage.unlock_at,Locked car tooltip,UNLOCK AT LVL {0},DÉBLOQUÉE AU NIV. {0},SBLOCCO AL LIV. {0},AB LVL {0},SE DESBLOQUEA EN NIV. {0},{0}. SEVİYEDE AÇILIR,LIBERA NO NÍV. {0},ОТКРОЕТСЯ НА УР. {0}
+settings.title,Settings popup title,SETTINGS,RÉGLAGES,IMPOSTAZIONI,EINSTELLUNGEN,AJUSTES,AYARLAR,CONFIGURAÇÕES,НАСТРОЙКИ
+settings.music,Music toggle caption,MUSIC,MUSIQUE,MUSICA,MUSIK,MÚSICA,MÜZİK,MÚSICA,МУЗЫКА
+settings.sound,Sound toggle caption,SOUND,SON,SUONI,SOUND,SONIDO,SES,SOM,ЗВУК
+settings.language,Language toggle caption,LANGUAGE,LANGUE,LINGUA,SPRACHE,IDIOMA,DİL,IDIOMA,ЯЗЫК
+car.racer.name,Car name,RACER,BOLIDE,BOLIDE,RENNER,BÓLIDO,YARIŞÇI,BÓLIDO,ГОНЩИК
+car.speedster.name,Car name,SPEEDSTER,SPEEDSTER,SPEEDSTER,SPEEDSTER,SPEEDSTER,SPEEDSTER,SPEEDSTER,СПИДСТЕР
+car.vintage.name,Car name,VINTAGE,RÉTRO,D'EPOCA,OLDTIMER,CLÁSICO,KLASİK,CLÁSSICO,РЕТРО
+car.suv.name,Car name,SUV,SUV,SUV,SUV,SUV,SUV,SUV,ДЖИП
+car.drag-racer.name,Car name,DRAGSTER,DRAGSTER,DRAGSTER,DRAGSTER,DRAGSTER,DRAGSTER,DRAGSTER,ДРАГСТЕР
+car.truck.name,Car name,TRUCK,CAMION,CAMION,LASTER,CAMIÓN,KAMYON,CAMINHÃO,ГРУЗОВИК
+car.monster-truck.name,Car name,MONSTER,MONSTER,MONSTER,MONSTER,MONSTRUO,CANAVAR,MONSTRO,МОНСТР
+arena.sandbox.name,Arena name,SANDBOX,BAC À SABLE,SABBIERA,SANDKASTEN,ARENERO,KUM HAVUZU,CAIXA DE AREIA,ПЕСОЧНИЦА
+arena.tabletop.name,Arena name,TABLETOP,TABLE,TAVOLO,TISCH,MESA,MASA,MESA,СТОЛ
+arena.candy.name,Arena name,CANDY,BONBONS,CARAMELLE,SÜSSES,DULCES,ŞEKER,DOCES,КОНФЕТЫ
+arena.playroom.name,Arena name,PLAYROOM,SALLE DE JEUX,STANZA GIOCHI,SPIELZIMMER,CUARTO DE JUEGOS,OYUN ODASI,BRINQUEDOTECA,ДЕТСКАЯ

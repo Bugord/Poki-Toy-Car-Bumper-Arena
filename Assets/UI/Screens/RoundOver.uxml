@@ -2,24 +2,17 @@
     <ui:VisualElement name="round-over" class="screen round-over">
         <Style src="../ui_screens.uss" />
         <ui:VisualElement picking-mode="Ignore" class="round-over__spacer-top" />
-        <ui:VisualElement picking-mode="Ignore" class="stroke round-over__title">
-            <ui:VisualElement name="confetti" picking-mode="Ignore" class="round-over__confetti">
-                <ui:VisualElement picking-mode="Ignore" class="confetti" style="left: -150px; top: -40px; rotate: -24deg; background-color: #ff4d4d;" />
-                <ui:VisualElement picking-mode="Ignore" class="confetti" style="left: -60px; top: -120px; rotate: 18deg; background-color: #38b6ff;" />
-                <ui:VisualElement picking-mode="Ignore" class="confetti" style="left: 90px; top: -150px; rotate: -40deg; background-color: #5bd34a;" />
-                <ui:VisualElement picking-mode="Ignore" class="confetti" style="left: 260px; top: -110px; rotate: 30deg; background-color: #ff9f1c;" />
-                <ui:VisualElement picking-mode="Ignore" class="confetti" style="left: 430px; top: -150px; rotate: -14deg; background-color: #b06cff;" />
-                <ui:VisualElement picking-mode="Ignore" class="confetti" style="left: 610px; top: -110px; rotate: 36deg; background-color: #38b6ff;" />
-                <ui:VisualElement picking-mode="Ignore" class="confetti" style="left: 760px; top: -40px; rotate: -30deg; background-color: #5bd34a;" />
-                <ui:VisualElement picking-mode="Ignore" class="confetti" style="left: 840px; top: 120px; rotate: 20deg; background-color: #ffc93c;" />
-                <ui:VisualElement picking-mode="Ignore" class="confetti" style="left: -210px; top: 140px; rotate: 40deg; background-color: #b06cff;" />
-            </ui:VisualElement>
+        <ui:VisualElement name="title" picking-mode="Ignore" class="stroke round-over__title">
             <ui:Label text="TIME UP!" picking-mode="Ignore" class="display round-over__title-text" />
             <ui:Label text="TIME UP!" picking-mode="Ignore" class="display round-over__title-text stroke__face" />
         </ui:VisualElement>
         <ui:Label name="subtitle" text="STILL ON THE ARENA" picking-mode="Ignore" class="round-over__subtitle" />
         <ui:VisualElement name="knocked-by" picking-mode="Ignore" class="round-over__by">
-            <ui:Label text="PUSHED OFF BY" picking-mode="Ignore" class="round-over__subtitle round-over__by-text" />
+            <ui:Label text="PUSHED OFF BY" picking-mode="Ignore" class="round-over__subtitle round-over__by-text">
+                <Bindings>
+                    <Bugord.App.Localization.LocalizedText property="text" key="result.pushed_by" />
+                </Bindings>
+            </ui:Label>
             <ui:VisualElement picking-mode="Ignore" class="round-over__by-badge">
                 <ui:VisualElement picking-mode="Ignore" class="pip">
                     <ui:VisualElement picking-mode="Ignore" class="pip__wheel pip__wheel--front-left" />
@@ -36,7 +29,11 @@
                 <ui:Label name="by-name-face" picking-mode="Ignore" class="display round-over__by-name-text stroke__face" />
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:Label name="revenge" text="REVENGE!" picking-mode="Ignore" class="best best--new round-over__revenge" />
+        <ui:Label name="revenge" text="REVENGE!" picking-mode="Ignore" class="best best--new round-over__revenge">
+            <Bindings>
+                <Bugord.App.Localization.LocalizedText property="text" key="hud.revenge_taken" />
+            </Bindings>
+        </ui:Label>
         <ui:VisualElement picking-mode="Ignore" class="round-over__spacer" />
         <ui:VisualElement picking-mode="Ignore" class="round-over__unlock-slot">
             <ui:VisualElement name="xp-new-car" picking-mode="Ignore" class="best best--shown best--new round-over__new-car">
@@ -64,21 +61,41 @@
             <ui:VisualElement picking-mode="Ignore" class="round-over__buttons">
                 <ui:Button name="garage-button" class="pill round-over__garage">
                     <ui:VisualElement name="garage-portrait" picking-mode="Ignore" class="car-portrait round-over__garage-portrait" />
-                    <ui:Label text="CAR" picking-mode="Ignore" class="round-over__garage-label" />
+                    <ui:Label text="CAR" picking-mode="Ignore" class="round-over__garage-label">
+                        <Bindings>
+                            <Bugord.App.Localization.LocalizedText property="text" key="result.car" />
+                        </Bindings>
+                    </ui:Label>
                     <ui:VisualElement name="garage-dot" picking-mode="Ignore" class="round-over__garage-dot" />
                 </ui:Button>
                 <ui:Button name="play-again-button" class="button button--green button--big round-over__button">
                     <ui:VisualElement picking-mode="Ignore" class="button__face" />
                     <ui:VisualElement picking-mode="Ignore" class="stroke">
-                        <ui:Label text="NEXT MATCH" picking-mode="Ignore" class="button__label" />
-                        <ui:Label text="NEXT MATCH" picking-mode="Ignore" class="button__label stroke__face" />
+                        <ui:Label text="NEXT MATCH" picking-mode="Ignore" class="button__label">
+                            <Bindings>
+                                <Bugord.App.Localization.LocalizedText property="text" key="common.next_match" />
+                            </Bindings>
+                        </ui:Label>
+                        <ui:Label text="NEXT MATCH" picking-mode="Ignore" class="button__label stroke__face">
+                            <Bindings>
+                                <Bugord.App.Localization.LocalizedText property="text" key="common.next_match" />
+                            </Bindings>
+                        </ui:Label>
                     </ui:VisualElement>
                 </ui:Button>
             </ui:VisualElement>
             <ui:VisualElement name="hint" picking-mode="Ignore" class="round-over__hint">
-                <ui:Label text="OR PRESS" picking-mode="Ignore" class="round-over__hint-text" />
+                <ui:Label text="OR PRESS" picking-mode="Ignore" class="round-over__hint-text">
+                    <Bindings>
+                        <Bugord.App.Localization.LocalizedText property="text" key="result.or_press" />
+                    </Bindings>
+                </ui:Label>
                 <ui:VisualElement picking-mode="Ignore" class="key">
-                    <ui:Label text="SPACE" picking-mode="Ignore" class="key__text" />
+                    <ui:Label text="SPACE" picking-mode="Ignore" class="key__text">
+                        <Bindings>
+                            <Bugord.App.Localization.LocalizedText property="text" key="common.space" />
+                        </Bindings>
+                    </ui:Label>
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
