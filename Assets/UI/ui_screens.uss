@@ -487,8 +487,9 @@
 
 .lobby__title > .stroke__face { margin: 0; }
 
-/* The HUD: the stopwatch pill at the top centre, 54 px from the edge, and under it the pill with a chip per car still
-   in the round. On a wide screen it stays in the middle, over the arena. */
+/* The HUD: one white bar at the top centre, 54 px from the edge: the stopwatch, a chip per car still in the round with
+   their count, and from the first knock-out the player's KOs, each part split off by a short rule. On a wide screen it
+   stays in the middle, over the arena. Each part keeps its own name, so the name tags and the feed keep clear of it. */
 .hud {
     position: absolute;
     left: 0;
@@ -499,10 +500,31 @@
     padding-top: 54px;
 }
 
-.hud__timer {
+.hud__bar {
+    flex-shrink: 0;
     height: 136px;
-    min-width: 320px;
-    padding: 0 46px 0 24px;
+    padding: 0 30px 0 12px;
+}
+
+.hud__section {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    height: 100%;
+    border-radius: 999px;
+}
+
+.hud__sep {
+    flex-shrink: 0;
+    width: 8px;
+    height: 64px;
+    margin: 0 22px 0 18px;
+    border-radius: 4px;
+    background-color: var(--shade);
+}
+
+.hud__timer {
+    padding: 0 16px 0 12px;
     transition-property: scale;
     transition-duration: 0.15s;
     transition-timing-function: ease-out;
@@ -510,14 +532,14 @@
 
 /* The time, wide enough for any m:ss so the pill does not change width every second. */
 .hud__time {
-    min-width: 150px;
-    margin-left: 18px;
+    min-width: 130px;
+    margin-left: 14px;
 }
 
 .hud__time-text {
     margin: 0;
     padding: 0 0 6px 0;
-    font-size: 88px;
+    font-size: 76px;
     color: var(--navy);
     -unity-text-align: middle-center;
     white-space: nowrap;
@@ -546,13 +568,11 @@
 
 /* The cars left: a white pill, lower than the time's so it does not compete with it, with a stack of overlapping round
    chips, one per car still in (HudView builds them), each in the car's colour (car-color) with a little white car seen
-   from above in it, and the count and LEFT after them. The bots come first and the player's chip last, in front on the
+   from above in it, and the count after them. The bots come first and the player's chip last, in front on the
    right, with the white ring of its marker on the arena inside its outline. The pill pops when a car goes out
    (hud__cars--pop) and the count punches (hud__cars-count--punch). */
 .hud__cars {
-    height: 116px;
-    margin-top: 24px;
-    padding: 0 38px 0 14px;
+    padding: 0;
     transition-property: scale;
     transition-duration: 0.2s;
     transition-timing-function: ease-out;
@@ -654,9 +674,9 @@
 }
 
 .hud__cars-count {
-    margin: 0 0 0 18px;
+    margin: 0 0 0 14px;
     padding: 0 0 6px 0;
-    font-size: 72px;
+    font-size: 68px;
     color: var(--navy);
     -unity-text-align: middle-center;
     white-space: nowrap;
@@ -668,16 +688,6 @@
 .hud__cars-count--punch {
     scale: 1.3 1.3;
     transition-duration: 0.05s;
-}
-
-.hud__cars-text {
-    margin: 0 0 0 10px;
-    padding: 0 0 2px 0;
-    font-size: 44px;
-    letter-spacing: 1px;
-    color: var(--navy);
-    -unity-text-align: middle-left;
-    white-space: nowrap;
 }
 
 /* The little car of the PUSHED OFF BY badge: four wheels under a body with a windscreen. */
@@ -741,9 +751,7 @@
    (HudView sets hud__ko--shown), popping at each one. */
 .hud__ko {
     display: none;
-    height: 108px;
-    margin-top: 20px;
-    padding: 0 36px 0 24px;
+    padding: 0;
     transition-property: scale;
     transition-duration: 0.2s;
     transition-timing-function: ease-out;
@@ -759,9 +767,9 @@
 }
 
 .hud__ko-text {
-    margin: 0 0 0 14px;
+    margin: 0 0 0 12px;
     padding: 0 0 6px 0;
-    font-size: 60px;
+    font-size: 68px;
     color: var(--navy);
     -unity-text-align: middle-left;
     white-space: nowrap;
@@ -1056,7 +1064,7 @@
     position: absolute;
     left: 0;
     right: 0;
-    top: 390px;
+    top: 250px;
     align-items: center;
     transition-property: scale, opacity;
     transition-duration: 0.35s, 0.2s;
@@ -2452,7 +2460,7 @@
 .feed {
     position: absolute;
     left: 24px;
-    top: 488px;
+    top: 240px;
     width: 660px;
     height: 0;
     visibility: hidden;
