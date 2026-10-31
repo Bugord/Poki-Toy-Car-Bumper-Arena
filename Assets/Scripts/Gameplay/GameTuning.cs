@@ -860,9 +860,11 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float fallHeight = -3f;
 
-            [Tooltip("A car out of the round keeps falling in view and is put away below this height, in metres")]
+            [Tooltip("A car out of the round keeps falling in view and is put away below this height, in metres; deeper than " +
+                "the ground of every arena (its catalog entry's ground depth), so a car is hidden by the ground or the fog " +
+                "long before it is put away")]
             [SerializeField]
-            private float removeHeight = -25f;
+            private float removeHeight = -100f;
 
             public float Duration => duration;
             public float ResultDelay => resultDelay;
