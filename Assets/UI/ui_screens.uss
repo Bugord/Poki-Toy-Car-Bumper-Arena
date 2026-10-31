@@ -1701,11 +1701,13 @@
     border-radius: 999px;
 }
 
+/* As wide as the step between stops, so a long name in another language shrinks rather than runs into its
+   neighbour's. */
 .track__caption {
     position: absolute;
     top: 100%;
-    left: -60px;
-    width: 224px;
+    left: -33px;
+    width: 172px;
     margin-top: 11px;
     align-items: center;
 }
@@ -1724,8 +1726,11 @@
 }
 
 .track__caption-name {
+    align-self: stretch;
     margin: 0;
     padding: 0;
+    overflow: hidden;
+    -unity-text-auto-size: best-fit 16px 30px;
     font-size: 30px;
     color: var(--navy);
     -unity-text-align: middle-center;
@@ -1998,8 +2003,13 @@
 }
 
 .round-over__garage-label {
-    margin: 0;
+    align-self: stretch;
+    margin: 0 18px;
     padding: 0;
+    overflow: hidden;
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+    -unity-text-auto-size: best-fit 18px 34px;
     font-size: 34px;
     color: var(--navy);
 }
@@ -2213,8 +2223,11 @@
 
 .garage__name {
     flex-shrink: 0;
-    margin: 0 0 4px 0;
+    align-self: stretch;
+    margin: 0 10px 4px 10px;
     padding: 0;
+    overflow: hidden;
+    -unity-text-auto-size: best-fit 20px 40px;
     font-size: 40px;
     -unity-text-align: middle-center;
     white-space: nowrap;
@@ -2723,7 +2736,7 @@
 
 .lobby__level {
     margin-left: 20px;
-    margin-right: -6px;
+    margin-right: 14px;
 }
 .lobby__row .hud__chip-ring {
     width: 66px;

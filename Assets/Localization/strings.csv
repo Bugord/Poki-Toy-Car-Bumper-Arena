@@ -50,7 +50,7 @@ result.time_up,Result title when time ran out,TIME UP!,TEMPS ÉCOULÉ !,TEMPO SC
 result.time_up_subtitle,Result subtitle when time ran out,STILL ON THE ARENA,ENCORE SUR L'ARÈNE,ANCORA NELL'ARENA,NOCH IN DER ARENA,SIGUES EN LA ARENA,HÂLÂ ARENADASIN,AINDA NA ARENA,ЕЩЁ НА АРЕНЕ
 result.pushed_by,Before the name of the bot that knocked the player off,PUSHED OFF BY,POUSSÉ PAR,SPINTO DA,RUNTERGESCHUBST VON,TE EMPUJÓ,SENİ İTEN,EMPURRADO POR,ТЕБЯ СТОЛКНУЛ
 result.or_press,Before the SPACE key cap under NEXT MATCH,OR PRESS,OU APPUIE SUR,O PREMI,ODER DRÜCKE,O PULSA,YA DA BAS,OU APERTE,ИЛИ НАЖМИ
-result.car,Round garage button caption; max ~6 chars,CAR,AUTO,AUTO,AUTO,COCHE,ARABA,CARRO,МАШИНА
+result.car,Round garage button caption; max ~6 chars,CAR,AUTO,AUTO,AUTO,COCHE,ARABA,CARRO,АВТО
 result.new_car,Unlock sticker with the car name,NEW CAR! {0},NOUVELLE VOITURE ! {0},NUOVA AUTO! {0},NEUES AUTO! {0},¡NUEVO COCHE! {0},YENİ ARABA! {0},CARRO NOVO! {0},НОВАЯ МАШИНА! {0}
 result.drives_next,Under the unlock sticker,DRIVES NEXT MATCH,AU PROCHAIN MATCH,NELLA PROSSIMA SFIDA,IM NÄCHSTEN MATCH,EN LA PRÓXIMA PARTIDA,SONRAKİ MAÇTA,NA PRÓXIMA PARTIDA,В СЛЕДУЮЩЕМ МАТЧЕ
 result.xp_gain,XP earned this round,+{0} XP,+{0} XP,+{0} XP,+{0} XP,+{0} XP,+{0} XP,+{0} XP,+{0} ОПЫТА
@@ -74,7 +74,7 @@ settings.language,Language toggle caption,LANGUAGE,LANGUE,LINGUA,SPRACHE,IDIOMA,
 car.racer.name,Car name,RACER,BOLIDE,BOLIDE,RENNER,BÓLIDO,YARIŞÇI,BÓLIDO,ГОНЩИК
 car.speedster.name,Car name,SPEEDSTER,SPEEDSTER,SPEEDSTER,SPEEDSTER,SPEEDSTER,SPEEDSTER,SPEEDSTER,СПИДСТЕР
 car.vintage.name,Car name,VINTAGE,RÉTRO,D'EPOCA,OLDTIMER,CLÁSICO,KLASİK,CLÁSSICO,РЕТРО
-car.suv.name,Car name,SUV,SUV,SUV,SUV,TODOTERRENO,SUV,SUV,ВНЕДОРОЖНИК
+car.suv.name,Car name,SUV,SUV,SUV,SUV,SUV,SUV,SUV,ДЖИП
 car.drag-racer.name,Car name,DRAGSTER,DRAGSTER,DRAGSTER,DRAGSTER,DRAGSTER,DRAGSTER,DRAGSTER,ДРАГСТЕР
 car.truck.name,Car name,TRUCK,CAMION,CAMION,LASTER,CAMIÓN,KAMYON,CAMINHÃO,ГРУЗОВИК
 car.monster-truck.name,Car name,MONSTER,MONSTER,MONSTER,MONSTER,MONSTRUO,CANAVAR,MONSTRO,МОНСТР
