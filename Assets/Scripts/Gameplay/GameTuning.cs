@@ -921,18 +921,50 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private int unlockLevel = 1;
 
-            [Tooltip("What makes a round on this arena play differently; the first arena has none, so the first round " +
-                "of a visit teaches only the basics")]
+            [Tooltip("The variants of this arena, first the one every player meets first. A round plays one of them: " +
+                "its own floor look and its own twist; the first arena's first variant has none, so the first round of " +
+                "a visit teaches only the basics")]
             [SerializeField]
-            private ArenaMechanic mechanic;
+            private VariantSettings[] variants = Array.Empty<VariantSettings>();
 
             [SerializeField]
             private ArenaSettings arena = new();
 
             public string Id => id;
             public int UnlockLevel => unlockLevel;
-            public ArenaMechanic Mechanic => mechanic;
+            public IReadOnlyList<VariantSettings> Variants => variants;
             public ArenaSettings Arena => arena;
+
+            /// <summary>The variant with this id, or null.</summary>
+            public VariantSettings FindVariant(string variantId)
+            {
+                foreach (var variant in variants) {
+                    if (variant.Id == variantId) {
+                        return variant;
+                    }
+                }
+
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// One variant of an arena: what makes a round on it play differently. Its floor look is in the
+        /// <c>ArenaCatalog</c>, by the arena's id and this one.
+        /// </summary>
+        [Serializable]
+        public sealed class VariantSettings
+        {
+            [Tooltip("Permanent identity shared with the arena catalog, storage and analytics; lowercase letters only, no digits")]
+            [SerializeField]
+            private string id;
+
+            [Tooltip("What makes a round on this variant play differently")]
+            [SerializeField]
+            private ArenaMechanic mechanic;
+
+            public string Id => id;
+            public ArenaMechanic Mechanic => mechanic;
         }
 
         /// <summary>
@@ -947,6 +979,22 @@ namespace ToyCarArena.Gameplay
             Carousel,
             /// <summary>A big toy ball rolls across the arena now and then and knocks cars aside.</summary>
             Ball,
+            /// <summary>A wind-up crab walks across the arena and shoves what it meets.</summary>
+            Crab,
+            /// <summary>Sand mounds rise at random places and slow and toss the cars.</summary>
+            Mounds,
+            /// <summary>A spinning top wanders over the table and flings what it touches.</summary>
+            Top,
+            /// <summary>A pencil rolls across the page and sweeps it.</summary>
+            Pencil,
+            /// <summary>Jelly springs toss the cars that drive onto them.</summary>
+            Jelly,
+            /// <summary>A candy stirrer sweeps round from the middle of the hole and changes direction.</summary>
+            Stirrer,
+            /// <summary>A toy train circles the arena on rails.</summary>
+            Train,
+            /// <summary>Jack-in-the-boxes pop up at marked places and toss the cars.</summary>
+            Jack,
         }
 
         /// <summary>

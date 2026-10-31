@@ -47,6 +47,11 @@ namespace ToyCarArena.Gameplay.Arena
             [SerializeField]
             private Color background = new(0.53f, 0.81f, 0.92f, 1f);
 
+            [Tooltip("The look of each variant of the arena: its id and the floor it has. A variant without a look, or with " +
+                "no material in it, has the floor material above")]
+            [SerializeField]
+            private VariantLook[] looks = Array.Empty<VariantLook>();
+
             [Header("World below")]
             [Tooltip("Metres from the floor's top down to the ground far below; 0 builds no world, only the props")]
             [Min(0f)]
@@ -84,6 +89,19 @@ namespace ToyCarArena.Gameplay.Arena
             public string Id => id;
             public string DisplayName => displayName;
             public Material FloorMaterial => floorMaterial;
+            public IReadOnlyList<VariantLook> Looks => looks;
+
+            /// <summary>The floor material of a variant: its own look's, else the arena's.</summary>
+            public Material FloorMaterialOf(string variantId)
+            {
+                foreach (var look in looks) {
+                    if (look.VariantId == variantId && look.FloorMaterial != null) {
+                        return look.FloorMaterial;
+                    }
+                }
+
+                return floorMaterial;
+            }
             public Color Background => background;
             public IReadOnlyList<DecorItem> Decor => decor;
             public float GroundDepth => groundDepth;
@@ -92,6 +110,22 @@ namespace ToyCarArena.Gameplay.Arena
             public float FogEnd => fogEnd;
             public IReadOnlyList<WorldPiece> Pedestal => pedestal;
             public IReadOnlyList<WorldPiece> GroundPieces => groundPieces;
+        }
+
+        /// <summary>What one variant of an arena looks like; the numbers and the twist are in <see cref="GameTuning.VariantSettings"/>.</summary>
+        [Serializable]
+        public sealed class VariantLook
+        {
+            [Tooltip("Id of the variant, as in GameTuning.Maps")]
+            [SerializeField]
+            private string variantId;
+
+            [Tooltip("Material of the floor in this variant")]
+            [SerializeField]
+            private Material floorMaterial;
+
+            public string VariantId => variantId;
+            public Material FloorMaterial => floorMaterial;
         }
 
         /// <summary>The shape of a <see cref="WorldPiece"/>.</summary>

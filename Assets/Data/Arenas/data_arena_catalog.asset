@@ -17,6 +17,13 @@ MonoBehaviour:
     displayName: SANDBOX
     floorMaterial: {fileID: 2100000, guid: 12ab94fc4e3c4744abe6f21a4d67b14b, type: 2}
     background: {r: 0.55, g: 0.78, b: 0.95, a: 1}
+    looks:
+    - variantId: rake
+      floorMaterial: {fileID: 2100000, guid: 12ab94fc4e3c4744abe6f21a4d67b14b, type: 2}
+    - variantId: molds
+      floorMaterial: {fileID: 2100000, guid: 12ab94fc4e3c4744abe6f21a4d67b14b, type: 2}
+    - variantId: bricks
+      floorMaterial: {fileID: 2100000, guid: 12ab94fc4e3c4744abe6f21a4d67b14b, type: 2}
     groundDepth: 56
     groundMaterial: {fileID: 2100000, guid: 22984108c7fd0d6418cb3d9f550a0134, type: 2}
     fogStart: 10
@@ -245,6 +252,13 @@ MonoBehaviour:
     displayName: TABLETOP
     floorMaterial: {fileID: 2100000, guid: df94a409402e0bc40adc94dbdec6220f, type: 2}
     background: {r: 1, g: 0.9411765, b: 0.8, a: 1}
+    looks:
+    - variantId: board
+      floorMaterial: {fileID: 2100000, guid: df94a409402e0bc40adc94dbdec6220f, type: 2}
+    - variantId: cloth
+      floorMaterial: {fileID: 2100000, guid: df94a409402e0bc40adc94dbdec6220f, type: 2}
+    - variantId: notebook
+      floorMaterial: {fileID: 2100000, guid: df94a409402e0bc40adc94dbdec6220f, type: 2}
     groundDepth: 64
     groundMaterial: {fileID: 2100000, guid: ac5efc380c23cd64d9d83a87cf37fb0f, type: 2}
     fogStart: 8
@@ -424,6 +438,13 @@ MonoBehaviour:
     displayName: CANDY
     floorMaterial: {fileID: 2100000, guid: 156e413cfa0f7784fafc3cd76ebed354, type: 2}
     background: {r: 0.6509804, g: 0.92156863, b: 0.79607844, a: 1}
+    looks:
+    - variantId: frosting
+      floorMaterial: {fileID: 2100000, guid: 156e413cfa0f7784fafc3cd76ebed354, type: 2}
+    - variantId: chocolate
+      floorMaterial: {fileID: 2100000, guid: 156e413cfa0f7784fafc3cd76ebed354, type: 2}
+    - variantId: waffle
+      floorMaterial: {fileID: 2100000, guid: 156e413cfa0f7784fafc3cd76ebed354, type: 2}
     groundDepth: 60
     groundMaterial: {fileID: 2100000, guid: c73df6aa9a6904343a50008c42477c2b, type: 2}
     fogStart: 10
@@ -638,6 +659,13 @@ MonoBehaviour:
     displayName: PLAYROOM
     floorMaterial: {fileID: 2100000, guid: 6ee51e48e870ce94f86270333ffc56d6, type: 2}
     background: {r: 1, g: 0.8784314, b: 0.4, a: 1}
+    looks:
+    - variantId: puzzle
+      floorMaterial: {fileID: 2100000, guid: 6ee51e48e870ce94f86270333ffc56d6, type: 2}
+    - variantId: road
+      floorMaterial: {fileID: 2100000, guid: 6ee51e48e870ce94f86270333ffc56d6, type: 2}
+    - variantId: blocks
+      floorMaterial: {fileID: 2100000, guid: 6ee51e48e870ce94f86270333ffc56d6, type: 2}
     groundDepth: 62
     groundMaterial: {fileID: 2100000, guid: ac5efc380c23cd64d9d83a87cf37fb0f, type: 2}
     fogStart: 10

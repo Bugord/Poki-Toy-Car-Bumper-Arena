@@ -23,10 +23,14 @@ namespace ToyCarArena.Tests.PlayMode
         {
             tuning = ScriptableObject.CreateInstance<GameTuning>();
             JsonUtility.FromJsonOverwrite("{\"maps\":[" +
-                "{\"id\":\"sandbox\",\"unlockLevel\":1,\"arena\":{\"radius\":15}}," +
-                "{\"id\":\"tabletop\",\"unlockLevel\":2,\"arena\":{\"radius\":12}}," +
-                "{\"id\":\"candy\",\"unlockLevel\":4,\"arena\":{\"radius\":15}}," +
-                "{\"id\":\"playroom\",\"unlockLevel\":6,\"arena\":{\"radius\":18}}]}", tuning);
+                "{\"id\":\"sandbox\",\"unlockLevel\":1,\"arena\":{\"radius\":15},\"variants\":[" +
+                "{\"id\":\"rake\",\"mechanic\":0},{\"id\":\"molds\",\"mechanic\":4},{\"id\":\"bricks\",\"mechanic\":5}]}," +
+                "{\"id\":\"tabletop\",\"unlockLevel\":2,\"arena\":{\"radius\":12},\"variants\":[" +
+                "{\"id\":\"board\",\"mechanic\":3},{\"id\":\"cloth\",\"mechanic\":6},{\"id\":\"notebook\",\"mechanic\":7}]}," +
+                "{\"id\":\"candy\",\"unlockLevel\":4,\"arena\":{\"radius\":15},\"variants\":[" +
+                "{\"id\":\"frosting\",\"mechanic\":1},{\"id\":\"chocolate\",\"mechanic\":8},{\"id\":\"waffle\",\"mechanic\":9}]}," +
+                "{\"id\":\"playroom\",\"unlockLevel\":6,\"arena\":{\"radius\":18},\"variants\":[" +
+                "{\"id\":\"puzzle\",\"mechanic\":2},{\"id\":\"road\",\"mechanic\":10},{\"id\":\"blocks\",\"mechanic\":11}]}]}", tuning);
             storage = new MemoryStorage();
             rotation = new ArenaRotation(tuning, storage);
         }
@@ -116,6 +120,97 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [Test]
+        public void VisitStartsOnTheFirstVariantOfTheFirstArena()
+        {
+            Assert.That(rotation.CurrentVariant, Is.EqualTo("rake"));
+        }
+
+        [Test]
+        public void VisitStartIsRakeEvenWhenAnotherSandboxVariantWasPlayedLast()
+        {
+            rotation.MarkPlayed("sandbox", "molds");
+            Assert.That(new ArenaRotation(tuning, storage).CurrentVariant, Is.EqualTo("rake"));
+        }
+
+        [Test]
+        public void FirstTimeOnAnArenaIsItsFirstVariant()
+        {
+            rotation.Next(2);
+            Assert.That(rotation.Current, Is.EqualTo("tabletop"));
+            Assert.That(rotation.CurrentVariant, Is.EqualTo("board"));
+        }
+
+        [Test]
+        public void NeverTheSameVariantTwiceInARowOnAnArena()
+        {
+            // Only the first arena is open, so every round comes back to it.
+            var seen = new HashSet<string>();
+            var previous = rotation.CurrentVariant;
+            for (var round = 0; round < 60; round++) {
+                rotation.MarkPlayed(rotation.Current, rotation.CurrentVariant);
+                rotation.Next(1);
+                Assert.That(rotation.Current, Is.EqualTo("sandbox"));
+                Assert.That(rotation.CurrentVariant, Is.Not.EqualTo(previous), $"Round {round}.");
+                seen.Add(rotation.CurrentVariant);
+                previous = rotation.CurrentVariant;
+            }
+
+            Assert.That(seen, Is.EquivalentTo(new[] { "rake", "molds", "bricks" }), "Chance reaches every variant.");
+        }
+
+        [Test]
+        public void VariantOfAnArenaFollowsWhatWasPlayedThereNotElsewhere()
+        {
+            rotation.MarkPlayed("candy", "waffle");
+            rotation.MarkPlayed("tabletop", "board");
+            for (var round = 0; round < 30; round++) {
+                // The arenas go round in order, so candy comes up whenever the walk reaches it.
+                do {
+                    rotation.Next(6);
+                }
+                while (rotation.Current != "candy");
+
+                Assert.That(rotation.CurrentVariant, Is.Not.EqualTo("waffle"));
+                Assert.That(new[] { "frosting", "chocolate" }, Contains.Item(rotation.CurrentVariant));
+                // Pretend the round did not begin: the saved variant stays, and so does the rule.
+            }
+        }
+
+        [Test]
+        public void PlayedVariantIsSavedPerArenaAndOutlivesTheSession()
+        {
+            rotation.MarkPlayed("candy", "waffle");
+            Assert.That(storage.GetString("arena_variant_candy"), Is.EqualTo("waffle"));
+            Assert.That(storage.HasKey("arena_variant_tabletop"), Is.False);
+            var next = new ArenaRotation(tuning, storage);
+            do {
+                next.Next(6);
+            }
+            while (next.Current != "candy");
+
+            Assert.That(next.CurrentVariant, Is.Not.EqualTo("waffle"));
+        }
+
+        [Test]
+        public void UnknownSavedVariantCountsAsTheFirstTime()
+        {
+            storage.SetString("arena_variant_tabletop", "gone");
+            rotation.Next(2);
+            Assert.That(rotation.CurrentVariant, Is.EqualTo("board"));
+        }
+
+        [Test]
+        public void FixedRotationKeepsTheVariantItWasGiven()
+        {
+            var fixedRotation = new FixedArenaRotation("tabletop", "cloth");
+            Assert.That(fixedRotation.CurrentVariant, Is.EqualTo("cloth"));
+            fixedRotation.Next(9);
+            Assert.That(fixedRotation.Current, Is.EqualTo("tabletop"));
+            Assert.That(fixedRotation.CurrentVariant, Is.EqualTo("cloth"));
+            Assert.That(new FixedArenaRotation("tabletop").CurrentVariant, Is.Null);
+        }
+
+        [Test]
         public void OpenedBetweenListsArenasOfTheCrossedLevels()
         {
             Assert.That(ArenaRotation.OpenedBetween(tuning, 1, 1), Is.Empty);
@@ -134,6 +229,25 @@ namespace ToyCarArena.Tests.PlayMode
                 Assert.That(map.Id, Is.EqualTo("tabletop"));
                 Assert.That(map.Settings.Radius, Is.EqualTo(12f));
                 Assert.That(map.HasTheme, Is.False, "No catalog entry keeps the scene's look.");
+                Assert.That(map.Variant, Is.EqualTo("board"));
+                Assert.That(map.Mechanic, Is.EqualTo(GameTuning.ArenaMechanic.Ball));
+            }
+            finally {
+                Object.DestroyImmediate(catalog);
+            }
+        }
+
+        [Test]
+        public void MapTakesTheMechanicOfTheVariantAndRejectsAnUnknownOne()
+        {
+            var catalog = ScriptableObject.CreateInstance<ArenaCatalog>();
+            try {
+                var map = new ArenaMap(tuning, new FixedArenaRotation("tabletop", "cloth"), catalog);
+                Assert.That(map.Variant, Is.EqualTo("cloth"));
+                Assert.That(map.Mechanic, Is.EqualTo(GameTuning.ArenaMechanic.Top));
+                map = new ArenaMap(tuning, new FixedArenaRotation("tabletop"), catalog);
+                Assert.That(map.Variant, Is.EqualTo("board"), "No variant named is the arena's first.");
+                Assert.Throws<System.ArgumentException>(() => new ArenaMap(tuning, new FixedArenaRotation("tabletop", "nope"), catalog));
             }
             finally {
                 Object.DestroyImmediate(catalog);

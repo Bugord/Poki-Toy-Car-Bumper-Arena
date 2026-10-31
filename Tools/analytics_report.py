@@ -77,6 +77,7 @@ def summarise(data):
         "unlocks": other(o, r"progress-(?!map-)([a-z]+(?:-[a-z]+)*)-unlock"),
         "map_unlocks": other(o, r"progress-map-([a-z]+)-unlock"),
         "maps": other(o, r"result-map-([a-z]+-r(?:1|2|3|4plus))-map"),
+        "variants": other(o, r"result-variant-([a-z]+-[a-z]+-r(?:1|2|3|4plus))-map-variant"),
         "equips": other(o, r"garage-([a-z]+(?:-[a-z]+)*)-equip"),
         "driven": other(o, r"result-car-([a-z]+(?:-[a-z]+)*-r(?:1|2|3|4plus))-car"),
         "colors": other(o, r"garage-color-(green|red|blue|yellow|purple|orange|pink|dark)-color"),
@@ -179,6 +180,7 @@ def report(version, previous):
         ("Цвет машинки по раундам (визиты с color)", "played_colors"),
         ("Открытия арен (визиты с map unlock)", "map_unlocks"),
         ("Арены по раундам (визиты с map)", "maps"),
+        ("Варианты арен по раундам (визиты с map-variant)", "variants"),
     ):
         keys = keys_of(key)
         if key == "levels":

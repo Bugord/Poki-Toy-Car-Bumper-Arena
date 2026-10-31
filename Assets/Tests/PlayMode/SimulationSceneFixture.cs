@@ -72,7 +72,7 @@ namespace ToyCarArena.Tests.PlayMode
             }
         }
 
-        protected void CreateParent(SimulationInput input, SimulationProgress progress, string map = null)
+        protected void CreateParent(SimulationInput input, SimulationProgress progress, string map = null, string variant = null)
         {
             var catalog = LoadCarCatalog();
             var arenas = LoadArenaCatalog();
@@ -83,8 +83,10 @@ namespace ToyCarArena.Tests.PlayMode
                 builder.RegisterInstance<ISessionProgress>(progress);
                 builder.RegisterInstance(catalog, typeof(CarCatalog));
                 builder.RegisterInstance(arenas, typeof(ArenaCatalog));
-                // A simulation measures one arena, the first unless SIM_MAP names another, and never rotates.
-                builder.RegisterInstance(new FixedArenaRotation(map ?? SimMap), typeof(FixedArenaRotation))
+                // A simulation measures one arena and variant, the first of each unless SIM_MAP and SIM_VARIANT name
+                // others, and never rotates. A test that names its map also names its variant or gets the first.
+                builder.RegisterInstance(new FixedArenaRotation(map ?? SimMap, map == null ? SimVariant : variant),
+                    typeof(FixedArenaRotation))
                     .As(typeof(IArenaRotation));
                 builder.Register<IPlayerCar, FirstPlayerCar>(Lifetime.Singleton);
                 builder.Register<SessionRoster>(Lifetime.Singleton).As<ISessionRoster>();
@@ -148,6 +150,15 @@ namespace ToyCarArena.Tests.PlayMode
             get {
                 var id = Environment.GetEnvironmentVariable("SIM_MAP");
                 return string.IsNullOrWhiteSpace(id) ? "sandbox" : id.Trim();
+            }
+        }
+
+        /// <summary>The variant a simulation plays: the SIM_VARIANT environment variable, else null for the arena's first.</summary>
+        protected static string SimVariant
+        {
+            get {
+                var id = Environment.GetEnvironmentVariable("SIM_VARIANT");
+                return string.IsNullOrWhiteSpace(id) ? null : id.Trim();
             }
         }
 

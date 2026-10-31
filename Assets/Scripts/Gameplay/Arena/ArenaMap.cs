@@ -12,6 +12,11 @@ namespace ToyCarArena.Gameplay.Arena
     {
         public string Id { get; }
         public GameTuning.ArenaSettings Settings { get; }
+
+        /// <summary>The variant of the arena this scene plays: its floor and its mechanic.</summary>
+        public string Variant { get; }
+
+        /// <summary>The twist of the variant; every mechanic runs only in the variant that names it.</summary>
         public GameTuning.ArenaMechanic Mechanic { get; }
 
         /// <summary>The look of the arena, or null when the catalog has no entry for it: the scene's own stays.</summary>
@@ -29,7 +34,16 @@ namespace ToyCarArena.Gameplay.Arena
             foreach (var map in tuning.Maps) {
                 if (map.Id == Id) {
                     Settings = map.Arena;
-                    Mechanic = map.Mechanic;
+                    var variants = map.Variants;
+                    var wanted = rotation.CurrentVariant;
+                    // No variant named (a scene opened on its own) is the arena's first; one that does not exist is a typo.
+                    var variant = string.IsNullOrEmpty(wanted) ? (variants.Count > 0 ? variants[0] : null) : map.FindVariant(wanted);
+                    if (variant == null && !string.IsNullOrEmpty(wanted)) {
+                        throw new ArgumentException($"GameTuning.Maps arena '{Id}' has no variant '{wanted}'.");
+                    }
+
+                    Variant = variant != null ? variant.Id : "";
+                    Mechanic = variant != null ? variant.Mechanic : GameTuning.ArenaMechanic.None;
                     break;
                 }
             }
@@ -52,7 +66,7 @@ namespace ToyCarArena.Gameplay.Arena
         }
 
         /// <summary>The floor material of the theme, or null to keep the scene's.</summary>
-        public Material FloorMaterial => Theme != null ? Theme.FloorMaterial : null;
+        public Material FloorMaterial => Theme != null ? Theme.FloorMaterialOf(Variant) : null;
 
         /// <summary>
         /// Whether the theme restyles the scene. It is all or nothing, floor and background together, so an entry still

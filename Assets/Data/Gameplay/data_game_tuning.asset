@@ -162,7 +162,13 @@ MonoBehaviour:
   maps:
   - id: sandbox
     unlockLevel: 1
-    mechanic: 0
+    variants:
+    - id: rake
+      mechanic: 0
+    - id: molds
+      mechanic: 4
+    - id: bricks
+      mechanic: 5
     arena:
       radius: 15
       spawnRadius: 0.6
@@ -187,7 +193,13 @@ MonoBehaviour:
       spawnClear: 0
   - id: tabletop
     unlockLevel: 2
-    mechanic: 3
+    variants:
+    - id: board
+      mechanic: 3
+    - id: cloth
+      mechanic: 6
+    - id: notebook
+      mechanic: 7
     arena:
       radius: 13.6
       spawnRadius: 0.6
@@ -212,7 +224,13 @@ MonoBehaviour:
       spawnClear: 0
   - id: candy
     unlockLevel: 4
-    mechanic: 1
+    variants:
+    - id: frosting
+      mechanic: 1
+    - id: chocolate
+      mechanic: 8
+    - id: waffle
+      mechanic: 9
     arena:
       radius: 17.32
       spawnRadius: 0.6
@@ -237,7 +255,13 @@ MonoBehaviour:
       spawnClear: 0
   - id: playroom
     unlockLevel: 6
-    mechanic: 2
+    variants:
+    - id: puzzle
+      mechanic: 2
+    - id: road
+      mechanic: 10
+    - id: blocks
+      mechanic: 11
     arena:
       radius: 21.5
       spawnRadius: 0.6

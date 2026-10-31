@@ -172,6 +172,17 @@ namespace ToyCarArena.App
         public static void MeasureRoundMap(this IGamePlatform platform, int round, string mapId) =>
             platform.Measure(ResultCategory, $"map-{mapId}-{RoundTag(round)}", "map");
 
+        /// <summary>
+        /// The variant played on the arena, besides <see cref="MeasureRoundMap"/>, which keeps its name for the reports
+        /// built on it. Ids have no digits, so the round is the only number.
+        /// </summary>
+        public static void MeasureRoundVariant(this IGamePlatform platform, int round, string mapId, string variantId)
+        {
+            if (!string.IsNullOrEmpty(variantId)) {
+                platform.Measure(ResultCategory, $"variant-{mapId}-{variantId}-{RoundTag(round)}", "map-variant");
+            }
+        }
+
         /// <summary>The arenas the levels of this reward opened, from the tuning, as the cars are.</summary>
         public static void MeasureMapUnlocks(this IGamePlatform platform, XpGain gain, GameTuning tuning)
         {

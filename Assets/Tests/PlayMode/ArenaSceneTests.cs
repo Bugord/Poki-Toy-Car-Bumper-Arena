@@ -1,7 +1,9 @@
 using System.Collections;
+using System.Collections.Generic;
 using NUnit.Framework;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Arena;
+using ToyCarArena.Gameplay.Round;
 using UnityEngine;
 using UnityEngine.TestTools;
 using VContainer;
@@ -35,6 +37,58 @@ namespace ToyCarArena.Tests.PlayMode
             var extent = arenaMap.Shape == null ? expected.Radius : arenaMap.Shape.FullExtent;
             Assert.That(container.Resolve<ArenaFloor>().SafeExtent, Is.EqualTo(extent).Within(0.01f));
             Assert.That(arenaMap.Shape == null, Is.EqualTo(expected.Shape == GameTuning.ArenaShapeKind.Circle));
+        }
+
+        /// <summary>Every variant of every arena in the game's own tuning, as (arena, variant).</summary>
+        public static IEnumerable<object[]> AllVariants()
+        {
+#if UNITY_EDITOR
+            var tuning = UnityEditor.AssetDatabase.LoadAssetAtPath<GameTuning>("Assets/Data/Gameplay/data_game_tuning.asset");
+            foreach (var map in tuning.Maps) {
+                foreach (var variant in map.Variants) {
+                    yield return new object[] { map.Id, variant.Id };
+                }
+            }
+#else
+            yield break;
+#endif
+        }
+
+        [UnityTest]
+        public IEnumerator SceneBuildsForEveryVariantAndOnlyItsOwnMechanicRuns(
+            [ValueSource(nameof(AllVariants))] object[] pair)
+        {
+            var map = (string)pair[0];
+            var variant = (string)pair[1];
+            CreateParent(new SimulationInput(), new SimulationProgress(), map, variant);
+            yield return LoadGame();
+            var container = GameScope().Container;
+            var arenaMap = container.Resolve<ArenaMap>();
+            var tuning = container.Resolve<GameTuning>();
+            var expected = GameTuning.ArenaMechanic.None;
+            foreach (var entry in tuning.Maps) {
+                if (entry.Id == map) {
+                    expected = entry.FindVariant(variant).Mechanic;
+                }
+            }
+
+            Assert.That(arenaMap.Id, Is.EqualTo(map));
+            Assert.That(arenaMap.Variant, Is.EqualTo(variant));
+            Assert.That(arenaMap.Mechanic, Is.EqualTo(expected));
+            Assert.That(arenaMap.FloorMaterial, Is.Not.Null, $"{map}/{variant} has no floor material.");
+
+            // The mechanics are laid out on the first tick after the cars stand.
+            container.Resolve<ArenaRound>().Place();
+            yield return null;
+            yield return null;
+
+            var ball = Object.FindFirstObjectByType<ArenaBall>(FindObjectsInactive.Include);
+            Assert.That(ball != null && ball.gameObject.activeSelf, Is.EqualTo(expected == GameTuning.ArenaMechanic.Ball),
+                $"Ball on {map}/{variant}.");
+            Assert.That(container.Resolve<CarouselDisc>().Exists, Is.EqualTo(expected == GameTuning.ArenaMechanic.Carousel),
+                $"Carousel on {map}/{variant}.");
+            Assert.That(container.Resolve<CandyPatches>().Count > 0, Is.EqualTo(expected == GameTuning.ArenaMechanic.Candy),
+                $"Candy patches on {map}/{variant}.");
         }
 
         [UnityTest]

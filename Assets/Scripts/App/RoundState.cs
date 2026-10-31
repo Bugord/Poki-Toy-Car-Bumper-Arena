@@ -73,7 +73,9 @@ namespace ToyCarArena.App
             // Record() may auto-equip a new unlock; analytics must name the car that actually played this round.
             var playedCar = playerProgress.SelectedCar;
             // The arena the loaded scene was built for, before the rotation moves on to the next one.
-            var playedMap = levelScene.Resolve<ArenaMap>().Id;
+            var arenaMap = levelScene.Resolve<ArenaMap>();
+            var playedMap = arenaMap.Id;
+            var playedVariant = arenaMap.Variant;
             var waitsForPlayer = roundNumber == 1;
 
             void BeginRound()
@@ -82,6 +84,7 @@ namespace ToyCarArena.App
                 platform.GameplayStart();
                 platform.MeasureRoundStart(roundNumber);
                 arenaRotation.MarkSeen(playedMap);
+                arenaRotation.MarkPlayed(playedMap, playedVariant);
                 isPlaying = true;
             }
 
@@ -114,6 +117,7 @@ namespace ToyCarArena.App
                 platform.MeasureRoundCar(roundNumber, playedCar);
                 platform.MeasureProgress(record.XpGain);
                 platform.MeasureRoundMap(roundNumber, playedMap);
+                platform.MeasureRoundVariant(roundNumber, playedMap, playedVariant);
                 platform.MeasureMapUnlocks(record.XpGain, tuning);
 
                 var delay = result.Outcome == RoundOutcome.Out ? tuning.Round.OutResultDelay : tuning.Round.ResultDelay;

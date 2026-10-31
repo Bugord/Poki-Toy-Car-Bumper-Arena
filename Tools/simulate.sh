@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Measures novice rounds in the actual Game scene using editor PlayMode tests.
 # The Unity Editor must not have this project open. Reports and test results go to Logs/.
-# Usage: SIM_ROUNDS=5 SIM_LEVELS=1,7 SIM_SEED=1 SIM_MAP=sandbox Tools/simulate.sh [path to Unity.exe]
-# Defaults: 40 runs per visit round, levels 1,3,5,7, base seed 1, arena sandbox (SIM_MAP=tabletop|candy|playroom). This measures outcomes, not balance thresholds.
+# Usage: SIM_ROUNDS=5 SIM_LEVELS=1,7 SIM_SEED=1 SIM_MAP=sandbox SIM_VARIANT=rake Tools/simulate.sh [path to Unity.exe]
+# Defaults: 40 runs per visit round, levels 1,3,5,7, base seed 1, arena sandbox (SIM_MAP=tabletop|candy|playroom), its first variant (SIM_VARIANT=<variant id>, e.g. cloth). This measures outcomes, not balance thresholds.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
