@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using VContainer;
 
 namespace ToyCarArena.Gameplay.Arena
@@ -72,6 +73,7 @@ namespace ToyCarArena.Gameplay.Arena
         private float shake;
         private Vector3 shakeOffset;
         private float shakeSeed;
+        private bool hasFog;
 
         public Camera Camera => view;
 
@@ -90,7 +92,20 @@ namespace ToyCarArena.Gameplay.Arena
                 view.backgroundColor = map.Theme.Background;
             }
 
+            hasFog = map.HasTheme && map.Theme.GroundDepth > 0f;
+            ApplyFog();
+
             shakeSeed = Random.Range(0f, 100f);
+        }
+
+        private void OnEnable()
+        {
+            SceneManager.activeSceneChanged += OnActiveSceneChanged;
+        }
+
+        private void OnDisable()
+        {
+            SceneManager.activeSceneChanged -= OnActiveSceneChanged;
         }
 
         private void LateUpdate()
@@ -106,6 +121,33 @@ namespace ToyCarArena.Gameplay.Arena
                 ? Mathf.SmoothDamp(viewRadius, target, ref zoomSpeed, zoomTime)
                 : target;
             transform.position = -transform.forward * (unitDistance * viewRadius) + Shaken();
+            if (hasFog) {
+                // Fog counts from the camera, and the camera's distance to the arena changes with the screen's shape and the
+                // zoom, so it is anchored to the arena's middle: the arena itself stays clear whatever the view.
+                var distance = unitDistance * viewRadius;
+                RenderSettings.fogStartDistance = distance + map.Theme.FogStart;
+                RenderSettings.fogEndDistance = distance + map.Theme.FogEnd;
+            }
+        }
+
+        // Render settings belong to the active scene, and the scene that loads this one becomes active only after it has
+        // loaded: the fog set on waking would be lost to the scene's own settings, so it is set again then.
+        private void OnActiveSceneChanged(Scene previous, Scene next)
+        {
+            ApplyFog();
+        }
+
+        /// <summary>
+        /// The fog is the background colour, so the world far below melts into the sky with no horizon. An arena without a
+        /// world switches it off, because the scene's own settings may have it on.
+        /// </summary>
+        private void ApplyFog()
+        {
+            RenderSettings.fog = hasFog;
+            if (hasFog) {
+                RenderSettings.fogMode = FogMode.Linear;
+                RenderSettings.fogColor = map.Theme.Background;
+            }
         }
 
         /// <summary>

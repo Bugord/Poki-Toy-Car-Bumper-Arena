@@ -139,6 +139,7 @@ namespace ToyCarArena.Gameplay
             builder.RegisterEntryPoint<BotDriver>();
             builder.RegisterEntryPoint<ArenaCrumble>().AsSelf();
             builder.RegisterEntryPoint<ArenaDecor>().WithParameter(transform);
+            builder.RegisterEntryPoint<ArenaWorld>().WithParameter(transform);
             if (isStandalone) {
                 builder.RegisterEntryPoint<StandaloneRound>();
                 // From Boot the session's progress lives in the app scope; on its own the scene reloads itself every

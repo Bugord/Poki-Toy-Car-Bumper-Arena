@@ -154,7 +154,7 @@ MonoBehaviour:
     boostFallWindow: 1
     slideWindow: 6
     fallHeight: -3
-    removeHeight: -25
+    removeHeight: -100
   maps:
   - id: sandbox
     unlockLevel: 1

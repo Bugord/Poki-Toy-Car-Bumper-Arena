@@ -47,7 +47,37 @@ namespace ToyCarArena.Gameplay.Arena
             [SerializeField]
             private Color background = new(0.53f, 0.81f, 0.92f, 1f);
 
-            [Tooltip("Props around the rim, outside the playable floor; empty leaves the arena bare")]
+            [Header("World below")]
+            [Tooltip("Metres from the floor's top down to the ground far below; 0 builds no world, only the props")]
+            [Min(0f)]
+            [SerializeField]
+            private float groundDepth = 40f;
+
+            [Tooltip("Material of the ground that fills the view far below the arena")]
+            [SerializeField]
+            private Material groundMaterial;
+
+            [Tooltip("Metres of view depth past the arena's middle where the fog starts; the fog colour is the background")]
+            [Min(0f)]
+            [SerializeField]
+            private float fogStart = 8f;
+
+            [Tooltip("Metres of view depth past the arena's middle where the fog is thick and hides everything")]
+            [Min(0f)]
+            [SerializeField]
+            private float fogEnd = 90f;
+
+            [Tooltip("What the arena stands on, under its floor: always narrower than the floor, so the rim and the drop show")]
+            [SerializeField]
+            private WorldPiece[] pedestal = Array.Empty<WorldPiece>();
+
+            [Tooltip("Large flat or solid pieces of the world below, such as a table top or a rug; their base height is " +
+                "measured from the floor's top like the pedestal's")]
+            [SerializeField]
+            private WorldPiece[] groundPieces = Array.Empty<WorldPiece>();
+
+            [Header("Props")]
+            [Tooltip("Props standing on the ground and round the rim; empty leaves the arena bare")]
             [SerializeField]
             private DecorItem[] decor = Array.Empty<DecorItem>();
 
@@ -56,6 +86,65 @@ namespace ToyCarArena.Gameplay.Arena
             public Material FloorMaterial => floorMaterial;
             public Color Background => background;
             public IReadOnlyList<DecorItem> Decor => decor;
+            public float GroundDepth => groundDepth;
+            public Material GroundMaterial => groundMaterial;
+            public float FogStart => fogStart;
+            public float FogEnd => fogEnd;
+            public IReadOnlyList<WorldPiece> Pedestal => pedestal;
+            public IReadOnlyList<WorldPiece> GroundPieces => groundPieces;
+        }
+
+        /// <summary>The shape of a <see cref="WorldPiece"/>.</summary>
+        public enum PieceShape
+        {
+            Cylinder,
+            Box,
+            Model,
+        }
+
+        /// <summary>
+        /// One solid of the world below the arena: a tier of the pedestal, a table top, a rug. Built from a plain
+        /// cylinder or box, or from a model, and placed by <see cref="ArenaWorld"/>.
+        /// </summary>
+        [Serializable]
+        public sealed class WorldPiece
+        {
+            [Tooltip("Cylinder or Box for a plain solid in the material below, Model for a prop with its own colours")]
+            [SerializeField]
+            private PieceShape shape;
+
+            [Tooltip("The model of a Model piece")]
+            [SerializeField]
+            private GameObject model;
+
+            [Tooltip("Colour of a cylinder or box; a model keeps its own")]
+            [SerializeField]
+            private Material material;
+
+            [Tooltip("Metres: width, height and depth of a box; across, height and across of a cylinder; for a model, X is " +
+                "its size multiplier")]
+            [SerializeField]
+            private Vector3 size = Vector3.one;
+
+            [Tooltip("Metres from the arena's middle, as the camera sees it: X to the right of the screen, Y away from the camera")]
+            [SerializeField]
+            private Vector2 offset;
+
+            [Tooltip("Metres of the piece's base above the floor's top; negative is below it")]
+            [SerializeField]
+            private float baseHeight;
+
+            [Tooltip("Degrees of turn about the vertical")]
+            [SerializeField]
+            private float yaw;
+
+            public PieceShape Shape => shape;
+            public GameObject Model => model;
+            public Material Material => material;
+            public Vector3 Size => size;
+            public Vector2 Offset => offset;
+            public float BaseHeight => baseHeight;
+            public float Yaw => yaw;
         }
 
         /// <summary>One prop of an arena's surroundings, placed round the floor as <see cref="ArenaDecor"/> describes.</summary>
@@ -74,7 +163,7 @@ namespace ToyCarArena.Gameplay.Arena
             [SerializeField]
             private float distance = 3f;
 
-            [Tooltip("Metres of the prop's base above the floor's top; negative hangs below the rim")]
+            [Tooltip("Metres of the prop's base above the floor's top; negative stands it on the ground far below")]
             [SerializeField]
             private float height;
 
@@ -87,12 +176,18 @@ namespace ToyCarArena.Gameplay.Arena
             [SerializeField]
             private float yaw;
 
+            [Tooltip("Degrees the prop's front tips down (positive) or back, after the yaw: stands a model that lies flat, or " +
+                "turns a face up to the camera that looks down on it")]
+            [SerializeField]
+            private float pitch;
+
             public GameObject Model => model;
             public float Angle => angle;
             public float Distance => distance;
             public float Height => height;
             public float Scale => scale;
             public float Yaw => yaw;
+            public float Pitch => pitch;
         }
     }
 }

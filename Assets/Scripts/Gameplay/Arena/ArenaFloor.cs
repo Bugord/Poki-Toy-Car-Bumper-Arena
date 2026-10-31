@@ -72,10 +72,11 @@ namespace ToyCarArena.Gameplay.Arena
         [SerializeField]
         private Vector2 fallSpin = new(60f, 200f);
 
-        [Tooltip("A fallen block is put away this far below the floor, in metres")]
+        [Tooltip("A fallen block is put away this far below the floor, in metres; deeper than the ground of every arena, so " +
+            "the block drops out of sight into the fog or behind the ground instead of vanishing on the way")]
         [Min(0f)]
         [SerializeField]
-        private float hideDepth = 25f;
+        private float hideDepth = 110f;
 
         private ArenaMap map;
         private GameTuning.ArenaSettings settings;

@@ -14,12 +14,12 @@ OcclusionCullingSettings:
 RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
-  m_Fog: 0
-  m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  m_FogMode: 3
+  m_Fog: 1
+  m_FogColor: {r: 0.55, g: 0.78, b: 0.95, a: 1}
+  m_FogMode: 1
   m_FogDensity: 0.01
-  m_LinearFogStart: 0
-  m_LinearFogEnd: 300
+  m_LinearFogStart: 40
+  m_LinearFogEnd: 200
   m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
@@ -616,7 +616,7 @@ MonoBehaviour:
   fallDrift: {x: 0.5, y: 2}
   fallKick: 1.5
   fallSpin: {x: 60, y: 200}
-  hideDepth: 25
+  hideDepth: 110
 --- !u!1 &1684495027
 GameObject:
   m_ObjectHideFlags: 0
@@ -692,7 +692,6 @@ MonoBehaviour:
   arrowWarning: {fileID: 2100000, guid: 182c9f696e1f3e34cb0cb47761b28072, type: 2}
   lift: 0.008
   rimWidth: 0.22
-  hubRadius: 0.55
   wedges: 8
   arrows: 8
   flashRate: 8
