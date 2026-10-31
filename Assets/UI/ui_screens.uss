@@ -566,7 +566,7 @@
     transition-duration: 0.05s;
 }
 
-/* The cars left: a white pill, lower than the time's so it does not compete with it, with a stack of overlapping round
+/* The cars left: the middle of the bar, a stack of overlapping round
    chips, one per car still in (HudView builds them), each in the car's colour (car-color) with a little white car seen
    from above in it, and the count after them. The bots come first and the player's chip last, in front on the
    right, with the white ring of its marker on the arena inside its outline. The pill pops when a car goes out
