@@ -10,7 +10,7 @@ namespace ToyCarArena.Gameplay
     /// own section. Code reads them through the properties and never keeps its own copy of a number.
     /// </summary>
     [CreateAssetMenu(fileName = "data_game_tuning", menuName = "Bonk Arena/Game Tuning")]
-    public sealed class GameTuning : ScriptableObject
+    public sealed partial class GameTuning : ScriptableObject
     {
         [SerializeField]
         private CarSettings car = new();

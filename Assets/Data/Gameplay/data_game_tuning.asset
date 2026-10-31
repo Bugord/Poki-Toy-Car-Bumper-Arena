@@ -301,3 +301,70 @@ MonoBehaviour:
   players:
     leaveChance: 0.25
     maxLeaves: 2
+  jelly:
+    padCount: 4
+    padRadius: 1.3
+    jumpSpeed: 4.5
+    range: 7
+    minSpeed: 2
+    landingMargin: 0.8
+    cooldown: 1
+    edgeClearance: 2.6
+    padSpacing: 4
+    spawnClearance: 3.8
+  stirrer:
+    delay: 5
+    angularSpeed: 35
+    reverseInterval: 9
+    pause: 1
+    easeTime: 0.5
+    length: 15.5
+    hubRadius: 1.5
+    reach: 1.3
+    wedgeAhead: 1
+    push: 9
+    sweepShare: 0.85
+    stagger: 0.5
+    hitCooldown: 1.5
+    easyPlayerShare: 0.5
+    hitHeight: 1.5
+    botLookAhead: 1.3
+  train:
+    delay: 5
+    easySpeed: 5.5
+    speed: 7
+    warning: 1.2
+    railInset: 1.5
+    partLength: {x: 2.6, y: 2.2}
+    gap: 0.4
+    carriages: 2
+    sideReach: 1.7
+    endReach: 0.8
+    push: 10
+    sideShare: 0.7
+    stagger: 0.6
+    easyPlayerShare: 0.5
+    botLookAhead: 1.6
+    hitHeight: 1.5
+    startRamp: 1
+    stationOffset: 4
+    hitCooldown: 1.2
+    respawnDelay: 3
+    respawnRun: 20
+  jack:
+    spotCount: 6
+    delay: 4
+    interval: 5
+    jitter: 1
+    doubleChance: 0.4
+    warning: 1.2
+    hold: 1.5
+    hitRadius: 1.8
+    push: 7
+    lift: 3.5
+    stagger: 0.5
+    easyPlayerShare: 0.5
+    edgeClearance: 3.5
+    spotSpacing: 4.5
+    spawnClearance: 4
+    hitHeight: 1.2
