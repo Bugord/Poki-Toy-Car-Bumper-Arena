@@ -75,7 +75,7 @@ namespace ToyCarArena.UI
             BuildArenaLine();
             fill = 0f;
             fillTime = 0f;
-            Root.Q<Label>("lobby-tip").text = Tips[Random.Range(0, Tips.Length)];
+            Root.Q<Label>("lobby-tip").text = Strings.Get(Tips[Random.Range(0, Tips.Length)]);
             foreach (var row in ViewModel.Rows) {
                 var slot = Element("lobby__slot");
                 var incoming = row.Name != null ? CreateRow(row, false) : null;
