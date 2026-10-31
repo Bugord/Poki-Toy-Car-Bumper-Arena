@@ -2142,7 +2142,8 @@
 
 .garage__close-bar--turned { rotate: -45deg; }
 
-/* The settings gear, a round white sticker in a top corner of the result (right) and the garage (left). */
+/* The settings gear, a round white sticker at the top right of the result and beside the garage's close button: the
+   top left corner is where Poki's inspector and the browser chrome sit. */
 .gear-button {
     position: absolute;
     top: 40px;
@@ -2164,7 +2165,7 @@
 .gear-button:focus { background-color: var(--soft); }
 .gear-button:active { translate: 0 8px; }
 .round-over__settings { right: 40px; }
-.garage__settings { left: 40px; }
+.garage__settings { right: 184px; }
 
 .gear {
     width: 68px;
@@ -2343,10 +2344,10 @@
 .speaker__cone {
     width: 0;
     height: 0;
-    margin-left: -6px;
-    border-top-width: 40px;
-    border-bottom-width: 40px;
-    border-right-width: 46px;
+    margin-left: -24px;
+    border-top-width: 42px;
+    border-bottom-width: 42px;
+    border-right-width: 60px;
     border-top-color: rgba(0, 0, 0, 0);
     border-bottom-color: rgba(0, 0, 0, 0);
     border-right-color: var(--navy);
@@ -2393,12 +2394,12 @@
 .lobby__name--revenge .sticker-text__text { color: var(--red); }
 .lobby__row--left .lobby__name .sticker-text__text { color: var(--silver); opacity: 0.6; }
 
-/* Loading bar and a tip at the bottom of the curtain: the arena loads behind it. */
+/* A loading bar under the seats (in the flow, so seven seats on a 1920 high panel never run into it) and a tip at the
+   bottom of the curtain: the arena loads behind it. */
 .lobby__loading {
-    position: absolute;
-    left: 140px;
-    right: 140px;
-    bottom: 300px;
+    flex-shrink: 0;
+    width: 800px;
+    margin-top: 44px;
     align-items: stretch;
 }
 
