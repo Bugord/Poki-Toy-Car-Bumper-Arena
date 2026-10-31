@@ -47,17 +47,20 @@ namespace ToyCarArena.UI
         public int SelectedColor => progress.SelectedColor;
         public int ColorOf(int index) => colors[index];
 
-        /// <summary>The popup leaves this view attached and its reward animation running exactly once.</summary>
-        public async UniTask OpenGarage(CancellationToken token)
+        /// <summary>
+        /// The popup leaves this view attached and its reward animation running exactly once. True when the player
+        /// asked for the next match from the garage.
+        /// </summary>
+        public async UniTask<bool> OpenGarage(CancellationToken token)
         {
             if (IsGarageOpen) {
-                return;
+                return false;
             }
 
             IsGarageOpen = true;
             try {
                 platform.MeasureGaragePressed();
-                await navigator.RunAsync<GarageViewModel, bool>(token);
+                return await navigator.RunAsync<GarageViewModel, bool>(token);
             }
             finally {
                 IsGarageOpen = false;

@@ -1436,61 +1436,6 @@
     min-height: 40px;
 }
 
-/* The garage's level row still uses the old level pill and XP bar. */
-.round-over__level {
-    flex-shrink: 0;
-    width: 160px;
-    height: 160px;
-    background-color: var(--gold);
-    rotate: -5deg;
-}
-
-.round-over__level-value {
-    margin: 0;
-    padding: 0;
-    font-size: 44px;
-    -unity-text-align: middle-center;
-    white-space: nowrap;
-}
-
-.round-over__xp-body {
-    flex-grow: 1;
-    margin-left: 28px;
-    align-items: stretch;
-}
-
-.round-over__xp-track {
-    height: 60px;
-    background-color: var(--soft);
-}
-
-.round-over__xp-clip {
-    position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 999px;
-    overflow: hidden;
-}
-
-.round-over__xp-fill {
-    width: 0;
-    height: 100%;
-    border-radius: 999px;
-    background-color: var(--gold);
-}
-
-.round-over__xp-next {
-    margin: 12px 0 0 0;
-    padding: 0;
-    font-size: 36px;
-    color: var(--white);
-    -unity-text-align: middle-center;
-    text-shadow: 0 5px 0 rgb(29, 43, 79);
-    white-space: nowrap;
-}
-
 .round-over__unlock-slot {
     height: 120px;
     margin-top: 24px;
@@ -1852,11 +1797,6 @@
     -unity-background-image-tint-color: var(--white);
 }
 
-.round-over__xp-body {
-    flex-basis: 0;
-    min-width: 0;
-}
-
 .round-over__ready {
     margin: 0;
     padding: 0;
@@ -1974,15 +1914,43 @@
     color: var(--gold);
 }
 
-.garage__progress {
+/* The car the player drives next, large and in the chosen colour; the grid below is where it is changed. */
+.garage__preview {
     flex-shrink: 0;
     flex-direction: row;
     align-items: center;
+    justify-content: center;
     width: 940px;
+    height: 180px;
     margin-bottom: 8px;
 }
 
-.garage__progress .round-over__level { width: 132px; height: 132px; }
+.garage__preview-car {
+    flex-shrink: 0;
+    width: 280px;
+    height: 180px;
+}
+
+.garage__preview-copy {
+    flex-shrink: 0;
+    margin-left: 24px;
+    align-items: flex-start;
+}
+
+.garage__preview-caption {
+    margin: 0;
+    padding: 0;
+    font-size: 34px;
+    color: var(--soft);
+}
+
+.garage__preview-name {
+    margin: 0;
+    padding: 0;
+    font-size: 84px;
+    color: var(--white);
+    white-space: nowrap;
+}
 
 /* Eight colours fit in one row above either grid; selection changes scale without moving its neighbours. */
 .garage__colors {
@@ -2126,18 +2094,44 @@
     display: flex;
 }
 
-.garage__hint {
+.garage__play {
     flex-shrink: 0;
-    margin: 12px 0;
-    padding: 0;
-    font-size: 32px;
-    color: var(--white);
+    margin-top: 20px;
 }
 
-.garage__back {
-    flex-shrink: 0;
-    font-size: 56px;
+/* Back to the result, top right; Esc does the same. */
+.garage__close {
+    position: absolute;
+    top: 40px;
+    right: 40px;
+    width: 120px;
+    height: 120px;
+    margin: 0;
+    padding: 0;
+    border-width: 8px;
+    border-bottom-width: 16px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+    background-image: none;
+    align-items: center;
+    justify-content: center;
 }
+
+.garage__close:hover,
+.garage__close:focus { background-color: var(--soft); }
+.garage__close:active { translate: 0 8px; }
+
+.garage__close-bar {
+    position: absolute;
+    width: 56px;
+    height: 14px;
+    border-radius: 7px;
+    background-color: var(--navy);
+    rotate: 45deg;
+}
+
+.garage__close-bar--turned { rotate: -45deg; }
 
 .garage--landscape .garage__grid {
     width: 1800px;

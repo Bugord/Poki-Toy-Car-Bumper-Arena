@@ -7,7 +7,10 @@ using UIKit.Runtime.Abstractions;
 
 namespace ToyCarArena.UI
 {
-    /// <summary>Cosmetic selection for the next round, backed by the same saved progress as the reward screen.</summary>
+    /// <summary>
+    /// Cosmetic selection for the next round, backed by the same saved progress as the reward screen. The result is
+    /// true when the player asks for the next match from here, false when they go back to the result.
+    /// </summary>
     public sealed class GarageViewModel : ResultViewModel<bool>
     {
         private readonly PlayerProgress progress;
@@ -22,8 +25,8 @@ namespace ToyCarArena.UI
         }
 
         public IReadOnlyList<CarCatalog.Entry> Cars => catalog.Cars;
-        public XpLevel Level => progress.At(progress.TotalXp);
         public string SelectedCar => progress.SelectedCar;
+        public CarCatalog.Entry SelectedEntry => catalog.Find(progress.SelectedCar);
         public int SelectedColor => progress.SelectedColor;
         public bool IsUnlocked(string id) => progress.IsUnlocked(id);
 
@@ -37,7 +40,9 @@ namespace ToyCarArena.UI
             return true;
         }
 
-        public void Back() => SetResult(true);
+        public void Back() => SetResult(false);
+
+        public void NextMatch() => SetResult(true);
 
         public bool SelectColor(int id)
         {
