@@ -18,7 +18,6 @@ namespace ToyCarArena.UI
         private const float FillDuration = 0.8f;
         private const float PopDuration = 0.35f;
         private const float GrowDuration = 0.15f;
-        private const float RevealDuration = 0.3f;
         // After the screen's own fade, so the track builds on a settled card.
         private const int BuildDelay = 150;
         // How long a new car celebrates before the fill goes on; its sticker stays afterwards.
@@ -93,9 +92,6 @@ namespace ToyCarArena.UI
         public void RefreshColor()
         {
             newCarPortrait.SetColor(viewModel.SelectedColor);
-            foreach (var stop in stops) {
-                stop.Portrait?.SetColor(viewModel.SelectedColor);
-            }
         }
 
         private void BuildTrack(VisualElement track, int from)
@@ -114,7 +110,6 @@ namespace ToyCarArena.UI
             var node = new VisualElement { pickingMode = PickingMode.Ignore };
             node.AddToClassList("track__node");
             track.Add(node);
-            CarPortrait portrait = null;
             if (isCurrent) {
                 node.AddToClassList(ReachedClass);
                 node.Add(Text(level.ToString(), "track__level"));
@@ -125,12 +120,10 @@ namespace ToyCarArena.UI
                 node.Add(Text(level.ToString(), "track__level"));
             }
             else if (reward.Car != null) {
-                var image = new VisualElement { pickingMode = PickingMode.Ignore };
-                image.AddToClassList("car-portrait");
-                image.AddToClassList("track__car");
-                node.Add(image);
-                portrait = new CarPortrait(image);
-                portrait.Set(reward.Car, viewModel.SelectedColor, true);
+                // A plain silhouette, as in the design: the car itself is the NEW CAR! sticker's to show.
+                var silhouette = new VisualElement { pickingMode = PickingMode.Ignore };
+                silhouette.AddToClassList("track__car");
+                node.Add(silhouette);
             }
             else {
                 var map = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -147,13 +140,14 @@ namespace ToyCarArena.UI
                 node.Add(caption);
             }
 
-            var tick = new VisualElement { pickingMode = PickingMode.Ignore };
-            tick.AddToClassList("track__tick");
+            // Reached, the whole stop turns into a gold disc with a navy tick over what it showed.
+            var reach = new VisualElement { pickingMode = PickingMode.Ignore };
+            reach.AddToClassList("track__reach");
             var mark = new VisualElement { pickingMode = PickingMode.Ignore };
             mark.AddToClassList("track__tick-mark");
-            tick.Add(mark);
-            node.Add(tick);
-            return new Waypoint(level, node, portrait, isCurrent);
+            reach.Add(mark);
+            node.Add(reach);
+            return new Waypoint(level, node, isCurrent);
         }
 
         private static Label Text(string text, string className)
@@ -207,9 +201,6 @@ namespace ToyCarArena.UI
                     stop.Node.AddToClassList(ReachedClass);
                     stop.Node.AddToClassList(DoneClass);
                     celebrations.Add(Bounce(stop.Node, token));
-                    if (stop.Portrait != null) {
-                        celebrations.Add(Reveal(stop.Portrait, token));
-                    }
                 }
             }
             await UniTask.WhenAll(celebrations);
@@ -256,16 +247,6 @@ namespace ToyCarArena.UI
             SetPosition(to);
         }
 
-        private static async UniTask Reveal(CarPortrait portrait, CancellationToken token)
-        {
-            for (var time = 0f; time < RevealDuration; time += Time.unscaledDeltaTime) {
-                portrait.SetReveal(time / RevealDuration);
-                await UniTask.Yield(PlayerLoopTiming.Update, token);
-            }
-
-            portrait.SetReveal(1f);
-        }
-
         private static async UniTask Grow(VisualElement segment, CancellationToken token)
         {
             for (var time = 0f; time < GrowDuration; time += Time.unscaledDeltaTime) {
@@ -306,23 +287,26 @@ namespace ToyCarArena.UI
 
         private sealed class Waypoint
         {
-            public Waypoint(int level, VisualElement node, CarPortrait portrait, bool isReached)
+            public Waypoint(int level, VisualElement node, bool isReached)
             {
                 Level = level;
                 Node = node;
-                Portrait = portrait;
                 IsReached = isReached;
             }
 
             public int Level { get; }
             public VisualElement Node { get; }
-            public CarPortrait Portrait { get; }
             public bool IsReached { get; set; }
         }
 
-        /// <summary>The bar between two stops; the next-rank one is dotted, it is further than it looks.</summary>
+        /// <summary>
+        /// The bar between two stops, tucked under the next stop. The one to the next rank is a dotted line instead:
+        /// it is further than it looks, and nothing fills it.
+        /// </summary>
         private sealed class Segment
         {
+            private const int Dots = 5;
+
             private readonly VisualElement fill;
 
             public Segment(bool isDotted)
@@ -330,6 +314,16 @@ namespace ToyCarArena.UI
                 Root = new VisualElement { pickingMode = PickingMode.Ignore };
                 Root.AddToClassList("track__segment");
                 Root.EnableInClassList("track__segment--dotted", isDotted);
+                if (isDotted) {
+                    // USS has no dotted border, so the dots are elements.
+                    for (var i = 0; i < Dots; i++) {
+                        var dot = new VisualElement { pickingMode = PickingMode.Ignore };
+                        dot.AddToClassList("track__dot");
+                        Root.Add(dot);
+                    }
+                    return;
+                }
+
                 fill = new VisualElement { pickingMode = PickingMode.Ignore };
                 fill.AddToClassList("track__fill");
                 Root.Add(fill);
@@ -337,7 +331,12 @@ namespace ToyCarArena.UI
 
             public VisualElement Root { get; }
 
-            public void SetFill(float value) => fill.style.width = Length.Percent(Mathf.Clamp01(value) * 100f);
+            public void SetFill(float value)
+            {
+                if (fill != null) {
+                    fill.style.width = Length.Percent(Mathf.Clamp01(value) * 100f);
+                }
+            }
         }
     }
 }

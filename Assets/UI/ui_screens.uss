@@ -1539,8 +1539,8 @@
     font-size: 70px;
 }
 
-/* The level track: round stops joined by bars, the captions hanging under the stops. A stop the fill has reached turns
-   gold and gets the green tick; the current level is gold from the start. */
+/* The level track, as in the design: round stops joined by bars that tuck under the next stop, the captions hanging
+   under the stops. A reached stop turns into a gold disc with a navy tick; the current level is gold from the start. */
 .track {
     flex-direction: row;
     align-items: center;
@@ -1552,8 +1552,8 @@
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    width: 104px;
-    height: 104px;
+    width: 105px;
+    height: 105px;
     border-width: 8px;
     border-bottom-width: 14px;
     border-color: var(--navy);
@@ -1563,8 +1563,8 @@
 }
 
 .track__node--rank {
-    width: 124px;
-    height: 124px;
+    width: 127px;
+    height: 127px;
 }
 
 .track__node--reached {
@@ -1580,22 +1580,27 @@
 
 .track__level {
     margin: 0;
-    padding: 0;
+    padding: 0 0 4px 0;
     font-size: 44px;
     -unity-text-align: middle-center;
 }
 
+.track__node--rank .track__level { font-size: 50px; }
+
+/* A car still to come: a plain navy silhouette. */
 .track__car {
-    width: 84px;
-    height: 70px;
+    width: 61px;
+    height: 33px;
+    border-radius: 14px;
+    background-color: var(--navy);
 }
 
 .track__map {
-    width: 54px;
-    height: 54px;
+    width: 55px;
+    height: 55px;
     border-width: 7px;
     border-color: var(--navy);
-    border-radius: 27px;
+    border-radius: 999px;
 }
 
 .track__caption {
@@ -1603,12 +1608,12 @@
     top: 100%;
     left: -60px;
     width: 224px;
-    margin-top: 10px;
+    margin-top: 11px;
     align-items: center;
 }
 
 .track__node--rank .track__caption {
-    left: -50px;
+    left: -49px;
 }
 
 .track__caption-level {
@@ -1629,52 +1634,66 @@
     white-space: nowrap;
 }
 
-.track__tick {
+/* Covers the stop's whole outline: the node's border sits outside this child's box. */
+.track__reach {
     display: none;
     position: absolute;
-    top: -18px;
-    right: -18px;
-    width: 50px;
-    height: 50px;
+    left: -8px;
+    top: -8px;
+    right: -8px;
+    bottom: -14px;
     align-items: center;
     justify-content: center;
-    border-width: 6px;
+    border-width: 8px;
+    border-bottom-width: 14px;
     border-color: var(--navy);
-    border-radius: 25px;
-    background-color: var(--green);
+    border-radius: 999px;
+    background-color: var(--gold);
 }
 
-.track__node--done .track__tick {
+.track__node--done .track__reach {
     display: flex;
 }
 
 .track__tick-mark {
-    width: 22px;
-    height: 12px;
-    margin-top: -4px;
-    border-left-width: 6px;
-    border-bottom-width: 6px;
-    border-color: var(--white);
+    width: 36px;
+    height: 19px;
+    margin-top: -10px;
+    border-left-width: 11px;
+    border-bottom-width: 11px;
+    border-color: var(--navy);
     rotate: -45deg;
 }
 
+/* No end caps: the bar starts at the stop before and runs under the next one, which is drawn after it. */
 .track__segment {
     flex-grow: 1;
-    height: 34px;
-    min-width: 30px;
-    border-width: 7px;
+    height: 33px;
+    min-width: 39px;
+    margin-right: -10px;
+    border-top-width: 7px;
+    border-bottom-width: 7px;
     border-color: var(--navy);
     background-color: var(--soft);
     overflow: hidden;
     transform-origin: 0 50%;
 }
 
-/* Toward the next rank: thinner and pale, it is further than it looks. */
+/* Toward the next rank: a row of pale dots. */
 .track__segment--dotted {
-    height: 16px;
-    margin: 0 10px;
+    height: 11px;
+    margin: 0 11px;
     border-width: 0;
-    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0);
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.track__dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 999px;
     background-color: var(--silver);
 }
 
