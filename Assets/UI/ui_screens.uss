@@ -1731,6 +1731,15 @@
     background-color: var(--silver);
 }
 
+/* As far in from each end as the bar runs under its stops. */
+.track__fill-area {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    top: 0;
+    bottom: 0;
+}
+
 .track__fill {
     width: 0;
     height: 100%;

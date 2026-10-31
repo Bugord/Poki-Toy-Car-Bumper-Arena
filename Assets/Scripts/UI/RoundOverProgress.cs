@@ -357,9 +357,13 @@ namespace ToyCarArena.UI
                     return;
                 }
 
+                // The fill runs over the visible part only, between the two stops the bar is tucked under.
+                var area = new VisualElement { pickingMode = PickingMode.Ignore };
+                area.AddToClassList("track__fill-area");
                 fill = new VisualElement { pickingMode = PickingMode.Ignore };
                 fill.AddToClassList("track__fill");
-                Root.Add(fill);
+                area.Add(fill);
+                Root.Add(area);
             }
 
             public VisualElement Root { get; }
