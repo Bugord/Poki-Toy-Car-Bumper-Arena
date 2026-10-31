@@ -13,6 +13,18 @@ namespace ToyCarArena.Gameplay.Arena
     }
 
     /// <summary>
+    /// One mechanic's say in the floor's feel (the Candy patches, the Mounds' sand): what <see cref="ArenaSurface"/> adds
+    /// together into the one <see cref="IArenaSurface"/> the cars ask. A layer is a separate interface because the
+    /// entry points register every interface they implement, and a second <see cref="IArenaSurface"/> would replace the
+    /// composite.
+    /// </summary>
+    public interface ISurfaceLayer
+    {
+        /// <summary>The feel this layer gives the floor at a world position, only its horizontal place counts.</summary>
+        SurfaceFeel Sample(Vector3 position);
+    }
+
+    /// <summary>
     /// Multipliers a floor puts on a car's driving and on how it takes a hit; 1 everywhere is plain floor.
     /// </summary>
     public readonly struct SurfaceFeel
@@ -40,6 +52,13 @@ namespace ToyCarArena.Gameplay.Arena
 
         /// <summary>The time a hit knocks the car off balance for.</summary>
         public float Stagger { get; }
+
+        /// <summary>This feel together with <paramref name="other"/>, each multiplier times its counterpart.</summary>
+        public SurfaceFeel Combine(SurfaceFeel other)
+        {
+            return new SurfaceFeel(Speed * other.Speed, Acceleration * other.Acceleration, Grip * other.Grip,
+                Push * other.Push, Stagger * other.Stagger);
+        }
 
         /// <summary>This feel moved towards <paramref name="other"/> by <paramref name="t"/>, 0 to 1.</summary>
         public SurfaceFeel Lerp(SurfaceFeel other, float t)
