@@ -1,7 +1,7 @@
 key,context,en,fr,it,de,es,tr,pt,ru
 common.you,"The player in the lobby, the feed and lists",YOU,TOI,TU,DU,TÚ,SEN,VOCÊ,ТЫ
 common.back,Back button,BACK,RETOUR,INDIETRO,ZURÜCK,ATRÁS,GERİ,VOLTAR,НАЗАД
-common.next_match,Big green button that starts the next round,NEXT MATCH,MATCH SUIVANT,PROSSIMA SFIDA,NÄCHSTES MATCH,SIGUIENTE,SONRAKİ MAÇ,PRÓXIMA,ДАЛЬШЕ
+common.next_match,Big green button that starts the next round,NEXT MATCH,SUIVANT,AVANTI,WEITER,SIGUIENTE,DEVAM,PRÓXIMA,ДАЛЬШЕ
 common.new,Small gold badge: a new player or arena; max ~5 chars,NEW,NEUF,NUOVO,NEU,NUEVO,YENİ,NOVO,НОВЫЙ
 common.level_short,"Level caption with its number, e.g. LVL 5; short",LVL {0},NIV. {0},LIV. {0},LVL {0},NIV. {0},SV. {0},NÍV. {0},УР. {0}
 common.space,Space bar key cap,SPACE,ESPACE,SPAZIO,LEERTASTE,ESPACIO,BOŞLUK,ESPAÇO,ПРОБЕЛ
