@@ -147,6 +147,11 @@ namespace ToyCarArena.Gameplay
             builder.RegisterEntryPoint<ArenaCrumble>().AsSelf();
             builder.RegisterEntryPoint<ArenaDecor>().WithParameter(transform);
             builder.RegisterEntryPoint<ArenaWorld>().WithParameter(transform);
+            // The interactive objects of the arena variants; each builds and does something only on its own variant.
+            builder.RegisterEntryPoint<JellyPads>().AsSelf().WithParameter(transform);
+            builder.RegisterEntryPoint<CandyStirrer>().AsSelf().WithParameter(transform);
+            builder.RegisterEntryPoint<ToyTrain>().AsSelf().WithParameter(transform);
+            builder.RegisterEntryPoint<JackBoxes>().AsSelf().WithParameter(transform);
             if (isStandalone) {
                 builder.RegisterEntryPoint<StandaloneRound>();
                 // From Boot the session's progress lives in the app scope; on its own the scene reloads itself every
