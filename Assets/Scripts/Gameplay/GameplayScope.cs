@@ -127,7 +127,9 @@ namespace ToyCarArena.Gameplay
 
             // What the floor does to a car: the Candy arena's patches, neutral on the others. Cars ask for it as they are
             // built, so it is registered on every arena.
-            builder.RegisterEntryPoint<CandyPatches>().AsSelf().As<IArenaSurface>();
+            // The composite of the mechanics that change the floor's feel; each adds itself as a layer when it is built.
+            builder.Register<ArenaSurface>(Lifetime.Singleton).AsSelf().As<IArenaSurface>();
+            builder.RegisterEntryPoint<CandyPatches>().AsSelf();
 
             // The part of the floor that moves and carries the cars: the Carousel arena's turntable, still on the others.
             builder.RegisterEntryPoint<CarouselDisc>().AsSelf().As<IArenaPlatform>();
@@ -145,6 +147,11 @@ namespace ToyCarArena.Gameplay
             builder.RegisterInstance(mechanicArt, typeof(MechanicArt));
             builder.RegisterEntryPoint<BotDriver>();
             builder.RegisterEntryPoint<ArenaCrumble>().AsSelf();
+            // The objects of the sandbox and tabletop variants: each does nothing unless its variant names it.
+            builder.RegisterEntryPoint<ArenaCrab>().AsSelf().WithParameter(transform);
+            builder.RegisterEntryPoint<ArenaMounds>().AsSelf().WithParameter(transform);
+            builder.RegisterEntryPoint<ArenaTop>().AsSelf().WithParameter(transform);
+            builder.RegisterEntryPoint<ArenaPencil>().AsSelf().WithParameter(transform);
             builder.RegisterEntryPoint<ArenaDecor>().WithParameter(transform);
             builder.RegisterEntryPoint<ArenaWorld>().WithParameter(transform);
             // The interactive objects of the arena variants; each builds and does something only on its own variant.

@@ -368,3 +368,63 @@ MonoBehaviour:
     spotSpacing: 4.5
     spawnClearance: 4
     hitHeight: 1.2
+  crab:
+    delay: 5
+    speed: 3
+    warning: 1.5
+    hitRadius: 2.4
+    push: 8
+    stagger: 0.5
+    easyPlayerShare: 0.5
+    turnPause: 1
+    edgeInset: 2.2
+    minWalk: 6
+    hitHeight: 1.5
+  mounds:
+    delay: 5
+    interval: 6
+    jitter: 1
+    minCount: 1
+    maxCount: 2
+    warning: 1.2
+    stay: 4
+    radius: 1.6
+    height: 0.6
+    bounceOut: 6
+    bounceUp: 3.5
+    stagger: 0.4
+    easyPlayerShare: 0.5
+    speed: 0.6
+    acceleration: 0.7
+    grip: 1.2
+    spawnClearTime: 8
+    spawnClear: 3
+    edgeMargin: 1
+  top:
+    delay: 5
+    spinUp: 1
+    speed: 4
+    turnRate: 1.1
+    radius: 1.3
+    hitRadius: 2.1
+    push: 10
+    tangentShare: 0.75
+    stagger: 0.6
+    retrigger: 1
+    easyPlayerShare: 0.5
+    edgeMargin: 2.5
+    lookAhead: 1
+    hitHeight: 1.5
+  pencil:
+    delay: 6
+    interval: 10
+    jitter: 1.5
+    warning: 1.5
+    speed: 6
+    radius: 0.5
+    lengthShare: 0.6
+    maxOffset: 0.35
+    push: 9
+    stagger: 0.6
+    easyPlayerShare: 0.5
+    hitHeight: 1.5

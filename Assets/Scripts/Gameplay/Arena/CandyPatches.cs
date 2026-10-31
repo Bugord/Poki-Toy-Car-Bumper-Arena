@@ -11,8 +11,8 @@ namespace ToyCarArena.Gameplay.Arena
 {
     /// <summary>
     /// The Candy arena's mechanic: six flat patches on the floor, caramel (slow, sticky, hard to shove) and icing
-    /// (fast, slippery), which change how a car drives and takes a hit while it is over them. It is also the arena's
-    /// <see cref="IArenaSurface"/>: registered in every scope and neutral off the Candy arena, so a car asks it without
+    /// (fast, slippery), which change how a car drives and takes a hit while it is over them. It is a layer of the arena's
+    /// <see cref="ArenaSurface"/>: registered in every scope and neutral off the Candy arena, so a car asks without
     /// knowing which arena it is on.
     /// <para>
     /// The layout is four outer patches and two inner ones on a ring of six slots, caramel and icing alternating, so each
@@ -24,7 +24,7 @@ namespace ToyCarArena.Gameplay.Arena
     /// simulation repeats it.
     /// </para>
     /// </summary>
-    public sealed class CandyPatches : IArenaSurface, ITickable, IDisposable
+    public sealed class CandyPatches : ISurfaceLayer, ITickable, IDisposable
     {
         private const int Segments = 40;
         private const int Slots = 6;
@@ -40,8 +40,9 @@ namespace ToyCarArena.Gameplay.Arena
         private bool built;
 
         public CandyPatches(GameTuning tuning, ArenaMap map, ArenaRound round, IArenaEdge edge, CandyDecor decor,
-            IObjectResolver resolver)
+            IObjectResolver resolver, ArenaSurface surface)
         {
+            surface.Add(this);
             this.settings = tuning.Candy;
             this.map = map;
             this.round = round;

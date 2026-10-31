@@ -79,3 +79,55 @@ MonoBehaviour:
     material: {fileID: 2100000, guid: 0145501b50d3c5c4fa210ddf82b148de, type: 2}
   - key: jack_glow_bright
     material: {fileID: 2100000, guid: f9f318cec67808546b58e34c96603d7c, type: 2}
+  - key: crab_shell
+    material: {fileID: 2100000, guid: 6fc8f998ac6442b4b8673dade33e04d1, type: 2}
+  - key: crab_claw
+    material: {fileID: 2100000, guid: f4f604a8cf449e04d9d4e4908210a4cb, type: 2}
+  - key: crab_leg
+    material: {fileID: 2100000, guid: 9a24de31358aa744d8f1277db318c05d, type: 2}
+  - key: crab_eye
+    material: {fileID: 2100000, guid: 7aa6aa9ea049d0645b29d996301201b5, type: 2}
+  - key: crab_pupil
+    material: {fileID: 2100000, guid: d41cddcc7a64dc24fadaf8f9b78f07e7, type: 2}
+  - key: crab_key
+    material: {fileID: 2100000, guid: 5e91639e08ff27d45a8d76063230a24f, type: 2}
+  - key: mound_sand
+    material: {fileID: 2100000, guid: b3fee23d0c4589141bb4c0bf3061c03f, type: 2}
+  - key: mound_crumb
+    material: {fileID: 2100000, guid: 2848648811493c64ca0098976744e0c2, type: 2}
+  - key: top_body
+    material: {fileID: 2100000, guid: 7227e3669c7ed7f43abcf67b47cb8508, type: 2}
+  - key: top_stripe
+    material: {fileID: 2100000, guid: 1843c7de8fe89c241b17a105f05e66de, type: 2}
+  - key: top_tip
+    material: {fileID: 2100000, guid: afa1961e79ed65c4eae3eddb15107934, type: 2}
+  - key: top_stud
+    material: {fileID: 2100000, guid: 06ed5cc8a88d04a47af772b7e1c1fed4, type: 2}
+  - key: pencil_body
+    material: {fileID: 2100000, guid: a3fa9138a12bbb948a473c5e646b7f49, type: 2}
+  - key: pencil_wood
+    material: {fileID: 2100000, guid: 0ae1f21c9eda7ba44b77162efb44b8de, type: 2}
+  - key: pencil_lead
+    material: {fileID: 2100000, guid: 18eb3a299b0f8574696076c3b2ef702e, type: 2}
+  - key: pencil_eraser
+    material: {fileID: 2100000, guid: ae5eb4aaff768ac4fbaca030397bfd99, type: 2}
+  - key: pencil_metal
+    material: {fileID: 2100000, guid: 6d24c9c2c38c28d4190d180151d98795, type: 2}
+  - key: crab_print
+    material: {fileID: 2100000, guid: cd6fca1be5480894fbfa593e0f6d59f3, type: 2}
+  - key: crab_shadow
+    material: {fileID: 2100000, guid: 6592cc6968a8a7742a7cac271a60a321, type: 2}
+  - key: mound_ring
+    material: {fileID: 2100000, guid: 6f02a00efe3fd6b41bb248a18fcacc85, type: 2}
+  - key: top_ring
+    material: {fileID: 2100000, guid: 2d668da795d51a4479b04ce2493ca92a, type: 2}
+  - key: top_dot
+    material: {fileID: 2100000, guid: 7284f1ae96a43144abd70ee2adbb9e61, type: 2}
+  - key: top_shadow
+    material: {fileID: 2100000, guid: 7507549424e2fcb4b866f804c0d85bc5, type: 2}
+  - key: pencil_band
+    material: {fileID: 2100000, guid: e3faa7be9f4d7de4fb0249ee76f6441b, type: 2}
+  - key: pencil_dash
+    material: {fileID: 2100000, guid: af6121363f33cf14d91efe6afa6aa34e, type: 2}
+  - key: pencil_shadow
+    material: {fileID: 2100000, guid: 97d82962d370e574db177f79e3d61666, type: 2}
