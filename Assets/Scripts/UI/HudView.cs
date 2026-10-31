@@ -246,6 +246,9 @@ namespace ToyCarArena.UI
             boostButton.RegisterCallback<PointerDownEvent>(OnBoostPointerDown);
             controls.SetBoostButton(boostButton);
 
+            // The very first start also says what to do: everyone else off the arena.
+            Root.Q<VisualElement>("start-goal").style.display =
+                ViewModel.IsNewPlayer ? DisplayStyle.Flex : DisplayStyle.None;
             if (ViewModel.IsWaitingForPlayer) {
                 ShowStart();
             }
@@ -426,6 +429,18 @@ namespace ToyCarArena.UI
 
             sticker.Add(CreateOutlinedText(isRevenge ? "REVENGE!" : "KNOCKOUT!", "ko-pop__text"));
             return popup;
+        }
+
+        internal static VisualElement CreateLevelBadge(int level, string className)
+        {
+            var badge = new VisualElement { pickingMode = PickingMode.Ignore };
+            badge.AddToClassList("level-badge");
+            badge.AddToClassList(PlayerRank.ClassOf(level));
+            badge.AddToClassList(className);
+            var value = new Label(level.ToString()) { pickingMode = PickingMode.Ignore };
+            value.AddToClassList("level-badge__value");
+            badge.Add(value);
+            return badge;
         }
 
         private static VisualElement CreateOutlinedText(string value, string textClass)
@@ -636,7 +651,12 @@ namespace ToyCarArena.UI
                     sticker.Add(heading);
                 }
 
-                sticker.Add(CreateOutlinedText(ViewModel.NameOf(index), "car-name__text"));
+                // The bot's level on a small badge in its rank's colour, before the handle, as a player's would be.
+                var line = new VisualElement { pickingMode = PickingMode.Ignore };
+                line.AddToClassList("car-name__line");
+                line.Add(CreateLevelBadge(ViewModel.LevelOf(index), "car-name__level"));
+                line.Add(CreateOutlinedText(ViewModel.NameOf(index), "car-name__text"));
+                sticker.Add(line);
                 nameLayer.Add(tag);
                 carNames[index] = tag;
             }

@@ -161,6 +161,9 @@ namespace ToyCarArena.UI
             var chip = CarColor.CreateChip(row.ColorId, row.Index == 0);
             chip.EnableInClassList("lobby__you-chip", row.Index == 0);
             sticker.Add(chip);
+            if (!isLeft && row.Level > 0) {
+                sticker.Add(HudView.CreateLevelBadge(row.Level, "lobby__level"));
+            }
             var name = OutlinedText(isLeft ? row.LeftName : row.Name, "lobby__name");
             name.EnableInClassList("lobby__name--revenge", row.IsNemesis && !isLeft);
             sticker.Add(name);

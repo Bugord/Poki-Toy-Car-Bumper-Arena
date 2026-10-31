@@ -845,6 +845,25 @@
     transition-timing-function: ease-out-back;
 }
 
+.car-name__line {
+    flex-direction: row;
+    align-items: center;
+    padding-left: 8px;
+}
+
+.car-name__level {
+    min-width: 46px;
+    height: 40px;
+    padding: 0 6px;
+    border-width: 4px;
+    border-bottom-width: 7px;
+    border-radius: 12px;
+}
+
+.car-name__level .level-badge__value {
+    font-size: 26px;
+}
+
 .car-name__text {
     margin: 0;
     padding: 0 14px 3px 14px;
@@ -1104,6 +1123,24 @@
 
 .hud__start--bob .hud__start-prompt {
     scale: 1.06 1.06;
+}
+
+.hud__start-goal {
+    align-items: center;
+    margin-bottom: 18px;
+    rotate: -3deg;
+}
+
+.hud__start-goal-text {
+    margin: 0;
+    padding: 0;
+    font-size: 76px;
+    color: var(--gold);
+    -unity-text-outline-width: 14px;
+    -unity-text-outline-color: var(--navy);
+    text-shadow: 0 10px 0 rgb(29, 43, 79);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
 }
 
 .hud__start-text {
@@ -2505,6 +2542,11 @@
     -unity-text-align: middle-center;
 }
 .lobby__row .lobby__you-chip { border-color: var(--white); }
+
+.lobby__level {
+    margin-left: 20px;
+    margin-right: -6px;
+}
 .lobby__row .hud__chip-ring {
     width: 66px;
     height: 66px;

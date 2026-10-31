@@ -21,6 +21,12 @@ namespace ToyCarArena.Gameplay.Round
         /// <summary>The slot's colour ID; 0 is the player's current selection, independently of seated names.</summary>
         int ColorOf(int carIndex);
 
+        /// <summary>
+        /// The level shown by a car's name: the player's own for 0, the occupant's for 1..N, fixed when it was seated.
+        /// It is only a look: difficulty never reads it.
+        /// </summary>
+        int LevelOf(int carIndex);
+
         bool Joined(int carIndex);
         string LeftNameOf(int carIndex);
         IReadOnlyList<SessionPlayer> ForRound(int botCount);

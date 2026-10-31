@@ -43,6 +43,9 @@ namespace ToyCarArena.UI
         /// <summary>The round of the visit this HUD shows, 1 for the first, captured before progress moves on.</summary>
         public int RoundNumber { get; private set; }
 
+        /// <summary>The player has never finished a round, so the start screen also says what the game is about.</summary>
+        public bool IsNewPlayer { get; private set; }
+
         public bool IsRunning => round != null && round.IsRunning && !round.Player.IsOut;
 
         public float LastSteerTime => driver?.LastSteerTime ?? float.NegativeInfinity;
@@ -74,6 +77,7 @@ namespace ToyCarArena.UI
         }
 
         public string NameOf(int index) => round.NameOf(index);
+        public int LevelOf(int index) => round.LevelOf(index);
         public int ColorOf(int index) => round.ColorOf(index);
 
         public Vector3 PositionOf(int index) => round.Cars[index].Position;
@@ -158,6 +162,7 @@ namespace ToyCarArena.UI
             // Capture it now: session progress already advances as this round finishes.
             IsFirstRound = payload.IsFirstRound;
             RoundNumber = payload.RoundNumber;
+            IsNewPlayer = payload.IsNewPlayer;
             if (round != null) {
                 round.CarOut += OnCarOut;
                 round.KnockedOut += OnKnockedOut;
@@ -212,10 +217,12 @@ namespace ToyCarArena.UI
         public GameTuning.ControlSettings Controls { get; }
         public bool IsFirstRound { get; }
         public int RoundNumber { get; }
+        public bool IsNewPlayer { get; }
 
         public HudRound(ArenaRound round, PlayerDriver driver, GameTuning.ControlSettings controls, bool isFirstRound,
-            int roundNumber)
+            int roundNumber, bool isNewPlayer)
         {
+            IsNewPlayer = isNewPlayer;
             Round = round;
             Driver = driver;
             Controls = controls;

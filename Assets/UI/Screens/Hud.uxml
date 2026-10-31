@@ -32,6 +32,10 @@
         </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="start" picking-mode="Ignore" class="hud__start">
+            <ui:VisualElement name="start-goal" picking-mode="Ignore" class="stroke hud__start-goal">
+                <ui:Label text="PUSH EVERYONE OFF!" picking-mode="Ignore" class="hud__start-goal-text" />
+                <ui:Label text="PUSH EVERYONE OFF!" picking-mode="Ignore" class="hud__start-goal-text stroke__face" />
+            </ui:VisualElement>
             <ui:VisualElement picking-mode="Ignore" class="stroke hud__start-prompt">
                 <ui:Label name="start-text" text="TAP TO START" picking-mode="Ignore" class="hud__start-text" />
                 <ui:Label name="start-text-face" text="TAP TO START" picking-mode="Ignore" class="hud__start-text stroke__face" />
