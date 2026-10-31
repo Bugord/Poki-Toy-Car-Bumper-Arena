@@ -105,8 +105,11 @@ namespace ToyCarArena.UI
             var nodes = Row(track, "track__row--nodes");
             Slot(bars, false);
             stops.Add(CreateStop(nodes, from, null, null, true));
+            var previous = from;
             foreach (var trackStop in viewModel.TrackStops()) {
-                var segment = new Segment(trackStop.IsRank);
+                // Dotted only where the rank is further than one level: the bar to it would hardly move.
+                var segment = new Segment(trackStop.IsRank && trackStop.Level - previous > 1);
+                previous = trackStop.Level;
                 bars.Add(segment.Root);
                 segments.Add(segment);
                 var gap = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -141,6 +144,9 @@ namespace ToyCarArena.UI
             track.Add(node);
             if (isCurrent) {
                 node.AddToClassList(ReachedClass);
+                node.Add(Text(level.ToString(), "track__level"));
+            }
+            else if (name == null) {
                 node.Add(Text(level.ToString(), "track__level"));
             }
             else if (reward.IsRank) {

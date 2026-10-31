@@ -125,6 +125,14 @@ namespace ToyCarArena.UI
                 }
                 stops.Add(reward);
             }
+            // Once the rewards run out, plain levels keep the track full, the next ones first, so the round's XP
+            // still fills a bar that moves.
+            for (var level = from + 1; stops.Count < TrackRewards && (rank == 0 || level < rank); level++) {
+                if (!rewards.ContainsKey(level)) {
+                    stops.Add(new TrackStop(level, null, null, null, false));
+                }
+            }
+            stops.Sort((a, b) => a.Level.CompareTo(b.Level));
             if (rank > 0) {
                 stops.Add(new TrackStop(rank, PlayerRank.NextRankName(from) + " RANK", null, null, true));
             }
@@ -156,7 +164,10 @@ namespace ToyCarArena.UI
         public void PlayAgain() => SetResult(true);
     }
 
-    /// <summary>A stop on the level track: the level and what it opens, one of a car, an arena or a rank.</summary>
+    /// <summary>
+    /// A stop on the level track: the level and what it opens, one of a car, an arena or a rank, or nothing (a plain
+    /// level, with no name).
+    /// </summary>
     public sealed class TrackStop
     {
         public TrackStop(int level, string name, CarCatalog.Entry car, ArenaCatalog.Entry arena, bool isRank)
