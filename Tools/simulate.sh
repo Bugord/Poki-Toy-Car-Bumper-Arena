@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Measures novice rounds in the actual Game scene using editor PlayMode tests.
 # The Unity Editor must not have this project open. Reports and test results go to Logs/.
-# Usage: SIM_ROUNDS=5 SIM_LEVELS=1,7 SIM_SEED=1 Tools/simulate.sh [path to Unity.exe]
-# Defaults: 40 runs per visit round, levels 1,3,5,7, base seed 1. This measures outcomes, not balance thresholds.
+# Usage: SIM_ROUNDS=5 SIM_LEVELS=1,7 SIM_SEED=1 SIM_MAP=sandbox SIM_VARIANT=rake Tools/simulate.sh [path to Unity.exe]
+# Defaults: 40 runs per visit round, levels 1,3,5,7, base seed 1, arena sandbox (SIM_MAP=tabletop|candy|playroom), its first variant (SIM_VARIANT=<variant id>, e.g. cloth). This measures outcomes, not balance thresholds.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -10,6 +10,7 @@ UNITY="${1:-C:/Program Files/Unity/Hub/Editor/$(sed -n 's/^m_EditorVersion: //p'
 export SIM_ROUNDS="${SIM_ROUNDS:-40}"
 export SIM_LEVELS="${SIM_LEVELS:-1,3,5,7}"
 export SIM_SEED="${SIM_SEED:-1}"
+export SIM_MAP="${SIM_MAP:-sandbox}"
 
 mkdir -p Logs
 # Remove only the previous report so a failed run cannot print old measurements as its own.

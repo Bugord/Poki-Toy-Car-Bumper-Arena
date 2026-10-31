@@ -1,4 +1,5 @@
 using Bugord.App.Platform;
+using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
@@ -29,8 +30,9 @@ namespace ToyCarArena.App
     /// later ones: <c>result / cars-N-rR / cars</c>, the cars in the round (the difficulty brings fewer early on, so a
     /// place reads against it), <c>result / early, mid, late, full-rR / round-time</c>, seconds on the arena (under 15,
     /// under 30, under 60, 60 and more; no more numbers fit), and <c>result / pushed, fell-rR / round-out-cause</c></item>
-    /// <item>since v0.2.0: <c>result / fell-ring, boost, slide, drive-rR / fall-cause</c> when the player falls without
-    /// knockout credit: the floor gave way, a recent boost, an older hit, or driving off, in that order</item>
+    /// <item>since v0.2.0: <c>result / fell-ring, boost, ball, slide, drive-rR / fall-cause</c> when the player falls without
+    /// knockout credit: the floor gave way, a recent boost, the Ball arena's ball (no car pushed the player after it), an
+    /// older hit, or driving off, in that order</item>
     /// <item><c>result / play-again / visible</c>, then <c>interact</c> when pressed</item>
     /// <item>since v0.2.0, only with a marked rival present: <c>result / revenge-got, missed-rR / revenge</c></item>
     /// <item><c>garage / button / visible, interact</c> and <c>garage / car-id / equip</c></item>
@@ -38,6 +40,8 @@ namespace ToyCarArena.App
     /// <c>result / color-name-rR / color</c> for the colour captured by the played round</item>
     /// <item><c>progress / level-2..10, level-10plus / level-up</c> for each crossed level, and
     /// <c>progress / car-id / unlock</c> from the saved reward</item>
+    /// <item><c>result / map-arena-id-rR / map</c>: the arena of the round, and <c>progress / map-arena-id / unlock</c>
+    /// for each arena a crossed level opened</item>
     /// <item><c>result / car-car-id-rR / car</c>: the car played, before an unlock auto-equips the next one;
     /// catalog IDs contain no numbers, including drag-racer and monster-truck</item>
     /// </list>
@@ -164,6 +168,28 @@ namespace ToyCarArena.App
 
         public static void MeasureRoundCar(this IGamePlatform platform, int round, string carId) =>
             platform.Measure(ResultCategory, $"car-{carId}-{RoundTag(round)}", "car");
+
+        public static void MeasureRoundMap(this IGamePlatform platform, int round, string mapId) =>
+            platform.Measure(ResultCategory, $"map-{mapId}-{RoundTag(round)}", "map");
+
+        /// <summary>
+        /// The variant played on the arena, besides <see cref="MeasureRoundMap"/>, which keeps its name for the reports
+        /// built on it. Ids have no digits, so the round is the only number.
+        /// </summary>
+        public static void MeasureRoundVariant(this IGamePlatform platform, int round, string mapId, string variantId)
+        {
+            if (!string.IsNullOrEmpty(variantId)) {
+                platform.Measure(ResultCategory, $"variant-{mapId}-{variantId}-{RoundTag(round)}", "map-variant");
+            }
+        }
+
+        /// <summary>The arenas the levels of this reward opened, from the tuning, as the cars are.</summary>
+        public static void MeasureMapUnlocks(this IGamePlatform platform, XpGain gain, GameTuning tuning)
+        {
+            foreach (var id in ArenaRotation.OpenedBetween(tuning, gain.Before.Level, gain.After.Level)) {
+                platform.Measure("progress", $"map-{id}", "unlock");
+            }
+        }
 
         /// <summary>Sent from the saved reward, independently of how soon the result screen is dismissed.</summary>
         public static void MeasureProgress(this IGamePlatform platform, XpGain gain)

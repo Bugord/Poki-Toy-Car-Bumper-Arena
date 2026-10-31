@@ -132,10 +132,10 @@ namespace ToyCarArena.Gameplay.Cars
                 return;
             }
 
-            // VContainer's fixed tick precedes MonoBehaviour.FixedUpdate. Supply the current shrinking radius and
+            // VContainer's fixed tick precedes MonoBehaviour.FixedUpdate. Supply the current shrinking edge and
             // contact history each step; CarMovement limits the final driven velocity after its own ground probe.
             var share = round.IsRunning && !car.IsOut ? difficulty.EdgeAssist : 0f;
-            car.Movement.SetEdgeHold(round.ArenaRadius, share, car.LastHitTime);
+            car.Movement.SetEdgeHold(round.Edge, share, car.LastHitTime);
         }
 
         /// <returns>True while a finger steers by the joystick, which is drawn under it then.</returns>
@@ -351,16 +351,16 @@ namespace ToyCarArena.Gameplay.Cars
         {
             var position = car.Position;
             position.y = 0f;
-            var fromMiddle = position.magnitude;
-            if (fromMiddle < 0.01f) {
+            var edge = round.Edge;
+            var inward = edge.Inward(position);
+            if (inward == Vector3.zero) {
                 share = 0f;
                 return Vector3.zero;
             }
 
-            var radius = round.ArenaRadius;
             var controls = tuning.Controls;
-            share = Mathf.InverseLerp(radius - controls.EdgeAssistMargin, radius - controls.EdgeAssistStop, fromMiddle);
-            return position / fromMiddle;
+            share = edge.Proximity(position, controls.EdgeAssistMargin, controls.EdgeAssistStop);
+            return (-inward).normalized;
         }
 
         private void SetJoystickShown(bool isShown)

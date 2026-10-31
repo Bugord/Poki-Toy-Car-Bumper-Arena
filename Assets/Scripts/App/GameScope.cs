@@ -1,6 +1,7 @@
 using Bugord.App;
 using ToyCarArena.Audio;
 using ToyCarArena.Gameplay;
+using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Input;
 using ToyCarArena.Gameplay.Round;
@@ -33,6 +34,10 @@ namespace ToyCarArena.App
         [SerializeField]
         private CarCatalog carCatalog;
 
+        [Tooltip("Arena names and looks; the arenas themselves and their levels are in the tuning")]
+        [SerializeField]
+        private ArenaCatalog arenaCatalog;
+
         protected override void ConfigureGame(IContainerBuilder builder)
         {
             // Checked here, as GameplayScope checks its own: in the WebGL player a missing reference fails much later,
@@ -52,8 +57,14 @@ namespace ToyCarArena.App
                     $"{nameof(carCatalog)}.");
             }
 
+            if (arenaCatalog == null) {
+                throw new MissingReferenceException($"{nameof(GameScope)} in {gameObject.scene.name} has no " +
+                    $"{nameof(arenaCatalog)}.");
+            }
+
             builder.RegisterInstance(tuning, typeof(GameTuning));
             builder.RegisterInstance(carCatalog, typeof(CarCatalog));
+            builder.RegisterInstance(arenaCatalog, typeof(ArenaCatalog));
 
             builder.Register<LevelScene>(Lifetime.Singleton);
             // Here, so the music goes on across the Game scene reloaded every round and the screens can click. The
@@ -67,6 +78,8 @@ namespace ToyCarArena.App
             // built.
             builder.Register<SessionProgress>(Lifetime.Singleton).AsSelf().As<ISessionProgress>();
             builder.Register<SessionRoster>(Lifetime.Singleton).As<ISessionRoster>();
+            // The arena of the next round is chosen before its scene is built, so it lives here too.
+            builder.Register<ArenaRotation>(Lifetime.Singleton).As<IArenaRotation>();
             builder.Register<PersonalBests>(Lifetime.Singleton);
             builder.Register<PlayerProgress>(Lifetime.Singleton).AsSelf().As<IPlayerCar>();
 #if BUGORD_SUPERCONSOLE
@@ -79,6 +92,7 @@ namespace ToyCarArena.App
             builder.RegisterScreen<HudViewModel, HudView>();
             builder.RegisterScreen<RoundOverViewModel, RoundOverView>();
             builder.RegisterScreen<GarageViewModel, GarageView>();
+            builder.RegisterScreen<SettingsViewModel, SettingsView>();
 
             builder.RegisterState<RoundState>();
             builder.RegisterState<ResultState>();

@@ -74,7 +74,10 @@ def summarise(data):
         "lobby": i.get("lobby-shown"),
         "scoreboard": i.get("scoreboard-shown"),
         "levels": other(o, r"progress-level-(2|3|4|5|6|7|8|9|10|10plus)-level-up"),
-        "unlocks": other(o, r"progress-([a-z]+(?:-[a-z]+)*)-unlock"),
+        "unlocks": other(o, r"progress-(?!map-)([a-z]+(?:-[a-z]+)*)-unlock"),
+        "map_unlocks": other(o, r"progress-map-([a-z]+)-unlock"),
+        "maps": other(o, r"result-map-([a-z]+-r(?:1|2|3|4plus))-map"),
+        "variants": other(o, r"result-variant-([a-z]+-[a-z]+-r(?:1|2|3|4plus))-map-variant"),
         "equips": other(o, r"garage-([a-z]+(?:-[a-z]+)*)-equip"),
         "driven": other(o, r"result-car-([a-z]+(?:-[a-z]+)*-r(?:1|2|3|4plus))-car"),
         "colors": other(o, r"garage-color-(green|red|blue|yellow|purple|orange|pink|dark)-color"),
@@ -157,7 +160,7 @@ def report(version, previous):
         ("Нокауты игрока в 1-м раунде", "ko1", sorted(keys_of("ko1"), key=int)),
         ("Машинок в раунде (с v0.2)", "cars", None),
         ("Длительность раунда (с v0.2)", "round_time", None),
-        ("Причина самовылета (с v0.2.0)", "fall_cause", None),
+        ("Причина самовылета (с v0.2.0; ball: мяч арены tabletop)", "fall_cause", None),
         ("REVENGE (с v0.2.0)", "revenge", None),
     ):
         keys = order if order is not None else keys_of(key)
@@ -175,6 +178,9 @@ def report(version, previous):
         ("На чём ездят по раундам (визиты с car)", "driven"),
         ("Выбор цвета в гараже (визиты с color)", "colors"),
         ("Цвет машинки по раундам (визиты с color)", "played_colors"),
+        ("Открытия арен (визиты с map unlock)", "map_unlocks"),
+        ("Арены по раундам (визиты с map)", "maps"),
+        ("Варианты арен по раундам (визиты с map-variant)", "variants"),
     ):
         keys = keys_of(key)
         if key == "levels":

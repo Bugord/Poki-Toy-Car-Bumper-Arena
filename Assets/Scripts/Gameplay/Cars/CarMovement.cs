@@ -1,4 +1,5 @@
 using System;
+using ToyCarArena.Gameplay.Arena;
 using UnityEngine;
 using VContainer;
 
@@ -28,12 +29,14 @@ namespace ToyCarArena.Gameplay.Cars
         private GameTuning.CarSettings settings;
         private GameTuning.BoostSettings boostSettings;
         private GameTuning.ControlSettings controls;
+        private IArenaSurface surface;
+        private IArenaPlatform platform;
         private Rigidbody body;
         private Vector3 direction;
         private float throttle;
 
         // Set only for the player's next physics step. Zero share leaves every bot's movement unchanged.
-        private float edgeHoldRadius;
+        private IArenaEdge edgeHoldField;
         private float edgeHoldShare;
         private float edgeHoldContactTime = float.NegativeInfinity;
 
@@ -65,6 +68,12 @@ namespace ToyCarArena.Gameplay.Cars
         /// spent dropping below the round's elimination height. Negative infinity until the car reaches the floor.
         /// </summary>
         public float LastGroundedTime { get; private set; } = float.NegativeInfinity;
+
+        /// <summary>
+        /// What the floor under the car did to its driving in the last physics step (plain floor is neutral). A hit reads
+        /// it too, to tell whether the car resists being pushed.
+        /// </summary>
+        public SurfaceFeel Surface { get; private set; } = SurfaceFeel.Neutral;
 
         public Vector3 Velocity => body.linearVelocity;
 
@@ -110,8 +119,10 @@ namespace ToyCarArena.Gameplay.Cars
         }
 
         [Inject]
-        private void Construct(GameTuning tuning)
+        private void Construct(GameTuning tuning, IArenaSurface surface, IArenaPlatform platform)
         {
+            this.surface = surface;
+            this.platform = platform;
             this.settings = tuning.Car;
             this.boostSettings = tuning.Boost;
             this.controls = tuning.Controls;
@@ -144,9 +155,9 @@ namespace ToyCarArena.Gameplay.Cars
         /// Supplies the player's holding line before each movement FixedUpdate. The driver owns whether the round
         /// is running; movement applies the speed limit after its acceleration/boost, before PhysX and StepVelocity.
         /// </summary>
-        public void SetEdgeHold(float radius, float share, float lastContactTime)
+        public void SetEdgeHold(IArenaEdge edge, float share, float lastContactTime)
         {
-            this.edgeHoldRadius = radius;
+            this.edgeHoldField = edge;
             this.edgeHoldShare = Mathf.Clamp01(share);
             this.edgeHoldContactTime = lastContactTime;
         }
@@ -230,7 +241,20 @@ namespace ToyCarArena.Gameplay.Cars
                 arenaMask, QueryTriggerInteraction.Ignore);
             if (IsGrounded) {
                 LastGroundedTime = Time.time;
+                Surface = surface != null ? surface.Sample(body.position) : SurfaceFeel.Neutral;
+                // On a moving floor the car drives in the floor's frame: take the floor's motion off, let the arcade
+                // steering and grip work on what is left, and put it back, so an idle car is simply carried round.
+                var motion = platform != null ? platform.Sample(body.position) : PlatformMotion.None;
+                var moving = motion.IsMoving;
+                if (moving) {
+                    ShiftFrame(motion, -1f);
+                }
+
                 Steer(Time.fixedDeltaTime);
+                if (moving) {
+                    ShiftFrame(motion, 1f);
+                }
+
                 HoldAtEdge();
             }
 
@@ -241,8 +265,20 @@ namespace ToyCarArena.Gameplay.Cars
         }
 
         /// <summary>
+        /// Adds (<paramref name="sign"/> 1) or takes off (-1) the motion of the floor under the car, in velocity and in
+        /// turn about the vertical axis.
+        /// </summary>
+        private void ShiftFrame(PlatformMotion motion, float sign)
+        {
+            body.linearVelocity += motion.Velocity * sign;
+            var angularVelocity = body.angularVelocity;
+            angularVelocity.y += motion.AngularVelocity * sign;
+            body.angularVelocity = angularVelocity;
+        }
+
+        /// <summary>
         /// Removes only excess outward speed: tangential, inward and vertical motion are preserved. A shrinking
-        /// safe radius may leave the car past the holding line; a zero limit there never pulls it back inside.
+        /// safe floor may leave the car past the holding line; a zero limit there never pulls it back inside.
         /// Recent pressure and stagger leave the shove entirely to the existing physics and braking.
         /// </summary>
         private void HoldAtEdge()
@@ -260,13 +296,13 @@ namespace ToyCarArena.Gameplay.Cars
 
             var position = body.position;
             position.y = 0f;
-            var distance = position.magnitude;
-            if (distance < 0.0001f) {
+            var inward = edgeHoldField.Inward(position);
+            if (inward == Vector3.zero) {
                 return;
             }
 
-            var outward = position / distance;
-            var remaining = Mathf.Max(0f, edgeHoldRadius - controls.EdgeHoldMargin - distance);
+            var outward = (-inward).normalized;
+            var remaining = Mathf.Max(0f, edgeHoldField.DistanceToEdge(position, controls.EdgeHoldMargin));
             var limit = Mathf.Sqrt(2f * controls.EdgeHoldBrake * remaining);
             var velocity = body.linearVelocity;
             var excess = Mathf.Max(0f, Vector3.Dot(velocity, outward) - limit);
@@ -300,17 +336,18 @@ namespace ToyCarArena.Gameplay.Cars
             else {
                 // Facing away from the heading, the car turns first and speeds up as it comes round.
                 var alignment = drive > 0f ? Mathf.Clamp01(Vector3.Dot(forward, direction)) : 0f;
-                targetSpeed = settings.MaxSpeed * drive * alignment;
+                // The floor changes the top speed of driving only: a boost carries the car through it.
+                targetSpeed = settings.MaxSpeed * Surface.Speed * drive * alignment;
             }
 
             var right = Vector3.Cross(Vector3.up, axis);
             var velocity = body.linearVelocity;
             var axisSpeed = Vector3.Dot(velocity, axis);
-            var rate = targetSpeed > axisSpeed ? settings.Acceleration : settings.Braking;
+            var rate = targetSpeed > axisSpeed ? settings.Acceleration * Surface.Acceleration : settings.Braking;
             var newAxisSpeed = Mathf.MoveTowards(axisSpeed, targetSpeed, rate * deltaTime);
 
             var sideSpeed = Vector3.Dot(velocity, right);
-            var grip = settings.Grip * (isStaggered ? settings.StaggerGrip : 1f);
+            var grip = settings.Grip * Surface.Grip * (isStaggered ? settings.StaggerGrip : 1f);
             var newSideSpeed = sideSpeed * Mathf.Exp(-grip * deltaTime);
 
             body.linearVelocity = velocity + axis * (newAxisSpeed - axisSpeed) + right * (newSideSpeed - sideSpeed);

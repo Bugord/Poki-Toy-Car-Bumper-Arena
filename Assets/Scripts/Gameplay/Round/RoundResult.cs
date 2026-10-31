@@ -33,6 +33,9 @@ namespace ToyCarArena.Gameplay.Round
         /// <summary>The player boosted shortly before falling.</summary>
         Boost,
 
+        /// <summary>The Ball arena's ball knocked the player, and no car did after it.</summary>
+        Ball,
+
         /// <summary>Another car hit the player too long ago for knockout credit.</summary>
         Slide,
 

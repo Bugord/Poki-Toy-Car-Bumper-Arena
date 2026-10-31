@@ -1,0 +1,133 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29ca4dfff9088d4409aab4b2ef28aa43, type: 3}
+  m_Name: data_mechanic_art
+  m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Arena.MechanicArt
+  items:
+  - key: jelly_red
+    material: {fileID: 2100000, guid: 2bec7291f63a7e248bd4735ed3f5dbe5, type: 2}
+  - key: jelly_green
+    material: {fileID: 2100000, guid: 36e98bbc0adc91343af45f60be14abff, type: 2}
+  - key: jelly_blue
+    material: {fileID: 2100000, guid: 48d0d100bb5c7a64d8a923429f5a218e, type: 2}
+  - key: jelly_orange
+    material: {fileID: 2100000, guid: 63d1b49476aded54ba094aa290654b34, type: 2}
+  - key: jelly_shine
+    material: {fileID: 2100000, guid: c1311044606aac943ae9a97f7a25673c, type: 2}
+  - key: jelly_outline
+    material: {fileID: 2100000, guid: 2fcc23a2fbb245f429a73e64a3a22d89, type: 2}
+  - key: stirrer_red
+    material: {fileID: 2100000, guid: d093cb07d36800c4eba4a022dc20c500, type: 2}
+  - key: stirrer_white
+    material: {fileID: 2100000, guid: 362311154b654524a9383e02904c801d, type: 2}
+  - key: stirrer_flash
+    material: {fileID: 2100000, guid: 1ca999307a600ad4bb8f855f4ee3424b, type: 2}
+  - key: stirrer_hub
+    material: {fileID: 2100000, guid: 5cc601f8ccafc7447ab2b3e75855d4a9, type: 2}
+  - key: stirrer_outline
+    material: {fileID: 2100000, guid: c6616edcf70291d4b8dd5928c94a295e, type: 2}
+  - key: stirrer_wedge
+    material: {fileID: 2100000, guid: 9d70d2341b4b3ea45a43d18c1f802063, type: 2}
+  - key: stirrer_wedge_warn
+    material: {fileID: 2100000, guid: dda8aebee44a593479029c990f72e525, type: 2}
+  - key: train_outline
+    material: {fileID: 2100000, guid: 297c8f40e799a1044a1b618e43fb3b47, type: 2}
+  - key: train_bed
+    material: {fileID: 2100000, guid: b2bc1e55b16f3bf4a9578264f185349f, type: 2}
+  - key: train_sleeper
+    material: {fileID: 2100000, guid: 1f5b95e0da093bc47b935e52841ca242, type: 2}
+  - key: train_rail
+    material: {fileID: 2100000, guid: c9bc2c9b3157d8f4b9447434f4e3f8f1, type: 2}
+  - key: train_red
+    material: {fileID: 2100000, guid: 633d5cf501a0d9c409ac358796d663ca, type: 2}
+  - key: train_blue
+    material: {fileID: 2100000, guid: e2cc3a9d93c112e42bdba05ca55ed0dc, type: 2}
+  - key: train_yellow
+    material: {fileID: 2100000, guid: 9afc674dc263a6e459b70c823da74a40, type: 2}
+  - key: train_white
+    material: {fileID: 2100000, guid: 3ea9179460f6cd148ac7d833686ca22b, type: 2}
+  - key: train_dark
+    material: {fileID: 2100000, guid: 47196edb0cd045f40ad13d216032765a, type: 2}
+  - key: train_glow
+    material: {fileID: 2100000, guid: 313a0432880e7fe4aa110294c897bb75, type: 2}
+  - key: train_glow_dim
+    material: {fileID: 2100000, guid: 0128484048c51e94a8513876042a44b3, type: 2}
+  - key: jack_outline
+    material: {fileID: 2100000, guid: 0b4698690ac779c4bb9af35313299ce5, type: 2}
+  - key: jack_lid
+    material: {fileID: 2100000, guid: 16b4012388c63e843a7c1dfadc5204b6, type: 2}
+  - key: jack_spring
+    material: {fileID: 2100000, guid: b98b04048b8dc3f4491de699734caf1c, type: 2}
+  - key: jack_white
+    material: {fileID: 2100000, guid: 044f18c199a2c234fb8b81a64b1ffe49, type: 2}
+  - key: jack_skin
+    material: {fileID: 2100000, guid: ba9facca339c08047bc01cf96beff85a, type: 2}
+  - key: jack_red
+    material: {fileID: 2100000, guid: 2c7939b252ea8a647970e2e1da456611, type: 2}
+  - key: jack_hat
+    material: {fileID: 2100000, guid: 7e271ef11eb720c47a3d075271d6b0ad, type: 2}
+  - key: jack_glow
+    material: {fileID: 2100000, guid: 0145501b50d3c5c4fa210ddf82b148de, type: 2}
+  - key: jack_glow_bright
+    material: {fileID: 2100000, guid: f9f318cec67808546b58e34c96603d7c, type: 2}
+  - key: crab_shell
+    material: {fileID: 2100000, guid: 6fc8f998ac6442b4b8673dade33e04d1, type: 2}
+  - key: crab_claw
+    material: {fileID: 2100000, guid: f4f604a8cf449e04d9d4e4908210a4cb, type: 2}
+  - key: crab_leg
+    material: {fileID: 2100000, guid: 9a24de31358aa744d8f1277db318c05d, type: 2}
+  - key: crab_eye
+    material: {fileID: 2100000, guid: 7aa6aa9ea049d0645b29d996301201b5, type: 2}
+  - key: crab_pupil
+    material: {fileID: 2100000, guid: d41cddcc7a64dc24fadaf8f9b78f07e7, type: 2}
+  - key: crab_key
+    material: {fileID: 2100000, guid: 5e91639e08ff27d45a8d76063230a24f, type: 2}
+  - key: mound_sand
+    material: {fileID: 2100000, guid: b3fee23d0c4589141bb4c0bf3061c03f, type: 2}
+  - key: mound_crumb
+    material: {fileID: 2100000, guid: 2848648811493c64ca0098976744e0c2, type: 2}
+  - key: top_body
+    material: {fileID: 2100000, guid: 7227e3669c7ed7f43abcf67b47cb8508, type: 2}
+  - key: top_stripe
+    material: {fileID: 2100000, guid: 1843c7de8fe89c241b17a105f05e66de, type: 2}
+  - key: top_tip
+    material: {fileID: 2100000, guid: afa1961e79ed65c4eae3eddb15107934, type: 2}
+  - key: top_stud
+    material: {fileID: 2100000, guid: 06ed5cc8a88d04a47af772b7e1c1fed4, type: 2}
+  - key: pencil_body
+    material: {fileID: 2100000, guid: a3fa9138a12bbb948a473c5e646b7f49, type: 2}
+  - key: pencil_wood
+    material: {fileID: 2100000, guid: 0ae1f21c9eda7ba44b77162efb44b8de, type: 2}
+  - key: pencil_lead
+    material: {fileID: 2100000, guid: 18eb3a299b0f8574696076c3b2ef702e, type: 2}
+  - key: pencil_eraser
+    material: {fileID: 2100000, guid: ae5eb4aaff768ac4fbaca030397bfd99, type: 2}
+  - key: pencil_metal
+    material: {fileID: 2100000, guid: 6d24c9c2c38c28d4190d180151d98795, type: 2}
+  - key: crab_print
+    material: {fileID: 2100000, guid: cd6fca1be5480894fbfa593e0f6d59f3, type: 2}
+  - key: crab_shadow
+    material: {fileID: 2100000, guid: 6592cc6968a8a7742a7cac271a60a321, type: 2}
+  - key: mound_ring
+    material: {fileID: 2100000, guid: 6f02a00efe3fd6b41bb248a18fcacc85, type: 2}
+  - key: top_ring
+    material: {fileID: 2100000, guid: 2d668da795d51a4479b04ce2493ca92a, type: 2}
+  - key: top_dot
+    material: {fileID: 2100000, guid: 7284f1ae96a43144abd70ee2adbb9e61, type: 2}
+  - key: top_shadow
+    material: {fileID: 2100000, guid: 7507549424e2fcb4b866f804c0d85bc5, type: 2}
+  - key: pencil_band
+    material: {fileID: 2100000, guid: e3faa7be9f4d7de4fb0249ee76f6441b, type: 2}
+  - key: pencil_dash
+    material: {fileID: 2100000, guid: af6121363f33cf14d91efe6afa6aa34e, type: 2}
+  - key: pencil_shadow
+    material: {fileID: 2100000, guid: 97d82962d370e574db177f79e3d61666, type: 2}

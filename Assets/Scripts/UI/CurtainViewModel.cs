@@ -22,8 +22,16 @@ namespace ToyCarArena.UI
         public double StartedAt { get; private set; }
         public bool IsReady { get; private set; }
 
-        public void ShowLobby(ISessionRoster roster, int botCount, int nemesis)
+        /// <summary>Name of the arena of the coming round, or null when the lobby does not say.</summary>
+        public string ArenaName { get; private set; }
+
+        /// <summary>Whether the player has not yet played that arena.</summary>
+        public bool ArenaIsNew { get; private set; }
+
+        public void ShowLobby(ISessionRoster roster, int botCount, int nemesis, string arenaName = null, bool arenaIsNew = false)
         {
+            ArenaName = arenaName;
+            ArenaIsNew = arenaIsNew;
             var rows = new List<LobbyRow> { new(0, roster.ColorOf(0), "YOU", null, false, false) };
             for (var index = 1; index <= SessionRoster.MaxBots; index++) {
                 var left = roster.LeftNameOf(index);

@@ -58,8 +58,8 @@ namespace ToyCarArena.Tests.PlayMode
             var target = PickTarget(player);
             var toTarget = target != null ? Flat(target.Position) - position : -position;
             var heading = toTarget.normalized;
-            if (round.ArenaRadius - position.magnitude < EdgeFear && Chance(EdgeFearChance)) {
-                heading = -position.normalized;
+            if (round.Edge.DistanceToEdge(position) < EdgeFear && Chance(EdgeFearChance)) {
+                heading = round.Edge.Inward(position).normalized;
             }
 
             heading = Quaternion.Euler(0f, Between(-HeadingError, HeadingError), 0f) * heading;

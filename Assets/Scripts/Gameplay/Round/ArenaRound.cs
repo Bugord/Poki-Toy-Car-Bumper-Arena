@@ -49,7 +49,8 @@ namespace ToyCarArena.Gameplay.Round
         private readonly IObjectResolver resolver;
         private readonly Car carPrefab;
         private readonly Transform carParent;
-        private readonly ArenaFloor floor;
+        private readonly IArenaEdge edge;
+        private readonly GameTuning.ArenaSettings arena;
         private readonly RoundDifficulty difficulty;
         private readonly ISessionRoster roster;
         private readonly CarCatalog catalog;
@@ -65,15 +66,16 @@ namespace ToyCarArena.Gameplay.Round
         public IReadOnlyList<string> Names { get; private set; }
         public IReadOnlyList<int> Colors { get; private set; }
 
-        public ArenaRound(GameTuning tuning, IObjectResolver resolver, Car carPrefab, Transform carParent, ArenaFloor floor,
-            RoundDifficulty difficulty, ISessionProgress progress, ISessionRoster roster, CarCatalog catalog,
-            IPlayerCar playerCar)
+        public ArenaRound(GameTuning tuning, IObjectResolver resolver, Car carPrefab, Transform carParent, IArenaEdge edge,
+            GameTuning.ArenaSettings arena, RoundDifficulty difficulty, ISessionProgress progress, ISessionRoster roster,
+            CarCatalog catalog, IPlayerCar playerCar)
         {
             this.tuning = tuning;
             this.resolver = resolver;
             this.carPrefab = carPrefab;
             this.carParent = carParent;
-            this.floor = floor;
+            this.edge = edge;
+            this.arena = arena;
             this.difficulty = difficulty;
             this.roster = roster;
             this.catalog = catalog;
@@ -141,10 +143,10 @@ namespace ToyCarArena.Gameplay.Round
         public Car PlayerKnockedOutBy { get; private set; }
 
         /// <summary>
-        /// How far from the middle the arena reaches now, in metres. The one place the bots read the edge from: it
-        /// shrinks as the edge crumbles, and a ring counts as gone as soon as it starts to shake, so the bots get off it.
+        /// The arena's edge as it is now. The one place the bots and the player's help read the edge from: it moves in as
+        /// the floor crumbles, and a wave of tiles counts as gone as soon as it starts to shake, so the bots get off it.
         /// </summary>
-        public float ArenaRadius => floor.Radius;
+        public IArenaEdge Edge => edge;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         public PlayerFallTelemetry FallTelemetry { get; private set; }
@@ -177,7 +179,7 @@ namespace ToyCarArena.Gameplay.Round
             Spawn(1 + difficulty.BotCount);
             Player = cars[0];
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            FallTelemetry = new PlayerFallTelemetry(this, floor, Player);
+            FallTelemetry = new PlayerFallTelemetry(this, edge, Player);
             Player.Movement.FallTelemetry = FallTelemetry;
 #endif
             Nemesis = nemesisIndex > 0 && nemesisIndex < cars.Count ? cars[nemesisIndex] : null;
@@ -299,6 +301,11 @@ namespace ToyCarArena.Gameplay.Round
                 return FallCause.Boost;
             }
 
+            // A ball hit clears the hitter, so no car's push after it is blamed on the ball.
+            if (car.LastHitBy == null && now - car.LastHazardTime <= tuning.Round.SlideWindow) {
+                return FallCause.Ball;
+            }
+
             if (car.LastHitBy != null && car.LastHitBy != car && now - car.LastHitTime <= tuning.Round.SlideWindow) {
                 return FallCause.Slide;
             }
@@ -322,18 +329,29 @@ namespace ToyCarArena.Gameplay.Round
         }
 
         /// <summary>
-        /// Spreads the cars evenly round the spawn circle, the first one nearest the camera, all facing the middle.
+        /// Spreads the cars evenly round the spawn circle (or the contour of a floor that is not round), the first one nearest
+        /// the camera, all facing the middle.
         /// </summary>
         private void Spawn(int count)
         {
-            var radius = tuning.Arena.Radius * tuning.Arena.SpawnRadius;
-            var height = tuning.Arena.SpawnHeight;
+            var radius = arena.Radius * arena.SpawnRadius;
+            var height = arena.SpawnHeight;
             for (var i = 0; i < count; i++) {
-                var angle = -Mathf.PI * 0.5f + i * Mathf.PI * 2f / count;
-                var outward = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
-                // At the very middle (a radius of 0) a car faces away from the camera.
-                var facing = radius > 0f ? -outward : Vector3.forward;
-                var position = outward * radius + Vector3.up * height;
+                Vector3 position;
+                Vector3 facing;
+                if (edge.TryGetSpawn(i, count, out var spot)) {
+                    // A floor that is not round has a contour of its own, clear of its pits.
+                    position = spot + Vector3.up * height;
+                    facing = spot.sqrMagnitude > 0.0001f ? -spot.normalized : Vector3.forward;
+                }
+                else {
+                    var angle = -Mathf.PI * 0.5f + i * Mathf.PI * 2f / count;
+                    var outward = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+                    // At the very middle (a radius of 0) a car faces away from the camera.
+                    facing = radius > 0f ? -outward : Vector3.forward;
+                    position = outward * radius + Vector3.up * height;
+                }
+
                 var rotation = Quaternion.LookRotation(facing);
                 var car = resolver.InstantiateInjected(carPrefab, position, rotation, carParent);
                 // The interpolated Rigidbody wakes up where the prefab was made, at the origin, and puts the transform

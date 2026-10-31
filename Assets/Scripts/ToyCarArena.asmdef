@@ -11,7 +11,9 @@
         "Unity.InputSystem",
         "UIKit",
         "UIKit.VContainer",
-        "SuperConsole.Runtime"
+        "SuperConsole.Runtime",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

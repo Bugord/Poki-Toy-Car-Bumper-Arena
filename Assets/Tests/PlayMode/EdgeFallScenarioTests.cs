@@ -102,6 +102,7 @@ namespace ToyCarArena.Tests.PlayMode
             var container = scope.Container;
             var round = container.Resolve<ArenaRound>();
             var tuning = container.Resolve<GameTuning>();
+            var arena = container.Resolve<GameTuning.ArenaSettings>();
             var difficulty = container.Resolve<RoundDifficulty>();
             var camera = container.Resolve<ArenaCamera>();
             var botDriver = container.Resolve<IEnumerable<ITickable>>().OfType<BotDriver>().Single();
@@ -112,7 +113,7 @@ namespace ToyCarArena.Tests.PlayMode
 
             var outward = Quaternion.Euler(0f, angle, 0f) * Vector3.forward;
             var tangent = Vector3.Cross(Vector3.up, outward);
-            var radius = tuning.Arena.Radius;
+            var radius = arena.Radius;
             var natural = scenario == Scenario.Idle || scenario == Scenario.Novice;
             var boost = IsBoost(scenario);
             var tap = scenario == Scenario.TapCenter || scenario == Scenario.TapHalf || scenario == Scenario.TapAssist;
@@ -122,7 +123,7 @@ namespace ToyCarArena.Tests.PlayMode
                 : scenario == Scenario.BoostAssist || scenario == Scenario.TapAssist ? radius - 4f : 0f;
             var startRadius = boost ? targetRadius - 3f
                 : scenario == Scenario.DriveCenter ? 0f
-                : scenario == Scenario.DriveSpawn || scenario == Scenario.Mouse ? radius * tuning.Arena.SpawnRadius
+                : scenario == Scenario.DriveSpawn || scenario == Scenario.Mouse ? radius * arena.SpawnRadius
                 : scenario == Scenario.IdleRing ? radius - 1f
                 : pushed ? radius - 2f
                 : ram ? radius - 6f : radius - 3f;
@@ -131,7 +132,7 @@ namespace ToyCarArena.Tests.PlayMode
                 : scenario == Scenario.Diagonal30 ? tangent * Mathf.Cos(30f * Mathf.Deg2Rad) + outward * 0.5f
                 : scenario == Scenario.Diagonal60 ? tangent * 0.5f + outward * Mathf.Sin(60f * Mathf.Deg2Rad) : outward;
             if (!natural) {
-                round.Player.Movement.Place(outward * startRadius + Vector3.up * tuning.Arena.SpawnHeight,
+                round.Player.Movement.Place(outward * startRadius + Vector3.up * arena.SpawnHeight,
                     Quaternion.LookRotation(heading));
                 // Nonparticipants stay counted by ArenaRound, so an isolated drive cannot end early as a win.
                 // Their objects are disabled, never marked out; the report identifies these as isolated cases.
@@ -146,7 +147,7 @@ namespace ToyCarArena.Tests.PlayMode
                         position -= tangent * 2f;
                     }
 
-                    target.Movement.Place(position + Vector3.up * tuning.Arena.SpawnHeight,
+                    target.Movement.Place(position + Vector3.up * arena.SpawnHeight,
                         Quaternion.LookRotation(pushed ? outward : scenario == Scenario.RamPassing ? tangent : -outward));
                 }
             }

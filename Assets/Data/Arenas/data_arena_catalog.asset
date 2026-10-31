@@ -1,0 +1,969 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 704b38d2608881d48be8f5ce8ef713a6, type: 3}
+  m_Name: data_arena_catalog
+  m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Arena.ArenaCatalog
+  arenas:
+  - id: sandbox
+    displayName: SANDBOX
+    floorMaterial: {fileID: 2100000, guid: 12ab94fc4e3c4744abe6f21a4d67b14b, type: 2}
+    background: {r: 0.55, g: 0.78, b: 0.95, a: 1}
+    looks:
+    - variantId: rake
+      floorMaterial: {fileID: 2100000, guid: f96d9c84db5129c4db4b56dddfb1ee54, type: 2}
+    - variantId: molds
+      floorMaterial: {fileID: 2100000, guid: 6814b7a622f9b7743bf66de371136639, type: 2}
+    - variantId: bricks
+      floorMaterial: {fileID: 2100000, guid: c81fc3583dbf01c448043feb3ff17604, type: 2}
+    groundDepth: 56
+    groundMaterial: {fileID: 2100000, guid: 22984108c7fd0d6418cb3d9f550a0134, type: 2}
+    fogStart: 10
+    fogEnd: 260
+    pedestal:
+    - shape: 0
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 63431f3a8c84e8f4d8a881b2a0ba949c, type: 2}
+      size: {x: 14, y: 54.45, z: 14}
+      offset: {x: 0, y: 0}
+      baseHeight: -55
+      yaw: 0
+    - shape: 0
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 33e7665ec763c4e488d7e68cd873212f, type: 2}
+      size: {x: 17, y: 1.4, z: 17}
+      offset: {x: 0, y: 0}
+      baseHeight: -8.5
+      yaw: 0
+    - shape: 0
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 33e7665ec763c4e488d7e68cd873212f, type: 2}
+      size: {x: 20, y: 1.4, z: 20}
+      offset: {x: 0, y: 0}
+      baseHeight: -17
+      yaw: 0
+    - shape: 0
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 33e7665ec763c4e488d7e68cd873212f, type: 2}
+      size: {x: 24, y: 1.6, z: 24}
+      offset: {x: 0, y: 0}
+      baseHeight: -26
+      yaw: 0
+    - shape: 0
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 33e7665ec763c4e488d7e68cd873212f, type: 2}
+      size: {x: 28, y: 1.8, z: 28}
+      offset: {x: 0, y: 0}
+      baseHeight: -36
+      yaw: 0
+    - shape: 0
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 33e7665ec763c4e488d7e68cd873212f, type: 2}
+      size: {x: 34, y: 2.6, z: 34}
+      offset: {x: 0, y: 0}
+      baseHeight: -55
+      yaw: 0
+    groundPieces:
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 63431f3a8c84e8f4d8a881b2a0ba949c, type: 2}
+      size: {x: 64, y: 1, z: 56}
+      offset: {x: 0, y: 0}
+      baseHeight: -56
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: ebce55a83566b8d4bbd2a43ff547b665, type: 2}
+      size: {x: 66, y: 2.8, z: 2}
+      offset: {x: 0, y: 28}
+      baseHeight: -56
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: ebce55a83566b8d4bbd2a43ff547b665, type: 2}
+      size: {x: 66, y: 2.8, z: 2}
+      offset: {x: 0, y: -28}
+      baseHeight: -56
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: ebce55a83566b8d4bbd2a43ff547b665, type: 2}
+      size: {x: 2, y: 2.8, z: 56}
+      offset: {x: 32, y: 0}
+      baseHeight: -56
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: ebce55a83566b8d4bbd2a43ff547b665, type: 2}
+      size: {x: 2, y: 2.8, z: 56}
+      offset: {x: -32, y: 0}
+      baseHeight: -56
+      yaw: 0
+    - shape: 0
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 617dc7c2dcf7bcf419cc9e16dca7ccc7, type: 2}
+      size: {x: 8, y: 7, z: 8}
+      offset: {x: -23, y: 12}
+      baseHeight: -55
+      yaw: 0
+    - shape: 0
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 0abb7b9ee0ae67747942049b5775f182, type: 2}
+      size: {x: 8.5, y: 0.9, z: 8.5}
+      offset: {x: -23, y: 12}
+      baseHeight: -48.8
+      yaw: 0
+    - shape: 0
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 33e7665ec763c4e488d7e68cd873212f, type: 2}
+      size: {x: 8, y: 2.8, z: 8}
+      offset: {x: 20, y: 18}
+      baseHeight: -55
+      yaw: 0
+    - shape: 0
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 33e7665ec763c4e488d7e68cd873212f, type: 2}
+      size: {x: 5.4, y: 2.8, z: 5.4}
+      offset: {x: 20, y: 18}
+      baseHeight: -52.2
+      yaw: 0
+    - shape: 0
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 33e7665ec763c4e488d7e68cd873212f, type: 2}
+      size: {x: 2.8, y: 2.8, z: 2.8}
+      offset: {x: 20, y: 18}
+      baseHeight: -49.4
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 48cca8ff63cfe284d8afd3fb04ea2034, type: 2}
+      size: {x: 4, y: 0.5, z: 5.5}
+      offset: {x: -10, y: 21}
+      baseHeight: -55
+      yaw: 25
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: ebce55a83566b8d4bbd2a43ff547b665, type: 2}
+      size: {x: 1.1, y: 0.8, z: 7}
+      offset: {x: -9, y: 15.5}
+      baseHeight: -55
+      yaw: 25
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: 19f463ebefad2a449a907ce3ab96fdbb, type: 3}
+      material: {fileID: 0}
+      size: {x: 42, y: 1, z: 1}
+      offset: {x: -8, y: 96}
+      baseHeight: -56
+      yaw: 0
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: af02493b423e66f4a8df063c5b2e2857, type: 3}
+      material: {fileID: 0}
+      size: {x: 45, y: 1, z: 1}
+      offset: {x: 40, y: 72}
+      baseHeight: -56
+      yaw: 0
+    decor:
+    - model: {fileID: 919132149155446097, guid: 6cedba7b01f5c554191416dd1e9c5dfa, type: 3}
+      angle: -68.96249
+      distance: 12.856777
+      height: -55
+      scale: 14
+      yaw: -41.037506
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: cfb40d4272a7f1a4e828911815d3e2b9, type: 3}
+      angle: 66.03751
+      distance: 14.546574
+      height: -55
+      scale: 14
+      yaw: 53.962494
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: 829125cf599ec4542a86c5822d038bdf, type: 3}
+      angle: 19.983107
+      distance: 8.409399
+      height: -55
+      scale: 22
+      yaw: 160.0169
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: c466f8d01f99a7f4aacfeb34722e08c7, type: 3}
+      angle: -31.328691
+      distance: 92.70329
+      height: -56
+      scale: 60
+      yaw: -148.67131
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: c7e07948309a98c49842aa80fffc375a, type: 3}
+      angle: 30.113733
+      distance: 100.60277
+      height: -56
+      scale: 62
+      yaw: 149.88626
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: c7e07948309a98c49842aa80fffc375a, type: 3}
+      angle: -12.154942
+      distance: 117.9812
+      height: -56
+      scale: 66
+      yaw: -167.84506
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: c466f8d01f99a7f4aacfeb34722e08c7, type: 3}
+      angle: 10.080598
+      distance: 122.116745
+      height: -56
+      scale: 62
+      yaw: 169.9194
+      pitch: 0
+  - id: tabletop
+    displayName: TABLETOP
+    floorMaterial: {fileID: 2100000, guid: df94a409402e0bc40adc94dbdec6220f, type: 2}
+    background: {r: 1, g: 0.9411765, b: 0.8, a: 1}
+    looks:
+    - variantId: board
+      floorMaterial: {fileID: 2100000, guid: 316018a88a167dc4782174e8926b6a0c, type: 2}
+    - variantId: cloth
+      floorMaterial: {fileID: 2100000, guid: c1d542ea8842bd14d93540c76ec1abf9, type: 2}
+    - variantId: notebook
+      floorMaterial: {fileID: 2100000, guid: 05f580277b01ba647b6a4eeb439e174e, type: 2}
+    groundDepth: 59
+    groundMaterial: {fileID: 2100000, guid: ac5efc380c23cd64d9d83a87cf37fb0f, type: 2}
+    fogStart: 8
+    fogEnd: 230
+    pedestal:
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 617dc7c2dcf7bcf419cc9e16dca7ccc7, type: 2}
+      size: {x: 17, y: 3.6785715, z: 12.5}
+      offset: {x: 0, y: 0}
+      baseHeight: -26.3
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 8c78ce719e373e44fa9a5e54b46b36dd, type: 2}
+      size: {x: 15, y: 3.6785715, z: 11.5}
+      offset: {x: 0, y: 0}
+      baseHeight: -22.62143
+      yaw: 14
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 46b55db066cdac14ab410c09ffc2ac55, type: 2}
+      size: {x: 17.5, y: 3.6785715, z: 12.5}
+      offset: {x: 0, y: 0}
+      baseHeight: -18.942858
+      yaw: -9
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 30b50d637a8a99940b5ed1b5200a4d96, type: 2}
+      size: {x: 14.5, y: 3.6785715, z: 11}
+      offset: {x: 0, y: 0}
+      baseHeight: -15.264286
+      yaw: 20
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: cedcab4799b0f2e4baf4f7e7d8b49b11, type: 2}
+      size: {x: 16, y: 3.6785715, z: 11.5}
+      offset: {x: 0, y: 0}
+      baseHeight: -11.585714
+      yaw: -14
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 0bb4618c50efd25479494332f3a7febd, type: 2}
+      size: {x: 16.5, y: 3.6785715, z: 12}
+      offset: {x: 0, y: 0}
+      baseHeight: -7.9071426
+      yaw: 8
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: ca3d577219d843440be02cead177beb5, type: 2}
+      size: {x: 15, y: 3.6785715, z: 11}
+      offset: {x: 0, y: 0}
+      baseHeight: -4.2285714
+      yaw: -18
+    groundPieces:
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: 63ce9ce7e01b3e54cb72f060452da7b8, type: 3}
+      material: {fileID: 0}
+      size: {x: 9, y: 1, z: 1}
+      offset: {x: 0, y: 8}
+      baseHeight: -58.8
+      yaw: 90
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: ffa186d2735573948976b4ddb1a2f397, type: 3}
+      material: {fileID: 0}
+      size: {x: 10, y: 1, z: 1}
+      offset: {x: 0, y: 0}
+      baseHeight: -59
+      yaw: 90
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: 75ba99c9ac7abad4393911a5ee5df379, type: 3}
+      material: {fileID: 0}
+      size: {x: 10, y: 1, z: 1}
+      offset: {x: 33, y: 4}
+      baseHeight: -59
+      yaw: -90
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: 75ba99c9ac7abad4393911a5ee5df379, type: 3}
+      material: {fileID: 0}
+      size: {x: 10, y: 1, z: 1}
+      offset: {x: 33, y: 30}
+      baseHeight: -59
+      yaw: -90
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: 75ba99c9ac7abad4393911a5ee5df379, type: 3}
+      material: {fileID: 0}
+      size: {x: 10, y: 1, z: 1}
+      offset: {x: -33, y: 4}
+      baseHeight: -59
+      yaw: 90
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: 75ba99c9ac7abad4393911a5ee5df379, type: 3}
+      material: {fileID: 0}
+      size: {x: 10, y: 1, z: 1}
+      offset: {x: -33, y: 30}
+      baseHeight: -59
+      yaw: 90
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: 75ba99c9ac7abad4393911a5ee5df379, type: 3}
+      material: {fileID: 0}
+      size: {x: 10, y: 1, z: 1}
+      offset: {x: 6, y: 46}
+      baseHeight: -59
+      yaw: 180
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: cedcab4799b0f2e4baf4f7e7d8b49b11, type: 2}
+      size: {x: 400, y: 170, z: 2}
+      offset: {x: 0, y: 104}
+      baseHeight: -59
+      yaw: 0
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: af49db9db710852489dbd60e6c3cd8ca, type: 3}
+      material: {fileID: 0}
+      size: {x: 10, y: 1, z: 1}
+      offset: {x: -90, y: 78}
+      baseHeight: -59
+      yaw: 0
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: af49db9db710852489dbd60e6c3cd8ca, type: 3}
+      material: {fileID: 0}
+      size: {x: 10, y: 1, z: 1}
+      offset: {x: -47, y: 78}
+      baseHeight: -59
+      yaw: 0
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: 7ef97ec184fb8fe41a5aa7cab5330ddd, type: 3}
+      material: {fileID: 0}
+      size: {x: 10, y: 1, z: 1}
+      offset: {x: -4, y: 78}
+      baseHeight: -59
+      yaw: 0
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: 0a4c01b53a447b54bb657014d1133d34, type: 3}
+      material: {fileID: 0}
+      size: {x: 10, y: 1, z: 1}
+      offset: {x: 39, y: 78}
+      baseHeight: -59
+      yaw: 0
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: af49db9db710852489dbd60e6c3cd8ca, type: 3}
+      material: {fileID: 0}
+      size: {x: 10, y: 1, z: 1}
+      offset: {x: 82, y: 78}
+      baseHeight: -59
+      yaw: 0
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: 533b8926f387b164e96914a96e338bf3, type: 3}
+      material: {fileID: 0}
+      size: {x: 10, y: 1, z: 1}
+      offset: {x: -47, y: 86}
+      baseHeight: 16
+      yaw: 0
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: 533b8926f387b164e96914a96e338bf3, type: 3}
+      material: {fileID: 0}
+      size: {x: 10, y: 1, z: 1}
+      offset: {x: 39, y: 86}
+      baseHeight: 16
+      yaw: 0
+    decor:
+    - model: {fileID: 919132149155446097, guid: 7a4dbd64962e7cf409ff4937df0abe67, type: 3}
+      angle: -83.29016
+      distance: 6.5448275
+      height: -26.3
+      scale: 11
+      yaw: -96.70984
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: 7a4dbd64962e7cf409ff4937df0abe67, type: 3}
+      angle: 83.29016
+      distance: 6.5448275
+      height: -26.3
+      scale: 11
+      yaw: 96.70984
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: 81216b43c345fed49ab2dff221e4be93, type: 3}
+      angle: -77.4712
+      distance: -1.5365915
+      height: -26.3
+      scale: 15
+      yaw: -12.528809
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: aa1b5d395b179704c9489583db4a73ab, type: 3}
+      angle: 85.23636
+      distance: 13.546793
+      height: -26.3
+      scale: 15
+      yaw: -175.23636
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: 1c22809caa2486341b1f76356c1c81b6, type: 3}
+      angle: -149.03624
+      distance: -0.5830965
+      height: -26.3
+      scale: 11
+      yaw: 59.03624
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: be597cb9c6437464e90c335065b61a8a, type: 3}
+      angle: 138.01279
+      distance: -0.0779562
+      height: -26.3
+      scale: 11
+      yaw: 41.987213
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: 48cd3f82e0ab6ee4f99f3e29d190b9a5, type: 3}
+      angle: 42.954594
+      distance: 65.6951
+      height: -59
+      scale: 6
+      yaw: -42.95459
+      pitch: 0
+  - id: candy
+    displayName: CANDY
+    floorMaterial: {fileID: 2100000, guid: 156e413cfa0f7784fafc3cd76ebed354, type: 2}
+    background: {r: 0.6509804, g: 0.92156863, b: 0.79607844, a: 1}
+    looks:
+    - variantId: frosting
+      floorMaterial: {fileID: 2100000, guid: 5904f3e57650e40478a9af8c9a126b89, type: 2}
+    - variantId: chocolate
+      floorMaterial: {fileID: 2100000, guid: cbf4ae4b7047fc249b115620fa439aa9, type: 2}
+    - variantId: waffle
+      floorMaterial: {fileID: 2100000, guid: e0165c6b586cd2b49900abf6b4336a0b, type: 2}
+    groundDepth: 86.78
+    groundMaterial: {fileID: 2100000, guid: c73df6aa9a6904343a50008c42477c2b, type: 2}
+    fogStart: 10
+    fogEnd: 200
+    pedestal:
+    - shape: 3
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: cedcab4799b0f2e4baf4f7e7d8b49b11, type: 2}
+      size: {x: 1, y: 8, z: 1}
+      offset: {x: 0, y: 0}
+      baseHeight: -8.55
+      yaw: 0
+    - shape: 3
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: ca3d577219d843440be02cead177beb5, type: 2}
+      size: {x: 1.03, y: 1.2, z: 1.03}
+      offset: {x: 0, y: 0}
+      baseHeight: -9.75
+      yaw: 0
+    - shape: 3
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 8e66be6f4f0d41d42bbfc789f54f0e89, type: 2}
+      size: {x: 1.25, y: 8, z: 1.25}
+      offset: {x: 0, y: 0}
+      baseHeight: -16.55
+      yaw: 0
+    - shape: 3
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: ca3d577219d843440be02cead177beb5, type: 2}
+      size: {x: 1.28, y: 1.2, z: 1.28}
+      offset: {x: 0, y: 0}
+      baseHeight: -17.75
+      yaw: 0
+    - shape: 3
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: ca3d577219d843440be02cead177beb5, type: 2}
+      size: {x: 1.55, y: 8, z: 1.55}
+      offset: {x: 0, y: 0}
+      baseHeight: -24.55
+      yaw: 0
+    - shape: 3
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: cedcab4799b0f2e4baf4f7e7d8b49b11, type: 2}
+      size: {x: 1.58, y: 1.2, z: 1.58}
+      offset: {x: 0, y: 0}
+      baseHeight: -25.75
+      yaw: 0
+    - shape: 3
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 8e66be6f4f0d41d42bbfc789f54f0e89, type: 2}
+      size: {x: 1.9, y: 8, z: 1.9}
+      offset: {x: 0, y: 0}
+      baseHeight: -32.55
+      yaw: 0
+    - shape: 3
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: ca3d577219d843440be02cead177beb5, type: 2}
+      size: {x: 1.93, y: 1.2, z: 1.93}
+      offset: {x: 0, y: 0}
+      baseHeight: -33.75
+      yaw: 0
+    - shape: 0
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 172dc44586351b144947fbe70c9e79ae, type: 2}
+      size: {x: 56, y: 1.5, z: 56}
+      offset: {x: 0, y: 0}
+      baseHeight: -34.05
+      yaw: 0
+    - shape: 0
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 172dc44586351b144947fbe70c9e79ae, type: 2}
+      size: {x: 12, y: 6.95, z: 12}
+      offset: {x: 0, y: 0}
+      baseHeight: -41
+      yaw: 0
+    - shape: 0
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 172dc44586351b144947fbe70c9e79ae, type: 2}
+      size: {x: 30, y: 1.8, z: 30}
+      offset: {x: 0, y: 0}
+      baseHeight: -41
+      yaw: 0
+    groundPieces:
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: 9f3ebff6a40a1bb4d8254bb5b6072c02, type: 3}
+      material: {fileID: 0}
+      size: {x: 15, y: 1, z: 1}
+      offset: {x: 0, y: 6}
+      baseHeight: -86.58
+      yaw: 0
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: ffa186d2735573948976b4ddb1a2f397, type: 3}
+      material: {fileID: 0}
+      size: {x: 14, y: 1, z: 1}
+      offset: {x: 0, y: 0}
+      baseHeight: -86.78
+      yaw: 90
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: 75ba99c9ac7abad4393911a5ee5df379, type: 3}
+      material: {fileID: 0}
+      size: {x: 14, y: 1, z: 1}
+      offset: {x: 45, y: 2}
+      baseHeight: -86.78
+      yaw: -90
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: 75ba99c9ac7abad4393911a5ee5df379, type: 3}
+      material: {fileID: 0}
+      size: {x: 14, y: 1, z: 1}
+      offset: {x: 45, y: 38}
+      baseHeight: -86.78
+      yaw: -90
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: 75ba99c9ac7abad4393911a5ee5df379, type: 3}
+      material: {fileID: 0}
+      size: {x: 14, y: 1, z: 1}
+      offset: {x: -45, y: 2}
+      baseHeight: -86.78
+      yaw: 90
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: 75ba99c9ac7abad4393911a5ee5df379, type: 3}
+      material: {fileID: 0}
+      size: {x: 14, y: 1, z: 1}
+      offset: {x: -45, y: 38}
+      baseHeight: -86.78
+      yaw: 90
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: 75ba99c9ac7abad4393911a5ee5df379, type: 3}
+      material: {fileID: 0}
+      size: {x: 14, y: 1, z: 1}
+      offset: {x: 0, y: 73}
+      baseHeight: -86.78
+      yaw: 180
+    decor:
+    - model: {fileID: 919132149155446097, guid: ff0b0bb87ddd89a4487ce9ca61d610a2, type: 3}
+      angle: -118.61046
+      distance: 7.9736137
+      height: -32.55
+      scale: 24
+      yaw: 118.61047
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: 8de1b385a06042e46bf2f35bc85dea6e, type: 3}
+      angle: 122.47119
+      distance: 9.161909
+      height: -32.55
+      scale: 24
+      yaw: -122.47119
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: 922bc4b9e7b04c546994587ba98b7a2d, type: 3}
+      angle: 72.255325
+      distance: 10.499524
+      height: -32.55
+      scale: 40
+      yaw: -72.255325
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: 64909a7f573977e498f596381d0266be, type: 3}
+      angle: -72.255325
+      distance: 10.499524
+      height: -32.55
+      scale: 28
+      yaw: 72.255325
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: e6b65c902bd026a4c92edc4e34eeb504, type: 3}
+      angle: 17.74467
+      distance: 10.899388
+      height: -32.55
+      scale: 36
+      yaw: -17.744675
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: ff0b0bb87ddd89a4487ce9ca61d610a2, type: 3}
+      angle: -22.619865
+      distance: 10.875055
+      height: -32.55
+      scale: 24
+      yaw: 22.619873
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: 2a9d736bf924dd94cb69692eed04c3da, type: 3}
+      angle: -17.650124
+      distance: 30.818638
+      height: -41
+      scale: 38
+      yaw: -142.34988
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: 88de88ab67ac7e741bcbb67a9cd3d951, type: 3}
+      angle: 12.011478
+      distance: 32.281445
+      height: -41
+      scale: 36
+      yaw: 147.98853
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: 485ac6b2d8715464d9cdfb409005f6be, type: 3}
+      angle: 0
+      distance: 37.679
+      height: -41
+      scale: 34
+      yaw: -175
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: cf5c0ea41f54149408f8eb0b9d1ba00b, type: 3}
+      angle: 26.565052
+      distance: 29.694704
+      height: -41
+      scale: 30
+      yaw: -176.56505
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: ff0b0bb87ddd89a4487ce9ca61d610a2, type: 3}
+      angle: 147.09476
+      distance: 25.47793
+      height: -41
+      scale: 20
+      yaw: -147.09476
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: 243c75318f10c2645b737aeaed63d212, type: 3}
+      angle: -147.09476
+      distance: 25.47793
+      height: -41
+      scale: 20
+      yaw: 147.09476
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: 02f9e9128ce68c542a88dafe8ef0f6a8, type: 3}
+      angle: -65.65891
+      distance: 75.731964
+      height: -86.78
+      scale: 9
+      yaw: -24.341095
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: 2a9d736bf924dd94cb69692eed04c3da, type: 3}
+      angle: 66.97451
+      distance: 70.62677
+      height: -86.78
+      scale: 46
+      yaw: 133.02548
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: 88de88ab67ac7e741bcbb67a9cd3d951, type: 3}
+      angle: 64.39781
+      distance: 89.818756
+      height: -86.78
+      scale: 40
+      yaw: 105.60217
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: cf5c0ea41f54149408f8eb0b9d1ba00b, type: 3}
+      angle: 56.309933
+      distance: 84.222275
+      height: -86.78
+      scale: 34
+      yaw: 158.69006
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: 485ac6b2d8715464d9cdfb409005f6be, type: 3}
+      angle: -75.96376
+      distance: 67.000465
+      height: -86.78
+      scale: 40
+      yaw: -124.03624
+      pitch: 0
+  - id: playroom
+    displayName: PLAYROOM
+    floorMaterial: {fileID: 2100000, guid: 6ee51e48e870ce94f86270333ffc56d6, type: 2}
+    background: {r: 1, g: 0.8784314, b: 0.4, a: 1}
+    looks:
+    - variantId: puzzle
+      floorMaterial: {fileID: 2100000, guid: 526259a13389e6840a403658283126fd, type: 2}
+    - variantId: road
+      floorMaterial: {fileID: 2100000, guid: a88671b37cba25d46bec7c6f3245208c, type: 2}
+    - variantId: blocks
+      floorMaterial: {fileID: 2100000, guid: a981f3c625c0a274aa6843fab4fdff68, type: 2}
+    groundDepth: 62
+    groundMaterial: {fileID: 2100000, guid: ac5efc380c23cd64d9d83a87cf37fb0f, type: 2}
+    fogStart: 10
+    fogEnd: 320
+    pedestal:
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 617dc7c2dcf7bcf419cc9e16dca7ccc7, type: 2}
+      size: {x: 16, y: 8, z: 16}
+      offset: {x: 0, y: 0}
+      baseHeight: -8.55
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 4c182efc22f5ed543a5af5b92e49dcf5, type: 2}
+      size: {x: 18, y: 8, z: 18}
+      offset: {x: 0, y: 0}
+      baseHeight: -16.55
+      yaw: 18
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 0abb7b9ee0ae67747942049b5775f182, type: 2}
+      size: {x: 21, y: 8, z: 21}
+      offset: {x: 0, y: 0}
+      baseHeight: -24.55
+      yaw: -12
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 0bb4618c50efd25479494332f3a7febd, type: 2}
+      size: {x: 25, y: 8, z: 25}
+      offset: {x: 0, y: 0}
+      baseHeight: -32.55
+      yaw: 25
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 48cca8ff63cfe284d8afd3fb04ea2034, type: 2}
+      size: {x: 29, y: 8, z: 29}
+      offset: {x: 0, y: 0}
+      baseHeight: -40.55
+      yaw: -8
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 8c78ce719e373e44fa9a5e54b46b36dd, type: 2}
+      size: {x: 33, y: 8, z: 33}
+      offset: {x: 0, y: 0}
+      baseHeight: -48.55
+      yaw: 14
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: ca3d577219d843440be02cead177beb5, type: 2}
+      size: {x: 37, y: 8, z: 37}
+      offset: {x: 0, y: 0}
+      baseHeight: -56.55
+      yaw: -20
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: dde6faf6f5245154e9a1b51e2853f849, type: 2}
+      size: {x: 41, y: 5.45, z: 41}
+      offset: {x: 0, y: 0}
+      baseHeight: -62
+      yaw: 6
+    groundPieces:
+    - shape: 0
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 47284138420aff748b2a610118679f49, type: 2}
+      size: {x: 140, y: 0.3, z: 140}
+      offset: {x: 0, y: 0}
+      baseHeight: -62
+      yaw: 0
+    - shape: 0
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 7c20113c5bc48d742ba827828f276d1a, type: 2}
+      size: {x: 100, y: 0.45, z: 100}
+      offset: {x: 0, y: 0}
+      baseHeight: -62
+      yaw: 0
+    - shape: 0
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: cedcab4799b0f2e4baf4f7e7d8b49b11, type: 2}
+      size: {x: 60, y: 0.6, z: 60}
+      offset: {x: 0, y: 0}
+      baseHeight: -62
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: c73df6aa9a6904343a50008c42477c2b, type: 2}
+      size: {x: 460, y: 190, z: 2}
+      offset: {x: 0, y: 136}
+      baseHeight: -62
+      yaw: 0
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: 59fcf385a5e784446970886388beafcb, type: 3}
+      material: {fileID: 0}
+      size: {x: 10, y: 1, z: 1}
+      offset: {x: -44, y: 108}
+      baseHeight: -62
+      yaw: 180
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: 59fcf385a5e784446970886388beafcb, type: 3}
+      material: {fileID: 0}
+      size: {x: 10, y: 1, z: 1}
+      offset: {x: 46, y: 108}
+      baseHeight: -62
+      yaw: 180
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: 4dc32dc317bc83548861f4ce153dc7a5, type: 3}
+      material: {fileID: 0}
+      size: {x: 8, y: 1, z: 1}
+      offset: {x: 84, y: 40}
+      baseHeight: -62
+      yaw: 90
+    - shape: 2
+      model: {fileID: 919132149155446097, guid: 79dcb1c159fa6714ca82cde8e8ebaa12, type: 3}
+      material: {fileID: 0}
+      size: {x: 12, y: 1, z: 1}
+      offset: {x: 0, y: 104}
+      baseHeight: -62
+      yaw: 180
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 617dc7c2dcf7bcf419cc9e16dca7ccc7, type: 2}
+      size: {x: 8, y: 8, z: 8}
+      offset: {x: -40, y: 8}
+      baseHeight: -62
+      yaw: 15
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 0abb7b9ee0ae67747942049b5775f182, type: 2}
+      size: {x: 8, y: 8, z: 8}
+      offset: {x: -33, y: 14}
+      baseHeight: -62
+      yaw: 40
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 4c182efc22f5ed543a5af5b92e49dcf5, type: 2}
+      size: {x: 8, y: 8, z: 8}
+      offset: {x: -37, y: 11}
+      baseHeight: -54
+      yaw: 20
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 0bb4618c50efd25479494332f3a7febd, type: 2}
+      size: {x: 8, y: 8, z: 8}
+      offset: {x: 38, y: 12}
+      baseHeight: -62
+      yaw: 30
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 48cca8ff63cfe284d8afd3fb04ea2034, type: 2}
+      size: {x: 8, y: 8, z: 8}
+      offset: {x: 31, y: 18}
+      baseHeight: -62
+      yaw: 10
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: ca3d577219d843440be02cead177beb5, type: 2}
+      size: {x: 8, y: 8, z: 8}
+      offset: {x: -20, y: 36}
+      baseHeight: -62
+      yaw: 25
+    decor:
+    - model: {fileID: 919132149155446097, guid: 02f9e9128ce68c542a88dafe8ef0f6a8, type: 3}
+      angle: 33.424812
+      distance: 100.01937
+      height: -62
+      scale: 8
+      yaw: -33.424805
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: 72124f2d19bdc74429f244fa1e6430f8, type: 3}
+      angle: -11.309933
+      distance: 80.72968
+      height: -62
+      scale: 7
+      yaw: 11.309937
+      pitch: -12
+    - model: {fileID: 919132149155446097, guid: c72c4f2dd346cdd498f14320f59ea4c5, type: 3}
+      angle: -23.96249
+      distance: 97.62722
+      height: -22
+      scale: 18
+      yaw: 23.962494
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: cf5c0ea41f54149408f8eb0b9d1ba00b, type: 3}
+      angle: -19.384516
+      distance: 93.6012
+      height: -22
+      scale: 22
+      yaw: -140.61548
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: 6cedba7b01f5c554191416dd1e9c5dfa, type: 3}
+      angle: -27.192352
+      distance: 102.17612
+      height: -22
+      scale: 13
+      yaw: 7.1923523
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: 2a9d736bf924dd94cb69692eed04c3da, type: 3}
+      angle: 20.323137
+      distance: 94.31135
+      height: -22
+      scale: 22
+      yaw: 169.67685
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: cfb40d4272a7f1a4e828911815d3e2b9, type: 3}
+      angle: 25.50414
+      distance: 100.30917
+      height: -22
+      scale: 13
+      yaw: -15.504135
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: 2a9d736bf924dd94cb69692eed04c3da, type: 3}
+      angle: -70.821
+      distance: 33.351093
+      height: -62
+      scale: 28
+      yaw: -89.179
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: 88de88ab67ac7e741bcbb67a9cd3d951, type: 3}
+      angle: 70.90651
+      distance: 39.683125
+      height: -62
+      scale: 28
+      yaw: 119.093506
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: 675ae3faf5232e64fb27d7fffd6b06db, type: 3}
+      angle: -53.841816
+      distance: 46.972954
+      height: -61.4
+      scale: 40
+      yaw: -36.158188
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: c72c4f2dd346cdd498f14320f59ea4c5, type: 3}
+      angle: -41.877872
+      distance: 58.974426
+      height: -61.4
+      scale: 40
+      yaw: -48.12213
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: c72c4f2dd346cdd498f14320f59ea4c5, type: 3}
+      angle: -33.690067
+      distance: 73.96571
+      height: -61.4
+      scale: 40
+      yaw: -56.309937
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: fefbfd4265b93244f9b170e71868de73, type: 3}
+      angle: 24.77514
+      distance: 65.40247
+      height: -62
+      scale: 36
+      yaw: -24.775146
+      pitch: 0

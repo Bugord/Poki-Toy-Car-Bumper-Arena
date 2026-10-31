@@ -1,3 +1,4 @@
+using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
@@ -21,6 +22,11 @@ namespace ToyCarArena.Gameplay.Bots
         private readonly RoundDifficulty difficulty;
         private readonly Car player;
         private readonly System.Random random;
+        // More hazards than this on one arena are not dodged; a mechanic has one or two.
+        private const int MaxHazards = 8;
+
+        private readonly BallLane ballLane;
+        private readonly ArenaHazards hazards;
 
         private float retargetTimer;
         private bool isPushing;
@@ -38,13 +44,29 @@ namespace ToyCarArena.Gameplay.Bots
         private float pushTime;
         private float boostDelay;
 
+        // The Ball arena's ball this bot last saw announced, for how long, and how long it takes to react to it.
+        private int seenBall;
+        private float ballSeenFor;
+        private float ballReaction;
+
+        // The same for the hazards of the arena's mechanic, by their place in the list (there are only a few).
+        private readonly int[] seenHazard = new int[MaxHazards];
+        private readonly float[] hazardSeenFor = new float[MaxHazards];
+        private readonly float[] hazardReaction = new float[MaxHazards];
+
+        // The side a bot goes round a pit on (+1 or -1 along the rim) and for how many more seconds it keeps it.
+        private float pitSide = 1f;
+        private float pitHold;
+
         // Heading back to the middle, and whether this escape may still boost (rolled once as it starts).
         private bool isEscaping;
         private bool mayEscapeBoost;
 
         public Bot(Car car, GameTuning.BotPersonality personality, GameTuning tuning, RoundDifficulty difficulty,
-            Car player, int seed)
+            Car player, int seed, BallLane ballLane, ArenaHazards hazards)
         {
+            this.ballLane = ballLane;
+            this.hazards = hazards;
             this.Car = car;
             this.tuning = tuning;
             this.settings = tuning.Bots;
@@ -98,7 +120,8 @@ namespace ToyCarArena.Gameplay.Bots
         }
 
         /// <summary>
-        /// Heads back towards the middle when the car is near the edge, or will be soon at its speed; otherwise drives
+        /// Heads back away from the edge (see <see cref="IArenaEdge.Inward"/>; towards the middle on a round floor) when the car
+        /// is near the edge, or will be soon at its speed; otherwise drives
         /// at a point just behind the target on the side facing the middle, so the hit sends the target outward.
         /// Staying on the arena comes first: a bot that pushes a car off and follows it loses as much. It is never
         /// slowed by the difficulty: the bot sees its own car at once, and a careless bot would fall off on its own and
@@ -118,26 +141,32 @@ namespace ToyCarArena.Gameplay.Bots
         /// In a duel the round's duel pace and escape chance take over, so the last bot can be softened separately.
         /// </para>
         /// </summary>
-        public void Steer(float arenaRadius, float deltaTime, bool isDuel)
+        public void Steer(IArenaEdge edge, float deltaTime, bool isDuel)
         {
             retargetTimer -= deltaTime;
             sinceSeen += deltaTime;
 
             var position = Flat(Car.Position);
             var velocity = Flat(Car.Movement.Velocity);
-            var safeRadius = Mathf.Max(0f, arenaRadius - settings.EdgeMargin);
+            var margin = settings.EdgeMargin;
             isPushing = IsPushing(position);
             // Pushing a car, the bot is slow and the target is between it and the edge, so it keeps on to the margin.
             var lookAhead = isPushing ? 0f : settings.LookAhead * Traits.Caution;
             var ahead = position + velocity * lookAhead;
-            if (position.sqrMagnitude > safeRadius * safeRadius || ahead.sqrMagnitude > safeRadius * safeRadius) {
+            if (edge.DistanceToEdge(position, margin) < 0f || edge.DistanceToEdge(ahead, margin) < 0f) {
                 pushTime = 0f;
-                Car.Movement.Drive(-position, 1f);
-                Escape(position, velocity, safeRadius, isDuel);
+                Car.Movement.Drive(edge.Inward(position), 1f);
+                Escape(edge, position, velocity, margin, isDuel);
                 return;
             }
 
             isEscaping = false;
+
+            // Staying clear of the ball comes before any attack, but after staying on the arena.
+            if (AvoidBall(edge, position, margin, deltaTime) || AvoidHazards(edge, position, margin, deltaTime)) {
+                pushTime = 0f;
+                return;
+            }
 
             if (Target == null) {
                 pushTime = 0f;
@@ -148,21 +177,96 @@ namespace ToyCarArena.Gameplay.Bots
             Look();
             var targetPosition = seenPosition + seenVelocity * (sinceSeen + settings.AimLead);
             var toTarget = targetPosition - position;
-            // A target at the very middle has no outward side; the bot then just drives through it.
-            var outward = targetPosition.sqrMagnitude > 0.0001f ? targetPosition.normalized : toTarget.normalized;
+            // The side of the target facing the middle is the side away from the nearest void (the rim, a pit, a hole).
+            // A target with no preferred way out (the middle of a round floor) is just driven through.
+            var inwardOfTarget = edge.Inward(targetPosition);
+            var outward = inwardOfTarget.sqrMagnitude > 0.0001f ? -inwardOfTarget.normalized : toTarget.normalized;
             // Halved close up, so the aim closes in on the target instead of circling the point behind it.
             var behind = Mathf.Min(settings.AimBehind, toTarget.magnitude * 0.5f);
             var aim = targetPosition - outward * behind;
             var heading = Quaternion.AngleAxis(aimError, Vector3.up) * (aim - position);
+            if (!isPushing) {
+                heading = GoRoundPits(edge, position, heading, margin, deltaTime);
+            }
+
             var playerPace = isDuel ? difficulty.DuelPace : difficulty.PlayerPace;
             Car.Movement.Drive(heading, Target == player ? playerPace : 1f);
 
             if (isPushing) {
-                Push(position, heading, safeRadius, deltaTime);
+                Push(edge, position, heading, margin, deltaTime);
             }
             else {
                 pushTime = 0f;
             }
+        }
+
+        /// <summary>
+        /// Bends the line to the target round a pit or a hole in the way, keeping the side it chose for a moment.
+        /// </summary>
+        private Vector3 GoRoundPits(IArenaEdge edge, Vector3 position, Vector3 heading, float margin, float deltaTime)
+        {
+            pitHold -= deltaTime;
+            return PitDetour.Bend(edge, position, heading, margin, settings.PitProbe, settings.PitSamples,
+                settings.PitInward, settings.PitSideHold, ref pitSide, ref pitHold);
+        }
+
+        /// <summary>
+        /// Steers out of the Ball arena's lane once the bot has noticed the ball: a moment after it is announced, longer
+        /// for the careless (a personality's caution divides it), and only if the bot is in the ball's way.
+        /// </summary>
+        private bool AvoidBall(IArenaEdge edge, Vector3 position, float edgeMargin, float deltaTime)
+        {
+            if (ballLane == null || !ballLane.IsActive) {
+                return false;
+            }
+
+            if (ballLane.Pass != seenBall) {
+                seenBall = ballLane.Pass;
+                ballSeenFor = 0f;
+                var reaction = tuning.Ball.BotReaction;
+                ballReaction = Range(reaction.x, reaction.y) / Mathf.Max(0.1f, Traits.Caution);
+            }
+
+            ballSeenFor += deltaTime;
+            if (ballSeenFor < ballReaction
+                || !ballLane.TryAvoid(position, tuning.Ball.BotMargin, edge, edgeMargin, out var heading)) {
+                return false;
+            }
+
+            Car.Movement.Drive(heading, 1f);
+            return true;
+        }
+
+        /// <summary>
+        /// Steers out of the way of the mechanic's hazards, each noticed like the ball: a moment after it starts a new
+        /// threat, longer for the careless, and only if the bot is in its way. The first hazard that needs it wins.
+        /// </summary>
+        private bool AvoidHazards(IArenaEdge edge, Vector3 position, float edgeMargin, float deltaTime)
+        {
+            if (hazards == null) {
+                return false;
+            }
+
+            var all = hazards.All;
+            var count = Mathf.Min(all.Count, MaxHazards);
+            for (var index = 0; index < count; index++) {
+                var hazard = all[index];
+                if (hazard.Version != seenHazard[index]) {
+                    seenHazard[index] = hazard.Version;
+                    hazardSeenFor[index] = 0f;
+                    var reaction = settings.HazardReaction;
+                    hazardReaction[index] = Range(reaction.x, reaction.y) / Mathf.Max(0.1f, Traits.Caution);
+                }
+
+                hazardSeenFor[index] += deltaTime;
+                if (hazardSeenFor[index] >= hazardReaction[index]
+                    && hazard.TryAvoid(position, settings.HazardMargin, edge, edgeMargin, out var heading)) {
+                    Car.Movement.Drive(heading, 1f);
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -189,7 +293,7 @@ namespace ToyCarArena.Gameplay.Bots
         /// margin: at the raised top speed a boost carries the car about (top speed + impulse) × duration, which a bold
         /// bot counts short and a careful one long.
         /// </summary>
-        private void Push(Vector3 position, Vector3 heading, float safeRadius, float deltaTime)
+        private void Push(IArenaEdge edge, Vector3 position, Vector3 heading, float edgeMargin, float deltaTime)
         {
             if (pushTime <= 0f) {
                 var delay = difficulty.BoostDelay * Traits.BoostDelay;
@@ -203,16 +307,16 @@ namespace ToyCarArena.Gameplay.Bots
 
             var reach = (tuning.Car.MaxSpeed + tuning.Boost.Impulse) * tuning.Boost.Duration * Traits.Caution;
             var landing = position + heading.normalized * reach;
-            if (landing.sqrMagnitude <= safeRadius * safeRadius && Car.Movement.TryBoost()) {
+            if (edge.DistanceToEdge(landing, edgeMargin) >= 0f && Car.Movement.TryBoost()) {
                 pushTime = 0f;
             }
         }
 
         /// <summary>
-        /// Heading back to the middle: once per escape the bot rolls whether it may boost, and it does once it is past
+        /// Heading back inward: once per escape the bot rolls whether it may boost, and it does once it is past
         /// the margin and still sliding outward, where turning round alone would come too late.
         /// </summary>
-        private void Escape(Vector3 position, Vector3 velocity, float safeRadius, bool isDuel)
+        private void Escape(IArenaEdge edge, Vector3 position, Vector3 velocity, float edgeMargin, bool isDuel)
         {
             if (!isEscaping) {
                 isEscaping = true;
@@ -220,7 +324,7 @@ namespace ToyCarArena.Gameplay.Bots
                 mayEscapeBoost = Range(0f, 1f) < chance * Traits.EscapeBoost;
             }
 
-            var isSlidingOut = position.sqrMagnitude > safeRadius * safeRadius && Vector3.Dot(velocity, position) > 0f;
+            var isSlidingOut = edge.DistanceToEdge(position, edgeMargin) < 0f && Vector3.Dot(velocity, -edge.Inward(position)) > 0f;
             if (mayEscapeBoost && isSlidingOut && Car.Movement.TryBoost()) {
                 mayEscapeBoost = false;
             }

@@ -83,7 +83,7 @@ namespace ToyCarArena.UI
         {
             var position = round.Cars[index].Position;
             position.y = 0f;
-            return position.magnitude >= round.ArenaRadius * 0.85f;
+            return round.Edge.Nearness(position) >= 0.85f;
         }
 
         public bool HasRecovered(int index)
@@ -92,7 +92,7 @@ namespace ToyCarArena.UI
             var position = car.Position;
             position.y = 0f;
             return !car.IsOut && car.Movement.IsGrounded && !car.Movement.IsStaggered &&
-                (position.magnitude < round.ArenaRadius * 0.85f || Vector3.Dot(position, car.Movement.Velocity) <= 0f);
+                (round.Edge.Nearness(position) < 0.85f || Vector3.Dot(round.Edge.Inward(position), car.Movement.Velocity) >= 0f);
         }
 
         public bool IsNemesis(int index) => round != null && round.Nemesis != null &&
@@ -193,7 +193,7 @@ namespace ToyCarArena.UI
             // edge, under it, is still on the screen and tells which car it was.
             var position = car.Position;
             var flat = new Vector3(position.x, 0f, position.z);
-            PlayerKnockout?.Invoke(Vector3.ClampMagnitude(flat, round.ArenaRadius), car == round.Nemesis);
+            PlayerKnockout?.Invoke(round.Edge.ClampToFloor(flat), car == round.Nemesis);
         }
     }
 

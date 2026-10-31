@@ -299,7 +299,7 @@ namespace ToyCarArena.UI
             var knockouts = ViewModel.Knockouts;
             if (knockouts != shownKnockouts) {
                 shownKnockouts = knockouts;
-                knockoutLabel.text = $"KO {knockouts}";
+                knockoutLabel.text = knockouts.ToString();
                 knockoutBadge.EnableInClassList(KnockoutShownClass, knockouts > 0);
                 Pulse(knockoutBadge, KnockoutPopClass);
             }

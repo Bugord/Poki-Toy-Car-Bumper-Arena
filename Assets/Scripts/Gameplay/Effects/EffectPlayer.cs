@@ -513,6 +513,63 @@ namespace ToyCarArena.Gameplay.Effects
             }
         }
 
+        /// <summary>
+        /// The tiles of a wave about to fall, a floor that is not round: a clump of dust hops up over each spot, one after
+        /// another through the warning. Each spot is (x, z, drift x, drift z).
+        /// </summary>
+        public void PlayTileWarning(Vector4[] spots, float duration)
+        {
+            foreach (var spot in spots) {
+                var outward = new Vector3(spot.z, 0f, spot.w);
+                var position = new Vector3(spot.x, 0.1f, spot.y)
+                    + new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
+                var delay = Random.Range(0f, duration * 0.85f);
+
+                ref var clump = ref Add(Shape.Puff, dust, position, Random.Range(clumpSize.x, clumpSize.y),
+                    Random.Range(0.45f, 0.7f));
+                clump.Velocity = Vector3.up * Random.Range(clumpHop.x, clumpHop.y) + outward * Random.Range(0f, 0.8f);
+                clump.Gravity = gravity * 0.5f;
+                clump.Delay = delay;
+                clump.Hold = 0.5f;
+
+                ref var bit = ref Add(Shape.Chunk, dust, position, clumpSize.x * 0.6f, 0.5f);
+                bit.Velocity = Vector3.up * (Random.Range(clumpHop.x, clumpHop.y) * 1.2f)
+                    + outward * Random.Range(0.5f, 1.5f);
+                bit.Gravity = gravity;
+                bit.Axis = Random.onUnitSphere;
+                bit.Spin = Random.Range(-500f, 500f);
+                bit.Delay = delay + Random.Range(0f, 0.1f);
+                bit.Hold = 0.6f;
+            }
+        }
+
+        /// <summary>
+        /// The tiles of a wave falling away, a floor that is not round: a cloud of dust and a tumbling chunk over each spot.
+        /// </summary>
+        public void PlayTileFall(Vector4[] spots)
+        {
+            foreach (var spot in spots) {
+                var outward = new Vector3(spot.z, 0f, spot.w);
+                var position = new Vector3(spot.x, 0.1f, spot.y)
+                    + new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
+
+                ref var cloud = ref Add(Shape.Puff, dust, position, Random.Range(fallPuffSize.x, fallPuffSize.y),
+                    Random.Range(0.6f, 0.9f));
+                cloud.Velocity = Vector3.up * Random.Range(1f, 2.5f) + outward * Random.Range(0.5f, 2f);
+                cloud.Gravity = -1f;
+                cloud.Drag = 2f;
+                cloud.Delay = Random.Range(0f, 0.1f);
+                cloud.Hold = 0.4f;
+
+                ref var bit = ref Add(Shape.Chunk, dust, position, Random.Range(fallChunkSize.x, fallChunkSize.y), 1f);
+                bit.Velocity = outward * Random.Range(1f, 3f) + Vector3.up * Random.Range(2f, 5f);
+                bit.Gravity = gravity;
+                bit.Axis = Random.onUnitSphere;
+                bit.Spin = Random.Range(-400f, 400f);
+                bit.Hold = 0.7f;
+            }
+        }
+
         private void LateUpdate()
         {
             var deltaTime = Mathf.Min(Time.unscaledDeltaTime, MaxStep);

@@ -1,3 +1,4 @@
+using ToyCarArena.Rendering;
 using UnityEngine;
 
 namespace ToyCarArena.Gameplay.Cars
@@ -121,6 +122,8 @@ namespace ToyCarArena.Gameplay.Cars
             model.transform.localRotation = ModelRotation;
             var instance = Instantiate(entry.Model, model.transform, false);
             CarModel.SetMaterial(instance, ModelMaterial);
+            // The cars carry the comic-book outline; the marker and the shadow, flat stickers, do not.
+            Outline.Apply(instance);
             var bounds = CarModel.BoundsIn(model, transform.worldToLocalMatrix);
             if (bounds.size.z <= Mathf.Epsilon) {
                 throw new System.InvalidOperationException($"Car model {entry.Id} has no length along Z.");
