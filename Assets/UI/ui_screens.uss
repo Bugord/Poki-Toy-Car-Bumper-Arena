@@ -1051,6 +1051,44 @@
     opacity: 1;
 }
 
+/* Without a touch screen: a smaller gauge in the slot's bottom-right corner, its key under the word. */
+.hud__boost--desktop {
+    width: 230px;
+    height: 230px;
+    margin-left: 70px;
+    margin-top: 70px;
+}
+
+.hud__boost--desktop .hud__boost-charge {
+    left: 16px;
+    top: 10px;
+    width: 180px;
+    height: 180px;
+    border-radius: 90px;
+}
+
+.hud__boost--desktop .hud__boost-text {
+    font-size: 50px;
+    padding-bottom: 2px;
+}
+
+.hud__boost-key {
+    display: none;
+    margin: 2px 0 0 0;
+    padding: 0 14px 2px 14px;
+    border-width: 5px;
+    border-bottom-width: 9px;
+    border-radius: 12px;
+}
+
+.hud__boost--desktop .hud__boost-key {
+    display: flex;
+}
+
+.hud__boost-key-text {
+    font-size: 26px;
+}
+
 .hud__boost--ready .hud__boost-text {
     color: var(--white);
     -unity-text-outline-width: 14px;
@@ -2324,29 +2362,40 @@
 }
 
 /* Settings: a card with two round toggles, white while on and grey with a red slash while off. */
+/* The settings popup, as SMUP's: a card in the middle of the dim with the title in gold, three round toggles (music,
+   sound, and the language coin with its flag) and the white BACK under them. A toggle is white while on and the empty
+   track's grey while off, its icon crossed out; pressed, it sinks onto its drop like a button, so its caption stays. */
 .settings {
     justify-content: center;
 }
 
 .settings__card {
     width: 900px;
+    padding: 54px 63px 63px 63px;
+    border-width: 11px;
+    border-bottom-width: 29px;
+    border-radius: 68px;
 }
 
 .settings__title {
     flex-shrink: 0;
-    margin-bottom: 30px;
+    max-width: 100%;
 }
 
 .settings__title-text {
     margin: 0;
     padding: 0;
-    font-size: 104px;
+    -unity-text-auto-size: best-fit 80px 126px;
+    font-size: 126px;
     color: var(--gold);
+    -unity-text-outline-width: 18px;
+    text-shadow: 0 13px 0 rgb(29, 43, 79);
 }
 
 .settings__toggles {
     flex-direction: row;
     justify-content: center;
+    margin-top: 50px;
 }
 
 .settings__column {
@@ -2354,121 +2403,224 @@
 }
 
 .settings__column--second {
-    margin-left: 60px;
+    margin-left: 63px;
 }
 
 .settings__toggle {
-    width: 210px;
-    height: 222px;
+    width: 162px;
+    height: 176px;
     margin: 0;
     padding: 0;
     align-items: center;
     justify-content: center;
-    border-width: 11px;
-    border-bottom-width: 22px;
+    border-width: 9px;
+    border-bottom-width: 23px;
     border-color: var(--navy);
-    border-radius: 999px;
+    border-radius: 81px;
     background-color: var(--white);
     background-image: none;
 }
 
-.settings__toggle:hover,
-.settings__toggle:focus { background-color: var(--soft); }
+.settings__toggle:hover { background-color: var(--soft); }
 .settings__toggle--off,
-.settings__toggle--off:hover,
-.settings__toggle--off:focus { background-color: var(--shade); }
-.settings__toggle:active { translate: 0 10px; }
-
-.settings__slash {
-    display: none;
-    position: absolute;
-    width: 150px;
-    height: 26px;
-    border-width: 5px;
-    border-color: var(--navy);
-    border-radius: 13px;
-    background-color: var(--red);
-    rotate: -45deg;
+.settings__toggle--off:hover { background-color: var(--track); }
+.settings__toggle:active,
+.settings__toggle--off:active {
+    border-color: rgba(0, 0, 0, 0);
+    background-color: rgba(0, 0, 0, 0);
+    translate: 0 14px;
 }
 
-.settings__toggle--off .settings__slash { display: flex; }
+.settings__toggle-icon {
+    width: 77px;
+    height: 77px;
+    flex-shrink: 0;
+}
+
+.settings__toggle--music .settings__toggle-icon { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_music_on.svg?fileID=7388822144124034973&guid=26d0976557343874597bca202f857be4&type=3#sprite_ui_music_on"); }
+.settings__toggle--music.settings__toggle--off .settings__toggle-icon { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_music_off.svg?fileID=7388822144124034973&guid=1f9aed5d33d550c41b79f831348e53bb&type=3#sprite_ui_music_off"); }
+.settings__toggle--sound .settings__toggle-icon { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_sound_on.svg?fileID=7388822144124034973&guid=5acdf37f02665824a88fd461b3bc16f3&type=3#sprite_ui_sound_on"); }
+.settings__toggle--sound.settings__toggle--off .settings__toggle-icon { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_sound_off.svg?fileID=7388822144124034973&guid=5b4b1e45f31b01b45bf21be083f557d4&type=3#sprite_ui_sound_off"); }
 
 .settings__caption {
-    margin-top: 18px;
-    font-size: 40px;
+    margin-top: 23px;
+    font-size: 29px;
 }
 
+/* The language coin: the flag fills it inside its outline, with a white badge holding a chevron on its lower right that
+   turns blue and points up while the list is open. */
+.settings__toggle--language {
+    padding: 0;
+}
+
+.settings__language-flag {
+    width: 144px;
+    height: 144px;
+    flex-shrink: 0;
+}
+
+.settings__language-badge {
+    position: absolute;
+    right: -25px;
+    bottom: -20px;
+    width: 58px;
+    height: 58px;
+    align-items: center;
+    justify-content: center;
+    border-width: 7px;
+    border-color: var(--navy);
+    border-radius: 29px;
+    background-color: var(--white);
+}
+
+.settings__language-chevron {
+    width: 32px;
+    height: 32px;
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_chevron_down.svg?fileID=7388822144124034973&guid=8687c8a957e248cd81e44e2fdb08b518&type=3#sprite_ui_chevron_down");
+}
+
+.settings__toggle--open .settings__language-badge { background-color: var(--blue); }
+.settings__toggle--open .settings__language-chevron { rotate: 180deg; }
+
+/* BACK: the white secondary button, straight after the toggles. */
 .settings__back {
     align-self: stretch;
     min-width: 0;
-    margin-top: 40px;
+    margin-top: 68px;
+    padding: 19px 50px 33px 50px;
+    border-radius: 45px;
 }
 
-/* A beamed pair of notes, from elements as every icon here. */
-.note {
-    width: 84px;
-    height: 94px;
+.settings__back > .button__face {
+    bottom: 14px;
+    border-radius: 36px;
 }
 
-.note__head {
+.settings__back-label {
+    font-size: 41px;
+    letter-spacing: 2px;
+    -unity-font-definition: url("/Assets/UI/Fonts/font_nunito_black.asset");
+}
+
+.button--white {
+    background-color: var(--shade);
+    color: var(--navy);
+}
+
+.button--white > .button__face {
+    background-color: var(--white);
+}
+
+.button--white:hover > .button__face,
+.button--white:focus > .button__face {
+    background-color: var(--soft);
+}
+
+/* A flag in a circle (sprite_ui_flag_<code>: circle-flags, MIT, from SMUP), by the language's code. */
+.language-flag--en { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_en.svg?fileID=7388822144124034973&guid=d02e6230ae8244eea8a23cb64d493dc6&type=3#sprite_ui_flag_en"); }
+.language-flag--fr { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_fr.svg?fileID=7388822144124034973&guid=b1c59f484d30427bb4bcae7ca2ff01e0&type=3#sprite_ui_flag_fr"); }
+.language-flag--it { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_it.svg?fileID=7388822144124034973&guid=3276dd36bedc4d4ab6b028188e544cc8&type=3#sprite_ui_flag_it"); }
+.language-flag--de { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_de.svg?fileID=7388822144124034973&guid=e7a0daddd17f4792bdac86700b4c61ca&type=3#sprite_ui_flag_de"); }
+.language-flag--es { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_es.svg?fileID=7388822144124034973&guid=c2c72ffea2ce45ba95a811766171fd0b&type=3#sprite_ui_flag_es"); }
+.language-flag--tr { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_tr.svg?fileID=7388822144124034973&guid=6f695fcd2cfb4a3cb2d74461753becee&type=3#sprite_ui_flag_tr"); }
+.language-flag--pt { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_pt.svg?fileID=7388822144124034973&guid=3b77c616fe6046bc9d899c2d0110bb31&type=3#sprite_ui_flag_pt"); }
+.language-flag--ru { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_ru.svg?fileID=7388822144124034973&guid=4af19f1ae49248e58994146d9c0c5d97&type=3#sprite_ui_flag_ru"); }
+
+/* The language list: a white sticker card under the coin, its notch pointing up at it. The last child of the card, so
+   it draws over BACK; SettingsView places it when it opens. Each row is the flag, the language's own name and, on the
+   current one, a green tick coin; pale blue while current, soft while hovered. */
+.language-list {
+    display: none;
     position: absolute;
-    left: 0;
-    bottom: 0;
-    width: 38px;
-    height: 32px;
-    border-radius: 999px;
-    background-color: var(--navy);
+    width: 567px;
+    padding: 14px 18px 18px 18px;
+    border-width: 9px;
+    border-bottom-width: 25px;
+    border-color: var(--navy);
+    border-radius: 50px;
+    background-color: var(--white);
 }
 
-.note__head--second { left: 44px; }
+.language-list--open {
+    display: flex;
+}
 
-.note__stem {
+/* Over the coin's centre: SettingsView puts the list's right edge 157 px past it. */
+.language-list__notch {
     position: absolute;
-    left: 28px;
-    top: 6px;
-    width: 9px;
-    height: 74px;
-    background-color: var(--navy);
-}
-
-.note__stem--second {
-    left: 73px;
-    top: 0;
-}
-
-.note__beam {
-    position: absolute;
-    left: 28px;
-    top: 0;
+    top: -29px;
+    right: 121px;
     width: 54px;
-    height: 18px;
-    background-color: var(--navy);
-    rotate: -7deg;
+    height: 54px;
+    border-left-width: 9px;
+    border-top-width: 9px;
+    border-color: var(--navy);
+    border-top-left-radius: 11px;
+    background-color: var(--white);
+    rotate: 45deg;
 }
 
-/* A speaker: a box and a cone made of the box's right border fanned out by transparent top and bottom borders. */
-.speaker {
+.language-row {
     flex-direction: row;
     align-items: center;
+    height: 94px;
+    margin: 4px 0 0 0;
+    padding: 0 22px 0 14px;
+    border-width: 0;
+    border-radius: 32px;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: none;
 }
 
-.speaker__box {
-    width: 30px;
-    height: 40px;
-    border-radius: 6px;
-    background-color: var(--navy);
+.language-row:hover {
+    background-color: var(--soft);
 }
 
-.speaker__cone {
-    width: 0;
-    height: 0;
-    margin-left: -24px;
-    border-top-width: 42px;
-    border-bottom-width: 42px;
-    border-right-width: 60px;
-    border-top-color: rgba(0, 0, 0, 0);
-    border-bottom-color: rgba(0, 0, 0, 0);
-    border-right-color: var(--navy);
+.language-row--current,
+.language-row--current:hover {
+    background-color: var(--pick);
+}
+
+.language-row__flag {
+    width: 81px;
+    height: 81px;
+    flex-shrink: 0;
+    border-width: 7px;
+    border-color: var(--navy);
+    border-radius: 41px;
+}
+
+.language-row__name {
+    flex-grow: 1;
+    margin: 0 0 0 27px;
+    padding: 0;
+    font-size: 40px;
+    color: var(--navy);
+    -unity-text-align: middle-left;
+    -unity-font-definition: url("/Assets/UI/Fonts/font_nunito_black.asset");
+}
+
+.language-row__check {
+    display: none;
+    width: 58px;
+    height: 58px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-width: 7px;
+    border-color: var(--navy);
+    border-radius: 29px;
+    background-color: var(--green);
+}
+
+.language-row--current .language-row__check {
+    display: flex;
+}
+
+.language-row__tick {
+    width: 32px;
+    height: 32px;
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_check_white.svg?fileID=7388822144124034973&guid=3cb9172530394ad689efe9d0761fd4f5&type=3#sprite_ui_check_white");
 }
 
 .garage--landscape .garage__grid {

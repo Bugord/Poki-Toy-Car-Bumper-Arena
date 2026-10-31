@@ -29,6 +29,7 @@ namespace ToyCarArena.UI
         private const string ChipFallClass = "hud__chip--fall";
         private const string BoostShownClass = "hud__boost--shown";
         private const string BoostReadyClass = "hud__boost--ready";
+        private const string BoostDesktopClass = "hud__boost--desktop";
         private const string BoostPopClass = "hud__boost--pop";
         private const string BoostPressedClass = "hud__boost--pressed";
         private const string BoostLeftClass = "hud__boost-slot--left";
@@ -710,19 +711,18 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>
-        /// Shows the boost button once the screen is a touch screen, the charge growing from its middle as the boost
-        /// cools down, and pops it when the boost is ready again.
+        /// Shows the boost button, the charge growing from its middle as the boost cools down, and pops it when the
+        /// boost is ready again. Without a touch screen it is a smaller gauge with the key that boosts: a mouse player
+        /// sees when the boost is back and what to press.
         /// </summary>
         private void RefreshBoost()
         {
             if (!isBoostShown) {
-                if (!controls.CheckTouchScreen()) {
-                    return;
-                }
-
                 isBoostShown = true;
                 boostButton.AddToClassList(BoostShownClass);
             }
+
+            boostButton.EnableInClassList(BoostDesktopClass, !controls.CheckTouchScreen());
 
             if (!isBoostMoving && isBoostOnLeft != controls.IsBoostOnLeft) {
                 isBoostMoving = true;

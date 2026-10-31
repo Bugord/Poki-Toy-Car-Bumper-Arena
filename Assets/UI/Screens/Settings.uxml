@@ -16,15 +16,8 @@
             </ui:VisualElement>
             <ui:VisualElement class="settings__toggles">
                 <ui:VisualElement class="settings__column">
-                    <ui:Button name="music-toggle" class="settings__toggle">
-                        <ui:VisualElement picking-mode="Ignore" class="note">
-                            <ui:VisualElement picking-mode="Ignore" class="note__head" />
-                            <ui:VisualElement picking-mode="Ignore" class="note__head note__head--second" />
-                            <ui:VisualElement picking-mode="Ignore" class="note__stem" />
-                            <ui:VisualElement picking-mode="Ignore" class="note__stem note__stem--second" />
-                            <ui:VisualElement picking-mode="Ignore" class="note__beam" />
-                        </ui:VisualElement>
-                        <ui:VisualElement picking-mode="Ignore" class="settings__slash" />
+                    <ui:Button name="music-toggle" class="settings__toggle settings__toggle--music">
+                        <ui:VisualElement picking-mode="Ignore" class="settings__toggle-icon" />
                     </ui:Button>
                     <ui:Label text="MUSIC" picking-mode="Ignore" class="caption settings__caption">
                         <Bindings>
@@ -33,12 +26,8 @@
                     </ui:Label>
                 </ui:VisualElement>
                 <ui:VisualElement class="settings__column settings__column--second">
-                    <ui:Button name="sound-toggle" class="settings__toggle">
-                        <ui:VisualElement picking-mode="Ignore" class="speaker">
-                            <ui:VisualElement picking-mode="Ignore" class="speaker__box" />
-                            <ui:VisualElement picking-mode="Ignore" class="speaker__cone" />
-                        </ui:VisualElement>
-                        <ui:VisualElement picking-mode="Ignore" class="settings__slash" />
+                    <ui:Button name="sound-toggle" class="settings__toggle settings__toggle--sound">
+                        <ui:VisualElement picking-mode="Ignore" class="settings__toggle-icon" />
                     </ui:Button>
                     <ui:Label text="SOUND" picking-mode="Ignore" class="caption settings__caption">
                         <Bindings>
@@ -46,22 +35,31 @@
                         </Bindings>
                     </ui:Label>
                 </ui:VisualElement>
-            </ui:VisualElement>
-            <ui:Button name="settings-back" class="button button--green settings__back">
-                <ui:VisualElement picking-mode="Ignore" class="button__face" />
-                <ui:VisualElement picking-mode="Ignore" class="stroke">
-                    <ui:Label text="BACK" picking-mode="Ignore" class="button__label">
+                <ui:VisualElement class="settings__column settings__column--second">
+                    <ui:Button name="language-toggle" class="settings__toggle settings__toggle--language">
+                        <ui:VisualElement name="language-flag" picking-mode="Ignore" class="language-flag settings__language-flag" />
+                        <ui:VisualElement picking-mode="Ignore" class="settings__language-badge">
+                            <ui:VisualElement picking-mode="Ignore" class="settings__language-chevron" />
+                        </ui:VisualElement>
+                    </ui:Button>
+                    <ui:Label text="LANGUAGE" picking-mode="Ignore" class="caption settings__caption">
                         <Bindings>
-                            <Bugord.App.Localization.LocalizedText property="text" key="common.back" />
-                        </Bindings>
-                    </ui:Label>
-                    <ui:Label text="BACK" picking-mode="Ignore" class="button__label stroke__face">
-                        <Bindings>
-                            <Bugord.App.Localization.LocalizedText property="text" key="common.back" />
+                            <Bugord.App.Localization.LocalizedText property="text" key="settings.language" />
                         </Bindings>
                     </ui:Label>
                 </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Button name="settings-back" class="button button--white settings__back">
+                <ui:VisualElement picking-mode="Ignore" class="button__face" />
+                <ui:Label text="BACK" picking-mode="Ignore" class="button__label settings__back-label">
+                    <Bindings>
+                        <Bugord.App.Localization.LocalizedText property="text" key="common.back" />
+                    </Bindings>
+                </ui:Label>
             </ui:Button>
+            <ui:VisualElement name="language-list" class="language-list">
+                <ui:VisualElement picking-mode="Ignore" name="language-notch" class="language-list__notch" />
+            </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
