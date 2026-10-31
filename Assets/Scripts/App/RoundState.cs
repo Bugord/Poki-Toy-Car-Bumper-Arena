@@ -91,7 +91,7 @@ namespace ToyCarArena.App
                     BeginRound();
                 }
 
-                var hudRound = new HudRound(round, driver, tuning.Controls, waitsForPlayer);
+                var hudRound = new HudRound(round, driver, tuning.Controls, waitsForPlayer, roundNumber);
                 hud = await navigator.OpenAsync<HudViewModel, HudRound>(hudRound, token);
                 await curtain.Hide();
 

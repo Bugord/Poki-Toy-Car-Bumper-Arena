@@ -40,7 +40,14 @@ namespace ToyCarArena.UI
         public float JoystickRadius { get; private set; }
 
         /// <summary>
-        /// The button starts on the right and changes sides only when a new steering finger comes down.
+        /// Whether a finger has steered in this visit, so <see cref="JoystickCenter"/> is where the player's thumb
+        /// rests; kept between rounds, as the HUD is.
+        /// </summary>
+        public bool HasJoystickPlace { get; private set; }
+
+        /// <summary>
+        /// The button starts on the right and changes sides only when a new steering finger comes down. The choice
+        /// lives here, in the app's scope, so the next round keeps the side the player plays on.
         /// </summary>
         public bool IsBoostOnLeft { get; private set; }
 
@@ -109,6 +116,7 @@ namespace ToyCarArena.UI
         public void ShowJoystick(Vector2 center, Vector2 knob, float radius)
         {
             IsJoystickShown = true;
+            HasJoystickPlace = true;
             JoystickCenter = center;
             JoystickKnob = knob;
             JoystickRadius = radius;

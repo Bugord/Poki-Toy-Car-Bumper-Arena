@@ -75,6 +75,8 @@ namespace ToyCarArena.UI
         // joystick's proportions, with an opaque capsule finger whose tip follows the knob right, up, left, down.
         private const float GhostCycle = 2f;
         private const float GhostOpacity = 0.9f;
+        // After the first round the ghost only reminds where the joystick is, fainter and without its caption.
+        private const float GhostLaterOpacity = 0.5f;
         private const float GhostMaxRadius = 120f;
         private const float GhostTravel = 0.8f;
         private const float GhostFingerWidthScale = 0.7f;
@@ -223,7 +225,12 @@ namespace ToyCarArena.UI
             stickBase = Root.Q<VisualElement>("stick-base");
             stickKnob = Root.Q<VisualElement>("stick-knob");
             ghost = Root.Q<VisualElement>("ghost");
-            Root.Q<VisualElement>("ghost-stick").style.opacity = GhostOpacity;
+            Root.Q<VisualElement>("ghost-stick").style.opacity = ViewModel.IsFirstRound ? GhostOpacity : GhostLaterOpacity;
+            Root.Q<VisualElement>(className: "hud__ghost-caption").style.display =
+                ViewModel.IsFirstRound ? DisplayStyle.Flex : DisplayStyle.None;
+            // The side the player plays on carries over from the round before, without the button moving at the start.
+            isBoostOnLeft = controls.IsBoostOnLeft;
+            boostSlot.EnableInClassList(BoostLeftClass, isBoostOnLeft);
             ghostBase = Root.Q<VisualElement>("ghost-base");
             ghostKnob = Root.Q<VisualElement>("ghost-knob");
             ghostFinger = Root.Q<VisualElement>("ghost-finger");
@@ -773,7 +780,12 @@ namespace ToyCarArena.UI
             var now = Time.unscaledTime;
             var elapsed = Mathf.Max(0f, now - teachingTime);
             teachingTime = now;
-            var enabled = IsShown && ViewModel.IsFirstRound && controls.CheckTouchScreen();
+            var isTouch = IsShown && controls.CheckTouchScreen();
+            var enabled = isTouch && ViewModel.IsFirstRound;
+            // The visit's first rounds keep the ghost wherever no finger steers: it yields to a touch and comes back
+            // once the finger lifts.
+            var keepsGhost = isTouch && ViewModel.RoundNumber <= ViewModel.Controls.GhostStickRounds &&
+                (ViewModel.IsRunning || ViewModel.IsWaitingForPlayer);
 
             if (ViewModel.LastTouchTime > seenTouchTime) {
                 seenTouchTime = ViewModel.LastTouchTime;
@@ -796,8 +808,8 @@ namespace ToyCarArena.UI
                 idleHintCount++;
             }
 
-            var showGhost = enabled && !controls.IsJoystickShown &&
-                ((ViewModel.IsWaitingForPlayer && !hasStartTouch) || isIdleHintShown);
+            var showGhost = !controls.IsJoystickShown &&
+                (keepsGhost || (enabled && ((ViewModel.IsWaitingForPlayer && !hasStartTouch) || isIdleHintShown)));
             if (showGhost && !isGhostShown) {
                 ghostTime = now;
                 ghostPanelSize = Vector2.zero;
@@ -845,7 +857,8 @@ namespace ToyCarArena.UI
             // Keep the demonstration still as cars drive past; find a clear place again only on show or resize.
             if (size != ghostPanelSize) {
                 ghostPanelSize = size;
-                ghostCenter = size.x >= size.y ? PlaceWideGhost(size, radius) :
+                ghostCenter = controls.HasJoystickPlace && !ViewModel.IsFirstRound ? PlaceGhostAtThumb(size, radius) :
+                    size.x >= size.y ? PlaceWideGhost(size, radius) :
                     new Vector2(size.x * 0.5f, size.y * GhostPortraitY);
             }
 
@@ -862,6 +875,24 @@ namespace ToyCarArena.UI
             ghostFinger.style.top = knob.y;
             ghostFinger.style.width = fingerWidth;
             ghostFinger.style.height = radius * GhostFingerLengthScale;
+        }
+
+        /// <summary>
+        /// Where the player's thumb last steered, kept on screen with room for the finger: after the first round the
+        /// ghost marks where the joystick comes up, on the side the player plays on.
+        /// </summary>
+        private Vector2 PlaceGhostAtThumb(Vector2 size, float radius)
+        {
+            var center = controls.JoystickCenter;
+            var panelPoint = RuntimePanelUtils.ScreenToPanel(Root.panel, new Vector2(center.x, Screen.height - center.y));
+            var point = Root.WorldToLocal(panelPoint);
+            var fingerHalfWidth = radius * GhostFingerWidthScale * 0.5f;
+            var bottom = radius * GhostTravel + fingerHalfWidth +
+                (radius * GhostFingerLengthScale - fingerHalfWidth) * Mathf.Cos(GhostFingerTilt * Mathf.Deg2Rad);
+            var reach = radius * StickBaseScale + TeachingMargin;
+            point.x = Mathf.Clamp(point.x, reach, Mathf.Max(reach, size.x - reach));
+            point.y = Mathf.Clamp(point.y, reach, Mathf.Max(reach, size.y - bottom - TeachingMargin));
+            return point;
         }
 
         // In landscape, prefer the lower area just right of centre. Check nearby places against the projected live

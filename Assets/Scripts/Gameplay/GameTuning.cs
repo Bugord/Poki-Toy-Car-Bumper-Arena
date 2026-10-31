@@ -262,6 +262,12 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private int idleHintMax = 2;
 
+            [Tooltip("Visit rounds, from the first, in which a touch screen keeps a ghost joystick wherever no finger " +
+                "steers")]
+            [Min(0)]
+            [SerializeField]
+            private int ghostStickRounds = 5;
+
             [Tooltip("Distance to another car, centre to centre in metres, within which to suggest the first boost")]
             [Min(0f)]
             [SerializeField]
@@ -322,6 +328,7 @@ namespace ToyCarArena.Gameplay
             public float TapBoostMemory => tapBoostMemory;
             public float IdleHintDelay => idleHintDelay;
             public int IdleHintMax => idleHintMax;
+            public int GhostStickRounds => ghostStickRounds;
             public float BoostHintDistance => boostHintDistance;
             public float PointerStopRadius => pointerStopRadius;
             public float PointerSlowRadius => pointerSlowRadius;
