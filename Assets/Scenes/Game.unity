@@ -464,6 +464,7 @@ MonoBehaviour:
   arenaCatalog: {fileID: 11400000, guid: 2fe3d4e7840d6c94a81609bfd78f968f, type: 2}
   candyDecor: {fileID: 1684495028}
   carouselDecor: {fileID: 1684495030}
+  mechanicArt: {fileID: 11400000, guid: f8f8cacd285371344b9af20985d1802c, type: 2}
   audioLibrary: {fileID: 11400000, guid: f401b36b1849431cb6ac97152243978d, type: 2}
 --- !u!4 &1404793206
 Transform:

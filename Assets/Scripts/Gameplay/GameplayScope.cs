@@ -49,6 +49,10 @@ namespace ToyCarArena.Gameplay
         [SerializeField]
         private CarouselDecor carouselDecor;
 
+        [Tooltip("Materials of the mechanics that build their look in code, by name; unused on arenas without one")]
+        [SerializeField]
+        private MechanicArt mechanicArt;
+
         [Tooltip("Sounds and music for the scene played on its own; from Boot the app's audio plays")]
         [SerializeField]
         private AudioLibrary audioLibrary;
@@ -69,6 +73,7 @@ namespace ToyCarArena.Gameplay
             if (!carouselDecor.IsComplete) {
                 throw new MissingReferenceException($"{nameof(CarouselDecor)} in {gameObject.scene.name} lacks a material.");
             }
+            Require(mechanicArt, nameof(mechanicArt));
             Require(audioLibrary, nameof(audioLibrary));
 
             // No parent means no Boot, so no app scope to bring the kit's storage and logging, nor app states to play
@@ -136,6 +141,8 @@ namespace ToyCarArena.Gameplay
             builder.RegisterEntryPoint<ArenaRound>().AsSelf().WithParameter(carPrefab).WithParameter(transform);
             builder.RegisterEntryPoint<PlayerDriver>().AsSelf();
             builder.Register<BallLane>(Lifetime.Singleton);
+            builder.Register<ArenaHazards>(Lifetime.Singleton);
+            builder.RegisterInstance(mechanicArt, typeof(MechanicArt));
             builder.RegisterEntryPoint<BotDriver>();
             builder.RegisterEntryPoint<ArenaCrumble>().AsSelf();
             builder.RegisterEntryPoint<ArenaDecor>().WithParameter(transform);

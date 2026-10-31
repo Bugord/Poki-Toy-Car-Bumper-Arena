@@ -34,6 +34,7 @@ namespace ToyCarArena.Gameplay.Bots
         private readonly ArenaRound round;
         private readonly RoundDifficulty difficulty;
         private readonly BallLane ballLane;
+        private readonly ArenaHazards hazards;
         private readonly List<Bot> bots = new();
 
         private int seed;
@@ -42,12 +43,14 @@ namespace ToyCarArena.Gameplay.Bots
         // The one bot whose grudge against the player is counted, while it is after the player.
         private Bot playerGrudge;
 
-        public BotDriver(GameTuning tuning, ArenaRound round, RoundDifficulty difficulty, BallLane ballLane)
+        public BotDriver(GameTuning tuning, ArenaRound round, RoundDifficulty difficulty, BallLane ballLane,
+            ArenaHazards hazards)
         {
             this.tuning = tuning;
             this.round = round;
             this.difficulty = difficulty;
             this.ballLane = ballLane;
+            this.hazards = hazards;
             this.Seed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
         }
 
@@ -60,6 +63,7 @@ namespace ToyCarArena.Gameplay.Bots
                 seed = value;
                 // The Ball arena's chords come from the same seed, so a replayed round replays its balls.
                 ballLane.Seed = value;
+                hazards.Seed = value;
             }
         }
 
@@ -122,7 +126,7 @@ namespace ToyCarArena.Gameplay.Bots
             foreach (var car in round.Cars) {
                 car.Hit += OnHit;
                 if (car != round.Player) {
-                    bots.Add(new Bot(car, personalities[next++], tuning, difficulty, round.Player, random.Next(), ballLane));
+                    bots.Add(new Bot(car, personalities[next++], tuning, difficulty, round.Player, random.Next(), ballLane, hazards));
                 }
             }
         }

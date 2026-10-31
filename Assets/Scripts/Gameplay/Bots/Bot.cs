@@ -22,7 +22,11 @@ namespace ToyCarArena.Gameplay.Bots
         private readonly RoundDifficulty difficulty;
         private readonly Car player;
         private readonly System.Random random;
+        // More hazards than this on one arena are not dodged; a mechanic has one or two.
+        private const int MaxHazards = 8;
+
         private readonly BallLane ballLane;
+        private readonly ArenaHazards hazards;
 
         private float retargetTimer;
         private bool isPushing;
@@ -45,6 +49,11 @@ namespace ToyCarArena.Gameplay.Bots
         private float ballSeenFor;
         private float ballReaction;
 
+        // The same for the hazards of the arena's mechanic, by their place in the list (there are only a few).
+        private readonly int[] seenHazard = new int[MaxHazards];
+        private readonly float[] hazardSeenFor = new float[MaxHazards];
+        private readonly float[] hazardReaction = new float[MaxHazards];
+
         // The side a bot goes round a pit on (+1 or -1 along the rim) and for how many more seconds it keeps it.
         private float pitSide = 1f;
         private float pitHold;
@@ -54,9 +63,10 @@ namespace ToyCarArena.Gameplay.Bots
         private bool mayEscapeBoost;
 
         public Bot(Car car, GameTuning.BotPersonality personality, GameTuning tuning, RoundDifficulty difficulty,
-            Car player, int seed, BallLane ballLane)
+            Car player, int seed, BallLane ballLane, ArenaHazards hazards)
         {
             this.ballLane = ballLane;
+            this.hazards = hazards;
             this.Car = car;
             this.tuning = tuning;
             this.settings = tuning.Bots;
@@ -153,7 +163,7 @@ namespace ToyCarArena.Gameplay.Bots
             isEscaping = false;
 
             // Staying clear of the ball comes before any attack, but after staying on the arena.
-            if (AvoidBall(edge, position, margin, deltaTime)) {
+            if (AvoidBall(edge, position, margin, deltaTime) || AvoidHazards(edge, position, margin, deltaTime)) {
                 pushTime = 0f;
                 return;
             }
@@ -225,6 +235,38 @@ namespace ToyCarArena.Gameplay.Bots
 
             Car.Movement.Drive(heading, 1f);
             return true;
+        }
+
+        /// <summary>
+        /// Steers out of the way of the mechanic's hazards, each noticed like the ball: a moment after it starts a new
+        /// threat, longer for the careless, and only if the bot is in its way. The first hazard that needs it wins.
+        /// </summary>
+        private bool AvoidHazards(IArenaEdge edge, Vector3 position, float edgeMargin, float deltaTime)
+        {
+            if (hazards == null) {
+                return false;
+            }
+
+            var all = hazards.All;
+            var count = Mathf.Min(all.Count, MaxHazards);
+            for (var index = 0; index < count; index++) {
+                var hazard = all[index];
+                if (hazard.Version != seenHazard[index]) {
+                    seenHazard[index] = hazard.Version;
+                    hazardSeenFor[index] = 0f;
+                    var reaction = settings.HazardReaction;
+                    hazardReaction[index] = Range(reaction.x, reaction.y) / Mathf.Max(0.1f, Traits.Caution);
+                }
+
+                hazardSeenFor[index] += deltaTime;
+                if (hazardSeenFor[index] >= hazardReaction[index]
+                    && hazard.TryAvoid(position, settings.HazardMargin, edge, edgeMargin, out var heading)) {
+                    Car.Movement.Drive(heading, 1f);
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>

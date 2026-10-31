@@ -56,6 +56,8 @@ MonoBehaviour:
     pitSamples: 5
     pitSideHold: 1
     pitInward: 0.5
+    hazardReaction: {x: 0.15, y: 0.45}
+    hazardMargin: 1.2
     lookAhead: 0.25
     pushDistance: 3.5
     pushAngle: 45

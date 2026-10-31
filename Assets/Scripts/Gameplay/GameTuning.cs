@@ -416,6 +416,17 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float pitInward = 0.5f;
 
+            [Header("Hazards")]
+            [Tooltip("Seconds, from and to, a bot takes to notice a new hazard of the arena's mechanic (a crab, a top, " +
+                "a pencil, a train) before it steers out of its way; a personality's caution divides it")]
+            [SerializeField]
+            private Vector2 hazardReaction = new(0.15f, 0.45f);
+
+            [Tooltip("Metres beyond a hazard's own reach a bot still counts as in its way")]
+            [Min(0f)]
+            [SerializeField]
+            private float hazardMargin = 1.2f;
+
             [Header("Aim")]
             [Tooltip("Seconds ahead a bot foresees where its speed takes it, times its personality's caution; heading " +
                 "past the edge margin by then, it turns back towards the middle before it gets there")]
@@ -583,6 +594,8 @@ namespace ToyCarArena.Gameplay
             public int PitSamples => pitSamples;
             public float PitSideHold => pitSideHold;
             public float PitInward => pitInward;
+            public Vector2 HazardReaction => hazardReaction;
+            public float HazardMargin => hazardMargin;
             public float LookAhead => lookAhead;
             public float PushDistance => pushDistance;
             public float PushAngle => pushAngle;
