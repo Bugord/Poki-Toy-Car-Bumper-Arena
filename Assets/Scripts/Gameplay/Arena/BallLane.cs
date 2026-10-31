@@ -60,9 +60,10 @@ namespace ToyCarArena.Gameplay.Arena
         /// Whether a car at <paramref name="position"/> is in the ball's way (in the lane, or within
         /// <paramref name="margin"/> of its side, and not yet passed by the ball), and the flat heading out of it: across
         /// the lane, to the side the car is on, or to the middle's side when it is on the line itself. A side that
-        /// leads past <paramref name="safeRadius"/> is not taken; if neither is safe the car is left to stay.
+        /// leads closer than <paramref name="edgeMargin"/> to the edge of the floor is not taken; if neither is safe the car
+        /// is left to stay.
         /// </summary>
-        public bool TryAvoid(Vector3 position, float margin, float safeRadius, out Vector3 heading)
+        public bool TryAvoid(Vector3 position, float margin, IArenaEdge edge, float edgeMargin, out Vector3 heading)
         {
             heading = Vector3.zero;
             if (!IsActive) {
@@ -94,7 +95,7 @@ namespace ToyCarArena.Gameplay.Arena
                 // Where the car would be once clear of the lane on this side.
                 var travel = Mathf.Max(0f, (reach + ClearRoom) - side * sideOffset);
                 var target = position + Normal * (side * travel);
-                if (target.sqrMagnitude <= safeRadius * safeRadius) {
+                if (edge.DistanceToEdge(target, edgeMargin) >= 0f) {
                     heading = Normal * side;
                     return true;
                 }

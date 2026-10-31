@@ -32,20 +32,20 @@ namespace ToyCarArena.Gameplay.Arena
         private readonly GameTuning.CandySettings settings;
         private readonly ArenaMap map;
         private readonly ArenaRound round;
-        private readonly ArenaFloor floor;
+        private readonly IArenaEdge edge;
         private readonly CandyDecor decor;
         private readonly IObjectResolver resolver;
         private readonly List<Patch> patches = new();
         private readonly List<Mesh> meshes = new();
         private bool built;
 
-        public CandyPatches(GameTuning tuning, ArenaMap map, ArenaRound round, ArenaFloor floor, CandyDecor decor,
+        public CandyPatches(GameTuning tuning, ArenaMap map, ArenaRound round, IArenaEdge edge, CandyDecor decor,
             IObjectResolver resolver)
         {
             this.settings = tuning.Candy;
             this.map = map;
             this.round = round;
-            this.floor = floor;
+            this.edge = edge;
             this.decor = decor;
             this.resolver = resolver;
         }
@@ -101,9 +101,9 @@ namespace ToyCarArena.Gameplay.Arena
             }
 
             var step = Time.deltaTime / settings.VanishTime;
-            var radius = floor.Radius;
             foreach (var patch in patches) {
-                if (radius >= patch.Reach - settings.VanishMargin || patch.Scale <= 0f) {
+                // The patch stays while the floor reaches out to its outer edge, less the margin.
+                if (edge.DistanceToEdge(patch.Centre3) >= patch.Radius - settings.VanishMargin || patch.Scale <= 0f) {
                     continue;
                 }
 
@@ -165,7 +165,7 @@ namespace ToyCarArena.Gameplay.Arena
                 var radius = inner ? settings.InnerRadius : settings.OuterRadius;
                 var angle = turn + slot * Mathf.PI * 2f / Slots;
                 var center = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * distance;
-                var patch = new Patch(center, radius, distance + radius, (slot + flip) % 2 == 0,
+                var patch = new Patch(center, radius, (slot + flip) % 2 == 0,
                     (float)(random.NextDouble() * Mathf.PI * 2d));
                 patches.Add(patch);
                 BuildVisual(patch, parent, random);
@@ -298,8 +298,10 @@ namespace ToyCarArena.Gameplay.Arena
         private sealed class Patch
         {
             public readonly Vector2 Center;
+
+            /// <summary>The centre on the ground plane, as a point of the arena.</summary>
+            public Vector3 Centre3 => new(Center.x, 0f, Center.y);
             public readonly float Radius;
-            public readonly float Reach;
             public readonly bool IsCaramel;
             private readonly float phase;
 
@@ -308,11 +310,10 @@ namespace ToyCarArena.Gameplay.Arena
 
             public GameObject Root;
 
-            public Patch(Vector2 center, float radius, float reach, bool isCaramel, float phase)
+            public Patch(Vector2 center, float radius, bool isCaramel, float phase)
             {
                 Center = center;
                 Radius = radius;
-                Reach = reach;
                 IsCaramel = isCaramel;
                 this.phase = phase;
             }

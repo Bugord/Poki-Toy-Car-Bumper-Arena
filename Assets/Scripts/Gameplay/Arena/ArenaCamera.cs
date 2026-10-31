@@ -9,7 +9,7 @@ namespace ToyCarArena.Gameplay.Arena
     /// shape: a phone held upright needs it much further than a wide window. Also turns screen points and screen
     /// directions into the arena's ground plane, for steering.
     /// <para>
-    /// As the edge crumbles away it closes in on what is left of the floor (<see cref="ArenaFloor.SolidRadius"/>), so
+    /// As the edge crumbles away it closes in on what is left of the floor (<see cref="IArenaEdge.SolidExtent"/>), so
     /// the last cars fighting on the small middle stay big enough to read. It eases in once a ring has fallen, not while
     /// it shakes, so a car on a shaking ring stays in view.
     /// </para>
@@ -58,7 +58,7 @@ namespace ToyCarArena.Gameplay.Arena
 
         private ArenaMap map;
         private GameTuning.ArenaSettings settings;
-        private ArenaFloor floor;
+        private IArenaEdge edge;
         private Camera view;
         private int fittedWidth;
         private int fittedHeight;
@@ -76,11 +76,11 @@ namespace ToyCarArena.Gameplay.Arena
         public Camera Camera => view;
 
         [Inject]
-        private void Construct(ArenaMap map, ArenaFloor floor)
+        private void Construct(ArenaMap map, IArenaEdge edge)
         {
             this.map = map;
             this.settings = map.Settings;
-            this.floor = floor;
+            this.edge = edge;
         }
 
         private void Awake()
@@ -101,7 +101,7 @@ namespace ToyCarArena.Gameplay.Arena
                 unitDistance = FitDistance(1f);
             }
 
-            var target = Mathf.Lerp(settings.Radius, floor.SolidRadius, zoomShare) + settings.ViewMargin;
+            var target = Mathf.Lerp(edge.FullExtent, edge.SolidExtent, zoomShare) + settings.ViewMargin;
             viewRadius = viewRadius > 0f
                 ? Mathf.SmoothDamp(viewRadius, target, ref zoomSpeed, zoomTime)
                 : target;

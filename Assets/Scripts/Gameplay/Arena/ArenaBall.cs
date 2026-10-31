@@ -117,7 +117,7 @@ namespace ToyCarArena.Gameplay.Arena
         private GameTuning.BallSettings settings;
         private GameTuning tuning;
         private ArenaRound round;
-        private ArenaFloor floor;
+        private IArenaEdge edge;
         private RoundDifficulty difficulty;
         private BallLane lane;
         private ArenaCamera arenaCamera;
@@ -155,13 +155,13 @@ namespace ToyCarArena.Gameplay.Arena
         public Vector3 Position => new(position.x, height, position.z);
 
         [Inject]
-        private void Construct(GameTuning tuning, ArenaMap map, ArenaRound round, ArenaFloor floor,
+        private void Construct(GameTuning tuning, ArenaMap map, ArenaRound round, IArenaEdge edge,
             RoundDifficulty difficulty, BallLane lane, ArenaCamera arenaCamera, IAudioService audioService)
         {
             this.tuning = tuning;
             this.settings = tuning.Ball;
             this.round = round;
-            this.floor = floor;
+            this.edge = edge;
             this.difficulty = difficulty;
             this.lane = lane;
             this.arenaCamera = arenaCamera;
@@ -221,13 +221,13 @@ namespace ToyCarArena.Gameplay.Arena
         /// </summary>
         private void Launch()
         {
-            var edge = floor.SolidRadius;
+            var extent = edge.SolidExtent;
             var directionAngle = (float)random.NextDouble() * Mathf.PI * 2f;
             var direction = new Vector3(Mathf.Cos(directionAngle), 0f, Mathf.Sin(directionAngle));
             var normal = new Vector3(-direction.z, 0f, direction.x);
-            var offset = ((float)random.NextDouble() * 2f - 1f) * settings.MaxOffset * edge;
+            var offset = ((float)random.NextDouble() * 2f - 1f) * settings.MaxOffset * extent;
             var origin = normal * offset;
-            edgeLength = Mathf.Sqrt(Mathf.Max(0f, edge * edge - offset * offset));
+            edgeLength = edge.SolidHalfChord(origin, direction);
 
             speed = Mathf.Lerp(settings.EasySpeed, settings.Speed, difficulty.Level);
             stage = Stage.Warning;
@@ -283,15 +283,13 @@ namespace ToyCarArena.Gameplay.Arena
             position += lane.Direction * (speed * deltaTime);
             angle += speed * deltaTime / settings.Radius * Mathf.Rad2Deg;
 
-            var distance = new Vector2(position.x, position.z).magnitude;
-            var edge = floor.SolidRadius;
             if (stage == Stage.Rolling) {
-                if (!hasEntered && distance < edge - 0.1f) {
+                if (!hasEntered && edge.DistanceToSolidEdge(position) > 0.1f) {
                     hasEntered = true;
                 }
 
                 // Over the far edge, or over a ring that has fallen away, it drops.
-                if (hasEntered && distance > edge) {
+                if (hasEntered && !edge.IsSolid(position)) {
                     stage = Stage.Falling;
                     fallSpeed = 0f;
                 }

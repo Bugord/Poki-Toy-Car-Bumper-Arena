@@ -15,7 +15,7 @@ namespace ToyCarArena.Gameplay.Round
     public sealed class PlayerFallTelemetry
     {
         private readonly ArenaRound round;
-        private readonly ArenaFloor floor;
+        private readonly IArenaEdge edge;
         private readonly Car player;
         private readonly SamplePoint[] samples;
         private readonly ContactPoint[] contacts = new ContactPoint[192];
@@ -34,10 +34,10 @@ namespace ToyCarArena.Gameplay.Round
         public int CreditWrites { get; private set; }
         public float PeakSpeed { get; private set; }
 
-        public PlayerFallTelemetry(ArenaRound round, ArenaFloor floor, Car player)
+        public PlayerFallTelemetry(ArenaRound round, IArenaEdge edge, Car player)
         {
             this.round = round;
-            this.floor = floor;
+            this.edge = edge;
             this.player = player;
             this.samples = new SamplePoint[Mathf.CeilToInt(3f / Time.fixedDeltaTime) + 2];
             this.lastContact.Other = RoundResult.Nobody;
@@ -204,10 +204,10 @@ namespace ToyCarArena.Gameplay.Round
                 Position = position,
                 Velocity = movement.Velocity,
                 Radial = distance > 0.001f ? (position.x * movement.Velocity.x + position.z * movement.Velocity.z) / distance : 0f,
-                SafeRadius = round.ArenaRadius,
-                SolidRadius = floor.SolidRadius,
-                Edge = round.ArenaRadius - distance,
-                SolidEdge = floor.SolidRadius - distance,
+                SafeRadius = edge.SafeExtent,
+                SolidRadius = edge.SolidExtent,
+                Edge = edge.DistanceToEdge(position),
+                SolidEdge = edge.DistanceToSolidEdge(position),
                 Throttle = movement.DiagnosticThrottle,
                 Direction = movement.DiagnosticDirection,
                 Assist = assist,

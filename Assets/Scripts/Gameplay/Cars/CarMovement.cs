@@ -36,7 +36,7 @@ namespace ToyCarArena.Gameplay.Cars
         private float throttle;
 
         // Set only for the player's next physics step. Zero share leaves every bot's movement unchanged.
-        private float edgeHoldRadius;
+        private IArenaEdge edgeHoldField;
         private float edgeHoldShare;
         private float edgeHoldContactTime = float.NegativeInfinity;
 
@@ -155,9 +155,9 @@ namespace ToyCarArena.Gameplay.Cars
         /// Supplies the player's holding line before each movement FixedUpdate. The driver owns whether the round
         /// is running; movement applies the speed limit after its acceleration/boost, before PhysX and StepVelocity.
         /// </summary>
-        public void SetEdgeHold(float radius, float share, float lastContactTime)
+        public void SetEdgeHold(IArenaEdge edge, float share, float lastContactTime)
         {
-            this.edgeHoldRadius = radius;
+            this.edgeHoldField = edge;
             this.edgeHoldShare = Mathf.Clamp01(share);
             this.edgeHoldContactTime = lastContactTime;
         }
@@ -278,7 +278,7 @@ namespace ToyCarArena.Gameplay.Cars
 
         /// <summary>
         /// Removes only excess outward speed: tangential, inward and vertical motion are preserved. A shrinking
-        /// safe radius may leave the car past the holding line; a zero limit there never pulls it back inside.
+        /// safe floor may leave the car past the holding line; a zero limit there never pulls it back inside.
         /// Recent pressure and stagger leave the shove entirely to the existing physics and braking.
         /// </summary>
         private void HoldAtEdge()
@@ -296,13 +296,13 @@ namespace ToyCarArena.Gameplay.Cars
 
             var position = body.position;
             position.y = 0f;
-            var distance = position.magnitude;
-            if (distance < 0.0001f) {
+            var inward = edgeHoldField.Inward(position);
+            if (inward == Vector3.zero) {
                 return;
             }
 
-            var outward = position / distance;
-            var remaining = Mathf.Max(0f, edgeHoldRadius - controls.EdgeHoldMargin - distance);
+            var outward = (-inward).normalized;
+            var remaining = Mathf.Max(0f, edgeHoldField.DistanceToEdge(position, controls.EdgeHoldMargin));
             var limit = Mathf.Sqrt(2f * controls.EdgeHoldBrake * remaining);
             var velocity = body.linearVelocity;
             var excess = Mathf.Max(0f, Vector3.Dot(velocity, outward) - limit);

@@ -30,7 +30,41 @@ namespace ToyCarArena.Tests.PlayMode
 
             Assert.That(container.Resolve<ArenaMap>().Id, Is.EqualTo(map));
             Assert.That(container.Resolve<GameTuning.ArenaSettings>(), Is.SameAs(expected));
-            Assert.That(container.Resolve<ArenaFloor>().Radius, Is.EqualTo(expected.Radius));
+            Assert.That(container.Resolve<ArenaFloor>().SafeExtent, Is.EqualTo(expected.Radius));
+        }
+
+        [UnityTest]
+        public IEnumerator FloorMovesTheEdgeAsWavesShakeAndFall([Values("sandbox", "candy")] string map)
+        {
+            CreateParent(new SimulationInput(), new SimulationProgress(), map);
+            yield return LoadGame();
+            var container = GameScope().Container;
+            var floor = container.Resolve<ArenaFloor>();
+            var edge = container.Resolve<IArenaEdge>();
+            Assert.That(edge, Is.SameAs(floor));
+
+            var full = floor.FullExtent;
+            Assert.That(floor.WaveCount, Is.GreaterThan(1));
+            Assert.That(floor.SafeExtent, Is.EqualTo(full));
+            Assert.That(floor.SolidExtent, Is.EqualTo(full));
+
+            var changes = 0;
+            floor.Changed += () => changes++;
+            var outer = floor.Wave(0);
+            Assert.That(outer.Outer, Is.EqualTo(full));
+            var onOuterRing = new Vector3((outer.Inner + outer.Outer) * 0.5f, 0.4f, 0f);
+            Assert.That(floor.Contains(0, onOuterRing), Is.True);
+            Assert.That(floor.Contains(1, onOuterRing), Is.False);
+
+            floor.Warn(0);
+            Assert.That(floor.SafeExtent, Is.EqualTo(outer.Inner), "a shaking wave is no longer safe floor");
+            Assert.That(floor.SolidExtent, Is.EqualTo(full), "but it is still solid");
+            Assert.That(changes, Is.EqualTo(1));
+
+            floor.Drop(0);
+            Assert.That(floor.SolidExtent, Is.EqualTo(outer.Inner), "a fallen wave is gone");
+            Assert.That(floor.IsSolid(onOuterRing), Is.False);
+            Assert.That(changes, Is.EqualTo(2));
         }
     }
 }

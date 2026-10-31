@@ -85,7 +85,7 @@ namespace ToyCarArena.Gameplay.Bots
             }
 
             var deltaTime = Time.deltaTime;
-            var radius = round.ArenaRadius;
+            var edge = round.Edge;
             var isDuel = round.IsDuel;
             foreach (var bot in bots) {
                 if (bot.Car.IsOut) {
@@ -93,10 +93,10 @@ namespace ToyCarArena.Gameplay.Bots
                 }
 
                 if (bot.WantsTarget) {
-                    bot.SetTarget(PickTarget(bot, radius));
+                    bot.SetTarget(PickTarget(bot, edge));
                 }
 
-                bot.Steer(radius, deltaTime, isDuel);
+                bot.Steer(edge, deltaTime, isDuel);
             }
         }
 
@@ -147,13 +147,13 @@ namespace ToyCarArena.Gameplay.Bots
         /// <summary>
         /// The best scoring car still in, other than the bot's own; null when there is none.
         /// </summary>
-        private Car PickTarget(Bot bot, float radius)
+        private Car PickTarget(Bot bot, IArenaEdge edge)
         {
             var settings = tuning.Bots;
             var traits = bot.Traits;
             var player = round.Player;
             var position = bot.Car.Position;
-            var diameter = Mathf.Max(1f, radius * 2f);
+            var diameter = edge.Span;
             var now = Time.time;
             var isPlayerSpared = round.Elapsed < difficulty.PlayerGrace
                 || CountHunters(player, bot) >= difficulty.MaxPlayerHunters;
@@ -180,8 +180,7 @@ namespace ToyCarArena.Gameplay.Bots
 
                 var carPosition = new Vector2(car.Position.x, car.Position.z);
                 var distance = Vector2.Distance(new Vector2(position.x, position.z), carPosition);
-                var fromMiddle = carPosition.magnitude;
-                var score = settings.EdgeWeight * traits.EdgeWeight * Mathf.Clamp01(fromMiddle / Mathf.Max(1f, radius))
+                var score = settings.EdgeWeight * traits.EdgeWeight * edge.Nearness(car.Position)
                     - settings.DistanceWeight * distance / diameter
                     - settings.CrowdPenalty * CountHunters(car, bot)
                     + bot.Range(0f, settings.PickNoise);
@@ -197,7 +196,7 @@ namespace ToyCarArena.Gameplay.Bots
                     score += settings.GrudgeWeight;
                 }
 
-                if (IsSlidingOff(car, now)) {
+                if (IsSlidingOff(car, edge, now)) {
                     score += settings.OpportunityWeight * traits.Opportunism;
                 }
 
@@ -218,9 +217,9 @@ namespace ToyCarArena.Gameplay.Bots
         }
 
         /// <summary>
-        /// Whether the car was hit a moment ago and is sliding away from the middle: the easiest car to finish.
+        /// Whether the car was hit a moment ago and is sliding towards the edge: the easiest car to finish.
         /// </summary>
-        private bool IsSlidingOff(Car car, float now)
+        private bool IsSlidingOff(Car car, IArenaEdge edge, float now)
         {
             if (now - car.LastHitTime > tuning.Bots.OpportunityTime) {
                 return false;
@@ -228,7 +227,7 @@ namespace ToyCarArena.Gameplay.Bots
 
             var position = car.Position;
             var velocity = car.Movement.Velocity;
-            return position.x * velocity.x + position.z * velocity.z > 0f;
+            return Vector3.Dot(velocity, edge.Inward(position)) < 0f;
         }
 
         /// <summary>

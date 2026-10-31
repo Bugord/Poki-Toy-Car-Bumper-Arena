@@ -115,7 +115,8 @@ namespace ToyCarArena.Gameplay
             builder.Register(resolver => resolver.Resolve<ArenaMap>().Settings, Lifetime.Singleton);
 
             builder.RegisterComponent(arenaCamera);
-            builder.RegisterComponent(arenaFloor);
+            // The floor is also the arena's edge: everything that asks how far the edge is, or which way, asks the interface.
+            builder.RegisterComponent(arenaFloor).AsSelf().As<IArenaEdge>();
             builder.RegisterComponent(candyDecor);
             builder.RegisterComponent(carouselDecor);
 

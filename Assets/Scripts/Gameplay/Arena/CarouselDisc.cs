@@ -30,7 +30,7 @@ namespace ToyCarArena.Gameplay.Arena
         private readonly GameTuning.CarouselSettings settings;
         private readonly ArenaMap map;
         private readonly ArenaRound round;
-        private readonly ArenaFloor floor;
+        private readonly IArenaEdge edge;
         private readonly CarouselDecor decor;
         private readonly IObjectResolver resolver;
         private readonly List<Mesh> meshes = new();
@@ -44,13 +44,13 @@ namespace ToyCarArena.Gameplay.Arena
         private int flashed = -1;
         private int shownSet = -1;
 
-        public CarouselDisc(GameTuning tuning, ArenaMap map, ArenaRound round, ArenaFloor floor, CarouselDecor decor,
+        public CarouselDisc(GameTuning tuning, ArenaMap map, ArenaRound round, IArenaEdge edge, CarouselDecor decor,
             IObjectResolver resolver)
         {
             this.settings = tuning.Carousel;
             this.map = map;
             this.round = round;
-            this.floor = floor;
+            this.edge = edge;
             this.decor = decor;
             this.resolver = resolver;
         }
@@ -115,8 +115,9 @@ namespace ToyCarArena.Gameplay.Arena
             Angle += AngularVelocity * delta;
             IsWarning = round.IsRunning && Warning(clock);
 
-            // The floor's radius drops the moment a ring starts to shake; the disc follows it down, fast but not at once.
-            var target = Mathf.Max(0f, Mathf.Min(settings.Radius, floor.Radius - decor.RimWidth));
+            // The floor around the middle shrinks the moment a ring starts to shake; the disc follows it down, fast but not
+            // at once.
+            var target = Mathf.Max(0f, Mathf.Min(settings.Radius, edge.DistanceToEdge(Vector3.zero) - decor.RimWidth));
             Radius = Mathf.MoveTowards(Radius, target, settings.ShrinkSpeed * delta);
             Show();
         }
@@ -212,7 +213,7 @@ namespace ToyCarArena.Gameplay.Arena
                 .DefaultIfEmpty(0).First();
             var random = new System.Random(unchecked(seed ^ 0x5C0A71D));
             firstDirection = random.Next(2) == 0 ? 1f : -1f;
-            Radius = Mathf.Max(0f, Mathf.Min(settings.Radius, floor.Radius - decor.RimWidth));
+            Radius = Mathf.Max(0f, Mathf.Min(settings.Radius, edge.DistanceToEdge(Vector3.zero) - decor.RimWidth));
 
             root = new GameObject("Carousel");
             root.transform.SetParent(decor.transform, false);

@@ -49,7 +49,7 @@ namespace ToyCarArena.Gameplay.Round
         private readonly IObjectResolver resolver;
         private readonly Car carPrefab;
         private readonly Transform carParent;
-        private readonly ArenaFloor floor;
+        private readonly IArenaEdge edge;
         private readonly GameTuning.ArenaSettings arena;
         private readonly RoundDifficulty difficulty;
         private readonly ISessionRoster roster;
@@ -66,7 +66,7 @@ namespace ToyCarArena.Gameplay.Round
         public IReadOnlyList<string> Names { get; private set; }
         public IReadOnlyList<int> Colors { get; private set; }
 
-        public ArenaRound(GameTuning tuning, IObjectResolver resolver, Car carPrefab, Transform carParent, ArenaFloor floor,
+        public ArenaRound(GameTuning tuning, IObjectResolver resolver, Car carPrefab, Transform carParent, IArenaEdge edge,
             GameTuning.ArenaSettings arena, RoundDifficulty difficulty, ISessionProgress progress, ISessionRoster roster,
             CarCatalog catalog, IPlayerCar playerCar)
         {
@@ -74,7 +74,7 @@ namespace ToyCarArena.Gameplay.Round
             this.resolver = resolver;
             this.carPrefab = carPrefab;
             this.carParent = carParent;
-            this.floor = floor;
+            this.edge = edge;
             this.arena = arena;
             this.difficulty = difficulty;
             this.roster = roster;
@@ -143,10 +143,10 @@ namespace ToyCarArena.Gameplay.Round
         public Car PlayerKnockedOutBy { get; private set; }
 
         /// <summary>
-        /// How far from the middle the arena reaches now, in metres. The one place the bots read the edge from: it
-        /// shrinks as the edge crumbles, and a ring counts as gone as soon as it starts to shake, so the bots get off it.
+        /// The arena's edge as it is now. The one place the bots and the player's help read the edge from: it moves in as
+        /// the floor crumbles, and a wave of tiles counts as gone as soon as it starts to shake, so the bots get off it.
         /// </summary>
-        public float ArenaRadius => floor.Radius;
+        public IArenaEdge Edge => edge;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         public PlayerFallTelemetry FallTelemetry { get; private set; }
@@ -179,7 +179,7 @@ namespace ToyCarArena.Gameplay.Round
             Spawn(1 + difficulty.BotCount);
             Player = cars[0];
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            FallTelemetry = new PlayerFallTelemetry(this, floor, Player);
+            FallTelemetry = new PlayerFallTelemetry(this, edge, Player);
             Player.Movement.FallTelemetry = FallTelemetry;
 #endif
             Nemesis = nemesisIndex > 0 && nemesisIndex < cars.Count ? cars[nemesisIndex] : null;

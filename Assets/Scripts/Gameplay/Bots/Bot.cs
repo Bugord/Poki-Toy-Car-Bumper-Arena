@@ -106,7 +106,8 @@ namespace ToyCarArena.Gameplay.Bots
         }
 
         /// <summary>
-        /// Heads back towards the middle when the car is near the edge, or will be soon at its speed; otherwise drives
+        /// Heads back away from the edge (see <see cref="IArenaEdge.Inward"/>; towards the middle on a round floor) when the car
+        /// is near the edge, or will be soon at its speed; otherwise drives
         /// at a point just behind the target on the side facing the middle, so the hit sends the target outward.
         /// Staying on the arena comes first: a bot that pushes a car off and follows it loses as much. It is never
         /// slowed by the difficulty: the bot sees its own car at once, and a careless bot would fall off on its own and
@@ -126,29 +127,29 @@ namespace ToyCarArena.Gameplay.Bots
         /// In a duel the round's duel pace and escape chance take over, so the last bot can be softened separately.
         /// </para>
         /// </summary>
-        public void Steer(float arenaRadius, float deltaTime, bool isDuel)
+        public void Steer(IArenaEdge edge, float deltaTime, bool isDuel)
         {
             retargetTimer -= deltaTime;
             sinceSeen += deltaTime;
 
             var position = Flat(Car.Position);
             var velocity = Flat(Car.Movement.Velocity);
-            var safeRadius = Mathf.Max(0f, arenaRadius - settings.EdgeMargin);
+            var margin = settings.EdgeMargin;
             isPushing = IsPushing(position);
             // Pushing a car, the bot is slow and the target is between it and the edge, so it keeps on to the margin.
             var lookAhead = isPushing ? 0f : settings.LookAhead * Traits.Caution;
             var ahead = position + velocity * lookAhead;
-            if (position.sqrMagnitude > safeRadius * safeRadius || ahead.sqrMagnitude > safeRadius * safeRadius) {
+            if (edge.DistanceToEdge(position, margin) < 0f || edge.DistanceToEdge(ahead, margin) < 0f) {
                 pushTime = 0f;
-                Car.Movement.Drive(-position, 1f);
-                Escape(position, velocity, safeRadius, isDuel);
+                Car.Movement.Drive(edge.Inward(position), 1f);
+                Escape(edge, position, velocity, margin, isDuel);
                 return;
             }
 
             isEscaping = false;
 
             // Staying clear of the ball comes before any attack, but after staying on the arena.
-            if (AvoidBall(position, safeRadius, deltaTime)) {
+            if (AvoidBall(edge, position, margin, deltaTime)) {
                 pushTime = 0f;
                 return;
             }
@@ -172,7 +173,7 @@ namespace ToyCarArena.Gameplay.Bots
             Car.Movement.Drive(heading, Target == player ? playerPace : 1f);
 
             if (isPushing) {
-                Push(position, heading, safeRadius, deltaTime);
+                Push(edge, position, heading, margin, deltaTime);
             }
             else {
                 pushTime = 0f;
@@ -183,7 +184,7 @@ namespace ToyCarArena.Gameplay.Bots
         /// Steers out of the Ball arena's lane once the bot has noticed the ball: a moment after it is announced, longer
         /// for the careless (a personality's caution divides it), and only if the bot is in the ball's way.
         /// </summary>
-        private bool AvoidBall(Vector3 position, float safeRadius, float deltaTime)
+        private bool AvoidBall(IArenaEdge edge, Vector3 position, float edgeMargin, float deltaTime)
         {
             if (ballLane == null || !ballLane.IsActive) {
                 return false;
@@ -198,7 +199,7 @@ namespace ToyCarArena.Gameplay.Bots
 
             ballSeenFor += deltaTime;
             if (ballSeenFor < ballReaction
-                || !ballLane.TryAvoid(position, tuning.Ball.BotMargin, safeRadius, out var heading)) {
+                || !ballLane.TryAvoid(position, tuning.Ball.BotMargin, edge, edgeMargin, out var heading)) {
                 return false;
             }
 
@@ -230,7 +231,7 @@ namespace ToyCarArena.Gameplay.Bots
         /// margin: at the raised top speed a boost carries the car about (top speed + impulse) × duration, which a bold
         /// bot counts short and a careful one long.
         /// </summary>
-        private void Push(Vector3 position, Vector3 heading, float safeRadius, float deltaTime)
+        private void Push(IArenaEdge edge, Vector3 position, Vector3 heading, float edgeMargin, float deltaTime)
         {
             if (pushTime <= 0f) {
                 var delay = difficulty.BoostDelay * Traits.BoostDelay;
@@ -244,16 +245,16 @@ namespace ToyCarArena.Gameplay.Bots
 
             var reach = (tuning.Car.MaxSpeed + tuning.Boost.Impulse) * tuning.Boost.Duration * Traits.Caution;
             var landing = position + heading.normalized * reach;
-            if (landing.sqrMagnitude <= safeRadius * safeRadius && Car.Movement.TryBoost()) {
+            if (edge.DistanceToEdge(landing, edgeMargin) >= 0f && Car.Movement.TryBoost()) {
                 pushTime = 0f;
             }
         }
 
         /// <summary>
-        /// Heading back to the middle: once per escape the bot rolls whether it may boost, and it does once it is past
+        /// Heading back inward: once per escape the bot rolls whether it may boost, and it does once it is past
         /// the margin and still sliding outward, where turning round alone would come too late.
         /// </summary>
-        private void Escape(Vector3 position, Vector3 velocity, float safeRadius, bool isDuel)
+        private void Escape(IArenaEdge edge, Vector3 position, Vector3 velocity, float edgeMargin, bool isDuel)
         {
             if (!isEscaping) {
                 isEscaping = true;
@@ -261,7 +262,7 @@ namespace ToyCarArena.Gameplay.Bots
                 mayEscapeBoost = Range(0f, 1f) < chance * Traits.EscapeBoost;
             }
 
-            var isSlidingOut = position.sqrMagnitude > safeRadius * safeRadius && Vector3.Dot(velocity, position) > 0f;
+            var isSlidingOut = edge.DistanceToEdge(position, edgeMargin) < 0f && Vector3.Dot(velocity, -edge.Inward(position)) > 0f;
             if (mayEscapeBoost && isSlidingOut && Car.Movement.TryBoost()) {
                 mayEscapeBoost = false;
             }
