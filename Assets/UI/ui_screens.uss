@@ -1421,114 +1421,13 @@
     rotate: 10deg;
 }
 
-.round-over__card {
-    flex-shrink: 0;
-    margin-top: 48px;
-    padding: 30px 40px 34px 40px;
-    transition-property: translate, opacity;
-    transition-duration: 0.3s;
-    transition-timing-function: ease-out;
-    transition-delay: 0.05s;
-}
-
-/* On the card's top corner, clear of both record chips in its rows. Shares NEW BEST!'s delayed entrance. */
+/* REVENGE! under the title, after a round the player knocked out the bot marked for it. Shares the stickers' entrance. */
 .round-over__revenge {
-    position: absolute;
-    right: 12px;
-    top: -30px;
+    flex-shrink: 0;
+    margin-top: 30px;
     background-color: var(--red);
     color: var(--white);
     rotate: 5deg;
-}
-
-.round-over__revenge--enter {
-    scale: 0 0;
-}
-
-/* NEW BEST! starts at 0.35s after the card enters; REVENGE follows it when both were earned. */
-.round-over__revenge--second {
-    transition-delay: 0.55s;
-}
-
-.round-over__place {
-    align-self: stretch;
-    align-items: center;
-}
-
-/* The place on a flat tilted pill: gold, silver or bronze on the podium, soft past it (RoundOverView). */
-.round-over__place-pill {
-    margin-top: 12px;
-    padding: 0 56px 10px 56px;
-    border-width: 7px;
-    border-color: var(--navy);
-    border-radius: 999px;
-    background-color: var(--soft);
-    rotate: -2deg;
-}
-
-.round-over__place-pill--gold {
-    background-color: var(--gold);
-}
-
-.round-over__place-pill--silver {
-    background-color: var(--silver);
-}
-
-.round-over__place-pill--bronze {
-    background-color: var(--bronze);
-}
-
-.round-over__place-value {
-    margin: 0;
-    padding: 0;
-    font-size: 104px;
-    color: var(--navy);
-    -unity-text-align: middle-center;
-    white-space: nowrap;
-}
-
-/* OF N CARS, and the best place beside it. */
-.round-over__of {
-    flex-direction: row;
-    align-items: center;
-    margin-top: 16px;
-}
-
-.round-over__place-best {
-    margin-left: 24px;
-}
-
-.round-over__time-label {
-    flex-direction: row;
-    align-items: center;
-}
-
-.round-over__time-caption {
-    margin-left: 26px;
-}
-
-/* The time on the arena and the knock-outs, right in their insets. */
-.round-over__value {
-    margin: 0;
-    padding: 0;
-    font-size: 72px;
-    color: var(--navy);
-    -unity-text-align: middle-right;
-    white-space: nowrap;
-}
-
-/* The knock-outs, in an inset like the time's: the star, KNOCKOUTS, and the count with the best beside it. */
-.round-over__ko {
-    margin-top: 20px;
-}
-
-.round-over__ko-score {
-    flex-direction: row;
-    align-items: center;
-}
-
-.round-over__ko-best {
-    margin-right: 24px;
 }
 
 .round-over__spacer {
@@ -1537,27 +1436,7 @@
     min-height: 40px;
 }
 
-/* Compact only this card to reserve a real layout slot for XP, including its unlock sticker. The panel's Expand
-   scaling keeps landscape at least 1920 reference pixels high too; no absolute reward can cover the card or button. */
-.round-over__card .rule {
-    margin: 22px 0;
-}
-
-.round-over__card .inset {
-    padding: 12px 28px 16px 28px;
-}
-
-.round-over__progress {
-    flex-shrink: 0;
-    width: 981px;
-    margin-top: 32px;
-}
-
-.round-over__xp-row {
-    flex-direction: row;
-    align-items: center;
-}
-
+/* The garage's level row still uses the old level pill and XP bar. */
 .round-over__level {
     flex-shrink: 0;
     width: 160px;
@@ -1578,20 +1457,6 @@
     flex-grow: 1;
     margin-left: 28px;
     align-items: stretch;
-}
-
-.round-over__xp-gain {
-    align-self: center;
-    margin-bottom: 8px;
-}
-
-.round-over__xp-text {
-    margin: 0;
-    padding: 0;
-    font-size: 64px;
-    color: var(--gold);
-    -unity-text-outline-width: 8px;
-    text-shadow: 0 8px 0 rgb(29, 43, 79);
 }
 
 .round-over__xp-track {
@@ -1643,7 +1508,229 @@
     transition-property: none;
 }
 
-/* PLAY AGAIN and, where there is a keyboard, the key that presses it. The entrance moves this wrapper, not the
+/* The level card: the player's level badge, the XP the round gave and how far the level is, over the level track
+   (RoundOverProgress builds its stops). The meta goal is the one thing on the result besides the buttons. */
+.level-card {
+    flex-shrink: 0;
+    margin: 24px 0 44px 0;
+    padding: 28px 40px 10px 40px;
+    align-items: stretch;
+    transition-property: translate, opacity;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-out;
+    transition-delay: 0.05s;
+}
+
+.level-card__head {
+    flex-direction: row;
+    align-items: center;
+}
+
+.level-card__gain {
+    margin-left: 28px;
+}
+
+.level-card__rank {
+    font-size: 34px;
+    -unity-text-align: middle-left;
+}
+
+.level-card__xp {
+    margin: 0;
+    padding: 0;
+    font-size: 64px;
+    color: var(--green-shade);
+    -unity-text-align: middle-left;
+}
+
+.level-card__total {
+    margin-left: auto;
+    font-size: 34px;
+}
+
+/* A level badge: the number on a rounded sticker in its rank's colour (PlayerRank): white, bronze, silver, gold, and
+   pink for legend, since the panel draws no gradient. */
+.level-badge {
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    min-width: 60px;
+    height: 50px;
+    padding: 0 10px;
+    border-width: 5px;
+    border-bottom-width: 9px;
+    border-color: var(--navy);
+    border-radius: 16px;
+    background-color: var(--white);
+    color: var(--navy);
+}
+
+.level-badge--big {
+    min-width: 132px;
+    height: 116px;
+    padding: 0 18px;
+    border-width: 8px;
+    border-bottom-width: 16px;
+    border-radius: 30px;
+}
+
+.level-badge__value {
+    margin: 0;
+    padding: 0;
+    font-size: 30px;
+    -unity-text-align: middle-center;
+}
+
+.level-badge--big .level-badge__value {
+    font-size: 70px;
+}
+
+/* The level track: round stops joined by bars, the captions hanging under the stops. A stop the fill has reached turns
+   gold and gets the green tick; the current level is gold from the start. */
+.track {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 26px;
+    padding: 0 30px 96px 30px;
+}
+
+.track__node {
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 104px;
+    height: 104px;
+    border-width: 8px;
+    border-bottom-width: 14px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+    color: var(--navy);
+}
+
+.track__node--rank {
+    width: 124px;
+    height: 124px;
+}
+
+.track__node--reached {
+    background-color: var(--gold);
+}
+
+/* After the stop's own colours, so the next-rank stop wears its rank. */
+.level-badge--rookie { background-color: var(--white); }
+.level-badge--bronze { background-color: #e8a46a; }
+.level-badge--silver { background-color: #d7e0ee; }
+.level-badge--gold { background-color: var(--gold); }
+.level-badge--legend { background-color: #ff7aa8; }
+
+.track__level {
+    margin: 0;
+    padding: 0;
+    font-size: 44px;
+    -unity-text-align: middle-center;
+}
+
+.track__car {
+    width: 84px;
+    height: 70px;
+}
+
+.track__map {
+    width: 54px;
+    height: 54px;
+    border-width: 7px;
+    border-color: var(--navy);
+    border-radius: 27px;
+}
+
+.track__caption {
+    position: absolute;
+    top: 100%;
+    left: -60px;
+    width: 224px;
+    margin-top: 10px;
+    align-items: center;
+}
+
+.track__node--rank .track__caption {
+    left: -50px;
+}
+
+.track__caption-level {
+    margin: 0;
+    padding: 0;
+    font-size: 28px;
+    color: var(--muted);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.track__caption-name {
+    margin: 0;
+    padding: 0;
+    font-size: 30px;
+    color: var(--navy);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.track__tick {
+    display: none;
+    position: absolute;
+    top: -18px;
+    right: -18px;
+    width: 50px;
+    height: 50px;
+    align-items: center;
+    justify-content: center;
+    border-width: 6px;
+    border-color: var(--navy);
+    border-radius: 25px;
+    background-color: var(--green);
+}
+
+.track__node--done .track__tick {
+    display: flex;
+}
+
+.track__tick-mark {
+    width: 22px;
+    height: 12px;
+    margin-top: -4px;
+    border-left-width: 6px;
+    border-bottom-width: 6px;
+    border-color: var(--white);
+    rotate: -45deg;
+}
+
+.track__segment {
+    flex-grow: 1;
+    height: 34px;
+    min-width: 30px;
+    border-width: 7px;
+    border-color: var(--navy);
+    background-color: var(--soft);
+    overflow: hidden;
+    transform-origin: 0 50%;
+}
+
+/* Toward the next rank: thinner and pale, it is further than it looks. */
+.track__segment--dotted {
+    height: 16px;
+    margin: 0 10px;
+    border-width: 0;
+    border-radius: 8px;
+    background-color: var(--silver);
+}
+
+.track__fill {
+    width: 0;
+    height: 100%;
+    background-color: var(--gold);
+}
+
+/* NEXT MATCH and, where there is a keyboard, the key that presses it. The entrance moves this wrapper, not the
    button, whose own translate is its press. */
 .round-over__actions {
     flex-shrink: 0;
@@ -1687,13 +1774,13 @@
     scale: 0 0;
 }
 
-.round-over--enter .round-over__card {
-    translate: 0 120px;
-    opacity: 0;
-}
-
 .round-over--enter .best--new {
     scale: 0 0;
+}
+
+.round-over--enter .level-card {
+    translate: 0 120px;
+    opacity: 0;
 }
 
 .round-over--enter .round-over__actions {
@@ -1768,14 +1855,6 @@
 .round-over__xp-body {
     flex-basis: 0;
     min-width: 0;
-}
-
-.round-over__car-badge {
-    flex-shrink: 0;
-    width: 160px;
-    height: 160px;
-    margin-left: 20px;
-    padding: 4px;
 }
 
 .round-over__ready {
@@ -2198,115 +2277,3 @@
 .emotion__text { height: 68px; }
 .emotion__text .sticker-text__text { font-size: 42px; color: var(--navy); -unity-text-align: middle-center; -unity-text-outline-width: 0; }
 
-/* The result has one fixed-height body. Portrait swaps its contents; wide panels add a second column. XP and
-   actions stay in the same flow and the same positions whichever tab is selected. */
-.round-over__body {
-    flex-shrink: 0;
-    width: 981px;
-    height: 640px;
-    margin-top: 36px;
-}
-.round-over__body .round-over__card {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 981px;
-    height: 640px;
-    margin-top: 0;
-    padding: 22px 32px 22px 32px;
-}
-.result-tabs {
-    flex-shrink: 0;
-    align-self: stretch;
-    flex-direction: row;
-    height: 58px;
-    margin-bottom: 10px;
-}
-.result-tab {
-    flex-grow: 1;
-    flex-basis: 0;
-    margin: 0 4px;
-    padding: 0;
-    border-width: 4px;
-    border-bottom-width: 8px;
-    border-color: var(--navy);
-    border-radius: 20px;
-    background-color: var(--soft);
-    color: var(--muted);
-    font-size: 32px;
-    -unity-text-align: middle-center;
-}
-.result-tab--selected { background-color: var(--gold); color: var(--navy); }
-.result-tab:hover { background-color: var(--shade); }
-.round-over__details { align-self: stretch; }
-.round-over__details .caption { font-size: 34px; }
-.round-over__details .round-over__place-pill { margin-top: 6px; padding: 0 40px 6px 40px; }
-.round-over__details .round-over__place-value { font-size: 88px; }
-.round-over__details .round-over__of { margin-top: 8px; }
-.round-over__details .rule { margin: 14px 0; }
-.round-over__details .inset { padding: 8px 24px; }
-.round-over__details .round-over__value { font-size: 56px; }
-.round-over__details .round-over__ko { margin-top: 14px; }
-.round-over__details .round-over__time-caption { margin-left: 18px; }
-.round-over__details .round-over__ko-best { margin-right: 16px; }
-.round-over__details .best { font-size: 28px; }
-
-.scoreboard {
-    display: none;
-    position: absolute;
-    left: 42px;
-    right: 42px;
-    top: 112px;
-    height: 490px;
-    width: auto;
-    margin: 0;
-    padding: 0;
-    border-width: 0;
-    border-radius: 0;
-    background-color: var(--white);
-    align-items: stretch;
-    color: var(--navy);
-}
-.scoreboard__title { display: none; height: 60px; margin: 0; padding: 0; font-size: 50px; color: var(--navy); -unity-text-align: middle-center; }
-.scoreboard__header { flex-direction: row; justify-content: space-between; height: 40px; flex-shrink: 0; padding: 0 14px; }
-.scoreboard__heading { margin: 0; padding: 0; font-size: 28px; color: var(--muted); }
-.scoreboard__rows { align-items: stretch; }
-.scoreboard__row {
-    flex-direction: row;
-    align-items: center;
-    flex-shrink: 0;
-    height: 58px;
-    margin-bottom: 4px;
-    padding: 0 12px;
-    border-width: 3px;
-    border-color: var(--white);
-    border-radius: 18px;
-    background-color: var(--soft);
-    color: var(--navy);
-    font-size: 36px;
-}
-.scoreboard__row--you { background-color: var(--gold); border-color: var(--navy); }
-.scoreboard__row .sticker-text__text { font-size: 36px; color: var(--navy); -unity-text-outline-width: 0; }
-.scoreboard__place { width: 86px; height: 50px; }
-.scoreboard__name { flex-grow: 1; flex-shrink: 1; flex-basis: 0; min-width: 0; height: 50px; margin-left: 14px; }
-.scoreboard__name .sticker-text__text { overflow: hidden; text-overflow: ellipsis; }
-.scoreboard__ko { width: 64px; height: 50px; }
-.scoreboard__ko .sticker-text__text { -unity-text-align: middle-right; }
-.scoreboard__row .hud__chip { position: relative; flex-shrink: 0; width: 48px; height: 48px; border-width: 4px; border-radius: 24px; transition-duration: 0s; }
-.scoreboard__row .hud__chip-car { scale: 0.7 0.7; }
-.scoreboard__row .hud__chip-ring { border-width: 4px; border-radius: 20px; }
-.round-over--landscape .round-over__body { width: 1851px; }
-.round-over--landscape .result-tabs { display: none; }
-.round-over--landscape .round-over__details { margin-top: 14px; }
-.round-over--landscape .scoreboard {
-    left: 1011px;
-    right: auto;
-    top: 0;
-    width: 840px;
-    height: 640px;
-    padding: 20px 28px;
-    border-width: 9px;
-    border-bottom-width: 25px;
-    border-radius: 58px;
-}
-.round-over--landscape .scoreboard__title { display: flex; }

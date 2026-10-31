@@ -8,27 +8,21 @@ using UnityEngine.UIElements;
 namespace ToyCarArena.UI
 {
     /// <summary>
-    /// The result screen: the title, how the player went out and by whom, the place and the knock-outs against the
-    /// player's bests, the time on the arena, saved XP and car unlocks, and PLAY AGAIN.
+    /// The result screen: the title, how the player went out and by whom, the level track with the saved XP and car
+    /// unlocks, CAR and NEXT MATCH. The arena stays undimmed behind it, as it ended.
     /// </summary>
     public sealed class RoundOverView : FadingView<RoundOverViewModel>
     {
         // How long after the screen shows its parts start to move in: long enough for them to be laid out where they
         // start, or their transitions would have nothing to move from.
         private const long EnterDelay = 80;
-        private const float ScoreboardDelay = 0.2f;
-        private const float ScoreboardEnterDuration = 0.25f;
 
         private const string WonClass = "round-over__title--won";
         private const string OutClass = "round-over__title--out";
         private const string EnterClass = "round-over--enter";
         private const string ConfettiShownClass = "round-over__confetti--shown";
-        private const string PlacePillClass = "round-over__place-pill";
         private const string KnockedByShownClass = "round-over__by--shown";
         private const string BestShownClass = "best--shown";
-        private const string BestNewClass = "best--new";
-        private const string RevengeEnterClass = "round-over__revenge--enter";
-        private const string RevengeSecondClass = "round-over__revenge--second";
 
         private readonly IAudioService audioService;
         private readonly HudControls controls;
@@ -39,16 +33,6 @@ namespace ToyCarArena.UI
         private CancellationTokenSource lifetime;
         private bool isPlayAgainPressed;
         private RoundOverProgress xpProgress;
-        private Button roundTab;
-        private Button scoreTab;
-        private VisualElement details;
-        private VisualElement scoreboard;
-        private IVisualElementScheduledItem scoreboardAnimation;
-        private bool wantsScoreboard;
-        private bool isLandscape;
-        private bool isScoreboardShown;
-        private float scoreboardAllowedAt = float.PositiveInfinity;
-        private float scoreboardStarted;
 
         public RoundOverView(IAudioService audioService, HudControls controls)
         {
@@ -64,7 +48,6 @@ namespace ToyCarArena.UI
             Root.RegisterCallback<KeyDownEvent>(OnKeyDown);
             Root.RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
             lifetime = new CancellationTokenSource();
-            BuildScoreboard();
 
             playAgainButton = Root.Q<Button>("play-again-button");
             playAgainButton.clicked += PlayAgain;
@@ -83,36 +66,23 @@ namespace ToyCarArena.UI
                 controls.CheckTouchScreen() ? DisplayStyle.None : DisplayStyle.Flex;
 
             ShowTitle();
-            ShowPlace();
-            ShowTime();
-            ShowKnockouts();
+            Root.Q<Label>("revenge").EnableInClassList(BestShownClass, ViewModel.RevengeTaken);
             xpProgress = new RoundOverProgress(Root, ViewModel);
-            var revenge = Root.Q<Label>("revenge");
-            revenge.AddToClassList(RevengeEnterClass);
-            var hasNewBest = (ViewModel.CarCount > 1 && ViewModel.IsBestPlace) || ViewModel.IsBestKnockouts;
-            revenge.EnableInClassList(RevengeSecondClass, hasNewBest);
         }
 
         public override async UniTask ShowAsync(CancellationToken token)
         {
-            // The title, the card and the button start small or low and spring into place while the screen fades in.
+            // The title and the buttons start small or low and spring into place while the screen fades in.
             Root.AddToClassList(EnterClass);
-            var revenge = Root.Q<Label>("revenge");
-            revenge.EnableInClassList(BestShownClass, ViewModel.RevengeTaken);
-            Root.schedule.Execute(() => {
-                Root?.RemoveFromClassList(EnterClass);
-                revenge.RemoveFromClassList(RevengeEnterClass);
-            }).StartingIn(EnterDelay);
+            Root.schedule.Execute(() => Root?.RemoveFromClassList(EnterClass)).StartingIn(EnterDelay);
             await base.ShowAsync(token);
-            // The reward runs beside input; no part of it delays Play Again, Space or Enter.
+            // The reward runs beside input; no part of it delays NEXT MATCH, Space or Enter.
             xpProgress.Play(token);
-            scoreboardAllowedAt = Time.unscaledTime + ScoreboardDelay;
         }
 
         public override async UniTask HideAsync(CancellationToken token)
         {
             xpProgress.Stop();
-            scoreboardAnimation?.Pause();
             await base.HideAsync(token);
         }
 
@@ -123,11 +93,6 @@ namespace ToyCarArena.UI
             lifetime?.Cancel();
             lifetime?.Dispose();
             xpProgress?.Dispose();
-            scoreboardAnimation?.Pause();
-            if (roundTab != null) {
-                roundTab.clicked -= ShowRoundTab;
-                scoreTab.clicked -= ShowScoreTab;
-            }
             if (playAgainButton != null) {
                 playAgainButton.clicked -= PlayAgain;
             }
@@ -139,78 +104,7 @@ namespace ToyCarArena.UI
 
         private void OnGeometryChanged(GeometryChangedEvent evt)
         {
-            isLandscape = evt.newRect.width > evt.newRect.height;
-            Root.EnableInClassList("round-over--landscape", isLandscape);
-            UpdateScoreboard();
-        }
-
-        private void BuildScoreboard()
-        {
-            details = Root.Q<VisualElement>("round-details");
-            scoreboard = Root.Q<VisualElement>("scoreboard");
-            roundTab = Root.Q<Button>("round-tab");
-            scoreTab = Root.Q<Button>("score-tab");
-            roundTab.RemoveFromClassList(Button.ussClassName);
-            scoreTab.RemoveFromClassList(Button.ussClassName);
-            roundTab.clicked += ShowRoundTab;
-            scoreTab.clicked += ShowScoreTab;
-            var rows = Root.Q<VisualElement>("scoreboard-rows");
-            foreach (var standing in ViewModel.Standings) {
-                var row = new VisualElement { pickingMode = PickingMode.Ignore };
-                row.AddToClassList("scoreboard__row");
-                row.EnableInClassList("scoreboard__row--you", standing.Index == 0);
-                // After the player is out, the round stops with others still driving: none of them has won, so they
-                // read as still in rather than as several winners.
-                var stillIn = ViewModel.Outcome == RoundOutcome.Out && standing.OutOrder == 0;
-                var place = new StickerText(stillIn ? "IN" : "#" + standing.Place);
-                place.AddToClassList("scoreboard__place");
-                row.Add(place);
-                row.Add(CarColor.CreateChip(ViewModel.ColorOf(standing.Index), standing.Index == 0));
-                var name = new StickerText(ViewModel.NameOf(standing.Index));
-                name.AddToClassList("scoreboard__name");
-                row.Add(name);
-                var knockouts = new StickerText(standing.Knockouts.ToString());
-                knockouts.AddToClassList("scoreboard__ko");
-                row.Add(knockouts);
-                rows.Add(row);
-            }
-            scoreboardAnimation = Root.schedule.Execute(UpdateScoreboard).Every(16);
-        }
-
-        private void ShowRoundTab() => ChooseTab(false);
-        private void ShowScoreTab() => ChooseTab(true);
-
-        private void ChooseTab(bool showScoreboard)
-        {
-            if (!IsShown || isPlayAgainPressed || ViewModel.IsGarageOpen || showScoreboard == wantsScoreboard) {
-                return;
-            }
-            audioService.PlayUiClick();
-            wantsScoreboard = showScoreboard;
-            UpdateScoreboard();
-        }
-
-        private void UpdateScoreboard()
-        {
-            var show = (isLandscape || wantsScoreboard) && Time.unscaledTime >= scoreboardAllowedAt;
-            details.style.display = !isLandscape && show ? DisplayStyle.None : DisplayStyle.Flex;
-            roundTab.EnableInClassList("result-tab--selected", !wantsScoreboard);
-            scoreTab.EnableInClassList("result-tab--selected", wantsScoreboard);
-            if (show != isScoreboardShown) {
-                isScoreboardShown = show;
-                scoreboard.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
-                if (show) {
-                    scoreboardStarted = Time.unscaledTime;
-                }
-            }
-            if (show) {
-                if (IsShown && !ViewModel.IsGarageOpen) {
-                    ViewModel.MeasureScoreboardShown();
-                }
-                var t = Mathf.Clamp01((Time.unscaledTime - scoreboardStarted) / ScoreboardEnterDuration);
-                scoreboard.style.opacity = t;
-                scoreboard.style.translate = new Translate(0f, 28f * (1f - t) * (1f - t));
-            }
+            Root.EnableInClassList("round-over--landscape", evt.newRect.width > evt.newRect.height);
         }
 
         private void RefreshGarage() => garagePortrait.Set(ViewModel.SelectedCar, ViewModel.SelectedColor);
@@ -263,56 +157,6 @@ namespace ToyCarArena.UI
             }
 
             Root.Q<VisualElement>("confetti").EnableInClassList(ConfettiShownClass, ViewModel.Outcome == RoundOutcome.Won);
-        }
-
-        private void ShowPlace()
-        {
-            // A round of one car (the player alone) has no place to speak of; the card keeps the time alone.
-            var hasPlace = ViewModel.CarCount > 1;
-            Root.Q<VisualElement>("place").style.display = hasPlace ? DisplayStyle.Flex : DisplayStyle.None;
-            Root.Q<Label>("place-value").text = $"#{ViewModel.Place}";
-            Root.Q<Label>("place-of").text = $"OF {ViewModel.CarCount} CARS";
-
-            // The podium in its metals, every place past it plain.
-            var tier = ViewModel.Place switch {
-                1 => "gold",
-                2 => "silver",
-                3 => "bronze",
-                _ => null,
-            };
-
-            if (tier != null) {
-                Root.Q<VisualElement>("place-pill").AddToClassList($"{PlacePillClass}--{tier}");
-            }
-
-            var bestText = ViewModel.BestPlace > 0 ? $"BEST #{ViewModel.BestPlace}" : null;
-            ShowBest(Root.Q<Label>("place-best"), hasPlace && ViewModel.IsBestPlace, hasPlace ? bestText : null);
-        }
-
-        private void ShowKnockouts()
-        {
-            Root.Q<Label>("ko-value").text = ViewModel.Knockouts.ToString();
-            var bestText = ViewModel.BestKnockouts > 0 ? $"BEST {ViewModel.BestKnockouts}" : null;
-            ShowBest(Root.Q<Label>("ko-best"), ViewModel.IsBestKnockouts, bestText);
-        }
-
-        /// <summary>
-        /// The chip beside a number: NEW BEST! when the round beat the player's best, else the best to beat, else
-        /// nothing (no best yet).
-        /// </summary>
-        private static void ShowBest(Label chip, bool isNew, string bestText)
-        {
-            var text = isNew ? "NEW BEST!" : bestText;
-            chip.text = text ?? "";
-            chip.EnableInClassList(BestShownClass, text != null);
-            chip.EnableInClassList(BestNewClass, isNew);
-        }
-
-        private void ShowTime()
-        {
-            // Down, so a car that fell a moment before the minute does not read as having lasted it.
-            var seconds = Mathf.FloorToInt(ViewModel.Seconds);
-            Root.Q<Label>("time-value").text = $"{seconds / 60}:{seconds % 60:00}";
         }
 
         private void OnKeyDown(KeyDownEvent evt)

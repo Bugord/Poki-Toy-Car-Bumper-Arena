@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <ui:VisualElement name="round-over" class="screen screen--dimmed round-over">
+    <ui:VisualElement name="round-over" class="screen round-over">
         <Style src="../ui_screens.uss" />
         <ui:VisualElement picking-mode="Ignore" class="round-over__spacer-top" />
         <ui:VisualElement picking-mode="Ignore" class="stroke round-over__title">
@@ -36,106 +36,42 @@
                 <ui:Label name="by-name-face" picking-mode="Ignore" class="display round-over__by-name-text stroke__face" />
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="result-body" class="round-over__body">
-          <ui:VisualElement picking-mode="Ignore" class="card round-over__card">
-            <ui:Label name="revenge" text="REVENGE!" picking-mode="Ignore" class="best best--new round-over__revenge" />
-            <ui:VisualElement class="result-tabs">
-                <ui:Button name="round-tab" text="YOUR ROUND" class="result-tab result-tab--selected" />
-                <ui:Button name="score-tab" text="SCOREBOARD" class="result-tab" />
-            </ui:VisualElement>
-            <ui:VisualElement name="round-details" picking-mode="Ignore" class="round-over__details">
-            <ui:VisualElement name="place" picking-mode="Ignore" class="round-over__place">
-                <ui:Label text="YOUR PLACE" picking-mode="Ignore" class="caption" />
-                <ui:VisualElement name="place-pill" picking-mode="Ignore" class="round-over__place-pill">
-                    <ui:Label name="place-value" text="#1" picking-mode="Ignore" class="round-over__place-value" />
-                </ui:VisualElement>
-                <ui:VisualElement picking-mode="Ignore" class="round-over__of">
-                    <ui:Label name="place-of" text="OF 1 CARS" picking-mode="Ignore" class="caption" />
-                    <ui:Label name="place-best" text="BEST #1" picking-mode="Ignore"
-                        class="best round-over__place-best" />
-                </ui:VisualElement>
-                <ui:VisualElement picking-mode="Ignore" class="rule" />
-            </ui:VisualElement>
-            <ui:VisualElement picking-mode="Ignore" class="inset">
-                <ui:VisualElement picking-mode="Ignore" class="round-over__time-label">
-                    <ui:VisualElement picking-mode="Ignore" class="watch">
-                        <ui:VisualElement picking-mode="Ignore" class="watch__knob" />
-                        <ui:VisualElement picking-mode="Ignore" class="watch__hand" />
-                    </ui:VisualElement>
-                    <ui:Label text="TIME ON ARENA" picking-mode="Ignore" class="caption round-over__time-caption" />
-                </ui:VisualElement>
-                <ui:Label name="time-value" text="0:00" picking-mode="Ignore" class="round-over__value" />
-            </ui:VisualElement>
-            <ui:VisualElement picking-mode="Ignore" class="inset round-over__ko">
-                <ui:VisualElement picking-mode="Ignore" class="round-over__time-label">
-                    <ui:VisualElement picking-mode="Ignore" class="ko-star">
-                        <ui:VisualElement picking-mode="Ignore" class="ko-star__back" />
-                        <ui:VisualElement picking-mode="Ignore" class="ko-star__back ko-star__turned" />
-                        <ui:VisualElement picking-mode="Ignore" class="ko-star__front" />
-                        <ui:VisualElement picking-mode="Ignore" class="ko-star__front ko-star__turned" />
-                    </ui:VisualElement>
-                    <ui:Label text="KNOCKOUTS" picking-mode="Ignore" class="caption round-over__time-caption" />
-                </ui:VisualElement>
-                <ui:VisualElement picking-mode="Ignore" class="round-over__ko-score">
-                    <ui:Label name="ko-best" text="NEW BEST!" picking-mode="Ignore" class="best round-over__ko-best" />
-                    <ui:Label name="ko-value" text="0" picking-mode="Ignore" class="round-over__value" />
-                </ui:VisualElement>
-            </ui:VisualElement>
-            </ui:VisualElement>
-          </ui:VisualElement>
-          <ui:VisualElement name="scoreboard" picking-mode="Ignore" class="card scoreboard">
-            <ui:Label text="SCOREBOARD" class="scoreboard__title" picking-mode="Ignore" />
-            <ui:VisualElement class="scoreboard__header" picking-mode="Ignore">
-                <ui:Label text="PLACE" class="scoreboard__heading" picking-mode="Ignore" />
-                <ui:Label text="KO" class="scoreboard__heading" picking-mode="Ignore" />
-            </ui:VisualElement>
-            <ui:VisualElement name="scoreboard-rows" class="scoreboard__rows" picking-mode="Ignore" />
-          </ui:VisualElement>
-        </ui:VisualElement>
-        <ui:VisualElement picking-mode="Ignore" class="round-over__progress">
-            <ui:VisualElement picking-mode="Ignore" class="round-over__xp-row">
-                <ui:VisualElement name="xp-level" picking-mode="Ignore" class="pill round-over__level">
-                    <ui:Label name="xp-level-value" text="LVL 1" picking-mode="Ignore" class="round-over__level-value" />
-                </ui:VisualElement>
-                <ui:VisualElement picking-mode="Ignore" class="round-over__xp-body">
-                    <ui:VisualElement name="xp-gain" picking-mode="Ignore" class="stroke round-over__xp-gain">
-                        <ui:Label text="+0 XP" picking-mode="Ignore" class="display round-over__xp-text" />
-                        <ui:Label text="+0 XP" picking-mode="Ignore" class="display round-over__xp-text stroke__face" />
-                    </ui:VisualElement>
-                    <ui:VisualElement picking-mode="Ignore" class="pill round-over__xp-track">
-                        <ui:VisualElement picking-mode="Ignore" class="round-over__xp-clip">
-                            <ui:VisualElement name="xp-fill" picking-mode="Ignore" class="round-over__xp-fill" />
-                        </ui:VisualElement>
-                    </ui:VisualElement>
-                    <ui:Label name="xp-next" text="NEXT: SPEEDSTER" picking-mode="Ignore" class="round-over__xp-next" />
-                </ui:VisualElement>
-                <ui:VisualElement name="xp-car-badge" picking-mode="Ignore" class="pill round-over__car-badge">
-                    <ui:VisualElement name="xp-car-portrait" picking-mode="Ignore" class="car-portrait car-portrait--locked" />
-                </ui:VisualElement>
-            </ui:VisualElement>
-            <ui:VisualElement picking-mode="Ignore" class="round-over__unlock-slot">
-                <ui:VisualElement name="xp-new-car" picking-mode="Ignore" class="best best--shown best--new round-over__new-car">
-                    <ui:VisualElement name="xp-new-car-portrait" picking-mode="Ignore" class="car-portrait round-over__new-car-portrait" />
-                    <ui:VisualElement picking-mode="Ignore" class="round-over__new-car-copy">
-                        <ui:Label name="xp-new-car-name" picking-mode="Ignore" class="round-over__new-car-name" />
-                        <ui:Label name="xp-ready" text="READY TO DRIVE!" picking-mode="Ignore" class="round-over__ready" />
-                    </ui:VisualElement>
-                </ui:VisualElement>
-            </ui:VisualElement>
-        </ui:VisualElement>
+        <ui:Label name="revenge" text="REVENGE!" picking-mode="Ignore" class="best best--new round-over__revenge" />
         <ui:VisualElement picking-mode="Ignore" class="round-over__spacer" />
+        <ui:VisualElement picking-mode="Ignore" class="round-over__unlock-slot">
+            <ui:VisualElement name="xp-new-car" picking-mode="Ignore" class="best best--shown best--new round-over__new-car">
+                <ui:VisualElement name="xp-new-car-portrait" picking-mode="Ignore" class="car-portrait round-over__new-car-portrait" />
+                <ui:VisualElement picking-mode="Ignore" class="round-over__new-car-copy">
+                    <ui:Label name="xp-new-car-name" picking-mode="Ignore" class="round-over__new-car-name" />
+                    <ui:Label name="xp-ready" text="DRIVES NEXT MATCH" picking-mode="Ignore" class="round-over__ready" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="level-card" picking-mode="Ignore" class="card level-card">
+            <ui:VisualElement picking-mode="Ignore" class="level-card__head">
+                <ui:VisualElement name="xp-level" picking-mode="Ignore" class="level-badge level-badge--big">
+                    <ui:Label name="xp-level-value" text="1" picking-mode="Ignore" class="level-badge__value" />
+                </ui:VisualElement>
+                <ui:VisualElement picking-mode="Ignore" class="level-card__gain">
+                    <ui:Label name="xp-rank" text="ROOKIE" picking-mode="Ignore" class="caption level-card__rank" />
+                    <ui:Label name="xp-gain" text="+0 XP" picking-mode="Ignore" class="level-card__xp" />
+                </ui:VisualElement>
+                <ui:Label name="xp-total" text="0 / 100 XP" picking-mode="Ignore" class="caption level-card__total" />
+            </ui:VisualElement>
+            <ui:VisualElement name="xp-track" picking-mode="Ignore" class="track" />
+        </ui:VisualElement>
         <ui:VisualElement picking-mode="Ignore" class="round-over__actions">
             <ui:VisualElement picking-mode="Ignore" class="round-over__buttons">
                 <ui:Button name="garage-button" class="pill round-over__garage">
                     <ui:VisualElement name="garage-portrait" picking-mode="Ignore" class="car-portrait round-over__garage-portrait" />
-                    <ui:Label text="GARAGE" picking-mode="Ignore" class="round-over__garage-label" />
+                    <ui:Label text="CAR" picking-mode="Ignore" class="round-over__garage-label" />
                     <ui:VisualElement name="garage-dot" picking-mode="Ignore" class="round-over__garage-dot" />
                 </ui:Button>
                 <ui:Button name="play-again-button" class="button button--green button--big round-over__button">
                     <ui:VisualElement picking-mode="Ignore" class="button__face" />
                     <ui:VisualElement picking-mode="Ignore" class="stroke">
-                        <ui:Label text="PLAY AGAIN" picking-mode="Ignore" class="button__label" />
-                        <ui:Label text="PLAY AGAIN" picking-mode="Ignore" class="button__label stroke__face" />
+                        <ui:Label text="NEXT MATCH" picking-mode="Ignore" class="button__label" />
+                        <ui:Label text="NEXT MATCH" picking-mode="Ignore" class="button__label stroke__face" />
                     </ui:VisualElement>
                 </ui:Button>
             </ui:VisualElement>
