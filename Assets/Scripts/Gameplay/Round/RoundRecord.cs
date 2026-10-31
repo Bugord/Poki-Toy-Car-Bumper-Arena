@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace ToyCarArena.Gameplay.Round
 {
     /// <summary>
@@ -11,6 +14,10 @@ namespace ToyCarArena.Gameplay.Round
 
         /// <summary>The reward is already saved before the result screen starts animating it.</summary>
         public readonly XpGain XpGain;
+
+        /// <summary>The played handle, captured before the visit roster moves on.</summary>
+        public readonly string KnockedOutByName;
+        public IReadOnlyList<string> Names { get; }
 
         /// <summary>
         /// The best place before this round, 1 being a win; 0 when no round with a place was played yet.
@@ -34,7 +41,7 @@ namespace ToyCarArena.Gameplay.Round
         public readonly bool IsBestKnockouts;
 
         public RoundRecord(RoundResult result, int bestPlace, int bestKnockouts, bool isBestPlace, bool isBestKnockouts,
-            XpGain xpGain = default)
+            XpGain xpGain = default, string knockedOutByName = "", IReadOnlyList<string> names = null)
         {
             this.Result = result;
             this.BestPlace = bestPlace;
@@ -42,10 +49,18 @@ namespace ToyCarArena.Gameplay.Round
             this.IsBestPlace = isBestPlace;
             this.IsBestKnockouts = isBestKnockouts;
             this.XpGain = xpGain;
+            this.KnockedOutByName = knockedOutByName;
+            this.Names = names ?? Array.Empty<string>();
         }
 
         /// <summary>Attaches the saved XP reward without changing the bests captured before this round.</summary>
         public RoundRecord WithXp(XpGain gain) =>
-            new(Result, BestPlace, BestKnockouts, IsBestPlace, IsBestKnockouts, gain);
+            new(Result, BestPlace, BestKnockouts, IsBestPlace, IsBestKnockouts, gain, KnockedOutByName, Names);
+
+        public RoundRecord WithKnocker(string name) =>
+            new(Result, BestPlace, BestKnockouts, IsBestPlace, IsBestKnockouts, XpGain, name, Names);
+
+        public RoundRecord WithNames(IReadOnlyList<string> names) =>
+            new(Result, BestPlace, BestKnockouts, IsBestPlace, IsBestKnockouts, XpGain, KnockedOutByName, names);
     }
 }

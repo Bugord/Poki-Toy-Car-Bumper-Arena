@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using VContainer;
 
 namespace ToyCarArena.Gameplay.Arena
@@ -9,7 +11,7 @@ namespace ToyCarArena.Gameplay.Arena
     /// shape: a phone held upright needs it much further than a wide window. Also turns screen points and screen
     /// directions into the arena's ground plane, for steering.
     /// <para>
-    /// As the edge crumbles away it closes in on what is left of the floor (<see cref="ArenaFloor.SolidRadius"/>), so
+    /// As the edge crumbles away it closes in on what is left of the floor (<see cref="IArenaEdge.SolidExtent"/>), so
     /// the last cars fighting on the small middle stay big enough to read. It eases in once a ring has fallen, not while
     /// it shakes, so a car on a shaking ring stays in view.
     /// </para>
@@ -56,8 +58,9 @@ namespace ToyCarArena.Gameplay.Arena
         [SerializeField]
         private float shakeDecay = 2.5f;
 
+        private ArenaMap map;
         private GameTuning.ArenaSettings settings;
-        private ArenaFloor floor;
+        private IArenaEdge edge;
         private Camera view;
         private int fittedWidth;
         private int fittedHeight;
@@ -71,35 +74,132 @@ namespace ToyCarArena.Gameplay.Arena
         private float shake;
         private Vector3 shakeOffset;
         private float shakeSeed;
+        private bool hasFog;
+
+        // On a floor that is not a circle the fit is done on its real outline: the whole floor's, kept from the start, and
+        // the solid floor's, fitted again each time a wave falls. A circle keeps the fit on a unit radius.
+        private Vector3[] fullOutline;
+        private float fullDistance;
+        private float solidDistance;
+        private bool isRefitNeeded;
 
         public Camera Camera => view;
 
         [Inject]
-        private void Construct(GameTuning tuning, ArenaFloor floor)
+        private void Construct(ArenaMap map, IArenaEdge edge)
         {
-            this.settings = tuning.Arena;
-            this.floor = floor;
+            this.map = map;
+            this.settings = map.Settings;
+            this.edge = edge;
         }
 
         private void Awake()
         {
             view = GetComponent<Camera>();
+            if (map.HasTheme) {
+                view.backgroundColor = map.Theme.Background;
+            }
+
+            hasFog = map.HasTheme && map.Theme.GroundDepth > 0f;
+            ApplyFog();
+
             shakeSeed = Random.Range(0f, 100f);
+            edge.Changed += OnEdgeChanged;
+        }
+
+        private void OnDestroy()
+        {
+            if (edge != null) {
+                edge.Changed -= OnEdgeChanged;
+            }
+        }
+
+        private void OnEdgeChanged()
+        {
+            isRefitNeeded = true;
+        }
+
+        private void OnEnable()
+        {
+            SceneManager.activeSceneChanged += OnActiveSceneChanged;
+        }
+
+        private void OnDisable()
+        {
+            SceneManager.activeSceneChanged -= OnActiveSceneChanged;
         }
 
         private void LateUpdate()
         {
-            if (view.pixelWidth != fittedWidth || view.pixelHeight != fittedHeight) {
-                fittedWidth = view.pixelWidth;
-                fittedHeight = view.pixelHeight;
-                unitDistance = FitDistance(1f);
+            var outline = edge.Outline(true);
+            if (outline == null) {
+                if (view.pixelWidth != fittedWidth || view.pixelHeight != fittedHeight) {
+                    fittedWidth = view.pixelWidth;
+                    fittedHeight = view.pixelHeight;
+                    unitDistance = FitDistance(1f);
+                }
+
+                var target = Mathf.Lerp(edge.FullExtent, edge.SolidExtent, zoomShare) + settings.ViewMargin;
+                viewRadius = viewRadius > 0f
+                    ? Mathf.SmoothDamp(viewRadius, target, ref zoomSpeed, zoomTime)
+                    : target;
+            }
+            else {
+                // The distance itself is eased; the unit distance is 1, so the rest of the frame reads it the same way.
+                unitDistance = 1f;
+                if (fullOutline == null) {
+                    fullOutline = new Vector3[outline.Count];
+                    for (var i = 0; i < fullOutline.Length; i++) {
+                        fullOutline[i] = outline[i];
+                    }
+
+                    isRefitNeeded = true;
+                }
+
+                if (view.pixelWidth != fittedWidth || view.pixelHeight != fittedHeight || isRefitNeeded) {
+                    fittedWidth = view.pixelWidth;
+                    fittedHeight = view.pixelHeight;
+                    isRefitNeeded = false;
+                    fullDistance = FitDistance(fullOutline);
+                    solidDistance = FitDistance(outline);
+                }
+
+                // The margin is metres of floor; it grows the fit by the share it is of the floor's extent.
+                var extent = Mathf.Max(1f, Mathf.Lerp(edge.FullExtent, edge.SolidExtent, zoomShare));
+                var target = Mathf.Lerp(fullDistance, solidDistance, zoomShare) * (1f + settings.ViewMargin / extent);
+                viewRadius = viewRadius > 0f
+                    ? Mathf.SmoothDamp(viewRadius, target, ref zoomSpeed, zoomTime)
+                    : target;
             }
 
-            var target = Mathf.Lerp(settings.Radius, floor.SolidRadius, zoomShare) + settings.ViewMargin;
-            viewRadius = viewRadius > 0f
-                ? Mathf.SmoothDamp(viewRadius, target, ref zoomSpeed, zoomTime)
-                : target;
             transform.position = -transform.forward * (unitDistance * viewRadius) + Shaken();
+            if (hasFog) {
+                // Fog counts from the camera, and the camera's distance to the arena changes with the screen's shape and the
+                // zoom, so it is anchored to the arena's middle: the arena itself stays clear whatever the view.
+                var distance = unitDistance * viewRadius;
+                RenderSettings.fogStartDistance = distance + map.Theme.FogStart;
+                RenderSettings.fogEndDistance = distance + map.Theme.FogEnd;
+            }
+        }
+
+        // Render settings belong to the active scene, and the scene that loads this one becomes active only after it has
+        // loaded: the fog set on waking would be lost to the scene's own settings, so it is set again then.
+        private void OnActiveSceneChanged(Scene previous, Scene next)
+        {
+            ApplyFog();
+        }
+
+        /// <summary>
+        /// The fog is the background colour, so the world far below melts into the sky with no horizon. An arena without a
+        /// world switches it off, because the scene's own settings may have it on.
+        /// </summary>
+        private void ApplyFog()
+        {
+            RenderSettings.fog = hasFog;
+            if (hasFog) {
+                RenderSettings.fogMode = FogMode.Linear;
+                RenderSettings.fogColor = map.Theme.Background;
+            }
         }
 
         /// <summary>
@@ -141,6 +241,26 @@ namespace ToyCarArena.Gameplay.Arena
         /// The nearest distance from the arena's centre along the view at which every point of its rim is inside the
         /// view on all four sides.
         /// </summary>
+        private float FitDistance(IReadOnlyList<Vector3> points)
+        {
+            var rotation = transform.rotation;
+            var forward = rotation * Vector3.forward;
+            var right = rotation * Vector3.right;
+            var up = rotation * Vector3.up;
+            var tanVertical = Mathf.Tan(view.fieldOfView * 0.5f * Mathf.Deg2Rad);
+            var tanHorizontal = tanVertical * view.aspect;
+
+            var distance = 0f;
+            for (var i = 0; i < points.Count; i++) {
+                var depth = Vector3.Dot(points[i], forward);
+                distance = Mathf.Max(distance,
+                    Mathf.Abs(Vector3.Dot(points[i], right)) / tanHorizontal - depth,
+                    Mathf.Abs(Vector3.Dot(points[i], up)) / tanVertical - depth);
+            }
+
+            return distance;
+        }
+
         private float FitDistance(float radius)
         {
             var rotation = transform.rotation;

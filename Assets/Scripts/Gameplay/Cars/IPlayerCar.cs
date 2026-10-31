@@ -1,11 +1,16 @@
+using System;
+
 namespace ToyCarArena.Gameplay.Cars
 {
     /// <summary>
-    /// The arena only needs the selected cosmetic identity, not the player's saved progression.
+    /// Cosmetic model and colour selection, independent of saved XP and unlock rules.
     /// </summary>
     public interface IPlayerCar
     {
         string SelectedCar { get; }
+        int SelectedColor { get; }
+        bool SelectColor(int id);
+        event Action<int> ColorChanged;
     }
 
     /// <summary>
@@ -16,5 +21,8 @@ namespace ToyCarArena.Gameplay.Cars
         public FirstPlayerCar(CarCatalog catalog) => SelectedCar = catalog.Cars[0].Id;
 
         public string SelectedCar { get; }
+        public int SelectedColor => 0;
+        public bool SelectColor(int id) => false;
+        public event Action<int> ColorChanged { add { } remove { } }
     }
 }

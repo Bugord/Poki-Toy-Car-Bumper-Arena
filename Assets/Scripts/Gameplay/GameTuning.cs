@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace ToyCarArena.Gameplay
@@ -9,7 +10,7 @@ namespace ToyCarArena.Gameplay
     /// own section. Code reads them through the properties and never keeps its own copy of a number.
     /// </summary>
     [CreateAssetMenu(fileName = "data_game_tuning", menuName = "Bonk Arena/Game Tuning")]
-    public sealed class GameTuning : ScriptableObject
+    public sealed partial class GameTuning : ScriptableObject
     {
         [SerializeField]
         private CarSettings car = new();
@@ -26,21 +27,88 @@ namespace ToyCarArena.Gameplay
         [SerializeField]
         private RoundSettings round = new();
 
+        [Header("Maps")]
+        [Tooltip("Arenas in rotation order; the first is the visit's first round, the rest open with the player's level")]
         [SerializeField]
-        private ArenaSettings arena = new();
+        private MapSettings[] maps = Array.Empty<MapSettings>();
 
         [Header("Progress")]
         [Tooltip("Round rewards and the experience needed for each next player level")]
         [SerializeField]
         private ProgressSettings progress = new();
 
+        [Header("Players")]
+        [Tooltip("Visit roster turnover between rounds; cosmetics only")]
+        [SerializeField]
+        private PlayerSettings players = new();
+
+        [Header("Ball arena")]
+        [Tooltip("The big toy ball of the Ball mechanic: when it rolls, how fast, and how hard it knocks a car aside")]
+        [SerializeField]
+        private BallSettings ball = new();
+
+        [Header("Candy arena")]
+        [Tooltip("Caramel and icing patches of the Candy mechanic: how they feel under a car and where they lie")]
+        [SerializeField]
+        private CandySettings candy = new();
+
+        [Header("Carousel arena")]
+        [Tooltip("The turntable of the Carousel mechanic: how big it is, how fast it turns and when it reverses")]
+        [SerializeField]
+        private CarouselSettings carousel = new();
+
+        [Header("Crab arena")]
+        [Tooltip("The wind-up crab of the Crab mechanic: how fast it walks and how hard it shoves a car aside")]
+        [SerializeField]
+        private CrabSettings crab = new();
+
+        [Header("Mounds arena")]
+        [Tooltip("The sand mounds of the Mounds mechanic: when they rise, how big, how they toss and slow a car")]
+        [SerializeField]
+        private MoundsSettings mounds = new();
+
+        [Header("Top arena")]
+        [Tooltip("The spinning top of the Top mechanic: how fast it wanders and how hard it flings a car")]
+        [SerializeField]
+        private TopSettings top = new();
+
+        [Header("Pencil arena")]
+        [Tooltip("The rolling pencil of the Pencil mechanic: how often it rolls, how long it is and how hard it knocks a car")]
+        [SerializeField]
+        private PencilSettings pencil = new();
+
         public CarSettings Car => car;
         public ControlSettings Controls => controls;
         public BoostSettings Boost => boost;
         public BotSettings Bots => bots;
         public RoundSettings Round => round;
-        public ArenaSettings Arena => arena;
+        public IReadOnlyList<MapSettings> Maps => maps;
         public ProgressSettings Progress => progress;
+        public PlayerSettings Players => players;
+        public BallSettings Ball => ball;
+        public CandySettings Candy => candy;
+        public CarouselSettings Carousel => carousel;
+        public CrabSettings Crab => crab;
+        public MoundsSettings Mounds => mounds;
+        public TopSettings Top => top;
+        public PencilSettings Pencil => pencil;
+
+        [Serializable]
+        public sealed class PlayerSettings
+        {
+            [Tooltip("Chance for each player from the finished round to leave, except the revenge target")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float leaveChance = 0.25f;
+
+            [Tooltip("Maximum departures after one round")]
+            [Range(0, 6)]
+            [SerializeField]
+            private int maxLeaves = 2;
+
+            public float LeaveChance => leaveChance;
+            public int MaxLeaves => maxLeaves;
+        }
 
         /// <summary>
         /// Every round advances the garage; all reward amounts and level prices are tuned together here.
@@ -246,6 +314,30 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float edgeAssistStop = 2f;
 
+            [Tooltip("Distance inside the safe arena radius of the player's edge holding line, in metres; " +
+                "keeps half the car's length and a little reserve on the floor")]
+            [Min(0f)]
+            [SerializeField]
+            private float edgeHoldMargin = 1.5f;
+
+            [Tooltip("Braking in metres per second squared used to limit outward speed to " +
+                "sqrt(2 * brake * distance to the holding line), including during a boost")]
+            [Min(0f)]
+            [SerializeField]
+            private float edgeHoldBrake = 12f;
+
+            [Tooltip("The most outward speed the hold takes away per second, in metres per second squared, scaled " +
+                "by the round's edge assist: full on Easy, a fraction on Normal, so a hard car still slides off there")]
+            [Min(0f)]
+            [SerializeField]
+            private float edgeHoldMaxBrake = 80f;
+
+            [Tooltip("Seconds after another car last drove into or kept pushing the player during which edge " +
+                "holding yields to the shove; holding also yields while staggered")]
+            [Min(0f)]
+            [SerializeField]
+            private float edgeHoldContactGrace = 0.5f;
+
             public TouchSteering TouchSteering => touchSteering;
             public float JoystickRadius => joystickRadius;
             public float JoystickDeadZone => joystickDeadZone;
@@ -259,6 +351,10 @@ namespace ToyCarArena.Gameplay
             public float PointerSlowRadius => pointerSlowRadius;
             public float EdgeAssistMargin => edgeAssistMargin;
             public float EdgeAssistStop => edgeAssistStop;
+            public float EdgeHoldMargin => edgeHoldMargin;
+            public float EdgeHoldBrake => edgeHoldBrake;
+            public float EdgeHoldMaxBrake => edgeHoldMaxBrake;
+            public float EdgeHoldContactGrace => edgeHoldContactGrace;
         }
 
         /// <summary>
@@ -321,6 +417,41 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float edgeMargin = 1.5f;
 
+            [Header("Pits")]
+            [Tooltip("How far ahead along its line to the target, in metres, a bot looks for a pit or a hole that would " +
+                "swallow it; 0 never goes round")]
+            [Min(0f)]
+            [SerializeField]
+            private float pitProbe = 9f;
+
+            [Tooltip("How many points along that line a bot samples the floor at")]
+            [Range(2, 8)]
+            [SerializeField]
+            private int pitSamples = 5;
+
+            [Tooltip("Seconds a bot keeps the side it chose to go round a pit, so it does not dither at the middle")]
+            [Min(0f)]
+            [SerializeField]
+            private float pitSideHold = 1f;
+
+            [Tooltip("How much of the way round a pit goes inward, away from the pit, beside along its rim: 0 hugs the " +
+                "rim, 1 as much inward as along")]
+            [Min(0f)]
+            [SerializeField]
+            private float pitInward = 0.5f;
+
+            [Header("Hazards")]
+            [Tooltip("Seconds, from and to, a bot takes to notice a new hazard of the arena's mechanic (a crab, a top, " +
+                "a pencil, a train) before it steers out of its way; a personality's caution divides it")]
+            [SerializeField]
+            private Vector2 hazardReaction = new(0.15f, 0.45f);
+
+            [Tooltip("Metres beyond a hazard's own reach a bot still counts as in its way")]
+            [Min(0f)]
+            [SerializeField]
+            private float hazardMargin = 1.2f;
+
+            [Header("Aim")]
             [Tooltip("Seconds ahead a bot foresees where its speed takes it, times its personality's caution; heading " +
                 "past the edge margin by then, it turns back towards the middle before it gets there")]
             [Min(0f)]
@@ -483,6 +614,12 @@ namespace ToyCarArena.Gameplay
             public float RetargetInterval => retargetInterval;
             public float RetargetJitter => retargetJitter;
             public float EdgeMargin => edgeMargin;
+            public float PitProbe => pitProbe;
+            public int PitSamples => pitSamples;
+            public float PitSideHold => pitSideHold;
+            public float PitInward => pitInward;
+            public Vector2 HazardReaction => hazardReaction;
+            public float HazardMargin => hazardMargin;
             public float LookAhead => lookAhead;
             public float PushDistance => pushDistance;
             public float PushAngle => pushAngle;
@@ -531,7 +668,7 @@ namespace ToyCarArena.Gameplay
         {
             [Tooltip("Bots in the round, beside the player; fewer early on, so a new player lasts long enough to push " +
                 "a car off and has fewer cars to beat")]
-            [Range(1, 7)]
+            [Range(1, 6)]
             [SerializeField]
             private int bots = 6;
 
@@ -767,19 +904,19 @@ namespace ToyCarArena.Gameplay
             private float knockoutCreditWindow = 2.5f;
 
             [Tooltip("Seconds after the floor ring under the player falls away that a fall without knockout credit " +
-                "is attributed to that ring")]
+                "is attributed to that ring; measured at the last grounded step, not elimination")]
             [Min(0f)]
             [SerializeField]
             private float ringFallWindow = 2f;
 
             [Tooltip("Seconds after a successful boost that a fall without knockout credit or a recent ring fall " +
-                "is attributed to the boost")]
+                "is attributed to the boost; measured at the last grounded step, not elimination")]
             [Min(0f)]
             [SerializeField]
             private float boostFallWindow = 1f;
 
             [Tooltip("Seconds after another car's hit that a fall without knockout credit, a recent ring fall or " +
-                "a boost is attributed to sliding after the hit")]
+                "a boost is attributed to sliding after the hit; measured at the last grounded step, not elimination")]
             [Min(0f)]
             [SerializeField]
             private float slideWindow = 6f;
@@ -788,9 +925,11 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float fallHeight = -3f;
 
-            [Tooltip("A car out of the round keeps falling in view and is put away below this height, in metres")]
+            [Tooltip("A car out of the round keeps falling in view and is put away below this height, in metres; deeper than " +
+                "the ground of every arena (its catalog entry's ground depth), so a car is hidden by the ground or the fog " +
+                "long before it is put away")]
             [SerializeField]
-            private float removeHeight = -25f;
+            private float removeHeight = -100f;
 
             public float Duration => duration;
             public float ResultDelay => resultDelay;
@@ -801,6 +940,98 @@ namespace ToyCarArena.Gameplay
             public float SlideWindow => slideWindow;
             public float FallHeight => fallHeight;
             public float RemoveHeight => removeHeight;
+        }
+
+        /// <summary>
+        /// One arena of the rotation: the numbers of its round and the level that opens it. Its look is in the
+        /// <c>ArenaCatalog</c>, by the same id.
+        /// </summary>
+        [Serializable]
+        public sealed class MapSettings
+        {
+            [Tooltip("Permanent identity shared with the arena catalog, storage and analytics; letters only")]
+            [SerializeField]
+            private string id;
+
+            [Tooltip("First player level at which this arena comes up in the rotation")]
+            [Min(1)]
+            [SerializeField]
+            private int unlockLevel = 1;
+
+            [Tooltip("The variants of this arena, first the one every player meets first. A round plays one of them: " +
+                "its own floor look and its own twist; the first arena's first variant has none, so the first round of " +
+                "a visit teaches only the basics")]
+            [SerializeField]
+            private VariantSettings[] variants = Array.Empty<VariantSettings>();
+
+            [SerializeField]
+            private ArenaSettings arena = new();
+
+            public string Id => id;
+            public int UnlockLevel => unlockLevel;
+            public IReadOnlyList<VariantSettings> Variants => variants;
+            public ArenaSettings Arena => arena;
+
+            /// <summary>The variant with this id, or null.</summary>
+            public VariantSettings FindVariant(string variantId)
+            {
+                foreach (var variant in variants) {
+                    if (variant.Id == variantId) {
+                        return variant;
+                    }
+                }
+
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// One variant of an arena: what makes a round on it play differently. Its floor look is in the
+        /// <c>ArenaCatalog</c>, by the arena's id and this one.
+        /// </summary>
+        [Serializable]
+        public sealed class VariantSettings
+        {
+            [Tooltip("Permanent identity shared with the arena catalog, storage and analytics; lowercase letters only, no digits")]
+            [SerializeField]
+            private string id;
+
+            [Tooltip("What makes a round on this variant play differently")]
+            [SerializeField]
+            private ArenaMechanic mechanic;
+
+            public string Id => id;
+            public ArenaMechanic Mechanic => mechanic;
+        }
+
+        /// <summary>
+        /// The arena's own twist on a round. Its numbers are in the section of the same name.
+        /// </summary>
+        public enum ArenaMechanic
+        {
+            None,
+            /// <summary>Sticky caramel and slippery icing patches on the floor.</summary>
+            Candy,
+            /// <summary>The middle of the floor turns and carries the cars on it.</summary>
+            Carousel,
+            /// <summary>A big toy ball rolls across the arena now and then and knocks cars aside.</summary>
+            Ball,
+            /// <summary>A wind-up crab walks across the arena and shoves what it meets.</summary>
+            Crab,
+            /// <summary>Sand mounds rise at random places and slow and toss the cars.</summary>
+            Mounds,
+            /// <summary>A spinning top wanders over the table and flings what it touches.</summary>
+            Top,
+            /// <summary>A pencil rolls across the page and sweeps it.</summary>
+            Pencil,
+            /// <summary>Jelly springs toss the cars that drive onto them.</summary>
+            Jelly,
+            /// <summary>A candy stirrer sweeps round from the middle of the hole and changes direction.</summary>
+            Stirrer,
+            /// <summary>A toy train circles the arena on rails.</summary>
+            Train,
+            /// <summary>Jack-in-the-boxes pop up at marked places and toss the cars.</summary>
+            Jack,
         }
 
         /// <summary>
@@ -857,6 +1088,74 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float viewMargin = 1.5f;
 
+            [Header("Shape")]
+            [Tooltip("The outline of the floor. Circle is a disc inside rings (Radius and the crumble numbers above); " +
+                "the others are cut into tiles from the numbers below, and Radius then says the circle that holds the " +
+                "whole floor (props are placed outside it)")]
+            [SerializeField]
+            private ArenaShapeKind shape = ArenaShapeKind.Circle;
+
+            [Tooltip("How the floor crumbles: Rings from the edge in, Strips side by side with the corners first, " +
+                "Scatter tiles at random along the edge (and the hole widens), Segments one by one round the rim. Each " +
+                "shape supports one pattern")]
+            [SerializeField]
+            private CrumblePattern pattern = CrumblePattern.Rings;
+
+            [Tooltip("Half the floor's width (X) and length (Z, away from the camera) in metres: both sides of a square, " +
+                "the flats of a hexagon (X, the distance from the middle to a flat), the width and the whole length of " +
+                "a stadium")]
+            [SerializeField]
+            private Vector2 halfSize = new(10.5f, 10.5f);
+
+            [Tooltip("Radius of the rounded corners of a square, in metres")]
+            [Min(0f)]
+            [SerializeField]
+            private float cornerRadius = 3f;
+
+            [Tooltip("The part that never crumbles: half its width in metres (a square's half side, the distance from " +
+                "the middle to the outer flat of a hexagon's ring, a stadium's half width)")]
+            [Min(1f)]
+            [SerializeField]
+            private float coreSize = 5.5f;
+
+            [Tooltip("The hole in the middle of a hexagon: its distance to a flat at the start of the round (X) and once " +
+                "it has widened to the most (Y), in metres")]
+            [SerializeField]
+            private Vector2 holeSize = new(2f, 3.5f);
+
+            [Tooltip("The two pits of a stadium, left and right of the middle: distance from the middle to the near edge " +
+                "of a pit (X) and width of a pit (Y), in metres; 0 width has none")]
+            [SerializeField]
+            private Vector2 pits = new(8.5f, 3f);
+
+            [Tooltip("Half the length of a pit along Z, in metres")]
+            [Min(0f)]
+            [SerializeField]
+            private float pitHalfLength = 4.5f;
+
+            [Tooltip("Tiles along one side of the outer layer: blocks along a side strip of a square, tiles along a flat of " +
+                "a hexagon, wedges round a cap of a stadium")]
+            [Range(1, 12)]
+            [SerializeField]
+            private int tilesPerSide = 3;
+
+            [Tooltip("How many waves the tiles crumble in when the pattern scatters or cuts them (Scatter, Segments); " +
+                "the other patterns have their own")]
+            [Range(2, 20)]
+            [SerializeField]
+            private int waves = 8;
+
+            [Tooltip("The cars start on the contour this far in from the rim, in metres, on a floor that is not a circle")]
+            [Min(0f)]
+            [SerializeField]
+            private float spawnInset = 5.2f;
+
+            [Tooltip("The cars do not start within this distance of the middle, in metres (a turntable there), nor within " +
+                "two metres of a pit")]
+            [Min(0f)]
+            [SerializeField]
+            private float spawnClear;
+
             public float Radius => radius;
             public float SpawnRadius => spawnRadius;
             public float SpawnHeight => spawnHeight;
@@ -866,6 +1165,703 @@ namespace ToyCarArena.Gameplay
             public float CrumbleStep => crumbleStep;
             public float CrumbleWarning => crumbleWarning;
             public float ViewMargin => viewMargin;
+            public ArenaShapeKind Shape => shape;
+            public CrumblePattern Pattern => pattern;
+            public Vector2 HalfSize => halfSize;
+            public float CornerRadius => cornerRadius;
+            public float CoreSize => coreSize;
+            public Vector2 HoleSize => holeSize;
+            public Vector2 Pits => pits;
+            public float PitHalfLength => pitHalfLength;
+            public int TilesPerSide => tilesPerSide;
+            public int Waves => waves;
+            public float SpawnInset => spawnInset;
+            public float SpawnClear => spawnClear;
+        }
+
+        /// <summary>The outline of an arena's floor.</summary>
+        public enum ArenaShapeKind
+        {
+            /// <summary>A disc inside rings.</summary>
+            Circle,
+            /// <summary>A square with rounded corners, like a board.</summary>
+            RoundedSquare,
+            /// <summary>A hexagon with a hole in the middle that widens as the round goes on.</summary>
+            HexDonut,
+            /// <summary>Two half discs joined by straight sides, with a pit left and right of the middle.</summary>
+            Stadium,
+        }
+
+        /// <summary>The order the pieces of the floor crumble in.</summary>
+        public enum CrumblePattern
+        {
+            /// <summary>Rings from the edge in.</summary>
+            Rings,
+            /// <summary>The corners, then the sides one after another.</summary>
+            Strips,
+            /// <summary>Tiles at random along the edge, and the hole widens.</summary>
+            Scatter,
+            /// <summary>Pieces one after another round the rim, layer by layer.</summary>
+            Segments,
+        }
+
+        /// <summary>
+        /// The Candy arena's patches. Each feel number multiplies what the car has on plain floor, so 1 changes nothing.
+        /// Caramel is a safe, slow, heavy spot; icing is fast and slides. The layout is six patches on a ring of slots,
+        /// alternating caramel and icing, turned by a seeded angle each round; see <c>CandyPatches</c>.
+        /// </summary>
+        [Serializable]
+        public sealed class CandySettings
+        {
+            [Header("Caramel")]
+            [Tooltip("Top speed on caramel, against plain floor; a boost is not slowed")]
+            [Range(0.1f, 1f)]
+            [SerializeField]
+            private float caramelSpeed = 0.55f;
+
+            [Tooltip("Acceleration on caramel, against plain floor")]
+            [Range(0.1f, 1f)]
+            [SerializeField]
+            private float caramelAcceleration = 0.6f;
+
+            [Tooltip("Grip on caramel, against plain floor; above 1 the car sticks to its line")]
+            [Min(0f)]
+            [SerializeField]
+            private float caramelGrip = 1.6f;
+
+            [Tooltip("Share of a hit's extra push a car on caramel gets: it resists being shoved")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float caramelPush = 0.6f;
+
+            [Tooltip("Share of the stagger time a hit gives a car on caramel")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float caramelStagger = 0.6f;
+
+            [Header("Icing")]
+            [Tooltip("Grip on icing, against plain floor; low slides and turns badly")]
+            [Range(0.02f, 1f)]
+            [SerializeField]
+            private float icingGrip = 0.2f;
+
+            [Tooltip("Top speed on icing, against plain floor")]
+            [Min(0.1f)]
+            [SerializeField]
+            private float icingSpeed = 1.15f;
+
+            [Tooltip("Acceleration on icing, against plain floor")]
+            [Min(0.1f)]
+            [SerializeField]
+            private float icingAcceleration = 1f;
+
+            [Header("Patches")]
+            [Tooltip("Metres across which a patch's effect fades in at its rim, so a car does not jerk on entering")]
+            [Min(0.01f)]
+            [SerializeField]
+            private float blendWidth = 0.5f;
+
+            [Tooltip("Seconds a patch shrinks away in, once its ring is crumbling")]
+            [Min(0.01f)]
+            [SerializeField]
+            private float vanishTime = 0.3f;
+
+            [Tooltip("A patch starts to vanish when the floor's radius is less than the patch's outer edge minus this, " +
+                "in metres")]
+            [Min(0f)]
+            [SerializeField]
+            private float vanishMargin = 0.4f;
+
+            [Tooltip("Distance of the two inner patches from the middle, in metres. With their radius they stay inside " +
+                "the spawn circle, so the start is fair")]
+            [Min(0f)]
+            [SerializeField]
+            private float innerDistance = 4.2f;
+
+            [Tooltip("Radius of an inner patch, in metres")]
+            [Min(0.5f)]
+            [SerializeField]
+            private float innerRadius = 2.8f;
+
+            [Tooltip("Distance of the four outer patches from the middle, in metres. Their inner edge stays out of the " +
+                "spawn circle and their outer edge inside the first ring")]
+            [Min(0f)]
+            [SerializeField]
+            private float outerDistance = 12.6f;
+
+            [Tooltip("Radius of an outer patch, in metres")]
+            [Min(0.5f)]
+            [SerializeField]
+            private float outerRadius = 2.1f;
+
+            [Header("On a donut floor")]
+            [Tooltip("Distance of the three inner patches from the middle on a floor with a hole, in metres, along the " +
+                "directions of the hexagon's flats. They lie between the hole and the spawn contour")]
+            [Min(0f)]
+            [SerializeField]
+            private float ringInnerDistance = 5.2f;
+
+            [Tooltip("Radius of an inner patch on a floor with a hole, in metres")]
+            [Min(0.5f)]
+            [SerializeField]
+            private float ringInnerRadius = 1.4f;
+
+            [Tooltip("Distance of the three outer patches from the middle on a floor with a hole, in metres. They lie " +
+                "beyond the spawn contour and reach into the crumbling edge")]
+            [Min(0f)]
+            [SerializeField]
+            private float ringOuterDistance = 11.4f;
+
+            [Tooltip("Radius of an outer patch on a floor with a hole, in metres")]
+            [Min(0.5f)]
+            [SerializeField]
+            private float ringOuterRadius = 1.6f;
+
+            public float CaramelSpeed => caramelSpeed;
+            public float CaramelAcceleration => caramelAcceleration;
+            public float CaramelGrip => caramelGrip;
+            public float CaramelPush => caramelPush;
+            public float CaramelStagger => caramelStagger;
+            public float IcingGrip => icingGrip;
+            public float IcingSpeed => icingSpeed;
+            public float IcingAcceleration => icingAcceleration;
+            public float BlendWidth => blendWidth;
+            public float VanishTime => vanishTime;
+            public float VanishMargin => vanishMargin;
+            public float InnerDistance => innerDistance;
+            public float InnerRadius => innerRadius;
+            public float OuterDistance => outerDistance;
+            public float OuterRadius => outerRadius;
+            public float RingInnerDistance => ringInnerDistance;
+            public float RingInnerRadius => ringInnerRadius;
+            public float RingOuterDistance => ringOuterDistance;
+            public float RingOuterRadius => ringOuterRadius;
+        }
+
+        /// <summary>
+        /// The Carousel arena's turntable: a disc in the middle of the floor that turns and carries the cars on it. It
+        /// reverses on a fixed schedule, easing through a stop, and flashes before it does; see <c>CarouselDisc</c>.
+        /// </summary>
+        [Serializable]
+        public sealed class CarouselSettings
+        {
+            [Tooltip("Radius of the turntable, in metres. Wider than the arena's solid middle, so it shrinks with the " +
+                "floor in the last stage; the cars start outside it")]
+            [Min(1f)]
+            [SerializeField]
+            private float radius = 7f;
+
+            [Tooltip("Turn at full speed, in degrees per second: at the rim 30 is about 3.7 metres per second")]
+            [Min(0f)]
+            [SerializeField]
+            private float angularSpeed = 30f;
+
+            [Tooltip("Seconds into the round before the turntable starts to turn")]
+            [Min(0f)]
+            [SerializeField]
+            private float startDelay = 3f;
+
+            [Tooltip("Seconds it turns one way before it reverses")]
+            [Min(1f)]
+            [SerializeField]
+            private float reverseInterval = 10f;
+
+            [Tooltip("Seconds it takes to get up to speed, and to stop and turn back")]
+            [Min(0.1f)]
+            [SerializeField]
+            private float easeTime = 1f;
+
+            [Tooltip("Seconds before a reversal that the arrows on the rim flash")]
+            [Min(0f)]
+            [SerializeField]
+            private float telegraph = 0.8f;
+
+            [Tooltip("Metres across which the carry fades out at the rim, so a car is not snatched on or off")]
+            [Min(0.05f)]
+            [SerializeField]
+            private float rimBlend = 0.5f;
+
+            [Tooltip("Metres per second the turntable shrinks at once the floor under its rim is crumbling")]
+            [Min(0.5f)]
+            [SerializeField]
+            private float shrinkSpeed = 6f;
+
+            public float Radius => radius;
+            public float AngularSpeed => angularSpeed;
+            public float StartDelay => startDelay;
+            public float ReverseInterval => reverseInterval;
+            public float EaseTime => easeTime;
+            public float Telegraph => telegraph;
+            public float RimBlend => rimBlend;
+            public float ShrinkSpeed => shrinkSpeed;
+        }
+
+        /// <summary>
+        /// The Ball mechanic: a big toy ball rolls along a chord of the arena now and then, announced by a lane on the
+        /// floor, and knocks aside each car it touches. Nobody is credited for a car it knocks out.
+        /// </summary>
+        [Serializable]
+        public sealed class BallSettings
+        {
+            [Tooltip("Seconds into the round before the first ball is announced")]
+            [Min(0f)]
+            [SerializeField]
+            private float delay = 6f;
+
+            [Tooltip("Seconds from one ball being announced to the next")]
+            [Min(1f)]
+            [SerializeField]
+            private float interval = 9f;
+
+            [Tooltip("Random seconds added to or taken off each interval")]
+            [Min(0f)]
+            [SerializeField]
+            private float jitter = 1.5f;
+
+            [Tooltip("Seconds the lane shows on the floor and the ball wobbles at the edge before it rolls")]
+            [Min(0.1f)]
+            [SerializeField]
+            private float warning = 1.3f;
+
+            [Tooltip("Radius of the ball, in metres; the lane is as wide as the ball")]
+            [Min(0.2f)]
+            [SerializeField]
+            private float radius = 1.4f;
+
+            [Tooltip("Speed of the ball on the easiest round, metres per second: it is slower, easier to read and to dodge")]
+            [Min(1f)]
+            [SerializeField]
+            private float easySpeed = 10f;
+
+            [Tooltip("Speed of the ball on the hardest round, metres per second")]
+            [Min(1f)]
+            [SerializeField]
+            private float speed = 13f;
+
+            [Tooltip("The lane passes this far from the middle at most, as a share of the arena's radius; 0 is always " +
+                "through the middle")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float maxOffset = 0.4f;
+
+            [Tooltip("Speed, in metres per second, the ball adds to a car it touches")]
+            [Min(0f)]
+            [SerializeField]
+            private float push = 11f;
+
+            [Tooltip("Share of the push that sends the car sideways out of the lane; the rest goes the way the ball rolls")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float sideShare = 0.8f;
+
+            [Tooltip("Seconds a hit knocks the car off balance")]
+            [Min(0f)]
+            [SerializeField]
+            private float stagger = 0.7f;
+
+            [Tooltip("The player's share of the push and stagger on the easiest round; the hardest takes all of it, so " +
+                "the ball is rarely what drops a new player")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float easyPlayerShare = 0.5f;
+
+            [Tooltip("A bot this close to the lane's side, in metres, counts as in the lane and steers out of it")]
+            [Min(0f)]
+            [SerializeField]
+            private float botMargin = 1.2f;
+
+            [Tooltip("Seconds a bot takes to notice the lane, times 1 over its caution: the clumsy ones see it late")]
+            [SerializeField]
+            private Vector2 botReaction = new(0.15f, 0.45f);
+
+            [Tooltip("A car out of the round is out of the ball's way beyond this height above the floor, in metres")]
+            [Min(0f)]
+            [SerializeField]
+            private float hitHeight = 1.5f;
+
+            public float Delay => delay;
+            public float Interval => interval;
+            public float Jitter => jitter;
+            public float Warning => warning;
+            public float Radius => radius;
+            public float EasySpeed => easySpeed;
+            public float Speed => speed;
+            public float MaxOffset => maxOffset;
+            public float Push => push;
+            public float SideShare => sideShare;
+            public float Stagger => stagger;
+            public float EasyPlayerShare => easyPlayerShare;
+            public float BotMargin => botMargin;
+            public Vector2 BotReaction => botReaction;
+            public float HitHeight => hitHeight;
+        }
+
+        /// <summary>
+        /// The Crab arena's crab: a wind-up toy that walks sideways across the floor along chords and shoves the cars in its way. Nobody is credited for a car it knocks out.
+        /// </summary>
+        [Serializable]
+        public sealed class CrabSettings
+        {
+            [Tooltip("Seconds into the round before the crab starts walking")]
+            [Min(0f)]
+            [SerializeField]
+            private float delay = 5f;
+
+            [Tooltip("Walking speed, in metres per second")]
+            [Min(0f)]
+            [SerializeField]
+            private float speed = 3f;
+
+            [Tooltip("Seconds ahead of the crab its footprints show on the sand, and the bots start to keep out of its path")]
+            [Min(0f)]
+            [SerializeField]
+            private float warning = 1.5f;
+
+            [Tooltip("A car whose middle is this close to the crab's, in metres, is shoved")]
+            [Min(0f)]
+            [SerializeField]
+            private float hitRadius = 2.4f;
+
+            [Tooltip("Speed, in metres per second, the crab adds to a car it shoves, sideways out of its path")]
+            [Min(0f)]
+            [SerializeField]
+            private float push = 8f;
+
+            [Tooltip("Seconds a shove knocks the car off balance")]
+            [Min(0f)]
+            [SerializeField]
+            private float stagger = 0.5f;
+
+            [Tooltip("The player's share of the push and stagger on the easiest round; the hardest takes all of it")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float easyPlayerShare = 0.5f;
+
+            [Tooltip("Seconds the crab stands and snaps its claws at the end of a walk before it turns back")]
+            [Min(0f)]
+            [SerializeField]
+            private float turnPause = 1f;
+
+            [Tooltip("The crab turns back this far, in metres, short of the safe edge, so it rarely walks off")]
+            [Min(0f)]
+            [SerializeField]
+            private float edgeInset = 2.2f;
+
+            [Tooltip("The shortest walk the crab sets out on, in metres")]
+            [Min(0f)]
+            [SerializeField]
+            private float minWalk = 6f;
+
+            [Tooltip("A car above this height over the floor, in metres, is out of the crab's reach")]
+            [Min(0f)]
+            [SerializeField]
+            private float hitHeight = 1.5f;
+
+            public float Delay => delay;
+            public float Speed => speed;
+            public float Warning => warning;
+            public float HitRadius => hitRadius;
+            public float Push => push;
+            public float Stagger => stagger;
+            public float EasyPlayerShare => easyPlayerShare;
+            public float TurnPause => turnPause;
+            public float EdgeInset => edgeInset;
+            public float MinWalk => minWalk;
+            public float HitHeight => hitHeight;
+        }
+
+        /// <summary>
+        /// The Mounds arena's sand mounds: each is announced on the floor, then pops up, tosses the cars on it and stays a while as slow sand. Nobody is credited for a car it knocks out.
+        /// </summary>
+        [Serializable]
+        public sealed class MoundsSettings
+        {
+            [Tooltip("Seconds into the round before the first mounds are announced")]
+            [Min(0f)]
+            [SerializeField]
+            private float delay = 5f;
+
+            [Tooltip("Seconds from one announcement to the next")]
+            [Min(0f)]
+            [SerializeField]
+            private float interval = 6f;
+
+            [Tooltip("Random seconds added to or taken off each interval")]
+            [Min(0f)]
+            [SerializeField]
+            private float jitter = 1f;
+
+            [Tooltip("Fewest mounds announced at once")]
+            [Min(1)]
+            [SerializeField]
+            private int minCount = 1;
+
+            [Tooltip("Most mounds announced at once")]
+            [Min(1)]
+            [SerializeField]
+            private int maxCount = 2;
+
+            [Tooltip("Seconds the circle trembles on the floor before the mound pops up")]
+            [Min(0f)]
+            [SerializeField]
+            private float warning = 1.2f;
+
+            [Tooltip("Seconds a mound stays up before it sinks")]
+            [Min(0f)]
+            [SerializeField]
+            private float stay = 4f;
+
+            [Tooltip("Radius of a mound, in metres")]
+            [Min(0f)]
+            [SerializeField]
+            private float radius = 1.6f;
+
+            [Tooltip("Height of a mound, in metres")]
+            [Min(0f)]
+            [SerializeField]
+            private float height = 0.6f;
+
+            [Tooltip("Speed, in metres per second, a mound throws a car on it outwards from its middle")]
+            [Min(0f)]
+            [SerializeField]
+            private float bounceOut = 6f;
+
+            [Tooltip("Speed, in metres per second, a mound throws a car on it upwards")]
+            [Min(0f)]
+            [SerializeField]
+            private float bounceUp = 3.5f;
+
+            [Tooltip("Seconds the toss knocks the car off balance")]
+            [Min(0f)]
+            [SerializeField]
+            private float stagger = 0.4f;
+
+            [Tooltip("The player's share of the toss and stagger on the easiest round")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float easyPlayerShare = 0.5f;
+
+            [Tooltip("Share of its top speed a car keeps on a risen mound")]
+            [Range(0.1f, 1f)]
+            [SerializeField]
+            private float speed = 0.6f;
+
+            [Tooltip("Share of its acceleration a car keeps on a risen mound")]
+            [Range(0.1f, 1f)]
+            [SerializeField]
+            private float acceleration = 0.7f;
+
+            [Tooltip("How much more a car grips on a risen mound")]
+            [Min(0.1f)]
+            [SerializeField]
+            private float grip = 1.2f;
+
+            [Tooltip("Seconds into the round during which no mound is announced on the cars' starting contour")]
+            [Min(0f)]
+            [SerializeField]
+            private float spawnClearTime = 8f;
+
+            [Tooltip("Metres from the starting contour that stay free of mounds for that time")]
+            [Min(0f)]
+            [SerializeField]
+            private float spawnClear = 3f;
+
+            [Tooltip("A mound lies at least this far, in metres, inside the safe edge, its own radius apart")]
+            [Min(0f)]
+            [SerializeField]
+            private float edgeMargin = 1f;
+
+            public float Delay => delay;
+            public float Interval => interval;
+            public float Jitter => jitter;
+            public int MinCount => minCount;
+            public int MaxCount => maxCount;
+            public float Warning => warning;
+            public float Stay => stay;
+            public float Radius => radius;
+            public float Height => height;
+            public float BounceOut => bounceOut;
+            public float BounceUp => bounceUp;
+            public float Stagger => stagger;
+            public float EasyPlayerShare => easyPlayerShare;
+            public float Speed => speed;
+            public float Acceleration => acceleration;
+            public float Grip => grip;
+            public float SpawnClearTime => spawnClearTime;
+            public float SpawnClear => spawnClear;
+            public float EdgeMargin => edgeMargin;
+        }
+
+        /// <summary>
+        /// The Top arena's spinning top: it wanders over the floor on a curving path, turning back from the edge, and flings the cars it touches round with its spin. Nobody is credited for a car it knocks out.
+        /// </summary>
+        [Serializable]
+        public sealed class TopSettings
+        {
+            [Tooltip("Seconds into the round before the top starts to wander; it spins up for the second before that")]
+            [Min(0f)]
+            [SerializeField]
+            private float delay = 5f;
+
+            [Tooltip("Seconds before it wanders that its ring flashes and it spins faster, so nothing is hit unannounced")]
+            [Min(0f)]
+            [SerializeField]
+            private float spinUp = 1f;
+
+            [Tooltip("Speed of the top over the floor, in metres per second")]
+            [Min(0f)]
+            [SerializeField]
+            private float speed = 4f;
+
+            [Tooltip("The most the wander turns the top, radians per second")]
+            [Min(0f)]
+            [SerializeField]
+            private float turnRate = 1.1f;
+
+            [Tooltip("Radius of the top's body, in metres")]
+            [Min(0f)]
+            [SerializeField]
+            private float radius = 1.3f;
+
+            [Tooltip("A car whose middle is this close to the top's, in metres, is flung")]
+            [Min(0f)]
+            [SerializeField]
+            private float hitRadius = 2.1f;
+
+            [Tooltip("Speed, in metres per second, the top adds to a car it flings")]
+            [Min(0f)]
+            [SerializeField]
+            private float push = 10f;
+
+            [Tooltip("Share of the fling that goes round with the spin; the rest goes straight out from the top")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float tangentShare = 0.75f;
+
+            [Tooltip("Seconds a fling knocks the car off balance")]
+            [Min(0f)]
+            [SerializeField]
+            private float stagger = 0.6f;
+
+            [Tooltip("Seconds before the same car can be flung again")]
+            [Min(0f)]
+            [SerializeField]
+            private float retrigger = 1f;
+
+            [Tooltip("The player's share of the push and stagger on the easiest round")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float easyPlayerShare = 0.5f;
+
+            [Tooltip("The top steers off the safe edge when it is closer than this, in metres")]
+            [Min(0f)]
+            [SerializeField]
+            private float edgeMargin = 2.5f;
+
+            [Tooltip("Seconds of its path ahead that the faint dots show and the bots keep out of")]
+            [Min(0f)]
+            [SerializeField]
+            private float lookAhead = 1f;
+
+            [Tooltip("A car above this height over the floor, in metres, is out of the top's reach")]
+            [Min(0f)]
+            [SerializeField]
+            private float hitHeight = 1.5f;
+
+            public float Delay => delay;
+            public float SpinUp => spinUp;
+            public float Speed => speed;
+            public float TurnRate => turnRate;
+            public float Radius => radius;
+            public float HitRadius => hitRadius;
+            public float Push => push;
+            public float TangentShare => tangentShare;
+            public float Stagger => stagger;
+            public float Retrigger => retrigger;
+            public float EasyPlayerShare => easyPlayerShare;
+            public float EdgeMargin => edgeMargin;
+            public float LookAhead => lookAhead;
+            public float HitHeight => hitHeight;
+        }
+
+        /// <summary>
+        /// The Pencil arena's pencil: a long pencil announced by a dashed band on the floor, then rolled across it like a rolling pin, knocking along the cars in its band. Nobody is credited for a car it knocks out.
+        /// </summary>
+        [Serializable]
+        public sealed class PencilSettings
+        {
+            [Tooltip("Seconds into the round before the first pencil is announced")]
+            [Min(0f)]
+            [SerializeField]
+            private float delay = 6f;
+
+            [Tooltip("Seconds from one announcement to the next")]
+            [Min(0f)]
+            [SerializeField]
+            private float interval = 10f;
+
+            [Tooltip("Random seconds added to or taken off each interval")]
+            [Min(0f)]
+            [SerializeField]
+            private float jitter = 1.5f;
+
+            [Tooltip("Seconds the band shows on the floor and the pencil wobbles at the edge before it rolls")]
+            [Min(0f)]
+            [SerializeField]
+            private float warning = 1.5f;
+
+            [Tooltip("Speed of the pencil across the floor, in metres per second")]
+            [Min(0f)]
+            [SerializeField]
+            private float speed = 6f;
+
+            [Tooltip("Radius of the pencil, in metres")]
+            [Min(0f)]
+            [SerializeField]
+            private float radius = 0.5f;
+
+            [Tooltip("Length of the pencil as a share of the floor's width along its line")]
+            [Range(0.2f, 1f)]
+            [SerializeField]
+            private float lengthShare = 0.6f;
+
+            [Tooltip("How far the pencil's middle may sit from the middle of its line, as a share of the floor's width")]
+            [Range(0f, 0.5f)]
+            [SerializeField]
+            private float maxOffset = 0.35f;
+
+            [Tooltip("Speed, in metres per second, the pencil adds to a car it knocks, along the way it rolls")]
+            [Min(0f)]
+            [SerializeField]
+            private float push = 9f;
+
+            [Tooltip("Seconds a knock leaves the car off balance")]
+            [Min(0f)]
+            [SerializeField]
+            private float stagger = 0.6f;
+
+            [Tooltip("The player's share of the push and stagger on the easiest round")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float easyPlayerShare = 0.5f;
+
+            [Tooltip("A car above this height over the floor, in metres, is out of the pencil's reach")]
+            [Min(0f)]
+            [SerializeField]
+            private float hitHeight = 1.5f;
+
+            public float Delay => delay;
+            public float Interval => interval;
+            public float Jitter => jitter;
+            public float Warning => warning;
+            public float Speed => speed;
+            public float Radius => radius;
+            public float LengthShare => lengthShare;
+            public float MaxOffset => maxOffset;
+            public float Push => push;
+            public float Stagger => stagger;
+            public float EasyPlayerShare => easyPlayerShare;
+            public float HitHeight => hitHeight;
         }
 
         public enum TouchSteering

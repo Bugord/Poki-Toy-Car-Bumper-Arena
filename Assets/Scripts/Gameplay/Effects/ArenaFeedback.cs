@@ -122,6 +122,7 @@ namespace ToyCarArena.Gameplay.Effects
         private ArenaCamera arenaCamera;
         private IAudioService audioService;
         private GameTuning.ArenaSettings arenaSettings;
+        private IArenaEdge edge;
         private EffectPlayer effects;
         private int shownSeconds = -1;
         private Sound pendingJingle;
@@ -129,13 +130,14 @@ namespace ToyCarArena.Gameplay.Effects
 
         [Inject]
         private void Construct(ArenaRound round, ArenaCrumble crumble, ArenaCamera arenaCamera,
-            IAudioService audioService, GameTuning tuning)
+            IAudioService audioService, GameTuning.ArenaSettings arenaSettings, IArenaEdge edge)
         {
             this.round = round;
             this.crumble = crumble;
             this.arenaCamera = arenaCamera;
             this.audioService = audioService;
-            this.arenaSettings = tuning.Arena;
+            this.arenaSettings = arenaSettings;
+            this.edge = edge;
         }
 
         private void Awake()
@@ -148,8 +150,8 @@ namespace ToyCarArena.Gameplay.Effects
             round.CarOut += OnCarOut;
             round.KnockedOut += OnKnockedOut;
             round.Finished += OnFinished;
-            crumble.RingWarning += OnRingWarning;
-            crumble.RingFell += OnRingFell;
+            crumble.WaveWarning += OnWaveWarning;
+            crumble.WaveFell += OnWaveFell;
             audioService.PlayMusic();
         }
 
@@ -180,8 +182,8 @@ namespace ToyCarArena.Gameplay.Effects
             }
 
             if (crumble != null) {
-                crumble.RingWarning -= OnRingWarning;
-                crumble.RingFell -= OnRingFell;
+                crumble.WaveWarning -= OnWaveWarning;
+                crumble.WaveFell -= OnWaveFell;
             }
 
             for (var i = 0; i < cars.Count; i++) {
@@ -307,7 +309,7 @@ namespace ToyCarArena.Gameplay.Effects
         {
             var flat = car.Position;
             flat.y = 0f;
-            flat = Vector3.ClampMagnitude(flat, arenaSettings.Radius + SplashReach);
+            flat = Vector3.ClampMagnitude(flat, edge.FullExtent + SplashReach);
             return flat + Vector3.up * SplashHeight;
         }
 
@@ -324,15 +326,27 @@ namespace ToyCarArena.Gameplay.Effects
             jingleTime = Time.unscaledTime + jingleDelay;
         }
 
-        private void OnRingWarning(float innerRadius, float outerRadius)
+        private void OnWaveWarning(CrumbleWave wave)
         {
-            effects.PlayRingWarning(innerRadius, outerRadius, arenaSettings.CrumbleWarning);
+            if (wave.Spots != null) {
+                effects.PlayTileWarning(wave.Spots, arenaSettings.CrumbleWarning);
+            }
+            else {
+                effects.PlayRingWarning(wave.Inner, wave.Outer, arenaSettings.CrumbleWarning);
+            }
+
             audioService.Play(audioService.Library.CrumbleWarning);
         }
 
-        private void OnRingFell(float innerRadius, float outerRadius)
+        private void OnWaveFell(CrumbleWave wave)
         {
-            effects.PlayRingFall(innerRadius, outerRadius);
+            if (wave.Spots != null) {
+                effects.PlayTileFall(wave.Spots);
+            }
+            else {
+                effects.PlayRingFall(wave.Inner, wave.Outer);
+            }
+
             audioService.Play(audioService.Library.CrumbleFall);
             arenaCamera.Shake(ringFallShake);
         }

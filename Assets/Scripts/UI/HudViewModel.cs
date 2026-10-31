@@ -28,11 +28,11 @@ namespace ToyCarArena.UI
 
         /// <summary>
         /// Raised when a car falls off, the player's included, with its index in the round (0 the player, 1..N the
-        /// bots, as <see cref="CarLook"/> painted them).
+        /// bots, independently of their colours).
         /// </summary>
         public event Action<int> CarOut;
+        public event Action<int, int> Eliminated;
 
-        private readonly ISessionRoster roster;
         private ArenaRound round;
         private PlayerDriver driver;
 
@@ -58,7 +58,8 @@ namespace ToyCarArena.UI
                 }
 
                 var distanceSquared = Controls.BoostHintDistance * Controls.BoostHintDistance;
-                foreach (var car in round.Cars) {
+                for (var index = 0; index < round.Cars.Count; index++) {
+                    var car = round.Cars[index];
                     if (car != round.Player && !car.IsOut &&
                         (car.Position - round.Player.Position).sqrMagnitude < distanceSquared) {
                         return true;
@@ -69,14 +70,30 @@ namespace ToyCarArena.UI
             }
         }
 
-        public HudViewModel(ISessionRoster roster)
-        {
-            this.roster = roster;
-        }
-
-        public string NameOf(int index) => roster.NameOf(index);
+        public string NameOf(int index) => round.NameOf(index);
+        public int ColorOf(int index) => round.ColorOf(index);
 
         public Vector3 PositionOf(int index) => round.Cars[index].Position;
+
+        public float LastBoostOf(int index) => round.Cars[index].Movement.LastBoostTime;
+        public float LastHitOf(int index) => round.Cars[index].LastHitTime;
+
+        // Observation only: these sources never steer a car or consume the bot driver's random sequence.
+        public bool IsNearEdge(int index)
+        {
+            var position = round.Cars[index].Position;
+            position.y = 0f;
+            return round.Edge.Nearness(position) >= 0.85f;
+        }
+
+        public bool HasRecovered(int index)
+        {
+            var car = round.Cars[index];
+            var position = car.Position;
+            position.y = 0f;
+            return !car.IsOut && car.Movement.IsGrounded && !car.Movement.IsStaggered &&
+                (round.Edge.Nearness(position) < 0.85f || Vector3.Dot(round.Edge.Inward(position), car.Movement.Velocity) >= 0f);
+        }
 
         public bool IsNemesis(int index) => round != null && round.Nemesis != null &&
             round.IndexOf(round.Nemesis) == index;
@@ -96,7 +113,7 @@ namespace ToyCarArena.UI
         public int CarCount => round?.Cars.Count ?? 0;
 
         /// <summary>
-        /// The index of the player's car; its colour and place on the HUD set it apart.
+        /// The index of the player's car; its white ring and place on the HUD set it apart.
         /// </summary>
         public int PlayerIndex => round?.Player != null ? round.IndexOf(round.Player) : 0;
 
@@ -140,6 +157,7 @@ namespace ToyCarArena.UI
             if (round != null) {
                 round.CarOut += OnCarOut;
                 round.KnockedOut += OnKnockedOut;
+                round.Eliminated += OnEliminated;
             }
         }
 
@@ -154,6 +172,7 @@ namespace ToyCarArena.UI
             if (round != null) {
                 round.CarOut -= OnCarOut;
                 round.KnockedOut -= OnKnockedOut;
+                round.Eliminated -= OnEliminated;
             }
         }
 
@@ -161,6 +180,8 @@ namespace ToyCarArena.UI
         {
             CarOut?.Invoke(round.IndexOf(car));
         }
+
+        private void OnEliminated(int index, int by) => Eliminated?.Invoke(index, by);
 
         private void OnKnockedOut(Car car, Car knockedOutBy)
         {
@@ -172,7 +193,7 @@ namespace ToyCarArena.UI
             // edge, under it, is still on the screen and tells which car it was.
             var position = car.Position;
             var flat = new Vector3(position.x, 0f, position.z);
-            PlayerKnockout?.Invoke(Vector3.ClampMagnitude(flat, round.ArenaRadius), car == round.Nemesis);
+            PlayerKnockout?.Invoke(round.Edge.ClampToFloor(flat), car == round.Nemesis);
         }
     }
 

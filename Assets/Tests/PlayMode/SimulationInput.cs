@@ -13,11 +13,12 @@ namespace ToyCarArena.Tests.PlayMode
         public event Action<BoostInputMethod> BoostPressed;
 
         public Vector2 CurrentMoveInput { get; private set; }
+        private PointerDrag? pointer;
 
         public bool TryGetDrag(out PointerDrag drag)
         {
-            drag = default;
-            return false;
+            drag = pointer.GetValueOrDefault();
+            return pointer.HasValue;
         }
 
         public void SetMove(Vector2 move)
@@ -28,9 +29,24 @@ namespace ToyCarArena.Tests.PlayMode
             }
         }
 
-        public void PressBoost()
+        public void SetPointer(PointerDrag? drag)
         {
-            BoostPressed?.Invoke(BoostInputMethod.Key);
+            var started = !pointer.HasValue && drag.HasValue;
+            this.pointer = drag;
+            if (started) {
+                MoveUsed?.Invoke(drag.Value.IsMouse ? InputMethod.Mouse : InputMethod.Touch);
+            }
+        }
+
+        public void Reset()
+        {
+            this.pointer = null;
+            this.CurrentMoveInput = Vector2.zero;
+        }
+
+        public void PressBoost(BoostInputMethod method = BoostInputMethod.Key)
+        {
+            BoostPressed?.Invoke(method);
         }
 
         public void CancelTapBoost()

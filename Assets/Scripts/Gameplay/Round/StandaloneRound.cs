@@ -17,13 +17,15 @@ namespace ToyCarArena.Gameplay.Round
         private readonly ArenaRound round;
         private readonly GameTuning tuning;
         private readonly SessionProgress progress;
+        private readonly ISessionRoster sessionRoster;
         private readonly CancellationTokenSource lifetime = new();
 
-        public StandaloneRound(ArenaRound round, GameTuning tuning, SessionProgress progress)
+        public StandaloneRound(ArenaRound round, GameTuning tuning, SessionProgress progress, ISessionRoster sessionRoster)
         {
             this.round = round;
             this.tuning = tuning;
             this.progress = progress;
+            this.sessionRoster = sessionRoster;
         }
 
         /// <summary>
@@ -36,7 +38,7 @@ namespace ToyCarArena.Gameplay.Round
 
         // Lazy: Unity's random API must run on the main thread, not in a static initializer during scene loading.
         private static SessionRoster roster;
-        public static SessionRoster Roster(CarCatalog catalog) => roster ??= new SessionRoster(catalog);
+        public static SessionRoster Roster(CarCatalog catalog) => roster ??= new SessionRoster(catalog, new FirstPlayerCar(catalog));
 
         public void Start()
         {
@@ -55,6 +57,7 @@ namespace ToyCarArena.Gameplay.Round
         private static void ResetSession()
         {
             Session = new SessionProgress();
+            roster?.Dispose();
             roster = null;
         }
 
@@ -63,6 +66,8 @@ namespace ToyCarArena.Gameplay.Round
             Debug.Log($"Round {progress.Round} over: {result.Outcome}, #{result.Place} of {result.CarCount} after " +
                 $"{result.Seconds:0.0} s, {result.Knockouts} knocked out, knocked out by {result.KnockedOutBy}.");
             progress.Record(result);
+            sessionRoster.NextRound(result.CarCount - 1, RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis,
+                tuning.Players);
             RestartLater(result.Outcome, lifetime.Token).Forget();
         }
 

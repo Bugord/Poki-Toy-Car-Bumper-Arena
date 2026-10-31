@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace ToyCarArena.Gameplay.Round
 {
     /// <summary>
@@ -29,6 +32,9 @@ namespace ToyCarArena.Gameplay.Round
 
         /// <summary>The player boosted shortly before falling.</summary>
         Boost,
+
+        /// <summary>The Ball arena's ball knocked the player, and no car did after it.</summary>
+        Ball,
 
         /// <summary>Another car hit the player too long ago for knockout credit.</summary>
         Slide,
@@ -62,7 +68,7 @@ namespace ToyCarArena.Gameplay.Round
         /// <summary>
         /// The spawn index of the car that knocked the player out (1..N, a bot; see <see cref="ArenaRound.IndexOf"/>),
         /// or <see cref="Nobody"/>. An index rather than the car, because the car goes with its scene and the result
-        /// outlives it; the index is also what tells the car's colour.
+        /// outlives it. Colours are captured separately in Colors.
         /// </summary>
         public readonly int KnockedOutBy;
 
@@ -77,8 +83,13 @@ namespace ToyCarArena.Gameplay.Round
         /// <summary>The player got knockout credit for the marked rival.</summary>
         public readonly bool RevengeTaken;
 
+        public IReadOnlyList<RoundStanding> Standings { get; }
+        public IReadOnlyList<int> Colors { get; }
+        public int ColorOf(int index) => Colors[index];
+
         public RoundResult(RoundOutcome outcome, int place, int carCount, float seconds, int knockouts, int knockedOutBy,
-            FallCause fallCause, bool hadNemesis, bool revengeTaken)
+            FallCause fallCause, bool hadNemesis, bool revengeTaken, IReadOnlyList<RoundStanding> standings = null,
+            IReadOnlyList<int> colors = null)
         {
             Outcome = outcome;
             Place = place;
@@ -89,6 +100,8 @@ namespace ToyCarArena.Gameplay.Round
             FallCause = fallCause;
             HadNemesis = hadNemesis;
             RevengeTaken = revengeTaken;
+            Standings = standings ?? Array.Empty<RoundStanding>();
+            Colors = colors ?? Array.Empty<int>();
         }
     }
 }

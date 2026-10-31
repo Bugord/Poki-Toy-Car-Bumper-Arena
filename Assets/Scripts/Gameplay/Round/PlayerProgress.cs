@@ -6,13 +6,16 @@ using ToyCarArena.Gameplay.Cars;
 namespace ToyCarArena.Gameplay.Round
 {
     /// <summary>
-    /// Saves total XP and the selected cosmetic car. Levels and available cars follow the tuning and catalog, so
-    /// unlocks never disagree with the saved experience. Lives in the app scope to survive arena reloads.
+    /// Saves total XP, cosmetic model and free colour selection. Levels and available cars follow the tuning and
+    /// catalog, so unlocks never disagree with saved experience. Lives in the app scope to survive arena reloads.
     /// </summary>
     public sealed class PlayerProgress : IPlayerCar
     {
         private const string TotalKey = "xp_total";
         private const string SelectedKey = "car_selected";
+        private const string ColorKey = "car_color";
+
+        public event Action<int> ColorChanged;
 
         private readonly IKeyValueStorage storage;
         private readonly GameTuning.ProgressSettings settings;
@@ -38,6 +41,18 @@ namespace ToyCarArena.Gameplay.Round
         public int TotalXp => Math.Max(0, storage.GetInt(TotalKey));
         public int Level => At(TotalXp).Level;
         public CarCatalog.Entry NextCar => catalog.NextLocked(Level);
+        public int SelectedColor => CarPaint.OrGreen(storage.GetInt(ColorKey));
+
+        public bool SelectColor(int id)
+        {
+            if (!CarPaint.IsValid(id) || id == SelectedColor) {
+                return false;
+            }
+
+            storage.SetInt(ColorKey, id);
+            ColorChanged?.Invoke(id);
+            return true;
+        }
 
         public string SelectedCar
         {

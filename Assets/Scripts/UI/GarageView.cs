@@ -8,13 +8,21 @@ using UnityEngine.UIElements;
 
 namespace ToyCarArena.UI
 {
-    /// <summary>A full-screen popup: UIKit keeps RoundOver attached underneath and gives only the garage focus.</summary>
+    /// <summary>
+    /// A full-screen popup: UIKit keeps RoundOver attached underneath and gives only the garage focus. NEXT MATCH (and
+    /// Space or Enter) starts the next round straight from here; the close button and Esc go back to the result.
+    /// </summary>
     public sealed class GarageView : FadingView<GarageViewModel>
     {
         private const float BounceDuration = 0.3f;
         private readonly IAudioService audioService;
-        private readonly List<(CarCatalog.Entry Car, Button Button, Label Status)> cards = new();
-        private Button backButton;
+        private readonly List<(CarCatalog.Entry Car, Button Button, Label Status, CarPortrait Portrait)> cards = new();
+        private readonly Button[] colors = new Button[CarPaint.Count];
+        private Button closeButton;
+        private Button settingsButton;
+        private CancellationTokenSource lifetime;
+        private Button playButton;
+        private CarPortrait preview;
         private bool isClosing;
         private CancellationTokenSource bounce;
         private VisualElement bouncingCard;
@@ -31,14 +39,37 @@ namespace ToyCarArena.UI
             Root.RegisterCallback<KeyDownEvent>(OnKeyDown, TrickleDown.TrickleDown);
             Root.RegisterCallback<NavigationCancelEvent>(OnCancel);
             Root.RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
-            backButton = Root.Q<Button>("garage-back");
-            backButton.RemoveFromClassList(Button.ussClassName);
-            backButton.clicked += Back;
-
-            var level = ViewModel.Level;
-            Root.Q<Label>("garage-level-value").text = $"LVL {level.Level}";
-            Root.Q<VisualElement>("garage-xp-fill").style.width = Length.Percent(100f * level.Xp / level.Cost);
-            Root.Q<Label>("garage-xp-value").text = $"{level.Xp} / {level.Cost} XP";
+            closeButton = Root.Q<Button>("garage-close");
+            closeButton.RemoveFromClassList(Button.ussClassName);
+            closeButton.clicked += Back;
+            playButton = Root.Q<Button>("garage-play");
+            playButton.RemoveFromClassList(Button.ussClassName);
+            playButton.clicked += NextMatch;
+            settingsButton = Root.Q<Button>("settings-button");
+            settingsButton.RemoveFromClassList(Button.ussClassName);
+            settingsButton.clicked += OpenSettings;
+            lifetime = new CancellationTokenSource();
+            preview = new CarPortrait(Root.Q<VisualElement>("garage-preview"));
+            var colorRow = Root.Q<VisualElement>("garage-colors");
+            for (var id = 0; id < colors.Length; id++) {
+                var colorId = id;
+                var button = new Button {
+                    name = $"garage-color-{CarPaint.NameOf(id)}",
+                    tooltip = CarPaint.NameOf(id).ToUpperInvariant(),
+                };
+                button.RemoveFromClassList(Button.ussClassName);
+                button.AddToClassList("garage__color");
+                button.AddToClassList(CarColor.ClassOf(id));
+                var ring = new VisualElement { pickingMode = PickingMode.Ignore };
+                ring.AddToClassList("garage__color-ring");
+                var check = new VisualElement { pickingMode = PickingMode.Ignore };
+                check.AddToClassList("garage__color-check");
+                ring.Add(check);
+                button.Add(ring);
+                button.clicked += () => SelectColor(colorId, button);
+                colors[id] = button;
+                colorRow.Add(button);
+            }
             var grid = Root.Q<VisualElement>("garage-grid");
             foreach (var car in ViewModel.Cars) {
                 var button = new Button { name = $"garage-car-{car.Id}" };
@@ -47,8 +78,8 @@ namespace ToyCarArena.UI
                 var portrait = new VisualElement { pickingMode = PickingMode.Ignore };
                 portrait.AddToClassList("car-portrait");
                 portrait.AddToClassList("garage__portrait");
-                portrait.style.backgroundImage = new StyleBackground(car.Portrait);
-                portrait.EnableInClassList("car-portrait--locked", !ViewModel.IsUnlocked(car.Id));
+                var image = new CarPortrait(portrait);
+                image.Set(car, ViewModel.SelectedColor, !ViewModel.IsUnlocked(car.Id));
                 button.Add(portrait);
                 var name = new Label(car.DisplayName) { pickingMode = PickingMode.Ignore };
                 name.AddToClassList("garage__name");
@@ -63,7 +94,7 @@ namespace ToyCarArena.UI
                 statusRow.Add(status);
                 button.Add(statusRow);
                 button.clicked += () => Select(car, button);
-                cards.Add((car, button, status));
+                cards.Add((car, button, status, image));
                 grid.Add(button);
             }
 
@@ -75,14 +106,33 @@ namespace ToyCarArena.UI
 
         private void RefreshSelection()
         {
-            foreach (var (car, button, status) in cards) {
+            var selectedCar = ViewModel.SelectedEntry;
+            preview.Set(selectedCar, ViewModel.SelectedColor);
+            Root.Q<Label>("garage-preview-name").text = selectedCar?.DisplayName;
+            Root.Q<Label>("garage-preview-name-face").text = selectedCar?.DisplayName;
+            for (var id = 0; id < colors.Length; id++) {
+                colors[id].EnableInClassList("garage__color--selected", id == ViewModel.SelectedColor);
+            }
+            foreach (var (car, button, status, portrait) in cards) {
                 var selected = car.Id == ViewModel.SelectedCar;
                 var unlocked = ViewModel.IsUnlocked(car.Id);
                 button.EnableInClassList("garage__car--selected", selected);
                 button.EnableInClassList("garage__car--locked", !unlocked);
                 status.text = selected ? "IN USE" : unlocked ? "USE" : $"LVL {car.UnlockLevel}";
                 button.tooltip = unlocked ? car.DisplayName : $"UNLOCK AT LVL {car.UnlockLevel}";
+                portrait.SetColor(ViewModel.SelectedColor);
             }
+        }
+
+        private void SelectColor(int id, Button button)
+        {
+            if (!IsShown || isClosing || !ViewModel.SelectColor(id)) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            RefreshSelection();
+            StartBounce(button);
         }
 
         private void Select(CarCatalog.Entry car, Button button)
@@ -94,6 +144,11 @@ namespace ToyCarArena.UI
             audioService.PlayUiClick();
             ViewModel.Select(car.Id);
             RefreshSelection();
+            StartBounce(button);
+        }
+
+        private void StartBounce(VisualElement button)
+        {
             StopBounce();
             bouncingCard = button;
             bounce = new CancellationTokenSource();
@@ -117,8 +172,10 @@ namespace ToyCarArena.UI
                 Back();
             }
             else if (evt.keyCode is KeyCode.Space or KeyCode.Return or KeyCode.KeypadEnter) {
-                // Do not let a repeat of the result screen's restart key activate a newly focused card or BACK.
+                // The keys mean NEXT MATCH here as on the result, never a press of whichever card has the focus.
+                // A repeat of the result's restart key reaches us before the fade-in ends and is dropped by IsShown.
                 evt.StopImmediatePropagation();
+                NextMatch();
             }
         }
 
@@ -128,15 +185,36 @@ namespace ToyCarArena.UI
             Back();
         }
 
+        private void OpenSettings()
+        {
+            if (!IsShown || isClosing || ViewModel.IsSettingsOpen) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            ViewModel.OpenSettings(lifetime.Token).Forget();
+        }
+
         private void Back()
         {
-            if (!IsShown || isClosing) {
+            if (!IsShown || isClosing || ViewModel.IsSettingsOpen) {
                 return;
             }
 
             isClosing = true;
             audioService.PlayUiClick();
             ViewModel.Back();
+        }
+
+        private void NextMatch()
+        {
+            if (!IsShown || isClosing || ViewModel.IsSettingsOpen) {
+                return;
+            }
+
+            isClosing = true;
+            audioService.PlayUiClick();
+            ViewModel.NextMatch();
         }
 
         private void StopBounce()
@@ -163,9 +241,17 @@ namespace ToyCarArena.UI
             Root?.UnregisterCallback<KeyDownEvent>(OnKeyDown, TrickleDown.TrickleDown);
             Root?.UnregisterCallback<NavigationCancelEvent>(OnCancel);
             Root?.UnregisterCallback<GeometryChangedEvent>(OnGeometryChanged);
-            if (backButton != null) {
-                backButton.clicked -= Back;
+            if (closeButton != null) {
+                closeButton.clicked -= Back;
             }
+            if (playButton != null) {
+                playButton.clicked -= NextMatch;
+            }
+            if (settingsButton != null) {
+                settingsButton.clicked -= OpenSettings;
+            }
+            lifetime?.Cancel();
+            lifetime?.Dispose();
             cards.Clear();
             base.Dispose();
         }

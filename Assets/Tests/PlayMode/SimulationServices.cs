@@ -20,6 +20,8 @@ namespace ToyCarArena.Tests.PlayMode
     {
         public AudioLibrary Library { get; }
         public bool IsPaused { get; set; }
+        public bool IsMusicMuted { get; set; }
+        public bool IsSoundMuted { get; set; }
 
         public SilentAudioService(AudioLibrary library)
         {

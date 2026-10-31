@@ -15,8 +15,9 @@
    - red: the last seconds, a knock-out; gold: a win, first place, the stopwatch; silver, bronze: second and third place
    - green/green-shade/green-hover: the primary button
    - confetti: red, blue, green, orange, purple and gold
-   - car-*: the cars' bodies (car-color--N in ui_screens), in the order of CarLook's swatches on the car prefab: green
-     (the player), red, blue, yellow, purple, orange, pink and dark. Each is the atlas colour (tex_toy_car_kit_colormap)
+   - car-*: the cars' bodies (car-color--N in ui_screens), in the order of CarLook's swatches on the car prefab: green,
+     red, blue, yellow, purple, orange, pink and dark. IDs 0..7 are independent of car indices; CarColor.TintOf mirrors
+     these exact sRGB values for the two-layer portraits. Each is the atlas colour (tex_toy_car_kit_colormap)
      at the middle of the part of its swatch the body's UVs sit on, the right half, which shades down the swatch. On the
      arena light and shade make the body a little lighter or darker than this flat colour. */
 :root {

@@ -37,6 +37,22 @@ namespace ToyCarArena.Gameplay
         [SerializeField]
         private CarCatalog carCatalog;
 
+        [Tooltip("Arena catalog for Game opened without Boot; with a parent the parent's catalog is used")]
+        [SerializeField]
+        private ArenaCatalog arenaCatalog;
+
+        [Tooltip("Materials of the Candy arena's caramel and icing patches; unused on the other arenas")]
+        [SerializeField]
+        private CandyDecor candyDecor;
+
+        [Tooltip("Materials of the Carousel arena's turntable; unused on the other arenas")]
+        [SerializeField]
+        private CarouselDecor carouselDecor;
+
+        [Tooltip("Materials of the mechanics that build their look in code, by name; unused on arenas without one")]
+        [SerializeField]
+        private MechanicArt mechanicArt;
+
         [Tooltip("Sounds and music for the scene played on its own; from Boot the app's audio plays")]
         [SerializeField]
         private AudioLibrary audioLibrary;
@@ -49,6 +65,15 @@ namespace ToyCarArena.Gameplay
             Require(arenaCamera, nameof(arenaCamera));
             Require(arenaFloor, nameof(arenaFloor));
             Require(carPrefab, nameof(carPrefab));
+            Require(candyDecor, nameof(candyDecor));
+            if (!candyDecor.IsComplete) {
+                throw new MissingReferenceException($"{nameof(CandyDecor)} in {gameObject.scene.name} lacks a material.");
+            }
+            Require(carouselDecor, nameof(carouselDecor));
+            if (!carouselDecor.IsComplete) {
+                throw new MissingReferenceException($"{nameof(CarouselDecor)} in {gameObject.scene.name} lacks a material.");
+            }
+            Require(mechanicArt, nameof(mechanicArt));
             Require(audioLibrary, nameof(audioLibrary));
 
             // No parent means no Boot, so no app scope to bring the kit's storage and logging, nor app states to play
@@ -59,6 +84,11 @@ namespace ToyCarArena.Gameplay
                 Require(carCatalog, nameof(carCatalog));
                 builder.RegisterInstance(carCatalog, typeof(CarCatalog));
                 builder.Register<IPlayerCar, FirstPlayerCar>(Lifetime.Singleton);
+                // On its own the scene plays the first arena round after round: there is no level to open the others.
+                Require(arenaCatalog, nameof(arenaCatalog));
+                builder.RegisterInstance(arenaCatalog, typeof(ArenaCatalog));
+                builder.RegisterInstance(new FixedArenaRotation(tuning.Maps[0].Id), typeof(FixedArenaRotation))
+                    .As(typeof(IArenaRotation));
             }
 
             // The non-generic overload on purpose: in the release WebGL player (IL2CPP, faster-smaller code generation)
@@ -84,8 +114,25 @@ namespace ToyCarArena.Gameplay
                 builder.RegisterEntryPoint<InputService>().As<IInputService>();
             }
 
+            // The arena of this scene, from the rotation of the app scope (or the fixed one of a scene on its own, or of a
+            // simulation): chosen once, as the scene is built. Each reader takes what it needs from it.
+            builder.Register<ArenaMap>(Lifetime.Singleton);
+            builder.Register(resolver => resolver.Resolve<ArenaMap>().Settings, Lifetime.Singleton);
+
             builder.RegisterComponent(arenaCamera);
-            builder.RegisterComponent(arenaFloor);
+            // The floor is also the arena's edge: everything that asks how far the edge is, or which way, asks the interface.
+            builder.RegisterComponent(arenaFloor).AsSelf().As<IArenaEdge>();
+            builder.RegisterComponent(candyDecor);
+            builder.RegisterComponent(carouselDecor);
+
+            // What the floor does to a car: the Candy arena's patches, neutral on the others. Cars ask for it as they are
+            // built, so it is registered on every arena.
+            // The composite of the mechanics that change the floor's feel; each adds itself as a layer when it is built.
+            builder.Register<ArenaSurface>(Lifetime.Singleton).AsSelf().As<IArenaSurface>();
+            builder.RegisterEntryPoint<CandyPatches>().AsSelf();
+
+            // The part of the floor that moves and carries the cars: the Carousel arena's turntable, still on the others.
+            builder.RegisterEntryPoint<CarouselDisc>().AsSelf().As<IArenaPlatform>();
 
             // Read from the session's progress once, as the scene is built: the round's cars, the bots and the player's
             // driver share it, and the session moves on before the next scene is.
@@ -95,8 +142,23 @@ namespace ToyCarArena.Gameplay
             // the injector builds them, and outlive the scene.
             builder.RegisterEntryPoint<ArenaRound>().AsSelf().WithParameter(carPrefab).WithParameter(transform);
             builder.RegisterEntryPoint<PlayerDriver>().AsSelf();
+            builder.Register<BallLane>(Lifetime.Singleton);
+            builder.Register<ArenaHazards>(Lifetime.Singleton);
+            builder.RegisterInstance(mechanicArt, typeof(MechanicArt));
             builder.RegisterEntryPoint<BotDriver>();
             builder.RegisterEntryPoint<ArenaCrumble>().AsSelf();
+            // The objects of the sandbox and tabletop variants: each does nothing unless its variant names it.
+            builder.RegisterEntryPoint<ArenaCrab>().AsSelf().WithParameter(transform);
+            builder.RegisterEntryPoint<ArenaMounds>().AsSelf().WithParameter(transform);
+            builder.RegisterEntryPoint<ArenaTop>().AsSelf().WithParameter(transform);
+            builder.RegisterEntryPoint<ArenaPencil>().AsSelf().WithParameter(transform);
+            builder.RegisterEntryPoint<ArenaDecor>().WithParameter(transform);
+            builder.RegisterEntryPoint<ArenaWorld>().WithParameter(transform);
+            // The interactive objects of the arena variants; each builds and does something only on its own variant.
+            builder.RegisterEntryPoint<JellyPads>().AsSelf().WithParameter(transform);
+            builder.RegisterEntryPoint<CandyStirrer>().AsSelf().WithParameter(transform);
+            builder.RegisterEntryPoint<ToyTrain>().AsSelf().WithParameter(transform);
+            builder.RegisterEntryPoint<JackBoxes>().AsSelf().WithParameter(transform);
             if (isStandalone) {
                 builder.RegisterEntryPoint<StandaloneRound>();
                 // From Boot the session's progress lives in the app scope; on its own the scene reloads itself every

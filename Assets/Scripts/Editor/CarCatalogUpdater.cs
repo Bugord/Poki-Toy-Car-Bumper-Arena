@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using ToyCarArena.Gameplay.Cars;
 using UnityEditor;
@@ -52,21 +53,11 @@ namespace ToyCarArena.Editor
                 entry.FindPropertyRelative("bodySwatch").vector2IntValue = swatch;
                 AuditSwatch(model, body, swatch);
                 var path = $"{PortraitFolder}/tex_car_{id.Replace('-', '_')}.png";
-                RenderPortrait(model, swatch, look, path);
-                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
-                var importer = (TextureImporter)AssetImporter.GetAtPath(path);
-                importer.textureType = TextureImporterType.Default;
-                importer.alphaSource = TextureImporterAlphaSource.FromInput;
-                importer.alphaIsTransparency = true;
-                importer.mipmapEnabled = false;
-                importer.textureCompression = TextureImporterCompression.Compressed;
-                importer.maxTextureSize = PortraitSize;
-                importer.sRGBTexture = true;
-                importer.wrapMode = TextureWrapMode.Clamp;
-                importer.SaveAndReimport();
-                entry.FindPropertyRelative("portrait").objectReferenceValue =
-                    AssetDatabase.LoadAssetAtPath<Texture2D>(path);
-                Debug.Log($"Car {id}: body {body.name}, paint {swatch}, portrait {path}.", catalog);
+                var bodyPath = $"{PortraitFolder}/tex_car_{id.Replace('-', '_')}_body.png";
+                RenderPortrait(model, swatch, look, path, bodyPath);
+                entry.FindPropertyRelative("portrait").objectReferenceValue = ImportPortrait(path);
+                entry.FindPropertyRelative("bodyPortrait").objectReferenceValue = ImportPortrait(bodyPath);
+                Debug.Log($"Car {id}: body {body.name}, paint {swatch}, portraits {path}, {bodyPath}.", catalog);
             }
 
             serialized.ApplyModifiedPropertiesWithoutUndo();
@@ -77,6 +68,22 @@ namespace ToyCarArena.Editor
 
         [MenuItem("Tools/Cars/Update Catalog", true)]
         private static bool CanUpdateCatalog() => !EditorApplication.isPlayingOrWillChangePlaymode;
+
+        private static Texture2D ImportPortrait(string path)
+        {
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+            var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+            importer.textureType = TextureImporterType.Default;
+            importer.alphaSource = TextureImporterAlphaSource.FromInput;
+            importer.alphaIsTransparency = true;
+            importer.mipmapEnabled = false;
+            importer.textureCompression = TextureImporterCompression.Compressed;
+            importer.maxTextureSize = PortraitSize;
+            importer.sRGBTexture = true;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.SaveAndReimport();
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+        }
 
         private static void AuditSwatch(GameObject model, MeshFilter body, Vector2Int swatch)
         {
@@ -95,14 +102,17 @@ namespace ToyCarArena.Editor
             }
         }
 
-        private static void RenderPortrait(GameObject source, Vector2Int swatch, CarLook look, string path)
+        private static void RenderPortrait(GameObject source, Vector2Int swatch, CarLook look, string path, string bodyPath)
         {
             // PreviewRenderUtility owns an isolated preview scene, camera and lights. No scene, render settings or
             // gameplay components from the open arena are changed, and Cleanup releases the temporary model too.
             var preview = new PreviewRenderUtility();
             Mesh mesh = null;
             Texture2D portrait = null;
-            var previewOpen = false;
+            Texture2D mask = null;
+            Material whiteBody = null;
+            Material maskWhite = null;
+            Material maskBlack = null;
             var previousTarget = RenderTexture.active;
             try {
                 var root = new GameObject("Car Portrait");
@@ -110,7 +120,16 @@ namespace ToyCarArena.Editor
                 root.transform.rotation = look.ModelRotation;
                 var model = UnityEngine.Object.Instantiate(source, root.transform, false);
                 CarModel.SetMaterial(model, look.ModelMaterial);
-                mesh = CarModel.PaintBody(CarModel.FindBody(model, out _), swatch, look.PlayerSwatch);
+                var body = CarModel.FindBody(model, out _);
+                // Only paint triangles use a white copy of the original lit material; glass, rubber and metal keep
+                // the atlas. The same lights and normals shade both portrait layers identically.
+                mesh = SplitPaint(body.sharedMesh, swatch);
+                body.sharedMesh = mesh;
+                whiteBody = new Material(look.ModelMaterial) { hideFlags = HideFlags.HideAndDontSave };
+                whiteBody.SetTexture("_BaseMap", Texture2D.whiteTexture);
+                whiteBody.SetColor("_BaseColor", Color.white);
+                var bodyRenderer = body.GetComponent<MeshRenderer>();
+                bodyRenderer.sharedMaterials = new[] { look.ModelMaterial, whiteBody };
 
                 preview.ambientColor = new Color(0.55f, 0.55f, 0.55f);
                 preview.lights[0].intensity = 1.1f;
@@ -138,33 +157,39 @@ namespace ToyCarArena.Editor
                 camera.nearClipPlane = 0.01f;
                 camera.farClipPlane = distance * 2f;
 
-                var points = PortraitSize / EditorGUIUtility.pixelsPerPoint;
-                preview.BeginPreview(new Rect(0f, 0f, points, points), GUIStyle.none);
-                previewOpen = true;
-                preview.Render(true);
-                var rendered = (RenderTexture)preview.EndPreview();
-                previewOpen = false;
-                // EndStaticPreview creates RGB24 and discards alpha. Read the RGBA preview target ourselves instead.
-                RenderTexture.active = rendered;
-                portrait = new Texture2D(PortraitSize, PortraitSize, TextureFormat.RGBA32, false);
-                portrait.ReadPixels(new Rect(0f, 0f, PortraitSize, PortraitSize), 0, 0);
+                portrait = Capture(preview);
+                var pixels = portrait.GetPixels();
                 if (QualitySettings.activeColorSpace == ColorSpace.Linear) {
-                    var pixels = portrait.GetPixels();
                     for (var i = 0; i < pixels.Length; i++) {
                         pixels[i] = pixels[i].gamma;
                     }
-
-                    portrait.SetPixels(pixels);
                 }
-
+                portrait.SetPixels(pixels);
                 portrait.Apply();
                 File.WriteAllBytes(path, portrait.EncodeToPNG());
+
+                // A depth-tested unlit mask: every non-paint triangle stays opaque black, including other meshes
+                // in front of the body. Nothing is disabled, so no hidden body pixels leak into the second PNG.
+                var shader = Shader.Find("Universal Render Pipeline/Unlit");
+                if (shader == null) {
+                    throw new MissingReferenceException("Portrait body mask needs the URP Unlit shader.");
+                }
+                maskWhite = MaskMaterial(shader, Color.white);
+                maskBlack = MaskMaterial(shader, Color.black);
+                CarModel.SetMaterial(model, maskBlack);
+                bodyRenderer.sharedMaterials = new[] { maskBlack, maskWhite };
+                camera.backgroundColor = Color.black;
+                mask = Capture(preview);
+                var coverage = mask.GetPixels();
+                for (var i = 0; i < pixels.Length; i++) {
+                    // RGB comes from the lit white render, alpha from visibility; mask values are coverage, not colour.
+                    pixels[i].a = Mathf.Min(pixels[i].a, coverage[i].r);
+                }
+                portrait.SetPixels(pixels);
+                portrait.Apply();
+                File.WriteAllBytes(bodyPath, portrait.EncodeToPNG());
             }
             finally {
-                if (previewOpen) {
-                    preview.EndPreview();
-                }
-
                 RenderTexture.active = previousTarget;
                 preview.Cleanup();
                 if (mesh != null) {
@@ -174,6 +199,84 @@ namespace ToyCarArena.Editor
                 if (portrait != null) {
                     UnityEngine.Object.DestroyImmediate(portrait);
                 }
+                if (mask != null) {
+                    UnityEngine.Object.DestroyImmediate(mask);
+                }
+                if (whiteBody != null) {
+                    UnityEngine.Object.DestroyImmediate(whiteBody);
+                }
+                if (maskWhite != null) {
+                    UnityEngine.Object.DestroyImmediate(maskWhite);
+                }
+                if (maskBlack != null) {
+                    UnityEngine.Object.DestroyImmediate(maskBlack);
+                }
+            }
+        }
+
+        private static Material MaskMaterial(Shader shader, Color color)
+        {
+            var material = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
+            material.SetTexture("_BaseMap", Texture2D.whiteTexture);
+            material.SetColor("_BaseColor", color);
+            return material;
+        }
+
+        /// <summary>Partitions only the body's paint cell; the FBX and all its vertex data remain untouched.</summary>
+        private static Mesh SplitPaint(Mesh source, Vector2Int swatch)
+        {
+            var paint = new List<int>();
+            var details = new List<int>();
+            var uv = source.uv;
+            var triangles = source.triangles;
+            for (var i = 0; i < triangles.Length; i += 3) {
+                var isPaint = CarModel.SwatchOf(uv[triangles[i]]) == swatch
+                    && CarModel.SwatchOf(uv[triangles[i + 1]]) == swatch
+                    && CarModel.SwatchOf(uv[triangles[i + 2]]) == swatch;
+                var target = isPaint ? paint : details;
+                target.Add(triangles[i]);
+                target.Add(triangles[i + 1]);
+                target.Add(triangles[i + 2]);
+            }
+            if (paint.Count == 0) {
+                throw new System.InvalidOperationException($"No paint triangles in {source.name} at {swatch}.");
+            }
+            var mesh = UnityEngine.Object.Instantiate(source);
+            mesh.subMeshCount = 2;
+            mesh.SetTriangles(details, 0);
+            mesh.SetTriangles(paint, 1);
+            return mesh;
+        }
+
+        private static Texture2D Capture(PreviewRenderUtility preview)
+        {
+            var previousTarget = RenderTexture.active;
+            var previewOpen = false;
+            Texture2D texture = null;
+            try {
+                var points = PortraitSize / EditorGUIUtility.pixelsPerPoint;
+                preview.BeginPreview(new Rect(0f, 0f, points, points), GUIStyle.none);
+                previewOpen = true;
+                preview.Render(true);
+                var rendered = (RenderTexture)preview.EndPreview();
+                previewOpen = false;
+                // EndStaticPreview creates RGB24 and discards alpha; read the RGBA target ourselves.
+                RenderTexture.active = rendered;
+                texture = new Texture2D(PortraitSize, PortraitSize, TextureFormat.RGBA32, false);
+                texture.ReadPixels(new Rect(0f, 0f, PortraitSize, PortraitSize), 0, 0);
+                return texture;
+            }
+            catch {
+                if (texture != null) {
+                    UnityEngine.Object.DestroyImmediate(texture);
+                }
+                throw;
+            }
+            finally {
+                if (previewOpen) {
+                    preview.EndPreview();
+                }
+                RenderTexture.active = previousTarget;
             }
         }
     }

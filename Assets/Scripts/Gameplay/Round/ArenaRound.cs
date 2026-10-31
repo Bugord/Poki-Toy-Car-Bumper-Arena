@@ -37,6 +37,9 @@ namespace ToyCarArena.Gameplay.Round
         /// </summary>
         public event Action<Car, Car> KnockedOut;
 
+        /// <summary>One complete elimination, after knockout credit is known; Nobody means a fall without credit.</summary>
+        public event Action<int, int> Eliminated;
+
         /// <summary>
         /// Raised once, when the round is decided.
         /// </summary>
@@ -46,7 +49,8 @@ namespace ToyCarArena.Gameplay.Round
         private readonly IObjectResolver resolver;
         private readonly Car carPrefab;
         private readonly Transform carParent;
-        private readonly ArenaFloor floor;
+        private readonly IArenaEdge edge;
+        private readonly GameTuning.ArenaSettings arena;
         private readonly RoundDifficulty difficulty;
         private readonly ISessionRoster roster;
         private readonly CarCatalog catalog;
@@ -56,16 +60,22 @@ namespace ToyCarArena.Gameplay.Round
 
         private float elapsed;
         private FallCause playerFallCause;
+        private IReadOnlyList<SessionPlayer> players;
+        private RoundStandings standings;
 
-        public ArenaRound(GameTuning tuning, IObjectResolver resolver, Car carPrefab, Transform carParent, ArenaFloor floor,
-            RoundDifficulty difficulty, ISessionProgress progress, ISessionRoster roster, CarCatalog catalog,
-            IPlayerCar playerCar)
+        public IReadOnlyList<string> Names { get; private set; }
+        public IReadOnlyList<int> Colors { get; private set; }
+
+        public ArenaRound(GameTuning tuning, IObjectResolver resolver, Car carPrefab, Transform carParent, IArenaEdge edge,
+            GameTuning.ArenaSettings arena, RoundDifficulty difficulty, ISessionProgress progress, ISessionRoster roster,
+            CarCatalog catalog, IPlayerCar playerCar)
         {
             this.tuning = tuning;
             this.resolver = resolver;
             this.carPrefab = carPrefab;
             this.carParent = carParent;
-            this.floor = floor;
+            this.edge = edge;
+            this.arena = arena;
             this.difficulty = difficulty;
             this.roster = roster;
             this.catalog = catalog;
@@ -81,7 +91,7 @@ namespace ToyCarArena.Gameplay.Round
         public Car Player { get; private set; }
 
         /// <summary>
-        /// This round's marked rival, null if its colour is absent. Kept after a knockout so the HUD can name it.
+        /// This round's marked rival, null if its slot is absent. Kept after a knockout so the HUD can name it.
         /// </summary>
         public Car Nemesis { get; private set; }
 
@@ -133,10 +143,14 @@ namespace ToyCarArena.Gameplay.Round
         public Car PlayerKnockedOutBy { get; private set; }
 
         /// <summary>
-        /// How far from the middle the arena reaches now, in metres. The one place the bots read the edge from: it
-        /// shrinks as the edge crumbles, and a ring counts as gone as soon as it starts to shake, so the bots get off it.
+        /// The arena's edge as it is now. The one place the bots and the player's help read the edge from: it moves in as
+        /// the floor crumbles, and a wave of tiles counts as gone as soon as it starts to shake, so the bots get off it.
         /// </summary>
-        public float ArenaRadius => floor.Radius;
+        public IArenaEdge Edge => edge;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        public PlayerFallTelemetry FallTelemetry { get; private set; }
+#endif
 
         /// <summary>
         /// Puts the cars on the arena, still: nobody drives, the clock and the crumbling edge wait for
@@ -150,8 +164,24 @@ namespace ToyCarArena.Gameplay.Round
             }
 
             IsPlaced = true;
+            players = roster.ForRound(difficulty.BotCount);
+            var names = new string[1 + difficulty.BotCount];
+            var colors = new int[names.Length];
+            names[0] = "YOU";
+            colors[0] = roster.ColorOf(0);
+            for (var index = 1; index < names.Length; index++) {
+                names[index] = players[index - 1].Name;
+                colors[index] = players[index - 1].ColorId;
+            }
+            Names = Array.AsReadOnly(names);
+            Colors = Array.AsReadOnly(colors);
+            standings = new RoundStandings(names.Length);
             Spawn(1 + difficulty.BotCount);
             Player = cars[0];
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            FallTelemetry = new PlayerFallTelemetry(this, edge, Player);
+            Player.Movement.FallTelemetry = FallTelemetry;
+#endif
             Nemesis = nemesisIndex > 0 && nemesisIndex < cars.Count ? cars[nemesisIndex] : null;
             CarsLeft = cars.Count;
         }
@@ -188,8 +218,17 @@ namespace ToyCarArena.Gameplay.Round
                         playerFallCause = FindFallCause(car);
                     }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    if (car == Player) {
+                        FallTelemetry.Complete(playerFallCause, knockedOutBy);
+                    }
+#endif
+
                     car.TakeOut();
                     CarsLeft--;
+                    var index = IndexOf(car);
+                    var by = knockedOutBy != null ? IndexOf(knockedOutBy) : RoundResult.Nobody;
+                    standings.RecordOut(index, by);
                     CarOut?.Invoke(car);
 
                     if (knockedOutBy != null) {
@@ -206,8 +245,11 @@ namespace ToyCarArena.Gameplay.Round
 
                         KnockedOut?.Invoke(car, knockedOutBy);
                     }
+                    Eliminated?.Invoke(index, by);
                 }
             }
+
+            standings.CompleteFrame();
 
             // Cars that fell on the same frame as the player still count as behind it; but a car out never places first,
             // not even when the last of the others fell with it.
@@ -223,13 +265,16 @@ namespace ToyCarArena.Gameplay.Round
         }
 
         /// <summary>
-        /// The car's place in the round: 0 for the player, 1..N for the bots, as <see cref="CarLook.Apply"/> painted
-        /// them; -1 for a car not in the round.
+        /// The car's identity in the round: 0 for the player, 1..N for the bots; -1 for a car not in the round.
         /// </summary>
         public int IndexOf(Car car)
         {
             return car != null ? cars.IndexOf(car) : -1;
         }
+
+        /// <summary>The played occupant, even after the visit's roster has moved on.</summary>
+        public string NameOf(int index) => Names[index];
+        public int ColorOf(int index) => Colors[index];
 
         private void Finish(RoundOutcome outcome, int place)
         {
@@ -237,22 +282,28 @@ namespace ToyCarArena.Gameplay.Round
             IsFinished = true;
             var knockedOutBy = PlayerKnockedOutBy != null ? IndexOf(PlayerKnockedOutBy) : RoundResult.Nobody;
             Finished?.Invoke(new RoundResult(outcome, place, cars.Count, elapsed, PlayerKnockouts, knockedOutBy,
-                playerFallCause, Nemesis != null, RevengeTaken));
+                playerFallCause, Nemesis != null, RevengeTaken, standings.Snapshot(), Colors));
         }
 
         /// <summary>
-        /// Explains a fall without knockout credit at the moment the car is taken out, before later events can change
-        /// its history. A ring giving way wins over a boost, which wins over sliding after an old hit.
+        /// Explains a fall without knockout credit from the last ground contact, so the time spent falling below
+        /// FallHeight cannot age a boost or ring fall into Drive. Knockout credit still uses its existing clock.
+        /// A ring giving way wins over a boost, which wins over sliding after an old hit.
         /// </summary>
         private FallCause FindFallCause(Car car)
         {
-            var now = Time.time;
+            var now = float.IsNegativeInfinity(car.Movement.LastGroundedTime) ? Time.time : car.Movement.LastGroundedTime;
             if (now - car.LastRingFallTime <= tuning.Round.RingFallWindow) {
                 return FallCause.Ring;
             }
 
             if (now - car.Movement.LastBoostTime <= tuning.Round.BoostFallWindow) {
                 return FallCause.Boost;
+            }
+
+            // A ball hit clears the hitter, so no car's push after it is blamed on the ball.
+            if (car.LastHitBy == null && now - car.LastHazardTime <= tuning.Round.SlideWindow) {
+                return FallCause.Ball;
             }
 
             if (car.LastHitBy != null && car.LastHitBy != car && now - car.LastHitTime <= tuning.Round.SlideWindow) {
@@ -278,27 +329,38 @@ namespace ToyCarArena.Gameplay.Round
         }
 
         /// <summary>
-        /// Spreads the cars evenly round the spawn circle, the first one nearest the camera, all facing the middle.
+        /// Spreads the cars evenly round the spawn circle (or the contour of a floor that is not round), the first one nearest
+        /// the camera, all facing the middle.
         /// </summary>
         private void Spawn(int count)
         {
-            var radius = tuning.Arena.Radius * tuning.Arena.SpawnRadius;
-            var height = tuning.Arena.SpawnHeight;
+            var radius = arena.Radius * arena.SpawnRadius;
+            var height = arena.SpawnHeight;
             for (var i = 0; i < count; i++) {
-                var angle = -Mathf.PI * 0.5f + i * Mathf.PI * 2f / count;
-                var outward = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
-                // At the very middle (a radius of 0) a car faces away from the camera.
-                var facing = radius > 0f ? -outward : Vector3.forward;
-                var position = outward * radius + Vector3.up * height;
+                Vector3 position;
+                Vector3 facing;
+                if (edge.TryGetSpawn(i, count, out var spot)) {
+                    // A floor that is not round has a contour of its own, clear of its pits.
+                    position = spot + Vector3.up * height;
+                    facing = spot.sqrMagnitude > 0.0001f ? -spot.normalized : Vector3.forward;
+                }
+                else {
+                    var angle = -Mathf.PI * 0.5f + i * Mathf.PI * 2f / count;
+                    var outward = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+                    // At the very middle (a radius of 0) a car faces away from the camera.
+                    facing = radius > 0f ? -outward : Vector3.forward;
+                    position = outward * radius + Vector3.up * height;
+                }
+
                 var rotation = Quaternion.LookRotation(facing);
                 var car = resolver.InstantiateInjected(carPrefab, position, rotation, carParent);
                 // The interpolated Rigidbody wakes up where the prefab was made, at the origin, and puts the transform
                 // back there; placing the body itself keeps the cars apart.
                 car.Movement.Place(position, rotation);
-                car.name = roster.NameOf(i);
+                car.name = NameOf(i);
                 car.IsPlayer = i == 0;
-                var entry = i == 0 ? catalog.Find(playerCar.SelectedCar) : roster.CarOf(i);
-                car.GetComponent<CarLook>().Apply(i, entry);
+                var entry = i == 0 ? catalog.Find(playerCar.SelectedCar) : players[i - 1].Car;
+                car.GetComponent<CarLook>().Apply(i, entry, ColorOf(i));
                 cars.Add(car);
             }
         }

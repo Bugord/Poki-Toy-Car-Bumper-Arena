@@ -27,10 +27,12 @@ namespace ToyCarArena.Gameplay.Cars
     /// Near the edge it takes away the part of the steer that points off the arena, as much as the round's
     /// <see cref="RoundDifficulty.EdgeAssist"/> says, so a new player who steers too far stops at the edge instead of
     /// driving off it, and a boost there does not throw it off either; a hit still pushes the car off.
+    /// Each physics step also limits outward speed after movement, including a boost, while grounded and free of
+    /// stagger or recent pressure. It removes no tangential speed and never pulls a car inward after a ring warning.
     /// It also notes how the player plays the round (<see cref="FirstInput"/>, <see cref="FirstMoveTime"/>,
     /// <see cref="Boosts"/>), so the analytics can tell a player who never found the controls from one who was bored.
     /// </summary>
-    public sealed class PlayerDriver : ITickable, IInitializable, IDisposable
+    public sealed class PlayerDriver : ITickable, IFixedTickable, IInitializable, IDisposable
     {
         private readonly IInputService input;
         private readonly GameTuning tuning;
@@ -121,6 +123,19 @@ namespace ToyCarArena.Gameplay.Cars
         public void Tick()
         {
             SetJoystickShown(Steer());
+        }
+
+        public void FixedTick()
+        {
+            var car = round.Player;
+            if (car == null) {
+                return;
+            }
+
+            // VContainer's fixed tick precedes MonoBehaviour.FixedUpdate. Supply the current shrinking edge and
+            // contact history each step; CarMovement limits the final driven velocity after its own ground probe.
+            var share = round.IsRunning && !car.IsOut ? difficulty.EdgeAssist : 0f;
+            car.Movement.SetEdgeHold(round.Edge, share, car.LastHitTime);
         }
 
         /// <returns>True while a finger steers by the joystick, which is drawn under it then.</returns>
@@ -301,6 +316,9 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         private void Drive(Car car, Vector3 heading, float throttle)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            car.Movement.FallTelemetry?.Assist(0f);
+#endif
             heading.y = 0f;
             steer = throttle > 0f ? heading : Vector3.zero;
             if (steer != Vector3.zero) {
@@ -311,6 +329,9 @@ namespace ToyCarArena.Gameplay.Cars
             if (difficulty.EdgeAssist > 0f && heading.sqrMagnitude > 0.0001f) {
                 var outward = Outward(car, out var share);
                 share *= difficulty.EdgeAssist;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                car.Movement.FallTelemetry?.Assist(share);
+#endif
                 heading.Normalize();
                 var off = Vector3.Dot(heading, outward);
                 if (off > 0f && share > 0f) {
@@ -330,16 +351,16 @@ namespace ToyCarArena.Gameplay.Cars
         {
             var position = car.Position;
             position.y = 0f;
-            var fromMiddle = position.magnitude;
-            if (fromMiddle < 0.01f) {
+            var edge = round.Edge;
+            var inward = edge.Inward(position);
+            if (inward == Vector3.zero) {
                 share = 0f;
                 return Vector3.zero;
             }
 
-            var radius = round.ArenaRadius;
             var controls = tuning.Controls;
-            share = Mathf.InverseLerp(radius - controls.EdgeAssistMargin, radius - controls.EdgeAssistStop, fromMiddle);
-            return position / fromMiddle;
+            share = edge.Proximity(position, controls.EdgeAssistMargin, controls.EdgeAssistStop);
+            return (-inward).normalized;
         }
 
         private void SetJoystickShown(bool isShown)

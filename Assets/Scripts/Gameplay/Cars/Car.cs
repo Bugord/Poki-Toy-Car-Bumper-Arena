@@ -99,6 +99,23 @@ namespace ToyCarArena.Gameplay.Cars
         }
 
         /// <summary>
+        /// When an arena hazard (the Ball's ball) last hit this car, in <see cref="Time.time"/>, to recognise a fall it
+        /// caused.
+        /// </summary>
+        public float LastHazardTime { get; private set; } = float.NegativeInfinity;
+
+        /// <summary>
+        /// A hazard of the arena knocked this car: it counts as hit lately (the player's edge hold stands down, bots
+        /// see a car sliding), but by nobody, so a fall that follows is no one's knockout unless a car pushes it again.
+        /// </summary>
+        public void HitByHazard()
+        {
+            LastHitBy = null;
+            LastHitTime = Time.time;
+            LastHazardTime = Time.time;
+        }
+
+        /// <summary>
         /// Records the floor giving way while the car is over the falling ring, before the car can slide elsewhere.
         /// </summary>
         public void NoteRingFall()
@@ -151,7 +168,8 @@ namespace ToyCarArena.Gameplay.Cars
             var multiplier = (isOtherBoosting ? boostSettings.BumpMultiplier : 1f)
                 * (other.IsPlayer ? difficulty.PlayerBump : 1f);
             var drive = Mathf.Min(otherApproach, strength);
-            var push = carSettings.BumpForce * drive * multiplier * other.Movement.Mass / Movement.Mass;
+            var push = carSettings.BumpForce * drive * multiplier * other.Movement.Mass / Movement.Mass
+                * Movement.Surface.Push;
             // The solver has already bounced the car; the push only tops that up to the most a hit may leave a car
             // going, so a boosted hit or a heavy car cannot fling a car across the arena.
             var speedAway = Vector3.Dot(Movement.Velocity, normal);
@@ -163,6 +181,7 @@ namespace ToyCarArena.Gameplay.Cars
             // Off balance for longer the harder the other car drove in, capped at a hit at full speed before the
             // difficulty scales the player's time and the time caused by the player's hits.
             var stagger = carSettings.HitStagger * Mathf.Clamp01(drive * multiplier / Mathf.Max(0.01f, carSettings.MaxSpeed));
+            stagger *= Movement.Surface.Stagger;
             if (IsPlayer) {
                 stagger *= difficulty.PlayerStaggerScale;
             }
@@ -179,6 +198,11 @@ namespace ToyCarArena.Gameplay.Cars
                 LastHitBy = other;
                 LastHitTime = Time.time;
             }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Movement.FallTelemetry?.Contact(other, Vector3.Dot(otherVelocity, normal),
+                -Vector3.Dot(velocity, normal), otherApproach > 0f, true);
+#endif
 
             // A tie (both standing, or a head-on hit at the same speed) goes to one of the two cars, the same one on
             // both sides: a Unity object's hash is its instance id.
@@ -208,6 +232,12 @@ namespace ToyCarArena.Gameplay.Cars
                 LastHitBy = other;
                 LastHitTime = Time.time;
             }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Movement.FallTelemetry?.Contact(other, Vector3.Dot(other.Movement.Velocity, away.normalized),
+                -Vector3.Dot(Movement.Velocity, away.normalized),
+                Vector3.Dot(other.Movement.Velocity, away.normalized) > 0f, false);
+#endif
         }
 
         private static Vector3 Flat(Vector3 vector)

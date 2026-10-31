@@ -19,6 +19,17 @@ namespace ToyCarArena.Audio
         bool IsPaused { get; set; }
 
         /// <summary>
+        /// Whether the music is switched off in the settings. The choice is saved.
+        /// </summary>
+        bool IsMusicMuted { get; set; }
+
+        /// <summary>
+        /// Whether the sound effects (jingles and clicks among them) are switched off in the settings. The choice is
+        /// saved.
+        /// </summary>
+        bool IsSoundMuted { get; set; }
+
+        /// <summary>
         /// Plays a sound once, at <paramref name="volume"/> times its own level.
         /// </summary>
         void Play(Sound sound, float volume = 1f);
