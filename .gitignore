@@ -70,3 +70,4 @@ auth.json
 
 # Claude Code local settings
 .claude/settings.local.json
+Tools/floors/cache_*.npz

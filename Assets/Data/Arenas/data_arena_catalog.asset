@@ -19,11 +19,11 @@ MonoBehaviour:
     background: {r: 0.55, g: 0.78, b: 0.95, a: 1}
     looks:
     - variantId: rake
-      floorMaterial: {fileID: 2100000, guid: 12ab94fc4e3c4744abe6f21a4d67b14b, type: 2}
+      floorMaterial: {fileID: 2100000, guid: f96d9c84db5129c4db4b56dddfb1ee54, type: 2}
     - variantId: molds
-      floorMaterial: {fileID: 2100000, guid: 12ab94fc4e3c4744abe6f21a4d67b14b, type: 2}
+      floorMaterial: {fileID: 2100000, guid: 6814b7a622f9b7743bf66de371136639, type: 2}
     - variantId: bricks
-      floorMaterial: {fileID: 2100000, guid: 12ab94fc4e3c4744abe6f21a4d67b14b, type: 2}
+      floorMaterial: {fileID: 2100000, guid: c81fc3583dbf01c448043feb3ff17604, type: 2}
     groundDepth: 56
     groundMaterial: {fileID: 2100000, guid: 22984108c7fd0d6418cb3d9f550a0134, type: 2}
     fogStart: 10
@@ -254,11 +254,11 @@ MonoBehaviour:
     background: {r: 1, g: 0.9411765, b: 0.8, a: 1}
     looks:
     - variantId: board
-      floorMaterial: {fileID: 2100000, guid: df94a409402e0bc40adc94dbdec6220f, type: 2}
+      floorMaterial: {fileID: 2100000, guid: 316018a88a167dc4782174e8926b6a0c, type: 2}
     - variantId: cloth
-      floorMaterial: {fileID: 2100000, guid: df94a409402e0bc40adc94dbdec6220f, type: 2}
+      floorMaterial: {fileID: 2100000, guid: c1d542ea8842bd14d93540c76ec1abf9, type: 2}
     - variantId: notebook
-      floorMaterial: {fileID: 2100000, guid: df94a409402e0bc40adc94dbdec6220f, type: 2}
+      floorMaterial: {fileID: 2100000, guid: 05f580277b01ba647b6a4eeb439e174e, type: 2}
     groundDepth: 64
     groundMaterial: {fileID: 2100000, guid: ac5efc380c23cd64d9d83a87cf37fb0f, type: 2}
     fogStart: 8
@@ -440,11 +440,11 @@ MonoBehaviour:
     background: {r: 0.6509804, g: 0.92156863, b: 0.79607844, a: 1}
     looks:
     - variantId: frosting
-      floorMaterial: {fileID: 2100000, guid: 156e413cfa0f7784fafc3cd76ebed354, type: 2}
+      floorMaterial: {fileID: 2100000, guid: 5904f3e57650e40478a9af8c9a126b89, type: 2}
     - variantId: chocolate
-      floorMaterial: {fileID: 2100000, guid: 156e413cfa0f7784fafc3cd76ebed354, type: 2}
+      floorMaterial: {fileID: 2100000, guid: cbf4ae4b7047fc249b115620fa439aa9, type: 2}
     - variantId: waffle
-      floorMaterial: {fileID: 2100000, guid: 156e413cfa0f7784fafc3cd76ebed354, type: 2}
+      floorMaterial: {fileID: 2100000, guid: e0165c6b586cd2b49900abf6b4336a0b, type: 2}
     groundDepth: 60
     groundMaterial: {fileID: 2100000, guid: c73df6aa9a6904343a50008c42477c2b, type: 2}
     fogStart: 10
@@ -661,11 +661,11 @@ MonoBehaviour:
     background: {r: 1, g: 0.8784314, b: 0.4, a: 1}
     looks:
     - variantId: puzzle
-      floorMaterial: {fileID: 2100000, guid: 6ee51e48e870ce94f86270333ffc56d6, type: 2}
+      floorMaterial: {fileID: 2100000, guid: 526259a13389e6840a403658283126fd, type: 2}
     - variantId: road
-      floorMaterial: {fileID: 2100000, guid: 6ee51e48e870ce94f86270333ffc56d6, type: 2}
+      floorMaterial: {fileID: 2100000, guid: a88671b37cba25d46bec7c6f3245208c, type: 2}
     - variantId: blocks
-      floorMaterial: {fileID: 2100000, guid: 6ee51e48e870ce94f86270333ffc56d6, type: 2}
+      floorMaterial: {fileID: 2100000, guid: a981f3c625c0a274aa6843fab4fdff68, type: 2}
     groundDepth: 62
     groundMaterial: {fileID: 2100000, guid: ac5efc380c23cd64d9d83a87cf37fb0f, type: 2}
     fogStart: 10

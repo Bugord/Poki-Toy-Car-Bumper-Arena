@@ -25,12 +25,20 @@ namespace ToyCarArena.Gameplay.Arena
 
         private readonly ArenaShape shape;
         private readonly GridEdge edge;
+        private readonly FloorUv uv;
         private readonly float halfSeam;
         private readonly List<int>[] waveFaces;
         private readonly CrumbleWave[] waves;
 
         public TiledLayout(ArenaShape shape, GridEdge edge, float seam)
+            : this(shape, edge, seam, FloorUv.For(shape))
         {
+        }
+
+        /// <param name="uv">Where the floor's texture lies on it; baked into every mesh.</param>
+        public TiledLayout(ArenaShape shape, GridEdge edge, float seam, FloorUv uv)
+        {
+            this.uv = uv;
             this.shape = shape;
             this.edge = edge;
             this.halfSeam = seam * 0.5f;
@@ -202,21 +210,31 @@ namespace ToyCarArena.Gameplay.Arena
 
                 var ids = shape.Face(f);
                 for (var i = 1; i + 1 < ids.Length; i++) {
-                    var a = Local(Position(moved, ids[0]), 0f, pivot, unrotate);
-                    var b = Local(Position(moved, ids[i]), 0f, pivot, unrotate);
-                    var c = Local(Position(moved, ids[i + 1]), 0f, pivot, unrotate);
-                    builder.AddTriangle(a, b, c, Vector3.up);
+                    var flatA = Position(moved, ids[0]);
+                    var flatB = Position(moved, ids[i]);
+                    var flatC = Position(moved, ids[i + 1]);
+                    var a = Local(flatA, 0f, pivot, unrotate);
+                    var b = Local(flatB, 0f, pivot, unrotate);
+                    var c = Local(flatC, 0f, pivot, unrotate);
+                    builder.AddTriangle(a, b, c, Vector3.up, uv.Top(flatA.x, flatA.y), uv.Top(flatB.x, flatB.y),
+                        uv.Top(flatC.x, flatC.y));
                     if (hasBottom) {
-                        builder.AddTriangle(a + down, b + down, c + down, Vector3.down);
+                        var bottom = FloorUv.Side(0f, 0.5f);
+                        builder.AddTriangle(a + down, b + down, c + down, Vector3.down, bottom, bottom, bottom);
                     }
                 }
             }
 
             foreach (var (from, to, normal) in boundary) {
-                var a = Local(Position(moved, from), 0f, pivot, unrotate);
-                var b = Local(Position(moved, to), 0f, pivot, unrotate);
+                var flatFrom = Position(moved, from);
+                var flatTo = Position(moved, to);
+                var a = Local(flatFrom, 0f, pivot, unrotate);
+                var b = Local(flatTo, 0f, pivot, unrotate);
                 var facing = unrotate * new Vector3(normal.x, 0f, normal.y);
-                builder.AddQuad(a, b, b + down, a + down, facing, facing, facing, facing);
+                var turnA = FloorUv.Turn(flatFrom.x, flatFrom.y);
+                var turnB = FloorUv.NextTo(FloorUv.Turn(flatTo.x, flatTo.y), turnA);
+                builder.AddQuad(a, b, b + down, a + down, facing, facing, facing, facing,
+                    FloorUv.Side(turnA, 0f), FloorUv.Side(turnB, 0f), FloorUv.Side(turnB, 1f), FloorUv.Side(turnA, 1f));
             }
 
             return builder.ToMesh(name);

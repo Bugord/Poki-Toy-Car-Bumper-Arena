@@ -11,11 +11,21 @@ namespace ToyCarArena.Gameplay.Arena
     {
         private readonly List<Vector3> vertices = new();
         private readonly List<Vector3> normals = new();
+        private readonly List<Vector2> uvs = new();
         private readonly List<int> triangles = new();
 
         public void AddTriangle(Vector3 a, Vector3 b, Vector3 c, Vector3 normal)
         {
+            AddTriangle(a, b, c, normal, default, default, default);
+        }
+
+        /// <summary>A triangle with the UV of each corner, in the order of the corners.</summary>
+        public void AddTriangle(Vector3 a, Vector3 b, Vector3 c, Vector3 normal, Vector2 uvA, Vector2 uvB, Vector2 uvC)
+        {
             var start = vertices.Count;
+            uvs.Add(uvA);
+            uvs.Add(uvB);
+            uvs.Add(uvC);
             vertices.Add(a);
             vertices.Add(b);
             vertices.Add(c);
@@ -32,7 +42,18 @@ namespace ToyCarArena.Gameplay.Arena
         public void AddQuad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Vector3 normalA, Vector3 normalB,
             Vector3 normalC, Vector3 normalD)
         {
+            AddQuad(a, b, c, d, normalA, normalB, normalC, normalD, default, default, default, default);
+        }
+
+        /// <summary>A quad with the UV of each corner, in the order of the corners.</summary>
+        public void AddQuad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Vector3 normalA, Vector3 normalB,
+            Vector3 normalC, Vector3 normalD, Vector2 uvA, Vector2 uvB, Vector2 uvC, Vector2 uvD)
+        {
             var start = vertices.Count;
+            uvs.Add(uvA);
+            uvs.Add(uvB);
+            uvs.Add(uvC);
+            uvs.Add(uvD);
             vertices.Add(a);
             vertices.Add(b);
             vertices.Add(c);
@@ -66,6 +87,7 @@ namespace ToyCarArena.Gameplay.Arena
             var mesh = new Mesh { name = name };
             mesh.SetVertices(vertices);
             mesh.SetNormals(normals);
+            mesh.SetUVs(0, uvs);
             mesh.SetTriangles(triangles, 0);
             return mesh;
         }

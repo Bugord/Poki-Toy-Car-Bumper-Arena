@@ -135,8 +135,9 @@ namespace ToyCarArena.Gameplay.Arena
         {
             floorCollider = GetComponent<MeshCollider>();
             layout = map.Shape == null
-                ? new CircleLayout(settings, (CircleEdge)edge, blockLength, minBlocks, seam)
-                : new TiledLayout(map.Shape, (GridEdge)edge, seam);
+                ? new CircleLayout(settings, (CircleEdge)edge, blockLength, minBlocks, seam,
+                    FloorUv.ForCircle(settings.Radius))
+                : new TiledLayout(map.Shape, (GridEdge)edge, seam, FloorUv.For(map.Shape));
 
             var template = GetComponent<MeshRenderer>();
             // Before the blocks are built: they copy the template's material.
