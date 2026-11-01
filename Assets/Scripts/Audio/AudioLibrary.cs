@@ -94,6 +94,14 @@ namespace ToyCarArena.Audio
         [SerializeField]
         private Sound lose = new();
 
+        [Tooltip("A short whistle as a match reaches its last 30 seconds")]
+        [SerializeField]
+        private Sound timeWarning = new();
+
+        [Tooltip("The whistle as a match's clock runs out, with the HUD's TIME UP! stamp")]
+        [SerializeField]
+        private Sound timeUp = new();
+
         [Header("Screens")]
         [Tooltip("A button pressed on a screen")]
         [SerializeField]
@@ -117,6 +125,8 @@ namespace ToyCarArena.Audio
         public Sound KickoffGo => kickoffGo;
         public Sound Win => win;
         public Sound Lose => lose;
+        public Sound TimeWarning => timeWarning;
+        public Sound TimeUp => timeUp;
         public Sound UiClick => uiClick;
     }
 }

@@ -104,6 +104,12 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private int topPlaces = 3;
 
+            [Tooltip("Real seconds from the clock running out to the result screen: the HUD's TIME UP! stamp slams in " +
+                "and the cars freeze for a moment first")]
+            [Min(0f)]
+            [SerializeField]
+            private float resultDelay = 0.8f;
+
             public float Duration => duration;
             public float RespawnDelay => respawnDelay;
             public float Invulnerability => invulnerability;
@@ -113,6 +119,7 @@ namespace ToyCarArena.Gameplay
             public float SpawnSpread => spawnSpread;
             public float SpawnGridStep => spawnGridStep;
             public int TopPlaces => topPlaces;
+            public float ResultDelay => resultDelay;
         }
     }
 }

@@ -504,6 +504,8 @@
     flex-shrink: 0;
     height: 136px;
     padding: 0 30px 0 12px;
+    /* A match's last seconds grow the bar (HudEndTimer) from its top centre, so it stays under the screen's edge. */
+    transform-origin: 50% 0;
 }
 
 .hud__section {
@@ -563,6 +565,13 @@
 
 .hud__timer--beat {
     scale: 1.12 1.12;
+    transition-duration: 0.05s;
+}
+
+/* At 0:30 of a match the time flashes gold once (HudEndTimer). */
+.hud__timer--flash {
+    background-color: var(--gold);
+    transition-property: scale, background-color;
     transition-duration: 0.05s;
 }
 
@@ -4379,4 +4388,113 @@
 
 .round-over--landscape.round-over--desktop .round-over__hint {
     display: none;
+}
+
+/* The end of a match (HudEndTimer). The red frame round the screen in the last ten seconds, its opacity beating with
+   the clock; under every other part of the HUD. */
+.end-frame {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    border-width: 28px;
+    border-color: rgb(255, 77, 77);
+    opacity: 0;
+}
+
+/* A red ring spreading from the bar on each of the last seconds. */
+.end-ring {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    border-width: 10px;
+    border-color: var(--red);
+    border-radius: 68px;
+}
+
+/* 30 SECONDS LEFT! and FINAL 10!: gold words with a navy stroke under the bar, tilted, the goal of the start screen's
+   look. The code sets its top under the bar and springs it in. */
+.end-note {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    align-items: center;
+}
+
+.end-note__sticker {
+    align-self: stretch;
+    margin: 0 60px;
+}
+
+.end-note__text {
+    margin: 0;
+    padding: 0;
+    align-self: stretch;
+    -unity-text-auto-size: best-fit 40px 84px;
+    font-size: 84px;
+    color: var(--gold);
+    -unity-text-outline-width: 15px;
+    -unity-text-outline-color: var(--navy);
+    text-shadow: 0 11px 0 rgb(29, 43, 79);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+/* TIME UP! at 0:00: big white words with the kick-off's navy stroke, a gold ring and gold stars bursting behind. */
+.end-stamp {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 200px;
+}
+
+.end-stamp__ring {
+    position: absolute;
+    left: -200px;
+    top: -200px;
+    width: 400px;
+    height: 400px;
+    border-radius: 200px;
+    border-width: 28px;
+    border-color: var(--gold);
+}
+
+.end-stamp__star {
+    position: absolute;
+    left: -62px;
+    top: -62px;
+}
+
+.end-stamp__sticker {
+    position: absolute;
+    left: -500px;
+    top: -200px;
+    width: 1000px;
+    height: 400px;
+    justify-content: center;
+}
+
+.end-stamp__text {
+    flex-grow: 1;
+    margin: 0 20px;
+    padding: 0 0 24px 0;
+    -unity-text-auto-size: best-fit 90px 230px;
+    font-size: 230px;
+    color: var(--white);
+    -unity-text-outline-width: 34px;
+    -unity-text-outline-color: var(--navy);
+    text-shadow: 0 26px 0 rgb(29, 43, 79);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
 }

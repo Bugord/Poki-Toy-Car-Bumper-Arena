@@ -157,6 +157,11 @@ namespace ToyCarArena.UI
         public int CarsLeft => round?.CarsLeft ?? 0;
 
         /// <summary>
+        /// Whether the round has ended: in a match, the clock ran out.
+        /// </summary>
+        public bool IsFinished => round != null && round.IsFinished;
+
+        /// <summary>
         /// Whether the round is a long match: the HUD shows the score instead of the cars still in.
         /// </summary>
         public bool IsMatch => round != null && round.IsMatch;

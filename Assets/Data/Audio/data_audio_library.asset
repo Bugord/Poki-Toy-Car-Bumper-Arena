@@ -86,6 +86,16 @@ MonoBehaviour:
     - {fileID: 8300000, guid: 575025d74f9149459a43db9dd85f4f9b, type: 3}
     volume: 0.75
     pitchJitter: 0
+  timeWarning:
+    clips:
+    - {fileID: 8300000, guid: 4b7a4109b1724998b0e49d11ac92bc6c, type: 3}
+    volume: 0.5
+    pitchJitter: 0
+  timeUp:
+    clips:
+    - {fileID: 8300000, guid: 40c2cca92fde42848493b2aacb9a9701, type: 3}
+    volume: 0.6
+    pitchJitter: 0
   uiClick:
     clips:
     - {fileID: 8300000, guid: 61cb6dfe0a114e77a3f97959ea1af18f, type: 3}

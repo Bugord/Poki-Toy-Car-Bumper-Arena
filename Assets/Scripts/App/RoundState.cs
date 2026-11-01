@@ -173,8 +173,10 @@ namespace ToyCarArena.App
                 platform.MeasureRoundVariant(roundNumber, playedMap, playedVariant);
                 platform.MeasureMapUnlocks(record.XpGain, tuning);
 
-                var delay = result.Outcome == RoundOutcome.Out ? tuning.Round.OutResultDelay : tuning.Round.ResultDelay;
-                await UniTask.Delay(TimeSpan.FromSeconds(delay), cancellationToken: token);
+                var delay = result.IsMatch ? tuning.Match.ResultDelay :
+                    result.Outcome == RoundOutcome.Out ? tuning.Round.OutResultDelay : tuning.Round.ResultDelay;
+                // Real time: the buzzer's hit-stop at the end of a match must not stretch the wait.
+                await UniTask.Delay(TimeSpan.FromSeconds(delay), true, cancellationToken: token);
                 return Transition.GoTo<ResultState, RoundRecord>(record);
             }
             finally {

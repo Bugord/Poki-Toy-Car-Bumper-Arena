@@ -304,6 +304,7 @@ namespace ToyCarArena.UI
         private bool hasTapHint;
         private float tapHintTime;
         private float tapHintProgress;
+        private HudEndTimer endTimer;
         private VisualElement kickoff;
         private VisualElement kickoffNumber;
         private Label kickoffDigit;
@@ -388,6 +389,7 @@ namespace ToyCarArena.UI
             boostHint = Root.Q<VisualElement>("boost-hint");
             tapHint = Root.Q<VisualElement>("tap-hint");
             BuildKickoff();
+            endTimer = HudEndTimer.Create(Root, ViewModel, timePill, scoreboard?.Element, respawn, popupLayer);
             settingsButton = Root.Q<Button>("settings-button");
             settingsButton.RemoveFromClassList(Button.ussClassName);
             // Space is the boost: a focused button would take it as a click and open the settings mid-round.
@@ -443,6 +445,7 @@ namespace ToyCarArena.UI
         {
             social?.Dispose();
             scoreboard?.Dispose();
+            endTimer?.Dispose();
             ViewModel.PlayerKnockout -= ShowKnockout;
             ViewModel.CarOut -= OnCarOut;
             ViewModel.CarBack -= OnCarBack;
