@@ -123,6 +123,9 @@ namespace ToyCarArena.Gameplay.Cars
         public Material ModelMaterial => body.GetComponent<MeshRenderer>().sharedMaterial;
         public Quaternion ModelRotation => body.transform.localRotation;
 
+        /// <summary>The catalog model as this car shows it, painted; null before <see cref="Apply"/>.</summary>
+        public GameObject Model => model;
+
         private void ReplaceModel(CarCatalog.Entry entry)
         {
             if (entry == null || entry.Model == null) {

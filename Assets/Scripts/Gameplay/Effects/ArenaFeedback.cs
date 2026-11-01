@@ -118,6 +118,32 @@ namespace ToyCarArena.Gameplay.Effects
         [SerializeField]
         private int countdownSeconds = 10;
 
+        [Tooltip("The last this many seconds of a match tick louder, as the HUD's bar beats bigger")]
+        [Min(0)]
+        [SerializeField]
+        private int finalSeconds = 3;
+
+        [Tooltip("Volume of the tick of the last seconds of a match, against the usual tick (the source caps it at full)")]
+        [Min(1f)]
+        [SerializeField]
+        private float finalTickVolume = 1.6f;
+
+        [Tooltip("A match whistles once with this many seconds left, as the HUD shows its note")]
+        [Min(0)]
+        [SerializeField]
+        private int warningSeconds = 30;
+
+        [Header("Time up")]
+        [Tooltip("Real seconds the cars freeze as a match's clock runs out, under the TIME UP! stamp")]
+        [Min(0f)]
+        [SerializeField]
+        private float timeUpStop = 0.3f;
+
+        [Tooltip("Time scale while the cars freeze at the end of a match")]
+        [Range(0f, 1f)]
+        [SerializeField]
+        private float timeUpTimeScale = 0.02f;
+
         [Tooltip("Real seconds from the end of a round to its jingle, so the sound of the last fall is heard first")]
         [Min(0f)]
         [SerializeField]
@@ -242,10 +268,17 @@ namespace ToyCarArena.Gameplay.Effects
                 return;
             }
 
-            var isTick = shownSeconds >= 0 && seconds > 0 && seconds <= countdownSeconds;
+            var isCrossing = shownSeconds >= 0;
+            var isWarning = isCrossing && round.IsMatch && seconds == warningSeconds && shownSeconds > warningSeconds;
+            var isTick = isCrossing && seconds > 0 && seconds <= countdownSeconds;
             shownSeconds = seconds;
+            if (isWarning) {
+                audioService.Play(audioService.Library.TimeWarning);
+            }
+
             if (isTick) {
-                audioService.Play(audioService.Library.CountdownTick);
+                var isFinal = round.IsMatch && seconds <= finalSeconds;
+                audioService.Play(audioService.Library.CountdownTick, isFinal ? finalTickVolume : 1f);
             }
         }
 
@@ -334,9 +367,17 @@ namespace ToyCarArena.Gameplay.Effects
         /// </summary>
         private void OnFinished(RoundResult result)
         {
-            // The round's last moments play out at full speed, and nothing slowed is left under the result.
-            hitStop.Release();
             var library = audioService.Library;
+            if (result.IsMatch) {
+                // The buzzer: the whistle, and every car frozen a moment under the HUD's TIME UP! stamp.
+                audioService.Play(library.TimeUp);
+                hitStop.Hold(timeUpStop, timeUpTimeScale);
+            }
+            else {
+                // The round's last moments play out at full speed, and nothing slowed is left under the result.
+                hitStop.Release();
+            }
+
             pendingJingle = result.IsLoss ? library.Lose : library.Win;
             jingleTime = Time.unscaledTime + jingleDelay;
         }

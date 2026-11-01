@@ -37,6 +37,10 @@ Shader "ToyCarArena/Outline"
                 float _Width;
             CBUFFER_END
 
+            // A camera that draws into a texture shown smaller than the screen (the result's winner podium) thickens the
+            // line by this much for its own render; unset, it is 0 and counts as 1.
+            float _OutlineBoost;
+
             struct Attributes
             {
                 float4 positionOS : POSITION;
@@ -62,7 +66,7 @@ Shader "ToyCarArena/Outline"
 
                 // The width is a share of the short screen side, so a phone and a desktop show the same line.
                 float2 screen = _ScreenParams.xy;
-                float pixels = _Width * min(screen.x, screen.y) / 1080.0;
+                float pixels = _Width * min(screen.x, screen.y) / 1080.0 * max(_OutlineBoost, 1.0);
                 positionCS.xy += direction * (pixels * 2.0 / screen) * positionCS.w;
 
                 output.positionCS = positionCS;

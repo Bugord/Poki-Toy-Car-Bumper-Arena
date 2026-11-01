@@ -9,6 +9,7 @@ using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
 using UIKit.Runtime.Abstractions;
+using UnityEngine;
 
 namespace ToyCarArena.UI
 {
@@ -29,6 +30,8 @@ namespace ToyCarArena.UI
         private readonly IScreenNavigator navigator;
         private readonly IGamePlatform platform;
         private IReadOnlyList<int> colors;
+        private IReadOnlyList<string> names;
+        private IReadOnlyList<int> levels;
 
         public RoundOverViewModel(CarCatalog catalog, ArenaCatalog arenaCatalog, GameTuning tuning,
             PlayerProgress progress, IScreenNavigator navigator, IGamePlatform platform)
@@ -160,10 +163,31 @@ namespace ToyCarArena.UI
         /// </summary>
         public int KnockedOutBy { get; private set; }
 
+        /// <summary>A match's cars in place order, for the results table; empty after a round of the last car standing.</summary>
+        public IReadOnlyList<RoundStanding> Standings { get; private set; }
+
+        /// <summary>The REVENGE target as the match ended, or <see cref="RoundResult.Nobody"/>.</summary>
+        public int Nemesis { get; private set; }
+
+        /// <summary>The winner turning on its podium; null when there is none to show.</summary>
+        public Texture Podium { get; private set; }
+
+        public string NameOf(int index) =>
+            index == 0 ? Strings.Get("common.you") : index < names.Count ? names[index] : string.Empty;
+
+        /// <summary>The player's level is the one this result reached; the others as the round showed them.</summary>
+        public int LevelOf(int index) =>
+            index == 0 && XpGain.After.Level > 0 ? XpGain.After.Level : index < levels.Count ? levels[index] : 1;
+
         public void SetPayload(RoundRecord payload)
         {
             var result = payload.Result;
             colors = result.Colors;
+            names = payload.Names;
+            levels = payload.Levels;
+            Nemesis = payload.Nemesis;
+            Podium = payload.Podium;
+            Standings = result.IsMatch ? result.Standings : System.Array.Empty<RoundStanding>();
             XpGain = payload.XpGain;
             Outcome = result.Outcome;
             IsMatch = result.IsMatch;
