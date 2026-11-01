@@ -5,7 +5,7 @@ namespace ToyCarArena.Gameplay.Arena
 {
     /// <summary>
     /// A floor of any shape but a circle, made of the tiles of an <see cref="ArenaShape"/>: each tile one mesh of one or a
-    /// few faces with a slab under it, a groove drawn round it like the ring blocks' and a pivot in the middle of its
+    /// few faces with a slab under it, shared top edges and a pivot in the middle of its
     /// slab to rattle and tumble about, plus the core that never crumbles. The one collider is the faces still standing,
     /// extruded to the same thickness, with a wall only along the boundary of the standing floor: no seam between two
     /// tiles, a pit or a hole is a gap in it, and a tile that has fallen is simply missing the next time it is built,
@@ -26,22 +26,20 @@ namespace ToyCarArena.Gameplay.Arena
         private readonly ArenaShape shape;
         private readonly GridEdge edge;
         private readonly FloorUv uv;
-        private readonly float halfSeam;
         private readonly List<int>[] waveFaces;
         private readonly CrumbleWave[] waves;
 
-        public TiledLayout(ArenaShape shape, GridEdge edge, float seam)
-            : this(shape, edge, seam, FloorUv.For(shape))
+        public TiledLayout(ArenaShape shape, GridEdge edge)
+            : this(shape, edge, FloorUv.For(shape))
         {
         }
 
         /// <param name="uv">Where the floor's texture lies on it; baked into every mesh.</param>
-        public TiledLayout(ArenaShape shape, GridEdge edge, float seam, FloorUv uv)
+        public TiledLayout(ArenaShape shape, GridEdge edge, FloorUv uv)
         {
             this.uv = uv;
             this.shape = shape;
             this.edge = edge;
-            this.halfSeam = seam * 0.5f;
 
             var faceCount = shape.FaceCount;
             var groupFaces = new List<int>[shape.GroupCount];
@@ -173,8 +171,8 @@ namespace ToyCarArena.Gameplay.Arena
 
         /// <summary>
         /// The faces of a group as a solid: tops (fanned, they are convex), a bottom if wanted, and a wall along every
-        /// edge the group does not share with itself. The outline is pulled in by half the seam all round, so two tiles
-        /// side by side leave an even groove; a vertex where the outline turns moves along the bisector.
+        /// edge the group does not share with itself. Unmodified shape vertices let the core and tiles meet without a
+        /// groove; separate wall vertices keep their normals from changing the flat top's lighting.
         /// </summary>
         private Mesh BuildGroupMesh(int group, Vector3 pivot, Quaternion unrotate, bool hasBottom, string name)
         {
@@ -194,25 +192,6 @@ namespace ToyCarArena.Gameplay.Arena
                 boundary.Add((from, to, new Vector2(direction.y, -direction.x).normalized));
             }
 
-            var corners = new Dictionary<int, (Vector2 first, Vector2 second, int count)>();
-            foreach (var (from, to, normal) in boundary) {
-                Touch(corners, from, normal);
-                Touch(corners, to, normal);
-            }
-
-            var moved = new Dictionary<int, Vector2>();
-            foreach (var pair in corners) {
-                var (first, second, count) = pair.Value;
-                if (count != 2) {
-                    moved[pair.Key] = shape.Vertices[pair.Key];
-                    continue;
-                }
-
-                var denominator = 1f + Vector2.Dot(first, second);
-                var inward = denominator > 0.05f ? (first + second) / denominator : first;
-                moved[pair.Key] = shape.Vertices[pair.Key] - inward * halfSeam;
-            }
-
             var builder = new FloorMeshBuilder();
             var down = Vector3.down * Thickness;
             for (var f = 0; f < shape.FaceCount; f++) {
@@ -222,9 +201,9 @@ namespace ToyCarArena.Gameplay.Arena
 
                 var ids = shape.Face(f);
                 for (var i = 1; i + 1 < ids.Length; i++) {
-                    var flatA = Position(moved, ids[0]);
-                    var flatB = Position(moved, ids[i]);
-                    var flatC = Position(moved, ids[i + 1]);
+                    var flatA = shape.Vertices[ids[0]];
+                    var flatB = shape.Vertices[ids[i]];
+                    var flatC = shape.Vertices[ids[i + 1]];
                     var a = Local(flatA, 0f, pivot, unrotate);
                     var b = Local(flatB, 0f, pivot, unrotate);
                     var c = Local(flatC, 0f, pivot, unrotate);
@@ -238,8 +217,8 @@ namespace ToyCarArena.Gameplay.Arena
             }
 
             foreach (var (from, to, normal) in boundary) {
-                var flatFrom = Position(moved, from);
-                var flatTo = Position(moved, to);
+                var flatFrom = shape.Vertices[from];
+                var flatTo = shape.Vertices[to];
                 var a = Local(flatFrom, 0f, pivot, unrotate);
                 var b = Local(flatTo, 0f, pivot, unrotate);
                 var facing = unrotate * new Vector3(normal.x, 0f, normal.y);
@@ -295,26 +274,6 @@ namespace ToyCarArena.Gameplay.Arena
         private bool In(int face, int group)
         {
             return face >= 0 && shape.GroupOf(face) == group;
-        }
-
-        private static void Touch(Dictionary<int, (Vector2 first, Vector2 second, int count)> corners, int id,
-            Vector2 normal)
-        {
-            corners.TryGetValue(id, out var corner);
-            if (corner.count == 0) {
-                corner.first = normal;
-            }
-            else {
-                corner.second = normal;
-            }
-
-            corner.count++;
-            corners[id] = corner;
-        }
-
-        private Vector2 Position(Dictionary<int, Vector2> moved, int id)
-        {
-            return moved.TryGetValue(id, out var position) ? position : shape.Vertices[id];
         }
 
         private static Vector3 Point(Vector2 flat)
