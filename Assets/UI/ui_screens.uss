@@ -829,6 +829,18 @@
     background-color: var(--orange);
 }
 
+/* A match's pickup taken by the player (HEAVY!, SHOCKWAVE!, SHIELD!, TURBO!): the word alone, in the kind's colour,
+   the same sticker as KNOCKOUT! otherwise. */
+.ko-pop--power .ko-pop__text {
+    margin-left: 0;
+    font-size: 100px;
+}
+
+.ko-pop--heavy .ko-pop__text { color: var(--orange); }
+.ko-pop--shockwave .ko-pop__text { color: var(--purple); }
+.ko-pop--shield .ko-pop__text { color: var(--blue); }
+.ko-pop--turbo .ko-pop__text { color: var(--gold); }
+
 /* Visit handles follow the bots; the inner sticker animates independently of its projected anchor. */
 .car-name {
     position: absolute;
@@ -1106,6 +1118,107 @@
     scale: 0 0;
     opacity: 0;
 }
+
+/* A match: the ability the player's car runs, as a white sticker above the boost button (so the thumb on the button
+   does not cover it) in the slot, which follows the thumb's side in both orientations. Icon, name and a bar that drains
+   with the time say it without colour alone. It springs in over 0.2 s and leaves faster (HudView toggles
+   hud__power--shown; the kind's class colours the bar and icon). It takes no touch. */
+.hud__power {
+    position: absolute;
+    left: -10px;
+    top: -140px;
+    width: 320px;
+    height: 112px;
+    padding: 0 20px 0 14px;
+    justify-content: flex-start;
+    scale: 0 0;
+    transition-property: scale;
+    transition-duration: 0.12s;
+    transition-timing-function: ease-in;
+}
+
+.hud__power--shown {
+    scale: 1 1;
+    transition-duration: 0.2s;
+    transition-timing-function: ease-out-back;
+}
+
+.hud__power-icon {
+    flex-shrink: 0;
+    width: 68px;
+    height: 68px;
+    align-items: center;
+    justify-content: center;
+    border-width: 6px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--soft);
+}
+
+.hud__power-icon--heavy { background-color: var(--orange); }
+.hud__power-icon--shield { background-color: var(--blue); }
+.hud__power-icon--turbo { background-color: var(--gold); }
+
+/* A weight, a bubble and a diamond (a spark), in navy and white on the kind's colour. */
+.hud__power-glyph {
+    width: 26px;
+    height: 26px;
+}
+
+.hud__power-icon--heavy .hud__power-glyph {
+    height: 22px;
+    border-radius: 8px;
+    background-color: var(--navy);
+}
+
+.hud__power-icon--shield .hud__power-glyph {
+    border-width: 5px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+}
+
+.hud__power-icon--turbo .hud__power-glyph {
+    width: 20px;
+    height: 20px;
+    rotate: 45deg;
+    background-color: var(--navy);
+}
+
+.hud__power-info {
+    flex-grow: 1;
+    flex-shrink: 1;
+    justify-content: center;
+    margin-left: 14px;
+}
+
+.hud__power-name {
+    margin: 0;
+    padding: 0 0 2px 0;
+    font-size: 40px;
+    color: var(--navy);
+    -unity-text-align: middle-left;
+    white-space: nowrap;
+}
+
+.hud__power-bar {
+    height: 18px;
+    border-width: 4px;
+    border-color: var(--navy);
+    border-radius: 9px;
+    background-color: var(--track);
+    overflow: hidden;
+}
+
+.hud__power-fill {
+    width: 100%;
+    height: 100%;
+    background-color: var(--blue);
+}
+
+.hud__power--heavy .hud__power-fill { background-color: var(--orange); }
+.hud__power--shield .hud__power-fill { background-color: var(--blue); }
+.hud__power--turbo .hud__power-fill { background-color: var(--gold); }
 
 .hud__boost {
     display: none;

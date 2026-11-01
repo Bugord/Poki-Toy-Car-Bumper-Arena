@@ -34,7 +34,19 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public event Action<CarHit> Hit;
 
+        /// <summary>
+        /// Raised when the car takes a pickup in a long match, whatever the kind (one that acts once, a shockwave,
+        /// included); the HUD and the analytics listen to the player's.
+        /// </summary>
+        public event Action<PickupKind> PickedUp;
+
+        /// <summary>
+        /// Raised when the car's shield takes a hit and is gone, for its effect.
+        /// </summary>
+        public event Action ShieldPopped;
+
         private GameTuning.RoundSettings settings;
+        private GameTuning.PickupSettings pickupSettings;
         private GameTuning.CarSettings carSettings;
         private GameTuning.BoostSettings boostSettings;
         private RoundDifficulty difficulty;
@@ -80,9 +92,47 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public float LastRingFallTime { get; private set; } = float.NegativeInfinity;
 
+        /// <summary>
+        /// The ability a pickup gave the car and that is still running (<see cref="PickupKind.None"/> for none); one at
+        /// a time, a new one replacing the old. It ends with its time, a shield also with the hit it takes, and a fall
+        /// ends any.
+        /// </summary>
+        public PickupKind Ability { get; private set; }
+
+        /// <summary>
+        /// How much of the running ability is left, from 1 when it was picked up to 0; 0 for none.
+        /// </summary>
+        public float AbilityShare
+        {
+            get
+            {
+                if (Ability == PickupKind.None || abilityLength <= 0f) {
+                    return 0f;
+                }
+
+                return Mathf.Clamp01((abilityEndTime - Time.time) / abilityLength);
+            }
+        }
+
+        /// <summary>
+        /// Seconds the running ability has left; 0 for none.
+        /// </summary>
+        public float AbilityTimeLeft => Ability == PickupKind.None ? 0f : Mathf.Max(0f, abilityEndTime - Time.time);
+
+        /// <summary>
+        /// Whether a shield is up: the next real hit, of a car or of the arena, is taken whole.
+        /// </summary>
+        public bool IsShielded => Ability == PickupKind.Shield;
+
+        private float abilityEndTime;
+        private float abilityLength;
+        // Until this time (Time.time) the car that made a hit the shield took is not credited, however long it presses on.
+        private float shieldGraceEnd = float.NegativeInfinity;
+
         [Inject]
         private void Construct(GameTuning tuning, RoundDifficulty difficulty)
         {
+            this.pickupSettings = tuning.Pickups;
             this.settings = tuning.Round;
             this.carSettings = tuning.Car;
             this.boostSettings = tuning.Boost;
@@ -104,6 +154,10 @@ namespace ToyCarArena.Gameplay.Cars
             if (IsOut && transform.position.y < settings.RemoveHeight) {
                 gameObject.SetActive(false);
             }
+
+            if (Ability != PickupKind.None && Time.time >= abilityEndTime) {
+                ClearAbility();
+            }
         }
 
         /// <summary>
@@ -112,7 +166,79 @@ namespace ToyCarArena.Gameplay.Cars
         public void TakeOut()
         {
             IsOut = true;
+            ClearAbility();
             Movement.Drive(Vector3.zero, 0f);
+        }
+
+        /// <summary>
+        /// The car takes a pickup and its ability starts at once. A timed kind (heavy, shield, turbo) replaces whatever
+        /// ability was running; a shockwave leaves nothing running (the ring itself is the arena's business) but is
+        /// still reported.
+        /// </summary>
+        public void TakePickup(PickupKind kind)
+        {
+            if (kind == PickupKind.None) {
+                return;
+            }
+
+            var length = pickupSettings.DurationOf(kind);
+            if (length > 0f) {
+                ClearAbility();
+                Ability = kind;
+                abilityLength = length;
+                abilityEndTime = Time.time + length;
+                switch (kind) {
+                    case PickupKind.Heavy:
+                        Movement.SetMassScale(pickupSettings.Heavy.MassScale);
+                        break;
+                    case PickupKind.Turbo:
+                        Movement.SetBoostCooldown(pickupSettings.Turbo.BoostCooldown);
+                        break;
+                }
+            }
+
+            PickedUp?.Invoke(kind);
+        }
+
+        /// <summary>
+        /// Ends the running ability, if any, and puts the car's weight and boost back as tuned.
+        /// </summary>
+        public void ClearAbility()
+        {
+            if (Ability == PickupKind.None) {
+                return;
+            }
+
+            Ability = PickupKind.None;
+            abilityLength = 0f;
+            Movement.SetMassScale(1f);
+            Movement.SetBoostCooldown(-1f);
+        }
+
+        /// <summary>
+        /// Takes a hit into the shield if one is up: true, the shield is spent and the caller must do no harm to the
+        /// car; false when there is none. For the hits that are not the car's own collisions (a shockwave).
+        /// </summary>
+        public bool TryAbsorbHit()
+        {
+            if (Ability != PickupKind.Shield) {
+                return false;
+            }
+
+            ClearAbility();
+            shieldGraceEnd = Time.time + pickupSettings.Shield.Grace;
+            ShieldPopped?.Invoke();
+            return true;
+        }
+
+        /// <summary>
+        /// A shockwave from <paramref name="picker"/> knocked this car: it counts as hit by that car, so a fall that
+        /// follows is the picker's knock-out, the way a push of a car is.
+        /// </summary>
+        public void HitByShockwave(Car picker)
+        {
+            LastHitBy = picker;
+            LastHitTime = Time.time;
         }
 
         /// <summary>
@@ -133,6 +259,7 @@ namespace ToyCarArena.Gameplay.Cars
             LastHitTime = float.NegativeInfinity;
             LastHazardTime = float.NegativeInfinity;
             LastRingFallTime = float.NegativeInfinity;
+            ClearAbility();
             Movement.Respawn(position, rotation);
             IsInvulnerable = false;
             SetInvulnerable(true, cars);
@@ -207,6 +334,13 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public void HitByHazard()
         {
+            // A hazard pushes and staggers before it reports the hit: a shield takes all of it back.
+            if (Ability == PickupKind.Shield) {
+                Movement.UndoHazardKick();
+                TryAbsorbHit();
+                return;
+            }
+
             LastHitBy = null;
             LastHitTime = Time.time;
             LastHazardTime = Time.time;
@@ -258,6 +392,23 @@ namespace ToyCarArena.Gameplay.Cars
             var approach = Mathf.Max(0f, -Vector3.Dot(velocity, normal));
             var otherApproach = Mathf.Max(0f, Vector3.Dot(otherVelocity, normal));
             var strength = Mathf.Max(0f, Vector3.Dot(otherVelocity - velocity, normal));
+
+            // A shield takes a car driving into it whole (the physics' own bounce stays): no push, no loss of balance and
+            // no credit for the hit. A touch below the shield's minimum is let through unmarked and keeps it, so a tap
+            // cannot be turned into a knock-out. A car that rams with a shield is hit by nothing, and keeps it.
+            if (otherApproach > 0f) {
+                if (IsShielded) {
+                    if (strength >= pickupSettings.Shield.MinStrength) {
+                        TryAbsorbHit();
+                    }
+
+                    return;
+                }
+
+                if (Time.time < shieldGraceEnd) {
+                    return;
+                }
+            }
 
             // The push grows with how fast the other car drove into this one, but never past how fast the two closed
             // in: a car tapped from behind by a slightly faster one is barely pushed, and a contact lost and found again
@@ -324,6 +475,11 @@ namespace ToyCarArena.Gameplay.Cars
 
             var away = Flat(Position - other.Position);
             if (away.sqrMagnitude < 0.0001f) {
+                return;
+            }
+
+            // Still pressing on a shield that took the hit, or on one that stands: no credit.
+            if (IsShielded || Time.time < shieldGraceEnd) {
                 return;
             }
 

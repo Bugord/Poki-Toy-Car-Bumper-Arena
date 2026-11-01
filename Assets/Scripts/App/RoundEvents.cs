@@ -51,7 +51,8 @@ namespace ToyCarArena.App
     /// <c>match / knockouts-N-rR / knockouts</c>, <c>match / falls-N-rR / falls</c> (every fall is followed by a
     /// comeback, but for one at the very end) and <c>match / pushed-N-rR / pushed</c> (the falls a car got the credit
     /// for), N from 0 to 9 or 10plus, and <c>match / revenge-got, missed-rR / revenge</c> with a rival marked during the
-    /// match. It sends no <c>round / … / start, complete, fail</c>, and of the round's result only what still means
+    /// match; and <c>match / pickup-heavy, shockwave, shield, turbo-rR / pickup</c> for each pickup the player takes and
+    /// <c>match / pickups-N-rR / pickups</c> for how many at the end. It sends no <c>round / … / start, complete, fail</c>, and of the round's result only what still means
     /// the same in a match (<see cref="MeasureMatchEnd"/>).</item>
     /// <item><c>progress / level-2..10, level-10plus / level-up</c> for each crossed level, and
     /// <c>progress / car-id / unlock</c> from the saved reward</item>
@@ -229,6 +230,20 @@ namespace ToyCarArena.App
                 MeasureControls(platform, driver);
             }
         }
+
+        /// <summary>
+        /// The player took a pickup in match number <paramref name="match"/>: <c>match / pickup-heavy, shockwave, shield,
+        /// turbo-rR / pickup</c>, R as for the match's other events.
+        /// </summary>
+        public static void MeasurePickup(this IGamePlatform platform, int match, PickupKind kind) =>
+            platform.Measure(MatchCategory, $"pickup-{kind.ToString().ToLowerInvariant()}-{RoundTag(match)}", "pickup");
+
+        /// <summary>
+        /// How many pickups the player took in the match, at its end: <c>match / pickups-N-rR / pickups</c>, N from 0 to 9
+        /// or 10plus.
+        /// </summary>
+        public static void MeasureMatchPickups(this IGamePlatform platform, int match, int count) =>
+            platform.Measure(MatchCategory, $"pickups-{CountBucket(count)}-{RoundTag(match)}", "pickups");
 
         // One number, so the match's tag still fits beside it.
         private static string CountBucket(int count)
