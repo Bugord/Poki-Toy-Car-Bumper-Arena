@@ -18,8 +18,8 @@ namespace ToyCarArena.Gameplay
 
         /// <summary>
         /// The floor in cycles: open (the whole floor), shrink (every wave of the arena falls, spread over the phase
-        /// however many waves the arena has), peak (only the core) and return (the tiles drop back from above). The
-        /// tension of a long match comes in waves instead of building once. Off, the edge crumbles once over the round
+        /// however many waves the arena has, in a match only the outer share of them), peak (what is left standing) and
+        /// return (the tiles drop back from above). The tension of a long match comes in waves instead of building once. Off, the edge crumbles once over the round
         /// as it always has.
         /// </summary>
         [Serializable]
@@ -61,6 +61,13 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float returnWarning = 1.2f;
 
+            [Tooltip("In a match, the share of the arena's waves that fall in a cycle, the first in fall order (from the " +
+                "rim in); the rest stand all along, so the peak keeps room for every car and for the ones coming back. " +
+                "Rounds still crumble to the core")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float matchFallShare = 0.5f;
+
             public bool Enabled => enabled;
             public int Cycles => cycles;
             public float Open => open;
@@ -68,6 +75,16 @@ namespace ToyCarArena.Gameplay
             public float Peak => peak;
             public float ReturnTime => returnTime;
             public float ReturnWarning => returnWarning;
+            public float MatchFallShare => matchFallShare;
+
+            /// <summary>
+            /// How many of an arena's <paramref name="waveCount"/> waves fall in a cycle of a match: the share, rounded
+            /// down, but at least one, so the floor still shrinks.
+            /// </summary>
+            public int MatchFallingWaves(int waveCount)
+            {
+                return waveCount <= 0 ? 0 : Mathf.Clamp(Mathf.FloorToInt(waveCount * matchFallShare + 0.0001f), 1, waveCount);
+            }
         }
     }
 }

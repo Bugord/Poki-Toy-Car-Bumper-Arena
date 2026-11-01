@@ -68,8 +68,8 @@ namespace ToyCarArena.Gameplay.Arena
 
         public ArenaMounds(GameTuning tuning, ArenaMap map, ArenaRound round, IArenaEdge edge, ArenaHazards hazards,
             MechanicArt art, RoundDifficulty difficulty, ArenaCamera arenaCamera, IAudioService audioService,
-            ArenaSurface surface, Transform parent)
-            : base(GameTuning.ArenaMechanic.Mounds, map, round, edge, hazards, parent)
+            ArenaSurface surface, ArenaVariants variants, Transform parent)
+            : base(GameTuning.ArenaMechanic.Mounds, map, round, edge, hazards, variants, parent)
         {
             this.tuning = tuning;
             this.settings = tuning.Mounds;
@@ -108,6 +108,11 @@ namespace ToyCarArena.Gameplay.Arena
 
         public SurfaceFeel Sample(Vector3 position)
         {
+            // A mound left behind by a cycle that is over shrinks away as plain floor.
+            if (!IsRunning) {
+                return SurfaceFeel.Neutral;
+            }
+
             foreach (var mound in mounds) {
                 if (mound == null || mound.Stage == Stage.Free || mound.Stage == Stage.Warning || mound.Scale <= 0.1f) {
                     continue;
@@ -160,15 +165,15 @@ namespace ToyCarArena.Gameplay.Arena
             return false;
         }
 
-        public override void Dispose()
+        protected override void ResetState()
         {
-            Hazards.Remove(this);
-            base.Dispose();
+            System.Array.Clear(mounds, 0, mounds.Length);
+            nextAnnounce = -1f;
         }
 
         protected override void Build()
         {
-            random = new System.Random(Hazards.Seed ^ 0x5B2D);
+            random = new System.Random(SeedOf(Hazards.Seed ^ 0x5B2D));
             blow = new HazardBlow(tuning, difficulty, arenaCamera, audioService);
             Hazards.Add(this);
             BuildLook();
@@ -206,12 +211,12 @@ namespace ToyCarArena.Gameplay.Arena
                 nextAnnounce = settings.Delay;
             }
 
-            if (Round.Elapsed < nextAnnounce) {
+            if (Clock < nextAnnounce) {
                 return;
             }
 
             var jitter = ((float)random.NextDouble() * 2f - 1f) * settings.Jitter;
-            nextAnnounce = Round.Elapsed + Mathf.Max(settings.Warning + 1f, settings.Interval + jitter);
+            nextAnnounce = Clock + Mathf.Max(settings.Warning + 1f, settings.Interval + jitter);
             var count = random.Next(settings.MinCount, Mathf.Max(settings.MinCount, settings.MaxCount) + 1);
             var announced = 0;
             for (var i = 0; i < count; i++) {
@@ -241,7 +246,7 @@ namespace ToyCarArena.Gameplay.Arena
                     continue;
                 }
 
-                if (IsNearAnother(spot) || (Round.Elapsed < settings.SpawnClearTime && IsNearStartContour(spot))) {
+                if (IsNearAnother(spot) || (Clock < settings.SpawnClearTime && IsNearStartContour(spot))) {
                     continue;
                 }
 

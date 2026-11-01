@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using NUnit.Framework;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Arena;
@@ -9,9 +8,6 @@ using ToyCarArena.Gameplay.Round;
 using UnityEngine;
 using UnityEngine.TestTools;
 using VContainer;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace ToyCarArena.Tests.PlayMode
 {
@@ -20,30 +16,8 @@ namespace ToyCarArena.Tests.PlayMode
     /// shape, the whole cycle in the real Game scene on the round and two tiled floors, a car caught in a landing tile
     /// lifted onto it, and the old single crumble untouched with the switch off.
     /// </summary>
-    public sealed class FloorCyclesTests : ArenaObjectFixture
+    public sealed class FloorCyclesTests : CycleFixture
     {
-        private const string TuningPath = "Assets/Data/Gameplay/data_game_tuning.asset";
-
-        private static readonly string[] CycleFields =
-            { "enabled", "cycles", "open", "shrink", "peak", "returnTime", "returnWarning" };
-
-        private readonly Dictionary<string, object> savedCycles = new();
-
-        [TearDown]
-        public void RestoreTuning()
-        {
-            if (savedCycles.Count == 0) {
-                return;
-            }
-
-            var settings = LoadTuning().FloorCycles;
-            foreach (var pair in savedCycles) {
-                Field(pair.Key).SetValue(settings, pair.Value);
-            }
-
-            savedCycles.Clear();
-        }
-
         // --- The schedule ---
 
         [Test]
@@ -105,6 +79,33 @@ namespace ToyCarArena.Tests.PlayMode
             endless.CycleTime(1020f, out var many);
             Assert.That(many, Is.EqualTo(20));
             Assert.That(endless.PhaseAt(1020f), Is.EqualTo(FloorPhase.Shrink));
+        }
+
+        [Test]
+        public void AMatchKeepsTheInnerWavesStanding()
+        {
+            const int waves = 8;
+            var schedule = new FloorCycleSchedule(3, 15f, 25f, 7f, 3f, 1.2f, 2f, waves, 3);
+            Assert.That(schedule.FallingWaves, Is.EqualTo(3));
+            Assert.That(schedule.WarnAt(0), Is.EqualTo(schedule.ShrinkAt));
+            Assert.That(schedule.FallAt(2), Is.EqualTo(schedule.PeakAt).Within(0.0001f), "the last falling wave ends the shrink");
+            for (var w = 0; w < waves; w++) {
+                var falls = w < 3;
+                Assert.That(schedule.Falls(w), Is.EqualTo(falls));
+                Assert.That(schedule.StateAt(w, schedule.PeakAt + 1f),
+                    Is.EqualTo(falls ? WaveState.Gone : WaveState.Standing), $"wave {w} at the peak");
+                Assert.That(schedule.StateAt(w, schedule.ReturnAt + 0.1f),
+                    Is.EqualTo(falls ? WaveState.Returning : WaveState.Standing), $"wave {w} in the return");
+            }
+
+            Assert.That(schedule.LandAt(2), Is.EqualTo(schedule.ReturnAt + 1.2f).Within(0.0001f), "the innermost fallen lands first");
+            Assert.That(schedule.LandAt(0), Is.LessThan(schedule.Length));
+
+            var tuning = ScriptableObject.CreateInstance<GameTuning>();
+            Assert.That(tuning.FloorCycles.MatchFallingWaves(0), Is.EqualTo(0));
+            Assert.That(tuning.FloorCycles.MatchFallingWaves(1), Is.EqualTo(1), "a lone wave still falls");
+            Assert.That(tuning.FloorCycles.MatchFallingWaves(11), Is.InRange(1, 10), "a match never drops every wave");
+            Object.DestroyImmediate(tuning);
         }
 
         [Test]
@@ -261,8 +262,7 @@ namespace ToyCarArena.Tests.PlayMode
         [UnityTest]
         public IEnumerator WithoutCyclesTheEdgeCrumblesOnce()
         {
-            SaveCycles();
-            Field("enabled").SetValue(LoadTuning().FloorCycles, false);
+            SetField(LoadTuning().FloorCycles, "enabled", false);
             yield return Load("sandbox", "rake");
             var crumble = Container.Resolve<ArenaCrumble>();
             var settings = Container.Resolve<GameTuning.ArenaSettings>();
@@ -295,46 +295,6 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         // --- Helpers ---
-
-        private static GameTuning LoadTuning()
-        {
-#if UNITY_EDITOR
-            return AssetDatabase.LoadAssetAtPath<GameTuning>(TuningPath);
-#else
-            throw new System.NotSupportedException("Run the floor tests as editor PlayMode tests.");
-#endif
-        }
-
-        private static FieldInfo Field(string name)
-        {
-            return typeof(GameTuning.FloorCycleSettings).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
-        }
-
-        private void SaveCycles()
-        {
-            if (savedCycles.Count > 0) {
-                return;
-            }
-
-            var settings = LoadTuning().FloorCycles;
-            foreach (var name in CycleFields) {
-                savedCycles[name] = Field(name).GetValue(settings);
-            }
-        }
-
-        /// <summary>Switches the cycles on with short phases, for this test only; the tear-down puts the asset back.</summary>
-        private void EnableCycles(int cycles, float open, float shrink, float peak, float returnTime, float returnWarning)
-        {
-            SaveCycles();
-            var settings = LoadTuning().FloorCycles;
-            Field("enabled").SetValue(settings, true);
-            Field("cycles").SetValue(settings, cycles);
-            Field("open").SetValue(settings, open);
-            Field("shrink").SetValue(settings, shrink);
-            Field("peak").SetValue(settings, peak);
-            Field("returnTime").SetValue(settings, returnTime);
-            Field("returnWarning").SetValue(settings, returnWarning);
-        }
 
         /// <summary>
         /// Stands every car at rest on the floor that never crumbles, well apart and facing away from the nearest void, so

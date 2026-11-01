@@ -22,6 +22,8 @@ namespace ToyCarArena.Gameplay.Arena
     /// not drawn, and the train, which cannot cross the gap, derails there: it tips and falls off. A few seconds later a
     /// new one is put on a stretch of rail that still has floor, while there is one. A hazard for the bots, who step off the rail inwards (or run on ahead of the
     /// train where a pit is in the way). Registered in every scope; does nothing off its variant.
+    /// In a match whose cycles turn the variants it is built afresh, its schedule from the start, each cycle that plays
+    /// it, and leaves as the cycle ends (<see cref="MechanicRun"/>).
     /// </para>
     /// </summary>
     public sealed class ToyTrain : IArenaHazard, ITickable, IDisposable
@@ -77,7 +79,7 @@ namespace ToyCarArena.Gameplay.Arena
         private Material glowBright;
         private Material glowDim;
         private EffectPlayer effects;
-        private bool built;
+        private readonly MechanicRun run;
         private bool isDirty;
         private float clock;
         private float travelled;
@@ -96,8 +98,10 @@ namespace ToyCarArena.Gameplay.Arena
         private float loopLength;
 
         public ToyTrain(GameTuning tuning, ArenaMap map, ArenaRound round, IArenaEdge edge, RoundDifficulty difficulty,
-            MechanicArt art, ArenaHazards hazards, ArenaCamera arenaCamera, IAudioService audioService, Transform parent)
+            MechanicArt art, ArenaHazards hazards, ArenaCamera arenaCamera, IAudioService audioService,
+            ArenaVariants variants, Transform parent)
         {
+            this.run = new MechanicRun(variants, GameTuning.ArenaMechanic.Train);
             this.tuning = tuning;
             this.settings = tuning.Train;
             this.map = map;
@@ -109,13 +113,10 @@ namespace ToyCarArena.Gameplay.Arena
             this.arenaCamera = arenaCamera;
             this.audioService = audioService;
             this.parent = parent;
-            if (map.Mechanic == GameTuning.ArenaMechanic.Train) {
-                hazards.Add(this);
-            }
         }
 
         /// <summary>Whether the train and its rail are laid; false off the Train variant.</summary>
-        public bool Exists => built;
+        public bool Exists => run.IsBuilt;
 
         /// <summary>The train has fallen off the rail and is gone or falling.</summary>
         public bool IsDerailed { get; private set; }
@@ -162,7 +163,7 @@ namespace ToyCarArena.Gameplay.Arena
         public bool TryAvoid(Vector3 position, float margin, IArenaEdge edge, float edgeMargin, out Vector3 heading)
         {
             heading = Vector3.zero;
-            if (!built || IsDerailed || !IsWarning) {
+            if (!run.IsRunning || IsDerailed || !IsWarning) {
                 return false;
             }
 
@@ -198,16 +199,20 @@ namespace ToyCarArena.Gameplay.Arena
 
         public void Tick()
         {
-            if (map.Mechanic != GameTuning.ArenaMechanic.Train) {
-                return;
-            }
-
-            if (!built) {
-                if (!round.IsPlaced) {
+            switch (run.Next(round.IsPlaced, Time.deltaTime)) {
+                case MechanicStep.Idle:
                     return;
-                }
-
-                Build();
+                case MechanicStep.Leave:
+                    hazards.Remove(this);
+                    run.Shrink(root != null ? root.transform : null);
+                    return;
+                case MechanicStep.Clear:
+                    Clear();
+                    return;
+                case MechanicStep.Start:
+                    Clear();
+                    Build();
+                    break;
             }
 
             var delta = Time.deltaTime;
@@ -240,10 +245,20 @@ namespace ToyCarArena.Gameplay.Arena
 
         public void Dispose()
         {
+            Clear();
+        }
+
+        /// <summary>
+        /// Takes the train and its rail off the floor and out of the bots' way, its schedule back to the start, so a later
+        /// cycle lays a new one on the whole floor even if this one derailed.
+        /// </summary>
+        private void Clear()
+        {
             edge.Changed -= OnFloorChanged;
             hazards.Remove(this);
             if (root != null) {
                 UnityEngine.Object.Destroy(root);
+                root = null;
             }
 
             foreach (var mesh in meshes) {
@@ -253,6 +268,28 @@ namespace ToyCarArena.Gameplay.Arena
             }
 
             meshes.Clear();
+            parts.Clear();
+            railVertices.Clear();
+            pieceTriangles.Clear();
+            foreach (var list in railIndices) {
+                list.Clear();
+            }
+
+            railMesh = null;
+            isDirty = false;
+            clock = 0f;
+            travelled = 0f;
+            departAt = 0f;
+            goneAt = 0f;
+            whistled = false;
+            isGone = false;
+            lap = 0;
+            direction = 1f;
+            trainLength = 0f;
+            IsDerailed = false;
+            Speed = 0f;
+            IsWarning = false;
+            Head = 0f;
         }
 
         // ---- The loop ----
@@ -606,8 +643,8 @@ namespace ToyCarArena.Gameplay.Arena
 
         private void Build()
         {
-            built = true;
-            random = new System.Random(unchecked(hazards.Seed ^ 0x72A1B5));
+            hazards.Add(this);
+            random = new System.Random(run.SeedOf(unchecked(hazards.Seed ^ 0x72A1B5)));
             departAt = settings.Delay;
             direction = random.Next(2) == 0 ? 1f : -1f;
             var half = map.Settings.HalfSize;

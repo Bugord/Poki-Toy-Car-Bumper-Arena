@@ -82,8 +82,9 @@ namespace ToyCarArena.Gameplay.Arena
         private int version;
 
         public ArenaPencil(GameTuning tuning, ArenaMap map, ArenaRound round, IArenaEdge edge, ArenaHazards hazards,
-            MechanicArt art, RoundDifficulty difficulty, ArenaCamera arenaCamera, IAudioService audioService, Transform parent)
-            : base(GameTuning.ArenaMechanic.Pencil, map, round, edge, hazards, parent)
+            MechanicArt art, RoundDifficulty difficulty, ArenaCamera arenaCamera, IAudioService audioService,
+            ArenaVariants variants, Transform parent)
+            : base(GameTuning.ArenaMechanic.Pencil, map, round, edge, hazards, variants, parent)
         {
             this.tuning = tuning;
             this.settings = tuning.Pencil;
@@ -130,15 +131,27 @@ namespace ToyCarArena.Gameplay.Arena
                 -(settings.Radius + CarReach + 0.3f), float.MaxValue, edge, edgeMargin, out heading);
         }
 
-        public override void Dispose()
+        protected override void ResetState()
         {
-            Hazards.Remove(this);
-            base.Dispose();
+            hitCars.Clear();
+            dashVertices.Clear();
+            dashTriangles.Clear();
+            stage = Stage.Idle;
+            stageTime = 0f;
+            nextLaunch = -1f;
+            along = Vector3.forward;
+            axis = Vector3.right;
+            centerAxis = 0f;
+            halfLength = 0f;
+            travel = 0f;
+            travelStart = 0f;
+            travelEnd = 0f;
+            angle = 0f;
         }
 
         protected override void Build()
         {
-            random = new System.Random(Hazards.Seed ^ 0x2C4B);
+            random = new System.Random(SeedOf(Hazards.Seed ^ 0x2C4B));
             blow = new HazardBlow(tuning, difficulty, arenaCamera, audioService);
             Hazards.Add(this);
             BuildLook();
@@ -170,7 +183,7 @@ namespace ToyCarArena.Gameplay.Arena
                 nextLaunch = settings.Delay;
             }
 
-            if (Round.Elapsed >= nextLaunch) {
+            if (Clock >= nextLaunch) {
                 Launch();
             }
         }
@@ -205,7 +218,7 @@ namespace ToyCarArena.Gameplay.Arena
             stageTime = 0f;
             hitCars.Clear();
             version++;
-            nextLaunch = Round.Elapsed + Mathf.Max(settings.Warning + 3f,
+            nextLaunch = Clock + Mathf.Max(settings.Warning + 3f,
                 settings.Interval + ((float)random.NextDouble() * 2f - 1f) * settings.Jitter);
 
             ShowBand();

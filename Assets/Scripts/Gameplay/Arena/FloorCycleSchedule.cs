@@ -13,7 +13,7 @@ namespace ToyCarArena.Gameplay.Arena
         /// <summary>The waves shake and fall, one after another.</summary>
         Shrink,
 
-        /// <summary>Only the core is left.</summary>
+        /// <summary>Only the floor that does not fall this cycle is left: the core, or more of it in a match.</summary>
         Peak,
 
         /// <summary>The tiles hang over their places and drop back into them.</summary>
@@ -23,8 +23,9 @@ namespace ToyCarArena.Gameplay.Arena
     /// <summary>
     /// When each wave of the floor shakes, falls and comes back in the cycles of <see cref="GameTuning.FloorCycleSettings"/>,
     /// as a plain function of the round's clock: the floor at any moment is well defined, a frame that skips a step still
-    /// lands on the right floor, and a test can ask for any time. Every wave of the arena falls within the shrink phase,
-    /// however many there are, and they come back in the reverse order, the innermost first: a round floor holds a car up
+    /// lands on the right floor, and a test can ask for any time. The falling waves (every wave of the arena, or the first
+    /// few in fall order in a match, which keeps room to come back on) fall within the shrink phase, however many there
+    /// are; the rest never fall. They come back in the reverse order, the innermost first: a round floor holds a car up
     /// only over the unbroken run of rings from the middle, so an outer ring landing first would be drawn but hold nothing.
     /// After the last cycle the floor stays as the last cycle leaves it, whole.
     /// </summary>
@@ -37,14 +38,18 @@ namespace ToyCarArena.Gameplay.Arena
         private readonly float returnTime;
         private readonly float returnWarning;
         private readonly int waveCount;
+        private readonly int falling;
         private readonly float step;
         private readonly float first;
 
         /// <param name="cycles">Cycles the floor goes through; 0 for ever.</param>
         /// <param name="warning">Seconds a wave shakes before it falls; cut to the shrink phase if longer.</param>
         /// <param name="waveCount">Waves the arena's floor crumbles in.</param>
+        /// <param name="fallingWaves">
+        /// How many of them fall in a cycle, the first in fall order; the rest stand all along. Negative for all.
+        /// </param>
         public FloorCycleSchedule(int cycles, float open, float shrink, float peak, float returnTime,
-            float returnWarning, float warning, int waveCount)
+            float returnWarning, float warning, int waveCount, int fallingWaves = -1)
         {
             this.cycles = Mathf.Max(0, cycles);
             this.open = Mathf.Max(0f, open);
@@ -53,18 +58,27 @@ namespace ToyCarArena.Gameplay.Arena
             this.returnTime = Mathf.Max(0.01f, returnTime);
             this.returnWarning = Mathf.Clamp(returnWarning, 0f, this.returnTime);
             this.waveCount = Mathf.Max(0, waveCount);
+            this.falling = fallingWaves < 0 ? this.waveCount : Mathf.Min(fallingWaves, this.waveCount);
             this.Warning = Mathf.Clamp(warning, 0f, this.shrink);
             // The first wave shakes as the shrink begins and the last one falls as it ends; a lone wave falls as it ends,
             // so the peak is as long as it says.
-            this.step = this.waveCount > 1 ? (this.shrink - this.Warning) / (this.waveCount - 1) : 0f;
-            this.first = this.waveCount > 1 ? 0f : this.shrink - this.Warning;
+            this.step = this.falling > 1 ? (this.shrink - this.Warning) / (this.falling - 1) : 0f;
+            this.first = this.falling > 1 ? 0f : this.shrink - this.Warning;
         }
 
-        public static FloorCycleSchedule From(GameTuning.FloorCycleSettings settings, float warning, int waveCount)
+        /// <param name="fallingWaves">How many waves fall in a cycle, the first in fall order; negative for all.</param>
+        public static FloorCycleSchedule From(GameTuning.FloorCycleSettings settings, float warning, int waveCount,
+            int fallingWaves = -1)
         {
             return new FloorCycleSchedule(settings.Cycles, settings.Open, settings.Shrink, settings.Peak,
-                settings.ReturnTime, settings.ReturnWarning, warning, waveCount);
+                settings.ReturnTime, settings.ReturnWarning, warning, waveCount, fallingWaves);
         }
+
+        /// <summary>How many waves fall in a cycle, the first in fall order; the others never fall.</summary>
+        public int FallingWaves => falling;
+
+        /// <summary>Whether the given wave falls in the cycles at all.</summary>
+        public bool Falls(int wave) => wave < falling;
 
         /// <summary>Seconds a wave shakes before it falls.</summary>
         public float Warning { get; }
@@ -78,7 +92,7 @@ namespace ToyCarArena.Gameplay.Arena
         /// <summary>Seconds into a cycle the shrink begins.</summary>
         public float ShrinkAt => open;
 
-        /// <summary>Seconds into a cycle the last wave has fallen and only the core is left.</summary>
+        /// <summary>Seconds into a cycle the last falling wave has fallen and only what stays is left.</summary>
         public float PeakAt => open + shrink;
 
         /// <summary>Seconds into a cycle the tiles appear over their places.</summary>
@@ -102,9 +116,9 @@ namespace ToyCarArena.Gameplay.Arena
         /// </summary>
         public float LandAt(int wave)
         {
-            var order = waveCount - 1 - wave;
+            var order = falling - 1 - wave;
             var spread = returnTime - returnWarning;
-            return ReturnAt + returnWarning + (waveCount > 0 ? spread * order / waveCount : 0f);
+            return ReturnAt + returnWarning + (falling > 0 ? spread * order / falling : 0f);
         }
 
         /// <summary>
@@ -145,6 +159,10 @@ namespace ToyCarArena.Gameplay.Arena
         /// </summary>
         public WaveState StateAt(int wave, float time)
         {
+            if (!Falls(wave)) {
+                return WaveState.Standing;
+            }
+
             var into = CycleTime(time, out _);
             if (into < WarnAt(wave)) {
                 return WaveState.Standing;

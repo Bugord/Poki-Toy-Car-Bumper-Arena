@@ -19,6 +19,8 @@ namespace ToyCarArena.Gameplay.Arena
     /// (<see cref="PropPlacement"/>), from the seed the bots share. A spot whose floor crumbles is gone. A hazard for the
     /// bots: a bot inside the circle of an announced spot drives straight out of it. The boxes are checks of position
     /// with no colliders. Registered in every scope; does nothing off its variant.
+    /// In a match whose cycles turn the variants it is built afresh, its schedule from the start, each cycle that plays
+    /// it, and leaves as the cycle ends (<see cref="MechanicRun"/>).
     /// </para>
     /// </summary>
     public sealed class JackBoxes : IArenaHazard, ITickable, IDisposable
@@ -64,7 +66,6 @@ namespace ToyCarArena.Gameplay.Arena
 
         private readonly GameTuning.JackSettings settings;
         private readonly GameTuning tuning;
-        private readonly ArenaMap map;
         private readonly ArenaRound round;
         private readonly IArenaEdge edge;
         private readonly RoundDifficulty difficulty;
@@ -81,16 +82,17 @@ namespace ToyCarArena.Gameplay.Arena
         private GameObject root;
         private System.Random random;
         private EffectPlayer effects;
-        private bool built;
+        private readonly MechanicRun run;
         private float clock;
         private float nextAnnounce = -1f;
 
-        public JackBoxes(GameTuning tuning, ArenaMap map, ArenaRound round, IArenaEdge edge, RoundDifficulty difficulty,
-            MechanicArt art, ArenaHazards hazards, ArenaCamera arenaCamera, IAudioService audioService, Transform parent)
+        public JackBoxes(GameTuning tuning, ArenaRound round, IArenaEdge edge, RoundDifficulty difficulty,
+            MechanicArt art, ArenaHazards hazards, ArenaCamera arenaCamera, IAudioService audioService,
+            ArenaVariants variants, Transform parent)
         {
+            this.run = new MechanicRun(variants, GameTuning.ArenaMechanic.Jack);
             this.tuning = tuning;
             this.settings = tuning.Jack;
-            this.map = map;
             this.round = round;
             this.edge = edge;
             this.difficulty = difficulty;
@@ -99,13 +101,10 @@ namespace ToyCarArena.Gameplay.Arena
             this.arenaCamera = arenaCamera;
             this.audioService = audioService;
             this.parent = parent;
-            if (map.Mechanic == GameTuning.ArenaMechanic.Jack) {
-                hazards.Add(this);
-            }
         }
 
         /// <summary>Whether the spots are laid out; false off the Jack variant.</summary>
-        public bool Exists => built;
+        public bool Exists => run.IsBuilt;
 
         public int SpotCount => spots.Count;
 
@@ -136,7 +135,7 @@ namespace ToyCarArena.Gameplay.Arena
         public bool TryAvoid(Vector3 position, float margin, IArenaEdge edge, float edgeMargin, out Vector3 heading)
         {
             heading = Vector3.zero;
-            if (!built) {
+            if (!run.IsRunning) {
                 return false;
             }
 
@@ -174,16 +173,20 @@ namespace ToyCarArena.Gameplay.Arena
 
         public void Tick()
         {
-            if (map.Mechanic != GameTuning.ArenaMechanic.Jack) {
-                return;
-            }
-
-            if (!built) {
-                if (!round.IsPlaced) {
+            switch (run.Next(round.IsPlaced, Time.deltaTime)) {
+                case MechanicStep.Idle:
                     return;
-                }
-
-                Build();
+                case MechanicStep.Leave:
+                    hazards.Remove(this);
+                    run.Shrink(root != null ? root.transform : null);
+                    return;
+                case MechanicStep.Clear:
+                    Clear();
+                    return;
+                case MechanicStep.Start:
+                    Clear();
+                    Build();
+                    break;
             }
 
             var delta = Time.deltaTime;
@@ -199,9 +202,16 @@ namespace ToyCarArena.Gameplay.Arena
 
         public void Dispose()
         {
+            Clear();
+        }
+
+        /// <summary>Takes the boxes off the floor and out of the bots' way, their schedule back to the start.</summary>
+        private void Clear()
+        {
             hazards.Remove(this);
             if (root != null) {
                 UnityEngine.Object.Destroy(root);
+                root = null;
             }
 
             foreach (var mesh in meshes) {
@@ -211,6 +221,10 @@ namespace ToyCarArena.Gameplay.Arena
             }
 
             meshes.Clear();
+            spots.Clear();
+            idle.Clear();
+            clock = 0f;
+            nextAnnounce = -1f;
         }
 
         private void Schedule()
@@ -395,8 +409,8 @@ namespace ToyCarArena.Gameplay.Arena
 
         private void Build()
         {
-            built = true;
-            random = new System.Random(unchecked(hazards.Seed ^ 0x3AC41D));
+            hazards.Add(this);
+            random = new System.Random(run.SeedOf(unchecked(hazards.Seed ^ 0x3AC41D)));
             var places = PropPlacement.Scatter(random, edge, round.Cars, settings.SpotCount, settings.EdgeClearance,
                 settings.SpotSpacing, settings.SpawnClearance);
             root = new GameObject("Jack Boxes");

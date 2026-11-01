@@ -40,7 +40,8 @@ namespace ToyCarArena.App
     /// <see cref="SlowLobbySeconds"/> after the lobby came up, then <c>interact</c> when that round comes up after all,
     /// so a slow load can be told from a wait the player gave up on</item>
     /// <item>after v0.5.1: <c>arena / arena-id-variant-id / start</c>, then <c>complete</c> or <c>fail</c> beside the
-    /// round's, so Poki counts the visits that leave in the middle of a round per arena variant</item>
+    /// round's, so Poki counts the visits that leave in the middle of a round per arena variant; a long match sends it per
+    /// cycle of the floor, each cycle's variant completing as the next one starts</item>
     /// <item>since v0.2.0, only with a marked rival present: <c>result / revenge-got, missed-rR / revenge</c></item>
     /// <item><c>garage / button / visible, interact</c> and <c>garage / car-id / equip</c></item>
     /// <item><c>garage / color-name / color</c> on colour selection and
@@ -122,6 +123,20 @@ namespace ToyCarArena.App
             if (!string.IsNullOrEmpty(variantId)) {
                 platform.MeasureStart(ArenaCategory, $"{mapId}-{variantId}");
             }
+        }
+
+        /// <summary>
+        /// A match moving on to the next variant of its arena with the floor's cycle: the one played completes and the
+        /// next starts, so Poki counts the visits that leave in the middle of a match per variant, as in a round.
+        /// </summary>
+        public static void MeasureVariantChange(this IGamePlatform platform, string mapId, string fromVariantId,
+            string toVariantId)
+        {
+            if (!string.IsNullOrEmpty(fromVariantId)) {
+                platform.MeasureComplete(ArenaCategory, $"{mapId}-{fromVariantId}");
+            }
+
+            platform.MeasureVariantStart(mapId, toVariantId);
         }
 
         public static void MeasureVariantEnd(this IGamePlatform platform, string mapId, string variantId,

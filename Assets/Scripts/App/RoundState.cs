@@ -76,7 +76,19 @@ namespace ToyCarArena.App
             var arenaMap = levelScene.Resolve<ArenaMap>();
             var playedMap = arenaMap.Id;
             var playedVariant = arenaMap.Variant;
+            // A match turns through the arena's variants with the floor's cycles; each one is measured on its own.
+            var variants = levelScene.Resolve<ArenaVariants>();
+            var currentVariant = playedVariant;
             var waitsForPlayer = roundNumber == 1;
+
+            void OnVariantChanged(string variant)
+            {
+                if (isPlaying) {
+                    platform.MeasureVariantChange(playedMap, currentVariant, variant);
+                }
+
+                currentVariant = variant;
+            }
 
             void BeginRound()
             {
@@ -97,6 +109,7 @@ namespace ToyCarArena.App
                 isPlaying = true;
             }
 
+            variants.VariantChanged += OnVariantChanged;
             try {
                 round.Place();
                 if (!waitsForPlayer) {
@@ -124,7 +137,8 @@ namespace ToyCarArena.App
                 levelScene.Resolve<ISessionRoster>().NextRound(result.CarCount - 1,
                     RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis, tuning.Players);
                 platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, driver);
-                platform.MeasureVariantEnd(playedMap, playedVariant, result.Outcome);
+                // The variant playing as it ended: the rotation's own in a round, the last cycle's in a match.
+                platform.MeasureVariantEnd(playedMap, currentVariant, result.Outcome);
                 platform.MeasureRoundCar(roundNumber, playedCar);
                 platform.MeasureProgress(record.XpGain);
                 platform.MeasureRoundMap(roundNumber, playedMap);
@@ -137,6 +151,7 @@ namespace ToyCarArena.App
             }
             finally {
                 round.Finished -= OnFinished;
+                variants.VariantChanged -= OnVariantChanged;
                 // Cancelled with the app, or failed: the platform must not think the game still plays.
                 if (isPlaying) {
                     platform.GameplayStop();

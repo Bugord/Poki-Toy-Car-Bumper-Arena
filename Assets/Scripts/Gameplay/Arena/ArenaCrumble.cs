@@ -16,7 +16,8 @@ namespace ToyCarArena.Gameplay.Arena
     /// freeze mid-shake under the result.
     /// <para>
     /// In a match, or with <see cref="GameTuning.FloorCycleSettings.Enabled"/>, the floor goes in cycles instead
-    /// (<see cref="FloorCycleSchedule"/>): open, shrink (every wave falls), peak (the core alone) and return (the tiles
+    /// (<see cref="FloorCycleSchedule"/>): open, shrink (the waves fall: every one in a round, the outer share of them in a
+    /// match, <see cref="GameTuning.FloorCycleSettings.MatchFallShare"/>), peak (what is left) and return (the tiles
     /// drop back from above), again and again, so a long match tenses and eases in waves. The cycle and its phase, and an
     /// event at the start of each cycle and of each return, are here for what changes with the cycles. A tile lands only
     /// where no car is caught: a car still in the slab it fills is lifted onto it, keeping its way across the floor.
@@ -158,7 +159,10 @@ namespace ToyCarArena.Gameplay.Arena
         /// </summary>
         private void TickCycles()
         {
-            schedule ??= FloorCycleSchedule.From(tuning.FloorCycles, settings.CrumbleWarning, floor.WaveCount);
+            // A match keeps part of the floor standing at the peak, so there is room to come back on; a round cycling for
+            // a test still crumbles to the core.
+            schedule ??= FloorCycleSchedule.From(tuning.FloorCycles, settings.CrumbleWarning, floor.WaveCount,
+                tuning.IsMatch ? tuning.FloorCycles.MatchFallingWaves(floor.WaveCount) : -1);
             applied ??= new WaveState[floor.WaveCount];
             var isRunning = round.IsRunning;
             if (isRunning) {

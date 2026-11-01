@@ -18,7 +18,8 @@ namespace ToyCarArena.Gameplay.Arena
     /// arm and the wedge flash for the second it is stopped. It is a hazard for the bots (<see cref="IArenaHazard"/>): a
     /// bot the arm will reach within a moment runs along the sweep, faster than the arm, until it is clear of it.
     /// The arm shortens with the floor that is left, so after the rim has crumbled it does not hang over the void.
-    /// Registered in every scope; does nothing off its variant.
+    /// Registered in every scope; does nothing off its variant. In a match whose cycles turn the variants it is built
+    /// afresh, its schedule from the start, each cycle that plays it, and leaves as the cycle ends (<see cref="MechanicRun"/>).
     /// </para>
     /// </summary>
     public sealed class CandyStirrer : IArenaHazard, ITickable, IDisposable
@@ -45,7 +46,6 @@ namespace ToyCarArena.Gameplay.Arena
 
         private readonly GameTuning.StirrerSettings settings;
         private readonly GameTuning tuning;
-        private readonly ArenaMap map;
         private readonly ArenaRound round;
         private readonly IArenaEdge edge;
         private readonly RoundDifficulty difficulty;
@@ -72,19 +72,20 @@ namespace ToyCarArena.Gameplay.Arena
         private Material wedgeMaterial;
         private Material wedgeWarning;
         private EffectPlayer effects;
-        private bool built;
+        private readonly MechanicRun run;
         private bool isFlashing;
         private int leg = -1;
         private bool wasPaused;
         private float clock;
         private float firstDirection = 1f;
 
-        public CandyStirrer(GameTuning tuning, ArenaMap map, ArenaRound round, IArenaEdge edge, RoundDifficulty difficulty,
-            MechanicArt art, ArenaHazards hazards, ArenaCamera arenaCamera, IAudioService audioService, Transform parent)
+        public CandyStirrer(GameTuning tuning, ArenaRound round, IArenaEdge edge, RoundDifficulty difficulty,
+            MechanicArt art, ArenaHazards hazards, ArenaCamera arenaCamera, IAudioService audioService,
+            ArenaVariants variants, Transform parent)
         {
+            this.run = new MechanicRun(variants, GameTuning.ArenaMechanic.Stirrer);
             this.tuning = tuning;
             this.settings = tuning.Stirrer;
-            this.map = map;
             this.round = round;
             this.edge = edge;
             this.difficulty = difficulty;
@@ -93,13 +94,10 @@ namespace ToyCarArena.Gameplay.Arena
             this.arenaCamera = arenaCamera;
             this.audioService = audioService;
             this.parent = parent;
-            if (map.Mechanic == GameTuning.ArenaMechanic.Stirrer) {
-                hazards.Add(this);
-            }
         }
 
         /// <summary>Whether the arm is laid out; false off the Stirrer variant.</summary>
-        public bool Exists => built;
+        public bool Exists => run.IsBuilt;
 
         /// <summary>Where the arm points, in radians as Unity's Y rotation: (sin, cos) is its flat direction.</summary>
         public float Angle { get; private set; }
@@ -128,7 +126,7 @@ namespace ToyCarArena.Gameplay.Arena
         {
             heading = Vector3.zero;
             var radius = Mathf.Sqrt(position.x * position.x + position.z * position.z);
-            if (!built || Length <= settings.HubRadius || radius < settings.HubRadius || radius > Length + margin) {
+            if (!run.IsRunning || Length <= settings.HubRadius || radius < settings.HubRadius || radius > Length + margin) {
                 return false;
             }
 
@@ -158,16 +156,20 @@ namespace ToyCarArena.Gameplay.Arena
 
         public void Tick()
         {
-            if (map.Mechanic != GameTuning.ArenaMechanic.Stirrer) {
-                return;
-            }
-
-            if (!built) {
-                if (!round.IsPlaced) {
+            switch (run.Next(round.IsPlaced, Time.deltaTime)) {
+                case MechanicStep.Idle:
                     return;
-                }
-
-                Build();
+                case MechanicStep.Leave:
+                    hazards.Remove(this);
+                    run.Shrink(root != null ? root.transform : null);
+                    return;
+                case MechanicStep.Clear:
+                    Clear();
+                    return;
+                case MechanicStep.Start:
+                    Clear();
+                    Build();
+                    break;
             }
 
             var delta = Time.deltaTime;
@@ -184,9 +186,16 @@ namespace ToyCarArena.Gameplay.Arena
 
         public void Dispose()
         {
+            Clear();
+        }
+
+        /// <summary>Takes the arm off the floor and out of the bots' way, its schedule back to the start.</summary>
+        private void Clear()
+        {
             hazards.Remove(this);
             if (root != null) {
                 UnityEngine.Object.Destroy(root);
+                root = null;
             }
 
             foreach (var mesh in meshes) {
@@ -194,6 +203,19 @@ namespace ToyCarArena.Gameplay.Arena
                     UnityEngine.Object.Destroy(mesh);
                 }
             }
+
+            meshes.Clear();
+            isOn = false;
+            isFlashing = false;
+            leg = -1;
+            wasPaused = false;
+            clock = 0f;
+            firstDirection = 1f;
+            Angle = 0f;
+            AngularVelocity = 0f;
+            Length = 0f;
+            IsWarning = false;
+            Direction = 1f;
         }
 
         /// <summary>
@@ -343,8 +365,8 @@ namespace ToyCarArena.Gameplay.Arena
 
         private void Build()
         {
-            built = true;
-            var random = new System.Random(unchecked(hazards.Seed ^ 0x57112E5));
+            hazards.Add(this);
+            var random = new System.Random(run.SeedOf(unchecked(hazards.Seed ^ 0x57112E5)));
             firstDirection = random.Next(2) == 0 ? 1f : -1f;
             Direction = firstDirection;
             nextHit = new float[round.Cars.Count];

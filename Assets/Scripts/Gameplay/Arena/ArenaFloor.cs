@@ -187,7 +187,7 @@ namespace ToyCarArena.Gameplay.Arena
                 look.sharedMaterial = template.sharedMaterial;
                 look.shadowCastingMode = template.shadowCastingMode;
                 look.receiveShadows = template.receiveShadows;
-                blocks[tile.Wave].Add(new Block(block.transform, new Vector2(UnityEngine.Random.value * 100f,
+                blocks[tile.Wave].Add(new Block(block.transform, look, new Vector2(UnityEngine.Random.value * 100f,
                     UnityEngine.Random.value * 100f)));
             }
 
@@ -251,6 +251,38 @@ namespace ToyCarArena.Gameplay.Arena
         {
             return layout.Contains(wave, position);
         }
+
+        /// <summary>
+        /// Gives the floor another look: every block and the core, or with <paramref name="fallenOnly"/> only the blocks
+        /// of the waves that are down (falling, gone or coming back), so the tiles of a match's next variant come back in
+        /// its look while the floor still standing keeps the old one until they are in.
+        /// </summary>
+        public void SetMaterial(Material material, bool fallenOnly)
+        {
+            if (material == null) {
+                return;
+            }
+
+            for (var i = 0; i < waves.Length; i++) {
+                if (fallenOnly && states[i] is (WaveState.Standing or WaveState.Warning)) {
+                    continue;
+                }
+
+                foreach (var block in waves[i].Blocks) {
+                    block.Renderer.sharedMaterial = material;
+                }
+            }
+
+            if (!fallenOnly) {
+                GetComponent<MeshRenderer>().sharedMaterial = material;
+            }
+        }
+
+        /// <summary>The look of the floor's core, which every block also wears unless a match changed it.</summary>
+        public Material CoreMaterial => GetComponent<MeshRenderer>().sharedMaterial;
+
+        /// <summary>The look of one block of a wave, for tests.</summary>
+        public Material MaterialOf(int wave, int block) => waves[wave].Blocks[block].Renderer.sharedMaterial;
 
         /// <summary>
         /// Starts a wave shaking for <see cref="GameTuning.ArenaSettings.CrumbleWarning"/>, harder as it goes. It no
@@ -475,6 +507,7 @@ namespace ToyCarArena.Gameplay.Arena
         private sealed class Block
         {
             public readonly Transform Transform;
+            public readonly MeshRenderer Renderer;
             public readonly Vector3 RestPosition;
             public readonly Quaternion RestRotation;
 
@@ -485,9 +518,10 @@ namespace ToyCarArena.Gameplay.Arena
             public Vector3 SpinAxis;
             public float SpinSpeed;
 
-            public Block(Transform transform, Vector2 seed)
+            public Block(Transform transform, MeshRenderer renderer, Vector2 seed)
             {
                 this.Transform = transform;
+                this.Renderer = renderer;
                 this.RestPosition = transform.localPosition;
                 this.RestRotation = transform.localRotation;
                 this.Seed = seed;
