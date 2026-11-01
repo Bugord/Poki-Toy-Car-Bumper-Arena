@@ -6,6 +6,9 @@
         "VContainer",
         "Bugord.Core",
         "Bugord.Core.VContainer",
+        "Bugord.App",
+        "UIKit",
+        "UniTask",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

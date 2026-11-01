@@ -1,0 +1,15 @@
+event,gameplays,seen,interacted,total_seen,total_interacted
+result-play-again,511,511,455,4590,4297
+garage-button,510,510,119,4588,318
+lobby-shown,455,455,0,4296,0
+result-again-out-r4plus,272,272,241,2627,2478
+result-again-won-r1,271,271,248,271,248
+result-again-out-r2,256,256,229,256,229
+result-again-out-r1,236,236,205,236,205
+result-again-out-r3,219,219,195,219,195
+result-again-won-r4plus,206,206,196,690,669
+result-again-won-r2,150,150,141,150,141
+result-again-won-r3,112,112,106,112,106
+result-again-survived-r4plus,22,22,22,25,24
+result-again-survived-r1,2,2,1,2,1
+result-again-survived-r2,1,1,1,1,1

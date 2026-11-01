@@ -2,7 +2,8 @@
 
 Запуск: python -I Tools/analytics_report.py <версия> [<прошлая версия>]   (версия без "v", например 0.2.0)
 Печатает Markdown: воронку по раундам (переход, победы, поражения, уходы посреди раунда), исходы, места и нокауты
-в 1-м раунде, время на арене, причины выбывания, ускорения, управление, прогресс, гараж и выбор машинок.
+в 1-м раунде, время на арене, причины выбывания, ускорения, управление, прогресс, гараж и выбор машинок; для сборок
+с долгим матчем ещё воронку матчей, места, нокауты, падения и REVENGE по матчу.
 """
 import csv
 import re
@@ -33,10 +34,10 @@ def pct(a, b):
     return f"{100 * a / b:.0f}%" if b else "-"
 
 
-def rounds(progress):
+def rounds(progress, category="round"):
     out = {}
     for event, row in progress.items():
-        m = re.fullmatch(r"round-(\d+(?:plus)?)", event)
+        m = re.fullmatch(category + r"-(\d+(?:plus)?)", event)
         if m:
             out[m.group(1)] = (num(row, "starts"), num(row, "completes"), num(row, "fails"), num(row, "lefts"))
     return out
@@ -91,6 +92,16 @@ def summarise(data):
     # с v0.2: на раунд (R = 1, 2, 3, 4plus)
     s["cars"] = other(o, r"result-cars-(\d+-r[0-9a-z]+)-cars")
     s["round_time"] = other(o, r"result-((?:early|mid|late|full)-r[0-9a-z]+)-round-time")
+    # долгий матч (режим Match): свои старты и итоги вместо round / result
+    s["matches"] = rounds(p, "match")
+    s["match_place"] = other(o, r"match-place-(\d+-r[0-9a-z]+)-place")
+    s["match_knockouts"] = other(o, r"match-knockouts-([0-9a-z]+-r[0-9a-z]+)-knockouts")
+    s["match_falls"] = other(o, r"match-falls-([0-9a-z]+-r[0-9a-z]+)-falls")
+    s["match_pushed"] = other(o, r"match-pushed-([0-9a-z]+-r[0-9a-z]+)-pushed")
+    s["match_revenge"] = other(o, r"match-revenge-((?:got|missed)-r[0-9a-z]+)-revenge")
+    # способности матча: что подобрал игрок (kind-rR) и сколько за матч (N-rR)
+    s["match_pickup"] = other(o, r"match-pickup-((?:heavy|shockwave|shield|turbo)-r[0-9a-z]+)-pickup")
+    s["match_pickups"] = other(o, r"match-pickups-([0-9a-z]+-r[0-9a-z]+)-pickups")
     return s
 
 
@@ -146,6 +157,22 @@ def report(version, previous):
     out += ["", "## По всем раундам", "", head, sep]
     out.append(line("Победы / раунды", lambda s: f"{wins(s)} / {starts(s)} ({pct(wins(s), starts(s))})"))
 
+    # Долгий матч всегда доигрывается до конца времени, поэтому completes = доигранные матчи, fails нет.
+    matches = sorted({k for s in (cur, old) if s for k in s["matches"]}, key=lambda k: (k.endswith("plus"), int(re.sub(r"\D", "", k))))
+    if matches:
+        out += ["", "## Воронка по матчам (старты / доиграли / ушли посреди; далее = доля, перешедшая в следующий)", "", head, sep]
+
+        def match_step(s, name):
+            r = s["matches"].get(name)
+            if not r:
+                return "-"
+            nxt = s["matches"].get(str(int(name) + 1)) if name.isdigit() else None
+            go = f"; далее {pct(nxt[0], r[0])}" if nxt else ""
+            return f"{r[0]} / {r[1]} / {r[3]} (ушли {pct(r[3], r[0])}){go}"
+
+        for name in matches:
+            out.append(line(f"match-{name}", lambda s, n=name: match_step(s, n)))
+
     # Visits lost at each step of the first minutes. The sum through R1 matches the 0-1 min bar of the Poki dashboard.
     def steps(s):
         loads, loaded = s["loads"]
@@ -190,6 +217,13 @@ def report(version, previous):
         ("Длительность раунда (с v0.2)", "round_time", None),
         ("Причина самовылета (с v0.2.0; ball: мяч арены tabletop)", "fall_cause", None),
         ("REVENGE (с v0.2.0)", "revenge", None),
+        ("Матч: место по матчу (визиты)", "match_place", None),
+        ("Матч: нокауты игрока по матчу (визиты)", "match_knockouts", None),
+        ("Матч: падения игрока по матчу (визиты)", "match_falls", None),
+        ("Матч: из них столкнули по матчу (визиты)", "match_pushed", None),
+        ("Матч: REVENGE по матчу (визиты)", "match_revenge", None),
+        ("Матч: подобранные способности (heavy, shockwave, shield, turbo; визиты)", "match_pickup", None),
+        ("Матч: сколько способностей подобрал игрок за матч (визиты)", "match_pickups", None),
     ):
         keys = order if order is not None else keys_of(key)
         if keys:
@@ -217,7 +251,10 @@ def report(version, previous):
     for title, key, fmt in (
         ("NEXT MATCH по исходу и раунду (после v0.5.1; нажали / показано)", "again_by", lambda s, k: pressed(s, "again_by", k)),
         ("Медленное лобби, загрузка дольше 4 с (после v0.5.1; дождались / медленных)", "slow", lambda s, k: pressed(s, "slow", k)),
-        ("Раунды по варианту арены (после v0.5.1; визиты: старты / победы / поражения / ушли посреди)", "arenas", arena),
+        # В долгом матче вариант сменяется с каждым циклом пола: старт и complete на цикл, поражений нет, «ушли посреди»
+        # это ушли посреди цикла этого варианта, а «раундов» это циклов.
+        ("Раунды по варианту арены (после v0.5.1; визиты: старты / победы / поражения / ушли посреди; "
+         "в матче по циклам пола)", "arenas", arena),
     ):
         keys = keys_of(key)
         if keys:

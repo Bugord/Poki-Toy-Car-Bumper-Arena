@@ -23,6 +23,11 @@ namespace ToyCarArena.Gameplay.Arena
     /// angle drawn from <see cref="BotDriver.Seed"/> (and the kinds swapped on a coin flip), so it is not memorised yet a
     /// simulation repeats it.
     /// </para>
+    /// <para>
+    /// In a match whose cycles turn the variants (<see cref="ArenaVariants"/>) the patches are laid afresh on the whole
+    /// floor each time a cycle plays the Candy variant, with the cycle in the seed, and leave as their cycle ends: plain
+    /// floor at once, peeling off in <see cref="MechanicRun.LeaveTime"/>.
+    /// </para>
     /// </summary>
     public sealed class CandyPatches : ISurfaceLayer, ITickable, IDisposable
     {
@@ -37,12 +42,14 @@ namespace ToyCarArena.Gameplay.Arena
         private readonly IObjectResolver resolver;
         private readonly List<Patch> patches = new();
         private readonly List<Mesh> meshes = new();
-        private bool built;
+        private readonly MechanicRun run;
+        private Transform holder;
 
         public CandyPatches(GameTuning tuning, ArenaMap map, ArenaRound round, IArenaEdge edge, CandyDecor decor,
-            IObjectResolver resolver, ArenaSurface surface)
+            IObjectResolver resolver, ArenaSurface surface, ArenaVariants variants)
         {
             surface.Add(this);
+            this.run = new MechanicRun(variants, GameTuning.ArenaMechanic.Candy);
             this.settings = tuning.Candy;
             this.map = map;
             this.round = round;
@@ -64,6 +71,10 @@ namespace ToyCarArena.Gameplay.Arena
 
         public SurfaceFeel Sample(Vector3 position)
         {
+            if (!run.IsRunning) {
+                return SurfaceFeel.Neutral;
+            }
+
             foreach (var patch in patches) {
                 if (patch.Scale <= 0f) {
                     continue;
@@ -89,16 +100,19 @@ namespace ToyCarArena.Gameplay.Arena
 
         public void Tick()
         {
-            if (map.Mechanic != GameTuning.ArenaMechanic.Candy) {
-                return;
-            }
-
-            if (!built) {
-                if (!round.IsPlaced) {
+            switch (run.Next(round.IsPlaced, Time.deltaTime)) {
+                case MechanicStep.Idle:
                     return;
-                }
-
-                Build();
+                case MechanicStep.Leave:
+                    run.Shrink(holder);
+                    return;
+                case MechanicStep.Clear:
+                    Clear();
+                    return;
+                case MechanicStep.Start:
+                    Clear();
+                    Build();
+                    break;
             }
 
             var step = Time.deltaTime / settings.VanishTime;
@@ -118,10 +132,15 @@ namespace ToyCarArena.Gameplay.Arena
 
         public void Dispose()
         {
-            foreach (var patch in patches) {
-                if (patch.Root != null) {
-                    UnityEngine.Object.Destroy(patch.Root);
-                }
+            Clear();
+        }
+
+        /// <summary>Takes the patches off the floor, so a later cycle can lay new ones.</summary>
+        private void Clear()
+        {
+            if (holder != null) {
+                UnityEngine.Object.Destroy(holder.gameObject);
+                holder = null;
             }
 
             foreach (var mesh in meshes) {
@@ -151,14 +170,14 @@ namespace ToyCarArena.Gameplay.Arena
         /// </summary>
         private void Build()
         {
-            built = true;
             var seed = resolver.Resolve<IEnumerable<ITickable>>().OfType<BotDriver>().Select(driver => driver.Seed)
                 .DefaultIfEmpty(0).First();
-            var random = new System.Random(unchecked(seed ^ 0x2A5F1C3));
+            var random = new System.Random(run.SeedOf(unchecked(seed ^ 0x2A5F1C3)));
             var turn = (float)(random.NextDouble() * Mathf.PI * 2d);
             var flip = random.Next(2);
             var parent = new GameObject("Candy Patches").transform;
             parent.SetParent(decor.transform, false);
+            holder = parent;
 
             if (map.Shape != null) {
                 BuildOnDonut(random, flip, parent);

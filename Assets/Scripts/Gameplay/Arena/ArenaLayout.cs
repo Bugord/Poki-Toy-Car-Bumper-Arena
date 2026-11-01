@@ -4,7 +4,7 @@ using UnityEngine;
 namespace ToyCarArena.Gameplay.Arena
 {
     /// <summary>
-    /// Where a wave of tiles is in its crumbling.
+    /// Where a wave of tiles is in its crumbling, and in coming back when the floor goes in cycles.
     /// </summary>
     public enum WaveState
     {
@@ -12,6 +12,12 @@ namespace ToyCarArena.Gameplay.Arena
         Warning,
         Falling,
         Gone,
+
+        /// <summary>
+        /// Hanging over its place and dropping into it: still no floor in either view of the edge, and no collider,
+        /// until it lands and stands again.
+        /// </summary>
+        Returning,
     }
 
     /// <summary>
@@ -72,6 +78,12 @@ namespace ToyCarArena.Gameplay.Arena
     /// </summary>
     public abstract class ArenaLayout
     {
+        /// <summary>
+        /// Depth of the floor below the driving surface, in metres, the same for every layout: seen on the rim and on
+        /// falling tiles, and the slab a returning tile fills, which a car caught in it is lifted out of.
+        /// </summary>
+        public const float SlabThickness = 0.5f;
+
         protected readonly List<FloorTile> tiles = new();
         protected readonly List<Mesh> meshes = new();
 

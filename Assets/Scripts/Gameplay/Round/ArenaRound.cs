@@ -22,6 +22,15 @@ namespace ToyCarArena.Gameplay.Round
     /// knocked out by nobody. Player hits use <see cref="RoundDifficulty.PlayerKnockoutWindow"/>, so their credit can
     /// be more forgiving without changing which bot knocked the player out.
     /// </para>
+    /// <para>
+    /// In a build that plays long matches (<see cref="GameTuning.IsMatch"/>) the same round runs as a match: it ends only
+    /// when <see cref="GameTuning.MatchSettings.Duration"/> runs out, and a car that falls comes back
+    /// <see cref="GameTuning.MatchSettings.RespawnDelay"/> later (<see cref="Respawned"/>), dropped onto the safe floor
+    /// away from the others (<see cref="RespawnSpot"/>) and safe for a moment after it lands
+    /// (<see cref="Car.IsInvulnerable"/>). Knock-outs score under the same credit rules (<see cref="Score"/>), and the
+    /// player's rival lives within the match: the last car to knock the player off is marked until the player knocks
+    /// it off (<see cref="NemesisChanged"/>). Still one match per scene.
+    /// </para>
     /// </summary>
     public sealed class ArenaRound : ITickable
     {
@@ -45,6 +54,17 @@ namespace ToyCarArena.Gameplay.Round
         /// </summary>
         public event Action<RoundResult> Finished;
 
+        /// <summary>
+        /// Raised in a match when a car that fell comes back onto the floor, safe for a moment.
+        /// </summary>
+        public event Action<Car> Respawned;
+
+        /// <summary>
+        /// Raised in a match when the player's marked rival changes: a car knocked the player off, or the player knocked
+        /// the rival off. <see cref="Nemesis"/> is the new one, null for none.
+        /// </summary>
+        public event Action NemesisChanged;
+
         private readonly GameTuning tuning;
         private readonly IObjectResolver resolver;
         private readonly Car carPrefab;
@@ -56,7 +76,14 @@ namespace ToyCarArena.Gameplay.Round
         private readonly CarCatalog catalog;
         private readonly IPlayerCar playerCar;
         private readonly int nemesisIndex;
+        private readonly bool isMatch;
         private readonly List<Car> cars = new();
+
+        // A match's cars waiting to come back (Time.time, positive infinity for none), and the safe time of those that
+        // came back: when they came back and when it ends (positive infinity until the car lands).
+        private float[] respawnTimes;
+        private float[] respawnedTimes;
+        private float[] safeUntil;
 
         private float elapsed;
         private FallCause playerFallCause;
@@ -83,7 +110,9 @@ namespace ToyCarArena.Gameplay.Round
             this.roster = roster;
             this.catalog = catalog;
             this.playerCar = playerCar;
-            this.nemesisIndex = progress.Nemesis;
+            this.isMatch = tuning.IsMatch;
+            // A match's rival lives within the match: it starts with none.
+            this.nemesisIndex = isMatch ? RoundResult.Nobody : progress.Nemesis;
         }
 
         public IReadOnlyList<Car> Cars => cars;
@@ -99,6 +128,23 @@ namespace ToyCarArena.Gameplay.Round
         public Car Nemesis { get; private set; }
 
         public bool RevengeTaken { get; private set; }
+
+        /// <summary>
+        /// Whether the round had a marked rival at any time: from the start in a round, once a car knocked the player
+        /// off in a match.
+        /// </summary>
+        public bool HadNemesis { get; private set; }
+
+        /// <summary>
+        /// Whether this round is a long match with respawns (<see cref="GameTuning.IsMatch"/>), fixed as the scene is
+        /// built.
+        /// </summary>
+        public bool IsMatch => isMatch;
+
+        /// <summary>
+        /// The match's score by car index, null in a last-car-standing round or before the cars are placed.
+        /// </summary>
+        public MatchScore Score { get; private set; }
 
         /// <summary>
         /// The cars are on the arena (<see cref="Place"/>), whether the round has begun or not.
@@ -124,9 +170,9 @@ namespace ToyCarArena.Gameplay.Round
         /// Whether the bots drive: while the round runs, and on after the player is out, so the arena behind the result
         /// screen goes on like a match of players rather than freezing. Nothing they do then counts: the result is out.
         /// </summary>
-        public bool IsBotsPlaying => IsRunning || (IsFinished && Player != null && Player.IsOut);
+        public bool IsBotsPlaying => IsRunning || (!isMatch && IsFinished && Player != null && Player.IsOut);
 
-        public float TimeLeft => Mathf.Max(0f, tuning.Round.Duration - elapsed);
+        public float TimeLeft => Mathf.Max(0f, tuning.PlayDuration - elapsed);
 
         /// <summary>
         /// Seconds since the round began.
@@ -138,7 +184,7 @@ namespace ToyCarArena.Gameplay.Round
         /// <summary>
         /// Only the player and one bot remain: the final fight can be gentler without changing the earlier crowd.
         /// </summary>
-        public bool IsDuel => Player != null && !Player.IsOut && CarsLeft == 2;
+        public bool IsDuel => !isMatch && Player != null && !Player.IsOut && CarsLeft == 2;
 
         /// <summary>
         /// Cars the player has knocked out this round.
@@ -196,7 +242,19 @@ namespace ToyCarArena.Gameplay.Round
             Player.Movement.FallTelemetry = FallTelemetry;
 #endif
             Nemesis = nemesisIndex > 0 && nemesisIndex < cars.Count ? cars[nemesisIndex] : null;
+            HadNemesis = Nemesis != null;
             CarsLeft = cars.Count;
+            if (isMatch) {
+                Score = new MatchScore(cars.Count);
+                respawnTimes = new float[cars.Count];
+                respawnedTimes = new float[cars.Count];
+                safeUntil = new float[cars.Count];
+                for (var i = 0; i < cars.Count; i++) {
+                    respawnTimes[i] = float.PositiveInfinity;
+                    respawnedTimes[i] = float.NegativeInfinity;
+                    safeUntil[i] = float.NegativeInfinity;
+                }
+            }
         }
 
         /// <summary>
@@ -227,6 +285,9 @@ namespace ToyCarArena.Gameplay.Round
             }
 
             elapsed += Time.deltaTime;
+            if (isMatch) {
+                TickComebacks();
+            }
 
             foreach (var car in cars) {
                 if (!car.IsOut && car.Position.y < tuning.Round.FallHeight) {
@@ -245,7 +306,17 @@ namespace ToyCarArena.Gameplay.Round
                     CarsLeft--;
                     var index = IndexOf(car);
                     var by = knockedOutBy != null ? IndexOf(knockedOutBy) : RoundResult.Nobody;
-                    standings.RecordOut(index, by);
+                    if (isMatch) {
+                        // A car that misses the floor as it drops back is no longer safe while it falls again.
+                        car.SetInvulnerable(false, cars);
+                        Score.RecordFall(index, by, elapsed);
+                        respawnTimes[index] = Time.time + tuning.Match.RespawnDelay;
+                    }
+                    else {
+                        standings.RecordOut(index, by);
+                    }
+
+                    var rival = Nemesis;
                     CarOut?.Invoke(car);
 
                     if (knockedOutBy != null) {
@@ -263,7 +334,19 @@ namespace ToyCarArena.Gameplay.Round
                         KnockedOut?.Invoke(car, knockedOutBy);
                     }
                     Eliminated?.Invoke(index, by);
+                    if (isMatch) {
+                        // After the events, so the KNOCKOUT! sticker and the feed still see the rival it was.
+                        UpdateRival(car, knockedOutBy, rival);
+                    }
                 }
+            }
+
+            if (isMatch) {
+                if (elapsed >= tuning.Match.Duration) {
+                    FinishMatch();
+                }
+
+                return;
             }
 
             standings.CompleteFrame();
@@ -306,13 +389,134 @@ namespace ToyCarArena.Gameplay.Round
             }
         }
 
+        /// <summary>
+        /// Seconds until a match's fallen car comes back; 0 for a car in play, after the match, and in a round.
+        /// </summary>
+        public float RespawnTimeLeft(Car car)
+        {
+            var index = IndexOf(car);
+            if (!isMatch || index < 0 || !car.IsOut || !IsRunning) {
+                return 0f;
+            }
+
+            return Mathf.Max(0f, respawnTimes[index] - Time.time);
+        }
+
+        /// <summary>
+        /// How much of a car's safe time after coming back is left, from 1 (still dropping, or just landed) to 0 once
+        /// it is over.
+        /// </summary>
+        public float SafeShareLeft(Car car)
+        {
+            var index = IndexOf(car);
+            if (!isMatch || index < 0 || !car.IsInvulnerable) {
+                return 0f;
+            }
+
+            var until = safeUntil[index];
+            if (float.IsPositiveInfinity(until)) {
+                return 1f;
+            }
+
+            // Past its time while still in another car it reads as nearly over, not over.
+            var length = tuning.Match.Invulnerability;
+            return length > 0f ? Mathf.Clamp((until - Time.time) / length, 0.02f, 1f) : 0.02f;
+        }
+
+        /// <summary>
+        /// The match's rival after a fall: a car that knocks the player off becomes it, and the player knocking it off
+        /// (the revenge, already counted) leaves none until a car knocks the player off again.
+        /// </summary>
+        private void UpdateRival(Car car, Car knockedOutBy, Car rival)
+        {
+            if (knockedOutBy == null) {
+                return;
+            }
+
+            if (car == Player && knockedOutBy != Player) {
+                Nemesis = knockedOutBy;
+                HadNemesis = true;
+            }
+            else if (knockedOutBy == Player && car == rival) {
+                Nemesis = null;
+            }
+
+            if (Nemesis != rival) {
+                NemesisChanged?.Invoke();
+            }
+        }
+
+        /// <summary>
+        /// Brings back the match's fallen cars whose time has come, and ends the safe time of those that came back once
+        /// they have been on the floor long enough and are clear of every other car (the physics would throw the two
+        /// apart at once otherwise).
+        /// </summary>
+        private void TickComebacks()
+        {
+            var now = Time.time;
+            var settings = tuning.Match;
+            for (var index = 0; index < cars.Count; index++) {
+                var car = cars[index];
+                if (car.IsOut) {
+                    if (now >= respawnTimes[index]) {
+                        Respawn(index);
+                    }
+
+                    continue;
+                }
+
+                if (!car.IsInvulnerable) {
+                    continue;
+                }
+
+                if (float.IsPositiveInfinity(safeUntil[index])
+                    && (car.Movement.IsGrounded || now - respawnedTimes[index] >= settings.MaxDropTime)) {
+                    safeUntil[index] = now + settings.Invulnerability;
+                }
+
+                if (now >= safeUntil[index] && !car.OverlapsCar(cars)) {
+                    car.SetInvulnerable(false, cars);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Drops a fallen car back onto the floor as it is now, away from the others, facing the middle.
+        /// </summary>
+        private void Respawn(int index)
+        {
+            var car = cars[index];
+            var spot = RespawnSpot.Find(edge, tuning.Match, cars, car);
+            var facing = spot.sqrMagnitude > 0.01f ? -spot.normalized : Vector3.forward;
+            car.Respawn(spot + Vector3.up * tuning.Match.DropHeight, Quaternion.LookRotation(facing), cars);
+            respawnTimes[index] = float.PositiveInfinity;
+            respawnedTimes[index] = Time.time;
+            safeUntil[index] = float.PositiveInfinity;
+            CarsLeft++;
+            Respawned?.Invoke(car);
+        }
+
+        /// <summary>
+        /// The match is decided by its score once time runs out: first place wins, every other place ran out the clock.
+        /// The player is never out at the end of a match, so nobody knocked the player out.
+        /// </summary>
+        private void FinishMatch()
+        {
+            IsRunning = false;
+            IsFinished = true;
+            var place = Score.PlaceOf(0);
+            Finished?.Invoke(new RoundResult(place == 1 ? RoundOutcome.Won : RoundOutcome.Survived, place, cars.Count,
+                elapsed, PlayerKnockouts, RoundResult.Nobody, FallCause.None, HadNemesis, RevengeTaken, Score.Snapshot(),
+                Colors, true, Score.FallsOf(0), Score.KnockedOffOf(0), place > tuning.Match.TopPlaces));
+        }
+
         private void Finish(RoundOutcome outcome, int place)
         {
             IsRunning = false;
             IsFinished = true;
             var knockedOutBy = PlayerKnockedOutBy != null ? IndexOf(PlayerKnockedOutBy) : RoundResult.Nobody;
             Finished?.Invoke(new RoundResult(outcome, place, cars.Count, elapsed, PlayerKnockouts, knockedOutBy,
-                playerFallCause, Nemesis != null, RevengeTaken, standings.Snapshot(), Colors));
+                playerFallCause, HadNemesis, RevengeTaken, standings.Snapshot(), Colors));
         }
 
         /// <summary>

@@ -28,7 +28,6 @@ namespace ToyCarArena.Gameplay.Arena
         private const int RimSegments = 64;
 
         private readonly GameTuning.CarouselSettings settings;
-        private readonly ArenaMap map;
         private readonly ArenaRound round;
         private readonly IArenaEdge edge;
         private readonly CarouselDecor decor;
@@ -36,19 +35,19 @@ namespace ToyCarArena.Gameplay.Arena
         private readonly List<Mesh> meshes = new();
         private readonly MeshRenderer[] arrowRenderers = new MeshRenderer[2];
         private readonly GameObject[] arrowSets = new GameObject[2];
+        private readonly MechanicRun run;
         private GameObject root;
         private Transform disc;
-        private bool built;
         private float firstDirection = 1f;
         private float clock;
         private int flashed = -1;
         private int shownSet = -1;
 
-        public CarouselDisc(GameTuning tuning, ArenaMap map, ArenaRound round, IArenaEdge edge, CarouselDecor decor,
-            IObjectResolver resolver)
+        public CarouselDisc(GameTuning tuning, ArenaRound round, IArenaEdge edge, CarouselDecor decor,
+            IObjectResolver resolver, ArenaVariants variants)
         {
+            this.run = new MechanicRun(variants, GameTuning.ArenaMechanic.Carousel);
             this.settings = tuning.Carousel;
-            this.map = map;
             this.round = round;
             this.edge = edge;
             this.decor = decor;
@@ -56,7 +55,7 @@ namespace ToyCarArena.Gameplay.Arena
         }
 
         /// <summary>Whether the turntable is laid on the floor; false off the Carousel arena.</summary>
-        public bool Exists => built;
+        public bool Exists => run.IsBuilt;
 
         /// <summary>The radius the turntable reaches now, in metres: its own, or less once the floor has shrunk.</summary>
         public float Radius { get; private set; }
@@ -75,7 +74,7 @@ namespace ToyCarArena.Gameplay.Arena
 
         public PlatformMotion Sample(Vector3 position)
         {
-            if (AngularVelocity == 0f || Radius <= 0f) {
+            if (!run.IsRunning || AngularVelocity == 0f || Radius <= 0f) {
                 return PlatformMotion.None;
             }
 
@@ -94,16 +93,22 @@ namespace ToyCarArena.Gameplay.Arena
 
         public void Tick()
         {
-            if (map.Mechanic != GameTuning.ArenaMechanic.Carousel) {
-                return;
-            }
-
-            if (!built) {
-                if (!round.IsPlaced) {
+            switch (run.Next(round.IsPlaced, Time.deltaTime)) {
+                case MechanicStep.Idle:
                     return;
-                }
-
-                Build();
+                case MechanicStep.Leave:
+                    // It carries nobody from now on; the disc stops and shrinks into the middle.
+                    AngularVelocity = 0f;
+                    IsWarning = false;
+                    run.Shrink(root != null ? root.transform : null);
+                    return;
+                case MechanicStep.Clear:
+                    Clear();
+                    return;
+                case MechanicStep.Start:
+                    Clear();
+                    Build();
+                    break;
             }
 
             var delta = Time.deltaTime;
@@ -124,8 +129,15 @@ namespace ToyCarArena.Gameplay.Arena
 
         public void Dispose()
         {
+            Clear();
+        }
+
+        /// <summary>Takes the turntable off the floor and puts its schedule back to the start, for a later cycle.</summary>
+        private void Clear()
+        {
             if (root != null) {
                 UnityEngine.Object.Destroy(root);
+                root = null;
             }
 
             foreach (var mesh in meshes) {
@@ -135,6 +147,14 @@ namespace ToyCarArena.Gameplay.Arena
             }
 
             meshes.Clear();
+            clock = 0f;
+            flashed = -1;
+            shownSet = -1;
+            firstDirection = 1f;
+            Angle = 0f;
+            AngularVelocity = 0f;
+            Radius = 0f;
+            IsWarning = false;
         }
 
         /// <summary>
@@ -208,10 +228,9 @@ namespace ToyCarArena.Gameplay.Arena
         /// </summary>
         private void Build()
         {
-            built = true;
             var seed = resolver.Resolve<IEnumerable<ITickable>>().OfType<BotDriver>().Select(driver => driver.Seed)
                 .DefaultIfEmpty(0).First();
-            var random = new System.Random(unchecked(seed ^ 0x5C0A71D));
+            var random = new System.Random(run.SeedOf(unchecked(seed ^ 0x5C0A71D)));
             firstDirection = random.Next(2) == 0 ? 1f : -1f;
             Radius = Mathf.Max(0f, Mathf.Min(settings.Radius, edge.DistanceToEdge(Vector3.zero) - decor.RimWidth));
 

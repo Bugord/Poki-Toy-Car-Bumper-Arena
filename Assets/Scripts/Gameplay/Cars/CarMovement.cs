@@ -58,6 +58,18 @@ namespace ToyCarArena.Gameplay.Cars
         // Knocked off balance by a hit until this time (Time.time); see Stagger.
         private float staggerEndTime = float.NegativeInfinity;
 
+        // A pickup's effects on the body: its mass is the tuned mass times this, and the boost waits this many seconds
+        // instead of the tuned cooldown when it is not negative.
+        private float massScale = 1f;
+        private float boostCooldownOverride = -1f;
+
+        // The last shove an arena object gave and the balance it took, with the frame they came in, so a shield can take
+        // the whole hit back (see UndoHazardKick).
+        private Vector3 lastKick;
+        private int lastKickFrame = -1;
+        private float staggerBeforeKick = float.NegativeInfinity;
+        private int lastStaggerFrame = -1;
+
         /// <summary>
         /// Whether the wheels are on the arena; only then does the car steer, and only then can it boost.
         /// </summary>
@@ -85,6 +97,9 @@ namespace ToyCarArena.Gameplay.Cars
 
         public float Mass => body.mass;
 
+        /// <summary>What the car's mass is multiplied by while a pickup makes it heavy; 1 otherwise.</summary>
+        public float MassScale => massScale;
+
         /// <summary>
         /// Whether a boost is running: the car holds its line at the raised top speed and its hits push harder.
         /// </summary>
@@ -107,13 +122,18 @@ namespace ToyCarArena.Gameplay.Cars
         public bool IsBoostReady => Time.time >= boostReadyTime;
 
         /// <summary>
+        /// Seconds the boost takes to cool down now: the boost's own, or a pickup's shorter one.
+        /// </summary>
+        private float BoostCooldown => boostCooldownOverride >= 0f ? boostCooldownOverride : boostSettings.Cooldown;
+
+        /// <summary>
         /// How far the cooldown has come, from 0 just after a boost to 1 once the next one is ready, for the HUD.
         /// </summary>
         public float BoostReadiness
         {
             get
             {
-                var cooldown = boostSettings.Cooldown;
+                var cooldown = BoostCooldown;
                 return cooldown > 0f ? Mathf.Clamp01(1f - (boostReadyTime - Time.time) / cooldown) : 1f;
             }
         }
@@ -191,7 +211,7 @@ namespace ToyCarArena.Gameplay.Cars
             boostEndTime = Time.time + boostSettings.Duration;
             // A boost is the way to catch the car after a hit, so it ends being off balance.
             staggerEndTime = float.NegativeInfinity;
-            boostReadyTime = Time.time + boostSettings.Cooldown;
+            boostReadyTime = Time.time + BoostCooldown;
             LastBoostTime = Time.time;
             Boosted?.Invoke();
             return true;
@@ -203,6 +223,12 @@ namespace ToyCarArena.Gameplay.Cars
         public void Push(Vector3 velocityChange)
         {
             body.linearVelocity += velocityChange;
+            // Only what the game's own objects do between physics steps can be taken back; a hit's push comes from the
+            // physics callbacks, and a shield stops that one before it is made.
+            if (!Time.inFixedTimeStep) {
+                lastKick = velocityChange;
+                lastKickFrame = Time.frameCount;
+            }
         }
 
         /// <summary>
@@ -211,7 +237,52 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public void Stagger(float seconds)
         {
+            if (!Time.inFixedTimeStep) {
+                staggerBeforeKick = staggerEndTime;
+                lastStaggerFrame = Time.frameCount;
+            }
+
             staggerEndTime = Mathf.Max(staggerEndTime, Time.time + seconds);
+        }
+
+        /// <summary>
+        /// Takes back the push and the loss of balance an arena object gave the car in this frame, whole: a hazard
+        /// pushes, staggers and then reports the hit (<see cref="Car.HitByHazard"/>), and a shield that takes the hit
+        /// takes those back.
+        /// </summary>
+        public void UndoHazardKick()
+        {
+            if (lastKickFrame == Time.frameCount) {
+                body.linearVelocity -= lastKick;
+                lastKickFrame = -1;
+            }
+
+            if (lastStaggerFrame == Time.frameCount) {
+                staggerEndTime = staggerBeforeKick;
+                lastStaggerFrame = -1;
+            }
+        }
+
+        /// <summary>
+        /// Makes the car heavier or lighter than tuned (a pickup's heavy ability): its mass, which the physics and the
+        /// push of its hits both read, is the tuned mass times <paramref name="scale"/>.
+        /// </summary>
+        public void SetMassScale(float scale)
+        {
+            massScale = Mathf.Max(0.01f, scale);
+            body.mass = settings.Mass * massScale;
+        }
+
+        /// <summary>
+        /// Shortens the wait between boosts to <paramref name="seconds"/> (a pickup's turbo), or back to the tuned
+        /// cooldown with a negative value. A boost already cooling down is cut to the shorter wait.
+        /// </summary>
+        public void SetBoostCooldown(float seconds)
+        {
+            boostCooldownOverride = seconds;
+            if (seconds >= 0f && !float.IsNegativeInfinity(LastBoostTime)) {
+                boostReadyTime = Mathf.Min(boostReadyTime, LastBoostTime + seconds);
+            }
         }
 
         /// <summary>
@@ -226,6 +297,27 @@ namespace ToyCarArena.Gameplay.Cars
             transform.SetPositionAndRotation(position, rotation);
         }
 
+        /// <summary>
+        /// Puts a car that comes back in a match at rest at <paramref name="position"/>, with nothing left of its fall:
+        /// no drive, no boost running and the next one ready, not off balance, and not on the floor until a ground
+        /// probe finds it.
+        /// </summary>
+        public void Respawn(Vector3 position, Quaternion rotation)
+        {
+            Place(position, rotation);
+            direction = Vector3.zero;
+            throttle = 0f;
+            boostEndTime = float.NegativeInfinity;
+            boostReadyTime = Time.time;
+            LastBoostTime = float.NegativeInfinity;
+            staggerEndTime = float.NegativeInfinity;
+            edgeHoldContactTime = float.NegativeInfinity;
+            IsGrounded = false;
+            LastGroundedTime = float.NegativeInfinity;
+            Surface = SurfaceFeel.Neutral;
+            StepVelocity = Vector3.zero;
+        }
+
         private void FixedUpdate()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -233,7 +325,7 @@ namespace ToyCarArena.Gameplay.Cars
             DiagnosticHoldRemoved = 0f;
             DiagnosticHoldSuppressed = false;
 #endif
-            body.mass = settings.Mass;
+            body.mass = settings.Mass * massScale;
             body.centerOfMass = new Vector3(0f, settings.CenterOfMassHeight, 0f);
 
             var up = body.rotation * Vector3.up;

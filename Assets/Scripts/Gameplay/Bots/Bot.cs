@@ -1,5 +1,6 @@
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Cars;
+using ToyCarArena.Gameplay.Pickups;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
 
@@ -89,9 +90,23 @@ namespace ToyCarArena.Gameplay.Bots
         public Car Target { get; private set; }
 
         /// <summary>
-        /// Whether it is time to pick a target: there is none, it fell off, or the bot has chased it long enough.
+        /// Whether it is time to pick a target: there is none, it fell off (or came back and is safe), or the bot has
+        /// chased it long enough.
         /// </summary>
-        public bool WantsTarget => Target == null || Target.IsOut || retargetTimer <= 0f;
+        public bool WantsTarget => Target == null || !Target.IsTargetable || retargetTimer <= 0f
+            || (Pickup != null && !Pickup.IsLive);
+
+        /// <summary>
+        /// The pickup on the floor this bot is driving to in a long match, null for none. It goes there instead of at its
+        /// target, but only when the edge is no worry and no arena hazard is on it, and it is dropped when the pickup is
+        /// gone (<see cref="WantsTarget"/>).
+        /// </summary>
+        public FloorPickup Pickup { get; private set; }
+
+        public void SetPickup(FloorPickup pickup)
+        {
+            Pickup = pickup;
+        }
 
         public void SetTarget(Car target)
         {
@@ -168,6 +183,12 @@ namespace ToyCarArena.Gameplay.Bots
                 return;
             }
 
+            // A pickup is worth driving to, but not at the cost of a car it is already pushing.
+            if (Pickup != null && !isPushing && DriveToPickup(edge, position, margin, deltaTime)) {
+                pushTime = 0f;
+                return;
+            }
+
             if (Target == null) {
                 pushTime = 0f;
                 Car.Movement.Drive(Vector3.zero, 0f);
@@ -198,6 +219,22 @@ namespace ToyCarArena.Gameplay.Bots
             else {
                 pushTime = 0f;
             }
+        }
+
+        /// <summary>
+        /// Drives at the pickup at full throttle, round pits and holes in the way; false (and the pickup dropped) when it
+        /// is gone.
+        /// </summary>
+        private bool DriveToPickup(IArenaEdge edge, Vector3 position, float margin, float deltaTime)
+        {
+            if (!Pickup.IsLive) {
+                Pickup = null;
+                return false;
+            }
+
+            var heading = GoRoundPits(edge, position, Flat(Pickup.Position) - position, margin, deltaTime);
+            Car.Movement.Drive(heading, 1f);
+            return true;
         }
 
         /// <summary>

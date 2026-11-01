@@ -29,10 +29,13 @@ namespace ToyCarArena.Tests.PlayMode
         protected IArenaEdge Edge { get; private set; }
         protected IObjectResolver Container { get; private set; }
 
-        /// <summary>Loads the scene on <paramref name="map"/> and <paramref name="variant"/> and places the cars.</summary>
-        protected IEnumerator Load(string map, string variant, int seed = 7)
+        /// <summary>
+        /// Loads the scene on <paramref name="map"/> and <paramref name="variant"/> and places the cars; the round of the
+        /// visit (<paramref name="visitRound"/>) sets the bots' number.
+        /// </summary>
+        protected IEnumerator Load(string map, string variant, int seed = 7, int visitRound = 3)
         {
-            CreateParent(new SimulationInput(), new SimulationProgress { Round = 3 }, map, variant);
+            CreateParent(new SimulationInput(), new SimulationProgress { Round = visitRound }, map, variant);
             yield return LoadGame();
             Container = GameScope().Container;
             Round = Container.Resolve<ArenaRound>();

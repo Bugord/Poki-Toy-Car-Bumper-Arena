@@ -18,7 +18,9 @@ namespace ToyCarArena.Gameplay.Arena
     /// landing place from the car's own speed (raised to the pad's range), and when that place is not on the floor with
     /// some margin the forward speed is shortened until it is; if even standing still would land badly the car is tossed
     /// straight up. The pad is a check of position in this class, with no collider, so the steering ray never sees it.
-    /// A pad vanishes when the floor under it crumbles. Registered in every scope; does nothing off its variant.
+    /// A pad vanishes when the floor under it crumbles. Registered in every scope; does nothing off its variant. In a match
+    /// whose cycles turn the variants the pads are laid afresh on the whole floor each cycle that plays them
+    /// (<see cref="MechanicRun"/>).
     /// </para>
     /// </summary>
     public sealed class JellyPads : ITickable, IDisposable
@@ -53,7 +55,6 @@ namespace ToyCarArena.Gameplay.Arena
         }
 
         private readonly GameTuning.JellySettings settings;
-        private readonly ArenaMap map;
         private readonly ArenaRound round;
         private readonly IArenaEdge edge;
         private readonly MechanicArt art;
@@ -62,16 +63,16 @@ namespace ToyCarArena.Gameplay.Arena
         private readonly Transform parent;
         private readonly List<Pad> pads = new();
         private readonly List<Mesh> meshes = new();
+        private readonly MechanicRun run;
         private GameObject root;
         private EffectPlayer effects;
-        private bool built;
         private float clock;
 
-        public JellyPads(GameTuning tuning, ArenaMap map, ArenaRound round, IArenaEdge edge, MechanicArt art,
-            ArenaHazards hazards, IAudioService audioService, Transform parent)
+        public JellyPads(GameTuning tuning, ArenaRound round, IArenaEdge edge, MechanicArt art,
+            ArenaHazards hazards, IAudioService audioService, ArenaVariants variants, Transform parent)
         {
+            this.run = new MechanicRun(variants, GameTuning.ArenaMechanic.Jelly);
             this.settings = tuning.Jelly;
-            this.map = map;
             this.round = round;
             this.edge = edge;
             this.art = art;
@@ -81,7 +82,7 @@ namespace ToyCarArena.Gameplay.Arena
         }
 
         /// <summary>Whether the pads are laid out; false off the Jelly variant.</summary>
-        public bool Exists => built;
+        public bool Exists => run.IsBuilt;
 
         /// <summary>How many pads have been laid, whole or not.</summary>
         public int Count => pads.Count;
@@ -97,16 +98,19 @@ namespace ToyCarArena.Gameplay.Arena
 
         public void Tick()
         {
-            if (map.Mechanic != GameTuning.ArenaMechanic.Jelly) {
-                return;
-            }
-
-            if (!built) {
-                if (!round.IsPlaced) {
+            switch (run.Next(round.IsPlaced, Time.deltaTime)) {
+                case MechanicStep.Idle:
                     return;
-                }
-
-                Build();
+                case MechanicStep.Leave:
+                    run.Shrink(root != null ? root.transform : null);
+                    return;
+                case MechanicStep.Clear:
+                    Clear();
+                    return;
+                case MechanicStep.Start:
+                    Clear();
+                    Build();
+                    break;
             }
 
             var delta = Time.deltaTime;
@@ -147,8 +151,15 @@ namespace ToyCarArena.Gameplay.Arena
 
         public void Dispose()
         {
+            Clear();
+        }
+
+        /// <summary>Takes the pads off the floor, so a later cycle can lay new ones.</summary>
+        private void Clear()
+        {
             if (root != null) {
                 UnityEngine.Object.Destroy(root);
+                root = null;
             }
 
             foreach (var mesh in meshes) {
@@ -158,6 +169,8 @@ namespace ToyCarArena.Gameplay.Arena
             }
 
             meshes.Clear();
+            pads.Clear();
+            clock = 0f;
         }
 
         /// <summary>
@@ -237,8 +250,7 @@ namespace ToyCarArena.Gameplay.Arena
 
         private void Build()
         {
-            built = true;
-            var random = new System.Random(unchecked(hazards.Seed ^ 0x4A31E11));
+            var random = new System.Random(run.SeedOf(unchecked(hazards.Seed ^ 0x4A31E11)));
             var places = PropPlacement.Scatter(random, edge, round.Cars, settings.PadCount, settings.EdgeClearance,
                 settings.PadSpacing, settings.SpawnClearance);
 

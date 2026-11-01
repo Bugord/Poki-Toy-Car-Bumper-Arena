@@ -2,6 +2,7 @@ using System.Threading;
 using Bugord.App.Localization;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.Audio;
+using ToyCarArena.Gameplay;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -54,6 +55,22 @@ namespace ToyCarArena.UI
         private const string NameLeaveClass = "car-name--leave";
         private const string NamePulseClass = "car-name--pulse";
         private const string SettingsUnderClass = "hud__settings--under";
+        private const string RespawnShownClass = "hud__respawn--shown";
+        private const string RespawnPopClass = "hud__respawn--pop";
+        private const string ShieldShownClass = "hud__shield--shown";
+        private const string RevengeClass = "car-name--revenge";
+        private const string PowerShownClass = "hud__power--shown";
+
+        // The badge of a running ability blinks over the last seconds, as the ability ends.
+        private const float PowerBlinkTime = 2f;
+        private const float PowerBlinkRate = 5f;
+
+        // From this width against the height the arena, fitted to the height, leaves a side free for the scoreboard's
+        // full column; a narrower screen shows the leaders and the player's row only.
+        private const float ScoreboardWideAspect = 1.65f;
+
+        // The safe sticker floats this high over the player's car, in metres: above its marker's arrow.
+        private const float ShieldHeight = 4.2f;
 
         // Names sit above the body in panel pixels; a rival springs in, pulses twice, then stays quiet.
         private const float NameLift = 76f;
@@ -125,6 +142,10 @@ namespace ToyCarArena.UI
         private const float PopupTopMargin = 572f;
         private const float PopupBottomMargin = 480f;
 
+        // About half the size of the sticker sprung to its full scale, in reference pixels, to keep it off the scoreboard.
+        private const float PopupHalfWidth = 260f;
+        private const float PopupHalfHeight = 90f;
+
         // The sticker sits this far above the point where the car went over the edge, in reference pixels, so the car
         // still shows under it.
         private const float PopupLift = 110f;
@@ -156,6 +177,20 @@ namespace ToyCarArena.UI
         private bool isBoostShownReady;
         private VisualElement knockoutBadge;
         private Label knockoutLabel;
+        // A match's score: the scoreboard of every car, the comeback countdown and the safe sticker.
+        private HudScoreboard scoreboard;
+        private int shownRespawn = -1;
+        private VisualElement respawn;
+        private Label respawnCount;
+        private Label respawnCountFace;
+        private VisualElement shield;
+        private VisualElement shieldFill;
+        // A match's pickups: the badge of the ability the player's car runs, with its icon, name and draining bar.
+        private PickupKind shownAbility;
+        private VisualElement power;
+        private VisualElement powerIcon;
+        private Label powerName;
+        private VisualElement powerFill;
         private VisualElement popupLayer;
         private VisualElement nameLayer;
         private VisualElement[] carNames;
@@ -229,6 +264,20 @@ namespace ToyCarArena.UI
             boostCharge = Root.Q<VisualElement>("boost-charge");
             knockoutBadge = Root.Q<VisualElement>("ko-badge");
             knockoutLabel = Root.Q<Label>("ko");
+            respawn = Root.Q<VisualElement>("respawn");
+            respawnCount = Root.Q<Label>("respawn-count");
+            respawnCountFace = Root.Q<Label>("respawn-count-face");
+            shield = Root.Q<VisualElement>("shield");
+            shieldFill = Root.Q<VisualElement>("shield-fill");
+            power = Root.Q<VisualElement>("power");
+            powerIcon = Root.Q<VisualElement>("power-icon");
+            powerName = Root.Q<Label>("power-name");
+            powerFill = Root.Q<VisualElement>("power-fill");
+            // In a match the player's score is always there, 0 included: it is the point of the match. The scoreboard
+            // shows the leader and everyone else, so the bar keeps only the time and the player's own knock-outs.
+            knockoutBadge.EnableInClassList(KnockoutShownClass, ViewModel.IsMatch);
+            carsPill.style.display = ViewModel.IsMatch ? DisplayStyle.None : DisplayStyle.Flex;
+            scoreboard = HudScoreboard.Create(Root.Q<VisualElement>("scoreboard"), ViewModel);
             popupLayer = Root.Q<VisualElement>("ko-layer");
             nameLayer = Root.Q<VisualElement>("name-layer");
             start = Root.Q<VisualElement>("start");
@@ -255,10 +304,14 @@ namespace ToyCarArena.UI
             settingsButton.clicked += OpenSettings;
             controls.SetSettingsButton(settingsButton);
             Root.RegisterCallback<GeometryChangedEvent>(PlaceSettings);
-            social = new HudSocial(Root, ViewModel, stick, boostSlot, timePill, carsPill, knockoutBadge, settingsButton);
+            social = new HudSocial(Root, ViewModel, stick, boostSlot, timePill, carsPill, knockoutBadge, settingsButton,
+                scoreboard);
             teachingTime = idleSince = Time.unscaledTime;
             ViewModel.PlayerKnockout += ShowKnockout;
             ViewModel.CarOut += OnCarOut;
+            ViewModel.CarBack += OnCarBack;
+            ViewModel.NemesisChanged += OnNemesisChanged;
+            ViewModel.PickedUp += OnPickedUp;
 
             // On the press, not the release: a boost is all about the moment.
             boostButton.RegisterCallback<PointerDownEvent>(OnBoostPointerDown);
@@ -275,6 +328,7 @@ namespace ToyCarArena.UI
             RefreshBoost();
             Root.schedule.Execute(Refresh).Every(RefreshInterval);
             Root.schedule.Execute(RefreshBoost).Every(BoostRefreshInterval);
+            Root.schedule.Execute(RefreshPower).Every(BoostRefreshInterval);
             Root.schedule.Execute(RefreshStick).Every(BoostRefreshInterval);
             Root.schedule.Execute(RefreshTeaching).Every(BoostRefreshInterval);
             Root.schedule.Execute(RefreshNames).Every(BoostRefreshInterval);
@@ -283,8 +337,12 @@ namespace ToyCarArena.UI
         public override void Dispose()
         {
             social?.Dispose();
+            scoreboard?.Dispose();
             ViewModel.PlayerKnockout -= ShowKnockout;
             ViewModel.CarOut -= OnCarOut;
+            ViewModel.CarBack -= OnCarBack;
+            ViewModel.NemesisChanged -= OnNemesisChanged;
+            ViewModel.PickedUp -= OnPickedUp;
 
             if (boostButton != null) {
                 boostButton.UnregisterCallback<PointerDownEvent>(OnBoostPointerDown);
@@ -327,21 +385,119 @@ namespace ToyCarArena.UI
                 }
             }
 
-            // The chips are built once the round has its cars; a car going out is shown as it happens (OnCarOut).
-            if (chipSlots == null) {
-                BuildChips();
+            if (ViewModel.IsMatch) {
+                scoreboard?.RefreshCountdowns();
+                ShowRespawn();
             }
+            else {
+                // The chips are built once the round has its cars; a car going out is shown as it happens (OnCarOut).
+                if (chipSlots == null) {
+                    BuildChips();
+                }
 
-            ShowCarsLeft();
+                ShowCarsLeft();
+            }
 
             // The badge stays away until the first knock-out, so the HUD starts with only the time and the cars.
             var knockouts = ViewModel.Knockouts;
             if (knockouts != shownKnockouts) {
                 shownKnockouts = knockouts;
                 knockoutLabel.text = knockouts.ToString();
-                knockoutBadge.EnableInClassList(KnockoutShownClass, knockouts > 0);
+                knockoutBadge.EnableInClassList(KnockoutShownClass, knockouts > 0 || ViewModel.IsMatch);
                 Pulse(knockoutBadge, KnockoutPopClass);
             }
+        }
+
+        /// <summary>
+        /// While the player's car is out in a match, a sticker in the middle of the screen counts down to its comeback,
+        /// popping at each second.
+        /// </summary>
+        private void ShowRespawn()
+        {
+            var left = ViewModel.RespawnTimeLeft;
+            var seconds = left > 0f ? Mathf.CeilToInt(left) : 0;
+            if (seconds == shownRespawn) {
+                return;
+            }
+
+            shownRespawn = seconds;
+            respawn.EnableInClassList(RespawnShownClass, seconds > 0);
+            if (seconds > 0) {
+                var text = seconds.ToString();
+                respawnCount.text = text;
+                respawnCountFace.text = text;
+                Pulse(respawn, RespawnPopClass);
+            }
+        }
+
+        /// <summary>
+        /// The scoreboard is up while the match runs, not over the start prompt, which takes the top of a narrow
+        /// screen while every score is still 0. It fades while a finger steers under it or the ghost joystick is taught
+        /// there, as the feed hides: the board never paints over the thumb.
+        /// </summary>
+        private void ShowScoreboard()
+        {
+            if (scoreboard == null) {
+                return;
+            }
+
+            var shown = IsShown && ViewModel.HasBegun;
+            var area = scoreboard.Element.worldBound;
+            var faded = shown && ((isStickShown && area.Overlaps(stickBase.worldBound)) ||
+                (ghostProgress > 0f && area.Overlaps(ghost.worldBound)));
+            scoreboard.Show(shown, faded);
+        }
+
+        /// <summary>
+        /// Moves something centred on <paramref name="point"/> and ending there at its bottom (a name, a sticker) off
+        /// the scoreboard the shorter way: towards the middle of the screen, past the board's inner side, or under it.
+        /// The board sits at the right, so towards the middle is to the left.
+        /// </summary>
+        private void ClearScoreboard(VisualElement layer, ref Vector2 point, float halfWidth, float height)
+        {
+            if (scoreboard == null || !scoreboard.IsVisible) {
+                return;
+            }
+
+            var min = layer.WorldToLocal(scoreboard.Element.worldBound.min) - Vector2.one * NameMargin;
+            var max = layer.WorldToLocal(scoreboard.Element.worldBound.max) + Vector2.one * NameMargin;
+            if (point.x + halfWidth > min.x && point.x - halfWidth < max.x && point.y > min.y && point.y - height < max.y) {
+                var aside = point.x + halfWidth - min.x;
+                var below = max.y + height - point.y;
+                if (aside <= below) {
+                    point.x = min.x - halfWidth;
+                }
+                else {
+                    point.y = max.y + height;
+                }
+            }
+        }
+
+        /// <summary>
+        /// While the player's car is safe after coming back, a SAFE sticker floats over it, its bar running down with
+        /// the safe time; the car itself is drawn see-through meanwhile.
+        /// </summary>
+        private void ShowShield(Camera camera)
+        {
+            var share = ViewModel.SafeShareLeft;
+            var isShown = share > 0f && camera != null && shield.panel != null;
+            shield.EnableInClassList(ShieldShownClass, isShown);
+            if (!isShown) {
+                return;
+            }
+
+            var position = ViewModel.PlayerPosition + Vector3.up * ShieldHeight;
+            var panelPoint = RuntimePanelUtils.CameraTransformWorldToPanel(shield.panel, position, camera);
+            var point = nameLayer.WorldToLocal(panelPoint);
+            var size = nameLayer.layout.size;
+            var halfWidth = shield.layout.width * 0.5f + NameMargin;
+            var height = shield.layout.height + NameMargin;
+            point.x = Mathf.Clamp(point.x, halfWidth, Mathf.Max(halfWidth, size.x - halfWidth));
+            point.y = Mathf.Clamp(point.y, height, Mathf.Max(height, size.y - NameMargin));
+            ClearScoreboard(nameLayer, ref point, halfWidth, height);
+            shield.style.left = point.x;
+            shield.style.top = point.y;
+            shieldFill.style.width = Length.Percent(share * 100f);
         }
 
         /// <summary>
@@ -403,11 +559,16 @@ namespace ToyCarArena.UI
         }
 
         // The top right corner, where the result and the garage keep theirs; on a narrow screen a full HUD bar reaches
-        // it, so there the gear goes under the bar.
+        // it, so there the gear goes under the bar. A match's bar is only the time and the player's knock-outs, which
+        // never reach the corner, and its scoreboard goes under the gear. The scoreboard is the whole column beside the
+        // arena only where the screen is wide enough to leave room for it at the side.
         private void PlaceSettings(GeometryChangedEvent evt)
         {
             var size = Root.layout.size;
-            settingsButton.EnableInClassList(SettingsUnderClass, size.x < size.y);
+            settingsButton.EnableInClassList(SettingsUnderClass, !ViewModel.IsMatch && size.x < size.y);
+            if (scoreboard != null && size.x > 0f && size.y > 0f) {
+                scoreboard.SetWide(size.x >= size.y * ScoreboardWideAspect);
+            }
         }
 
         private void OnResized(GeometryChangedEvent evt)
@@ -420,7 +581,15 @@ namespace ToyCarArena.UI
         /// Pops a KNOCKOUT! sticker up over the point where the car the player knocked out went over the edge, kept
         /// clear of the screen's sides and the HUD: it springs in, holds, and flies up and away.
         /// </summary>
-        private void ShowKnockout(Vector3 worldPosition, bool isRevenge)
+        private void ShowKnockout(Vector3 worldPosition, bool isRevenge) =>
+            ShowPopup(worldPosition, isRevenge, PickupKind.None);
+
+        /// <summary>
+        /// The same sticker for a pickup the player's car took (HEAVY!, SHOCKWAVE!, SHIELD!, TURBO!), over the car.
+        /// </summary>
+        private void OnPickedUp(PickupKind kind) => ShowPopup(ViewModel.PlayerPosition, false, kind);
+
+        private void ShowPopup(Vector3 worldPosition, bool isRevenge, PickupKind pickup)
         {
             var panel = popupLayer.panel;
             if (panel == null) {
@@ -438,8 +607,12 @@ namespace ToyCarArena.UI
 
             point.x = Mathf.Clamp(point.x, PopupSideMargin, Mathf.Max(PopupSideMargin, size.x - PopupSideMargin));
             point.y = Mathf.Clamp(point.y, PopupTopMargin, Mathf.Max(PopupTopMargin, size.y - PopupBottomMargin));
+            // The sticker is centred on its point; keep the box it springs to off the scoreboard.
+            point.y += PopupHalfHeight;
+            ClearScoreboard(popupLayer, ref point, PopupHalfWidth, PopupHalfHeight * 2f);
+            point.y -= PopupHalfHeight;
 
-            var popup = CreatePopup(popupCount++ % 2 == 0 ? -PopupTilt : PopupTilt, isRevenge);
+            var popup = CreatePopup(popupCount++ % 2 == 0 ? -PopupTilt : PopupTilt, isRevenge, pickup);
             popup.style.left = point.x;
             popup.style.top = point.y;
             popupLayer.Add(popup);
@@ -460,7 +633,7 @@ namespace ToyCarArena.UI
 
         // The sticker: the knock-out star and KNOCKOUT! in gold, outlined (.stroke in ui_screens). The outer element
         // holds the place, centred on it; the inner one springs, tilts and flies.
-        private static VisualElement CreatePopup(float tilt, bool isRevenge)
+        private static VisualElement CreatePopup(float tilt, bool isRevenge, PickupKind pickup)
         {
             var popup = new VisualElement { pickingMode = PickingMode.Ignore };
             popup.AddToClassList("ko-pop");
@@ -472,10 +645,51 @@ namespace ToyCarArena.UI
             sticker.style.rotate = new Rotate(tilt);
             popup.Add(sticker);
 
+            // A pickup's sticker is the word alone, in the kind's colour.
+            if (pickup != PickupKind.None) {
+                popup.AddToClassList("ko-pop--power");
+                popup.AddToClassList($"ko-pop--{PowerName(pickup)}");
+                sticker.Add(CreateOutlinedText(Strings.Get($"hud.pickup_{PowerName(pickup)}"), "ko-pop__text"));
+                return popup;
+            }
+
             sticker.Add(CreateStar("ko-star--big"));
 
             sticker.Add(CreateOutlinedText(Strings.Get(isRevenge ? "hud.revenge_taken" : "hud.knockout"), "ko-pop__text"));
             return popup;
+        }
+
+        /// <summary>The kind's name as the strings and the classes spell it: heavy, shockwave, shield, turbo.</summary>
+        private static string PowerName(PickupKind kind) => kind.ToString().ToLowerInvariant();
+
+        /// <summary>
+        /// The badge of the ability the player's car runs: its icon and name, and a bar that drains with the time. It
+        /// blinks over the last seconds, and a shield, which can also go with a hit, is gone as it does.
+        /// </summary>
+        private void RefreshPower()
+        {
+            var ability = ViewModel.Ability;
+            if (ability != shownAbility) {
+                foreach (var kind in new[] { PickupKind.Heavy, PickupKind.Shield, PickupKind.Turbo }) {
+                    power.EnableInClassList($"hud__power--{PowerName(kind)}", kind == ability);
+                    powerIcon.EnableInClassList($"hud__power-icon--{PowerName(kind)}", kind == ability);
+                }
+
+                shownAbility = ability;
+                power.EnableInClassList(PowerShownClass, ability != PickupKind.None);
+                if (ability != PickupKind.None) {
+                    powerName.text = Strings.Get($"hud.pickup_{PowerName(ability)}");
+                }
+            }
+
+            if (ability == PickupKind.None) {
+                return;
+            }
+
+            powerFill.style.width = Length.Percent(ViewModel.AbilityShare * 100f);
+            var isBlinking = ViewModel.AbilityTimeLeft < PowerBlinkTime
+                && Mathf.Repeat(Time.unscaledTime * PowerBlinkRate, 1f) < 0.5f;
+            power.style.opacity = isBlinking ? 0.45f : 1f;
         }
 
         internal static VisualElement CreateLevelBadge(int level, string className)
@@ -520,6 +734,11 @@ namespace ToyCarArena.UI
             }
 
             var camera = Camera.main;
+            if (ViewModel.IsMatch) {
+                ShowScoreboard();
+                ShowShield(camera);
+            }
+
             if (carNames == null || camera == null || nameLayer.panel == null) {
                 return;
             }
@@ -558,12 +777,13 @@ namespace ToyCarArena.UI
                 ClearPill(timePill, ref point, halfWidth, height);
                 ClearPill(carsPill, ref point, halfWidth, height);
                 ClearPill(settingsButton, ref point, halfWidth, height);
-                if (shownKnockouts > 0) {
+                if (knockoutBadge.ClassListContains(KnockoutShownClass)) {
                     ClearPill(knockoutBadge, ref point, halfWidth, height);
                 }
                 if (social.IsFeedVisible) {
                     ClearPill(social.Feed, ref point, halfWidth, height);
                 }
+                ClearScoreboard(nameLayer, ref point, halfWidth, height);
 
                 ref var placement = ref namePlacements[index];
                 placement.Anchor = point;
@@ -605,11 +825,14 @@ namespace ToyCarArena.UI
                 maxLift = LimitNameLift(timePill, bounds, maxLift);
                 maxLift = LimitNameLift(carsPill, bounds, maxLift);
                 maxLift = LimitNameLift(settingsButton, bounds, maxLift);
-                if (shownKnockouts > 0) {
+                if (knockoutBadge.ClassListContains(KnockoutShownClass)) {
                     maxLift = LimitNameLift(knockoutBadge, bounds, maxLift);
                 }
                 if (social.IsFeedVisible) {
                     maxLift = LimitNameLift(social.Feed, bounds, maxLift);
+                }
+                if (scoreboard != null && scoreboard.IsVisible) {
+                    maxLift = LimitNameLift(scoreboard.Element, bounds, maxLift);
                 }
 
                 maxLift = Mathf.Max(0f, maxLift);
@@ -643,6 +866,11 @@ namespace ToyCarArena.UI
         // A name below a HUD pill may rise only as far as its bottom edge, including the usual clearance.
         private float LimitNameLift(VisualElement pill, Rect bounds, float maxLift)
         {
+            // A part of the bar the mode does not use (a match's cars pill) has no place to keep clear of.
+            if (pill.resolvedStyle.display == DisplayStyle.None) {
+                return maxLift;
+            }
+
             var min = nameLayer.WorldToLocal(pill.worldBound.min) - Vector2.one * NameMargin;
             var max = nameLayer.WorldToLocal(pill.worldBound.max) + Vector2.one * NameMargin;
             if (bounds.xMax > min.x && bounds.xMin < max.x && bounds.yMin >= max.y) {
@@ -654,6 +882,10 @@ namespace ToyCarArena.UI
 
         private void ClearPill(VisualElement pill, ref Vector2 point, float halfWidth, float height)
         {
+            if (pill.resolvedStyle.display == DisplayStyle.None) {
+                return;
+            }
+
             var min = nameLayer.WorldToLocal(pill.worldBound.min) - Vector2.one * NameMargin;
             var max = nameLayer.WorldToLocal(pill.worldBound.max) + Vector2.one * NameMargin;
             if (point.x + halfWidth > min.x && point.x - halfWidth < max.x &&
@@ -678,40 +910,115 @@ namespace ToyCarArena.UI
                     continue;
                 }
 
-                var tag = new VisualElement { pickingMode = PickingMode.Ignore };
-                tag.AddToClassList("car-name");
-                tag.style.visibility = Visibility.Hidden;
-                var sticker = new VisualElement { pickingMode = PickingMode.Ignore };
-                sticker.AddToClassList("car-name__sticker");
-                tag.Add(sticker);
+                var tag = CreateName(index);
                 if (ViewModel.IsNemesis(index)) {
                     revengeName = tag;
-                    tag.AddToClassList("car-name--revenge");
-                    tag.AddToClassList(NameEnterClass);
-                    var heading = new VisualElement { pickingMode = PickingMode.Ignore };
-                    heading.AddToClassList("car-name__revenge");
-                    var target = new VisualElement { pickingMode = PickingMode.Ignore };
-                    target.AddToClassList("revenge-target");
-                    var center = new VisualElement { pickingMode = PickingMode.Ignore };
-                    center.AddToClassList("revenge-target__center");
-                    target.Add(center);
-                    heading.Add(target);
-                    heading.Add(CreateOutlinedText(Strings.Get("hud.revenge"), "car-name__revenge-text"));
-                    sticker.Add(heading);
                 }
 
-                // The bot's level on a small badge in its rank's colour, before the handle, as a player's would be.
-                var line = new VisualElement { pickingMode = PickingMode.Ignore };
-                line.AddToClassList("car-name__line");
-                line.Add(CreateLevelBadge(ViewModel.LevelOf(index), "car-name__level"));
-                line.Add(CreateOutlinedText(ViewModel.NameOf(index), "car-name__text"));
-                sticker.Add(line);
-                nameLayer.Add(tag);
                 carNames[index] = tag;
             }
 
             // Painting priority is independent of which car is closer; keep the whole rival sticker on top.
             revengeName?.BringToFront();
+        }
+
+        /// <summary>
+        /// A bot's handle over its car, hidden until it is placed: its level badge and name, and over them REVENGE with
+        /// the target for the marked rival, which springs in once it is introduced.
+        /// </summary>
+        private VisualElement CreateName(int index)
+        {
+            var tag = new VisualElement { pickingMode = PickingMode.Ignore };
+            tag.AddToClassList("car-name");
+            tag.style.visibility = Visibility.Hidden;
+            var sticker = new VisualElement { pickingMode = PickingMode.Ignore };
+            sticker.AddToClassList("car-name__sticker");
+            tag.Add(sticker);
+            if (ViewModel.IsNemesis(index)) {
+                tag.AddToClassList(RevengeClass);
+                tag.AddToClassList(NameEnterClass);
+                var heading = new VisualElement { pickingMode = PickingMode.Ignore };
+                heading.AddToClassList("car-name__revenge");
+                var target = new VisualElement { pickingMode = PickingMode.Ignore };
+                target.AddToClassList("revenge-target");
+                var center = new VisualElement { pickingMode = PickingMode.Ignore };
+                center.AddToClassList("revenge-target__center");
+                target.Add(center);
+                heading.Add(target);
+                heading.Add(CreateOutlinedText(Strings.Get("hud.revenge"), "car-name__revenge-text"));
+                sticker.Add(heading);
+            }
+
+            // The bot's level on a small badge in its rank's colour, before the handle, as a player's would be.
+            var line = new VisualElement { pickingMode = PickingMode.Ignore };
+            line.AddToClassList("car-name__line");
+            line.Add(CreateLevelBadge(ViewModel.LevelOf(index), "car-name__level"));
+            line.Add(CreateOutlinedText(ViewModel.NameOf(index), "car-name__text"));
+            sticker.Add(line);
+            nameLayer.Add(tag);
+            return tag;
+        }
+
+        /// <summary>
+        /// A car back in a match gets its handle again, and the rival its REVENGE at once: it was introduced already.
+        /// </summary>
+        private void OnCarBack(int index)
+        {
+            if (carNames == null || index < 0 || index >= carNames.Length || index == ViewModel.PlayerIndex
+                || carNames[index] != null) {
+                return;
+            }
+
+            var tag = CreateName(index);
+            carNames[index] = tag;
+            if (ViewModel.IsNemesis(index)) {
+                SpringRevenge(tag);
+            }
+        }
+
+        /// <summary>
+        /// The match's rival changed: the handle of the car that lost the mark becomes a plain one, and the handle of the
+        /// new rival gets REVENGE, springing in and pulsing as at the start of a round.
+        /// </summary>
+        private void OnNemesisChanged()
+        {
+            if (carNames == null) {
+                return;
+            }
+
+            for (var index = 0; index < carNames.Length; index++) {
+                var tag = carNames[index];
+                if (tag == null || tag.ClassListContains(RevengeClass) == ViewModel.IsNemesis(index)) {
+                    continue;
+                }
+
+                tag.RemoveFromHierarchy();
+                tag = CreateName(index);
+                carNames[index] = tag;
+                if (ViewModel.IsNemesis(index)) {
+                    SpringRevenge(tag);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Brings a new rival's handle in once it is laid out small, on top of the others, and pulses it twice.
+        /// </summary>
+        private void SpringRevenge(VisualElement tag)
+        {
+            tag.BringToFront();
+
+            void OnLaidOut(GeometryChangedEvent evt)
+            {
+                tag.UnregisterCallback<GeometryChangedEvent>(OnLaidOut);
+                tag.RemoveFromClassList(NameEnterClass);
+            }
+
+            tag.RegisterCallback<GeometryChangedEvent>(OnLaidOut);
+            for (var beat = 0; beat < 2; beat++) {
+                tag.schedule.Execute(() => Pulse(tag, NamePulseClass))
+                    .StartingIn(RevengeEnterDuration + beat * RevengePulseInterval);
+            }
         }
 
         private void IntroduceRevenge()
@@ -737,7 +1044,7 @@ namespace ToyCarArena.UI
 
         // The knock-out star, eight points, built from two navy squares under two gold ones, each pair a plain one and
         // one turned by 45 degrees (ko-star in ui_screens), so the build carries no image for it.
-        private static VisualElement CreateStar(string sizeClass)
+        internal static VisualElement CreateStar(string sizeClass)
         {
             var star = new VisualElement { pickingMode = PickingMode.Ignore };
             star.AddToClassList("ko-star");
@@ -1095,6 +1402,11 @@ namespace ToyCarArena.UI
                 carNames[index] = null;
                 tag.AddToClassList(NameLeaveClass);
                 tag.schedule.Execute(tag.RemoveFromHierarchy).StartingIn(NameLeaveDuration);
+            }
+
+            // A match keeps the leader in the cars pill, not the cars still in.
+            if (ViewModel.IsMatch) {
+                return;
             }
 
             ShowCarsLeft();

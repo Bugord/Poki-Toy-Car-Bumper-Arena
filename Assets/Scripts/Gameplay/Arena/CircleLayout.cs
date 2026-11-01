@@ -16,7 +16,7 @@ namespace ToyCarArena.Gameplay.Arena
         private const int Segments = 96;
 
         // Depth of the floor below the driving surface, in metres; seen on the rim and on falling blocks.
-        private const float Thickness = 0.5f;
+        private const float Thickness = SlabThickness;
 
         private readonly CircleEdge edge;
         private readonly FloorUv uv;

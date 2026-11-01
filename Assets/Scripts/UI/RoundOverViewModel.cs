@@ -147,6 +147,15 @@ namespace ToyCarArena.UI
         public RoundOutcome Outcome { get; private set; }
 
         /// <summary>
+        /// Whether the result is a long match's: the subtitle gives its place and knock-outs.
+        /// </summary>
+        public bool IsMatch { get; private set; }
+
+        public int Place { get; private set; }
+
+        public int Knockouts { get; private set; }
+
+        /// <summary>
         /// The index of the car that knocked the player out, or <see cref="RoundResult.Nobody"/>.
         /// </summary>
         public int KnockedOutBy { get; private set; }
@@ -157,6 +166,9 @@ namespace ToyCarArena.UI
             colors = result.Colors;
             XpGain = payload.XpGain;
             Outcome = result.Outcome;
+            IsMatch = result.IsMatch;
+            Place = result.Place;
+            Knockouts = result.Knockouts;
             KnockedOutBy = result.KnockedOutBy;
             KnockedOutByName = payload.KnockedOutByName;
             RevengeTaken = result.RevengeTaken;

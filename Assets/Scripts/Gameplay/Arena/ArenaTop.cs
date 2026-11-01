@@ -67,8 +67,9 @@ namespace ToyCarArena.Gameplay.Arena
         private int version = 1;
 
         public ArenaTop(GameTuning tuning, ArenaMap map, ArenaRound round, IArenaEdge edge, ArenaHazards hazards,
-            MechanicArt art, RoundDifficulty difficulty, ArenaCamera arenaCamera, IAudioService audioService, Transform parent)
-            : base(GameTuning.ArenaMechanic.Top, map, round, edge, hazards, parent)
+            MechanicArt art, RoundDifficulty difficulty, ArenaCamera arenaCamera, IAudioService audioService,
+            ArenaVariants variants, Transform parent)
+            : base(GameTuning.ArenaMechanic.Top, map, round, edge, hazards, variants, parent)
         {
             this.tuning = tuning;
             this.settings = tuning.Top;
@@ -127,15 +128,22 @@ namespace ToyCarArena.Gameplay.Arena
             return false;
         }
 
-        public override void Dispose()
+        protected override void ResetState()
         {
-            Hazards.Remove(this);
-            base.Dispose();
+            stage = Stage.Standing;
+            position = Vector3.zero;
+            heading = 0f;
+            clock = 0f;
+            spinAngle = 0f;
+            spinSpeed = 3f;
+            height = 0f;
+            fallSpeed = 0f;
+            nextVersion = 0f;
         }
 
         protected override void Build()
         {
-            var random = new System.Random(Hazards.Seed ^ 0x7E1F);
+            var random = new System.Random(SeedOf(Hazards.Seed ^ 0x7E1F));
             phaseA = (float)random.NextDouble() * Mathf.PI * 2f;
             phaseB = (float)random.NextDouble() * Mathf.PI * 2f;
             heading = (float)random.NextDouble() * Mathf.PI * 2f;
@@ -153,7 +161,7 @@ namespace ToyCarArena.Gameplay.Arena
 
         protected override void Step(float deltaTime)
         {
-            var elapsed = Round.Elapsed;
+            var elapsed = Clock;
             switch (stage) {
                 case Stage.Standing:
                     if (IsClockRunning && elapsed >= settings.Delay) {
@@ -189,7 +197,7 @@ namespace ToyCarArena.Gameplay.Arena
             Animate(deltaTime);
         }
 
-        private bool IsSpinningUp => stage == Stage.Standing && IsClockRunning && Round.Elapsed >= settings.Delay - settings.SpinUp;
+        private bool IsSpinningUp => stage == Stage.Standing && IsClockRunning && Clock >= settings.Delay - settings.SpinUp;
 
         /// <summary>
         /// The top's turn at <paramref name="time"/> from <paramref name="at"/> heading <paramref name="angle"/>: a smooth
@@ -269,7 +277,7 @@ namespace ToyCarArena.Gameplay.Arena
             var reach = settings.HitRadius;
             for (var i = 0; i < Round.Cars.Count; i++) {
                 var car = Round.Cars[i];
-                if (car.IsOut || car.Position.y > settings.HitHeight || i >= lastFling.Length
+                if (!car.IsTargetable || car.Position.y > settings.HitHeight || i >= lastFling.Length
                     || Time.time - lastFling[i] < settings.Retrigger) {
                     continue;
                 }
