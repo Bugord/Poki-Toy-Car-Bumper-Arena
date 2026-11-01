@@ -38,6 +38,12 @@ namespace ToyCarArena.Gameplay.Round
         /// </summary>
         public int Leader => order.Length > 0 ? order[0] : RoundResult.Nobody;
 
+        /// <summary>
+        /// The car at a place in the ranking, from 0 for the leader: the HUD's scoreboard reads the order without
+        /// a snapshot, so a score change costs it no allocation.
+        /// </summary>
+        public int IndexAt(int place) => order[place];
+
         public int KnockoutsOf(int index) => knockouts[index];
 
         public int FallsOf(int index) => falls[index];

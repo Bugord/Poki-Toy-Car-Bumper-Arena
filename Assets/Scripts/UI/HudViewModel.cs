@@ -151,14 +151,21 @@ namespace ToyCarArena.UI
         public bool IsMatch => round != null && round.IsMatch;
 
         /// <summary>
-        /// The index of the match's leader by knock-outs (the player's while nobody has scored).
-        /// </summary>
-        public int LeaderIndex => round?.Score?.Leader ?? 0;
-
-        /// <summary>
         /// The knock-outs a car has scored in the match.
         /// </summary>
         public int ScoreOf(int index) => round?.Score?.KnockoutsOf(index) ?? 0;
+
+        /// <summary>
+        /// The car at a place of the match's ranking, from 0 for the leader (knock-outs, then fewer falls, then who
+        /// scored first).
+        /// </summary>
+        public int IndexAtPlace(int place) => round?.Score?.IndexAt(place) ?? place;
+
+        /// <summary>
+        /// Seconds until a car fallen in a match comes back; 0 while it is in play.
+        /// </summary>
+        public float RespawnTimeLeftOf(int index) =>
+            round != null && index >= 0 && index < round.Cars.Count ? round.RespawnTimeLeft(round.Cars[index]) : 0f;
 
         /// <summary>
         /// Seconds until the player's car comes back after a fall in a match; 0 while it is in play.

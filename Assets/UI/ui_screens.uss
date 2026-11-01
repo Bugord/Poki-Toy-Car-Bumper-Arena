@@ -3063,3 +3063,260 @@
 .emotion__text { height: 68px; }
 .emotion__text .sticker-text__text { font-size: 42px; color: var(--navy); -unity-text-align: middle-center; -unity-text-outline-width: 0; }
 
+
+/* A match's scoreboard (HudScoreboard): a row per car in the order of the score, placed by its translate so a new
+   order slides; under one knock-out star that names the column. The narrow form (a phone held upright) mirrors the feed
+   at the top right under the gear: the three leaders and, a little apart, the player's own row with its place. The wide
+   form is the whole column at the right side beside the arena, under the gear, its text larger because a wide screen's
+   panel is scaled down. Rows are the feed's translucent navy with white names; the player's is white with navy text.
+   Nothing takes a touch; it is shown once the match runs and fades while a finger steers under it. */
+.scoreboard {
+    display: none;
+    position: absolute;
+    right: 24px;
+    top: 240px;
+    width: 340px;
+    opacity: 0;
+    transition-property: opacity;
+    transition-duration: 0.2s;
+    transition-timing-function: ease-out;
+}
+
+.scoreboard--match { display: flex; }
+.scoreboard--shown { opacity: 1; }
+.scoreboard--faded { opacity: 0.2; }
+
+.scoreboard--wide {
+    right: 48px;
+    top: 200px;
+    width: 600px;
+}
+
+/* The star sits over the knock-out column's middle. */
+.scoreboard__header {
+    flex-direction: row;
+    justify-content: flex-end;
+    height: 44px;
+    padding-right: 6px;
+}
+
+.scoreboard__star {
+    width: 40px;
+    height: 40px;
+}
+
+.scoreboard__star > .ko-star__back { left: 6px; top: 6px; width: 28px; height: 28px; border-radius: 4px; }
+.scoreboard__star > .ko-star__front { left: 11px; top: 11px; width: 18px; height: 18px; border-radius: 3px; }
+
+.scoreboard--wide .scoreboard__header {
+    height: 60px;
+    padding-right: 14px;
+}
+
+.scoreboard--wide .scoreboard__star { width: 56px; height: 56px; }
+.scoreboard--wide .scoreboard__star > .ko-star__back { left: 8px; top: 8px; width: 40px; height: 40px; border-radius: 6px; }
+.scoreboard--wide .scoreboard__star > .ko-star__front { left: 15px; top: 15px; width: 26px; height: 26px; border-radius: 4px; }
+
+.scoreboard__rows {
+    height: 0;
+}
+
+/* Every row is at the top of the list, moved down to its place; the move and a fade ease in, as the rows reorder after
+   a knock-out. */
+.scoreboard__row {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 56px;
+    flex-direction: row;
+    align-items: center;
+    padding: 0 12px 0 6px;
+    border-width: 4px;
+    border-bottom-width: 8px;
+    border-color: var(--navy);
+    border-radius: 22px;
+    background-color: var(--name-backdrop);
+    transition-property: translate, opacity, scale;
+    transition-duration: 0.25s, 0.2s, 0.2s;
+    transition-timing-function: ease-out;
+}
+
+.scoreboard--wide .scoreboard__row {
+    height: 76px;
+    padding: 0 18px 0 8px;
+    border-width: 5px;
+    border-bottom-width: 10px;
+    border-radius: 30px;
+}
+
+.scoreboard__row--you {
+    background-color: var(--white);
+}
+
+.scoreboard__row--out {
+    opacity: 0.5;
+}
+
+.scoreboard__row--hidden {
+    opacity: 0;
+    scale: 0.85 0.85;
+}
+
+/* The place on a small round badge: gold, silver and bronze for the podium, white for the rest. */
+.scoreboard__rank {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    border-width: 4px;
+    border-color: var(--navy);
+    border-radius: 20px;
+    background-color: var(--white);
+}
+
+.scoreboard--wide .scoreboard__rank {
+    width: 54px;
+    height: 54px;
+    border-width: 5px;
+    border-radius: 27px;
+}
+
+.scoreboard__rank--1 { background-color: var(--gold); }
+.scoreboard__rank--2 { background-color: var(--silver); }
+.scoreboard__rank--3 { background-color: var(--bronze); }
+
+.scoreboard__rank-text {
+    margin: 0;
+    padding: 0 0 3px 0;
+    font-size: 28px;
+    color: var(--navy);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.scoreboard--wide .scoreboard__rank-text {
+    font-size: 36px;
+}
+
+.scoreboard__chip {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    margin-left: 8px;
+}
+
+.scoreboard--wide .scoreboard__chip {
+    width: 58px;
+    height: 58px;
+    margin-left: 12px;
+}
+
+.scoreboard__chip .hud__chip {
+    width: 100%;
+    height: 100%;
+    border-width: 4px;
+    border-radius: 999px;
+    transition-duration: 0s;
+}
+
+.scoreboard__chip .hud__chip-car { scale: 0.55 0.55; }
+.scoreboard__chip .hud__chip-ring { border-width: 3px; border-radius: 999px; }
+.scoreboard--wide .scoreboard__chip .hud__chip { border-width: 5px; }
+.scoreboard--wide .scoreboard__chip .hud__chip-car { scale: 0.8 0.8; }
+.scoreboard--wide .scoreboard__chip .hud__chip-ring { border-width: 4px; }
+
+/* The seconds until a fallen car comes back, on a navy disc over its chip; empty while it is in play. */
+.scoreboard__countdown {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    margin: 0;
+    padding: 0 0 2px 0;
+    border-radius: 999px;
+    background-color: var(--navy);
+    font-size: 28px;
+    color: var(--white);
+    -unity-text-align: middle-center;
+}
+
+.scoreboard--wide .scoreboard__countdown { font-size: 38px; }
+.scoreboard__row--out .scoreboard__countdown { display: flex; }
+
+.scoreboard__target {
+    display: none;
+    margin-left: 8px;
+    margin-right: 0;
+}
+
+.scoreboard__row--revenge .scoreboard__target { display: flex; }
+
+.scoreboard__name {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+    min-width: 0;
+    height: 44px;
+    margin-left: 10px;
+    overflow: hidden;
+}
+
+.scoreboard--wide .scoreboard__name {
+    height: 60px;
+    margin-left: 14px;
+}
+
+.scoreboard__name .sticker-text__text {
+    font-size: 30px;
+    color: var(--white);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.scoreboard--wide .scoreboard__name .sticker-text__text {
+    font-size: 44px;
+    -unity-text-outline-width: 4px;
+}
+
+.scoreboard__row--revenge .scoreboard__name .sticker-text__text { color: var(--red); }
+.scoreboard__row--you .scoreboard__name .sticker-text__text { color: var(--navy); -unity-text-outline-width: 0; }
+
+/* The knock-outs, in a column wide enough for two digits so the names do not move as they grow; gold as the star. */
+.scoreboard__ko {
+    min-width: 46px;
+    height: 44px;
+    margin-left: 6px;
+    transition-property: scale;
+    transition-duration: 0.2s;
+    transition-timing-function: ease-out;
+}
+
+.scoreboard--wide .scoreboard__ko {
+    min-width: 72px;
+    height: 60px;
+}
+
+.scoreboard__ko .sticker-text__text {
+    font-size: 36px;
+    color: var(--gold);
+    -unity-text-align: middle-center;
+}
+
+.scoreboard--wide .scoreboard__ko .sticker-text__text {
+    font-size: 50px;
+    -unity-text-outline-width: 4px;
+}
+
+.scoreboard__row--you .scoreboard__ko .sticker-text__text { color: var(--navy); -unity-text-outline-width: 0; }
+
+.scoreboard__ko--pop {
+    scale: 1.45 1.45;
+    transition-duration: 0.05s;
+}
+
+/* The face of each two-label text has no outline of its own, as everywhere else (.stroke > .stroke__face). */
+.scoreboard__row .stroke > .stroke__face { -unity-text-outline-width: 0; }
