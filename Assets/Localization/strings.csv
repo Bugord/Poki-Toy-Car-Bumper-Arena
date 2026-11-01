@@ -10,6 +10,7 @@ hud.click_to_start,Start prompt with a mouse,CLICK TO START,CLIQUE POUR JOUER,CL
 hud.goal,First launch goal over the start prompt,PUSH EVERYONE OFF!,POUSSE-LES TOUS !,BUTTALI TUTTI GIÙ!,SCHIEB ALLE RUNTER!,¡ÉCHALOS A TODOS!,HERKESİ DÜŞÜR!,DERRUBE TODOS!,СТОЛКНИ ВСЕХ!
 hud.tap_to_boost,Touch hint: tap to boost,TAP TO BOOST,TOUCHE : TURBO,TOCCA: TURBO,TIPPEN: BOOST,TOCA: TURBO,DOKUN: HIZLAN,TOQUE: TURBO,ТАП — УСКОРЕНИЕ
 hud.hold_to_drive,Mouse hint: hold the button to drive,HOLD TO DRIVE,MAINTIENS POUR ROULER,TIENI PREMUTO E GUIDA,HALTEN ZUM FAHREN,MANTÉN PARA CONDUCIR,SÜRMEK İÇİN BASILI TUT,SEGURE PARA DIRIGIR,"ЗАЖМИ, ЧТОБЫ ЕХАТЬ"
+hud.click_to_boost,Mouse hint: a short click of the left button boosts,CLICK TO BOOST,CLIQUE : TURBO,CLICCA: TURBO,KLICK: BOOST,CLIC: TURBO,TIKLA: HIZLAN,CLIQUE: TURBO,КЛИК — УСКОРЕНИЕ
 hud.boost,Boost button and key hint; max ~7 chars,BOOST,TURBO,TURBO,BOOST,TURBO,HIZ,TURBO,РЫВОК
 hud.tap,Arrow sticker over the boost button,TAP!,TOUCHE !,TOCCA!,TIPP!,¡TOCA!,DOKUN!,TOQUE!,ЖМИ!
 hud.go,"Kick-off: the word after 3, 2, 1 as the round starts; short and punchy, max ~7 chars",GO!,PARTEZ !,VIA!,LOS!,¡YA!,HADİ!,JÁ!,ВПЕРЁД!
@@ -96,3 +97,4 @@ hud.item_glove,"Match: item name; sticker when the player uses the boxing glove 
 hud.pow,"Match: comic sticker where the player's boxing glove hits a car; max ~6 chars",POW!,PAF !,POW!,BUMM!,¡PUM!,PAT!,POW!,БАЦ!
 hud.tap_to_use,"Match: first-time hint over the touch item button; max ~14 chars",TAP TO USE,TOUCHE POUR UTILISER,TOCCA PER USARE,TIPPEN ZUM NUTZEN,TOCA PARA USAR,KULLANMAK İÇİN DOKUN,TOQUE PARA USAR,"ЖМИ, ЧТОБЫ ПРИМЕНИТЬ"
 hud.press_e,"Match: first-time hint over the item button on a desktop: the E key uses the item; keep the letter E",PRESS E,APPUIE SUR E,PREMI E,DRÜCKE E,PULSA E,E TUŞUNA BAS,APERTE E,НАЖМИ E
+hud.right_click,"Match: first-time hint over the item button on a desktop: the right mouse button uses the item (the E key cap shows beside it); max ~12 chars",RIGHT CLICK,CLIC DROIT,CLIC DESTRO,RECHTSKLICK,CLIC DERECHO,SAĞ TIK,BOTÃO DIREITO,ПРАВЫЙ КЛИК

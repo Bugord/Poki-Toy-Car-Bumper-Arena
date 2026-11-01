@@ -1067,8 +1067,8 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>
-        /// TAP TO USE or PRESS E over the slot the first time in a visit an item lands in it, the button pulsing with
-        /// it, for a moment; the visit's controls remember it was shown.
+        /// TAP TO USE, or RIGHT CLICK with the E key cap on a desktop, over the slot the first time in a visit an item
+        /// lands in it, the button pulsing with it, for a moment; the visit's controls remember it was shown.
         /// </summary>
         private void RefreshItemHint(bool isTouch)
         {
@@ -1082,7 +1082,7 @@ namespace ToyCarArena.UI
                 isItemHintShown = true;
                 itemHintTime = now;
                 nextItemPulse = now;
-                var text = Strings.Get(isTouch ? "hud.tap_to_use" : "hud.press_e");
+                var text = Strings.Get(isTouch ? "hud.tap_to_use" : "hud.right_click");
                 itemHintText.text = text;
                 itemHintFace.text = text;
                 itemHint.AddToClassList(ItemHintShownClass);

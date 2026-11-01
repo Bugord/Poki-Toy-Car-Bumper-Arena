@@ -18,11 +18,11 @@ namespace ToyCarArena.Gameplay.Cars
     /// steers (<see cref="IOnScreenControls.ShowJoystick"/>), so the player sees where its middle is and how hard they
     /// push.</item>
     /// </list>
-    /// A drag wins over the keys while it lasts. Boost (Space, the right mouse button, a gamepad's south button or the
-    /// boost button, a second finger or a short tap on a touch screen) fires the car's boost towards where it is
-    /// steered. A released tap remembers nonzero steering briefly, so letting go to tap keeps the intended boost line.
-    /// In a long match the item key (E, Left Shift, a gamepad's west button or the item button) uses the item the car
-    /// holds (<see cref="ArenaPickups.Use"/>).
+    /// A drag wins over the keys while it lasts. Boost (Space, a short click of the left mouse button, a gamepad's south
+    /// button or the boost button, a second finger or a short tap on a touch screen) fires the car's boost towards
+    /// where it is steered. A released tap or click remembers nonzero steering briefly, so letting go to tap keeps the
+    /// intended boost line. In a long match the item key (E, Left Shift, the right mouse button, a gamepad's west button
+    /// or the item button) uses the item the car holds (<see cref="ArenaPickups.Use"/>).
     /// Once the round is over the
     /// car rolls to a stop, so a click on the result screen does not steer it, and boost does nothing.
     /// Before the round begins it only watches for the player's first steer or boost (<see cref="HasActed"/>), which the
@@ -232,8 +232,8 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         private bool TryBoost(Car car, BoostInputMethod method)
         {
-            // Only a released tap uses memory: other controls keep their usual steering/nose boost.
-            var isTap = method == BoostInputMethod.Tap;
+            // Only a released tap or click uses memory: other controls keep their usual steering/nose boost.
+            var isTap = method == BoostInputMethod.Tap || method == BoostInputMethod.Mouse;
             var heading = steer;
             if (isTap && heading == Vector3.zero && Time.unscaledTime - lastSteerTime <= tuning.Controls.TapBoostMemory) {
                 heading = lastSteer;
@@ -275,7 +275,8 @@ namespace ToyCarArena.Gameplay.Cars
             }
 
             HasActed = true;
-            if (method == InputMethod.Touch && IsWaiting) {
+            // The press that starts the round (or comes during the kick-off) only starts it, finger or mouse.
+            if (IsWaiting) {
                 input.CancelTapBoost();
             }
 
@@ -295,10 +296,8 @@ namespace ToyCarArena.Gameplay.Cars
         {
             waitTime += Time.deltaTime;
             if (input.TryGetDrag(out var drag)) {
-                if (!drag.IsMouse) {
-                    input.CancelTapBoost();
-                }
-
+                // Neither a tap nor a click held across the start boosts as it lifts.
+                input.CancelTapBoost();
                 HasActed = true;
             }
             else if (input.CurrentMoveInput != Vector2.zero) {

@@ -1642,7 +1642,7 @@
     rotate: 135deg;
 }
 
-/* The first item of a visit: PRESS E under the desktop's item button, with an arrow up to it, for a moment (on a
+/* The first item of a visit: RIGHT CLICK and the E key cap under the desktop's item button, with an arrow up to it, for a moment (on a
    touch screen TAP TO USE stands beside the button, below). Below the button the screen is free on a desktop: above it
    lie the arena, the player's car and the item's timer badge. It keeps clear of BOOST on either side. */
 .hud__item-hint {
@@ -2662,6 +2662,113 @@
     top: -55px;
     height: 110px;
     background-color: var(--white);
+}
+
+/* A small mouse on a white sticker with a navy outline: the left button orange for a click to boost (the desktop
+   boost gauge's outer corner), the right one (mouse-glyph--right) for the item (beside the item badge's E key cap). It
+   sits on a corner of its button, as the key caps do, and shows only on a desktop. */
+.mouse-glyph {
+    display: none;
+    position: absolute;
+    width: 44px;
+    height: 60px;
+    border-width: 5px;
+    border-bottom-width: 9px;
+    border-color: var(--navy);
+    border-radius: 22px;
+    background-color: var(--white);
+    overflow: hidden;
+}
+
+.mouse-glyph__button {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 17px;
+    height: 24px;
+    background-color: var(--orange);
+}
+
+.mouse-glyph__line {
+    position: absolute;
+    left: 15px;
+    top: 0;
+    width: 4px;
+    height: 24px;
+    background-color: var(--navy);
+}
+
+.mouse-glyph--right .mouse-glyph__button {
+    left: auto;
+    right: 0;
+}
+
+.mouse-glyph--right .mouse-glyph__line {
+    left: auto;
+    right: 15px;
+}
+
+.hud__item--desktop .hud__item-mouse {
+    display: flex;
+    right: 30px;
+    bottom: -36px;
+}
+
+.hud__boost--desktop .hud__boost-mouse {
+    display: flex;
+    right: -10px;
+    bottom: -18px;
+}
+
+/* On a desktop the first-item hint reads RIGHT CLICK with the E key cap beside it, as the badge shows both. */
+.hud__item-hint-key {
+    display: none;
+    margin-left: 14px;
+    padding: 0 14px 2px 14px;
+    border-width: 5px;
+    border-bottom-width: 9px;
+    border-radius: 12px;
+}
+
+.hud__item-hint-key-text {
+    font-size: 32px;
+}
+
+.hud__item-hint--desktop .hud__item-hint-label {
+    flex-direction: row;
+    align-items: center;
+}
+
+.hud__item-hint--desktop .hud__item-hint-text {
+    font-size: 46px;
+}
+
+.hud__item-hint--desktop .hud__item-hint-key {
+    display: flex;
+}
+
+/* The desktop start hint: HOLD TO DRIVE, a dot, CLICK TO BOOST and the SPACE key cap, which only a wide screen has
+   room for: the mouse first, since half of the desktop players never touch the keys. */
+.hud__start-sep {
+    width: 12px;
+    height: 12px;
+    margin-left: 24px;
+    border-radius: 6px;
+    background-color: var(--white);
+    opacity: 0.6;
+}
+
+.hud__start-click-text {
+    margin-left: 24px;
+}
+
+.hud__start-hint--desktop .hud__start-key {
+    display: none;
+    margin-left: 24px;
+}
+
+.hud__start--wide .hud__start-hint--desktop .hud__start-key {
+    display: flex;
 }
 
 /* Last, so the face of a stroke wins over every rule above that gives its text an outline or a drop: the outline is
