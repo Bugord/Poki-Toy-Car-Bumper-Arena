@@ -4312,10 +4312,10 @@
     rotate: 6deg;
 }
 
-.round-over--desktop .round-over__garage-wide { display: flex; }
-.round-over--desktop .round-over__garage { display: none; }
-.round-over--desktop .round-over__buttons { justify-content: center; }
-.round-over--desktop .round-over__buttons .round-over__button { width: 981px; }
+/* Only a wide desktop screen: an upright one, phone or narrow window, keeps the round CAR button beside NEXT MATCH. */
+.round-over--landscape.round-over--desktop .round-over__garage-wide { display: flex; }
+.round-over--landscape.round-over--desktop .round-over__garage { display: none; }
+.round-over--landscape.round-over--desktop .round-over__buttons { justify-content: center; }
 
 .round-over--landscape .podium__name { font-size: 50px; }
 
