@@ -33,6 +33,7 @@ namespace ToyCarArena.UI
         private readonly VisualElement start;
         private readonly VisualElement ghost;
         private readonly VisualElement[] pills;
+        private readonly HudScoreboard scoreboard;
         private readonly FeedRow[] feedRows = new FeedRow[3];
         private readonly Speech[] speeches = new Speech[2];
         private readonly float[] nextSpeech;
@@ -49,8 +50,10 @@ namespace ToyCarArena.UI
         public bool IsFeedVisible { get; private set; }
 
         public HudSocial(VisualElement root, HudViewModel model, VisualElement stick, VisualElement boost,
-            VisualElement timePill, VisualElement carsPill, VisualElement koPill, VisualElement settingsButton)
+            VisualElement timePill, VisualElement carsPill, VisualElement koPill, VisualElement settingsButton,
+            HudScoreboard scoreboard = null)
         {
+            this.scoreboard = scoreboard;
             this.root = root;
             this.model = model;
             this.stick = stick;
@@ -300,6 +303,8 @@ namespace ToyCarArena.UI
                     visible &= !Overlaps(pills[pill], rect);
                 }
                 visible &= !IsFeedVisible || !Overlaps(Feed, rect);
+                // The scoreboard is a tall column at the side: a bubble over it is hidden rather than pushed far down.
+                visible &= scoreboard == null || !scoreboard.IsVisible || !Overlaps(scoreboard.Element, rect);
                 visible &= !stick.ClassListContains("hud__stick--shown") || !Overlaps(stickDisc, rect);
                 visible &= !Overlaps(boost, rect);
                 for (var other = 0; other < i; other++) {

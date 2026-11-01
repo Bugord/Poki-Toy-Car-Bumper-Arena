@@ -65,6 +65,10 @@ namespace ToyCarArena.UI
         private const float PowerBlinkTime = 2f;
         private const float PowerBlinkRate = 5f;
 
+        // From this width against the height the arena, fitted to the height, leaves a side free for the scoreboard's
+        // full column; a narrower screen shows the leaders and the player's row only.
+        private const float ScoreboardWideAspect = 1.65f;
+
         // The safe sticker floats this high over the player's car, in metres: above its marker's arrow.
         private const float ShieldHeight = 4.2f;
 
@@ -138,6 +142,10 @@ namespace ToyCarArena.UI
         private const float PopupTopMargin = 572f;
         private const float PopupBottomMargin = 480f;
 
+        // About half the size of the sticker sprung to its full scale, in reference pixels, to keep it off the scoreboard.
+        private const float PopupHalfWidth = 260f;
+        private const float PopupHalfHeight = 90f;
+
         // The sticker sits this far above the point where the car went over the edge, in reference pixels, so the car
         // still shows under it.
         private const float PopupLift = 110f;
@@ -169,9 +177,8 @@ namespace ToyCarArena.UI
         private bool isBoostShownReady;
         private VisualElement knockoutBadge;
         private Label knockoutLabel;
-        // A match's score: the leader's chip in the cars pill, the comeback countdown and the safe sticker.
-        private int shownLeader = -1;
-        private int shownLeaderScore = -1;
+        // A match's score: the scoreboard of every car, the comeback countdown and the safe sticker.
+        private HudScoreboard scoreboard;
         private int shownRespawn = -1;
         private VisualElement respawn;
         private Label respawnCount;
@@ -266,8 +273,11 @@ namespace ToyCarArena.UI
             powerIcon = Root.Q<VisualElement>("power-icon");
             powerName = Root.Q<Label>("power-name");
             powerFill = Root.Q<VisualElement>("power-fill");
-            // In a match the player's score is always there, 0 included: it is the point of the match.
+            // In a match the player's score is always there, 0 included: it is the point of the match. The scoreboard
+            // shows the leader and everyone else, so the bar keeps only the time and the player's own knock-outs.
             knockoutBadge.EnableInClassList(KnockoutShownClass, ViewModel.IsMatch);
+            carsPill.style.display = ViewModel.IsMatch ? DisplayStyle.None : DisplayStyle.Flex;
+            scoreboard = HudScoreboard.Create(Root.Q<VisualElement>("scoreboard"), ViewModel);
             popupLayer = Root.Q<VisualElement>("ko-layer");
             nameLayer = Root.Q<VisualElement>("name-layer");
             start = Root.Q<VisualElement>("start");
@@ -294,7 +304,8 @@ namespace ToyCarArena.UI
             settingsButton.clicked += OpenSettings;
             controls.SetSettingsButton(settingsButton);
             Root.RegisterCallback<GeometryChangedEvent>(PlaceSettings);
-            social = new HudSocial(Root, ViewModel, stick, boostSlot, timePill, carsPill, knockoutBadge, settingsButton);
+            social = new HudSocial(Root, ViewModel, stick, boostSlot, timePill, carsPill, knockoutBadge, settingsButton,
+                scoreboard);
             teachingTime = idleSince = Time.unscaledTime;
             ViewModel.PlayerKnockout += ShowKnockout;
             ViewModel.CarOut += OnCarOut;
@@ -326,6 +337,7 @@ namespace ToyCarArena.UI
         public override void Dispose()
         {
             social?.Dispose();
+            scoreboard?.Dispose();
             ViewModel.PlayerKnockout -= ShowKnockout;
             ViewModel.CarOut -= OnCarOut;
             ViewModel.CarBack -= OnCarBack;
@@ -374,7 +386,7 @@ namespace ToyCarArena.UI
             }
 
             if (ViewModel.IsMatch) {
-                ShowLeader();
+                scoreboard?.RefreshCountdowns();
                 ShowRespawn();
             }
             else {
@@ -393,33 +405,6 @@ namespace ToyCarArena.UI
                 knockoutLabel.text = knockouts.ToString();
                 knockoutBadge.EnableInClassList(KnockoutShownClass, knockouts > 0 || ViewModel.IsMatch);
                 Pulse(knockoutBadge, KnockoutPopClass);
-            }
-        }
-
-        /// <summary>
-        /// In a match the middle of the bar is the leader: its chip (the player's, with its white ring, when the player
-        /// leads) and its knock-outs, so the player always sees the score to beat beside their own.
-        /// </summary>
-        private void ShowLeader()
-        {
-            var leader = ViewModel.LeaderIndex;
-            var score = ViewModel.ScoreOf(leader);
-            if (leader != shownLeader) {
-                shownLeader = leader;
-                chipRow.Clear();
-                chipRow.Add(CreateChip(ViewModel.ColorOf(leader), leader == ViewModel.PlayerIndex));
-                if (shownLeaderScore >= 0) {
-                    Pulse(carsPill, PopClass);
-                }
-            }
-
-            if (score != shownLeaderScore) {
-                if (shownLeaderScore >= 0) {
-                    Pulse(carsLeftLabel, CountPunchClass);
-                }
-
-                shownLeaderScore = score;
-                carsLeftLabel.text = score.ToString();
             }
         }
 
@@ -446,6 +431,49 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>
+        /// The scoreboard is up while the match runs, not over the start prompt, which takes the top of a narrow
+        /// screen while every score is still 0. It fades while a finger steers under it or the ghost joystick is taught
+        /// there, as the feed hides: the board never paints over the thumb.
+        /// </summary>
+        private void ShowScoreboard()
+        {
+            if (scoreboard == null) {
+                return;
+            }
+
+            var shown = IsShown && ViewModel.HasBegun;
+            var area = scoreboard.Element.worldBound;
+            var faded = shown && ((isStickShown && area.Overlaps(stickBase.worldBound)) ||
+                (ghostProgress > 0f && area.Overlaps(ghost.worldBound)));
+            scoreboard.Show(shown, faded);
+        }
+
+        /// <summary>
+        /// Moves something centred on <paramref name="point"/> and ending there at its bottom (a name, a sticker) off
+        /// the scoreboard the shorter way: towards the middle of the screen, past the board's inner side, or under it.
+        /// The board sits at the right, so towards the middle is to the left.
+        /// </summary>
+        private void ClearScoreboard(VisualElement layer, ref Vector2 point, float halfWidth, float height)
+        {
+            if (scoreboard == null || !scoreboard.IsVisible) {
+                return;
+            }
+
+            var min = layer.WorldToLocal(scoreboard.Element.worldBound.min) - Vector2.one * NameMargin;
+            var max = layer.WorldToLocal(scoreboard.Element.worldBound.max) + Vector2.one * NameMargin;
+            if (point.x + halfWidth > min.x && point.x - halfWidth < max.x && point.y > min.y && point.y - height < max.y) {
+                var aside = point.x + halfWidth - min.x;
+                var below = max.y + height - point.y;
+                if (aside <= below) {
+                    point.x = min.x - halfWidth;
+                }
+                else {
+                    point.y = max.y + height;
+                }
+            }
+        }
+
+        /// <summary>
         /// While the player's car is safe after coming back, a SAFE sticker floats over it, its bar running down with
         /// the safe time; the car itself is drawn see-through meanwhile.
         /// </summary>
@@ -466,6 +494,7 @@ namespace ToyCarArena.UI
             var height = shield.layout.height + NameMargin;
             point.x = Mathf.Clamp(point.x, halfWidth, Mathf.Max(halfWidth, size.x - halfWidth));
             point.y = Mathf.Clamp(point.y, height, Mathf.Max(height, size.y - NameMargin));
+            ClearScoreboard(nameLayer, ref point, halfWidth, height);
             shield.style.left = point.x;
             shield.style.top = point.y;
             shieldFill.style.width = Length.Percent(share * 100f);
@@ -530,11 +559,16 @@ namespace ToyCarArena.UI
         }
 
         // The top right corner, where the result and the garage keep theirs; on a narrow screen a full HUD bar reaches
-        // it, so there the gear goes under the bar.
+        // it, so there the gear goes under the bar. A match's bar is only the time and the player's knock-outs, which
+        // never reach the corner, and its scoreboard goes under the gear. The scoreboard is the whole column beside the
+        // arena only where the screen is wide enough to leave room for it at the side.
         private void PlaceSettings(GeometryChangedEvent evt)
         {
             var size = Root.layout.size;
-            settingsButton.EnableInClassList(SettingsUnderClass, size.x < size.y);
+            settingsButton.EnableInClassList(SettingsUnderClass, !ViewModel.IsMatch && size.x < size.y);
+            if (scoreboard != null && size.x > 0f && size.y > 0f) {
+                scoreboard.SetWide(size.x >= size.y * ScoreboardWideAspect);
+            }
         }
 
         private void OnResized(GeometryChangedEvent evt)
@@ -573,6 +607,10 @@ namespace ToyCarArena.UI
 
             point.x = Mathf.Clamp(point.x, PopupSideMargin, Mathf.Max(PopupSideMargin, size.x - PopupSideMargin));
             point.y = Mathf.Clamp(point.y, PopupTopMargin, Mathf.Max(PopupTopMargin, size.y - PopupBottomMargin));
+            // The sticker is centred on its point; keep the box it springs to off the scoreboard.
+            point.y += PopupHalfHeight;
+            ClearScoreboard(popupLayer, ref point, PopupHalfWidth, PopupHalfHeight * 2f);
+            point.y -= PopupHalfHeight;
 
             var popup = CreatePopup(popupCount++ % 2 == 0 ? -PopupTilt : PopupTilt, isRevenge, pickup);
             popup.style.left = point.x;
@@ -697,6 +735,7 @@ namespace ToyCarArena.UI
 
             var camera = Camera.main;
             if (ViewModel.IsMatch) {
+                ShowScoreboard();
                 ShowShield(camera);
             }
 
@@ -744,6 +783,7 @@ namespace ToyCarArena.UI
                 if (social.IsFeedVisible) {
                     ClearPill(social.Feed, ref point, halfWidth, height);
                 }
+                ClearScoreboard(nameLayer, ref point, halfWidth, height);
 
                 ref var placement = ref namePlacements[index];
                 placement.Anchor = point;
@@ -791,6 +831,9 @@ namespace ToyCarArena.UI
                 if (social.IsFeedVisible) {
                     maxLift = LimitNameLift(social.Feed, bounds, maxLift);
                 }
+                if (scoreboard != null && scoreboard.IsVisible) {
+                    maxLift = LimitNameLift(scoreboard.Element, bounds, maxLift);
+                }
 
                 maxLift = Mathf.Max(0f, maxLift);
                 var minY = bounds.y - maxLift;
@@ -823,6 +866,11 @@ namespace ToyCarArena.UI
         // A name below a HUD pill may rise only as far as its bottom edge, including the usual clearance.
         private float LimitNameLift(VisualElement pill, Rect bounds, float maxLift)
         {
+            // A part of the bar the mode does not use (a match's cars pill) has no place to keep clear of.
+            if (pill.resolvedStyle.display == DisplayStyle.None) {
+                return maxLift;
+            }
+
             var min = nameLayer.WorldToLocal(pill.worldBound.min) - Vector2.one * NameMargin;
             var max = nameLayer.WorldToLocal(pill.worldBound.max) + Vector2.one * NameMargin;
             if (bounds.xMax > min.x && bounds.xMin < max.x && bounds.yMin >= max.y) {
@@ -834,6 +882,10 @@ namespace ToyCarArena.UI
 
         private void ClearPill(VisualElement pill, ref Vector2 point, float halfWidth, float height)
         {
+            if (pill.resolvedStyle.display == DisplayStyle.None) {
+                return;
+            }
+
             var min = nameLayer.WorldToLocal(pill.worldBound.min) - Vector2.one * NameMargin;
             var max = nameLayer.WorldToLocal(pill.worldBound.max) + Vector2.one * NameMargin;
             if (point.x + halfWidth > min.x && point.x - halfWidth < max.x &&
@@ -992,7 +1044,7 @@ namespace ToyCarArena.UI
 
         // The knock-out star, eight points, built from two navy squares under two gold ones, each pair a plain one and
         // one turned by 45 degrees (ko-star in ui_screens), so the build carries no image for it.
-        private static VisualElement CreateStar(string sizeClass)
+        internal static VisualElement CreateStar(string sizeClass)
         {
             var star = new VisualElement { pickingMode = PickingMode.Ignore };
             star.AddToClassList("ko-star");
