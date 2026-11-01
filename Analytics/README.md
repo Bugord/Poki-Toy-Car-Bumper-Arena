@@ -12,3 +12,5 @@
 | 0.1.0 | 183 визита, первый тест Poki, без рекламы | [analysis.md](v0.1.0/analysis.md) |
 | 0.1.1 | 554 визита, Player Fit Test пройден (3m 3s, 27% дольше 3 мин), без рекламы | [analysis.md](v0.1.1/analysis.md) |
 | 0.2.0 | 574 визита, Player Fit Test не пройден (2m 54s, 25% дольше 3 мин), без рекламы | [analysis.md](v0.2.0/analysis.md) |
+| 0.3.0 | 618 визитов, Player Fit Test пройден (3m 54s, 35% дольше 3 мин), без рекламы | [analysis.md](v0.3.0/analysis.md) |
+| 0.5.1 | 578 визитов, Player Fit Test пройден (4m 4s, 36% дольше 3 мин), без рекламы; выгрузки v0.4.0 нет | [analysis.md](v0.5.1/analysis.md) |
