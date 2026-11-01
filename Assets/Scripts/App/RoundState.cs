@@ -15,17 +15,22 @@ using UnityEngine;
 namespace ToyCarArena.App
 {
     /// <summary>
-    /// Plays one round on the loaded arena: begins it, shows the HUD and lifts the curtain, and waits for the round to
-    /// be decided. The platform hears gameplayStart as the round begins and gameplayStop the moment it is decided, the
+    /// Plays one round on the loaded arena: places the cars, shows the HUD and lifts the curtain, counts the kick-off
+    /// down and begins the round at GO, and waits for the round to be decided. The platform hears gameplayStart as the round begins and gameplayStop the moment it is decided, the
     /// player's fall included; the cars still on the arena go on for <see cref="GameTuning.RoundSettings.ResultDelay"/>
     /// (<see cref="GameTuning.RoundSettings.OutResultDelay"/> after a fall, which reads at once), so the last fall plays
     /// out before the result. The first round loads the arena itself; a restart comes here with a fresh one already
     /// loaded under the curtain.
     /// <para>
     /// The first round of a visit waits for the player: the cars stand on the arena under the HUD's start prompt until
-    /// the player first steers or boosts (<see cref="PlayerDriver.HasActed"/>), and only then does the round begin and
-    /// the platform hear gameplayStart, so nothing plays before the player is there. A later round comes from PLAY
-    /// AGAIN, which is that input, and begins at once.
+    /// the player first steers or boosts (<see cref="PlayerDriver.HasActed"/>), so nothing plays before the player is
+    /// there. A later round comes from PLAY AGAIN, which is that input, and goes on as soon as the curtain is up.
+    /// </para>
+    /// <para>
+    /// Then every round counts down 3, 2, 1 on the HUD (<see cref="GameTuning.RoundSettings.KickoffFrom"/>) and begins
+    /// at GO: the cars stand still and the clock, the bots and the floor wait until then, so a round never starts in the
+    /// middle of the curtain lifting or of the player reaching for the controls. The platform hears gameplayStart and the
+    /// round's start at GO; the match's time runs from there.
     /// </para>
     /// <para>
     /// The decided round moves the session on (<see cref="SessionProgress"/>, before the next arena is built from it) and
@@ -132,9 +137,6 @@ namespace ToyCarArena.App
                 pickupCar.ItemLanded += OnItemLanded;
                 pickupCar.ItemUsed += OnItemUsed;
                 pickups.Collected += OnCollected;
-                if (!waitsForPlayer) {
-                    BeginRound();
-                }
 
                 var hudRound = new HudRound(round, driver, tuning.Controls, waitsForPlayer, roundNumber,
                     playerProgress.TotalXp == 0);
@@ -143,8 +145,10 @@ namespace ToyCarArena.App
 
                 if (waitsForPlayer) {
                     await UniTask.WaitUntil(() => driver.HasActed, cancellationToken: token);
-                    BeginRound();
                 }
+
+                await Kickoff(hud.ViewModel, tuning.Round, token);
+                BeginRound();
 
                 var result = await finished.Task.AttachExternalCancellation(token);
                 platform.GameplayStop();
@@ -191,6 +195,24 @@ namespace ToyCarArena.App
                     await hud.CloseAsync();
                 }
             }
+        }
+
+        /// <summary>
+        /// Counts 3, 2, 1 on the HUD, a step at a time on unscaled time, and puts up GO! as it returns: the round begins
+        /// under GO!, which the HUD takes away on its own.
+        /// </summary>
+        private static async UniTask Kickoff(HudViewModel hud, GameTuning.RoundSettings settings, CancellationToken token)
+        {
+            if (settings.KickoffFrom <= 0) {
+                return;
+            }
+
+            for (var step = settings.KickoffFrom; step > 0; step--) {
+                hud.ShowKickoff(step, settings.KickoffStep);
+                await UniTask.Delay(TimeSpan.FromSeconds(settings.KickoffStep), true, cancellationToken: token);
+            }
+
+            hud.ShowKickoff(0, settings.KickoffGo);
         }
     }
 }

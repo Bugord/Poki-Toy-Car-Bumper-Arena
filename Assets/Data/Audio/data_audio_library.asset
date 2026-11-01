@@ -71,6 +71,11 @@ MonoBehaviour:
     - {fileID: 8300000, guid: 8affd8419eeb4049908737983249602d, type: 3}
     volume: 0.6
     pitchJitter: 0
+  kickoffGo:
+    clips:
+    - {fileID: 8300000, guid: b02fe5e8179c4573892ccd4600cdf4cd, type: 3}
+    volume: 0.9
+    pitchJitter: 0
   win:
     clips:
     - {fileID: 8300000, guid: a3d78c893df1431b80740cb1c807a2b1, type: 3}

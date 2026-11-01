@@ -185,6 +185,33 @@ namespace ToyCarArena.UI
         // The tilt of the sticker, in degrees, every other one the other way so two at once do not look alike.
         private const float PopupTilt = 7f;
 
+        // The kick-off's look, in unscaled seconds, degrees and reference pixels: a number springs in from small and
+        // tilted (a little overshoot), swells a touch while it holds and shrinks away at the end of its step; GO! springs
+        // harder, its ring and rays fly out, and it swells away. Its timing is the round's (GameTuning.Round.Kickoff*).
+        private const string KickoffShownClass = "kickoff--shown";
+        private const float KickoffEnter = 0.24f;
+        private const float KickoffLeave = 0.16f;
+        private const float KickoffFadeIn = 0.06f;
+        private const float KickoffStartScale = 0.2f;
+        private const float KickoffHoldGrowth = 0.06f;
+        private const float KickoffTilt = 6f;
+        private const float KickoffStartTilt = 20f;
+        private const float KickoffDrop = 90f;
+        private const float KickoffOvershoot = 2.2f;
+        private const float KickoffGoOvershoot = 3f;
+        private const float KickoffGoTilt = -5f;
+        private const float KickoffGoLeave = 0.24f;
+        private const float KickoffGoLeaveScale = 1.4f;
+        private const float KickoffBurstTime = 0.5f;
+        private const float KickoffRingScale = 4.2f;
+        private const float KickoffRingOpacity = 0.7f;
+        private const float KickoffRayFrom = 190f;
+        private const float KickoffRayTo = 640f;
+        private const int KickoffRays = 12;
+
+        // The digits the kick-off counts with, made once (GameTuning.Round.KickoffFrom is at most 5).
+        private static readonly string[] KickoffDigits = { "0", "1", "2", "3", "4", "5" };
+
         private readonly HudControls controls;
         private readonly IAudioService audioService;
         private CancellationTokenSource lifetime;
@@ -277,6 +304,15 @@ namespace ToyCarArena.UI
         private bool hasTapHint;
         private float tapHintTime;
         private float tapHintProgress;
+        private VisualElement kickoff;
+        private VisualElement kickoffNumber;
+        private Label kickoffDigit;
+        private Label kickoffDigitFace;
+        private VisualElement kickoffGo;
+        private VisualElement kickoffRing;
+        private VisualElement[] kickoffRays;
+        private int shownKickoffStep = HudViewModel.NoKickoff;
+        private bool isKickoffShown;
 
         private struct NamePlacement
         {
@@ -351,6 +387,7 @@ namespace ToyCarArena.UI
             ghostFinger.style.rotate = new Rotate(GhostFingerTilt);
             boostHint = Root.Q<VisualElement>("boost-hint");
             tapHint = Root.Q<VisualElement>("tap-hint");
+            BuildKickoff();
             settingsButton = Root.Q<Button>("settings-button");
             settingsButton.RemoveFromClassList(Button.ussClassName);
             // Space is the boost: a focused button would take it as a click and open the settings mid-round.
@@ -399,6 +436,7 @@ namespace ToyCarArena.UI
             Root.schedule.Execute(RefreshStick).Every(BoostRefreshInterval);
             Root.schedule.Execute(RefreshTeaching).Every(BoostRefreshInterval);
             Root.schedule.Execute(RefreshNames).Every(BoostRefreshInterval);
+            Root.schedule.Execute(RefreshKickoff).Every(BoostRefreshInterval);
         }
 
         public override void Dispose()
@@ -622,6 +660,137 @@ namespace ToyCarArena.UI
             start.RemoveFromClassList(StartBobClass);
             start.AddToClassList(StartLeaveClass);
             start.schedule.Execute(() => start.RemoveFromClassList(StartShownClass)).StartingIn(StartLeaveDuration);
+        }
+
+        private void BuildKickoff()
+        {
+            kickoff = Root.Q<VisualElement>("kickoff");
+            kickoffNumber = Root.Q<VisualElement>("kickoff-number");
+            kickoffDigit = Root.Q<Label>("kickoff-digit");
+            kickoffDigitFace = Root.Q<Label>("kickoff-digit-face");
+            kickoffGo = Root.Q<VisualElement>("kickoff-go");
+            kickoffRing = Root.Q<VisualElement>("kickoff-ring");
+            var burst = Root.Q<VisualElement>("kickoff-burst");
+            kickoffRays = new VisualElement[KickoffRays];
+            for (var i = 0; i < KickoffRays; i++) {
+                var ray = new VisualElement { pickingMode = PickingMode.Ignore };
+                ray.AddToClassList("kickoff__ray");
+                ray.EnableInClassList("kickoff__ray--short", i % 2 == 1);
+                burst.Add(ray);
+                kickoffRays[i] = ray;
+            }
+        }
+
+        /// <summary>
+        /// Shows the step of the kick-off the round state has reached: a tick and a number popping in for 3, 2 and 1, the
+        /// GO! sound and its burst for GO!, each animated by its age on unscaled time and gone at the end of its step.
+        /// </summary>
+        private void RefreshKickoff()
+        {
+            var step = ViewModel.KickoffStep;
+            if (step == HudViewModel.NoKickoff) {
+                SetKickoffShown(false);
+                return;
+            }
+
+            var age = Time.unscaledTime - ViewModel.KickoffStepTime;
+            var duration = ViewModel.KickoffStepDuration;
+            var isGo = step == 0;
+            if (step != shownKickoffStep) {
+                shownKickoffStep = step;
+                kickoffNumber.style.display = isGo ? DisplayStyle.None : DisplayStyle.Flex;
+                kickoffGo.style.display = isGo ? DisplayStyle.Flex : DisplayStyle.None;
+                kickoffRing.style.display = isGo ? DisplayStyle.Flex : DisplayStyle.None;
+                if (!isGo) {
+                    var digit = KickoffDigits[Mathf.Clamp(step, 0, KickoffDigits.Length - 1)];
+                    kickoffDigit.text = digit;
+                    kickoffDigitFace.text = digit;
+                }
+
+                if (age < duration) {
+                    audioService.Play(isGo ? audioService.Library.KickoffGo : audioService.Library.CountdownTick);
+                }
+            }
+
+            if (age >= duration) {
+                SetKickoffShown(false);
+                return;
+            }
+
+            SetKickoffShown(true);
+            if (isGo) {
+                AnimateKickoffGo(age, duration);
+            }
+            else {
+                AnimateKickoffNumber(kickoffNumber, step, age, duration);
+            }
+        }
+
+        private void SetKickoffShown(bool isShown)
+        {
+            if (isShown != isKickoffShown) {
+                isKickoffShown = isShown;
+                kickoff.EnableInClassList(KickoffShownClass, isShown);
+            }
+        }
+
+        // Springs in from small, tilted the other way every other number and dropping into place, swells a touch while
+        // it holds, and shrinks away over the end of its step.
+        private static void AnimateKickoffNumber(VisualElement sticker, int step, float age, float duration)
+        {
+            var side = step % 2 == 0 ? -1f : 1f;
+            var spring = EaseOutBack(Mathf.Clamp01(age / KickoffEnter), KickoffOvershoot);
+            var hold = Mathf.Clamp01((age - KickoffEnter) / Mathf.Max(0.01f, duration - KickoffEnter));
+            var scale = Mathf.LerpUnclamped(KickoffStartScale, 1f, spring) * (1f + KickoffHoldGrowth * hold);
+            var opacity = Mathf.Clamp01(age / KickoffFadeIn);
+            var leave = Mathf.Min(KickoffLeave, duration * 0.4f);
+            var gone = Mathf.Clamp01((age - (duration - leave)) / leave);
+            scale *= 1f - (1f - KickoffStartScale) * gone * gone;
+            opacity *= 1f - gone;
+            sticker.style.scale = new Scale(new Vector3(scale, scale, 1f));
+            sticker.style.rotate = new Rotate(side * Mathf.LerpUnclamped(KickoffStartTilt, KickoffTilt, spring));
+            sticker.style.translate = new Translate(0f, -KickoffDrop * (1f - spring));
+            sticker.style.opacity = opacity;
+        }
+
+        // GO! springs in harder over a gold ring that widens and fades and a burst of rays flying out, and swells away
+        // over its last moment, while the round already runs under it.
+        private void AnimateKickoffGo(float age, float duration)
+        {
+            var spring = EaseOutBack(Mathf.Clamp01(age / KickoffEnter), KickoffGoOvershoot);
+            var scale = Mathf.LerpUnclamped(KickoffStartScale, 1f, spring);
+            var opacity = Mathf.Clamp01(age / KickoffFadeIn);
+            var leave = Mathf.Min(KickoffGoLeave, duration * 0.4f);
+            var gone = Mathf.Clamp01((age - (duration - leave)) / leave);
+            scale *= Mathf.Lerp(1f, KickoffGoLeaveScale, gone);
+            opacity *= 1f - gone;
+            kickoffGo.style.scale = new Scale(new Vector3(scale, scale, 1f));
+            kickoffGo.style.rotate = new Rotate(Mathf.LerpUnclamped(-KickoffStartTilt, KickoffGoTilt, spring));
+            kickoffGo.style.opacity = opacity;
+
+            var burst = Mathf.Clamp01(age / KickoffBurstTime);
+            var outward = 1f - (1f - burst) * (1f - burst) * (1f - burst);
+            var ringScale = Mathf.Lerp(0.4f, KickoffRingScale, outward);
+            kickoffRing.style.scale = new Scale(new Vector3(ringScale, ringScale, 1f));
+            kickoffRing.style.opacity = KickoffRingOpacity * (1f - burst);
+
+            var distance = Mathf.Lerp(KickoffRayFrom, KickoffRayTo, outward);
+            var rayScale = burst < 0.35f ? Mathf.Clamp01(burst / 0.12f) : 1f - (burst - 0.35f) / 0.65f;
+            for (var i = 0; i < kickoffRays.Length; i++) {
+                var angle = (i + 0.5f) * 360f / kickoffRays.Length;
+                var radians = angle * Mathf.Deg2Rad;
+                var reach = i % 2 == 1 ? distance * 0.85f : distance;
+                var ray = kickoffRays[i];
+                ray.style.translate = new Translate(Mathf.Sin(radians) * reach, -Mathf.Cos(radians) * reach);
+                ray.style.rotate = new Rotate(angle);
+                ray.style.scale = new Scale(new Vector3(rayScale, rayScale, 1f));
+            }
+        }
+
+        private static float EaseOutBack(float t, float overshoot)
+        {
+            var u = t - 1f;
+            return 1f + (overshoot + 1f) * u * u * u + overshoot * u * u;
         }
 
         private void OpenSettings()
@@ -898,8 +1067,8 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>
-        /// TAP TO USE or PRESS E over the slot the first time in a visit an item lands in it, the button pulsing with
-        /// it, for a moment; the visit's controls remember it was shown.
+        /// TAP TO USE, or RIGHT CLICK with the E key cap on a desktop, over the slot the first time in a visit an item
+        /// lands in it, the button pulsing with it, for a moment; the visit's controls remember it was shown.
         /// </summary>
         private void RefreshItemHint(bool isTouch)
         {
@@ -913,7 +1082,7 @@ namespace ToyCarArena.UI
                 isItemHintShown = true;
                 itemHintTime = now;
                 nextItemPulse = now;
-                var text = Strings.Get(isTouch ? "hud.tap_to_use" : "hud.press_e");
+                var text = Strings.Get(isTouch ? "hud.tap_to_use" : "hud.right_click");
                 itemHintText.text = text;
                 itemHintFace.text = text;
                 itemHint.AddToClassList(ItemHintShownClass);
@@ -1437,7 +1606,7 @@ namespace ToyCarArena.UI
             // The visit's first rounds keep the ghost wherever no finger steers: it yields to a touch and comes back
             // once the finger lifts.
             var keepsGhost = isTouch && ViewModel.RoundNumber <= ViewModel.Controls.GhostStickRounds &&
-                (ViewModel.IsRunning || ViewModel.IsWaitingForPlayer);
+                (ViewModel.IsRunning || ViewModel.IsBeforeStart);
 
             if (ViewModel.LastTouchTime > seenTouchTime) {
                 seenTouchTime = ViewModel.LastTouchTime;

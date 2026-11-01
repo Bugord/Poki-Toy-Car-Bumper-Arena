@@ -170,7 +170,7 @@ namespace ToyCarArena.UI
             var teachesOverFeed = start.ClassListContains("hud__start--shown") ||
                 (ghost.resolvedStyle.display != DisplayStyle.None && ghost.resolvedStyle.opacity > 0f &&
                     Feed.worldBound.Overlaps(ghost.worldBound));
-            IsFeedVisible = count > 0 && isShown && !model.IsWaitingForPlayer && !touchesFeed && !teachesOverFeed;
+            IsFeedVisible = count > 0 && isShown && !model.IsBeforeStart && !touchesFeed && !teachesOverFeed;
             Feed.style.visibility = IsFeedVisible ? Visibility.Visible : Visibility.Hidden;
             for (var i = 0; i < feedRows.Length; i++) {
                 var row = feedRows[i];

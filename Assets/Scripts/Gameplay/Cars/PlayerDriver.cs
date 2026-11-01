@@ -18,15 +18,16 @@ namespace ToyCarArena.Gameplay.Cars
     /// steers (<see cref="IOnScreenControls.ShowJoystick"/>), so the player sees where its middle is and how hard they
     /// push.</item>
     /// </list>
-    /// A drag wins over the keys while it lasts. Boost (Space, the right mouse button, a gamepad's south button or the
-    /// boost button, a second finger or a short tap on a touch screen) fires the car's boost towards where it is
-    /// steered. A released tap remembers nonzero steering briefly, so letting go to tap keeps the intended boost line.
-    /// In a long match the item key (E, Left Shift, a gamepad's west button or the item button) uses the item the car
-    /// holds (<see cref="ArenaPickups.Use"/>).
+    /// A drag wins over the keys while it lasts. Boost (Space, a short click of the left mouse button, a gamepad's south
+    /// button or the boost button, a second finger or a short tap on a touch screen) fires the car's boost towards
+    /// where it is steered. A released tap or click remembers nonzero steering briefly, so letting go to tap keeps the
+    /// intended boost line. In a long match the item key (E, Left Shift, the right mouse button, a gamepad's west button
+    /// or the item button) uses the item the car holds (<see cref="ArenaPickups.Use"/>).
     /// Once the round is over the
     /// car rolls to a stop, so a click on the result screen does not steer it, and boost does nothing.
     /// Before the round begins it only watches for the player's first steer or boost (<see cref="HasActed"/>), which the
-    /// first round of a visit waits for.
+    /// first round of a visit waits for; through the kick-off's 3, 2, 1 the car stands, a boost or an item pressed then
+    /// is dropped, and a finger already down shows its joystick, so whatever the player holds drives the car from GO.
     /// Near the edge it takes away the part of the steer that points off the arena, as much as the round's
     /// <see cref="RoundDifficulty.EdgeAssist"/> says, so a new player who steers too far stops at the edge instead of
     /// driving off it, and a boost there does not throw it off either; a hit still pushes the car off.
@@ -155,7 +156,8 @@ namespace ToyCarArena.Gameplay.Cars
         {
             if (IsWaiting) {
                 WatchForFirstInput();
-                return false;
+                return input.TryGetDrag(out var held) && !held.IsMouse &&
+                    tuning.Controls.TouchSteering == GameTuning.TouchSteering.Joystick && TryShowJoystick(held);
             }
 
             var car = round.Player;
@@ -230,8 +232,8 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         private bool TryBoost(Car car, BoostInputMethod method)
         {
-            // Only a released tap uses memory: other controls keep their usual steering/nose boost.
-            var isTap = method == BoostInputMethod.Tap;
+            // Only a released tap or click uses memory: other controls keep their usual steering/nose boost.
+            var isTap = method == BoostInputMethod.Tap || method == BoostInputMethod.Mouse;
             var heading = steer;
             if (isTap && heading == Vector3.zero && Time.unscaledTime - lastSteerTime <= tuning.Controls.TapBoostMemory) {
                 heading = lastSteer;
@@ -273,7 +275,8 @@ namespace ToyCarArena.Gameplay.Cars
             }
 
             HasActed = true;
-            if (method == InputMethod.Touch && IsWaiting) {
+            // The press that starts the round (or comes during the kick-off) only starts it, finger or mouse.
+            if (IsWaiting) {
                 input.CancelTapBoost();
             }
 
@@ -293,10 +296,8 @@ namespace ToyCarArena.Gameplay.Cars
         {
             waitTime += Time.deltaTime;
             if (input.TryGetDrag(out var drag)) {
-                if (!drag.IsMouse) {
-                    input.CancelTapBoost();
-                }
-
+                // Neither a tap nor a click held across the start boosts as it lifts.
+                input.CancelTapBoost();
                 HasActed = true;
             }
             else if (input.CurrentMoveInput != Vector2.zero) {
@@ -320,23 +321,35 @@ namespace ToyCarArena.Gameplay.Cars
 
         private void SteerByJoystick(Car car, PointerDrag drag)
         {
-            var controls = tuning.Controls;
+            var stick = PlaceJoystick(drag);
+            var throttle = Mathf.InverseLerp(tuning.Controls.JoystickDeadZone, 1f, stick.magnitude);
+            Drive(car, arenaCamera.ScreenToGroundDirection(stick), throttle);
+        }
+
+        // Before GO the joystick only shows, so the thumb finds it during the kick-off and keeps its centre at GO.
+        private bool TryShowJoystick(PointerDrag drag)
+        {
+            PlaceJoystick(drag);
+            return true;
+        }
+
+        /// <returns>The stick: where the finger is from the joystick's middle, 1 at its radius.</returns>
+        private Vector2 PlaceJoystick(PointerDrag drag)
+        {
             if (drag.Id != joystickDragId) {
                 joystickDragId = drag.Id;
                 joystickCenter = drag.Start;
             }
 
-            var radius = controls.JoystickRadius * Mathf.Min(Screen.width, Screen.height);
+            var radius = tuning.Controls.JoystickRadius * Mathf.Min(Screen.width, Screen.height);
             var offset = drag.Position - joystickCenter;
             if (offset.magnitude > radius) {
                 joystickCenter = drag.Position - offset.normalized * radius;
                 offset = drag.Position - joystickCenter;
             }
 
-            var stick = offset / radius;
-            var throttle = Mathf.InverseLerp(controls.JoystickDeadZone, 1f, stick.magnitude);
-            Drive(car, arenaCamera.ScreenToGroundDirection(stick), throttle);
             onScreenControls.ShowJoystick(joystickCenter, joystickCenter + offset, radius);
+            return offset / radius;
         }
 
         /// <summary>
