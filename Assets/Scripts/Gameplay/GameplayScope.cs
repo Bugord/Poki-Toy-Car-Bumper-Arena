@@ -4,6 +4,7 @@ using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Bots;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Input;
+using ToyCarArena.Gameplay.Pickups;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
 using VContainer;
@@ -147,6 +148,10 @@ namespace ToyCarArena.Gameplay
             builder.RegisterInstance(mechanicArt, typeof(MechanicArt));
             builder.RegisterEntryPoint<BotDriver>();
             builder.RegisterEntryPoint<ArenaCrumble>().AsSelf();
+            // The variant playing now: the scene's own in a round, turning with the floor's cycles in a match.
+            builder.Register<ArenaVariants>(Lifetime.Singleton);
+            // The abilities on the floor of a long match; in a round of last-car-standing it builds nothing.
+            builder.RegisterEntryPoint<ArenaPickups>().AsSelf().WithParameter(transform);
             // The objects of the sandbox and tabletop variants: each does nothing unless its variant names it.
             builder.RegisterEntryPoint<ArenaCrab>().AsSelf().WithParameter(transform);
             builder.RegisterEntryPoint<ArenaMounds>().AsSelf().WithParameter(transform);

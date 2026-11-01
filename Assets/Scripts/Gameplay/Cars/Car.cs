@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
 using VContainer;
@@ -33,7 +34,19 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public event Action<CarHit> Hit;
 
+        /// <summary>
+        /// Raised when the car takes a pickup in a long match, whatever the kind (one that acts once, a shockwave,
+        /// included); the HUD and the analytics listen to the player's.
+        /// </summary>
+        public event Action<PickupKind> PickedUp;
+
+        /// <summary>
+        /// Raised when the car's shield takes a hit and is gone, for its effect.
+        /// </summary>
+        public event Action ShieldPopped;
+
         private GameTuning.RoundSettings settings;
+        private GameTuning.PickupSettings pickupSettings;
         private GameTuning.CarSettings carSettings;
         private GameTuning.BoostSettings boostSettings;
         private RoundDifficulty difficulty;
@@ -44,6 +57,17 @@ namespace ToyCarArena.Gameplay.Cars
         /// Whether the car has fallen off and left the round.
         /// </summary>
         public bool IsOut { get; private set; }
+
+        /// <summary>
+        /// Whether a car that came back in a match is still safe: it passes through the other cars, neither pushing nor
+        /// pushed, so it earns and gives no knock-out credit, hazards leave it be and bots do not pick it.
+        /// </summary>
+        public bool IsInvulnerable { get; private set; }
+
+        /// <summary>
+        /// Whether the car is in play for others to go after: on the arena and not safe.
+        /// </summary>
+        public bool IsTargetable => !IsOut && !IsInvulnerable;
 
         /// <summary>
         /// Whether the player drives this car; set by the round when it places the car.
@@ -68,24 +92,71 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public float LastRingFallTime { get; private set; } = float.NegativeInfinity;
 
+        /// <summary>
+        /// The ability a pickup gave the car and that is still running (<see cref="PickupKind.None"/> for none); one at
+        /// a time, a new one replacing the old. It ends with its time, a shield also with the hit it takes, and a fall
+        /// ends any.
+        /// </summary>
+        public PickupKind Ability { get; private set; }
+
+        /// <summary>
+        /// How much of the running ability is left, from 1 when it was picked up to 0; 0 for none.
+        /// </summary>
+        public float AbilityShare
+        {
+            get
+            {
+                if (Ability == PickupKind.None || abilityLength <= 0f) {
+                    return 0f;
+                }
+
+                return Mathf.Clamp01((abilityEndTime - Time.time) / abilityLength);
+            }
+        }
+
+        /// <summary>
+        /// Seconds the running ability has left; 0 for none.
+        /// </summary>
+        public float AbilityTimeLeft => Ability == PickupKind.None ? 0f : Mathf.Max(0f, abilityEndTime - Time.time);
+
+        /// <summary>
+        /// Whether a shield is up: the next real hit, of a car or of the arena, is taken whole.
+        /// </summary>
+        public bool IsShielded => Ability == PickupKind.Shield;
+
+        private float abilityEndTime;
+        private float abilityLength;
+        // Until this time (Time.time) the car that made a hit the shield took is not credited, however long it presses on.
+        private float shieldGraceEnd = float.NegativeInfinity;
+
         [Inject]
         private void Construct(GameTuning tuning, RoundDifficulty difficulty)
         {
+            this.pickupSettings = tuning.Pickups;
             this.settings = tuning.Round;
             this.carSettings = tuning.Car;
             this.boostSettings = tuning.Boost;
             this.difficulty = difficulty;
         }
 
+        private Collider[] colliders;
+        private CarLook look;
+
         private void Awake()
         {
             Movement = GetComponent<CarMovement>();
+            colliders = GetComponents<Collider>();
+            look = GetComponent<CarLook>();
         }
 
         private void Update()
         {
             if (IsOut && transform.position.y < settings.RemoveHeight) {
                 gameObject.SetActive(false);
+            }
+
+            if (Ability != PickupKind.None && Time.time >= abilityEndTime) {
+                ClearAbility();
             }
         }
 
@@ -95,7 +166,160 @@ namespace ToyCarArena.Gameplay.Cars
         public void TakeOut()
         {
             IsOut = true;
+            ClearAbility();
             Movement.Drive(Vector3.zero, 0f);
+        }
+
+        /// <summary>
+        /// The car takes a pickup and its ability starts at once. A timed kind (heavy, shield, turbo) replaces whatever
+        /// ability was running; a shockwave leaves nothing running (the ring itself is the arena's business) but is
+        /// still reported.
+        /// </summary>
+        public void TakePickup(PickupKind kind)
+        {
+            if (kind == PickupKind.None) {
+                return;
+            }
+
+            var length = pickupSettings.DurationOf(kind);
+            if (length > 0f) {
+                ClearAbility();
+                Ability = kind;
+                abilityLength = length;
+                abilityEndTime = Time.time + length;
+                switch (kind) {
+                    case PickupKind.Heavy:
+                        Movement.SetMassScale(pickupSettings.Heavy.MassScale);
+                        break;
+                    case PickupKind.Turbo:
+                        Movement.SetBoostCooldown(pickupSettings.Turbo.BoostCooldown);
+                        break;
+                }
+            }
+
+            PickedUp?.Invoke(kind);
+        }
+
+        /// <summary>
+        /// Ends the running ability, if any, and puts the car's weight and boost back as tuned.
+        /// </summary>
+        public void ClearAbility()
+        {
+            if (Ability == PickupKind.None) {
+                return;
+            }
+
+            Ability = PickupKind.None;
+            abilityLength = 0f;
+            Movement.SetMassScale(1f);
+            Movement.SetBoostCooldown(-1f);
+        }
+
+        /// <summary>
+        /// Takes a hit into the shield if one is up: true, the shield is spent and the caller must do no harm to the
+        /// car; false when there is none. For the hits that are not the car's own collisions (a shockwave).
+        /// </summary>
+        public bool TryAbsorbHit()
+        {
+            if (Ability != PickupKind.Shield) {
+                return false;
+            }
+
+            ClearAbility();
+            shieldGraceEnd = Time.time + pickupSettings.Shield.Grace;
+            ShieldPopped?.Invoke();
+            return true;
+        }
+
+        /// <summary>
+        /// A shockwave from <paramref name="picker"/> knocked this car: it counts as hit by that car, so a fall that
+        /// follows is the picker's knock-out, the way a push of a car is.
+        /// </summary>
+        public void HitByShockwave(Car picker)
+        {
+            LastHitBy = picker;
+            LastHitTime = Time.time;
+        }
+
+        /// <summary>
+        /// Brings the car back into a match after a fall, at rest at <paramref name="position"/>, as fresh as when it was
+        /// placed: nobody hit it, it has not boosted, it is not off balance, and it is safe until the round says
+        /// otherwise (<see cref="SetInvulnerable"/>). The same object comes back, so everything that holds the car
+        /// (the drivers, the HUD, the effects) keeps it.
+        /// </summary>
+        public void Respawn(Vector3 position, Quaternion rotation, IReadOnlyList<Car> cars)
+        {
+            // Put away far below the arena, it is woken up first: a collider out of play has nothing to ignore.
+            if (!gameObject.activeSelf) {
+                gameObject.SetActive(true);
+            }
+
+            IsOut = false;
+            LastHitBy = null;
+            LastHitTime = float.NegativeInfinity;
+            LastHazardTime = float.NegativeInfinity;
+            LastRingFallTime = float.NegativeInfinity;
+            ClearAbility();
+            Movement.Respawn(position, rotation);
+            IsInvulnerable = false;
+            SetInvulnerable(true, cars);
+        }
+
+        /// <summary>
+        /// Makes the car safe or ends it: while safe, the physics ignores it against every other car in
+        /// <paramref name="cars"/>, so it neither pushes nor is pushed, and it is drawn half seen through. A pair of two
+        /// safe cars keeps ignoring each other until the second ends.
+        /// </summary>
+        public void SetInvulnerable(bool value, IReadOnlyList<Car> cars)
+        {
+            if (IsInvulnerable == value) {
+                return;
+            }
+
+            IsInvulnerable = value;
+            for (var i = 0; i < cars.Count; i++) {
+                var other = cars[i];
+                // An inactive collider forgets what it ignores anyway, and the physics refuses to be told about it.
+                if (other == this || !other.gameObject.activeInHierarchy || (!value && other.IsInvulnerable)) {
+                    continue;
+                }
+
+                foreach (var mine in colliders) {
+                    foreach (var theirs in other.colliders) {
+                        Physics.IgnoreCollision(mine, theirs, value);
+                    }
+                }
+            }
+
+            if (look != null) {
+                look.SetGhost(value);
+            }
+        }
+
+        /// <summary>
+        /// Whether the car's colliders overlap another solid car still in play, where ending its safe time would make the
+        /// physics push the two apart at once. Another safe car does not count: the pair keeps ignoring each other until
+        /// the second ends (<see cref="SetInvulnerable"/>), which then waits for this one, so two safe cars that came back
+        /// on top of each other never wait for each other for good.
+        /// </summary>
+        public bool OverlapsCar(IReadOnlyList<Car> cars)
+        {
+            for (var i = 0; i < cars.Count; i++) {
+                var other = cars[i];
+                if (other == this || other.IsOut || other.IsInvulnerable) {
+                    continue;
+                }
+
+                foreach (var mine in colliders) {
+                    foreach (var theirs in other.colliders) {
+                        if (mine.bounds.Intersects(theirs.bounds)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -110,6 +334,13 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public void HitByHazard()
         {
+            // A hazard pushes and staggers before it reports the hit: a shield takes all of it back.
+            if (Ability == PickupKind.Shield) {
+                Movement.UndoHazardKick();
+                TryAbsorbHit();
+                return;
+            }
+
             LastHitBy = null;
             LastHitTime = Time.time;
             LastHazardTime = Time.time;
@@ -130,7 +361,8 @@ namespace ToyCarArena.Gameplay.Cars
         private void OnCollisionEnter(Collision collision)
         {
             var otherBody = collision.rigidbody;
-            if (IsOut || otherBody == null || !otherBody.TryGetComponent<Car>(out var other) || other.IsOut) {
+            if (IsOut || otherBody == null || !otherBody.TryGetComponent<Car>(out var other) || other.IsOut
+                || IsInvulnerable || other.IsInvulnerable) {
                 return;
             }
 
@@ -160,6 +392,23 @@ namespace ToyCarArena.Gameplay.Cars
             var approach = Mathf.Max(0f, -Vector3.Dot(velocity, normal));
             var otherApproach = Mathf.Max(0f, Vector3.Dot(otherVelocity, normal));
             var strength = Mathf.Max(0f, Vector3.Dot(otherVelocity - velocity, normal));
+
+            // A shield takes a car driving into it whole (the physics' own bounce stays): no push, no loss of balance and
+            // no credit for the hit. A touch below the shield's minimum is let through unmarked and keeps it, so a tap
+            // cannot be turned into a knock-out. A car that rams with a shield is hit by nothing, and keeps it.
+            if (otherApproach > 0f) {
+                if (IsShielded) {
+                    if (strength >= pickupSettings.Shield.MinStrength) {
+                        TryAbsorbHit();
+                    }
+
+                    return;
+                }
+
+                if (Time.time < shieldGraceEnd) {
+                    return;
+                }
+            }
 
             // The push grows with how fast the other car drove into this one, but never past how fast the two closed
             // in: a car tapped from behind by a slightly faster one is barely pushed, and a contact lost and found again
@@ -219,12 +468,18 @@ namespace ToyCarArena.Gameplay.Cars
         private void OnCollisionStay(Collision collision)
         {
             var otherBody = collision.rigidbody;
-            if (IsOut || otherBody == null || !otherBody.TryGetComponent<Car>(out var other) || other.IsOut) {
+            if (IsOut || otherBody == null || !otherBody.TryGetComponent<Car>(out var other) || other.IsOut
+                || IsInvulnerable || other.IsInvulnerable) {
                 return;
             }
 
             var away = Flat(Position - other.Position);
             if (away.sqrMagnitude < 0.0001f) {
+                return;
+            }
+
+            // Still pressing on a shield that took the hit, or on one that stands: no credit.
+            if (IsShielded || Time.time < shieldGraceEnd) {
                 return;
             }
 

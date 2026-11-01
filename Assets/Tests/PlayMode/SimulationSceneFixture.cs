@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Bugord.Core;
 using NUnit.Framework;
 using ToyCarArena.Audio;
@@ -32,6 +33,16 @@ namespace ToyCarArena.Tests.PlayMode
         private int originalVSyncCount;
         private bool originalRunInBackground;
         private UnityEngine.Random.State originalRandomState;
+        private GameTuning savedTuning;
+        private GameTuning.GameMode savedMode;
+        private float savedDuration;
+
+        private static readonly FieldInfo ModeField =
+            typeof(GameTuning).GetField("mode", BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly FieldInfo MatchField =
+            typeof(GameTuning).GetField("match", BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly FieldInfo DurationField =
+            typeof(GameTuning.MatchSettings).GetField("duration", BindingFlags.Instance | BindingFlags.NonPublic);
 
         [SetUp]
         public void SetUp()
@@ -69,7 +80,60 @@ namespace ToyCarArena.Tests.PlayMode
                 QualitySettings.vSyncCount = originalVSyncCount;
                 Application.runInBackground = originalRunInBackground;
                 UnityEngine.Random.state = originalRandomState;
+                RestoreMode();
             }
+        }
+
+        /// <summary>
+        /// Plays the Game scenes loaded after this call in <paramref name="mode"/> (and, when given, matches of
+        /// <paramref name="matchSeconds"/>): it changes the shared tuning asset in memory only, never saved, and the
+        /// tear-down puts it back, so a failed test cannot leave the next one, or the editor, in the other mode.
+        /// </summary>
+        protected GameTuning UseMode(GameTuning.GameMode mode, float? matchSeconds = null)
+        {
+            var tuning = LoadTuning();
+            var match = MatchField.GetValue(tuning);
+            if (savedTuning == null) {
+                this.savedTuning = tuning;
+                this.savedMode = (GameTuning.GameMode)ModeField.GetValue(tuning);
+                this.savedDuration = (float)DurationField.GetValue(match);
+            }
+
+            ModeField.SetValue(tuning, mode);
+            if (matchSeconds.HasValue) {
+                DurationField.SetValue(match, matchSeconds.Value);
+            }
+
+            return tuning;
+        }
+
+        private void RestoreMode()
+        {
+            if (savedTuning == null) {
+                return;
+            }
+
+            ModeField.SetValue(savedTuning, savedMode);
+            DurationField.SetValue(MatchField.GetValue(savedTuning), savedDuration);
+            this.savedTuning = null;
+        }
+
+        /// <summary>The mode a simulation plays: SIM_MODE=match for long matches, else the last car standing.</summary>
+        protected static bool SimMatch =>
+            string.Equals(Environment.GetEnvironmentVariable("SIM_MODE")?.Trim(), "match", StringComparison.OrdinalIgnoreCase);
+
+        protected static GameTuning LoadTuning()
+        {
+#if UNITY_EDITOR
+            var tuning = AssetDatabase.LoadAssetAtPath<GameTuning>("Assets/Data/Gameplay/data_game_tuning.asset");
+            if (tuning == null) {
+                throw new MissingReferenceException("Simulation needs the game's GameTuning asset.");
+            }
+
+            return tuning;
+#else
+            throw new NotSupportedException("Run the simulation as editor PlayMode tests via Tools/simulate.sh.");
+#endif
         }
 
         protected void CreateParent(SimulationInput input, SimulationProgress progress, string map = null, string variant = null)

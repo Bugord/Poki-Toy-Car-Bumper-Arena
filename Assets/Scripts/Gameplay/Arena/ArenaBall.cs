@@ -22,6 +22,12 @@ namespace ToyCarArena.Gameplay.Arena
     /// it switches itself off. The chords come from the seed the bots share (<see cref="BallLane.Seed"/>), the lane
     /// state for the bots goes through <see cref="BallLane"/>.
     /// </para>
+    /// <para>
+    /// In a match whose cycles turn the variants (<see cref="ArenaVariants"/>) it is on whenever some cycle plays the
+    /// Ball variant, and the balls run only in those cycles: the first one <see cref="GameTuning.BallSettings.Delay"/>
+    /// after the cycle starts, from a seed turned for the cycle, and a ball on the floor as the cycle ends shrinks away
+    /// and hits nobody.
+    /// </para>
     /// </summary>
     public sealed class ArenaBall : MonoBehaviour
     {
@@ -132,6 +138,7 @@ namespace ToyCarArena.Gameplay.Arena
         private Mesh chevronMesh;
         private MaterialPropertyBlock laneBlock;
         private System.Random random;
+        private MechanicRun run;
 
         private Stage stage;
         private float nextLaunch = -1f;
@@ -159,8 +166,9 @@ namespace ToyCarArena.Gameplay.Arena
         public Vector3 Position => new(position.x, height, position.z);
 
         [Inject]
-        private void Construct(GameTuning tuning, ArenaMap map, ArenaRound round, IArenaEdge edge,
-            RoundDifficulty difficulty, BallLane lane, ArenaCamera arenaCamera, IAudioService audioService)
+        private void Construct(GameTuning tuning, ArenaRound round, IArenaEdge edge,
+            RoundDifficulty difficulty, BallLane lane, ArenaCamera arenaCamera, IAudioService audioService,
+            ArenaVariants variants)
         {
             this.tuning = tuning;
             this.settings = tuning.Ball;
@@ -171,8 +179,10 @@ namespace ToyCarArena.Gameplay.Arena
             this.arenaCamera = arenaCamera;
             this.audioService = audioService;
 
-            // Any other arena has no ball: nothing of it is built, drawn or run.
-            if (map.Mechanic != GameTuning.ArenaMechanic.Ball) {
+            this.run = new MechanicRun(variants, GameTuning.ArenaMechanic.Ball);
+
+            // An arena no cycle of which plays the ball has none: nothing of it is built, drawn or run.
+            if (!run.IsUsed) {
                 gameObject.SetActive(false);
                 return;
             }
@@ -184,6 +194,22 @@ namespace ToyCarArena.Gameplay.Arena
 
         private void Update()
         {
+            switch (run.Next(round.IsPlaced, Time.deltaTime)) {
+                case MechanicStep.Idle:
+                    return;
+                case MechanicStep.Leave:
+                    // In nobody's way from now on; the ball and its lane shrink where they are.
+                    lane.IsActive = false;
+                    run.Shrink(transform);
+                    return;
+                case MechanicStep.Clear:
+                    Clear();
+                    return;
+                case MechanicStep.Start:
+                    Clear();
+                    break;
+            }
+
             if (stage == Stage.Idle) {
                 TryLaunch();
                 return;
@@ -212,11 +238,11 @@ namespace ToyCarArena.Gameplay.Arena
                 nextLaunch = settings.Delay;
             }
 
-            if (round.Elapsed < nextLaunch) {
+            if (run.Clock < nextLaunch) {
                 return;
             }
 
-            random ??= new System.Random(lane.Seed);
+            random ??= new System.Random(run.SeedOf(lane.Seed));
             Launch();
         }
 
@@ -259,7 +285,7 @@ namespace ToyCarArena.Gameplay.Arena
 
             // The next ball counts from this one's announcement, whatever it does meanwhile.
             var jitter = ((float)random.NextDouble() * 2f - 1f) * settings.Jitter;
-            nextLaunch = round.Elapsed + Mathf.Max(settings.Warning + 2f, settings.Interval + jitter);
+            nextLaunch = run.Clock + Mathf.Max(settings.Warning + 2f, settings.Interval + jitter);
 
             ShowLane(origin, direction, normal);
             ball.gameObject.SetActive(true);
@@ -330,6 +356,24 @@ namespace ToyCarArena.Gameplay.Arena
             }
         }
 
+        /// <summary>
+        /// Puts the ball away and its schedule back to the start, its look back to full size, for the next cycle that
+        /// plays it.
+        /// </summary>
+        private void Clear()
+        {
+            if (ball != null) {
+                Finish();
+                ball.localScale = Vector3.one;
+                laneRoot.localScale = Vector3.one;
+            }
+
+            stage = Stage.Idle;
+            nextLaunch = -1f;
+            random = null;
+            hitCars.Clear();
+        }
+
         private void Finish()
         {
             stage = Stage.Idle;
@@ -346,7 +390,7 @@ namespace ToyCarArena.Gameplay.Arena
         {
             var reach = settings.Radius + CarReach;
             foreach (var car in round.Cars) {
-                if (car.IsOut || car.Position.y > settings.HitHeight || hitCars.Contains(car)) {
+                if (!car.IsTargetable || car.Position.y > settings.HitHeight || hitCars.Contains(car)) {
                     continue;
                 }
 

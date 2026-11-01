@@ -73,8 +73,9 @@ namespace ToyCarArena.Gameplay.Arena
         private float height;
 
         public ArenaCrab(GameTuning tuning, ArenaMap map, ArenaRound round, IArenaEdge edge, ArenaHazards hazards,
-            MechanicArt art, RoundDifficulty difficulty, ArenaCamera arenaCamera, IAudioService audioService, Transform parent)
-            : base(GameTuning.ArenaMechanic.Crab, map, round, edge, hazards, parent)
+            MechanicArt art, RoundDifficulty difficulty, ArenaCamera arenaCamera, IAudioService audioService,
+            ArenaVariants variants, Transform parent)
+            : base(GameTuning.ArenaMechanic.Crab, map, round, edge, hazards, variants, parent)
         {
             this.tuning = tuning;
             this.settings = tuning.Crab;
@@ -128,17 +129,29 @@ namespace ToyCarArena.Gameplay.Arena
                 -settings.HitRadius * 0.8f, reachAhead, edge, edgeMargin, out heading);
         }
 
-        public override void Dispose()
+        protected override void ResetState()
         {
-            Hazards.Remove(this);
-            base.Dispose();
+            hitCars.Clear();
+            stage = Stage.Idle;
+            position = Vector3.zero;
+            legStart = Vector3.zero;
+            target = Vector3.zero;
+            direction = Vector3.right;
+            facing = Vector3.forward;
+            walked = 0f;
+            legLength = 0f;
+            pauseTime = 0f;
+            phase = 0f;
+            appearTime = 0f;
+            fallSpeed = 0f;
+            height = 0f;
         }
 
         private Vector3 Across => new(-direction.z, 0f, direction.x);
 
         protected override void Build()
         {
-            random = new System.Random(Hazards.Seed ^ 0x3C7A11);
+            random = new System.Random(SeedOf(Hazards.Seed ^ 0x3C7A11));
             blow = new HazardBlow(tuning, difficulty, arenaCamera, audioService);
             Hazards.Add(this);
             BuildLook();
@@ -149,14 +162,14 @@ namespace ToyCarArena.Gameplay.Arena
         {
             switch (stage) {
                 case Stage.Idle:
-                    if (IsClockRunning && Round.Elapsed >= settings.Delay - settings.Warning) {
+                    if (IsClockRunning && Clock >= settings.Delay - settings.Warning) {
                         Appear();
                     }
 
                     break;
                 case Stage.Waiting:
                     appearTime += deltaTime;
-                    if (Round.Elapsed >= settings.Delay && IsClockRunning) {
+                    if (Clock >= settings.Delay && IsClockRunning) {
                         StartWalk();
                     }
 
@@ -310,7 +323,7 @@ namespace ToyCarArena.Gameplay.Arena
             var reach = settings.HitRadius;
             for (var i = 0; i < Round.Cars.Count; i++) {
                 var car = Round.Cars[i];
-                if (car.IsOut || car.Position.y > settings.HitHeight || hitCars.Contains(car)) {
+                if (!car.IsTargetable || car.Position.y > settings.HitHeight || hitCars.Contains(car)) {
                     continue;
                 }
 

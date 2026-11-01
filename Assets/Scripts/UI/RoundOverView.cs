@@ -177,6 +177,13 @@ namespace ToyCarArena.UI
                 _ => (Strings.Get("result.time_up"), Strings.Get("result.time_up_subtitle")),
             };
 
+            // A match always runs out its time: first place has the most knock-outs, the others hear where they ended.
+            if (ViewModel.IsMatch) {
+                subtitle = ViewModel.Outcome == RoundOutcome.Won
+                    ? Strings.Get("result.match_won_subtitle")
+                    : Strings.Format("result.match_place", ViewModel.Place, ViewModel.Knockouts);
+            }
+
             // The title is the same text twice (the outline under, the face over it, see .stroke in ui_screens).
             foreach (var label in Root.Query<Label>(className: "round-over__title-text").ToList()) {
                 label.text = title;

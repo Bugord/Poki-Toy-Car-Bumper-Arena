@@ -96,11 +96,22 @@ namespace ToyCarArena.Gameplay.Effects
         [SerializeField]
         private float ringFallShake = 0.3f;
 
+        [Tooltip("Shake when a wave of the floor lands back in place; the waves land one after another, so it is light")]
+        [Range(0f, 1f)]
+        [SerializeField]
+        private float landShake = 0.12f;
+
         [Header("Sound")]
         [Tooltip("Volume of a bot's boost, against the player's")]
         [Range(0f, 1f)]
         [SerializeField]
         private float botBoostVolume = 0.35f;
+
+        [Tooltip("Volume of the thud of a wave of the floor landing back in place, against a wave falling; a few land in " +
+            "a row")]
+        [Range(0f, 1f)]
+        [SerializeField]
+        private float landVolume = 0.6f;
 
         [Tooltip("The last this many seconds of a round tick, as the HUD's clock pulses")]
         [Min(0)]
@@ -121,7 +132,6 @@ namespace ToyCarArena.Gameplay.Effects
         private ArenaCrumble crumble;
         private ArenaCamera arenaCamera;
         private IAudioService audioService;
-        private GameTuning.ArenaSettings arenaSettings;
         private IArenaEdge edge;
         private EffectPlayer effects;
         private int shownSeconds = -1;
@@ -130,13 +140,12 @@ namespace ToyCarArena.Gameplay.Effects
 
         [Inject]
         private void Construct(ArenaRound round, ArenaCrumble crumble, ArenaCamera arenaCamera,
-            IAudioService audioService, GameTuning.ArenaSettings arenaSettings, IArenaEdge edge)
+            IAudioService audioService, IArenaEdge edge)
         {
             this.round = round;
             this.crumble = crumble;
             this.arenaCamera = arenaCamera;
             this.audioService = audioService;
-            this.arenaSettings = arenaSettings;
             this.edge = edge;
         }
 
@@ -152,6 +161,9 @@ namespace ToyCarArena.Gameplay.Effects
             round.Finished += OnFinished;
             crumble.WaveWarning += OnWaveWarning;
             crumble.WaveFell += OnWaveFell;
+            crumble.FloorReturning += OnFloorReturning;
+            crumble.WaveReturning += OnWaveReturning;
+            crumble.WaveLanded += OnWaveLanded;
             audioService.PlayMusic();
         }
 
@@ -184,6 +196,9 @@ namespace ToyCarArena.Gameplay.Effects
             if (crumble != null) {
                 crumble.WaveWarning -= OnWaveWarning;
                 crumble.WaveFell -= OnWaveFell;
+                crumble.FloorReturning -= OnFloorReturning;
+                crumble.WaveReturning -= OnWaveReturning;
+                crumble.WaveLanded -= OnWaveLanded;
             }
 
             for (var i = 0; i < cars.Count; i++) {
@@ -315,24 +330,24 @@ namespace ToyCarArena.Gameplay.Effects
 
         /// <summary>
         /// The jingle of the round's end, a moment later. Running out the clock still on the arena is no loss, so it
-        /// gets the win's.
+        /// gets the win's; a match placed low is one (<see cref="RoundResult.IsLoss"/>).
         /// </summary>
         private void OnFinished(RoundResult result)
         {
             // The round's last moments play out at full speed, and nothing slowed is left under the result.
             hitStop.Release();
             var library = audioService.Library;
-            pendingJingle = result.Outcome == RoundOutcome.Out ? library.Lose : library.Win;
+            pendingJingle = result.IsLoss ? library.Lose : library.Win;
             jingleTime = Time.unscaledTime + jingleDelay;
         }
 
         private void OnWaveWarning(CrumbleWave wave)
         {
             if (wave.Spots != null) {
-                effects.PlayTileWarning(wave.Spots, arenaSettings.CrumbleWarning);
+                effects.PlayTileWarning(wave.Spots, crumble.Warning);
             }
             else {
-                effects.PlayRingWarning(wave.Inner, wave.Outer, arenaSettings.CrumbleWarning);
+                effects.PlayRingWarning(wave.Inner, wave.Outer, crumble.Warning);
             }
 
             audioService.Play(audioService.Library.CrumbleWarning);
@@ -349,6 +364,40 @@ namespace ToyCarArena.Gameplay.Effects
 
             audioService.Play(audioService.Library.CrumbleFall);
             arenaCamera.Shake(ringFallShake);
+        }
+
+        /// <summary>
+        /// The floor of a cycle about to come back: one rumble for all its waves, which appear together.
+        /// </summary>
+        private void OnFloorReturning(int cycle)
+        {
+            audioService.Play(audioService.Library.CrumbleWarning);
+        }
+
+        /// <summary>
+        /// A wave hanging over its place: gold rings close on the empty spots it will land on.
+        /// </summary>
+        private void OnWaveReturning(CrumbleWave wave, float landIn)
+        {
+            if (wave.Spots != null) {
+                effects.PlayTileReturn(wave.Spots, landIn);
+            }
+            else {
+                effects.PlayRingReturn(wave.Inner, wave.Outer, landIn);
+            }
+        }
+
+        private void OnWaveLanded(CrumbleWave wave)
+        {
+            if (wave.Spots != null) {
+                effects.PlayTileLand(wave.Spots);
+            }
+            else {
+                effects.PlayRingLand(wave.Inner, wave.Outer);
+            }
+
+            audioService.Play(audioService.Library.CrumbleFall, landVolume);
+            arenaCamera.Shake(landShake);
         }
     }
 }

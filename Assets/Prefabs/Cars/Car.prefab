@@ -586,6 +586,7 @@ MonoBehaviour:
   - {x: 3, y: 1}
   - {x: 0, y: 2}
   - {x: 0, y: 0}
+  ghostMaterial: {fileID: 2100000, guid: b40dd4589aacade4c85e7831df909af0, type: 2}
   markerFill: {fileID: 2100000, guid: 67abec6b3c8fad5429dc53cdea4f25da, type: 2}
   markerOutline: {fileID: 2100000, guid: 4cea892f3909cd14d8be753c90cd7c30, type: 2}
   ringRadius: {x: 1.45, y: 1.8}

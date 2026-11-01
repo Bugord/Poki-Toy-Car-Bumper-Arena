@@ -40,11 +40,20 @@ namespace ToyCarArena.App
     /// <see cref="SlowLobbySeconds"/> after the lobby came up, then <c>interact</c> when that round comes up after all,
     /// so a slow load can be told from a wait the player gave up on</item>
     /// <item>after v0.5.1: <c>arena / arena-id-variant-id / start</c>, then <c>complete</c> or <c>fail</c> beside the
-    /// round's, so Poki counts the visits that leave in the middle of a round per arena variant</item>
+    /// round's, so Poki counts the visits that leave in the middle of a round per arena variant; a long match sends it per
+    /// cycle of the floor, each cycle's variant completing as the next one starts</item>
     /// <item>since v0.2.0, only with a marked rival present: <c>result / revenge-got, missed-rR / revenge</c></item>
     /// <item><c>garage / button / visible, interact</c> and <c>garage / car-id / equip</c></item>
     /// <item><c>garage / color-name / color</c> on colour selection and
     /// <c>result / color-name-rR / color</c> for the colour captured by the played round</item>
+    /// <item>a build of long matches (<see cref="RoundResult.IsMatch"/>) sends <c>match / 1..10, 10plus / start</c>,
+    /// then <c>complete</c> (a match always runs its time), and with it <c>match / place-N-rR / place</c>,
+    /// <c>match / knockouts-N-rR / knockouts</c>, <c>match / falls-N-rR / falls</c> (every fall is followed by a
+    /// comeback, but for one at the very end) and <c>match / pushed-N-rR / pushed</c> (the falls a car got the credit
+    /// for), N from 0 to 9 or 10plus, and <c>match / revenge-got, missed-rR / revenge</c> with a rival marked during the
+    /// match; and <c>match / pickup-heavy, shockwave, shield, turbo-rR / pickup</c> for each pickup the player takes and
+    /// <c>match / pickups-N-rR / pickups</c> for how many at the end. It sends no <c>round / … / start, complete, fail</c>, and of the round's result only what still means
+    /// the same in a match (<see cref="MeasureMatchEnd"/>).</item>
     /// <item><c>progress / level-2..10, level-10plus / level-up</c> for each crossed level, and
     /// <c>progress / car-id / unlock</c> from the saved reward</item>
     /// <item><c>result / map-arena-id-rR / map</c>: the arena of the round, and <c>progress / map-arena-id / unlock</c>
@@ -56,6 +65,7 @@ namespace ToyCarArena.App
     public static class RoundEvents
     {
         private const string RoundCategory = "round";
+        private const string MatchCategory = "match";
         private const string ResultCategory = "result";
         private const string ControlsCategory = "controls";
         private const string PlayAgain = "play-again";
@@ -65,6 +75,9 @@ namespace ToyCarArena.App
         // Rounds past this one share one bucket: few sessions get there, and the event names stay few.
         private const int LastRoundBucket = 10;
         private const int LastLevelBucket = 10;
+
+        // A match's knock-outs and falls past this many share one bucket.
+        private const int LastCountBucket = 10;
 
         // Place and knockouts carry the round up to this one, the rest share a bucket: one more number fits in them.
         private const int LastTaggedRound = 4;
@@ -95,6 +108,14 @@ namespace ToyCarArena.App
         }
 
         /// <summary>
+        /// The start of the visit's <paramref name="match"/>-th long match, in place of <see cref="MeasureRoundStart"/>.
+        /// </summary>
+        public static void MeasureMatchStart(this IGamePlatform platform, int match)
+        {
+            platform.MeasureStart(MatchCategory, RoundBucket(match));
+        }
+
+        /// <summary>
         /// The variant's own start, beside <see cref="MeasureRoundStart"/>: the round's lefts say how many leave
         /// mid-round, these say on which arena. Ids have no digits, so no number is spent.
         /// </summary>
@@ -103,6 +124,20 @@ namespace ToyCarArena.App
             if (!string.IsNullOrEmpty(variantId)) {
                 platform.MeasureStart(ArenaCategory, $"{mapId}-{variantId}");
             }
+        }
+
+        /// <summary>
+        /// A match moving on to the next variant of its arena with the floor's cycle: the one played completes and the
+        /// next starts, so Poki counts the visits that leave in the middle of a match per variant, as in a round.
+        /// </summary>
+        public static void MeasureVariantChange(this IGamePlatform platform, string mapId, string fromVariantId,
+            string toVariantId)
+        {
+            if (!string.IsNullOrEmpty(fromVariantId)) {
+                platform.MeasureComplete(ArenaCategory, $"{mapId}-{fromVariantId}");
+            }
+
+            platform.MeasureVariantStart(mapId, toVariantId);
         }
 
         public static void MeasureVariantEnd(this IGamePlatform platform, string mapId, string variantId,
@@ -126,6 +161,11 @@ namespace ToyCarArena.App
         public static void MeasureRoundEnd(this IGamePlatform platform, int round, RoundResult result, float duration,
             PlayerDriver driver)
         {
+            if (result.IsMatch) {
+                MeasureMatchEnd(platform, round, result, driver);
+                return;
+            }
+
             var bucket = RoundBucket(round);
             if (result.Outcome == RoundOutcome.Out) {
                 platform.MeasureFail(RoundCategory, bucket);
@@ -163,6 +203,52 @@ namespace ToyCarArena.App
             if (round <= 1) {
                 MeasureControls(platform, driver);
             }
+        }
+
+        /// <summary>
+        /// The end of a long match. Of the round's result events it keeps those that still mean the same: the colour,
+        /// the cars in it and, in the first, the controls. The outcome, place, knock-outs, time, round time, revenge,
+        /// out causes and boosts mean something else over a whole match or never change (it always runs its time), so
+        /// the match sends its own in their place, and a version's reports never mix the two.
+        /// </summary>
+        public static void MeasureMatchEnd(this IGamePlatform platform, int match, RoundResult result, PlayerDriver driver)
+        {
+            platform.MeasureComplete(MatchCategory, RoundBucket(match));
+            var tag = RoundTag(match);
+            platform.Measure(MatchCategory, $"place-{result.Place}-{tag}", "place");
+            platform.Measure(MatchCategory, $"knockouts-{CountBucket(result.Knockouts)}-{tag}", "knockouts");
+            platform.Measure(MatchCategory, $"falls-{CountBucket(result.Falls)}-{tag}", "falls");
+            platform.Measure(MatchCategory, $"pushed-{CountBucket(result.KnockedOff)}-{tag}", "pushed");
+            if (result.HadNemesis) {
+                var revenge = result.RevengeTaken ? "got" : "missed";
+                platform.Measure(MatchCategory, $"revenge-{revenge}-{tag}", "revenge");
+            }
+
+            platform.Measure(ResultCategory, $"color-{CarPaint.NameOf(result.ColorOf(0))}-{tag}", "color");
+            platform.Measure(ResultCategory, $"cars-{result.CarCount}-{tag}", "cars");
+            if (match <= 1) {
+                MeasureControls(platform, driver);
+            }
+        }
+
+        /// <summary>
+        /// The player took a pickup in match number <paramref name="match"/>: <c>match / pickup-heavy, shockwave, shield,
+        /// turbo-rR / pickup</c>, R as for the match's other events.
+        /// </summary>
+        public static void MeasurePickup(this IGamePlatform platform, int match, PickupKind kind) =>
+            platform.Measure(MatchCategory, $"pickup-{kind.ToString().ToLowerInvariant()}-{RoundTag(match)}", "pickup");
+
+        /// <summary>
+        /// How many pickups the player took in the match, at its end: <c>match / pickups-N-rR / pickups</c>, N from 0 to 9
+        /// or 10plus.
+        /// </summary>
+        public static void MeasureMatchPickups(this IGamePlatform platform, int match, int count) =>
+            platform.Measure(MatchCategory, $"pickups-{CountBucket(count)}-{RoundTag(match)}", "pickups");
+
+        // One number, so the match's tag still fits beside it.
+        private static string CountBucket(int count)
+        {
+            return count >= LastCountBucket ? $"{LastCountBucket}plus" : Mathf.Max(0, count).ToString();
         }
 
         /// <summary>

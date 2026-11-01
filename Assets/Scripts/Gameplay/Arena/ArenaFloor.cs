@@ -16,6 +16,9 @@ namespace ToyCarArena.Gameplay.Arena
     /// shakes, and a car on a falling block has nothing under it and falls with it.
     /// The floor is also the <see cref="IArenaEdge"/> of the arena: the exact formulas of <see cref="CircleEdge"/> for a
     /// round floor, a <see cref="GridEdge"/> of signed distances for any other shape, which its layout keeps up to date.
+    /// When the floor goes in cycles a fallen wave comes back (<see cref="Raise"/>, <see cref="Restore"/>): its blocks
+    /// appear hanging over their places, then drop into them, and only as they land do the collider and the edge take
+    /// them back, so nothing on the floor collides with a block in the air.
     /// </summary>
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider))]
     public sealed class ArenaFloor : MonoBehaviour, IArenaEdge
@@ -78,6 +81,29 @@ namespace ToyCarArena.Gameplay.Arena
         [Min(0f)]
         [SerializeField]
         private float hideDepth = 110f;
+
+        [Header("Coming back")]
+        [Tooltip("Height a returning block hangs at over its place before it drops, in metres; it eases down to it from " +
+            "half again as high as it appears")]
+        [Min(0f)]
+        [SerializeField]
+        private float returnHeight = 3f;
+
+        [Tooltip("Seconds a returning block takes to drop from where it hangs into its place; it falls faster and faster, " +
+            "as a dropped block would")]
+        [Min(0.05f)]
+        [SerializeField]
+        private float returnDrop = 0.35f;
+
+        [Tooltip("Farthest a hanging block bobs from its height, in metres (x), and tilts, in degrees (y), so it reads as " +
+            "held up and about to come down")]
+        [SerializeField]
+        private Vector2 returnBob = new(0.15f, 3f);
+
+        [Tooltip("Seconds a returning block takes to sink from where it appears to the height it hangs at")]
+        [Min(0.01f)]
+        [SerializeField]
+        private float returnSettle = 0.4f;
 
         private ArenaMap map;
         private GameTuning.ArenaSettings settings;
@@ -161,7 +187,7 @@ namespace ToyCarArena.Gameplay.Arena
                 look.sharedMaterial = template.sharedMaterial;
                 look.shadowCastingMode = template.shadowCastingMode;
                 look.receiveShadows = template.receiveShadows;
-                blocks[tile.Wave].Add(new Block(block.transform, new Vector2(UnityEngine.Random.value * 100f,
+                blocks[tile.Wave].Add(new Block(block.transform, look, new Vector2(UnityEngine.Random.value * 100f,
                     UnityEngine.Random.value * 100f)));
             }
 
@@ -201,12 +227,21 @@ namespace ToyCarArena.Gameplay.Arena
                     states[i] = WaveState.Gone;
                     movingWaves--;
                 }
+                else if (states[i] == WaveState.Returning) {
+                    Hover(wave, time);
+                }
             }
         }
 
         public CrumbleWave Wave(int wave)
         {
             return layout.Wave(wave);
+        }
+
+        /// <summary>Where a wave is in its crumbling and coming back.</summary>
+        public WaveState StateOf(int wave)
+        {
+            return states[wave];
         }
 
         /// <summary>
@@ -218,10 +253,51 @@ namespace ToyCarArena.Gameplay.Arena
         }
 
         /// <summary>
+        /// Gives the floor another look: every block and the core, or with <paramref name="fallenOnly"/> only the blocks
+        /// of the waves that are down (falling, gone or coming back), so the tiles of a match's next variant come back in
+        /// its look while the floor still standing keeps the old one until they are in.
+        /// </summary>
+        public void SetMaterial(Material material, bool fallenOnly)
+        {
+            if (material == null) {
+                return;
+            }
+
+            for (var i = 0; i < waves.Length; i++) {
+                if (fallenOnly && states[i] is (WaveState.Standing or WaveState.Warning)) {
+                    continue;
+                }
+
+                foreach (var block in waves[i].Blocks) {
+                    block.Renderer.sharedMaterial = material;
+                }
+            }
+
+            if (!fallenOnly) {
+                GetComponent<MeshRenderer>().sharedMaterial = material;
+            }
+        }
+
+        /// <summary>The look of the floor's core, which every block also wears unless a match changed it.</summary>
+        public Material CoreMaterial => GetComponent<MeshRenderer>().sharedMaterial;
+
+        /// <summary>The look of one block of a wave, for tests.</summary>
+        public Material MaterialOf(int wave, int block) => waves[wave].Blocks[block].Renderer.sharedMaterial;
+
+        /// <summary>
         /// Starts a wave shaking for <see cref="GameTuning.ArenaSettings.CrumbleWarning"/>, harder as it goes. It no
         /// longer counts as safe floor, but still holds the cars up until <see cref="Drop"/>.
         /// </summary>
         public void Warn(int wave)
+        {
+            Warn(wave, settings.CrumbleWarning);
+        }
+
+        /// <summary>
+        /// Starts a wave shaking for <paramref name="duration"/> seconds, harder as it goes: the floor in cycles may shake
+        /// its waves for less than the arena's warning, when its shrink is short.
+        /// </summary>
+        public void Warn(int wave, float duration)
         {
             if (states[wave] != WaveState.Standing) {
                 return;
@@ -229,6 +305,7 @@ namespace ToyCarArena.Gameplay.Arena
 
             states[wave] = WaveState.Warning;
             waves[wave].WarnedAt = Time.time;
+            waves[wave].WarningTime = duration;
             movingWaves++;
             Refresh();
         }
@@ -239,7 +316,7 @@ namespace ToyCarArena.Gameplay.Arena
         public void Drop(int wave)
         {
             var target = waves[wave];
-            if (states[wave] == WaveState.Falling || states[wave] == WaveState.Gone) {
+            if (states[wave] is WaveState.Falling or WaveState.Gone or WaveState.Returning) {
                 return;
             }
 
@@ -262,6 +339,58 @@ namespace ToyCarArena.Gameplay.Arena
         }
 
         /// <summary>
+        /// Brings a fallen wave back over its place, to land in <paramref name="landIn"/> seconds: its blocks appear
+        /// hanging over their places, bob there and drop into them as the time runs out. It stays no floor at all,
+        /// neither safe nor solid and with no collider, until <see cref="Restore"/>, so a block in the air touches no car.
+        /// </summary>
+        public void Raise(int wave, float landIn)
+        {
+            if (states[wave] is not (WaveState.Falling or WaveState.Gone)) {
+                return;
+            }
+
+            if (states[wave] == WaveState.Gone) {
+                movingWaves++;
+            }
+
+            states[wave] = WaveState.Returning;
+            var target = waves[wave];
+            var time = Time.time;
+            target.RaisedAt = time;
+            target.LandAt = time + Mathf.Max(0f, landIn);
+            foreach (var block in target.Blocks) {
+                block.Velocity = Vector3.zero;
+                block.Transform.gameObject.SetActive(true);
+            }
+
+            Hover(target, time);
+        }
+
+        /// <summary>
+        /// Puts a wave back in its place, whatever it was doing: its blocks at rest, and the collider and the edge with it
+        /// again, which tells the readers of the edge (the camera opens out again).
+        /// </summary>
+        public void Restore(int wave)
+        {
+            if (states[wave] == WaveState.Standing) {
+                return;
+            }
+
+            if (states[wave] is WaveState.Warning or WaveState.Falling or WaveState.Returning) {
+                movingWaves--;
+            }
+
+            states[wave] = WaveState.Standing;
+            foreach (var block in waves[wave].Blocks) {
+                block.Velocity = Vector3.zero;
+                block.Transform.gameObject.SetActive(true);
+                block.Transform.SetLocalPositionAndRotation(block.RestPosition, block.RestRotation);
+            }
+
+            Refresh();
+        }
+
+        /// <summary>
         /// The layout works out the safe and solid floor from the waves' states and moves the collider.
         /// </summary>
         private void Refresh()
@@ -277,7 +406,7 @@ namespace ToyCarArena.Gameplay.Arena
         /// </summary>
         private void Shake(WaveBlocks wave, float time)
         {
-            var warning = settings.CrumbleWarning;
+            var warning = wave.WarningTime;
             var progress = warning > 0f ? Mathf.Clamp01((time - wave.WarnedAt) / warning) : 1f;
             var strength = Mathf.Lerp(shakeStart, 1f, progress * progress);
             var distance = shakeDistance * strength;
@@ -321,6 +450,41 @@ namespace ToyCarArena.Gameplay.Arena
             return isGone;
         }
 
+        /// <summary>
+        /// Holds the blocks of a returning wave over their places: sinking from where they appear to where they hang,
+        /// bobbing and tilting there with their own noise, and in the last moment dropping faster and faster, straight
+        /// into place.
+        /// </summary>
+        private void Hover(WaveBlocks wave, float time)
+        {
+            var left = wave.LandAt - time;
+            float height;
+            float sway;
+            if (left <= returnDrop) {
+                // A fall from rest: the height goes with the square of the time left.
+                var share = Mathf.Clamp01(left / returnDrop);
+                height = returnHeight * share * share;
+                sway = share;
+            }
+            else {
+                var settle = Mathf.Clamp01((time - wave.RaisedAt) / returnSettle);
+                var ease = 1f - (1f - settle) * (1f - settle);
+                height = returnHeight * Mathf.Lerp(1.5f, 1f, ease);
+                sway = 1f;
+            }
+
+            // Slower than the shake of a crumbling block: a sway, not a rattle.
+            var phase = time * shakeFrequency * 0.15f;
+            foreach (var block in wave.Blocks) {
+                var x = Noise(block.Seed.x, phase);
+                var y = Noise(block.Seed.x + block.Seed.y, phase);
+                var z = Noise(block.Seed.y, phase);
+                block.Transform.SetLocalPositionAndRotation(
+                    block.RestPosition + Vector3.up * (height + y * returnBob.x * sway),
+                    block.RestRotation * Quaternion.Euler(z * returnBob.y * sway, 0f, -x * returnBob.y * sway));
+            }
+        }
+
         private static float Noise(float seed, float phase)
         {
             return Mathf.PerlinNoise(seed, phase) * 2f - 1f;
@@ -330,6 +494,9 @@ namespace ToyCarArena.Gameplay.Arena
         {
             public readonly Block[] Blocks;
             public float WarnedAt;
+            public float WarningTime;
+            public float RaisedAt;
+            public float LandAt;
 
             public WaveBlocks(Block[] blocks)
             {
@@ -340,6 +507,7 @@ namespace ToyCarArena.Gameplay.Arena
         private sealed class Block
         {
             public readonly Transform Transform;
+            public readonly MeshRenderer Renderer;
             public readonly Vector3 RestPosition;
             public readonly Quaternion RestRotation;
 
@@ -350,9 +518,10 @@ namespace ToyCarArena.Gameplay.Arena
             public Vector3 SpinAxis;
             public float SpinSpeed;
 
-            public Block(Transform transform, Vector2 seed)
+            public Block(Transform transform, MeshRenderer renderer, Vector2 seed)
             {
                 this.Transform = transform;
+                this.Renderer = renderer;
                 this.RestPosition = transform.localPosition;
                 this.RestRotation = transform.localRotation;
                 this.Seed = seed;
