@@ -17,6 +17,7 @@ namespace ToyCarArena.Gameplay.Input
     {
         public event Action<InputMethod> MoveUsed;
         public event Action<BoostInputMethod> BoostPressed;
+        public event Action ItemPressed;
 
         private readonly InputSystemActions inputSystemActions = new();
         private readonly IOnScreenControls onScreenControls;
@@ -80,6 +81,12 @@ namespace ToyCarArena.Gameplay.Input
             // A press on the screens over the game, like the settings button or an open popup, is theirs: the finger
             // neither steers nor boosts until it is lifted.
             if (onScreenControls.IsUiAt(touch.screenPosition)) {
+                return;
+            }
+
+            // The item button sits beside boost: checked first, so a finger on it only ever uses the item.
+            if (onScreenControls.IsItemAt(touch.screenPosition)) {
+                ItemPressed?.Invoke();
                 return;
             }
 
@@ -156,7 +163,8 @@ namespace ToyCarArena.Gameplay.Input
 
             screenPosition = mouse.position.ReadValue();
             if (!isMouseDragging) {
-                if (onScreenControls.IsControlAt(screenPosition) || onScreenControls.IsUiAt(screenPosition)) {
+                if (onScreenControls.IsControlAt(screenPosition) || onScreenControls.IsItemAt(screenPosition)
+                    || onScreenControls.IsUiAt(screenPosition)) {
                     isMouseOnControl = true;
                     return false;
                 }
@@ -179,6 +187,8 @@ namespace ToyCarArena.Gameplay.Input
             inputSystemActions.Player.Move.performed += OnMovePerformed;
             inputSystemActions.Player.Boost.performed += OnBoostPerformed;
             onScreenControls.BoostPressed += OnScreenBoostPressed;
+            inputSystemActions.Player.UseItem.performed += OnUseItemPerformed;
+            onScreenControls.ItemPressed += OnScreenItemPressed;
         }
 
         public void Dispose()
@@ -189,6 +199,8 @@ namespace ToyCarArena.Gameplay.Input
             EnhancedTouchSupport.Disable();
             steeringFinger = null;
             onScreenControls.BoostPressed -= OnScreenBoostPressed;
+            onScreenControls.ItemPressed -= OnScreenItemPressed;
+            inputSystemActions.Player.UseItem.performed -= OnUseItemPerformed;
             inputSystemActions.Player.Boost.performed -= OnBoostPerformed;
             inputSystemActions.Player.Move.performed -= OnMovePerformed;
             inputSystemActions.Player.Disable();
@@ -217,6 +229,19 @@ namespace ToyCarArena.Gameplay.Input
             var method = context.control.device is Keyboard ? BoostInputMethod.Key :
                 context.control.device is Mouse ? BoostInputMethod.Mouse : BoostInputMethod.Gamepad;
             BoostPressed?.Invoke(method);
+        }
+
+        private void OnUseItemPerformed(InputAction.CallbackContext context)
+        {
+            ItemPressed?.Invoke();
+        }
+
+        private void OnScreenItemPressed()
+        {
+            // As for boost: a touch on the button came through OnFingerDown, and its echo as a click is left out.
+            if (Time.unscaledTime - lastTouchTime >= TouchEchoTime) {
+                ItemPressed?.Invoke();
+            }
         }
 
         private void OnScreenBoostPressed()

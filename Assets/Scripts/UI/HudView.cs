@@ -60,6 +60,29 @@ namespace ToyCarArena.UI
         private const string ShieldShownClass = "hud__shield--shown";
         private const string RevengeClass = "car-name--revenge";
         private const string PowerShownClass = "hud__power--shown";
+        private const string ItemShownClass = "hud__item--shown";
+        private const string ItemEmptyClass = "hud__item--empty";
+        private const string ItemRollingClass = "hud__item--rolling";
+        private const string ItemPopClass = "hud__item--pop";
+        private const string ItemPressedClass = "hud__item--pressed";
+        private const string ItemDesktopClass = "hud__item--desktop";
+        private const string ItemHintPulseClass = "hud__item--hint-pulse";
+        private const string ItemHintShownClass = "hud__item-hint--shown";
+        private const string ItemHintDesktopClass = "hud__item-hint--desktop";
+        private const string SlotItemsClass = "hud__boost-slot--items";
+
+        // The slot's roulette shows a new item this many times a second while the box's roll lasts, on unscaled time.
+        private const float ItemSpinRate = 14f;
+
+        // The first item of a visit says how to use it for this long, the button pulsing meanwhile, in unscaled seconds.
+        private const float ItemHintDuration = 2.6f;
+        private const float ItemHintPulsePeriod = 0.65f;
+
+        // The kinds the slot can hold, in the order its roulette shows them.
+        private static readonly ItemKind[] ItemKinds =
+        {
+            ItemKind.Heavy, ItemKind.Shockwave, ItemKind.Shield, ItemKind.Turbo, ItemKind.Bomb, ItemKind.Glove,
+        };
 
         // The badge of a running ability blinks over the last seconds, as the ability ends.
         private const float PowerBlinkTime = 2f;
@@ -198,11 +221,22 @@ namespace ToyCarArena.UI
         private VisualElement shield;
         private VisualElement shieldFill;
         // A match's pickups: the badge of the ability the player's car runs, with its icon, name and draining bar.
-        private PickupKind shownAbility;
+        private ItemKind shownAbility;
         private VisualElement power;
         private VisualElement powerIcon;
         private Label powerName;
         private VisualElement powerFill;
+        // A match's item slot: the button, its icon, the kind it shows, and the one-time hint over it.
+        private VisualElement itemButton;
+        private VisualElement itemIcon;
+        private VisualElement itemHint;
+        private Label itemHintText;
+        private Label itemHintFace;
+        private ItemKind shownItem = ItemKind.None;
+        private bool isItemShownRolling;
+        private bool isItemHintShown;
+        private float itemHintTime;
+        private float nextItemPulse;
         private VisualElement popupLayer;
         private VisualElement nameLayer;
         private VisualElement[] carNames;
@@ -285,6 +319,14 @@ namespace ToyCarArena.UI
             powerIcon = Root.Q<VisualElement>("power-icon");
             powerName = Root.Q<Label>("power-name");
             powerFill = Root.Q<VisualElement>("power-fill");
+            itemButton = Root.Q<VisualElement>("item-button");
+            itemIcon = Root.Q<VisualElement>("item-icon");
+            itemHint = Root.Q<VisualElement>("item-hint");
+            itemHintText = Root.Q<Label>("item-hint-text");
+            itemHintFace = Root.Q<Label>("item-hint-face");
+            // Only a match has items; a round of last-car-standing keeps the slot as it was.
+            itemButton.EnableInClassList(ItemShownClass, ViewModel.IsMatch);
+            itemButton.AddToClassList(ItemEmptyClass);
             // In a match the player's score is always there, 0 included: it is the point of the match. The scoreboard
             // shows the leader and everyone else, so the bar keeps only the time and the player's own knock-outs.
             knockoutBadge.EnableInClassList(KnockoutShownClass, ViewModel.IsMatch);
@@ -326,11 +368,17 @@ namespace ToyCarArena.UI
             ViewModel.CarOut += OnCarOut;
             ViewModel.CarBack += OnCarBack;
             ViewModel.NemesisChanged += OnNemesisChanged;
-            ViewModel.PickedUp += OnPickedUp;
+            ViewModel.ItemRolled += OnItemRolled;
+            ViewModel.ItemUsed += OnItemUsed;
+            ViewModel.ItemHit += OnItemHit;
 
             // On the press, not the release: a boost is all about the moment.
             boostButton.RegisterCallback<PointerDownEvent>(OnBoostPointerDown);
             controls.SetBoostButton(boostButton);
+            if (ViewModel.IsMatch) {
+                itemButton.RegisterCallback<PointerDownEvent>(OnItemPointerDown);
+                controls.SetItemButton(itemButton);
+            }
 
             // The very first start also says what to do: everyone else off the arena.
             Root.Q<VisualElement>("start-goal").style.display =
@@ -344,6 +392,10 @@ namespace ToyCarArena.UI
             Root.schedule.Execute(Refresh).Every(RefreshInterval);
             Root.schedule.Execute(RefreshBoost).Every(BoostRefreshInterval);
             Root.schedule.Execute(RefreshPower).Every(BoostRefreshInterval);
+            if (ViewModel.IsMatch) {
+                Root.schedule.Execute(RefreshItem).Every(BoostRefreshInterval);
+            }
+
             Root.schedule.Execute(RefreshStick).Every(BoostRefreshInterval);
             Root.schedule.Execute(RefreshTeaching).Every(BoostRefreshInterval);
             Root.schedule.Execute(RefreshNames).Every(BoostRefreshInterval);
@@ -357,11 +409,18 @@ namespace ToyCarArena.UI
             ViewModel.CarOut -= OnCarOut;
             ViewModel.CarBack -= OnCarBack;
             ViewModel.NemesisChanged -= OnNemesisChanged;
-            ViewModel.PickedUp -= OnPickedUp;
+            ViewModel.ItemRolled -= OnItemRolled;
+            ViewModel.ItemUsed -= OnItemUsed;
+            ViewModel.ItemHit -= OnItemHit;
 
             if (boostButton != null) {
                 boostButton.UnregisterCallback<PointerDownEvent>(OnBoostPointerDown);
                 controls.ReleaseBoostButton(boostButton);
+            }
+
+            if (itemButton != null) {
+                itemButton.UnregisterCallback<PointerDownEvent>(OnItemPointerDown);
+                controls.ReleaseItemButton(itemButton);
             }
 
             if (settingsButton != null) {
@@ -648,14 +707,27 @@ namespace ToyCarArena.UI
         /// clear of the screen's sides and the HUD: it springs in, holds, and flies up and away.
         /// </summary>
         private void ShowKnockout(Vector3 worldPosition, bool isRevenge) =>
-            ShowPopup(worldPosition, isRevenge, PickupKind.None);
+            ShowPopup(worldPosition, isRevenge, ItemKind.None, false);
 
         /// <summary>
-        /// The same sticker for a pickup the player's car took (HEAVY!, SHOCKWAVE!, SHIELD!, TURBO!), over the car.
+        /// The same sticker for an item the player used (HEAVY!, SHOCKWAVE!, SHIELD!, TURBO!, BOMB!, GLOVE!), over the
+        /// car, as it is used and not as it is taken: the box only fills the slot.
         /// </summary>
-        private void OnPickedUp(PickupKind kind) => ShowPopup(ViewModel.PlayerPosition, false, kind);
+        private void OnItemUsed(ItemKind kind)
+        {
+            ShowPopup(ViewModel.PlayerPosition, false, kind, false);
+            HideItemHint();
+        }
 
-        private void ShowPopup(Vector3 worldPosition, bool isRevenge, PickupKind pickup)
+        /// <summary>A comic POW! where the player's glove lands on a car.</summary>
+        private void OnItemHit(ItemKind kind, Vector3 point)
+        {
+            if (kind == ItemKind.Glove) {
+                ShowPopup(point, false, ItemKind.Glove, true);
+            }
+        }
+
+        private void ShowPopup(Vector3 worldPosition, bool isRevenge, ItemKind pickup, bool isPow)
         {
             var panel = popupLayer.panel;
             if (panel == null) {
@@ -680,7 +752,7 @@ namespace ToyCarArena.UI
             ClearScoreboard(popupLayer, ref point, PopupHalfWidth, PopupHalfHeight * 2f);
             point.y -= PopupHalfHeight;
 
-            var popup = CreatePopup(popupCount++ % 2 == 0 ? -PopupTilt : PopupTilt, isRevenge, pickup);
+            var popup = CreatePopup(popupCount++ % 2 == 0 ? -PopupTilt : PopupTilt, isRevenge, pickup, isPow);
             popup.style.left = point.x;
             popup.style.top = point.y;
             popupLayer.Add(popup);
@@ -701,7 +773,7 @@ namespace ToyCarArena.UI
 
         // The sticker: the knock-out star and KNOCKOUT! in gold, outlined (.stroke in ui_screens). The outer element
         // holds the place, centred on it; the inner one springs, tilts and flies.
-        private static VisualElement CreatePopup(float tilt, bool isRevenge, PickupKind pickup)
+        private static VisualElement CreatePopup(float tilt, bool isRevenge, ItemKind pickup, bool isPow)
         {
             var popup = new VisualElement { pickingMode = PickingMode.Ignore };
             popup.AddToClassList("ko-pop");
@@ -713,11 +785,17 @@ namespace ToyCarArena.UI
             sticker.style.rotate = new Rotate(tilt);
             popup.Add(sticker);
 
-            // A pickup's sticker is the word alone, in the kind's colour.
-            if (pickup != PickupKind.None) {
+            if (isPow) {
+                popup.AddToClassList("ko-pop--pow");
+                sticker.Add(CreateOutlinedText(Strings.Get("hud.pow"), "ko-pop__text"));
+                return popup;
+            }
+
+            // An item's sticker is the word alone, in the kind's colour.
+            if (pickup != ItemKind.None) {
                 popup.AddToClassList("ko-pop--power");
                 popup.AddToClassList($"ko-pop--{PowerName(pickup)}");
-                sticker.Add(CreateOutlinedText(Strings.Get($"hud.pickup_{PowerName(pickup)}"), "ko-pop__text"));
+                sticker.Add(CreateOutlinedText(Strings.Get($"hud.item_{PowerName(pickup)}"), "ko-pop__text"));
                 return popup;
             }
 
@@ -727,8 +805,10 @@ namespace ToyCarArena.UI
             return popup;
         }
 
-        /// <summary>The kind's name as the strings and the classes spell it: heavy, shockwave, shield, turbo.</summary>
-        private static string PowerName(PickupKind kind) => kind.ToString().ToLowerInvariant();
+        /// <summary>
+        /// The kind's name as the strings and the classes spell it: heavy, shockwave, shield, turbo, bomb, glove.
+        /// </summary>
+        private static string PowerName(ItemKind kind) => kind.ToString().ToLowerInvariant();
 
         /// <summary>
         /// The badge of the ability the player's car runs: its icon and name, and a bar that drains with the time. It
@@ -738,19 +818,19 @@ namespace ToyCarArena.UI
         {
             var ability = ViewModel.Ability;
             if (ability != shownAbility) {
-                foreach (var kind in new[] { PickupKind.Heavy, PickupKind.Shield, PickupKind.Turbo }) {
+                foreach (var kind in new[] { ItemKind.Heavy, ItemKind.Shield, ItemKind.Turbo }) {
                     power.EnableInClassList($"hud__power--{PowerName(kind)}", kind == ability);
                     powerIcon.EnableInClassList($"hud__power-icon--{PowerName(kind)}", kind == ability);
                 }
 
                 shownAbility = ability;
-                power.EnableInClassList(PowerShownClass, ability != PickupKind.None);
-                if (ability != PickupKind.None) {
-                    powerName.text = Strings.Get($"hud.pickup_{PowerName(ability)}");
+                power.EnableInClassList(PowerShownClass, ability != ItemKind.None);
+                if (ability != ItemKind.None) {
+                    powerName.text = Strings.Get($"hud.item_{PowerName(ability)}");
                 }
             }
 
-            if (ability == PickupKind.None) {
+            if (ability == ItemKind.None) {
                 return;
             }
 
@@ -758,6 +838,117 @@ namespace ToyCarArena.UI
             var isBlinking = ViewModel.AbilityTimeLeft < PowerBlinkTime
                 && Mathf.Repeat(Time.unscaledTime * PowerBlinkRate, 1f) < 0.5f;
             power.style.opacity = isBlinking ? 0.45f : 1f;
+        }
+
+        /// <summary>
+        /// The item slot: an empty slot is a faint "?"; a box the player broke spins it through the items, on unscaled
+        /// time for as long as the roll lasts (nothing skips it: the item cannot be used until it lands), and it lands
+        /// with a pop on the item; used, it is empty again. Small with its E key on a desktop. The first item of a visit
+        /// also says how to use it.
+        /// </summary>
+        private void RefreshItem()
+        {
+            var isTouch = controls.CheckTouchScreen();
+            itemButton.EnableInClassList(ItemDesktopClass, !isTouch);
+            itemHint.EnableInClassList(ItemHintDesktopClass, !isTouch);
+            boostSlot.EnableInClassList(SlotItemsClass, isTouch);
+
+            var held = ViewModel.HeldItem;
+            if (ViewModel.IsItemRolling) {
+                isItemShownRolling = true;
+                itemButton.AddToClassList(ItemRollingClass);
+                SetItemIcon(ItemKinds[(int)(Time.unscaledTime * ItemSpinRate) % ItemKinds.Length]);
+            }
+            else {
+                if (isItemShownRolling) {
+                    isItemShownRolling = false;
+                    itemButton.RemoveFromClassList(ItemRollingClass);
+                    if (held != ItemKind.None) {
+                        Pulse(itemButton, ItemPopClass);
+                        audioService.PlayUiClick();
+                    }
+                }
+
+                SetItemIcon(held);
+            }
+
+            itemButton.EnableInClassList(ItemEmptyClass, held == ItemKind.None);
+            RefreshItemHint(isTouch);
+        }
+
+        private void OnItemRolled(ItemKind kind)
+        {
+            Pulse(itemButton, ItemPopClass);
+        }
+
+        private void SetItemIcon(ItemKind kind)
+        {
+            if (kind == shownItem) {
+                return;
+            }
+
+            if (shownItem != ItemKind.None) {
+                itemIcon.RemoveFromClassList($"hud__item-icon--{PowerName(shownItem)}");
+            }
+
+            shownItem = kind;
+            if (kind != ItemKind.None) {
+                itemIcon.AddToClassList($"hud__item-icon--{PowerName(kind)}");
+            }
+        }
+
+        /// <summary>
+        /// TAP TO USE or PRESS E over the slot the first time in a visit an item lands in it, the button pulsing with
+        /// it, for a moment; the visit's controls remember it was shown.
+        /// </summary>
+        private void RefreshItemHint(bool isTouch)
+        {
+            var now = Time.unscaledTime;
+            if (!isItemHintShown) {
+                if (controls.HasShownItemHint || !ViewModel.IsItemReady || isItemShownRolling) {
+                    return;
+                }
+
+                controls.HasShownItemHint = true;
+                isItemHintShown = true;
+                itemHintTime = now;
+                nextItemPulse = now;
+                var text = Strings.Get(isTouch ? "hud.tap_to_use" : "hud.press_e");
+                itemHintText.text = text;
+                itemHintFace.text = text;
+                itemHint.AddToClassList(ItemHintShownClass);
+            }
+
+            if (now - itemHintTime >= ItemHintDuration || !ViewModel.IsItemReady) {
+                HideItemHint();
+                return;
+            }
+
+            if (now >= nextItemPulse) {
+                nextItemPulse = now + ItemHintPulsePeriod;
+                Pulse(itemButton, ItemHintPulseClass);
+            }
+        }
+
+        private void HideItemHint()
+        {
+            if (!isItemHintShown) {
+                return;
+            }
+
+            isItemHintShown = false;
+            itemHint.RemoveFromClassList(ItemHintShownClass);
+        }
+
+        private void OnItemPointerDown(PointerDownEvent evt)
+        {
+            evt.StopPropagation();
+            // As with boost, Enhanced Touch owns touch presses; only a mouse or a pen is passed on from here.
+            if (evt.pointerType != UnityEngine.UIElements.PointerType.touch) {
+                ViewModel.PressItem();
+            }
+
+            Pulse(itemButton, ItemPressedClass);
         }
 
         internal static VisualElement CreateLevelBadge(int level, string className)
@@ -1384,6 +1575,13 @@ namespace ToyCarArena.UI
             var bottom = radius * GhostTravel + fingerHalfWidth +
                 (radius * GhostFingerLengthScale - fingerHalfWidth) * Mathf.Cos(GhostFingerTilt * Mathf.Deg2Rad);
             var buttonBounds = new Rect(Root.WorldToLocal(boostSlot.worldBound.min), boostSlot.worldBound.size);
+            if (itemButton.ClassListContains(ItemShownClass)) {
+                // The item button stands out of the slot, up and inward of BOOST: the ghost keeps off both.
+                var itemBounds = new Rect(Root.WorldToLocal(itemButton.worldBound.min), itemButton.worldBound.size);
+                buttonBounds = Rect.MinMaxRect(Mathf.Min(buttonBounds.xMin, itemBounds.xMin),
+                    Mathf.Min(buttonBounds.yMin, itemBounds.yMin), Mathf.Max(buttonBounds.xMax, itemBounds.xMax),
+                    Mathf.Max(buttonBounds.yMax, itemBounds.yMax));
+            }
             for (var row = 0; row < 2; row++) {
                 for (var column = 0; column < 4; column++) {
                     var point = preferred + new Vector2(column * radius * 2f, row * radius);

@@ -232,15 +232,26 @@ namespace ToyCarArena.App
         }
 
         /// <summary>
-        /// The player took a pickup in match number <paramref name="match"/>: <c>match / pickup-heavy, shockwave, shield,
-        /// turbo-rR / pickup</c>, R as for the match's other events.
+        /// The roll of a box the player broke landed on an item, in match number <paramref name="match"/>:
+        /// <c>match / item-heavy, shockwave, shield, turbo, bomb, glove-rR / item-get</c>, R as for the match's other
+        /// events. Replaces v0.6's <c>pickup</c> event, when a pickup was its ability.
         /// </summary>
-        public static void MeasurePickup(this IGamePlatform platform, int match, PickupKind kind) =>
-            platform.Measure(MatchCategory, $"pickup-{kind.ToString().ToLowerInvariant()}-{RoundTag(match)}", "pickup");
+        public static void MeasureItemGet(this IGamePlatform platform, int match, ItemKind kind) =>
+            platform.Measure(MatchCategory, $"item-{ItemId(kind)}-{RoundTag(match)}", "item-get");
 
         /// <summary>
-        /// How many pickups the player took in the match, at its end: <c>match / pickups-N-rR / pickups</c>, N from 0 to 9
-        /// or 10plus.
+        /// The player used the item in the slot: <c>match / item-kind-rR / item-use</c>; against item-get it tells which
+        /// items the players find and which they forget to use.
+        /// </summary>
+        public static void MeasureItemUse(this IGamePlatform platform, int match, ItemKind kind) =>
+            platform.Measure(MatchCategory, $"item-{ItemId(kind)}-{RoundTag(match)}", "item-use");
+
+        // The kind as the events spell it, without digits.
+        private static string ItemId(ItemKind kind) => kind.ToString().ToLowerInvariant();
+
+        /// <summary>
+        /// How many boxes the player broke in the match, an item in them or not, at its end:
+        /// <c>match / pickups-N-rR / pickups</c>, N from 0 to 9 or 10plus.
         /// </summary>
         public static void MeasureMatchPickups(this IGamePlatform platform, int match, int count) =>
             platform.Measure(MatchCategory, $"pickups-{CountBucket(count)}-{RoundTag(match)}", "pickups");

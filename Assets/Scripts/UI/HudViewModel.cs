@@ -50,9 +50,20 @@ namespace ToyCarArena.UI
         public event Action NemesisChanged;
 
         /// <summary>
-        /// Raised in a match when the player's car takes a pickup, with its kind.
+        /// Raised in a match when the player's car breaks a box and its slot starts to spin, with the item it will land
+        /// on (the HUD spins anyway and lands on it).
         /// </summary>
-        public event Action<PickupKind> PickedUp;
+        public event Action<ItemKind> ItemRolled;
+
+        /// <summary>
+        /// Raised in a match when the player uses the item in the slot, with its kind.
+        /// </summary>
+        public event Action<ItemKind> ItemUsed;
+
+        /// <summary>
+        /// Raised in a match when an item of the player's hits a car, with its kind and where the car was.
+        /// </summary>
+        public event Action<ItemKind, Vector3> ItemHit;
 
         private readonly IScreenNavigator navigator;
         private Car player;
@@ -178,12 +189,26 @@ namespace ToyCarArena.UI
         public float SafeShareLeft => round?.Player != null && round.IsRunning ? round.SafeShareLeft(round.Player) : 0f;
 
         /// <summary>
-        /// The ability the player's car has running (<see cref="PickupKind.None"/> for none) and how much of it is left,
+        /// The ability the player's car has running (<see cref="ItemKind.None"/> for none) and how much of it is left,
         /// from 1 to 0, and in seconds.
         /// </summary>
-        public PickupKind Ability => round?.Player != null ? round.Player.Ability : PickupKind.None;
+        public ItemKind Ability => round?.Player != null ? round.Player.Ability : ItemKind.None;
         public float AbilityShare => round?.Player != null ? round.Player.AbilityShare : 0f;
         public float AbilityTimeLeft => round?.Player != null ? round.Player.AbilityTimeLeft : 0f;
+
+        /// <summary>
+        /// The item in the player's slot (<see cref="ItemKind.None"/> for an empty one), whether it still spins, and
+        /// whether it can be used now.
+        /// </summary>
+        public ItemKind HeldItem => round?.Player != null ? round.Player.HeldItem : ItemKind.None;
+        public bool IsItemRolling => round?.Player != null && round.Player.IsItemRolling;
+        public bool IsItemReady => IsRunning && round.Player.IsItemReady;
+
+        /// <summary>
+        /// The item button was clicked with a mouse: the input service hears it as the item key. A touch on it is the
+        /// input service's own.
+        /// </summary>
+        public void PressItem() => controls.PressItem();
 
         public Vector3 PlayerPosition => round?.Player != null ? round.Player.Position : Vector3.zero;
 
@@ -267,7 +292,9 @@ namespace ToyCarArena.UI
                 round.NemesisChanged += OnNemesisChanged;
                 player = round.Player;
                 if (player != null) {
-                    player.PickedUp += OnPickedUp;
+                    player.ItemRolled += OnItemRolled;
+                    player.ItemUsed += OnItemUsed;
+                    player.ItemHit += OnItemHit;
                 }
             }
         }
@@ -289,12 +316,16 @@ namespace ToyCarArena.UI
             }
 
             if (player != null) {
-                player.PickedUp -= OnPickedUp;
+                player.ItemRolled -= OnItemRolled;
+                player.ItemUsed -= OnItemUsed;
+                player.ItemHit -= OnItemHit;
                 player = null;
             }
         }
 
-        private void OnPickedUp(PickupKind kind) => PickedUp?.Invoke(kind);
+        private void OnItemRolled(ItemKind kind) => ItemRolled?.Invoke(kind);
+        private void OnItemUsed(ItemKind kind) => ItemUsed?.Invoke(kind);
+        private void OnItemHit(ItemKind kind, Vector3 point) => ItemHit?.Invoke(kind, point);
 
         private void OnRespawned(Car car) => CarBack?.Invoke(round.IndexOf(car));
 

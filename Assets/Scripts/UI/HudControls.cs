@@ -17,11 +17,13 @@ namespace ToyCarArena.UI
     public sealed class HudControls : IOnScreenControls
     {
         public event Action BoostPressed;
+        public event Action ItemPressed;
 
         // Read once: whether the browser's main pointer is a finger does not change while the game runs.
         private readonly bool isTouchDevice = IsTouchDevice();
 
         private VisualElement boostButton;
+        private VisualElement itemButton;
         private VisualElement settingsButton;
         private bool isTouchSeen;
 
@@ -51,6 +53,12 @@ namespace ToyCarArena.UI
         /// lives here, in the app's scope, so the next round keeps the side the player plays on.
         /// </summary>
         public bool IsBoostOnLeft { get; private set; }
+
+        /// <summary>
+        /// Whether the HUD has shown how to use an item in this visit: once is enough, so it lives here, in the app's
+        /// scope, with the visit.
+        /// </summary>
+        public bool HasShownItemHint { get; set; }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
@@ -87,6 +95,27 @@ namespace ToyCarArena.UI
             if (boostButton == button) {
                 boostButton = null;
             }
+        }
+
+        /// <summary>
+        /// The item button of the HUD on the screen now, null while there is none (or the round has no items).
+        /// </summary>
+        public void SetItemButton(VisualElement button)
+        {
+            itemButton = button;
+        }
+
+        public void ReleaseItemButton(VisualElement button)
+        {
+            if (itemButton == button) {
+                itemButton = null;
+            }
+        }
+
+        /// <summary>A mouse click on the item button; a touch on it is read by the input service.</summary>
+        public void PressItem()
+        {
+            ItemPressed?.Invoke();
         }
 
         /// <summary>
@@ -131,6 +160,11 @@ namespace ToyCarArena.UI
         public bool IsControlAt(Vector2 screenPosition)
         {
             return IsPicked(boostButton, screenPosition);
+        }
+
+        public bool IsItemAt(Vector2 screenPosition)
+        {
+            return !IsPopupOpen && IsPicked(itemButton, screenPosition);
         }
 
         public bool IsUiAt(Vector2 screenPosition)

@@ -30,6 +30,7 @@ namespace ToyCarArena.UI
         private readonly VisualElement stick;
         private readonly VisualElement stickDisc;
         private readonly VisualElement boost;
+        private readonly VisualElement item;
         private readonly VisualElement start;
         private readonly VisualElement ghost;
         private readonly VisualElement[] pills;
@@ -59,6 +60,7 @@ namespace ToyCarArena.UI
             this.stick = stick;
             stickDisc = root.Q<VisualElement>("stick-base");
             this.boost = boost;
+            item = root.Q<VisualElement>("item-button");
             start = root.Q<VisualElement>("start");
             ghost = root.Q<VisualElement>("ghost");
             pills = new[] { timePill, carsPill, koPill, settingsButton };
@@ -313,6 +315,7 @@ namespace ToyCarArena.UI
                 visible &= scoreboard == null || !scoreboard.IsVisible || !Overlaps(scoreboard.Element, rect);
                 visible &= !stick.ClassListContains("hud__stick--shown") || !Overlaps(stickDisc, rect);
                 visible &= !Overlaps(boost, rect);
+                visible &= item == null || item.resolvedStyle.display == DisplayStyle.None || !Overlaps(item, rect);
                 for (var other = 0; other < i; other++) {
                     if (speeches[other].Active && speeches[other].Root.resolvedStyle.visibility == Visibility.Visible) {
                         visible &= !Overlaps(speeches[other].Root, rect);

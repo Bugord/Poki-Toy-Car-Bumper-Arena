@@ -1,6 +1,7 @@
 using System;
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Input;
+using ToyCarArena.Gameplay.Pickups;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
 using VContainer.Unity;
@@ -20,6 +21,8 @@ namespace ToyCarArena.Gameplay.Cars
     /// A drag wins over the keys while it lasts. Boost (Space, the right mouse button, a gamepad's south button or the
     /// boost button, a second finger or a short tap on a touch screen) fires the car's boost towards where it is
     /// steered. A released tap remembers nonzero steering briefly, so letting go to tap keeps the intended boost line.
+    /// In a long match the item key (E, Left Shift, a gamepad's west button or the item button) uses the item the car
+    /// holds (<see cref="ArenaPickups.Use"/>).
     /// Once the round is over the
     /// car rolls to a stop, so a click on the result screen does not steer it, and boost does nothing.
     /// Before the round begins it only watches for the player's first steer or boost (<see cref="HasActed"/>), which the
@@ -40,6 +43,7 @@ namespace ToyCarArena.Gameplay.Cars
         private readonly ArenaRound round;
         private readonly IOnScreenControls onScreenControls;
         private readonly RoundDifficulty difficulty;
+        private readonly ArenaPickups pickups;
 
         // The joystick's centre: where the finger touched, pulled along when the finger goes past the radius.
         private int joystickDragId;
@@ -84,6 +88,11 @@ namespace ToyCarArena.Gameplay.Cars
         public int Boosts { get; private set; }
 
         /// <summary>
+        /// Items the player used this round.
+        /// </summary>
+        public int ItemsUsed { get; private set; }
+
+        /// <summary>
         /// Unscaled time of the last nonzero steer, before edge assist, so the HUD never mistakes braking at the edge
         /// for a player who has not found the joystick. Negative infinity until the first steer.
         /// </summary>
@@ -96,7 +105,7 @@ namespace ToyCarArena.Gameplay.Cars
         public float LastTouchTime { get; private set; } = float.NegativeInfinity;
 
         public PlayerDriver(IInputService input, GameTuning tuning, ArenaCamera arenaCamera, ArenaRound round,
-            IOnScreenControls onScreenControls, RoundDifficulty difficulty)
+            IOnScreenControls onScreenControls, RoundDifficulty difficulty, ArenaPickups pickups)
         {
             this.input = input;
             this.tuning = tuning;
@@ -104,11 +113,13 @@ namespace ToyCarArena.Gameplay.Cars
             this.round = round;
             this.onScreenControls = onScreenControls;
             this.difficulty = difficulty;
+            this.pickups = pickups;
         }
 
         public void Initialize()
         {
             input.BoostPressed += OnBoostPressed;
+            input.ItemPressed += OnItemPressed;
             input.MoveUsed += OnMoveUsed;
         }
 
@@ -116,6 +127,7 @@ namespace ToyCarArena.Gameplay.Cars
         {
             input.MoveUsed -= OnMoveUsed;
             input.BoostPressed -= OnBoostPressed;
+            input.ItemPressed -= OnItemPressed;
             // The HUD outlives the arena: a joystick left shown would stay on the next round's screen.
             SetJoystickShown(false);
         }
@@ -190,6 +202,24 @@ namespace ToyCarArena.Gameplay.Cars
             if (round.IsRunning && !car.IsOut && TryBoost(car, method)) {
                 Boosts++;
                 FirstBoostInput ??= method;
+            }
+        }
+
+        // The press that starts the round only starts it, as with boost; an empty or spinning slot does nothing.
+        private void OnItemPressed()
+        {
+            // A round of last-car-standing has no items: the key does nothing there, not even start the round.
+            if (!pickups.IsEnabled) {
+                return;
+            }
+
+            if (IsWaiting) {
+                HasActed = true;
+                return;
+            }
+
+            if (pickups.Use(round.Player)) {
+                ItemsUsed++;
             }
         }
 
