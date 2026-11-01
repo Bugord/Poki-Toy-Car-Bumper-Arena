@@ -4,6 +4,7 @@ using Bugord.App.Platform;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Arena;
+using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
 using ToyCarArena.UI;
 using UIKit.Runtime.Abstractions;
@@ -51,11 +52,21 @@ namespace ToyCarArena.App
             var outcome = Payload.Result.Outcome;
             var playedRound = progress.Round - 1;
             var mapId = arenaRotation.Current;
+            // The played arena is still loaded, and with it the driver that knows whether the player found the boost.
+            var firstAgain = playedRound <= 1 ? RoundEvents.FirstAgainOf(levelScene.Resolve<PlayerDriver>()) : null;
             try {
                 platform.MeasurePlayAgainShown(outcome, playedRound);
+                if (firstAgain != null) {
+                    platform.MeasureFirstAgainShown(firstAgain);
+                }
+
                 platform.MeasureGarageShown();
                 await screen.ViewModel.WaitForResultAsync(token);
                 platform.MeasurePlayAgainPressed(outcome, playedRound);
+                if (firstAgain != null) {
+                    platform.MeasureFirstAgainPressed(firstAgain);
+                }
+
                 await curtain.Show(token);
                 // RoundState already moved the rotation on, so Current is the arena of the round this lobby leads to.
                 var arena = arenaCatalog.Find(mapId);

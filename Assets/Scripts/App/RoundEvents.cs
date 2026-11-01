@@ -36,6 +36,9 @@ namespace ToyCarArena.App
     /// <item><c>result / play-again / visible</c>, then <c>interact</c> when pressed; after v0.5.1 also
     /// <c>result / again-won, out, survived-rR / visible, interact</c>, the same press by how the round went, so the
     /// visits that end on a result screen read by outcome and round</item>
+    /// <item>after v0.6.0, after the first round or match of a visit only: <c>controls / again-input-boost, noboost /
+    /// visible, interact</c>, the same press by what the player first steered with and whether they boosted at all, so
+    /// the visits lost after the first round read against a boost never found</item>
     /// <item>after v0.5.1: <c>lobby / slow-arena-id / visible</c> when the next arena is still loading
     /// <see cref="SlowLobbySeconds"/> after the lobby came up, then <c>interact</c> when that round comes up after all,
     /// so a slow load can be told from a wait the player gave up on</item>
@@ -301,6 +304,24 @@ namespace ToyCarArena.App
             platform.MeasureInteract(ResultCategory, PlayAgain);
             platform.MeasureInteract(ResultCategory, AgainOf(outcome, round));
         }
+
+        /// <summary>
+        /// The NEXT MATCH press after the first round or match of a visit, by what the player first steered with and
+        /// whether they boosted: <c>controls / again-touch-noboost / visible, interact</c>. Poki counts each event on
+        /// its own, so this is the one way to see whether the visits that leave there are the ones that never found the
+        /// boost. Read from the driver before the next arena replaces it.
+        /// </summary>
+        public static string FirstAgainOf(PlayerDriver driver)
+        {
+            var input = driver.FirstInput == null ? "none" : GameEvent.Clean(driver.FirstInput.Value.ToString());
+            return $"again-{input}-{(driver.FirstBoostInput == null ? "noboost" : "boost")}";
+        }
+
+        public static void MeasureFirstAgainShown(this IGamePlatform platform, string firstAgain) =>
+            platform.MeasureVisible(ControlsCategory, firstAgain);
+
+        public static void MeasureFirstAgainPressed(this IGamePlatform platform, string firstAgain) =>
+            platform.MeasureInteract(ControlsCategory, firstAgain);
 
         private static string AgainOf(RoundOutcome outcome, int round) =>
             $"again-{GameEvent.Clean(outcome.ToString())}-{RoundTag(round)}";
