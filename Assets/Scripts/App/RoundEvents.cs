@@ -33,7 +33,14 @@ namespace ToyCarArena.App
     /// <item>since v0.2.0: <c>result / fell-ring, boost, ball, slide, drive-rR / fall-cause</c> when the player falls without
     /// knockout credit: the floor gave way, a recent boost, the Ball arena's ball (no car pushed the player after it), an
     /// older hit, or driving off, in that order</item>
-    /// <item><c>result / play-again / visible</c>, then <c>interact</c> when pressed</item>
+    /// <item><c>result / play-again / visible</c>, then <c>interact</c> when pressed; after v0.5.1 also
+    /// <c>result / again-won, out, survived-rR / visible, interact</c>, the same press by how the round went, so the
+    /// visits that end on a result screen read by outcome and round</item>
+    /// <item>after v0.5.1: <c>lobby / slow-arena-id / visible</c> when the next arena is still loading
+    /// <see cref="SlowLobbySeconds"/> after the lobby came up, then <c>interact</c> when that round comes up after all,
+    /// so a slow load can be told from a wait the player gave up on</item>
+    /// <item>after v0.5.1: <c>arena / arena-id-variant-id / start</c>, then <c>complete</c> or <c>fail</c> beside the
+    /// round's, so Poki counts the visits that leave in the middle of a round per arena variant</item>
     /// <item>since v0.2.0, only with a marked rival present: <c>result / revenge-got, missed-rR / revenge</c></item>
     /// <item><c>garage / button / visible, interact</c> and <c>garage / car-id / equip</c></item>
     /// <item><c>garage / color-name / color</c> on colour selection and
@@ -52,6 +59,8 @@ namespace ToyCarArena.App
         private const string ResultCategory = "result";
         private const string ControlsCategory = "controls";
         private const string PlayAgain = "play-again";
+        private const string LobbyCategory = "lobby";
+        private const string ArenaCategory = "arena";
 
         // Rounds past this one share one bucket: few sessions get there, and the event names stay few.
         private const int LastRoundBucket = 10;
@@ -63,7 +72,19 @@ namespace ToyCarArena.App
         // Seconds on the arena are counted in buckets this wide, the round's last bucket ending at its full length.
         private const int TimeBucket = 15;
 
-        public static void MeasureLobbyShown(this IGamePlatform platform) => platform.Measure("lobby", "shown", "visible");
+        /// <summary>
+        /// Seconds of loading under the lobby after which the load counts as slow: the lobby itself shows for 1.6 s, and
+        /// a desktop loads the next arena well within it.
+        /// </summary>
+        public const float SlowLobbySeconds = 4f;
+
+        public static void MeasureLobbyShown(this IGamePlatform platform) => platform.Measure(LobbyCategory, "shown", "visible");
+
+        public static void MeasureLobbySlow(this IGamePlatform platform, string mapId) =>
+            platform.MeasureVisible(LobbyCategory, $"slow-{mapId}");
+
+        public static void MeasureLobbySlowDone(this IGamePlatform platform, string mapId) =>
+            platform.MeasureInteract(LobbyCategory, $"slow-{mapId}");
 
         public static void MeasureScoreboardShown(this IGamePlatform platform) =>
             platform.Measure("scoreboard", "shown", "visible");
@@ -71,6 +92,32 @@ namespace ToyCarArena.App
         public static void MeasureRoundStart(this IGamePlatform platform, int round)
         {
             platform.MeasureStart(RoundCategory, RoundBucket(round));
+        }
+
+        /// <summary>
+        /// The variant's own start, beside <see cref="MeasureRoundStart"/>: the round's lefts say how many leave
+        /// mid-round, these say on which arena. Ids have no digits, so no number is spent.
+        /// </summary>
+        public static void MeasureVariantStart(this IGamePlatform platform, string mapId, string variantId)
+        {
+            if (!string.IsNullOrEmpty(variantId)) {
+                platform.MeasureStart(ArenaCategory, $"{mapId}-{variantId}");
+            }
+        }
+
+        public static void MeasureVariantEnd(this IGamePlatform platform, string mapId, string variantId,
+            RoundOutcome outcome)
+        {
+            if (string.IsNullOrEmpty(variantId)) {
+                return;
+            }
+
+            if (outcome == RoundOutcome.Out) {
+                platform.MeasureFail(ArenaCategory, $"{mapId}-{variantId}");
+            }
+            else {
+                platform.MeasureComplete(ArenaCategory, $"{mapId}-{variantId}");
+            }
         }
 
         /// <summary>
@@ -146,15 +193,20 @@ namespace ToyCarArena.App
             return boosts == 0 ? "boosts-0" : boosts <= 2 ? "boosts-1-2" : "boosts-3plus";
         }
 
-        public static void MeasurePlayAgainShown(this IGamePlatform platform)
+        public static void MeasurePlayAgainShown(this IGamePlatform platform, RoundOutcome outcome, int round)
         {
             platform.MeasureVisible(ResultCategory, PlayAgain);
+            platform.MeasureVisible(ResultCategory, AgainOf(outcome, round));
         }
 
-        public static void MeasurePlayAgainPressed(this IGamePlatform platform)
+        public static void MeasurePlayAgainPressed(this IGamePlatform platform, RoundOutcome outcome, int round)
         {
             platform.MeasureInteract(ResultCategory, PlayAgain);
+            platform.MeasureInteract(ResultCategory, AgainOf(outcome, round));
         }
+
+        private static string AgainOf(RoundOutcome outcome, int round) =>
+            $"again-{GameEvent.Clean(outcome.ToString())}-{RoundTag(round)}";
 
         public static void MeasureGarageShown(this IGamePlatform platform) => platform.MeasureVisible("garage", "button");
 

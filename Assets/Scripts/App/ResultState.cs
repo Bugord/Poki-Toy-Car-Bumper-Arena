@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using Bugord.App.Platform;
 using Cysharp.Threading.Tasks;
@@ -46,14 +47,18 @@ namespace ToyCarArena.App
         public override async UniTask<StateTransitionInfo> Execute(CancellationToken token)
         {
             var screen = await navigator.OpenAsync<RoundOverViewModel, RoundRecord>(Payload, token);
+            // RoundState already moved the session on, so the round on this screen is the one before Round.
+            var outcome = Payload.Result.Outcome;
+            var playedRound = progress.Round - 1;
+            var mapId = arenaRotation.Current;
             try {
-                platform.MeasurePlayAgainShown();
+                platform.MeasurePlayAgainShown(outcome, playedRound);
                 platform.MeasureGarageShown();
                 await screen.ViewModel.WaitForResultAsync(token);
-                platform.MeasurePlayAgainPressed();
+                platform.MeasurePlayAgainPressed(outcome, playedRound);
                 await curtain.Show(token);
                 // RoundState already moved the rotation on, so Current is the arena of the round this lobby leads to.
-                var arena = arenaCatalog.Find(arenaRotation.Current);
+                var arena = arenaCatalog.Find(mapId);
                 curtain.ShowLobby(roster, RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis,
                     GameText.Arena(arena), arena != null && arenaRotation.IsNew(arena.Id));
                 platform.MeasureLobbyShown();
@@ -65,8 +70,21 @@ namespace ToyCarArena.App
 
             // Under the curtain the screen's fade-out shows nowhere, so the next arena loads meanwhile: the brief wants
             // a lost round back in play within about 3 seconds.
-            await UniTask.WhenAll(screen.CloseAsync(), levelScene.Load(token));
+            // A load still running past the lobby is told apart, so a visit lost here reads as a slow arena or a wait.
+            var loading = UniTask.WhenAll(screen.CloseAsync(), levelScene.Load(token)).Preserve();
+            var slowAfter = TimeSpan.FromSeconds(RoundEvents.SlowLobbySeconds);
+            var isSlow = await UniTask.WhenAny(loading,
+                UniTask.Delay(slowAfter, DelayType.Realtime, cancellationToken: token)) == 1;
+            if (isSlow) {
+                platform.MeasureLobbySlow(mapId);
+            }
+
+            await loading;
             await curtain.Ready(token);
+            if (isSlow) {
+                platform.MeasureLobbySlowDone(mapId);
+            }
+
             return Transition.GoTo<RoundState>();
         }
     }
