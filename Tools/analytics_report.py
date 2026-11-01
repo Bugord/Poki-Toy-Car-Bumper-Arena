@@ -75,6 +75,8 @@ def summarise(data):
         "lobby": i.get("lobby-shown"),
         # после v0.5.1: NEXT MATCH по исходу и раунду, медленное лобби по арене, раунды по варианту арены
         "again_by": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"result-again-([a-z]+-r(?:1|2|3|4plus))", e))},
+        # после v0.6.0: NEXT MATCH после первого матча визита по устройству и по тому, ускорялся ли игрок
+        "again_first": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"controls-again-([a-z]+-(?:boost|noboost))", e))},
         "slow": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"lobby-slow-([a-z]+)", e))},
         "arenas": {m.group(1): row for e, row in p.items() if (m := re.fullmatch(r"arena-([a-z]+-[a-z]+)", e))},
         "scoreboard": i.get("scoreboard-shown"),
@@ -255,6 +257,8 @@ def report(version, previous):
 
     for title, key, fmt in (
         ("NEXT MATCH по исходу и раунду (после v0.5.1; нажали / показано)", "again_by", lambda s, k: pressed(s, "again_by", k)),
+        ("NEXT MATCH после первого матча по устройству и бусту (после v0.6.0; нажали / показано)", "again_first",
+         lambda s, k: pressed(s, "again_first", k)),
         ("Медленное лобби, загрузка дольше 4 с (после v0.5.1; дождались / медленных)", "slow", lambda s, k: pressed(s, "slow", k)),
         # В долгом матче вариант сменяется с каждым циклом пола: старт и complete на цикл, поражений нет, «ушли посреди»
         # это ушли посреди цикла этого варианта, а «раундов» это циклов.
