@@ -34,6 +34,32 @@
                 <Bugord.App.Localization.LocalizedText property="text" key="hud.revenge_taken" />
             </Bindings>
         </ui:Label>
+        <ui:VisualElement name="match-results" picking-mode="Ignore" class="round-over__match">
+            <ui:VisualElement name="podium" picking-mode="Ignore" class="podium">
+                <ui:VisualElement name="podium-rays" picking-mode="Ignore" class="podium__rays" />
+                <ui:VisualElement name="podium-car" picking-mode="Ignore" class="podium__car" />
+                <ui:VisualElement name="podium-winner" picking-mode="Ignore" class="podium__winner">
+                    <ui:VisualElement name="podium-crown" picking-mode="Ignore" class="podium__crown" />
+                    <ui:Label name="podium-name" picking-mode="Ignore" class="podium__name" />
+                    <ui:Label text="WINNER" picking-mode="Ignore" class="podium__tag">
+                        <Bindings>
+                            <Bugord.App.Localization.LocalizedText property="text" key="result.winner" />
+                        </Bindings>
+                    </ui:Label>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="results" picking-mode="Ignore" class="results">
+                <ui:VisualElement picking-mode="Ignore" class="results__header">
+                    <ui:Label text="MATCH RESULTS" picking-mode="Ignore" class="results__title">
+                        <Bindings>
+                            <Bugord.App.Localization.LocalizedText property="text" key="result.match_results" />
+                        </Bindings>
+                    </ui:Label>
+                    <ui:Label text="KO" picking-mode="Ignore" class="results__title results__title--ko" />
+                </ui:VisualElement>
+                <ui:VisualElement name="results-rows" picking-mode="Ignore" class="results__rows" />
+            </ui:VisualElement>
+        </ui:VisualElement>
         <ui:VisualElement picking-mode="Ignore" class="round-over__spacer" />
         <ui:VisualElement picking-mode="Ignore" class="round-over__unlock-slot">
             <ui:VisualElement name="xp-new-car" picking-mode="Ignore" class="best best--shown best--new round-over__new-car">
@@ -44,58 +70,82 @@
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="level-card" picking-mode="Ignore" class="card level-card">
-            <ui:VisualElement picking-mode="Ignore" class="level-card__head">
-                <ui:VisualElement name="xp-level" picking-mode="Ignore" class="level-badge level-badge--big">
-                    <ui:Label name="xp-level-value" text="1" picking-mode="Ignore" class="level-badge__value" />
+        <ui:VisualElement picking-mode="Ignore" class="round-over__bottom">
+            <ui:VisualElement name="level-card" picking-mode="Ignore" class="card level-card">
+                <ui:VisualElement picking-mode="Ignore" class="level-card__head">
+                    <ui:VisualElement name="xp-level" picking-mode="Ignore" class="level-badge level-badge--big">
+                        <ui:Label name="xp-level-value" text="1" picking-mode="Ignore" class="level-badge__value" />
+                    </ui:VisualElement>
+                    <ui:VisualElement picking-mode="Ignore" class="level-card__gain">
+                        <ui:Label name="xp-rank" text="ROOKIE" picking-mode="Ignore" class="caption level-card__rank" />
+                        <ui:Label name="xp-gain" text="+0 XP" picking-mode="Ignore" class="level-card__xp" />
+                    </ui:VisualElement>
+                    <ui:Label name="xp-total" text="0 / 100 XP" picking-mode="Ignore" class="caption level-card__total" />
                 </ui:VisualElement>
-                <ui:VisualElement picking-mode="Ignore" class="level-card__gain">
-                    <ui:Label name="xp-rank" text="ROOKIE" picking-mode="Ignore" class="caption level-card__rank" />
-                    <ui:Label name="xp-gain" text="+0 XP" picking-mode="Ignore" class="level-card__xp" />
-                </ui:VisualElement>
-                <ui:Label name="xp-total" text="0 / 100 XP" picking-mode="Ignore" class="caption level-card__total" />
+                <ui:VisualElement name="xp-track" picking-mode="Ignore" class="track" />
             </ui:VisualElement>
-            <ui:VisualElement name="xp-track" picking-mode="Ignore" class="track" />
-        </ui:VisualElement>
-        <ui:VisualElement picking-mode="Ignore" class="round-over__actions">
-            <ui:VisualElement picking-mode="Ignore" class="round-over__buttons">
-                <ui:Button name="garage-button" class="pill round-over__garage">
-                    <ui:VisualElement name="garage-portrait" picking-mode="Ignore" class="car-portrait round-over__garage-portrait" />
-                    <ui:Label text="CAR" picking-mode="Ignore" class="round-over__garage-label">
-                        <Bindings>
-                            <Bugord.App.Localization.LocalizedText property="text" key="result.car" />
-                        </Bindings>
-                    </ui:Label>
-                    <ui:VisualElement name="garage-dot" picking-mode="Ignore" class="round-over__garage-dot" />
-                </ui:Button>
-                <ui:Button name="play-again-button" class="button button--green button--big round-over__button">
-                    <ui:VisualElement picking-mode="Ignore" class="button__face" />
-                    <ui:VisualElement picking-mode="Ignore" class="stroke">
-                        <ui:Label text="NEXT MATCH" picking-mode="Ignore" class="button__label">
+            <ui:VisualElement picking-mode="Ignore" class="round-over__actions">
+                <ui:VisualElement picking-mode="Ignore" class="round-over__buttons">
+                    <ui:Button name="garage-button" class="pill round-over__garage">
+                        <ui:VisualElement name="garage-portrait" picking-mode="Ignore" class="car-portrait round-over__garage-portrait" />
+                        <ui:Label text="CAR" picking-mode="Ignore" class="round-over__garage-label">
                             <Bindings>
-                                <Bugord.App.Localization.LocalizedText property="text" key="common.next_match" />
+                                <Bugord.App.Localization.LocalizedText property="text" key="result.car" />
                             </Bindings>
                         </ui:Label>
-                        <ui:Label text="NEXT MATCH" picking-mode="Ignore" class="button__label stroke__face">
+                        <ui:VisualElement name="garage-dot" picking-mode="Ignore" class="round-over__garage-dot" />
+                    </ui:Button>
+                    <ui:Button name="play-again-button" class="button button--green button--big round-over__button">
+                        <ui:VisualElement picking-mode="Ignore" class="button__face" />
+                        <ui:VisualElement picking-mode="Ignore" class="stroke">
+                            <ui:Label text="NEXT MATCH" picking-mode="Ignore" class="button__label">
+                                <Bindings>
+                                    <Bugord.App.Localization.LocalizedText property="text" key="common.next_match" />
+                                </Bindings>
+                            </ui:Label>
+                            <ui:Label text="NEXT MATCH" picking-mode="Ignore" class="button__label stroke__face">
+                                <Bindings>
+                                    <Bugord.App.Localization.LocalizedText property="text" key="common.next_match" />
+                                </Bindings>
+                            </ui:Label>
+                        </ui:VisualElement>
+                        <ui:VisualElement picking-mode="Ignore" class="key round-over__next-key">
+                            <ui:Label text="SPACE" picking-mode="Ignore" class="key__text">
+                                <Bindings>
+                                    <Bugord.App.Localization.LocalizedText property="text" key="common.space" />
+                                </Bindings>
+                            </ui:Label>
+                        </ui:VisualElement>
+                    </ui:Button>
+                </ui:VisualElement>
+                <ui:Button name="garage-wide-button" class="pill round-over__garage-wide">
+                    <ui:Label text="GARAGE" picking-mode="Ignore" class="round-over__garage-wide-label">
+                        <Bindings>
+                            <Bugord.App.Localization.LocalizedText property="text" key="garage.title" />
+                        </Bindings>
+                    </ui:Label>
+                    <ui:VisualElement picking-mode="Ignore" class="key round-over__garage-key">
+                        <ui:Label text="G" picking-mode="Ignore" class="key__text" />
+                    </ui:VisualElement>
+                    <ui:Label name="garage-new" text="NEW" picking-mode="Ignore" class="round-over__garage-new">
+                        <Bindings>
+                            <Bugord.App.Localization.LocalizedText property="text" key="common.new" />
+                        </Bindings>
+                    </ui:Label>
+                </ui:Button>
+                <ui:VisualElement name="hint" picking-mode="Ignore" class="round-over__hint">
+                    <ui:Label text="OR PRESS" picking-mode="Ignore" class="round-over__hint-text">
+                        <Bindings>
+                            <Bugord.App.Localization.LocalizedText property="text" key="result.or_press" />
+                        </Bindings>
+                    </ui:Label>
+                    <ui:VisualElement picking-mode="Ignore" class="key">
+                        <ui:Label text="SPACE" picking-mode="Ignore" class="key__text">
                             <Bindings>
-                                <Bugord.App.Localization.LocalizedText property="text" key="common.next_match" />
+                                <Bugord.App.Localization.LocalizedText property="text" key="common.space" />
                             </Bindings>
                         </ui:Label>
                     </ui:VisualElement>
-                </ui:Button>
-            </ui:VisualElement>
-            <ui:VisualElement name="hint" picking-mode="Ignore" class="round-over__hint">
-                <ui:Label text="OR PRESS" picking-mode="Ignore" class="round-over__hint-text">
-                    <Bindings>
-                        <Bugord.App.Localization.LocalizedText property="text" key="result.or_press" />
-                    </Bindings>
-                </ui:Label>
-                <ui:VisualElement picking-mode="Ignore" class="key">
-                    <ui:Label text="SPACE" picking-mode="Ignore" class="key__text">
-                        <Bindings>
-                            <Bugord.App.Localization.LocalizedText property="text" key="common.space" />
-                        </Bindings>
-                    </ui:Label>
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>

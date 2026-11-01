@@ -20,6 +20,8 @@ hud.revenge_taken,Sticker when the player knocks off the bot that beat them,REVE
 hud.revenge,Small heading over the rival bot name,REVENGE,VENGEANCE,VENDETTA,RACHE,VENGANZA,İNTİKAM,VINGANÇA,МЕСТЬ
 hud.fell_off,Feed line: the car fell by itself,FELL OFF,EST TOMBÉ,È CADUTO,GEFALLEN,SE CAYÓ,DÜŞTÜ,CAIU,УПАЛ
 hud.back_in,Match: before the seconds until the player's car comes back,BACK IN,RETOUR DANS,RIENTRI TRA,ZURÜCK IN,VUELVES EN,GERİ DÖNÜŞ,VOLTA EM,ВОЗВРАТ ЧЕРЕЗ
+hud.seconds_left,"Match: sticker at 30 seconds left, {0} is the seconds; short",{0} SECONDS LEFT!,PLUS QUE {0} SECONDES !,ANCORA {0} SECONDI!,NOCH {0} SEKUNDEN!,¡QUEDAN {0} SEGUNDOS!,SON {0} SANİYE!,FALTAM {0} SEGUNDOS!,ОСТАЛОСЬ {0} СЕКУНД!
+hud.final_seconds,"Match: sticker as the last 10 seconds start, {0} is the seconds; short and punchy",FINAL {0}!,{0} DERNIÈRES !,ULTIMI {0}!,LETZTE {0}!,¡ÚLTIMOS {0}!,SON {0}!,ÚLTIMOS {0}!,ПОСЛЕДНИЕ {0}!
 hud.safe,Match: over the player's car while it cannot be pushed after coming back; max ~10 chars,SAFE,PROTÉGÉ,PROTETTO,GESCHÜTZT,A SALVO,KORUMADA,PROTEGIDO,ЗАЩИТА
 social.gg,Bot chat bubble,GG,GG,GG,GG,GG,GG,GG,GG
 social.ez,Bot chat bubble: too easy,EZ,EZ,EZ,EZ,EZ,EZ,EZ,ИЗИ
@@ -63,6 +65,8 @@ result.xp_gain,XP earned this round,+{0} XP,+{0} XP,+{0} XP,+{0} XP,+{0} XP,+{0}
 result.xp_total,XP in the level and its price,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} ОПЫТА
 result.rank_level,"Rank name and level, e.g. BRONZE · LEVEL 12",{0} · LEVEL {1},{0} · NIVEAU {1},{0} · LIVELLO {1},{0} · LEVEL {1},{0} · NIVEL {1},{0} · SEVİYE {1},{0} · NÍVEL {1},{0} · УРОВЕНЬ {1}
 result.rank_stop,"Track caption of the next rank, e.g. SILVER RANK",{0} RANK,RANG {0},GRADO {0},RANG {0},RANGO {0},{0} RÜTBESİ,RANKING {0},РАНГ {0}
+result.match_results,Header of the results table at the end of a match,MATCH RESULTS,RÉSULTATS,RISULTATI,ERGEBNISSE,RESULTADOS,MAÇ SONUCU,RESULTADOS,ИТОГИ МАТЧА
+result.winner,Gold tag under the match winner's name; max ~8 chars,WINNER,VAINQUEUR,VINCITORE,SIEGER,GANADOR,KAZANAN,VENCEDOR,ПОБЕДИТЕЛЬ
 rank.rookie,Rank name,ROOKIE,DÉBUTANT,RECLUTA,ANFÄNGER,NOVATO,ÇAYLAK,NOVATO,НОВИЧОК
 rank.bronze,Rank name,BRONZE,BRONZE,BRONZO,BRONZE,BRONCE,BRONZ,BRONZE,БРОНЗА
 rank.silver,Rank name,SILVER,ARGENT,ARGENTO,SILBER,PLATA,GÜMÜŞ,PRATA,СЕРЕБРО

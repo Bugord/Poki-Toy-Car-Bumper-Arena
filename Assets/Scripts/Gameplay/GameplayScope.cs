@@ -143,6 +143,7 @@ namespace ToyCarArena.Gameplay
             // the injector builds them, and outlive the scene.
             builder.RegisterEntryPoint<ArenaRound>().AsSelf().WithParameter(carPrefab).WithParameter(transform);
             builder.RegisterEntryPoint<PlayerDriver>().AsSelf();
+            builder.RegisterEntryPoint<WinnerPodium>().AsSelf().WithParameter(transform);
             builder.Register<BallLane>(Lifetime.Singleton);
             builder.Register<ArenaHazards>(Lifetime.Singleton);
             builder.RegisterInstance(mechanicArt, typeof(MechanicArt));

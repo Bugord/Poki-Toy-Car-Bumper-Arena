@@ -42,6 +42,17 @@ namespace ToyCarArena.Gameplay.Effects
             Time.timeScale = timeScale;
         }
 
+        /// <summary>
+        /// Slows the game for <paramref name="duration"/> real seconds whatever stop is on or just ended: the buzzer at
+        /// the end of a match is never swallowed by the gap after a bump.
+        /// </summary>
+        public void Hold(float duration, float timeScale)
+        {
+            Release();
+            readyTime = 0f;
+            Stop(duration, timeScale, 0f);
+        }
+
         public void Tick()
         {
             if (isStopped && Time.unscaledTime >= endTime) {

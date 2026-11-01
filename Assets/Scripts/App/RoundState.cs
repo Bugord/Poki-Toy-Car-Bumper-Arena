@@ -156,7 +156,7 @@ namespace ToyCarArena.App
 
                 progress.Record(result);
                 var record = bests.Record(result).WithXp(playerProgress.Record(result)).WithKnocker(
-                    result.KnockedOutBy == RoundResult.Nobody ? "" : round.NameOf(result.KnockedOutBy)).WithNames(round.Names);
+                    result.KnockedOutBy == RoundResult.Nobody ? "" : round.NameOf(result.KnockedOutBy)).WithRoster(round.Names, round.Levels, IndexOf(round, round.Nemesis));
                 arenaRotation.Next(record.XpGain.After.Level);
                 levelScene.Resolve<ISessionRoster>().NextRound(result.CarCount - 1,
                     RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis, tuning.Players);
@@ -173,8 +173,10 @@ namespace ToyCarArena.App
                 platform.MeasureRoundVariant(roundNumber, playedMap, playedVariant);
                 platform.MeasureMapUnlocks(record.XpGain, tuning);
 
-                var delay = result.Outcome == RoundOutcome.Out ? tuning.Round.OutResultDelay : tuning.Round.ResultDelay;
-                await UniTask.Delay(TimeSpan.FromSeconds(delay), cancellationToken: token);
+                var delay = result.IsMatch ? tuning.Match.ResultDelay :
+                    result.Outcome == RoundOutcome.Out ? tuning.Round.OutResultDelay : tuning.Round.ResultDelay;
+                // Real time: the buzzer's hit-stop at the end of a match must not stretch the wait.
+                await UniTask.Delay(TimeSpan.FromSeconds(delay), true, cancellationToken: token);
                 return Transition.GoTo<ResultState, RoundRecord>(record);
             }
             finally {
@@ -213,6 +215,18 @@ namespace ToyCarArena.App
             }
 
             hud.ShowKickoff(0, settings.KickoffGo);
+        }
+
+        // The car's index in the round, as the result names cars; Nobody for none.
+        private static int IndexOf(ArenaRound round, Car car)
+        {
+            for (var i = 0; car != null && i < round.Cars.Count; i++) {
+                if (round.Cars[i] == car) {
+                    return i;
+                }
+            }
+
+            return RoundResult.Nobody;
         }
     }
 }
