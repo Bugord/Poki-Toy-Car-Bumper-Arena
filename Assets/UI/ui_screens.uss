@@ -2355,6 +2355,10 @@
 .gear-button:active { translate: 0 8px; }
 .round-over__settings { right: 40px; }
 .garage__settings { right: 184px; }
+/* On the HUD the round goes on under the settings. A narrow screen's HUD bar can reach the corner, so there the gear
+   sits under the bar (54 + 136 + a gap). */
+.hud__settings { right: 40px; }
+.hud__settings--under { top: 216px; }
 
 .gear {
     width: 68px;

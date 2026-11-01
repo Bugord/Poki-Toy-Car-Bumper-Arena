@@ -1,4 +1,7 @@
+using System.Threading;
 using Bugord.App.Localization;
+using Cysharp.Threading.Tasks;
+using ToyCarArena.Audio;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -50,6 +53,7 @@ namespace ToyCarArena.UI
         private const string NameEnterClass = "car-name--enter";
         private const string NameLeaveClass = "car-name--leave";
         private const string NamePulseClass = "car-name--pulse";
+        private const string SettingsUnderClass = "hud__settings--under";
 
         // Names sit above the body in panel pixels; a rival springs in, pulses twice, then stays quiet.
         private const float NameLift = 76f;
@@ -129,6 +133,9 @@ namespace ToyCarArena.UI
         private const float PopupTilt = 7f;
 
         private readonly HudControls controls;
+        private readonly IAudioService audioService;
+        private CancellationTokenSource lifetime;
+        private Button settingsButton;
         private HudSocial social;
         private VisualElement timePill;
         private Label timeLabel;
@@ -198,16 +205,18 @@ namespace ToyCarArena.UI
             public float Lift;
         }
 
-        public HudView(HudControls controls)
+        public HudView(HudControls controls, IAudioService audioService)
         {
             this.controls = controls;
+            this.audioService = audioService;
         }
 
         protected override void OnAttached()
         {
             // The HUD lies over the game: nothing on it may take a click or a touch from the controls but the boost
-            // button, which tells the controls where it is so a finger on it does not steer.
+            // button and the settings button, which tell the controls where they are so a finger on them does not steer.
             Root.pickingMode = PickingMode.Ignore;
+            lifetime = new CancellationTokenSource();
 
             timePill = Root.Q<VisualElement>("time-pill");
             timeLabel = Root.Q<Label>("time");
@@ -239,7 +248,14 @@ namespace ToyCarArena.UI
             ghostFinger.style.rotate = new Rotate(GhostFingerTilt);
             boostHint = Root.Q<VisualElement>("boost-hint");
             tapHint = Root.Q<VisualElement>("tap-hint");
-            social = new HudSocial(Root, ViewModel, stick, boostSlot, timePill, carsPill, knockoutBadge);
+            settingsButton = Root.Q<Button>("settings-button");
+            settingsButton.RemoveFromClassList(Button.ussClassName);
+            // Space is the boost: a focused button would take it as a click and open the settings mid-round.
+            settingsButton.focusable = false;
+            settingsButton.clicked += OpenSettings;
+            controls.SetSettingsButton(settingsButton);
+            Root.RegisterCallback<GeometryChangedEvent>(PlaceSettings);
+            social = new HudSocial(Root, ViewModel, stick, boostSlot, timePill, carsPill, knockoutBadge, settingsButton);
             teachingTime = idleSince = Time.unscaledTime;
             ViewModel.PlayerKnockout += ShowKnockout;
             ViewModel.CarOut += OnCarOut;
@@ -275,7 +291,18 @@ namespace ToyCarArena.UI
                 controls.ReleaseBoostButton(boostButton);
             }
 
+            if (settingsButton != null) {
+                settingsButton.clicked -= OpenSettings;
+                controls.ReleaseSettingsButton(settingsButton);
+            }
+
+            // The settings close with the HUD at the round's end, so the result never opens under a stale popup.
+            lifetime?.Cancel();
+            lifetime?.Dispose();
+            lifetime = null;
+
             Root?.UnregisterCallback<GeometryChangedEvent>(OnResized);
+            Root?.UnregisterCallback<GeometryChangedEvent>(PlaceSettings);
 
             base.Dispose();
         }
@@ -363,6 +390,24 @@ namespace ToyCarArena.UI
             start.RemoveFromClassList(StartBobClass);
             start.AddToClassList(StartLeaveClass);
             start.schedule.Execute(() => start.RemoveFromClassList(StartShownClass)).StartingIn(StartLeaveDuration);
+        }
+
+        private void OpenSettings()
+        {
+            if (!IsShown || lifetime == null || ViewModel.IsSettingsOpen) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            ViewModel.OpenSettings(lifetime.Token).Forget();
+        }
+
+        // The top right corner, where the result and the garage keep theirs; on a narrow screen a full HUD bar reaches
+        // it, so there the gear goes under the bar.
+        private void PlaceSettings(GeometryChangedEvent evt)
+        {
+            var size = Root.layout.size;
+            settingsButton.EnableInClassList(SettingsUnderClass, size.x < size.y);
         }
 
         private void OnResized(GeometryChangedEvent evt)
@@ -512,6 +557,7 @@ namespace ToyCarArena.UI
                 point.y = Mathf.Clamp(point.y, height, Mathf.Max(height, size.y - NameMargin));
                 ClearPill(timePill, ref point, halfWidth, height);
                 ClearPill(carsPill, ref point, halfWidth, height);
+                ClearPill(settingsButton, ref point, halfWidth, height);
                 if (shownKnockouts > 0) {
                     ClearPill(knockoutBadge, ref point, halfWidth, height);
                 }
@@ -558,6 +604,7 @@ namespace ToyCarArena.UI
                 var maxLift = Mathf.Min(tag.layout.height * NameMaxLiftHeights, bounds.yMin - NameMargin);
                 maxLift = LimitNameLift(timePill, bounds, maxLift);
                 maxLift = LimitNameLift(carsPill, bounds, maxLift);
+                maxLift = LimitNameLift(settingsButton, bounds, maxLift);
                 if (shownKnockouts > 0) {
                     maxLift = LimitNameLift(knockoutBadge, bounds, maxLift);
                 }
