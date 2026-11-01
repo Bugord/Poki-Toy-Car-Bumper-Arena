@@ -31,12 +31,12 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Seconds into the match, and into each cycle of the floor, before the first pickup appears")]
             [Min(0f)]
             [SerializeField]
-            private float firstDelay = 4f;
+            private float firstDelay = 3f;
 
             [Tooltip("Seconds between one pickup appearing and the next")]
             [Min(0.5f)]
             [SerializeField]
-            private float interval = 7f;
+            private float interval = 6.5f;
 
             [Tooltip("Seconds the interval varies by, either way, at random")]
             [Min(0f)]

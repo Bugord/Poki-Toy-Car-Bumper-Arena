@@ -35,8 +35,9 @@ namespace ToyCarArena.Tests.PlayMode
         [Test]
         public void TheGameTuningAssetPlaysTheLongMatch()
         {
-            Assert.That(LoadTuning().Mode, Is.EqualTo(GameTuning.GameMode.Match),
+            Assert.That(ShippedMode, Is.EqualTo(GameTuning.GameMode.Match),
                 "The mode is chosen per build; since v0.6.0 the asset ships the long match.");
+            Assert.That(ShippedMatchSeconds, Is.EqualTo(60f), "A match of the asset lasts a minute.");
         }
 
         [Test]

@@ -57,7 +57,7 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Seconds a match lasts; it ends only when time runs out")]
             [Min(10f)]
             [SerializeField]
-            private float duration = 150f;
+            private float duration = 60f;
 
             [Tooltip("Seconds between a car falling below the round's fall height and it dropping back onto the floor")]
             [Min(0f)]

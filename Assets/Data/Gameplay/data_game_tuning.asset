@@ -431,11 +431,16 @@ MonoBehaviour:
     hitHeight: 1.5
   floorCycles:
     enabled: 0
-    cycles: 3
-    open: 15
-    shrink: 25
-    peak: 7
+    cycles: 2
+    open: 8
+    shrink: 14
+    peak: 5
     returnTime: 3
     returnWarning: 1.2
     matchFallShare: 0.5
   mode: 1
+  match:
+    duration: 60
+  pickups:
+    firstDelay: 3
+    interval: 6.5
