@@ -43,6 +43,7 @@ namespace ToyCarArena.UI
 
         protected override void OnAttached()
         {
+            SafeArea.Pad(Root);
             Root.focusable = true;
             Root.delegatesFocus = true;
             Root.RegisterCallback<KeyDownEvent>(OnKeyDown, TrickleDown.TrickleDown);

@@ -128,11 +128,6 @@ namespace ToyCarArena.UI
             var now = Time.unscaledTime;
             var delta = Mathf.Max(0f, now - previousTime);
             previousTime = now;
-            var wide = root.layout.width > root.layout.height;
-            if (wide != landscape) {
-                landscape = wide;
-                Feed.EnableInClassList("feed--wide", wide);
-            }
             TickFeed(now, delta, isShown);
             if (isShown && model.IsRunning) {
                 if (!greeted) {
@@ -141,6 +136,17 @@ namespace ToyCarArena.UI
                 WatchRecovery(now);
             }
             TickSpeech(now, names);
+        }
+
+        /// <summary>
+        /// Follows the HUD's safe-area and pill offset, so names and speech avoid the feed at its real position.
+        /// </summary>
+        public void Place(SafeInsets insets, float topInset)
+        {
+            this.landscape = root.layout.width > root.layout.height;
+            Feed.EnableInClassList("feed--wide", landscape);
+            Feed.style.left = 24f + insets.Left;
+            Feed.style.top = (landscape ? 54f : 240f) + topInset;
         }
 
         private void TickFeed(float now, float delta, bool isShown)

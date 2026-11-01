@@ -69,6 +69,15 @@ namespace ToyCarArena.UI
         // full column; a narrower screen shows the leaders and the player's row only.
         private const float ScoreboardWideAspect = 1.65f;
 
+        // Reference pixels, matching ui_screens. Keep every top row below Poki's pill without moving its touch target
+        // into the arena; the gear is the highest element, 40 px from the top rather than the bar's 54.
+        private const float BarTop = 54f;
+        private const float SettingsTop = 40f;
+        private const float SettingsUnderTop = 216f;
+        private const float PillGap = 18f;
+        private const float BoostSide = 64f;
+        private const float BoostBottom = 220f;
+
         // The safe sticker floats this high over the player's car, in metres: above its marker's arrow.
         private const float ShieldHeight = 4.2f;
 
@@ -157,6 +166,9 @@ namespace ToyCarArena.UI
         private readonly IAudioService audioService;
         private CancellationTokenSource lifetime;
         private Button settingsButton;
+        private SafeInsets safeInsets;
+        private float hudTopInset;
+        private float contentTopInset;
         private HudSocial social;
         private VisualElement timePill;
         private Label timeLabel;
@@ -303,9 +315,12 @@ namespace ToyCarArena.UI
             settingsButton.focusable = false;
             settingsButton.clicked += OpenSettings;
             controls.SetSettingsButton(settingsButton);
-            Root.RegisterCallback<GeometryChangedEvent>(PlaceSettings);
+            Root.RegisterCallback<GeometryChangedEvent>(PlaceHud);
             social = new HudSocial(Root, ViewModel, stick, boostSlot, timePill, carsPill, knockoutBadge, settingsButton,
                 scoreboard);
+            SafeArea.Watch(Root, _ => PlaceHud(null));
+            PokiPill.Watch(Root, () => PlaceHud(null));
+            PlaceHud(null);
             teachingTime = idleSince = Time.unscaledTime;
             ViewModel.PlayerKnockout += ShowKnockout;
             ViewModel.CarOut += OnCarOut;
@@ -360,7 +375,7 @@ namespace ToyCarArena.UI
             lifetime = null;
 
             Root?.UnregisterCallback<GeometryChangedEvent>(OnResized);
-            Root?.UnregisterCallback<GeometryChangedEvent>(PlaceSettings);
+            Root?.UnregisterCallback<GeometryChangedEvent>(PlaceHud);
 
             base.Dispose();
         }
@@ -492,8 +507,10 @@ namespace ToyCarArena.UI
             var size = nameLayer.layout.size;
             var halfWidth = shield.layout.width * 0.5f + NameMargin;
             var height = shield.layout.height + NameMargin;
-            point.x = Mathf.Clamp(point.x, halfWidth, Mathf.Max(halfWidth, size.x - halfWidth));
-            point.y = Mathf.Clamp(point.y, height, Mathf.Max(height, size.y - NameMargin));
+            var left = halfWidth + safeInsets.Left;
+            var top = height + contentTopInset;
+            point.x = Mathf.Clamp(point.x, left, Mathf.Max(left, size.x - halfWidth - safeInsets.Right));
+            point.y = Mathf.Clamp(point.y, top, Mathf.Max(top, size.y - NameMargin - safeInsets.Bottom));
             ClearScoreboard(nameLayer, ref point, halfWidth, height);
             shield.style.left = point.x;
             shield.style.top = point.y;
@@ -562,19 +579,68 @@ namespace ToyCarArena.UI
         // it, so there the gear goes under the bar. A match's bar is only the time and the player's knock-outs, which
         // never reach the corner, and its scoreboard goes under the gear. The scoreboard is the whole column beside the
         // arena only where the screen is wide enough to leave room for it at the side.
-        private void PlaceSettings(GeometryChangedEvent evt)
+        /// <summary>
+        /// Reflows only on geometry or browser-inset changes. The full-screen projection layers stay put, so their
+        /// world bounds continue to describe the moved HUD for ClearPill, LimitNameLift and ClearScoreboard.
+        /// </summary>
+        private void PlaceHud(GeometryChangedEvent evt)
         {
             var size = Root.layout.size;
-            settingsButton.EnableInClassList(SettingsUnderClass, !ViewModel.IsMatch && size.x < size.y);
-            if (scoreboard != null && size.x > 0f && size.y > 0f) {
-                scoreboard.SetWide(size.x >= size.y * ScoreboardWideAspect);
+            if (!(size.x > 0f) || !(size.y > 0f)) {
+                return;
             }
+
+            this.safeInsets = SafeArea.GetInsets(Root.panel);
+            this.hudTopInset = this.contentTopInset = safeInsets.Top;
+            if (PokiPill.TryGetRect(Root.panel, out var pill)) {
+                pill = Root.WorldToLocal(pill);
+                if (pill.xMax > 0f && pill.xMin < size.x && pill.yMax > 0f && pill.yMin < size.y) {
+                    this.contentTopInset = Mathf.Max(contentTopInset, Mathf.Ceil(pill.yMax + PillGap));
+                    this.hudTopInset = Mathf.Max(hudTopInset, contentTopInset - SettingsTop);
+                }
+            }
+
+            Root.style.paddingTop = BarTop + hudTopInset;
+            Root.style.paddingLeft = safeInsets.Left;
+            Root.style.paddingRight = safeInsets.Right;
+            var isUnder = !ViewModel.IsMatch && size.x < size.y;
+            settingsButton.EnableInClassList(SettingsUnderClass, isUnder);
+            settingsButton.style.top = (isUnder ? SettingsUnderTop : SettingsTop) + hudTopInset;
+            settingsButton.style.right = SettingsTop + safeInsets.Right;
+            if (scoreboard != null) {
+                var wide = size.x >= size.y * ScoreboardWideAspect;
+                scoreboard.SetWide(wide);
+                scoreboard.Element.style.top = (wide ? 200f : 240f) + hudTopInset;
+                scoreboard.Element.style.right = (wide ? 48f : 24f) + safeInsets.Right;
+            }
+
+            social.Place(safeInsets, hudTopInset);
+            PlaceBoost();
+            PlaceStart();
+            // Find room for the ghost again even if only the browser chrome changed, with no canvas resize.
+            this.ghostPanelSize = Vector2.zero;
+        }
+
+        private void PlaceBoost()
+        {
+            boostSlot.style.left = isBoostOnLeft ? new StyleLength(BoostSide + safeInsets.Left) : StyleKeyword.Auto;
+            boostSlot.style.right = isBoostOnLeft ? StyleKeyword.Auto : new StyleLength(BoostSide + safeInsets.Right);
+            boostSlot.style.bottom = BoostBottom + safeInsets.Bottom;
+        }
+
+        private void PlaceStart()
+        {
+            var wide = Root.layout.width >= Root.layout.height;
+            start.EnableInClassList(StartWideClass, wide);
+            // Landscape keeps its central USS placement; portrait's prompt follows the lowered HUD bar.
+            start.style.top = wide ? new StyleLength(StyleKeyword.Null) : new StyleLength(250f + hudTopInset);
+            start.style.left = safeInsets.Left;
+            start.style.right = safeInsets.Right;
         }
 
         private void OnResized(GeometryChangedEvent evt)
         {
-            var size = Root.layout.size;
-            start.EnableInClassList(StartWideClass, size.x >= size.y);
+            PlaceStart();
         }
 
         /// <summary>
@@ -605,8 +671,10 @@ namespace ToyCarArena.UI
                 point = popupLayer.WorldToLocal(panelPoint) + Vector2.down * PopupLift;
             }
 
-            point.x = Mathf.Clamp(point.x, PopupSideMargin, Mathf.Max(PopupSideMargin, size.x - PopupSideMargin));
-            point.y = Mathf.Clamp(point.y, PopupTopMargin, Mathf.Max(PopupTopMargin, size.y - PopupBottomMargin));
+            var popupLeft = PopupSideMargin + safeInsets.Left;
+            var popupTop = PopupTopMargin + hudTopInset;
+            point.x = Mathf.Clamp(point.x, popupLeft, Mathf.Max(popupLeft, size.x - PopupSideMargin - safeInsets.Right));
+            point.y = Mathf.Clamp(point.y, popupTop, Mathf.Max(popupTop, size.y - PopupBottomMargin - safeInsets.Bottom));
             // The sticker is centred on its point; keep the box it springs to off the scoreboard.
             point.y += PopupHalfHeight;
             ClearScoreboard(popupLayer, ref point, PopupHalfWidth, PopupHalfHeight * 2f);
@@ -772,8 +840,10 @@ namespace ToyCarArena.UI
                 // Leave room for the outline and the rival's pulse. Clear just the central pills, not a whole band.
                 var halfWidth = tag.layout.width * 0.6f + NameMargin;
                 var height = tag.layout.height * 1.2f + NameMargin;
-                point.x = Mathf.Clamp(point.x, halfWidth, Mathf.Max(halfWidth, size.x - halfWidth));
-                point.y = Mathf.Clamp(point.y, height, Mathf.Max(height, size.y - NameMargin));
+                var left = halfWidth + safeInsets.Left;
+                var top = height + contentTopInset;
+                point.x = Mathf.Clamp(point.x, left, Mathf.Max(left, size.x - halfWidth - safeInsets.Right));
+                point.y = Mathf.Clamp(point.y, top, Mathf.Max(top, size.y - NameMargin - safeInsets.Bottom));
                 ClearPill(timePill, ref point, halfWidth, height);
                 ClearPill(carsPill, ref point, halfWidth, height);
                 ClearPill(settingsButton, ref point, halfWidth, height);
@@ -821,7 +891,8 @@ namespace ToyCarArena.UI
                 var tag = carNames[index];
                 ref var placement = ref namePlacements[index];
                 var bounds = placement.Bounds;
-                var maxLift = Mathf.Min(tag.layout.height * NameMaxLiftHeights, bounds.yMin - NameMargin);
+                var maxLift = Mathf.Min(tag.layout.height * NameMaxLiftHeights,
+                    bounds.yMin - Mathf.Max(NameMargin, contentTopInset));
                 maxLift = LimitNameLift(timePill, bounds, maxLift);
                 maxLift = LimitNameLift(carsPill, bounds, maxLift);
                 maxLift = LimitNameLift(settingsButton, bounds, maxLift);
@@ -1085,6 +1156,7 @@ namespace ToyCarArena.UI
                     // Use the latest drag's choice if another finger started steering while the button shrank.
                     isBoostOnLeft = controls.IsBoostOnLeft;
                     boostSlot.EnableInClassList(BoostLeftClass, isBoostOnLeft);
+                    PlaceBoost();
                     boostSlot.RemoveFromClassList(BoostMovingClass);
                     isBoostMoving = false;
                 }).StartingIn(BoostMoveDuration);
@@ -1120,8 +1192,22 @@ namespace ToyCarArena.UI
                 var center = ToStick(panel, controls.JoystickCenter);
                 var radius = Vector2.Distance(center,
                     ToStick(panel, controls.JoystickCenter + Vector2.right * controls.JoystickRadius));
+                var knob = ToStick(panel, controls.JoystickKnob);
+                if (!safeInsets.Equals(default(SafeInsets))) {
+                    // Translate the whole drawing together, preserving its direction and travel. Steering still uses
+                    // the real finger; a disc near a cutout or home indicator must remain visible.
+                    var reach = radius * Mathf.Max(StickBaseScale, 1f + StickKnobScale);
+                    var size = stick.layout.size;
+                    var safeCenter = new Vector2(
+                        Mathf.Clamp(center.x, safeInsets.Left + reach,
+                            Mathf.Max(safeInsets.Left + reach, size.x - safeInsets.Right - reach)),
+                        Mathf.Clamp(center.y, safeInsets.Top + reach,
+                            Mathf.Max(safeInsets.Top + reach, size.y - safeInsets.Bottom - reach)));
+                    knob += safeCenter - center;
+                    center = safeCenter;
+                }
                 Place(stickBase, center, radius * StickBaseScale);
-                Place(stickKnob, ToStick(panel, controls.JoystickKnob), radius * StickKnobScale);
+                Place(stickKnob, knob, radius * StickKnobScale);
             }
 
             if (isShown != isStickShown) {
@@ -1235,6 +1321,17 @@ namespace ToyCarArena.UI
                 ghostCenter = controls.HasJoystickPlace && !ViewModel.IsFirstRound ? PlaceGhostAtThumb(size, radius) :
                     size.x >= size.y ? PlaceWideGhost(size, radius) :
                     new Vector2(size.x * 0.5f, size.y * GhostPortraitY);
+                if (!safeInsets.Equals(default(SafeInsets))) {
+                    var fingerHalfWidth = radius * GhostFingerWidthScale * 0.5f;
+                    var bottom = radius * GhostTravel + fingerHalfWidth +
+                        (radius * GhostFingerLengthScale - fingerHalfWidth) * Mathf.Cos(GhostFingerTilt * Mathf.Deg2Rad);
+                    var left = safeInsets.Left + GhostHalfWidth + TeachingMargin;
+                    var top = contentTopInset + GhostCaptionLift;
+                    this.ghostCenter.x = Mathf.Clamp(ghostCenter.x, left,
+                        Mathf.Max(left, size.x - safeInsets.Right - GhostHalfWidth - TeachingMargin));
+                    this.ghostCenter.y = Mathf.Clamp(ghostCenter.y, top,
+                        Mathf.Max(top, size.y - safeInsets.Bottom - bottom - TeachingMargin));
+                }
             }
 
             ghost.style.left = ghostCenter.x;

@@ -50,6 +50,11 @@ namespace ToyCarArena.UI
             settingsButton = Root.Q<Button>("settings-button");
             settingsButton.RemoveFromClassList(Button.ussClassName);
             settingsButton.clicked += OpenSettings;
+            SafeArea.Watch(Root, insets => {
+                closeButton.style.top = settingsButton.style.top = 40f + insets.Top;
+                closeButton.style.right = 40f + insets.Right;
+                settingsButton.style.right = 184f + insets.Right;
+            });
             lifetime = new CancellationTokenSource();
             preview = new CarPortrait(Root.Q<VisualElement>("garage-preview"));
             var colorRow = Root.Q<VisualElement>("garage-colors");
