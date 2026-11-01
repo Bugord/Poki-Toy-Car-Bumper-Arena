@@ -18,6 +18,13 @@ namespace ToyCarArena.Gameplay.Input
         bool IsControlAt(Vector2 screenPosition);
 
         /// <summary>
+        /// Whether a press here belongs to the screens over the game rather than to the car: a button other than boost,
+        /// or anywhere while a popup is open over the round. Such a press neither steers nor boosts until released.
+        /// </summary>
+        /// <param name="screenPosition">In screen pixels from the bottom-left corner, as the Input System reports them.</param>
+        bool IsUiAt(Vector2 screenPosition);
+
+        /// <summary>
         /// Chooses the boost button's side opposite a new steering touch, once per drag, also in FollowFinger mode.
         /// </summary>
         void BeginTouchSteering(Vector2 screenPosition);

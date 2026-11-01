@@ -22,6 +22,7 @@ namespace ToyCarArena.UI
         private readonly bool isTouchDevice = IsTouchDevice();
 
         private VisualElement boostButton;
+        private VisualElement settingsButton;
         private bool isTouchSeen;
 
         /// <summary>
@@ -129,7 +130,39 @@ namespace ToyCarArena.UI
 
         public bool IsControlAt(Vector2 screenPosition)
         {
-            var panel = boostButton?.panel;
+            return IsPicked(boostButton, screenPosition);
+        }
+
+        public bool IsUiAt(Vector2 screenPosition)
+        {
+            return IsPopupOpen || IsPicked(settingsButton, screenPosition);
+        }
+
+        /// <summary>
+        /// A popup is open over the running round: the round goes on, so the keys still drive, but every press belongs
+        /// to the popup. The HUD clears it as the popup closes, whatever closes it, since a flag left set here would keep
+        /// every later round from taking a finger.
+        /// </summary>
+        public bool IsPopupOpen { get; set; }
+
+        /// <summary>
+        /// The HUD's settings button on the screen now, null while there is none.
+        /// </summary>
+        public void SetSettingsButton(VisualElement button)
+        {
+            settingsButton = button;
+        }
+
+        public void ReleaseSettingsButton(VisualElement button)
+        {
+            if (settingsButton == button) {
+                settingsButton = null;
+            }
+        }
+
+        private static bool IsPicked(VisualElement button, Vector2 screenPosition)
+        {
+            var panel = button?.panel;
             if (panel == null) {
                 return false;
             }
@@ -139,7 +172,7 @@ namespace ToyCarArena.UI
             var panelPosition = RuntimePanelUtils.ScreenToPanel(panel,
                 new Vector2(screenPosition.x, Screen.height - screenPosition.y));
             var picked = panel.Pick(panelPosition);
-            return picked != null && (picked == boostButton || boostButton.Contains(picked));
+            return picked != null && (picked == button || button.Contains(picked));
         }
     }
 }

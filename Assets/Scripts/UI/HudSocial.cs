@@ -49,7 +49,7 @@ namespace ToyCarArena.UI
         public bool IsFeedVisible { get; private set; }
 
         public HudSocial(VisualElement root, HudViewModel model, VisualElement stick, VisualElement boost,
-            VisualElement timePill, VisualElement carsPill, VisualElement koPill)
+            VisualElement timePill, VisualElement carsPill, VisualElement koPill, VisualElement settingsButton)
         {
             this.root = root;
             this.model = model;
@@ -58,7 +58,7 @@ namespace ToyCarArena.UI
             this.boost = boost;
             start = root.Q<VisualElement>("start");
             ghost = root.Q<VisualElement>("ghost");
-            pills = new[] { timePill, carsPill, koPill };
+            pills = new[] { timePill, carsPill, koPill, settingsButton };
             Feed = root.Q<VisualElement>("feed");
             speechLayer = root.Q<VisualElement>("emotion-layer");
             for (var i = 0; i < feedRows.Length; i++) {

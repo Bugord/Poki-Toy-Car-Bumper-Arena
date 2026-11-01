@@ -6,9 +6,9 @@ using UIKit.Runtime.Abstractions;
 namespace ToyCarArena.UI
 {
     /// <summary>
-    /// The settings popup over the result or the garage: music and sound effects on or off, saved at once by the audio
-    /// service, and the language, saved by the kit's language choice. A round has no pause, so it never opens over a
-    /// running round.
+    /// The settings popup over the result, the garage or the running round: music and sound effects on or off, saved at
+    /// once by the audio service, and the language, saved by the kit's language choice. A round has no pause, so over
+    /// the HUD the round goes on under it.
     /// </summary>
     public sealed class SettingsViewModel : ResultViewModel<bool>
     {

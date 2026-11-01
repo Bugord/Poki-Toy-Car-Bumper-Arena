@@ -77,6 +77,12 @@ namespace ToyCarArena.Gameplay.Input
         {
             lastTouchTime = Time.unscaledTime;
             var touch = finger.lastTouch;
+            // A press on the screens over the game, like the settings button or an open popup, is theirs: the finger
+            // neither steers nor boosts until it is lifted.
+            if (onScreenControls.IsUiAt(touch.screenPosition)) {
+                return;
+            }
+
             if (onScreenControls.IsControlAt(touch.screenPosition)) {
                 BoostPressed?.Invoke(BoostInputMethod.Button);
                 return;
@@ -150,7 +156,7 @@ namespace ToyCarArena.Gameplay.Input
 
             screenPosition = mouse.position.ReadValue();
             if (!isMouseDragging) {
-                if (onScreenControls.IsControlAt(screenPosition)) {
+                if (onScreenControls.IsControlAt(screenPosition) || onScreenControls.IsUiAt(screenPosition)) {
                     isMouseOnControl = true;
                     return false;
                 }
@@ -204,6 +210,10 @@ namespace ToyCarArena.Gameplay.Input
 
         private void OnBoostPerformed(InputAction.CallbackContext context)
         {
+            if (context.control.device is Mouse mouse && onScreenControls.IsUiAt(mouse.position.ReadValue())) {
+                return;
+            }
+
             var method = context.control.device is Keyboard ? BoostInputMethod.Key :
                 context.control.device is Mouse ? BoostInputMethod.Mouse : BoostInputMethod.Gamepad;
             BoostPressed?.Invoke(method);
