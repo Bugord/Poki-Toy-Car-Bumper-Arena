@@ -238,10 +238,41 @@ namespace ToyCarArena.UI
         public bool IsBoostReady => round != null && round.IsRunning && round.Player.Movement.IsBoostReady;
 
         /// <summary>
-        /// Whether the cars stand waiting for the player's first steer or boost to begin the round: the start prompt
-        /// shows meanwhile.
+        /// Whether the cars stand on the arena and the round has not begun yet: the wait for the player's first input
+        /// in a visit's first round, then the kick-off's 3, 2, 1. The ghost joystick and the feed treat both alike.
         /// </summary>
-        public bool IsWaitingForPlayer => round != null && round.IsPlaced && !round.HasBegun;
+        public bool IsBeforeStart => round != null && round.IsPlaced && !round.HasBegun;
+
+        /// <summary>
+        /// Whether the cars stand waiting for the player's first steer or boost: the start prompt shows meanwhile and
+        /// flashes away at that input, as the kick-off starts, not at GO. Only a visit's first round waits for one.
+        /// </summary>
+        public bool IsWaitingForPlayer => IsFirstRound && IsBeforeStart && (driver == null || !driver.HasActed);
+
+        /// <summary>
+        /// The kick-off's step on the screen: 3, 2 or 1, 0 for GO!, or <see cref="NoKickoff"/> before it starts. The
+        /// round state sets each step as its own timing reaches it, so the numbers, their ticks and the round's begin at
+        /// GO cannot drift apart; the view only animates the step it is given.
+        /// </summary>
+        public int KickoffStep { get; private set; } = NoKickoff;
+
+        /// <summary>The unscaled time <see cref="KickoffStep"/> was set, for the view's animation.</summary>
+        public float KickoffStepTime { get; private set; }
+
+        /// <summary>How long the current step stays on the screen, in unscaled seconds.</summary>
+        public float KickoffStepDuration { get; private set; }
+
+        public const int NoKickoff = -1;
+
+        /// <summary>
+        /// Shows a step of the kick-off (3, 2, 1, or 0 for GO!) for this many unscaled seconds.
+        /// </summary>
+        public void ShowKickoff(int step, float duration)
+        {
+            KickoffStep = step;
+            KickoffStepDuration = duration;
+            KickoffStepTime = Time.unscaledTime;
+        }
 
         /// <summary>
         /// Whether the car with this index is still on the arena.
@@ -284,6 +315,8 @@ namespace ToyCarArena.UI
             IsFirstRound = payload.IsFirstRound;
             RoundNumber = payload.RoundNumber;
             IsNewPlayer = payload.IsNewPlayer;
+            // The view model outlives a round: a GO! of the round before must not show again on this one.
+            KickoffStep = NoKickoff;
             if (round != null) {
                 round.CarOut += OnCarOut;
                 round.KnockedOut += OnKnockedOut;

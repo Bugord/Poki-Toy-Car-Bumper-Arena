@@ -2562,6 +2562,108 @@
     background-color: var(--car-dark);
 }
 
+/* The kick-off before every round: 3, 2, 1 as big white stickers that pop in tilted and shrink away, then GO! larger
+   in green over a gold ring and a burst of rays. HudView shows it (kickoff--shown) and animates scale, tilt and opacity
+   in code on unscaled time, so each step keeps to the round state's timing; nothing here transitions. The centre is a
+   point a little above the middle of the screen, over the arena, the same in portrait and landscape; the stickers, the
+   ring and the rays hang around it. */
+.kickoff {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 200px;
+}
+
+.kickoff--shown {
+    display: flex;
+}
+
+.kickoff__center {
+    width: 0;
+    height: 0;
+    overflow: visible;
+}
+
+.kickoff__sticker {
+    position: absolute;
+    left: -500px;
+    top: -280px;
+    width: 1000px;
+    height: 560px;
+    justify-content: center;
+}
+
+.kickoff__digit {
+    flex-grow: 1;
+    margin: 0;
+    padding: 0 0 30px 0;
+    font-size: 420px;
+    color: var(--white);
+    -unity-text-outline-width: 48px;
+    -unity-text-outline-color: var(--navy);
+    text-shadow: 0 36px 0 rgb(29, 43, 79);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.kickoff__go-text {
+    flex-grow: 1;
+    margin: 0 40px;
+    padding: 0 0 30px 0;
+    -unity-text-auto-size: best-fit 150px 400px;
+    font-size: 400px;
+    color: var(--green);
+    -unity-text-outline-width: 46px;
+    -unity-text-outline-color: var(--navy);
+    text-shadow: 0 34px 0 rgb(29, 43, 79);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.kickoff__ring {
+    position: absolute;
+    left: -160px;
+    top: -160px;
+    width: 320px;
+    height: 320px;
+    border-radius: 160px;
+    border-width: 26px;
+    border-color: var(--gold);
+}
+
+.kickoff__burst {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    overflow: visible;
+}
+
+/* A ray of GO!'s burst, a rounded bar pointing out from the centre (HudView builds them once and turns each its way). */
+.kickoff__ray {
+    position: absolute;
+    left: -24px;
+    top: -80px;
+    width: 48px;
+    height: 160px;
+    border-radius: 24px;
+    border-width: 8px;
+    border-color: var(--navy);
+    background-color: var(--gold);
+}
+
+.kickoff__ray--short {
+    top: -55px;
+    height: 110px;
+    background-color: var(--white);
+}
+
 /* Last, so the face of a stroke wins over every rule above that gives its text an outline or a drop: the outline is
    centred on the letters' edge, so the face over it keeps the letters their full width. */
 .stroke > .stroke__face {

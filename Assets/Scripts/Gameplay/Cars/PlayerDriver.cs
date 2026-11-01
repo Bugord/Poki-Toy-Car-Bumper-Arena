@@ -26,7 +26,8 @@ namespace ToyCarArena.Gameplay.Cars
     /// Once the round is over the
     /// car rolls to a stop, so a click on the result screen does not steer it, and boost does nothing.
     /// Before the round begins it only watches for the player's first steer or boost (<see cref="HasActed"/>), which the
-    /// first round of a visit waits for.
+    /// first round of a visit waits for; through the kick-off's 3, 2, 1 the car stands, a boost or an item pressed then
+    /// is dropped, and a finger already down shows its joystick, so whatever the player holds drives the car from GO.
     /// Near the edge it takes away the part of the steer that points off the arena, as much as the round's
     /// <see cref="RoundDifficulty.EdgeAssist"/> says, so a new player who steers too far stops at the edge instead of
     /// driving off it, and a boost there does not throw it off either; a hit still pushes the car off.
@@ -155,7 +156,8 @@ namespace ToyCarArena.Gameplay.Cars
         {
             if (IsWaiting) {
                 WatchForFirstInput();
-                return false;
+                return input.TryGetDrag(out var held) && !held.IsMouse &&
+                    tuning.Controls.TouchSteering == GameTuning.TouchSteering.Joystick && TryShowJoystick(held);
             }
 
             var car = round.Player;
@@ -320,23 +322,35 @@ namespace ToyCarArena.Gameplay.Cars
 
         private void SteerByJoystick(Car car, PointerDrag drag)
         {
-            var controls = tuning.Controls;
+            var stick = PlaceJoystick(drag);
+            var throttle = Mathf.InverseLerp(tuning.Controls.JoystickDeadZone, 1f, stick.magnitude);
+            Drive(car, arenaCamera.ScreenToGroundDirection(stick), throttle);
+        }
+
+        // Before GO the joystick only shows, so the thumb finds it during the kick-off and keeps its centre at GO.
+        private bool TryShowJoystick(PointerDrag drag)
+        {
+            PlaceJoystick(drag);
+            return true;
+        }
+
+        /// <returns>The stick: where the finger is from the joystick's middle, 1 at its radius.</returns>
+        private Vector2 PlaceJoystick(PointerDrag drag)
+        {
             if (drag.Id != joystickDragId) {
                 joystickDragId = drag.Id;
                 joystickCenter = drag.Start;
             }
 
-            var radius = controls.JoystickRadius * Mathf.Min(Screen.width, Screen.height);
+            var radius = tuning.Controls.JoystickRadius * Mathf.Min(Screen.width, Screen.height);
             var offset = drag.Position - joystickCenter;
             if (offset.magnitude > radius) {
                 joystickCenter = drag.Position - offset.normalized * radius;
                 offset = drag.Position - joystickCenter;
             }
 
-            var stick = offset / radius;
-            var throttle = Mathf.InverseLerp(controls.JoystickDeadZone, 1f, stick.magnitude);
-            Drive(car, arenaCamera.ScreenToGroundDirection(stick), throttle);
             onScreenControls.ShowJoystick(joystickCenter, joystickCenter + offset, radius);
+            return offset / radius;
         }
 
         /// <summary>

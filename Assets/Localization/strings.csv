@@ -12,6 +12,7 @@ hud.tap_to_boost,Touch hint: tap to boost,TAP TO BOOST,TOUCHE : TURBO,TOCCA: TUR
 hud.hold_to_drive,Mouse hint: hold the button to drive,HOLD TO DRIVE,MAINTIENS POUR ROULER,TIENI PREMUTO E GUIDA,HALTEN ZUM FAHREN,MANTÉN PARA CONDUCIR,SÜRMEK İÇİN BASILI TUT,SEGURE PARA DIRIGIR,"ЗАЖМИ, ЧТОБЫ ЕХАТЬ"
 hud.boost,Boost button and key hint; max ~7 chars,BOOST,TURBO,TURBO,BOOST,TURBO,HIZ,TURBO,РЫВОК
 hud.tap,Arrow sticker over the boost button,TAP!,TOUCHE !,TOCCA!,TIPP!,¡TOCA!,DOKUN!,TOQUE!,ЖМИ!
+hud.go,"Kick-off: the word after 3, 2, 1 as the round starts; short and punchy, max ~7 chars",GO!,PARTEZ !,VIA!,LOS!,¡YA!,HADİ!,JÁ!,ВПЕРЁД!
 hud.drag_to_drive,Ghost joystick caption,DRAG TO DRIVE,GLISSE POUR ROULER,TRASCINA PER GUIDARE,ZIEHEN ZUM FAHREN,ARRASTRA PARA CONDUCIR,SÜRMEK İÇİN KAYDIR,ARRASTE PARA DIRIGIR,ВЕДИ ПАЛЬЦЕМ
 hud.knockout,Sticker when the player knocks a car off,KNOCKOUT!,K.-O. !,K.O.!,K.O.!,¡K.O.!,NAKAVT!,NOCAUTE!,НОКАУТ!
 hud.revenge_taken,Sticker when the player knocks off the bot that beat them,REVENGE!,VENGEANCE !,VENDETTA!,RACHE!,¡VENGANZA!,İNTİKAM!,VINGANÇA!,МЕСТЬ!

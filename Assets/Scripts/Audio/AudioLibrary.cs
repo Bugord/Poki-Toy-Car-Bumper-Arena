@@ -81,6 +81,11 @@ namespace ToyCarArena.Audio
         [SerializeField]
         private Sound countdownTick = new();
 
+        [Tooltip("GO! at the end of the kick-off's 3, 2, 1, which tick with the countdown tick: an accent, not a " +
+            "jingle, so the music goes on under it")]
+        [SerializeField]
+        private Sound kickoffGo = new();
+
         [Tooltip("The jingle of a round the player won or survived to the end")]
         [SerializeField]
         private Sound win = new();
@@ -109,6 +114,7 @@ namespace ToyCarArena.Audio
         public Sound CrumbleWarning => crumbleWarning;
         public Sound CrumbleFall => crumbleFall;
         public Sound CountdownTick => countdownTick;
+        public Sound KickoffGo => kickoffGo;
         public Sound Win => win;
         public Sound Lose => lose;
         public Sound UiClick => uiClick;

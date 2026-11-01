@@ -162,6 +162,28 @@
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
+        <ui:VisualElement name="kickoff" picking-mode="Ignore" class="kickoff">
+            <ui:VisualElement picking-mode="Ignore" class="kickoff__center">
+                <ui:VisualElement name="kickoff-ring" picking-mode="Ignore" class="kickoff__ring" />
+                <ui:VisualElement name="kickoff-burst" picking-mode="Ignore" class="kickoff__burst" />
+                <ui:VisualElement name="kickoff-number" picking-mode="Ignore" class="stroke kickoff__sticker">
+                    <ui:Label name="kickoff-digit" text="3" picking-mode="Ignore" class="kickoff__digit" />
+                    <ui:Label name="kickoff-digit-face" text="3" picking-mode="Ignore" class="kickoff__digit stroke__face" />
+                </ui:VisualElement>
+                <ui:VisualElement name="kickoff-go" picking-mode="Ignore" class="stroke kickoff__sticker kickoff__go">
+                    <ui:Label text="GO!" picking-mode="Ignore" class="kickoff__go-text">
+                        <Bindings>
+                            <Bugord.App.Localization.LocalizedText property="text" key="hud.go" />
+                        </Bindings>
+                    </ui:Label>
+                    <ui:Label text="GO!" picking-mode="Ignore" class="kickoff__go-text stroke__face">
+                        <Bindings>
+                            <Bugord.App.Localization.LocalizedText property="text" key="hud.go" />
+                        </Bindings>
+                    </ui:Label>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
         <ui:VisualElement name="boost-slot" picking-mode="Ignore" class="hud__boost-slot">
             <ui:VisualElement name="power" picking-mode="Ignore" class="pill hud__power">
                 <ui:VisualElement name="power-icon" picking-mode="Ignore" class="hud__power-icon">
