@@ -14,6 +14,18 @@ namespace ToyCarArena.Gameplay.Input
         /// </summary>
         event Action BoostPressed;
 
+        /// <summary>
+        /// Raised when the on-screen item button is clicked with a mouse; a touch on it is read by the input service.
+        /// </summary>
+        event Action ItemPressed;
+
+        /// <summary>
+        /// Whether the on-screen item button is shown at this point: a finger that comes down here uses the item and
+        /// never steers or boosts.
+        /// </summary>
+        /// <param name="screenPosition">In screen pixels from the bottom-left corner, as the Input System reports them.</param>
+        bool IsItemAt(Vector2 screenPosition);
+
         /// <param name="screenPosition">In screen pixels from the bottom-left corner, as the Input System reports them.</param>
         bool IsControlAt(Vector2 screenPosition);
 

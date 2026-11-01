@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Pickups;
@@ -62,6 +63,11 @@ namespace ToyCarArena.Gameplay.Bots
         // Heading back to the middle, and whether this escape may still boost (rolled once as it starts).
         private bool isEscaping;
         private bool mayEscapeBoost;
+
+        // The item the bot has made up its mind about, how long its moment must last, and how long it has so far.
+        private ItemKind heldItem;
+        private float useDelay;
+        private float useMoment;
 
         public Bot(Car car, GameTuning.BotPersonality personality, GameTuning tuning, RoundDifficulty difficulty,
             Car player, int seed, BallLane ballLane, ArenaHazards hazards)
@@ -380,6 +386,134 @@ namespace ToyCarArena.Gameplay.Bots
             var toTarget = Flat(Target.Position) - position;
             return toTarget.magnitude < settings.PushDistance
                 && Vector3.Angle(Flat(Car.transform.forward), toTarget) < settings.PushAngle;
+        }
+
+        /// <summary>
+        /// Whether the bot uses the item it holds now, in a long match. Each item has its moment: heavy or turbo with a
+        /// target ahead within push range, the shockwave with enough cars round it, the shield when a car drives at it
+        /// or it is near the edge, the bomb at a car the throw's reach ahead, the glove at a car right in front of the
+        /// nose. The moment has to last a delay drawn once for each item (<see cref="GameTuning.PickupBotSettings.UseDelay"/>),
+        /// so a bot is not frame-perfect; no item is used that would carry the bot over the edge. Nothing is drawn from
+        /// the bot's dice while it holds nothing, so rounds without items replay as before.
+        /// </summary>
+        public bool WantsToUseItem(IArenaEdge edge, IReadOnlyList<Car> cars, float deltaTime)
+        {
+            if (!Car.IsItemReady || Car.IsOut) {
+                heldItem = ItemKind.None;
+                return false;
+            }
+
+            var use = tuning.Pickups.Bots;
+            if (Car.HeldItem != heldItem) {
+                heldItem = Car.HeldItem;
+                useDelay = Range(use.UseDelay.x, use.UseDelay.y);
+                useMoment = 0f;
+            }
+
+            if (!IsMoment(heldItem, edge, cars, use)) {
+                useMoment = 0f;
+                return false;
+            }
+
+            useMoment += deltaTime;
+            if (useMoment < useDelay) {
+                return false;
+            }
+
+            heldItem = ItemKind.None;
+            return true;
+        }
+
+        private bool IsMoment(ItemKind item, IArenaEdge edge, IReadOnlyList<Car> cars,
+            GameTuning.PickupBotSettings use)
+        {
+            var position = Flat(Car.Position);
+            var forward = Flat(Car.transform.forward);
+            var isSafe = edge.DistanceToEdge(position, settings.EdgeMargin) >= 0f;
+            switch (item) {
+                case ItemKind.Heavy:
+                case ItemKind.Turbo:
+                    // A turbo boosts often: only with room to boost into.
+                    return isSafe && IsAhead(Target, position, forward, 0f, use.PushRange, use.AheadAngle);
+                case ItemKind.Shield:
+                    return !isSafe || IsThreatened(position, cars, use);
+                case ItemKind.Shockwave:
+                    return CountNear(position, cars, tuning.Pickups.Shockwave.Radius) >= use.ShockwaveCars;
+                case ItemKind.Bomb:
+                    // Thrown only where it lands on floor, at a car about where it lands.
+                    var landing = position + forward.normalized * tuning.Pickups.Bomb.ThrowDistance;
+                    if (!edge.IsSolid(landing)) {
+                        return false;
+                    }
+
+                    for (var i = 0; i < cars.Count; i++) {
+                        if (cars[i] != Car && IsAhead(cars[i], position, forward, use.BombRange.x, use.BombRange.y, use.AheadAngle)) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                case ItemKind.Glove:
+                    var reach = tuning.Pickups.Glove.Reach + 1f;
+                    for (var i = 0; i < cars.Count; i++) {
+                        if (cars[i] != Car && IsAhead(cars[i], position, forward, 0f, reach, use.PunchAngle)) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsAhead(Car car, Vector3 position, Vector3 forward, float near, float far, float angle)
+        {
+            if (car == null || !car.IsTargetable) {
+                return false;
+            }
+
+            var offset = Flat(car.Position) - position;
+            var distance = offset.magnitude;
+            return distance >= near && distance <= far && Vector3.Angle(forward, offset) <= angle;
+        }
+
+        private bool IsThreatened(Vector3 position, IReadOnlyList<Car> cars,
+            GameTuning.PickupBotSettings use)
+        {
+            var velocity = Flat(Car.Movement.Velocity);
+            for (var i = 0; i < cars.Count; i++) {
+                var car = cars[i];
+                if (car == Car || !car.IsTargetable) {
+                    continue;
+                }
+
+                var offset = position - Flat(car.Position);
+                var distance = offset.magnitude;
+                if (distance > use.ShieldThreat || distance < 0.01f) {
+                    continue;
+                }
+
+                var closing = Vector3.Dot(Flat(car.Movement.Velocity) - velocity, offset / distance);
+                if (closing >= use.ShieldThreatSpeed) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private int CountNear(Vector3 position, IReadOnlyList<Car> cars, float radius)
+        {
+            var count = 0;
+            for (var i = 0; i < cars.Count; i++) {
+                var car = cars[i];
+                if (car != Car && car.IsTargetable && (Flat(car.Position) - position).sqrMagnitude <= radius * radius) {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         private static Vector3 Flat(Vector3 vector)

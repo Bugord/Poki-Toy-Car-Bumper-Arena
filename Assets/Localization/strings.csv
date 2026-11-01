@@ -86,7 +86,12 @@ arena.sandbox.name,Arena name,SANDBOX,BAC À SABLE,SABBIERA,SANDKASTEN,ARENERO,K
 arena.tabletop.name,Arena name,TABLETOP,TABLE,TAVOLO,TISCH,MESA,MASA,MESA,СТОЛ
 arena.candy.name,Arena name,CANDY,BONBONS,CARAMELLE,SÜSSES,DULCES,ŞEKER,DOCES,КОНФЕТЫ
 arena.playroom.name,Arena name,PLAYROOM,SALLE DE JEUX,STANZA GIOCHI,SPIELZIMMER,CUARTO DE JUEGOS,OYUN ODASI,BRINQUEDOTECA,ДЕТСКАЯ
-hud.pickup_heavy,"Match: sticker and badge when the player takes the heavy pickup (mass x3); max ~12 chars",HEAVY!,LOURD !,PESANTE!,SCHWER!,¡PESADO!,AĞIR!,PESADO!,ТЯЖЁЛЫЙ!
-hud.pickup_shockwave,"Match: sticker when the player takes the shockwave pickup (a ring pushes the cars near); max ~14 chars",SHOCKWAVE!,ONDE DE CHOC !,ONDA URTO!,DRUCKWELLE!,¡ONDA!,ŞOK DALGASI!,ONDA DE CHOQUE!,УДАРНАЯ ВОЛНА!
-hud.pickup_shield,"Match: sticker and badge when the player takes the shield pickup (absorbs the next hit); max ~12 chars",SHIELD!,BOUCLIER !,SCUDO!,SCHILD!,¡ESCUDO!,KALKAN!,ESCUDO!,ЩИТ!
-hud.pickup_turbo,"Match: sticker and badge when the player takes the turbo pickup (boost without cooldown); max ~12 chars",TURBO!,TURBO !,TURBO!,TURBO!,¡TURBO!,TURBO!,TURBO!,ТУРБО!
+hud.item_heavy,"Match: item name; sticker on use and badge when the player uses the heavy item (mass x3); max ~12 chars",HEAVY!,LOURD !,PESANTE!,SCHWER!,¡PESADO!,AĞIR!,PESADO!,ТЯЖЁЛЫЙ!
+hud.item_shockwave,"Match: item name; sticker when the player uses the shockwave item (a ring pushes the cars near); max ~14 chars",SHOCKWAVE!,ONDE DE CHOC !,ONDA URTO!,DRUCKWELLE!,¡ONDA!,ŞOK DALGASI!,ONDA DE CHOQUE!,УДАРНАЯ ВОЛНА!
+hud.item_shield,"Match: item name; sticker on use and badge when the player uses the shield item (absorbs the next hit); max ~12 chars",SHIELD!,BOUCLIER !,SCUDO!,SCHILD!,¡ESCUDO!,KALKAN!,ESCUDO!,ЩИТ!
+hud.item_turbo,"Match: item name; sticker on use and badge when the player uses the turbo item (boost without cooldown); max ~12 chars",TURBO!,TURBO !,TURBO!,TURBO!,¡TURBO!,TURBO!,TURBO!,ТУРБО!
+hud.item_bomb,"Match: item name; sticker when the player throws the bomb item (blasts cars near where it lands); max ~12 chars",BOMB!,BOMBE !,BOMBA!,BOMBE!,¡BOMBA!,BOMBA!,BOMBA!,БОМБА!
+hud.item_glove,"Match: item name; sticker when the player uses the boxing glove item (punches the car ahead); max ~12 chars",GLOVE!,GANT !,GUANTONE!,BOXHANDSCHUH!,¡GUANTE!,ELDİVEN!,LUVA!,ПЕРЧАТКА!
+hud.pow,"Match: comic sticker where the player's boxing glove hits a car; max ~6 chars",POW!,PAF !,POW!,BUMM!,¡PUM!,PAT!,POW!,БАЦ!
+hud.tap_to_use,"Match: first-time hint over the touch item button; max ~14 chars",TAP TO USE,TOUCHE POUR UTILISER,TOCCA PER USARE,TIPPEN ZUM NUTZEN,TOCA PARA USAR,KULLANMAK İÇİN DOKUN,TOQUE PARA USAR,"ЖМИ, ЧТОБЫ ПРИМЕНИТЬ"
+hud.press_e,"Match: first-time hint over the item button on a desktop: the E key uses the item; keep the letter E",PRESS E,APPUIE SUR E,PREMI E,DRÜCKE E,PULSA E,E TUŞUNA BAS,APERTE E,НАЖМИ E

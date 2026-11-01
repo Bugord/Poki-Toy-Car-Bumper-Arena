@@ -99,9 +99,12 @@ def summarise(data):
     s["match_falls"] = other(o, r"match-falls-([0-9a-z]+-r[0-9a-z]+)-falls")
     s["match_pushed"] = other(o, r"match-pushed-([0-9a-z]+-r[0-9a-z]+)-pushed")
     s["match_revenge"] = other(o, r"match-revenge-((?:got|missed)-r[0-9a-z]+)-revenge")
-    # способности матча: что подобрал игрок (kind-rR) и сколько за матч (N-rR)
+    # способности матча до ящиков (v0.6): что подобрал игрок (kind-rR)
     s["match_pickup"] = other(o, r"match-pickup-((?:heavy|shockwave|shield|turbo)-r[0-9a-z]+)-pickup")
+    # ящики матча: сколько разбил за матч (N-rR), какой предмет выпал (item-get) и какой применил (item-use)
     s["match_pickups"] = other(o, r"match-pickups-([0-9a-z]+-r[0-9a-z]+)-pickups")
+    s["match_item_get"] = other(o, r"match-item-((?:heavy|shockwave|shield|turbo|bomb|glove)-r[0-9a-z]+)-item-get")
+    s["match_item_use"] = other(o, r"match-item-((?:heavy|shockwave|shield|turbo|bomb|glove)-r[0-9a-z]+)-item-use")
     return s
 
 
@@ -222,8 +225,10 @@ def report(version, previous):
         ("Матч: падения игрока по матчу (визиты)", "match_falls", None),
         ("Матч: из них столкнули по матчу (визиты)", "match_pushed", None),
         ("Матч: REVENGE по матчу (визиты)", "match_revenge", None),
-        ("Матч: подобранные способности (heavy, shockwave, shield, turbo; визиты)", "match_pickup", None),
-        ("Матч: сколько способностей подобрал игрок за матч (визиты)", "match_pickups", None),
+        ("Матч: подобранные способности до ящиков (v0.6; heavy, shockwave, shield, turbo; визиты)", "match_pickup", None),
+        ("Матч: сколько ящиков разбил игрок за матч (до ящиков: способностей; визиты)", "match_pickups", None),
+        ("Матч: какой предмет выпал из ящика (item-get; визиты)", "match_item_get", None),
+        ("Матч: какой предмет игрок применил (item-use; визиты)", "match_item_use", None),
     ):
         keys = order if order is not None else keys_of(key)
         if keys:

@@ -12,14 +12,21 @@ using Object = UnityEngine.Object;
 namespace ToyCarArena.Gameplay.Pickups
 {
     /// <summary>
-    /// The abilities that lie on the floor of a long match for a car to drive over (<see cref="PickupKind"/>). A pickup
-    /// appears every <see cref="GameTuning.PickupSettings.Interval"/> seconds, one or two at a time, only while the floor
-    /// is whole or shrinking (<see cref="FloorPhase.Open"/> and <see cref="FloorPhase.Shrink"/>) and only on floor that is
-    /// safe with room round it; at the peak and as the floor comes back none lie there, and one whose floor begins to
-    /// shake fades away. Where it appears leans towards the cars behind in knock-outs, so a losing player can catch up.
-    /// A car on the floor, in play and not just back from a fall, takes it by driving within
-    /// <see cref="GameTuning.PickupSettings.PickRadius"/>; the ability starts at once (<see cref="Car.TakePickup"/>), and
-    /// a shockwave is the ring this class sends out from the picker.
+    /// The mystery boxes of a long match and the items they give (<see cref="ItemKind"/>). A box appears every
+    /// <see cref="GameTuning.PickupSettings.Interval"/> seconds, only while the floor is whole or shrinking
+    /// (<see cref="FloorPhase.Open"/> and <see cref="FloorPhase.Shrink"/>) and only on floor that is safe with room round
+    /// it; at the peak and as the floor comes back none lie there, and one whose floor begins to shake fades away. Where
+    /// it appears leans towards the cars behind in knock-outs. A car on the floor, in play and not just back from a fall,
+    /// breaks it by driving within <see cref="GameTuning.PickupSettings.PickRadius"/>: an empty slot spins for
+    /// <see cref="GameTuning.PickupSettings.RollTime"/> and lands on an item drawn by <see cref="ItemRoll"/> (the car
+    /// behind gets the items that knock cars off more often); a car that already holds one breaks the box and gets
+    /// nothing, as in a kart racer. The item is kept until its car uses it (<see cref="Use"/>) or falls.
+    /// <para>
+    /// Used, heavy, shield and turbo start running on the car (<see cref="Car.StartAbility"/>); the shockwave is a ring sent
+    /// from the car at once, the bomb is thrown ahead (<see cref="ItemBombs"/>) and the glove punches from the nose
+    /// (<see cref="ItemGloves"/>). Every hit of an item goes through <see cref="ItemBlow"/>: credited to its user, taken
+    /// by a shield, passing a car just back from a fall.
+    /// </para>
     /// <para>
     /// Registered in every scope, it does nothing and builds nothing outside a long match, so a round of last-car-standing
     /// is as it was. What it builds hangs under one root and is freed with it. All its choices come from the bots' seed
@@ -34,17 +41,18 @@ namespace ToyCarArena.Gameplay.Pickups
         private const float BlinkRate = 5f;
         private const float RetryDelay = 1f;
         private const int SpotAttempts = 60;
-        // Metres above the floor a car may be and still take a pickup it drives over.
+        // Metres above the floor a car may be and still break a box it drives through.
         private const float TakeHeight = 1.2f;
         private const float PickupVolume = 0.7f;
 
         /// <summary>
-        /// Raised when a car takes a pickup, with the kind and the car's place; after the ability has started.
+        /// Raised when a car breaks a box, with what it got (<see cref="ItemKind.None"/> when its slot was full) and the
+        /// car's place; after the slot has started to spin.
         /// </summary>
-        public event Action<Car, PickupKind, Vector3> Collected;
+        public event Action<Car, ItemKind, Vector3> Collected;
 
         /// <summary>
-        /// Raised when a pickup appears on the floor.
+        /// Raised when a box appears on the floor.
         /// </summary>
         public event Action<FloorPickup> Spawned;
 
@@ -54,6 +62,7 @@ namespace ToyCarArena.Gameplay.Pickups
         private readonly ArenaCrumble crumble;
         private readonly IArenaEdge edge;
         private readonly ArenaHazards hazards;
+        private readonly RoundDifficulty difficulty;
         private readonly MechanicArt mechanicArt;
         private readonly ArenaCamera arenaCamera;
         private readonly IAudioService audioService;
@@ -66,6 +75,9 @@ namespace ToyCarArena.Gameplay.Pickups
         private Transform root;
         private PickupArt art;
         private AbilityLook look;
+        private ItemBlow blow;
+        private ItemBombs bombs;
+        private ItemGloves gloves;
         private EffectPlayer effects;
         private System.Random random;
         private float nextSpawn;
@@ -73,7 +85,8 @@ namespace ToyCarArena.Gameplay.Pickups
         private bool isBuilt;
 
         public ArenaPickups(GameTuning tuning, ArenaRound round, ArenaCrumble crumble, IArenaEdge edge, ArenaHazards hazards,
-            MechanicArt mechanicArt, ArenaCamera arenaCamera, IAudioService audioService, Transform parent)
+            RoundDifficulty difficulty, MechanicArt mechanicArt, ArenaCamera arenaCamera, IAudioService audioService,
+            Transform parent)
         {
             this.tuning = tuning;
             this.settings = tuning.Pickups;
@@ -81,21 +94,22 @@ namespace ToyCarArena.Gameplay.Pickups
             this.crumble = crumble;
             this.edge = edge;
             this.hazards = hazards;
+            this.difficulty = difficulty;
             this.mechanicArt = mechanicArt;
             this.arenaCamera = arenaCamera;
             this.audioService = audioService;
             this.parent = parent;
-            // The one place the mode is read: a round of last-car-standing never has a pickup, or an object for one.
+            // The one place the mode is read: a round of last-car-standing never has a box, or an object for one.
             this.isEnabled = settings.Enabled && tuning.IsMatch;
         }
 
-        /// <summary>Whether this scene has pickups at all: a long match with them switched on.</summary>
+        /// <summary>Whether this scene has boxes and items at all: a long match with them switched on.</summary>
         public bool IsEnabled => isEnabled;
 
-        /// <summary>The pickups lying on the floor to be taken now.</summary>
+        /// <summary>The boxes lying on the floor to be broken now.</summary>
         public IReadOnlyList<FloorPickup> Live => live;
 
-        /// <summary>Counts up each time a pickup appears, so a bot can tell there is a new one to look at.</summary>
+        /// <summary>Counts up each time a box appears, so a bot can tell there is a new one to look at.</summary>
         public int Version => version;
 
         public void Tick()
@@ -115,9 +129,13 @@ namespace ToyCarArena.Gameplay.Pickups
             var deltaTime = Time.deltaTime;
             look.Tick(round.Cars, deltaTime);
             AnimateSlots(deltaTime);
+            bombs.Tick(deltaTime);
+            gloves.Tick(deltaTime);
             if (!round.IsRunning) {
                 if (round.IsFinished) {
                     RemoveAll();
+                    bombs.Clear();
+                    gloves.Clear();
                 }
 
                 return;
@@ -134,10 +152,10 @@ namespace ToyCarArena.Gameplay.Pickups
         }
 
         /// <summary>
-        /// Puts a pickup of <paramref name="kind"/> on the floor at <paramref name="position"/> (flat), as the spawner
-        /// does when it has chosen; null when every slot is taken. For the spawner, tests and the dev console.
+        /// Puts a box on the floor at <paramref name="position"/> (flat), as the spawner does when it has chosen a spot;
+        /// null when every slot is taken. For the spawner, tests and the dev console.
         /// </summary>
-        public FloorPickup Spawn(PickupKind kind, Vector3 position)
+        public FloorPickup Spawn(Vector3 position)
         {
             EnsureBuilt();
             foreach (var slot in slots) {
@@ -145,7 +163,6 @@ namespace ToyCarArena.Gameplay.Pickups
                     continue;
                 }
 
-                slot.Kind = kind;
                 slot.Position = new Vector3(position.x, 0f, position.z);
                 slot.Age = 0f;
                 slot.StageTime = 0f;
@@ -155,13 +172,7 @@ namespace ToyCarArena.Gameplay.Pickups
                 slot.Root.position = slot.Position;
                 slot.Root.localScale = Vector3.zero;
                 slot.Root.gameObject.SetActive(true);
-                for (var i = 0; i < slot.Tokens.Length; i++) {
-                    if (slot.Tokens[i] != null) {
-                        slot.Tokens[i].gameObject.SetActive(i == (int)kind);
-                    }
-                }
-
-                art.Tint(slot, kind, 0.5f);
+                art.TintBox(slot, slot.Phase);
                 live.Add(slot);
                 version++;
                 Spawned?.Invoke(slot);
@@ -172,23 +183,65 @@ namespace ToyCarArena.Gameplay.Pickups
         }
 
         /// <summary>
-        /// Gives <paramref name="car"/> the ability of <paramref name="kind"/> at once, with the effects of taking it. The
-        /// spawner calls this when a car drives over a pickup.
+        /// Puts <paramref name="kind"/> straight into <paramref name="car"/>'s slot, landed and ready to use, without a box
+        /// or a roll; false while the slot is full. For tests and the dev console.
         /// </summary>
-        public void Grant(Car car, PickupKind kind)
+        public bool Give(Car car, ItemKind kind)
         {
+            if (!isEnabled) {
+                return false;
+            }
+
             EnsureBuilt();
-            car.TakePickup(kind);
-            if (kind == PickupKind.Shockwave) {
-                SendShockwave(car);
+            return car.GiveItem(kind, 0f);
+        }
+
+        /// <summary>
+        /// Uses <paramref name="car"/>'s landed item: false, and nothing done, when there is no match running, the car is
+        /// out, or its slot is empty or still spins. The player's driver and the bots both call this.
+        /// </summary>
+        public bool Use(Car car)
+        {
+            if (!isEnabled || car == null || car.IsOut || !car.IsItemReady || !round.IsRunning) {
+                return false;
             }
 
-            if (effects != null) {
-                effects.PlayPickup(car.Position);
+            EnsureBuilt();
+            var kind = car.UseItem();
+            switch (kind) {
+                case ItemKind.Heavy:
+                case ItemKind.Shield:
+                case ItemKind.Turbo:
+                    car.StartAbility(kind);
+                    break;
+                case ItemKind.Shockwave:
+                    SendShockwave(car);
+                    break;
+                case ItemKind.Bomb:
+                    bombs.Throw(car);
+                    break;
+                case ItemKind.Glove:
+                    gloves.Punch(car);
+                    break;
+                default:
+                    return false;
             }
 
-            audioService?.Play(audioService.Library.KnockoutCredit, car.IsPlayer ? PickupVolume : PickupVolume * 0.5f);
-            Collected?.Invoke(car, kind, car.Position);
+            if (kind is ItemKind.Heavy or ItemKind.Shield or ItemKind.Turbo) {
+                if (effects != null) {
+                    effects.PlayPickup(car.Position);
+                }
+
+                audioService?.Play(audioService.Library.KnockoutCredit, car.IsPlayer ? PickupVolume : PickupVolume * 0.4f);
+            }
+
+            return true;
+        }
+
+        /// <summary>Whether <paramref name="car"/>'s glove is out, so a bot does not punch twice in a row.</summary>
+        public bool IsPunching(Car car)
+        {
+            return gloves != null && gloves.IsPunching(car);
         }
 
         public void Dispose()
@@ -219,8 +272,8 @@ namespace ToyCarArena.Gameplay.Pickups
         }
 
         /// <summary>
-        /// Builds the pool of pickups and the look of the abilities, once, when the cars are placed: the bots' seed is set
-        /// after the scene loads, and the choices come from it.
+        /// Builds the pool of boxes, bombs and gloves and the look of the abilities, once, when the cars are placed: the
+        /// bots' seed is set after the scene loads, and the choices come from it.
         /// </summary>
         private void Build()
         {
@@ -232,15 +285,18 @@ namespace ToyCarArena.Gameplay.Pickups
             // The effects live in the scene, not the container.
             effects = Object.FindAnyObjectByType<EffectPlayer>();
             look = new AbilityLook(mechanicArt, root, effects);
+            blow = new ItemBlow(settings, difficulty);
+            bombs = new ItemBombs(tuning, round, edge, blow, effects, audioService, arenaCamera, art, root);
+            gloves = new ItemGloves(tuning, round, blow, effects, audioService, arenaCamera, art, root);
 
             slots = new FloorPickup[settings.MaxCount];
             for (var i = 0; i < slots.Length; i++) {
                 var slot = new FloorPickup();
-                slot.Root = new GameObject("Pickup").transform;
+                slot.Root = new GameObject("Box").transform;
                 slot.Root.SetParent(root, false);
                 slot.Hover = new GameObject("Hover").transform;
                 slot.Hover.SetParent(slot.Root, false);
-                slot.Tokens = art.BuildTokens(slot.Hover);
+                slot.BoxRenderer = art.BuildBox(slot.Hover);
                 art.BuildMarker(slot);
                 slot.Root.gameObject.SetActive(false);
                 slots[i] = slot;
@@ -257,7 +313,7 @@ namespace ToyCarArena.Gameplay.Pickups
             crumble.CycleStarted += OnCycleStarted;
         }
 
-        /// <summary>Each cycle of the floor starts its pickups afresh: the first one a little after the floor is whole.</summary>
+        /// <summary>Each cycle of the floor starts its boxes afresh: the first one a little after the floor is whole.</summary>
         private void OnCycleStarted(int cycle)
         {
             nextSpawn = round.Elapsed + settings.FirstDelay;
@@ -272,10 +328,10 @@ namespace ToyCarArena.Gameplay.Pickups
             audioService?.Play(audioService.Library.HitLight, car.IsPlayer ? 0.8f : 0.4f);
         }
 
-        // --- Life of a pickup ---
+        // --- Life of a box ---
 
         /// <summary>
-        /// Ages the pickups lying there, fades the ones whose time is up or whose floor is going, and gives the rest to
+        /// Ages the boxes lying there, fades the ones whose time is up or whose floor is going, and breaks the rest under
         /// the nearest car that can take them.
         /// </summary>
         private void TickLive(float deltaTime)
@@ -292,9 +348,31 @@ namespace ToyCarArena.Gameplay.Pickups
                 var taker = NearestTaker(pickup);
                 if (taker != null) {
                     Leave(pickup, true);
-                    Grant(taker, pickup.Kind);
+                    Break(taker);
                 }
             }
+        }
+
+        /// <summary>
+        /// A car broke a box: an empty slot starts to spin on an item drawn for how far the car trails the leader; a full
+        /// one gets nothing.
+        /// </summary>
+        private void Break(Car car)
+        {
+            var kind = ItemKind.None;
+            if (!car.HasItem) {
+                var trailing = ItemRoll.TrailingOf(round.Score, round.IndexOf(car), settings);
+                kind = ItemRoll.Choose(random, settings, trailing);
+                car.GiveItem(kind, settings.RollTime);
+            }
+
+            if (effects != null) {
+                effects.PlayPickup(car.Position);
+            }
+
+            var volume = kind == ItemKind.None ? PickupVolume * 0.5f : PickupVolume;
+            audioService?.Play(audioService.Library.KnockoutCredit, car.IsPlayer ? volume : volume * 0.5f);
+            Collected?.Invoke(car, kind, car.Position);
         }
 
         private Car NearestTaker(FloorPickup pickup)
@@ -321,7 +399,7 @@ namespace ToyCarArena.Gameplay.Pickups
             return best;
         }
 
-        /// <summary>Takes a pickup off the floor: it pops if a car took it, or fades if it ran out or lost its floor.</summary>
+        /// <summary>Takes a box off the floor: it bursts if a car broke it, or fades if it ran out or lost its floor.</summary>
         private void Leave(FloorPickup pickup, bool wasTaken)
         {
             live.Remove(pickup);
@@ -348,7 +426,7 @@ namespace ToyCarArena.Gameplay.Pickups
                 return;
             }
 
-            if (TryPickSpot(out var spot) && Spawn(PickKind(), spot) != null) {
+            if (TryPickSpot(out var spot) && Spawn(spot) != null) {
                 var jitter = ((float)random.NextDouble() * 2f - 1f) * settings.Jitter;
                 nextSpawn = round.Elapsed + Mathf.Max(0.5f, settings.Interval + jitter);
             }
@@ -357,26 +435,8 @@ namespace ToyCarArena.Gameplay.Pickups
             }
         }
 
-        private PickupKind PickKind()
-        {
-            var total = 0f;
-            for (var kind = PickupKind.Heavy; kind <= PickupKind.Turbo; kind++) {
-                total += settings.WeightOf(kind);
-            }
-
-            var roll = (float)random.NextDouble() * total;
-            for (var kind = PickupKind.Heavy; kind <= PickupKind.Turbo; kind++) {
-                roll -= settings.WeightOf(kind);
-                if (roll < 0f) {
-                    return kind;
-                }
-            }
-
-            return PickupKind.Heavy;
-        }
-
         /// <summary>
-        /// A spot of safe floor with room round it, clear of every car and of the pickups already lying there; near a car
+        /// A spot of safe floor with room round it, clear of every car and of the boxes already lying there; near a car
         /// behind in knock-outs when the dice say so (<see cref="ChooseLean"/>), else anywhere on the safe floor.
         /// </summary>
         private bool TryPickSpot(out Vector3 spot)
@@ -407,7 +467,7 @@ namespace ToyCarArena.Gameplay.Pickups
         }
 
         /// <summary>
-        /// The car the next pickup leans towards, or null for none: the more the car furthest behind trails the leader in
+        /// The car the next box leans towards, or null for none: the more the car furthest behind trails the leader in
         /// knock-outs, the likelier one is picked, and then it is a car in play chosen by how far behind it is, so the one
         /// losing most is the one most often helped.
         /// </summary>
@@ -486,18 +546,16 @@ namespace ToyCarArena.Gameplay.Pickups
         // --- The shockwave ---
 
         /// <summary>
-        /// The ring of a shockwave: every other car in play within its reach is pushed away from the picker, harder the
-        /// nearer, and thrown a little up and off balance, credited to the picker so a fall that follows is the picker's
-        /// knock-out. A car just back from a fall is left alone, a shield takes the ring and is spent, and no car is sent
-        /// faster than a hit may.
+        /// The ring of a shockwave: every other car in play within its reach is pushed away from the user, harder the
+        /// nearer, and thrown a little up and off balance, credited to the user (<see cref="ItemBlow"/>).
         /// </summary>
-        private void SendShockwave(Car picker)
+        private void SendShockwave(Car user)
         {
             var wave = settings.Shockwave;
-            var origin = picker.Position;
-            var isPlayerHit = picker.IsPlayer;
+            var origin = user.Position;
+            var isPlayerHit = user.IsPlayer;
             foreach (var car in round.Cars) {
-                if (car == picker || !car.IsTargetable) {
+                if (car == user) {
                     continue;
                 }
 
@@ -508,20 +566,14 @@ namespace ToyCarArena.Gameplay.Pickups
                     continue;
                 }
 
-                if (car.TryAbsorbHit()) {
+                // Straight out; from the very spot, the way the car faces away from the user.
+                var direction = distance > 0.05f ? offset / distance : car.transform.forward;
+                var share = Mathf.Lerp(1f, wave.EdgeShare, distance / wave.Radius);
+                if (!blow.Apply(car, user, direction, wave.Push * share, tuning.Car.MaxBumpSpeed, wave.Lift, wave.Stagger)) {
                     continue;
                 }
 
-                // Straight out; from the very spot, the way the car faces away from the picker.
-                var direction = distance > 0.05f ? offset / distance : car.transform.forward;
-                direction.y = 0f;
-                direction.Normalize();
-                var share = Mathf.Lerp(1f, wave.EdgeShare, distance / wave.Radius);
-                var speedAway = Vector3.Dot(car.Movement.Velocity, direction);
-                var push = Mathf.Min(wave.Push * share, Mathf.Max(0f, tuning.Car.MaxBumpSpeed - speedAway));
-                car.Movement.Push(direction * push + Vector3.up * wave.Lift);
-                car.Movement.Stagger(wave.Stagger);
-                car.HitByShockwave(picker);
+                user.ReportItemHit(ItemKind.Shockwave, car.Position);
                 isPlayerHit |= car.IsPlayer;
             }
 
@@ -538,8 +590,8 @@ namespace ToyCarArena.Gameplay.Pickups
         // --- Looks ---
 
         /// <summary>
-        /// Floats, spins and sizes the pickups: popping in with an overshoot, blinking as their time runs out, and popping
-        /// or shrinking away.
+        /// Floats, spins, colours and sizes the boxes: popping in with an overshoot, blinking as their time runs out, and
+        /// bursting or shrinking away.
         /// </summary>
         private void AnimateSlots(float deltaTime)
         {
@@ -569,8 +621,10 @@ namespace ToyCarArena.Gameplay.Pickups
 
                 slot.Root.localScale = Vector3.one * Mathf.Max(0f, scale);
                 slot.Hover.localPosition = Vector3.up * (PickupArt.HoverHeight + Mathf.Sin(slot.Phase * 3f) * 0.18f);
-                slot.Hover.localRotation = Quaternion.Euler(0f, slot.Phase * 140f, 0f);
-                art.Tint(slot, slot.Kind, 0.5f + 0.5f * Mathf.Sin(slot.Phase * 4f));
+                // A tumble as well as a spin, so the box reads as a lucky box and not a crate.
+                slot.Hover.localRotation = Quaternion.Euler(Mathf.Sin(slot.Phase * 2f) * 12f, slot.Phase * 140f,
+                    Mathf.Cos(slot.Phase * 1.7f) * 12f);
+                art.TintBox(slot, slot.Phase);
             }
         }
 

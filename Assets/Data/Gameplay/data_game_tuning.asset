@@ -443,4 +443,4 @@ MonoBehaviour:
     duration: 60
   pickups:
     firstDelay: 3
-    interval: 6.5
+    interval: 4

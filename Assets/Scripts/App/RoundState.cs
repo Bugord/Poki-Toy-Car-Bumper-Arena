@@ -5,10 +5,12 @@ using Cysharp.Threading.Tasks;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Cars;
+using ToyCarArena.Gameplay.Pickups;
 using ToyCarArena.Gameplay.Round;
 using ToyCarArena.UI;
 using UIKit.Runtime.Abstractions;
 using UniState;
+using UnityEngine;
 
 namespace ToyCarArena.App
 {
@@ -80,14 +82,20 @@ namespace ToyCarArena.App
             var variants = levelScene.Resolve<ArenaVariants>();
             var currentVariant = playedVariant;
             var waitsForPlayer = roundNumber == 1;
-            // The pickups the player takes in a match, each reported as it is taken and counted for the end.
+            // The boxes the player breaks in a match, counted for the end, and its items, each reported as its roll lands
+            // and as it is used.
+            var pickups = levelScene.Resolve<ArenaPickups>();
             var pickupCount = 0;
             Car pickupCar = null;
-            void OnPickedUp(PickupKind kind)
+            void OnCollected(Car car, ItemKind kind, Vector3 position)
             {
-                pickupCount++;
-                platform.MeasurePickup(roundNumber, kind);
+                if (car == round.Player) {
+                    pickupCount++;
+                }
             }
+
+            void OnItemLanded(ItemKind kind) => platform.MeasureItemGet(roundNumber, kind);
+            void OnItemUsed(ItemKind kind) => platform.MeasureItemUse(roundNumber, kind);
 
             void OnVariantChanged(string variant)
             {
@@ -121,7 +129,9 @@ namespace ToyCarArena.App
             try {
                 round.Place();
                 pickupCar = round.Player;
-                pickupCar.PickedUp += OnPickedUp;
+                pickupCar.ItemLanded += OnItemLanded;
+                pickupCar.ItemUsed += OnItemUsed;
+                pickups.Collected += OnCollected;
                 if (!waitsForPlayer) {
                     BeginRound();
                 }
@@ -166,8 +176,10 @@ namespace ToyCarArena.App
             finally {
                 round.Finished -= OnFinished;
                 variants.VariantChanged -= OnVariantChanged;
+                pickups.Collected -= OnCollected;
                 if (pickupCar != null) {
-                    pickupCar.PickedUp -= OnPickedUp;
+                    pickupCar.ItemLanded -= OnItemLanded;
+                    pickupCar.ItemUsed -= OnItemUsed;
                 }
 
                 // Cancelled with the app, or failed: the platform must not think the game still plays.

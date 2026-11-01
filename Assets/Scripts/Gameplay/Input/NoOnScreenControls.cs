@@ -16,6 +16,17 @@ namespace ToyCarArena.Gameplay.Input
             remove { }
         }
 
+        public event Action ItemPressed
+        {
+            add { }
+            remove { }
+        }
+
+        public bool IsItemAt(Vector2 screenPosition)
+        {
+            return false;
+        }
+
         public bool IsControlAt(Vector2 screenPosition)
         {
             return false;

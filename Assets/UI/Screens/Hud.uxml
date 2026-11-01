@@ -174,6 +174,28 @@
                     </ui:VisualElement>
                 </ui:VisualElement>
             </ui:VisualElement>
+            <ui:VisualElement name="item-button" class="hud__item">
+                <ui:VisualElement name="item-icon" picking-mode="Ignore" class="hud__item-icon">
+                    <ui:VisualElement picking-mode="Ignore" class="hud__item-glyph">
+                        <ui:VisualElement picking-mode="Ignore" class="hud__item-glyph-part" />
+                    </ui:VisualElement>
+                    <ui:Label text="?" picking-mode="Ignore" class="hud__item-mark" />
+                </ui:VisualElement>
+                <ui:VisualElement picking-mode="Ignore" class="key hud__item-key">
+                    <ui:Label text="E" picking-mode="Ignore" class="key__text hud__item-key-text" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="item-hint" picking-mode="Ignore" class="hud__item-hint">
+                <ui:VisualElement picking-mode="Ignore" class="pill hud__item-hint-label">
+                    <ui:VisualElement picking-mode="Ignore" class="stroke">
+                        <ui:Label name="item-hint-text" text="TAP TO USE" picking-mode="Ignore" class="hud__teaching-text hud__item-hint-text" />
+                        <ui:Label name="item-hint-face" text="TAP TO USE" picking-mode="Ignore" class="hud__teaching-text hud__item-hint-text stroke__face" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement picking-mode="Ignore" class="hud__boost-hint-arrow hud__item-hint-arrow">
+                    <ui:VisualElement picking-mode="Ignore" class="hud__boost-hint-arrow-fill" />
+                </ui:VisualElement>
+            </ui:VisualElement>
             <ui:VisualElement name="boost-button" class="hud__boost">
                 <ui:VisualElement name="boost-charge" picking-mode="Ignore" class="hud__boost-charge" />
                 <ui:VisualElement picking-mode="Ignore" class="stroke hud__boost-label">

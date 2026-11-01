@@ -121,6 +121,9 @@ namespace ToyCarArena.Gameplay.Bots
                 }
 
                 bot.Steer(edge, deltaTime, isDuel);
+                if (pickups.IsEnabled && round.IsRunning && bot.WantsToUseItem(edge, round.Cars, deltaTime)) {
+                    pickups.Use(bot.Car);
+                }
             }
         }
 
@@ -249,7 +252,8 @@ namespace ToyCarArena.Gameplay.Bots
         /// </summary>
         private void ChoosePickup(Bot bot, IArenaEdge edge)
         {
-            if (!pickups.IsEnabled || !bot.Car.IsTargetable) {
+            // A bot that holds an item gets nothing from a box, so it does not go for one.
+            if (!pickups.IsEnabled || !bot.Car.IsTargetable || bot.Car.HasItem) {
                 bot.SetPickup(null);
                 return;
             }

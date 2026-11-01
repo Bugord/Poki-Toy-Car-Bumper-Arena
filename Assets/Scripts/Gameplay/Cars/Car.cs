@@ -35,10 +35,27 @@ namespace ToyCarArena.Gameplay.Cars
         public event Action<CarHit> Hit;
 
         /// <summary>
-        /// Raised when the car takes a pickup in a long match, whatever the kind (one that acts once, a shockwave,
-        /// included); the HUD and the analytics listen to the player's.
+        /// Raised when a mystery box in a long match gives the car an item: the slot spins for
+        /// <see cref="GameTuning.PickupSettings.RollTime"/> before it lands (<see cref="ItemLanded"/>). The HUD plays its
+        /// roulette on the player's.
         /// </summary>
-        public event Action<PickupKind> PickedUp;
+        public event Action<ItemKind> ItemRolled;
+
+        /// <summary>
+        /// Raised when the roll lands and the item can be used; the HUD and the analytics listen to the player's.
+        /// </summary>
+        public event Action<ItemKind> ItemLanded;
+
+        /// <summary>
+        /// Raised when the car uses its item, before what it does; the HUD shows its sticker and the analytics count it.
+        /// </summary>
+        public event Action<ItemKind> ItemUsed;
+
+        /// <summary>
+        /// Raised when the car's item hits another car (a glove's punch, a bomb's blast, a shockwave), with the point
+        /// it hit; the HUD shows POW! for the player's punch.
+        /// </summary>
+        public event Action<ItemKind, Vector3> ItemHit;
 
         /// <summary>
         /// Raised when the car's shield takes a hit and is gone, for its effect.
@@ -93,20 +110,20 @@ namespace ToyCarArena.Gameplay.Cars
         public float LastRingFallTime { get; private set; } = float.NegativeInfinity;
 
         /// <summary>
-        /// The ability a pickup gave the car and that is still running (<see cref="PickupKind.None"/> for none); one at
-        /// a time, a new one replacing the old. It ends with its time, a shield also with the hit it takes, and a fall
-        /// ends any.
+        /// The timed item the car used and that is still running (<see cref="ItemKind.None"/> for none): heavy, shield or
+        /// turbo, one at a time, a new one replacing the old. It ends with its time, a shield also with the hit it takes,
+        /// and a fall ends any.
         /// </summary>
-        public PickupKind Ability { get; private set; }
+        public ItemKind Ability { get; private set; }
 
         /// <summary>
-        /// How much of the running ability is left, from 1 when it was picked up to 0; 0 for none.
+        /// How much of the running ability is left, from 1 when it was used to 0; 0 for none.
         /// </summary>
         public float AbilityShare
         {
             get
             {
-                if (Ability == PickupKind.None || abilityLength <= 0f) {
+                if (Ability == ItemKind.None || abilityLength <= 0f) {
                     return 0f;
                 }
 
@@ -117,12 +134,32 @@ namespace ToyCarArena.Gameplay.Cars
         /// <summary>
         /// Seconds the running ability has left; 0 for none.
         /// </summary>
-        public float AbilityTimeLeft => Ability == PickupKind.None ? 0f : Mathf.Max(0f, abilityEndTime - Time.time);
+        public float AbilityTimeLeft => Ability == ItemKind.None ? 0f : Mathf.Max(0f, abilityEndTime - Time.time);
 
         /// <summary>
-        /// Whether a shield is up: the next real hit, of a car or of the arena, is taken whole.
+        /// Whether a shield is up: the next real hit, of a car, an item or the arena, is taken whole.
         /// </summary>
-        public bool IsShielded => Ability == PickupKind.Shield;
+        public bool IsShielded => Ability == ItemKind.Shield;
+
+        /// <summary>
+        /// The item in the car's slot (<see cref="ItemKind.None"/> for an empty one): one at a time, kept until used or
+        /// until the car falls. A car holding one still breaks the boxes it drives through but gets nothing from them,
+        /// as in a kart racer.
+        /// </summary>
+        public ItemKind HeldItem { get; private set; }
+
+        /// <summary>Whether the slot holds an item, spinning or landed.</summary>
+        public bool HasItem => HeldItem != ItemKind.None;
+
+        /// <summary>Whether the slot still spins: the item is decided but cannot be used yet.</summary>
+        public bool IsItemRolling => HasItem && Time.time < itemReadyTime;
+
+        /// <summary>Whether the item has landed and can be used now.</summary>
+        public bool IsItemReady => HasItem && Time.time >= itemReadyTime;
+
+        private float itemReadyTime;
+        // The roll has not been reported landed yet.
+        private bool isRollPending;
 
         private float abilityEndTime;
         private float abilityLength;
@@ -155,49 +192,102 @@ namespace ToyCarArena.Gameplay.Cars
                 gameObject.SetActive(false);
             }
 
-            if (Ability != PickupKind.None && Time.time >= abilityEndTime) {
+            if (Ability != ItemKind.None && Time.time >= abilityEndTime) {
                 ClearAbility();
+            }
+
+            if (isRollPending && Time.time >= itemReadyTime) {
+                isRollPending = false;
+                ItemLanded?.Invoke(HeldItem);
             }
         }
 
         /// <summary>
-        /// Leaves the round: nobody drives the car any more, and it falls on.
+        /// Leaves the round: nobody drives the car any more, and it falls on, losing its item and whatever ran.
         /// </summary>
         public void TakeOut()
         {
             IsOut = true;
             ClearAbility();
+            ClearItem();
             Movement.Drive(Vector3.zero, 0f);
         }
 
         /// <summary>
-        /// The car takes a pickup and its ability starts at once. A timed kind (heavy, shield, turbo) replaces whatever
-        /// ability was running; a shockwave leaves nothing running (the ring itself is the arena's business) but is
-        /// still reported.
+        /// A mystery box gives the car <paramref name="kind"/>: the slot spins for <paramref name="rollTime"/> seconds and
+        /// then holds it until it is used. False, and nothing given, while the slot is full (or for no kind).
         /// </summary>
-        public void TakePickup(PickupKind kind)
+        public bool GiveItem(ItemKind kind, float rollTime)
         {
-            if (kind == PickupKind.None) {
+            if (kind == ItemKind.None || HasItem) {
+                return false;
+            }
+
+            HeldItem = kind;
+            itemReadyTime = Time.time + Mathf.Max(0f, rollTime);
+            isRollPending = true;
+            ItemRolled?.Invoke(kind);
+            if (rollTime <= 0f) {
+                isRollPending = false;
+                ItemLanded?.Invoke(kind);
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Takes the landed item out of the slot to be used and reports it (<see cref="ItemUsed"/>); what it does is the
+        /// arena's business. <see cref="ItemKind.None"/>, and nothing used, while the slot is empty or still spins.
+        /// </summary>
+        public ItemKind UseItem()
+        {
+            if (!IsItemReady) {
+                return ItemKind.None;
+            }
+
+            var kind = HeldItem;
+            ClearItem();
+            ItemUsed?.Invoke(kind);
+            return kind;
+        }
+
+        /// <summary>
+        /// A used timed item starts running: heavy, shield or turbo replaces whatever ran before. The other kinds leave
+        /// nothing running.
+        /// </summary>
+        public void StartAbility(ItemKind kind)
+        {
+            var length = pickupSettings.DurationOf(kind);
+            if (length <= 0f) {
                 return;
             }
 
-            var length = pickupSettings.DurationOf(kind);
-            if (length > 0f) {
-                ClearAbility();
-                Ability = kind;
-                abilityLength = length;
-                abilityEndTime = Time.time + length;
-                switch (kind) {
-                    case PickupKind.Heavy:
-                        Movement.SetMassScale(pickupSettings.Heavy.MassScale);
-                        break;
-                    case PickupKind.Turbo:
-                        Movement.SetBoostCooldown(pickupSettings.Turbo.BoostCooldown);
-                        break;
-                }
+            ClearAbility();
+            Ability = kind;
+            abilityLength = length;
+            abilityEndTime = Time.time + length;
+            switch (kind) {
+                case ItemKind.Heavy:
+                    Movement.SetMassScale(pickupSettings.Heavy.MassScale);
+                    break;
+                case ItemKind.Turbo:
+                    Movement.SetBoostCooldown(pickupSettings.Turbo.BoostCooldown);
+                    break;
             }
+        }
 
-            PickedUp?.Invoke(kind);
+        /// <summary>
+        /// Reports that this car's <paramref name="kind"/> hit another car at <paramref name="point"/>.
+        /// </summary>
+        public void ReportItemHit(ItemKind kind, Vector3 point)
+        {
+            ItemHit?.Invoke(kind, point);
+        }
+
+        private void ClearItem()
+        {
+            HeldItem = ItemKind.None;
+            isRollPending = false;
         }
 
         /// <summary>
@@ -205,11 +295,11 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public void ClearAbility()
         {
-            if (Ability == PickupKind.None) {
+            if (Ability == ItemKind.None) {
                 return;
             }
 
-            Ability = PickupKind.None;
+            Ability = ItemKind.None;
             abilityLength = 0f;
             Movement.SetMassScale(1f);
             Movement.SetBoostCooldown(-1f);
@@ -217,11 +307,11 @@ namespace ToyCarArena.Gameplay.Cars
 
         /// <summary>
         /// Takes a hit into the shield if one is up: true, the shield is spent and the caller must do no harm to the
-        /// car; false when there is none. For the hits that are not the car's own collisions (a shockwave).
+        /// car; false when there is none. For the hits that are not the car's own collisions (an item's).
         /// </summary>
         public bool TryAbsorbHit()
         {
-            if (Ability != PickupKind.Shield) {
+            if (Ability != ItemKind.Shield) {
                 return false;
             }
 
@@ -232,12 +322,12 @@ namespace ToyCarArena.Gameplay.Cars
         }
 
         /// <summary>
-        /// A shockwave from <paramref name="picker"/> knocked this car: it counts as hit by that car, so a fall that
-        /// follows is the picker's knock-out, the way a push of a car is.
+        /// An item of <paramref name="user"/> (a shockwave, a bomb, a glove) knocked this car: it counts as hit by that
+        /// car, so a fall that follows is the user's knock-out, the way a push of a car is.
         /// </summary>
-        public void HitByShockwave(Car picker)
+        public void HitByItem(Car user)
         {
-            LastHitBy = picker;
+            LastHitBy = user;
             LastHitTime = Time.time;
         }
 
@@ -260,6 +350,7 @@ namespace ToyCarArena.Gameplay.Cars
             LastHazardTime = float.NegativeInfinity;
             LastRingFallTime = float.NegativeInfinity;
             ClearAbility();
+            ClearItem();
             Movement.Respawn(position, rotation);
             IsInvulnerable = false;
             SetInvulnerable(true, cars);
@@ -335,7 +426,7 @@ namespace ToyCarArena.Gameplay.Cars
         public void HitByHazard()
         {
             // A hazard pushes and staggers before it reports the hit: a shield takes all of it back.
-            if (Ability == PickupKind.Shield) {
+            if (Ability == ItemKind.Shield) {
                 Movement.UndoHazardKick();
                 TryAbsorbHit();
                 return;
