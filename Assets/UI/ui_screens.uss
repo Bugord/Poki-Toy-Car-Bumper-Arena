@@ -1327,10 +1327,9 @@
     transition-duration: 0.05s;
 }
 
-/* A match's item slot: a round white sticker beside BOOST, up and inward of it so the thumb on BOOST never covers it
-   and the steering thumb (on the other side) never reaches it; it follows BOOST's side (hud__boost-slot--left). 240
-   reference pixels is at least 44 pt on a phone held either way, and about 60 px clear of BOOST along the diagonal
-   (at least 8 pt on a phone in landscape). The icon is a disc in the
+/* A match's item slot: a round white sticker over BOOST on a touch screen (hud__boost-slot--items, below), so the
+   thumb on BOOST never covers it and the steering thumb (on the other side) never reaches it; it follows BOOST's side
+   (hud__boost-slot--left). 240 reference pixels is at least 44 pt on a phone held either way. The icon is a disc in the
    item's colour with a glyph of its own shape (a weight, a ring with a dot, a bubble, a diamond, a bomb, a glove), so
    the kind never rests on colour alone; an empty slot shows a faint "?". It spins through the items as a box is broken
    (hud__item--rolling), pops as it lands (hud__item--pop) and sinks as it is pressed. On a desktop it is smaller, to
@@ -1601,14 +1600,51 @@
     display: flex;
 }
 
-/* With the item button on a touch screen the ability badge goes over it, so neither covers the other. */
-.hud__boost-slot--items .hud__power {
-    top: -350px;
+/* On a touch screen the item button stands over BOOST and a little toward the screen's edge: up and inward of it, it
+   covered the player's car at its start in portrait. The ability badge goes over the item, so neither covers the
+   other. */
+.hud__boost-slot--items .hud__item {
+    left: 80px;
+    top: -275px;
 }
 
-/* The first item of a visit: TAP TO USE or PRESS E under the item button, with an arrow up to it, for a moment. Below
-   the button the screen is free on a phone held either way and on a desktop: above it lie the arena, the player's car
-   and the item's timer badge. It keeps clear of BOOST on either side. */
+.hud__boost-slot--items.hud__boost-slot--left .hud__item {
+    left: -20px;
+}
+
+.hud__boost-slot--items .hud__power {
+    top: -400px;
+}
+
+/* TAP! and its arrow beside BOOST, on the screen's middle side, pointing at it: over BOOST lies the item button. */
+.hud__boost-slot--items .hud__boost-hint {
+    left: -330px;
+    top: 90px;
+    height: 120px;
+    padding-right: 80px;
+    justify-content: center;
+}
+
+.hud__boost-slot--items .hud__boost-hint .hud__boost-hint-arrow {
+    left: 214px;
+    top: 24px;
+    rotate: -45deg;
+}
+
+.hud__boost-slot--items.hud__boost-slot--left .hud__boost-hint {
+    left: 330px;
+    padding-right: 0;
+    padding-left: 80px;
+}
+
+.hud__boost-slot--items.hud__boost-slot--left .hud__boost-hint .hud__boost-hint-arrow {
+    left: 14px;
+    rotate: 135deg;
+}
+
+/* The first item of a visit: PRESS E under the desktop's item button, with an arrow up to it, for a moment (on a
+   touch screen TAP TO USE stands beside the button, below). Below the button the screen is free on a desktop: above it
+   lie the arena, the player's car and the item's timer badge. It keeps clear of BOOST on either side. */
 .hud__item-hint {
     position: absolute;
     left: -410px;
@@ -1675,6 +1711,29 @@
 
 .hud__item-hint-arrow .hud__boost-hint-arrow-fill {
     border-color: var(--purple);
+}
+
+/* On a touch screen TAP TO USE stands over the item button, its arrow pointing down at it: beside the button it
+   covered the player's car at its start in portrait. The ability badge, which also goes there, shows only once an item
+   is used, and that hides the hint. */
+.hud__boost-slot--items .hud__item-hint {
+    left: -80px;
+    top: -435px;
+    padding-top: 0;
+}
+
+.hud__boost-slot--items .hud__item-hint .hud__item-hint-arrow {
+    left: 244px;
+    top: 86px;
+    rotate: 45deg;
+}
+
+.hud__boost-slot--items.hud__boost-slot--left .hud__item-hint {
+    left: -20px;
+}
+
+.hud__boost-slot--items.hud__boost-slot--left .hud__item-hint .hud__item-hint-arrow {
+    left: 84px;
 }
 
 /* POW!: the comic word where the player's glove lands, in red on the sticker. */
