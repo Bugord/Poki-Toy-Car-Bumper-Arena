@@ -21,6 +21,11 @@ namespace ToyCarArena.Gameplay.Input
             return false;
         }
 
+        public bool IsUiAt(Vector2 screenPosition)
+        {
+            return false;
+        }
+
         public void ShowJoystick(Vector2 center, Vector2 knob, float radius)
         {
         }

@@ -117,6 +117,17 @@
                 </ui:Label>
             </ui:VisualElement>
         </ui:VisualElement>
+        <ui:Button name="settings-button" class="pill gear-button hud__settings">
+            <ui:VisualElement picking-mode="Ignore" class="gear">
+                <ui:VisualElement picking-mode="Ignore" class="gear__tooth" />
+                <ui:VisualElement picking-mode="Ignore" class="gear__tooth gear__tooth--45" />
+                <ui:VisualElement picking-mode="Ignore" class="gear__tooth gear__tooth--90" />
+                <ui:VisualElement picking-mode="Ignore" class="gear__tooth gear__tooth--135" />
+                <ui:VisualElement picking-mode="Ignore" class="gear__hub">
+                    <ui:VisualElement picking-mode="Ignore" class="gear__hole" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:Button>
         <ui:VisualElement name="ko-layer" picking-mode="Ignore" class="hud__popups" />
         <ui:VisualElement name="boost-slot" picking-mode="Ignore" class="hud__boost-slot">
             <ui:VisualElement name="boost-button" class="hud__boost">

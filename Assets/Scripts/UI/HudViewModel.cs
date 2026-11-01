@@ -1,4 +1,6 @@
 using System;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
@@ -17,6 +19,10 @@ namespace ToyCarArena.UI
     /// The boost button is there from the visit's first round on: the boost is the one way to dodge a hit and to save
     /// the car at the edge, and the first test on Poki showed touch players losing the first round without it.
     /// </para>
+    /// <para>
+    /// The settings open over the running round, which goes on under them: the game has no pause, and Poki players
+    /// reach for the sound in the middle of play, not only on the result.
+    /// </para>
     /// </summary>
     public sealed class HudViewModel : ViewModel, IPayloadReceiver<HudRound>
     {
@@ -33,8 +39,16 @@ namespace ToyCarArena.UI
         public event Action<int> CarOut;
         public event Action<int, int> Eliminated;
 
+        private readonly IScreenNavigator navigator;
+        private readonly HudControls controls;
         private ArenaRound round;
         private PlayerDriver driver;
+
+        public HudViewModel(IScreenNavigator navigator, HudControls controls)
+        {
+            this.navigator = navigator;
+            this.controls = controls;
+        }
 
         public GameTuning.ControlSettings Controls { get; private set; }
 
@@ -152,6 +166,29 @@ namespace ToyCarArena.UI
         public bool IsCarIn(int index)
         {
             return round != null && index >= 0 && index < round.Cars.Count && !round.Cars[index].IsOut;
+        }
+
+        public bool IsSettingsOpen { get; private set; }
+
+        /// <summary>
+        /// The settings popup over the HUD. The round does not wait for it, and while it is open a finger or the mouse
+        /// on the screen belongs to the popup and drives nothing; the keys still drive.
+        /// </summary>
+        public async UniTask OpenSettings(CancellationToken token)
+        {
+            if (IsSettingsOpen) {
+                return;
+            }
+
+            IsSettingsOpen = true;
+            controls.IsPopupOpen = true;
+            try {
+                await navigator.RunAsync<SettingsViewModel, bool>(token);
+            }
+            finally {
+                IsSettingsOpen = false;
+                controls.IsPopupOpen = false;
+            }
         }
 
         public void SetPayload(HudRound payload)
