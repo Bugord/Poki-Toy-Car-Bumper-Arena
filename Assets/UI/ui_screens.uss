@@ -829,8 +829,8 @@
     background-color: var(--orange);
 }
 
-/* A match's pickup taken by the player (HEAVY!, SHOCKWAVE!, SHIELD!, TURBO!): the word alone, in the kind's colour,
-   the same sticker as KNOCKOUT! otherwise. */
+/* A match's item used by the player (HEAVY!, SHOCKWAVE!, SHIELD!, TURBO!, BOMB!, GLOVE!): the word alone, in the
+   kind's colour, the same sticker as KNOCKOUT! otherwise. */
 .ko-pop--power .ko-pop__text {
     margin-left: 0;
     font-size: 100px;
@@ -840,6 +840,8 @@
 .ko-pop--shockwave .ko-pop__text { color: var(--purple); }
 .ko-pop--shield .ko-pop__text { color: var(--blue); }
 .ko-pop--turbo .ko-pop__text { color: var(--gold); }
+.ko-pop--bomb .ko-pop__text { color: var(--red); }
+.ko-pop--glove .ko-pop__text { color: var(--red); }
 
 /* Visit handles follow the bots; the inner sticker animates independently of its projected anchor. */
 .car-name {
@@ -1323,6 +1325,422 @@
 .hud__boost--pressed {
     translate: 0 11px;
     transition-duration: 0.05s;
+}
+
+/* A match's item slot: a round white sticker over BOOST on a touch screen (hud__boost-slot--items, below), so the
+   thumb on BOOST never covers it and the steering thumb (on the other side) never reaches it; it follows BOOST's side
+   (hud__boost-slot--left). 240 reference pixels is at least 44 pt on a phone held either way. The icon is a disc in the
+   item's colour with a glyph of its own shape (a weight, a ring with a dot, a bubble, a diamond, a bomb, a glove), so
+   the kind never rests on colour alone; an empty slot shows a faint "?". It spins through the items as a box is broken
+   (hud__item--rolling), pops as it lands (hud__item--pop) and sinks as it is pressed. On a desktop it is smaller, to
+   the left of the boost gauge, with its E key. */
+.hud__item {
+    display: none;
+    position: absolute;
+    left: -205px;
+    top: -205px;
+    width: 240px;
+    height: 240px;
+    align-items: center;
+    justify-content: center;
+    border-width: 9px;
+    border-bottom-width: 20px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+    transition-property: scale, translate, opacity;
+    transition-duration: 0.15s;
+    transition-timing-function: ease-out;
+}
+
+.hud__item--shown {
+    display: flex;
+}
+
+.hud__boost-slot--left .hud__item {
+    left: 265px;
+}
+
+.hud__item--empty {
+    opacity: 0.45;
+}
+
+.hud__item--rolling {
+    scale: 1.06 1.06;
+}
+
+.hud__item--pop {
+    scale: 1.16 1.16;
+    transition-duration: 0.06s;
+}
+
+.hud__item--pressed {
+    translate: 0 11px;
+    transition-duration: 0.05s;
+}
+
+.hud__item--hint-pulse {
+    scale: 1.1 1.1;
+    transition-duration: 0.3s;
+}
+
+.hud__item-icon {
+    width: 160px;
+    height: 160px;
+    align-items: center;
+    justify-content: center;
+    border-width: 7px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--soft);
+}
+
+.hud__item-icon--heavy { background-color: var(--orange); }
+.hud__item-icon--shockwave { background-color: var(--purple); }
+.hud__item-icon--shield { background-color: var(--blue); }
+.hud__item-icon--turbo { background-color: var(--gold); }
+.hud__item-icon--bomb { background-color: var(--soft); }
+.hud__item-icon--glove { background-color: var(--red); }
+
+.hud__item-mark {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    margin: 0;
+    padding: 0 0 6px 0;
+    font-size: 100px;
+    color: var(--navy);
+    -unity-text-align: middle-center;
+}
+
+.hud__item-icon--heavy .hud__item-mark,
+.hud__item-icon--shockwave .hud__item-mark,
+.hud__item-icon--shield .hud__item-mark,
+.hud__item-icon--turbo .hud__item-mark,
+.hud__item-icon--bomb .hud__item-mark,
+.hud__item-icon--glove .hud__item-mark {
+    display: none;
+}
+
+.hud__item-glyph {
+    display: none;
+    width: 80px;
+    height: 80px;
+    align-items: center;
+    justify-content: center;
+}
+
+.hud__item-icon--heavy .hud__item-glyph,
+.hud__item-icon--shockwave .hud__item-glyph,
+.hud__item-icon--shield .hud__item-glyph,
+.hud__item-icon--turbo .hud__item-glyph,
+.hud__item-icon--bomb .hud__item-glyph,
+.hud__item-icon--glove .hud__item-glyph {
+    display: flex;
+}
+
+.hud__item-glyph-part {
+    display: none;
+    position: absolute;
+}
+
+/* A weight: a navy block with a ring on top. */
+.hud__item-icon--heavy .hud__item-glyph {
+    width: 84px;
+    height: 58px;
+    margin-top: 22px;
+    border-radius: 16px;
+    background-color: var(--navy);
+}
+
+.hud__item-icon--heavy .hud__item-glyph-part {
+    display: flex;
+    left: 22px;
+    top: -30px;
+    width: 40px;
+    height: 36px;
+    border-width: 10px;
+    border-color: var(--navy);
+    border-radius: 999px;
+}
+
+/* A shockwave: a navy ring round a dot. */
+.hud__item-icon--shockwave .hud__item-glyph {
+    width: 96px;
+    height: 96px;
+    border-width: 11px;
+    border-color: var(--navy);
+    border-radius: 999px;
+}
+
+.hud__item-icon--shockwave .hud__item-glyph-part {
+    display: flex;
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    background-color: var(--navy);
+}
+
+/* A shield: a white bubble with a navy rim. */
+.hud__item-icon--shield .hud__item-glyph {
+    width: 84px;
+    height: 84px;
+    border-width: 10px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+}
+
+/* A turbo: a navy diamond with a white spark. */
+.hud__item-icon--turbo .hud__item-glyph {
+    width: 60px;
+    height: 60px;
+    rotate: 45deg;
+    background-color: var(--navy);
+}
+
+.hud__item-icon--turbo .hud__item-glyph-part {
+    display: flex;
+    width: 20px;
+    height: 20px;
+    background-color: var(--white);
+}
+
+/* A bomb: a navy ball with a gold fuse. */
+.hud__item-icon--bomb .hud__item-glyph {
+    width: 84px;
+    height: 84px;
+    margin-top: 12px;
+    border-radius: 999px;
+    background-color: var(--navy);
+}
+
+.hud__item-icon--bomb .hud__item-glyph-part {
+    display: flex;
+    left: 52px;
+    top: -18px;
+    width: 18px;
+    height: 32px;
+    rotate: 35deg;
+    border-width: 4px;
+    border-color: var(--navy);
+    border-radius: 6px;
+    background-color: var(--gold);
+}
+
+/* A glove: a white fist with a thumb, outlined. */
+.hud__item-icon--glove .hud__item-glyph {
+    width: 80px;
+    height: 70px;
+    margin-left: 14px;
+    border-width: 8px;
+    border-color: var(--navy);
+    border-radius: 30px;
+    background-color: var(--white);
+}
+
+.hud__item-icon--glove .hud__item-glyph-part {
+    display: flex;
+    left: -30px;
+    top: 14px;
+    width: 38px;
+    height: 34px;
+    border-width: 8px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+}
+
+.hud__item-key {
+    display: none;
+    position: absolute;
+    right: -26px;
+    bottom: -30px;
+    margin: 0;
+    padding: 0 14px 2px 14px;
+    border-width: 5px;
+    border-bottom-width: 9px;
+    border-radius: 12px;
+}
+
+.hud__item-key-text {
+    font-size: 32px;
+}
+
+.hud__item--desktop {
+    left: -110px;
+    top: 105px;
+    width: 160px;
+    height: 160px;
+    border-width: 7px;
+    border-bottom-width: 14px;
+}
+
+.hud__boost-slot--left .hud__item--desktop {
+    left: 310px;
+}
+
+.hud__item--desktop .hud__item-icon {
+    width: 110px;
+    height: 110px;
+    border-width: 6px;
+}
+
+.hud__item--desktop .hud__item-glyph {
+    scale: 0.68 0.68;
+}
+
+.hud__item--desktop .hud__item-mark {
+    font-size: 70px;
+}
+
+.hud__item--desktop .hud__item-key {
+    display: flex;
+}
+
+/* On a touch screen the item button stands over BOOST and a little toward the screen's edge: up and inward of it, it
+   covered the player's car at its start in portrait. The ability badge goes over the item, so neither covers the
+   other. */
+.hud__boost-slot--items .hud__item {
+    left: 80px;
+    top: -275px;
+}
+
+.hud__boost-slot--items.hud__boost-slot--left .hud__item {
+    left: -20px;
+}
+
+.hud__boost-slot--items .hud__power {
+    top: -400px;
+}
+
+/* TAP! and its arrow beside BOOST, on the screen's middle side, pointing at it: over BOOST lies the item button. */
+.hud__boost-slot--items .hud__boost-hint {
+    left: -330px;
+    top: 90px;
+    height: 120px;
+    padding-right: 80px;
+    justify-content: center;
+}
+
+.hud__boost-slot--items .hud__boost-hint .hud__boost-hint-arrow {
+    left: 214px;
+    top: 24px;
+    rotate: -45deg;
+}
+
+.hud__boost-slot--items.hud__boost-slot--left .hud__boost-hint {
+    left: 330px;
+    padding-right: 0;
+    padding-left: 80px;
+}
+
+.hud__boost-slot--items.hud__boost-slot--left .hud__boost-hint .hud__boost-hint-arrow {
+    left: 14px;
+    rotate: 135deg;
+}
+
+/* The first item of a visit: RIGHT CLICK and the E key cap under the desktop's item button, with an arrow up to it, for a moment (on a
+   touch screen TAP TO USE stands beside the button, below). Below the button the screen is free on a desktop: above it
+   lie the arena, the player's car and the item's timer badge. It keeps clear of BOOST on either side. */
+.hud__item-hint {
+    position: absolute;
+    left: -410px;
+    top: 50px;
+    width: 400px;
+    height: 170px;
+    padding-top: 46px;
+    align-items: center;
+    opacity: 0;
+    scale: 0 0;
+    transition-property: scale, opacity;
+    transition-duration: 0.16s;
+    transition-timing-function: ease-in;
+}
+
+.hud__item-hint--shown {
+    opacity: 1;
+    scale: 1 1;
+    transition-duration: 0.25s;
+    transition-timing-function: ease-out-back;
+}
+
+.hud__boost-slot--left .hud__item-hint {
+    left: 310px;
+}
+
+.hud__item-hint--desktop {
+    left: -360px;
+    top: 280px;
+}
+
+.hud__boost-slot--left .hud__item-hint--desktop {
+    left: 300px;
+}
+
+.hud__item-hint-label {
+    padding: 4px 28px;
+    background-color: var(--purple);
+}
+
+.hud__item-hint-text {
+    font-size: 54px;
+}
+
+/* The arrow points up at the button, from the pill's end nearest to it; scoped under the hint so it outranks
+   hud__boost-hint-arrow, which comes later in the file. */
+.hud__item-hint .hud__item-hint-arrow {
+    left: 300px;
+    top: 6px;
+    rotate: 225deg;
+}
+
+.hud__boost-slot--left .hud__item-hint .hud__item-hint-arrow {
+    left: 30px;
+}
+
+.hud__item-hint--desktop .hud__item-hint-arrow {
+    left: 260px;
+}
+
+.hud__boost-slot--left .hud__item-hint--desktop .hud__item-hint-arrow {
+    left: 70px;
+}
+
+.hud__item-hint-arrow .hud__boost-hint-arrow-fill {
+    border-color: var(--purple);
+}
+
+/* On a touch screen TAP TO USE stands over the item button, its arrow pointing down at it: beside the button it
+   covered the player's car at its start in portrait. The ability badge, which also goes there, shows only once an item
+   is used, and that hides the hint. */
+.hud__boost-slot--items .hud__item-hint {
+    left: -80px;
+    top: -435px;
+    padding-top: 0;
+}
+
+.hud__boost-slot--items .hud__item-hint .hud__item-hint-arrow {
+    left: 244px;
+    top: 86px;
+    rotate: 45deg;
+}
+
+.hud__boost-slot--items.hud__boost-slot--left .hud__item-hint {
+    left: -20px;
+}
+
+.hud__boost-slot--items.hud__boost-slot--left .hud__item-hint .hud__item-hint-arrow {
+    left: 84px;
+}
+
+/* POW!: the comic word where the player's glove lands, in red on the sticker. */
+.ko-pop--pow .ko-pop__text {
+    margin-left: 0;
+    font-size: 120px;
+    color: var(--red);
 }
 
 /* The start prompt of a visit's first round, while the cars wait for the player's first steer or boost (HudView shows
@@ -2142,6 +2560,215 @@
 
 .car-color--7 {
     background-color: var(--car-dark);
+}
+
+/* The kick-off before every round: 3, 2, 1 as big white stickers that pop in tilted and shrink away, then GO! larger
+   in green over a gold ring and a burst of rays. HudView shows it (kickoff--shown) and animates scale, tilt and opacity
+   in code on unscaled time, so each step keeps to the round state's timing; nothing here transitions. The centre is a
+   point a little above the middle of the screen, over the arena, the same in portrait and landscape; the stickers, the
+   ring and the rays hang around it. */
+.kickoff {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 200px;
+}
+
+.kickoff--shown {
+    display: flex;
+}
+
+.kickoff__center {
+    width: 0;
+    height: 0;
+    overflow: visible;
+}
+
+.kickoff__sticker {
+    position: absolute;
+    left: -500px;
+    top: -280px;
+    width: 1000px;
+    height: 560px;
+    justify-content: center;
+}
+
+.kickoff__digit {
+    flex-grow: 1;
+    margin: 0;
+    padding: 0 0 30px 0;
+    font-size: 420px;
+    color: var(--white);
+    -unity-text-outline-width: 48px;
+    -unity-text-outline-color: var(--navy);
+    text-shadow: 0 36px 0 rgb(29, 43, 79);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.kickoff__go-text {
+    flex-grow: 1;
+    margin: 0 40px;
+    padding: 0 0 30px 0;
+    -unity-text-auto-size: best-fit 150px 400px;
+    font-size: 400px;
+    color: var(--green);
+    -unity-text-outline-width: 46px;
+    -unity-text-outline-color: var(--navy);
+    text-shadow: 0 34px 0 rgb(29, 43, 79);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.kickoff__ring {
+    position: absolute;
+    left: -160px;
+    top: -160px;
+    width: 320px;
+    height: 320px;
+    border-radius: 160px;
+    border-width: 26px;
+    border-color: var(--gold);
+}
+
+.kickoff__burst {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    overflow: visible;
+}
+
+/* A ray of GO!'s burst, a rounded bar pointing out from the centre (HudView builds them once and turns each its way). */
+.kickoff__ray {
+    position: absolute;
+    left: -24px;
+    top: -80px;
+    width: 48px;
+    height: 160px;
+    border-radius: 24px;
+    border-width: 8px;
+    border-color: var(--navy);
+    background-color: var(--gold);
+}
+
+.kickoff__ray--short {
+    top: -55px;
+    height: 110px;
+    background-color: var(--white);
+}
+
+/* A small mouse on a white sticker with a navy outline: the left button orange for a click to boost (the desktop
+   boost gauge's outer corner), the right one (mouse-glyph--right) for the item (beside the item badge's E key cap). It
+   sits on a corner of its button, as the key caps do, and shows only on a desktop. */
+.mouse-glyph {
+    display: none;
+    position: absolute;
+    width: 44px;
+    height: 60px;
+    border-width: 5px;
+    border-bottom-width: 9px;
+    border-color: var(--navy);
+    border-radius: 22px;
+    background-color: var(--white);
+    overflow: hidden;
+}
+
+.mouse-glyph__button {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 17px;
+    height: 24px;
+    background-color: var(--orange);
+}
+
+.mouse-glyph__line {
+    position: absolute;
+    left: 15px;
+    top: 0;
+    width: 4px;
+    height: 24px;
+    background-color: var(--navy);
+}
+
+.mouse-glyph--right .mouse-glyph__button {
+    left: auto;
+    right: 0;
+}
+
+.mouse-glyph--right .mouse-glyph__line {
+    left: auto;
+    right: 15px;
+}
+
+.hud__item--desktop .hud__item-mouse {
+    display: flex;
+    right: 30px;
+    bottom: -36px;
+}
+
+.hud__boost--desktop .hud__boost-mouse {
+    display: flex;
+    right: -10px;
+    bottom: -18px;
+}
+
+/* On a desktop the first-item hint reads RIGHT CLICK with the E key cap beside it, as the badge shows both. */
+.hud__item-hint-key {
+    display: none;
+    margin-left: 14px;
+    padding: 0 14px 2px 14px;
+    border-width: 5px;
+    border-bottom-width: 9px;
+    border-radius: 12px;
+}
+
+.hud__item-hint-key-text {
+    font-size: 32px;
+}
+
+.hud__item-hint--desktop .hud__item-hint-label {
+    flex-direction: row;
+    align-items: center;
+}
+
+.hud__item-hint--desktop .hud__item-hint-text {
+    font-size: 46px;
+}
+
+.hud__item-hint--desktop .hud__item-hint-key {
+    display: flex;
+}
+
+/* The desktop start hint: HOLD TO DRIVE, a dot, CLICK TO BOOST and the SPACE key cap, which only a wide screen has
+   room for: the mouse first, since half of the desktop players never touch the keys. */
+.hud__start-sep {
+    width: 12px;
+    height: 12px;
+    margin-left: 24px;
+    border-radius: 6px;
+    background-color: var(--white);
+    opacity: 0.6;
+}
+
+.hud__start-click-text {
+    margin-left: 24px;
+}
+
+.hud__start-hint--desktop .hud__start-key {
+    display: none;
+    margin-left: 24px;
+}
+
+.hud__start--wide .hud__start-hint--desktop .hud__start-key {
+    display: flex;
 }
 
 /* Last, so the face of a stroke wins over every rule above that gives its text an outline or a drop: the outline is

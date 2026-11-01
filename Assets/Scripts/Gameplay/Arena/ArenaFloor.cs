@@ -34,12 +34,6 @@ namespace ToyCarArena.Gameplay.Arena
         [SerializeField]
         private int minBlocks = 6;
 
-        [Tooltip("Width of the groove drawn between two blocks, in metres, so the rings read as blocks that can come " +
-            "apart; the collider has no groove")]
-        [Min(0f)]
-        [SerializeField]
-        private float seam = 0.08f;
-
         [Header("Shaking")]
         [Tooltip("Farthest a block of a crumbling ring rattles from its place, in metres, just before it falls")]
         [Min(0f)]
@@ -161,9 +155,9 @@ namespace ToyCarArena.Gameplay.Arena
         {
             floorCollider = GetComponent<MeshCollider>();
             layout = map.Shape == null
-                ? new CircleLayout(settings, (CircleEdge)edge, blockLength, minBlocks, seam,
+                ? new CircleLayout(settings, (CircleEdge)edge, blockLength, minBlocks,
                     FloorUv.ForCircle(settings.Radius))
-                : new TiledLayout(map.Shape, (GridEdge)edge, seam, FloorUv.For(map.Shape));
+                : new TiledLayout(map.Shape, (GridEdge)edge, FloorUv.For(map.Shape));
 
             var template = GetComponent<MeshRenderer>();
             // Before the blocks are built: they copy the template's material.

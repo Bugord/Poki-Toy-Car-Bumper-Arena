@@ -60,7 +60,17 @@ namespace ToyCarArena.Tests.PlayMode
             Application.targetFrameRate = -1;
             QualitySettings.vSyncCount = 0;
             Application.runInBackground = true;
+
+            // The asset ships the long match, but the suites were written for the last car standing: play that unless a
+            // test asks for the match with UseMode.
+            UseMode(GameTuning.GameMode.LastStanding);
         }
+
+        /// <summary>The mode the tuning asset ships, whatever the test plays.</summary>
+        protected GameTuning.GameMode ShippedMode => savedMode;
+
+        /// <summary>The seconds a match of the tuning asset lasts, whatever the test plays.</summary>
+        protected float ShippedMatchSeconds => savedDuration;
 
         [UnityTearDown]
         public IEnumerator TearDown()

@@ -62,6 +62,10 @@ namespace ToyCarArena.UI
             settingsButton = Root.Q<Button>("settings-button");
             settingsButton.RemoveFromClassList(Button.ussClassName);
             settingsButton.clicked += OpenSettings;
+            SafeArea.Watch(Root, insets => {
+                settingsButton.style.top = 40f + insets.Top;
+                settingsButton.style.right = 40f + insets.Right;
+            });
             garagePortrait = new CarPortrait(Root.Q<VisualElement>("garage-portrait"));
             RefreshGarage();
             Root.Q<VisualElement>("garage-dot").style.display =

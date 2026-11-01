@@ -75,6 +75,8 @@ def summarise(data):
         "lobby": i.get("lobby-shown"),
         # после v0.5.1: NEXT MATCH по исходу и раунду, медленное лобби по арене, раунды по варианту арены
         "again_by": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"result-again-([a-z]+-r(?:1|2|3|4plus))", e))},
+        # после v0.6.0: NEXT MATCH после первого матча визита по устройству и по тому, ускорялся ли игрок
+        "again_first": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"controls-again-([a-z]+-(?:boost|noboost))", e))},
         "slow": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"lobby-slow-([a-z]+)", e))},
         "arenas": {m.group(1): row for e, row in p.items() if (m := re.fullmatch(r"arena-([a-z]+-[a-z]+)", e))},
         "scoreboard": i.get("scoreboard-shown"),
@@ -99,9 +101,12 @@ def summarise(data):
     s["match_falls"] = other(o, r"match-falls-([0-9a-z]+-r[0-9a-z]+)-falls")
     s["match_pushed"] = other(o, r"match-pushed-([0-9a-z]+-r[0-9a-z]+)-pushed")
     s["match_revenge"] = other(o, r"match-revenge-((?:got|missed)-r[0-9a-z]+)-revenge")
-    # способности матча: что подобрал игрок (kind-rR) и сколько за матч (N-rR)
+    # способности матча до ящиков (v0.6): что подобрал игрок (kind-rR)
     s["match_pickup"] = other(o, r"match-pickup-((?:heavy|shockwave|shield|turbo)-r[0-9a-z]+)-pickup")
+    # ящики матча: сколько разбил за матч (N-rR), какой предмет выпал (item-get) и какой применил (item-use)
     s["match_pickups"] = other(o, r"match-pickups-([0-9a-z]+-r[0-9a-z]+)-pickups")
+    s["match_item_get"] = other(o, r"match-item-((?:heavy|shockwave|shield|turbo|bomb|glove)-r[0-9a-z]+)-item-get")
+    s["match_item_use"] = other(o, r"match-item-((?:heavy|shockwave|shield|turbo|bomb|glove)-r[0-9a-z]+)-item-use")
     return s
 
 
@@ -222,8 +227,10 @@ def report(version, previous):
         ("Матч: падения игрока по матчу (визиты)", "match_falls", None),
         ("Матч: из них столкнули по матчу (визиты)", "match_pushed", None),
         ("Матч: REVENGE по матчу (визиты)", "match_revenge", None),
-        ("Матч: подобранные способности (heavy, shockwave, shield, turbo; визиты)", "match_pickup", None),
-        ("Матч: сколько способностей подобрал игрок за матч (визиты)", "match_pickups", None),
+        ("Матч: подобранные способности до ящиков (v0.6; heavy, shockwave, shield, turbo; визиты)", "match_pickup", None),
+        ("Матч: сколько ящиков разбил игрок за матч (до ящиков: способностей; визиты)", "match_pickups", None),
+        ("Матч: какой предмет выпал из ящика (item-get; визиты)", "match_item_get", None),
+        ("Матч: какой предмет игрок применил (item-use; визиты)", "match_item_use", None),
     ):
         keys = order if order is not None else keys_of(key)
         if keys:
@@ -250,6 +257,8 @@ def report(version, previous):
 
     for title, key, fmt in (
         ("NEXT MATCH по исходу и раунду (после v0.5.1; нажали / показано)", "again_by", lambda s, k: pressed(s, "again_by", k)),
+        ("NEXT MATCH после первого матча по устройству и бусту (после v0.6.0; нажали / показано)", "again_first",
+         lambda s, k: pressed(s, "again_first", k)),
         ("Медленное лобби, загрузка дольше 4 с (после v0.5.1; дождались / медленных)", "slow", lambda s, k: pressed(s, "slow", k)),
         # В долгом матче вариант сменяется с каждым циклом пола: старт и complete на цикл, поражений нет, «ушли посреди»
         # это ушли посреди цикла этого варианта, а «раундов» это циклов.

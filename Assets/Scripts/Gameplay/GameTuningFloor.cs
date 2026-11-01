@@ -32,23 +32,23 @@ namespace ToyCarArena.Gameplay
             [Tooltip("How many cycles the floor goes through; after the last one it stays whole. 0 cycles for ever")]
             [Min(0)]
             [SerializeField]
-            private int cycles = 3;
+            private int cycles = 2;
 
             [Tooltip("Seconds of a cycle with the whole floor, at its start")]
             [Min(0f)]
             [SerializeField]
-            private float open = 15f;
+            private float open = 8f;
 
             [Tooltip("Seconds every wave of the arena takes to fall, from the first one shaking to the last one gone; " +
                 "the waves are spread evenly over it")]
             [Min(0.1f)]
             [SerializeField]
-            private float shrink = 25f;
+            private float shrink = 14f;
 
             [Tooltip("Seconds only the core is left, after the last wave has fallen")]
             [Min(0f)]
             [SerializeField]
-            private float peak = 7f;
+            private float peak = 5f;
 
             [Tooltip("Seconds from the first sign of the floor coming back to the last tile landing")]
             [Min(0.1f)]

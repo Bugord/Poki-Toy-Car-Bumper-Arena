@@ -17,6 +17,12 @@ namespace ToyCarArena.Gameplay.Input
         event Action<BoostInputMethod> BoostPressed;
 
         /// <summary>
+        /// Raised when the player uses the held item: E or Left Shift, a gamepad's west button, or the on-screen item
+        /// button (touched or clicked). One press is one use, and a finger on the button never steers.
+        /// </summary>
+        event Action ItemPressed;
+
+        /// <summary>
         /// Prevents the current steering touch from boosting on release: a touch that starts the round only starts it.
         /// </summary>
         void CancelTapBoost();

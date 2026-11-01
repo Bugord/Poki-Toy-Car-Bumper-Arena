@@ -54,15 +54,15 @@ namespace ToyCarArena.Gameplay.Pickups
             time += deltaTime;
             for (var i = 0; i < cars.Count; i++) {
                 var car = cars[i];
-                var ability = car.IsOut ? PickupKind.None : car.Ability;
-                if (ability == PickupKind.None && (i >= slots.Count || slots[i] == null)) {
+                var ability = car.IsOut ? ItemKind.None : car.Ability;
+                if (ability == ItemKind.None && (i >= slots.Count || slots[i] == null)) {
                     continue;
                 }
 
                 var slot = SlotFor(i);
-                ShowBubble(slot, car, ability == PickupKind.Shield);
-                ShowPad(slot, car, ability == PickupKind.Heavy);
-                if (ability == PickupKind.Turbo && effects != null) {
+                ShowBubble(slot, car, ability == ItemKind.Shield);
+                ShowPad(slot, car, ability == ItemKind.Heavy);
+                if (ability == ItemKind.Turbo && effects != null) {
                     slot.Flame -= deltaTime;
                     if (slot.Flame <= 0f && car.Movement.Velocity.sqrMagnitude > MinFlameSpeed * MinFlameSpeed) {
                         slot.Flame = FlameInterval;
@@ -146,7 +146,7 @@ namespace ToyCarArena.Gameplay.Pickups
 
             var bubble = ToyMeshes.Part(parent, "Shield Bubble", bubbleMesh, art.Get("mound_ring"), Vector3.zero);
             var bubbleRenderer = bubble.GetComponent<MeshRenderer>();
-            var colour = PickupArt.ColorOf(PickupKind.Shield);
+            var colour = PickupArt.ColorOf(ItemKind.Shield);
             block.SetColor(ColorId, new Color(colour.r, colour.g, colour.b, 0.32f));
             bubbleRenderer.SetPropertyBlock(block);
             bubble.gameObject.SetActive(false);

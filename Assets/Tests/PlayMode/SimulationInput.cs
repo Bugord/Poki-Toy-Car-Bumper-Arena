@@ -11,6 +11,7 @@ namespace ToyCarArena.Tests.PlayMode
     {
         public event Action<InputMethod> MoveUsed;
         public event Action<BoostInputMethod> BoostPressed;
+        public event Action ItemPressed;
 
         public Vector2 CurrentMoveInput { get; private set; }
         private PointerDrag? pointer;
@@ -47,6 +48,11 @@ namespace ToyCarArena.Tests.PlayMode
         public void PressBoost(BoostInputMethod method = BoostInputMethod.Key)
         {
             BoostPressed?.Invoke(method);
+        }
+
+        public void PressItem()
+        {
+            ItemPressed?.Invoke();
         }
 
         public void CancelTapBoost()

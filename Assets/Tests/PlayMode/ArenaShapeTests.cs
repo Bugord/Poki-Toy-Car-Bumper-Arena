@@ -73,7 +73,7 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(shape.GroupCount, Is.LessThanOrEqualTo(70), "A tile is an object: keep the draw calls near the sandbox's.");
 
             // The tiles make the layout's objects and its meshes.
-            var layout = new TiledLayout(shape, edge, 0.08f);
+            var layout = new TiledLayout(shape, edge);
             try {
                 Assert.That(layout.Tiles.Count, Is.EqualTo(shape.GroupCount));
                 Assert.That(layout.WaveCount, Is.EqualTo(shape.WaveCount));
@@ -176,7 +176,7 @@ namespace ToyCarArena.Tests.PlayMode
         public void AShakingTileIsVoidInTheSafeViewAndFloorInTheSolidView()
         {
             var shape = Shape("tabletop", out var edge);
-            var layout = new TiledLayout(shape, edge, 0.08f);
+            var layout = new TiledLayout(shape, edge);
             try {
                 var spot = layout.Wave(0).Spots[0];
                 var point = new Vector3(spot.x, 0f, spot.y);

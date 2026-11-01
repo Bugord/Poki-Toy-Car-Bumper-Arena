@@ -30,6 +30,7 @@ namespace ToyCarArena.UI
         private readonly VisualElement stick;
         private readonly VisualElement stickDisc;
         private readonly VisualElement boost;
+        private readonly VisualElement item;
         private readonly VisualElement start;
         private readonly VisualElement ghost;
         private readonly VisualElement[] pills;
@@ -59,6 +60,7 @@ namespace ToyCarArena.UI
             this.stick = stick;
             stickDisc = root.Q<VisualElement>("stick-base");
             this.boost = boost;
+            item = root.Q<VisualElement>("item-button");
             start = root.Q<VisualElement>("start");
             ghost = root.Q<VisualElement>("ghost");
             pills = new[] { timePill, carsPill, koPill, settingsButton };
@@ -128,11 +130,6 @@ namespace ToyCarArena.UI
             var now = Time.unscaledTime;
             var delta = Mathf.Max(0f, now - previousTime);
             previousTime = now;
-            var wide = root.layout.width > root.layout.height;
-            if (wide != landscape) {
-                landscape = wide;
-                Feed.EnableInClassList("feed--wide", wide);
-            }
             TickFeed(now, delta, isShown);
             if (isShown && model.IsRunning) {
                 if (!greeted) {
@@ -141,6 +138,17 @@ namespace ToyCarArena.UI
                 WatchRecovery(now);
             }
             TickSpeech(now, names);
+        }
+
+        /// <summary>
+        /// Follows the HUD's safe-area and pill offset, so names and speech avoid the feed at its real position.
+        /// </summary>
+        public void Place(SafeInsets insets, float topInset)
+        {
+            this.landscape = root.layout.width > root.layout.height;
+            Feed.EnableInClassList("feed--wide", landscape);
+            Feed.style.left = 24f + insets.Left;
+            Feed.style.top = (landscape ? 54f : 240f) + topInset;
         }
 
         private void TickFeed(float now, float delta, bool isShown)
@@ -162,7 +170,7 @@ namespace ToyCarArena.UI
             var teachesOverFeed = start.ClassListContains("hud__start--shown") ||
                 (ghost.resolvedStyle.display != DisplayStyle.None && ghost.resolvedStyle.opacity > 0f &&
                     Feed.worldBound.Overlaps(ghost.worldBound));
-            IsFeedVisible = count > 0 && isShown && !model.IsWaitingForPlayer && !touchesFeed && !teachesOverFeed;
+            IsFeedVisible = count > 0 && isShown && !model.IsBeforeStart && !touchesFeed && !teachesOverFeed;
             Feed.style.visibility = IsFeedVisible ? Visibility.Visible : Visibility.Hidden;
             for (var i = 0; i < feedRows.Length; i++) {
                 var row = feedRows[i];
@@ -307,6 +315,7 @@ namespace ToyCarArena.UI
                 visible &= scoreboard == null || !scoreboard.IsVisible || !Overlaps(scoreboard.Element, rect);
                 visible &= !stick.ClassListContains("hud__stick--shown") || !Overlaps(stickDisc, rect);
                 visible &= !Overlaps(boost, rect);
+                visible &= item == null || item.resolvedStyle.display == DisplayStyle.None || !Overlaps(item, rect);
                 for (var other = 0; other < i; other++) {
                     if (speeches[other].Active && speeches[other].Root.resolvedStyle.visibility == Visibility.Visible) {
                         visible &= !Overlaps(speeches[other].Root, rect);

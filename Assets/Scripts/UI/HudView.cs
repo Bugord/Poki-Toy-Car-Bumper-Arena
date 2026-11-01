@@ -60,6 +60,29 @@ namespace ToyCarArena.UI
         private const string ShieldShownClass = "hud__shield--shown";
         private const string RevengeClass = "car-name--revenge";
         private const string PowerShownClass = "hud__power--shown";
+        private const string ItemShownClass = "hud__item--shown";
+        private const string ItemEmptyClass = "hud__item--empty";
+        private const string ItemRollingClass = "hud__item--rolling";
+        private const string ItemPopClass = "hud__item--pop";
+        private const string ItemPressedClass = "hud__item--pressed";
+        private const string ItemDesktopClass = "hud__item--desktop";
+        private const string ItemHintPulseClass = "hud__item--hint-pulse";
+        private const string ItemHintShownClass = "hud__item-hint--shown";
+        private const string ItemHintDesktopClass = "hud__item-hint--desktop";
+        private const string SlotItemsClass = "hud__boost-slot--items";
+
+        // The slot's roulette shows a new item this many times a second while the box's roll lasts, on unscaled time.
+        private const float ItemSpinRate = 14f;
+
+        // The first item of a visit says how to use it for this long, the button pulsing meanwhile, in unscaled seconds.
+        private const float ItemHintDuration = 2.6f;
+        private const float ItemHintPulsePeriod = 0.65f;
+
+        // The kinds the slot can hold, in the order its roulette shows them.
+        private static readonly ItemKind[] ItemKinds =
+        {
+            ItemKind.Heavy, ItemKind.Shockwave, ItemKind.Shield, ItemKind.Turbo, ItemKind.Bomb, ItemKind.Glove,
+        };
 
         // The badge of a running ability blinks over the last seconds, as the ability ends.
         private const float PowerBlinkTime = 2f;
@@ -68,6 +91,15 @@ namespace ToyCarArena.UI
         // From this width against the height the arena, fitted to the height, leaves a side free for the scoreboard's
         // full column; a narrower screen shows the leaders and the player's row only.
         private const float ScoreboardWideAspect = 1.65f;
+
+        // Reference pixels, matching ui_screens. Keep every top row below Poki's pill without moving its touch target
+        // into the arena; the gear is the highest element, 40 px from the top rather than the bar's 54.
+        private const float BarTop = 54f;
+        private const float SettingsTop = 40f;
+        private const float SettingsUnderTop = 216f;
+        private const float PillGap = 18f;
+        private const float BoostSide = 64f;
+        private const float BoostBottom = 220f;
 
         // The safe sticker floats this high over the player's car, in metres: above its marker's arrow.
         private const float ShieldHeight = 4.2f;
@@ -153,10 +185,40 @@ namespace ToyCarArena.UI
         // The tilt of the sticker, in degrees, every other one the other way so two at once do not look alike.
         private const float PopupTilt = 7f;
 
+        // The kick-off's look, in unscaled seconds, degrees and reference pixels: a number springs in from small and
+        // tilted (a little overshoot), swells a touch while it holds and shrinks away at the end of its step; GO! springs
+        // harder, its ring and rays fly out, and it swells away. Its timing is the round's (GameTuning.Round.Kickoff*).
+        private const string KickoffShownClass = "kickoff--shown";
+        private const float KickoffEnter = 0.24f;
+        private const float KickoffLeave = 0.16f;
+        private const float KickoffFadeIn = 0.06f;
+        private const float KickoffStartScale = 0.2f;
+        private const float KickoffHoldGrowth = 0.06f;
+        private const float KickoffTilt = 6f;
+        private const float KickoffStartTilt = 20f;
+        private const float KickoffDrop = 90f;
+        private const float KickoffOvershoot = 2.2f;
+        private const float KickoffGoOvershoot = 3f;
+        private const float KickoffGoTilt = -5f;
+        private const float KickoffGoLeave = 0.24f;
+        private const float KickoffGoLeaveScale = 1.4f;
+        private const float KickoffBurstTime = 0.5f;
+        private const float KickoffRingScale = 4.2f;
+        private const float KickoffRingOpacity = 0.7f;
+        private const float KickoffRayFrom = 190f;
+        private const float KickoffRayTo = 640f;
+        private const int KickoffRays = 12;
+
+        // The digits the kick-off counts with, made once (GameTuning.Round.KickoffFrom is at most 5).
+        private static readonly string[] KickoffDigits = { "0", "1", "2", "3", "4", "5" };
+
         private readonly HudControls controls;
         private readonly IAudioService audioService;
         private CancellationTokenSource lifetime;
         private Button settingsButton;
+        private SafeInsets safeInsets;
+        private float hudTopInset;
+        private float contentTopInset;
         private HudSocial social;
         private VisualElement timePill;
         private Label timeLabel;
@@ -186,11 +248,22 @@ namespace ToyCarArena.UI
         private VisualElement shield;
         private VisualElement shieldFill;
         // A match's pickups: the badge of the ability the player's car runs, with its icon, name and draining bar.
-        private PickupKind shownAbility;
+        private ItemKind shownAbility;
         private VisualElement power;
         private VisualElement powerIcon;
         private Label powerName;
         private VisualElement powerFill;
+        // A match's item slot: the button, its icon, the kind it shows, and the one-time hint over it.
+        private VisualElement itemButton;
+        private VisualElement itemIcon;
+        private VisualElement itemHint;
+        private Label itemHintText;
+        private Label itemHintFace;
+        private ItemKind shownItem = ItemKind.None;
+        private bool isItemShownRolling;
+        private bool isItemHintShown;
+        private float itemHintTime;
+        private float nextItemPulse;
         private VisualElement popupLayer;
         private VisualElement nameLayer;
         private VisualElement[] carNames;
@@ -231,6 +304,15 @@ namespace ToyCarArena.UI
         private bool hasTapHint;
         private float tapHintTime;
         private float tapHintProgress;
+        private VisualElement kickoff;
+        private VisualElement kickoffNumber;
+        private Label kickoffDigit;
+        private Label kickoffDigitFace;
+        private VisualElement kickoffGo;
+        private VisualElement kickoffRing;
+        private VisualElement[] kickoffRays;
+        private int shownKickoffStep = HudViewModel.NoKickoff;
+        private bool isKickoffShown;
 
         private struct NamePlacement
         {
@@ -273,6 +355,14 @@ namespace ToyCarArena.UI
             powerIcon = Root.Q<VisualElement>("power-icon");
             powerName = Root.Q<Label>("power-name");
             powerFill = Root.Q<VisualElement>("power-fill");
+            itemButton = Root.Q<VisualElement>("item-button");
+            itemIcon = Root.Q<VisualElement>("item-icon");
+            itemHint = Root.Q<VisualElement>("item-hint");
+            itemHintText = Root.Q<Label>("item-hint-text");
+            itemHintFace = Root.Q<Label>("item-hint-face");
+            // Only a match has items; a round of last-car-standing keeps the slot as it was.
+            itemButton.EnableInClassList(ItemShownClass, ViewModel.IsMatch);
+            itemButton.AddToClassList(ItemEmptyClass);
             // In a match the player's score is always there, 0 included: it is the point of the match. The scoreboard
             // shows the leader and everyone else, so the bar keeps only the time and the player's own knock-outs.
             knockoutBadge.EnableInClassList(KnockoutShownClass, ViewModel.IsMatch);
@@ -297,25 +387,35 @@ namespace ToyCarArena.UI
             ghostFinger.style.rotate = new Rotate(GhostFingerTilt);
             boostHint = Root.Q<VisualElement>("boost-hint");
             tapHint = Root.Q<VisualElement>("tap-hint");
+            BuildKickoff();
             settingsButton = Root.Q<Button>("settings-button");
             settingsButton.RemoveFromClassList(Button.ussClassName);
             // Space is the boost: a focused button would take it as a click and open the settings mid-round.
             settingsButton.focusable = false;
             settingsButton.clicked += OpenSettings;
             controls.SetSettingsButton(settingsButton);
-            Root.RegisterCallback<GeometryChangedEvent>(PlaceSettings);
+            Root.RegisterCallback<GeometryChangedEvent>(PlaceHud);
             social = new HudSocial(Root, ViewModel, stick, boostSlot, timePill, carsPill, knockoutBadge, settingsButton,
                 scoreboard);
+            SafeArea.Watch(Root, _ => PlaceHud(null));
+            PokiPill.Watch(Root, () => PlaceHud(null));
+            PlaceHud(null);
             teachingTime = idleSince = Time.unscaledTime;
             ViewModel.PlayerKnockout += ShowKnockout;
             ViewModel.CarOut += OnCarOut;
             ViewModel.CarBack += OnCarBack;
             ViewModel.NemesisChanged += OnNemesisChanged;
-            ViewModel.PickedUp += OnPickedUp;
+            ViewModel.ItemRolled += OnItemRolled;
+            ViewModel.ItemUsed += OnItemUsed;
+            ViewModel.ItemHit += OnItemHit;
 
             // On the press, not the release: a boost is all about the moment.
             boostButton.RegisterCallback<PointerDownEvent>(OnBoostPointerDown);
             controls.SetBoostButton(boostButton);
+            if (ViewModel.IsMatch) {
+                itemButton.RegisterCallback<PointerDownEvent>(OnItemPointerDown);
+                controls.SetItemButton(itemButton);
+            }
 
             // The very first start also says what to do: everyone else off the arena.
             Root.Q<VisualElement>("start-goal").style.display =
@@ -329,9 +429,14 @@ namespace ToyCarArena.UI
             Root.schedule.Execute(Refresh).Every(RefreshInterval);
             Root.schedule.Execute(RefreshBoost).Every(BoostRefreshInterval);
             Root.schedule.Execute(RefreshPower).Every(BoostRefreshInterval);
+            if (ViewModel.IsMatch) {
+                Root.schedule.Execute(RefreshItem).Every(BoostRefreshInterval);
+            }
+
             Root.schedule.Execute(RefreshStick).Every(BoostRefreshInterval);
             Root.schedule.Execute(RefreshTeaching).Every(BoostRefreshInterval);
             Root.schedule.Execute(RefreshNames).Every(BoostRefreshInterval);
+            Root.schedule.Execute(RefreshKickoff).Every(BoostRefreshInterval);
         }
 
         public override void Dispose()
@@ -342,11 +447,18 @@ namespace ToyCarArena.UI
             ViewModel.CarOut -= OnCarOut;
             ViewModel.CarBack -= OnCarBack;
             ViewModel.NemesisChanged -= OnNemesisChanged;
-            ViewModel.PickedUp -= OnPickedUp;
+            ViewModel.ItemRolled -= OnItemRolled;
+            ViewModel.ItemUsed -= OnItemUsed;
+            ViewModel.ItemHit -= OnItemHit;
 
             if (boostButton != null) {
                 boostButton.UnregisterCallback<PointerDownEvent>(OnBoostPointerDown);
                 controls.ReleaseBoostButton(boostButton);
+            }
+
+            if (itemButton != null) {
+                itemButton.UnregisterCallback<PointerDownEvent>(OnItemPointerDown);
+                controls.ReleaseItemButton(itemButton);
             }
 
             if (settingsButton != null) {
@@ -360,7 +472,7 @@ namespace ToyCarArena.UI
             lifetime = null;
 
             Root?.UnregisterCallback<GeometryChangedEvent>(OnResized);
-            Root?.UnregisterCallback<GeometryChangedEvent>(PlaceSettings);
+            Root?.UnregisterCallback<GeometryChangedEvent>(PlaceHud);
 
             base.Dispose();
         }
@@ -492,8 +604,10 @@ namespace ToyCarArena.UI
             var size = nameLayer.layout.size;
             var halfWidth = shield.layout.width * 0.5f + NameMargin;
             var height = shield.layout.height + NameMargin;
-            point.x = Mathf.Clamp(point.x, halfWidth, Mathf.Max(halfWidth, size.x - halfWidth));
-            point.y = Mathf.Clamp(point.y, height, Mathf.Max(height, size.y - NameMargin));
+            var left = halfWidth + safeInsets.Left;
+            var top = height + contentTopInset;
+            point.x = Mathf.Clamp(point.x, left, Mathf.Max(left, size.x - halfWidth - safeInsets.Right));
+            point.y = Mathf.Clamp(point.y, top, Mathf.Max(top, size.y - NameMargin - safeInsets.Bottom));
             ClearScoreboard(nameLayer, ref point, halfWidth, height);
             shield.style.left = point.x;
             shield.style.top = point.y;
@@ -548,6 +662,137 @@ namespace ToyCarArena.UI
             start.schedule.Execute(() => start.RemoveFromClassList(StartShownClass)).StartingIn(StartLeaveDuration);
         }
 
+        private void BuildKickoff()
+        {
+            kickoff = Root.Q<VisualElement>("kickoff");
+            kickoffNumber = Root.Q<VisualElement>("kickoff-number");
+            kickoffDigit = Root.Q<Label>("kickoff-digit");
+            kickoffDigitFace = Root.Q<Label>("kickoff-digit-face");
+            kickoffGo = Root.Q<VisualElement>("kickoff-go");
+            kickoffRing = Root.Q<VisualElement>("kickoff-ring");
+            var burst = Root.Q<VisualElement>("kickoff-burst");
+            kickoffRays = new VisualElement[KickoffRays];
+            for (var i = 0; i < KickoffRays; i++) {
+                var ray = new VisualElement { pickingMode = PickingMode.Ignore };
+                ray.AddToClassList("kickoff__ray");
+                ray.EnableInClassList("kickoff__ray--short", i % 2 == 1);
+                burst.Add(ray);
+                kickoffRays[i] = ray;
+            }
+        }
+
+        /// <summary>
+        /// Shows the step of the kick-off the round state has reached: a tick and a number popping in for 3, 2 and 1, the
+        /// GO! sound and its burst for GO!, each animated by its age on unscaled time and gone at the end of its step.
+        /// </summary>
+        private void RefreshKickoff()
+        {
+            var step = ViewModel.KickoffStep;
+            if (step == HudViewModel.NoKickoff) {
+                SetKickoffShown(false);
+                return;
+            }
+
+            var age = Time.unscaledTime - ViewModel.KickoffStepTime;
+            var duration = ViewModel.KickoffStepDuration;
+            var isGo = step == 0;
+            if (step != shownKickoffStep) {
+                shownKickoffStep = step;
+                kickoffNumber.style.display = isGo ? DisplayStyle.None : DisplayStyle.Flex;
+                kickoffGo.style.display = isGo ? DisplayStyle.Flex : DisplayStyle.None;
+                kickoffRing.style.display = isGo ? DisplayStyle.Flex : DisplayStyle.None;
+                if (!isGo) {
+                    var digit = KickoffDigits[Mathf.Clamp(step, 0, KickoffDigits.Length - 1)];
+                    kickoffDigit.text = digit;
+                    kickoffDigitFace.text = digit;
+                }
+
+                if (age < duration) {
+                    audioService.Play(isGo ? audioService.Library.KickoffGo : audioService.Library.CountdownTick);
+                }
+            }
+
+            if (age >= duration) {
+                SetKickoffShown(false);
+                return;
+            }
+
+            SetKickoffShown(true);
+            if (isGo) {
+                AnimateKickoffGo(age, duration);
+            }
+            else {
+                AnimateKickoffNumber(kickoffNumber, step, age, duration);
+            }
+        }
+
+        private void SetKickoffShown(bool isShown)
+        {
+            if (isShown != isKickoffShown) {
+                isKickoffShown = isShown;
+                kickoff.EnableInClassList(KickoffShownClass, isShown);
+            }
+        }
+
+        // Springs in from small, tilted the other way every other number and dropping into place, swells a touch while
+        // it holds, and shrinks away over the end of its step.
+        private static void AnimateKickoffNumber(VisualElement sticker, int step, float age, float duration)
+        {
+            var side = step % 2 == 0 ? -1f : 1f;
+            var spring = EaseOutBack(Mathf.Clamp01(age / KickoffEnter), KickoffOvershoot);
+            var hold = Mathf.Clamp01((age - KickoffEnter) / Mathf.Max(0.01f, duration - KickoffEnter));
+            var scale = Mathf.LerpUnclamped(KickoffStartScale, 1f, spring) * (1f + KickoffHoldGrowth * hold);
+            var opacity = Mathf.Clamp01(age / KickoffFadeIn);
+            var leave = Mathf.Min(KickoffLeave, duration * 0.4f);
+            var gone = Mathf.Clamp01((age - (duration - leave)) / leave);
+            scale *= 1f - (1f - KickoffStartScale) * gone * gone;
+            opacity *= 1f - gone;
+            sticker.style.scale = new Scale(new Vector3(scale, scale, 1f));
+            sticker.style.rotate = new Rotate(side * Mathf.LerpUnclamped(KickoffStartTilt, KickoffTilt, spring));
+            sticker.style.translate = new Translate(0f, -KickoffDrop * (1f - spring));
+            sticker.style.opacity = opacity;
+        }
+
+        // GO! springs in harder over a gold ring that widens and fades and a burst of rays flying out, and swells away
+        // over its last moment, while the round already runs under it.
+        private void AnimateKickoffGo(float age, float duration)
+        {
+            var spring = EaseOutBack(Mathf.Clamp01(age / KickoffEnter), KickoffGoOvershoot);
+            var scale = Mathf.LerpUnclamped(KickoffStartScale, 1f, spring);
+            var opacity = Mathf.Clamp01(age / KickoffFadeIn);
+            var leave = Mathf.Min(KickoffGoLeave, duration * 0.4f);
+            var gone = Mathf.Clamp01((age - (duration - leave)) / leave);
+            scale *= Mathf.Lerp(1f, KickoffGoLeaveScale, gone);
+            opacity *= 1f - gone;
+            kickoffGo.style.scale = new Scale(new Vector3(scale, scale, 1f));
+            kickoffGo.style.rotate = new Rotate(Mathf.LerpUnclamped(-KickoffStartTilt, KickoffGoTilt, spring));
+            kickoffGo.style.opacity = opacity;
+
+            var burst = Mathf.Clamp01(age / KickoffBurstTime);
+            var outward = 1f - (1f - burst) * (1f - burst) * (1f - burst);
+            var ringScale = Mathf.Lerp(0.4f, KickoffRingScale, outward);
+            kickoffRing.style.scale = new Scale(new Vector3(ringScale, ringScale, 1f));
+            kickoffRing.style.opacity = KickoffRingOpacity * (1f - burst);
+
+            var distance = Mathf.Lerp(KickoffRayFrom, KickoffRayTo, outward);
+            var rayScale = burst < 0.35f ? Mathf.Clamp01(burst / 0.12f) : 1f - (burst - 0.35f) / 0.65f;
+            for (var i = 0; i < kickoffRays.Length; i++) {
+                var angle = (i + 0.5f) * 360f / kickoffRays.Length;
+                var radians = angle * Mathf.Deg2Rad;
+                var reach = i % 2 == 1 ? distance * 0.85f : distance;
+                var ray = kickoffRays[i];
+                ray.style.translate = new Translate(Mathf.Sin(radians) * reach, -Mathf.Cos(radians) * reach);
+                ray.style.rotate = new Rotate(angle);
+                ray.style.scale = new Scale(new Vector3(rayScale, rayScale, 1f));
+            }
+        }
+
+        private static float EaseOutBack(float t, float overshoot)
+        {
+            var u = t - 1f;
+            return 1f + (overshoot + 1f) * u * u * u + overshoot * u * u;
+        }
+
         private void OpenSettings()
         {
             if (!IsShown || lifetime == null || ViewModel.IsSettingsOpen) {
@@ -562,19 +807,68 @@ namespace ToyCarArena.UI
         // it, so there the gear goes under the bar. A match's bar is only the time and the player's knock-outs, which
         // never reach the corner, and its scoreboard goes under the gear. The scoreboard is the whole column beside the
         // arena only where the screen is wide enough to leave room for it at the side.
-        private void PlaceSettings(GeometryChangedEvent evt)
+        /// <summary>
+        /// Reflows only on geometry or browser-inset changes. The full-screen projection layers stay put, so their
+        /// world bounds continue to describe the moved HUD for ClearPill, LimitNameLift and ClearScoreboard.
+        /// </summary>
+        private void PlaceHud(GeometryChangedEvent evt)
         {
             var size = Root.layout.size;
-            settingsButton.EnableInClassList(SettingsUnderClass, !ViewModel.IsMatch && size.x < size.y);
-            if (scoreboard != null && size.x > 0f && size.y > 0f) {
-                scoreboard.SetWide(size.x >= size.y * ScoreboardWideAspect);
+            if (!(size.x > 0f) || !(size.y > 0f)) {
+                return;
             }
+
+            this.safeInsets = SafeArea.GetInsets(Root.panel);
+            this.hudTopInset = this.contentTopInset = safeInsets.Top;
+            if (PokiPill.TryGetRect(Root.panel, out var pill)) {
+                pill = Root.WorldToLocal(pill);
+                if (pill.xMax > 0f && pill.xMin < size.x && pill.yMax > 0f && pill.yMin < size.y) {
+                    this.contentTopInset = Mathf.Max(contentTopInset, Mathf.Ceil(pill.yMax + PillGap));
+                    this.hudTopInset = Mathf.Max(hudTopInset, contentTopInset - SettingsTop);
+                }
+            }
+
+            Root.style.paddingTop = BarTop + hudTopInset;
+            Root.style.paddingLeft = safeInsets.Left;
+            Root.style.paddingRight = safeInsets.Right;
+            var isUnder = !ViewModel.IsMatch && size.x < size.y;
+            settingsButton.EnableInClassList(SettingsUnderClass, isUnder);
+            settingsButton.style.top = (isUnder ? SettingsUnderTop : SettingsTop) + hudTopInset;
+            settingsButton.style.right = SettingsTop + safeInsets.Right;
+            if (scoreboard != null) {
+                var wide = size.x >= size.y * ScoreboardWideAspect;
+                scoreboard.SetWide(wide);
+                scoreboard.Element.style.top = (wide ? 200f : 240f) + hudTopInset;
+                scoreboard.Element.style.right = (wide ? 48f : 24f) + safeInsets.Right;
+            }
+
+            social.Place(safeInsets, hudTopInset);
+            PlaceBoost();
+            PlaceStart();
+            // Find room for the ghost again even if only the browser chrome changed, with no canvas resize.
+            this.ghostPanelSize = Vector2.zero;
+        }
+
+        private void PlaceBoost()
+        {
+            boostSlot.style.left = isBoostOnLeft ? new StyleLength(BoostSide + safeInsets.Left) : StyleKeyword.Auto;
+            boostSlot.style.right = isBoostOnLeft ? StyleKeyword.Auto : new StyleLength(BoostSide + safeInsets.Right);
+            boostSlot.style.bottom = BoostBottom + safeInsets.Bottom;
+        }
+
+        private void PlaceStart()
+        {
+            var wide = Root.layout.width >= Root.layout.height;
+            start.EnableInClassList(StartWideClass, wide);
+            // Landscape keeps its central USS placement; portrait's prompt follows the lowered HUD bar.
+            start.style.top = wide ? new StyleLength(StyleKeyword.Null) : new StyleLength(250f + hudTopInset);
+            start.style.left = safeInsets.Left;
+            start.style.right = safeInsets.Right;
         }
 
         private void OnResized(GeometryChangedEvent evt)
         {
-            var size = Root.layout.size;
-            start.EnableInClassList(StartWideClass, size.x >= size.y);
+            PlaceStart();
         }
 
         /// <summary>
@@ -582,14 +876,27 @@ namespace ToyCarArena.UI
         /// clear of the screen's sides and the HUD: it springs in, holds, and flies up and away.
         /// </summary>
         private void ShowKnockout(Vector3 worldPosition, bool isRevenge) =>
-            ShowPopup(worldPosition, isRevenge, PickupKind.None);
+            ShowPopup(worldPosition, isRevenge, ItemKind.None, false);
 
         /// <summary>
-        /// The same sticker for a pickup the player's car took (HEAVY!, SHOCKWAVE!, SHIELD!, TURBO!), over the car.
+        /// The same sticker for an item the player used (HEAVY!, SHOCKWAVE!, SHIELD!, TURBO!, BOMB!, GLOVE!), over the
+        /// car, as it is used and not as it is taken: the box only fills the slot.
         /// </summary>
-        private void OnPickedUp(PickupKind kind) => ShowPopup(ViewModel.PlayerPosition, false, kind);
+        private void OnItemUsed(ItemKind kind)
+        {
+            ShowPopup(ViewModel.PlayerPosition, false, kind, false);
+            HideItemHint();
+        }
 
-        private void ShowPopup(Vector3 worldPosition, bool isRevenge, PickupKind pickup)
+        /// <summary>A comic POW! where the player's glove lands on a car.</summary>
+        private void OnItemHit(ItemKind kind, Vector3 point)
+        {
+            if (kind == ItemKind.Glove) {
+                ShowPopup(point, false, ItemKind.Glove, true);
+            }
+        }
+
+        private void ShowPopup(Vector3 worldPosition, bool isRevenge, ItemKind pickup, bool isPow)
         {
             var panel = popupLayer.panel;
             if (panel == null) {
@@ -605,14 +912,16 @@ namespace ToyCarArena.UI
                 point = popupLayer.WorldToLocal(panelPoint) + Vector2.down * PopupLift;
             }
 
-            point.x = Mathf.Clamp(point.x, PopupSideMargin, Mathf.Max(PopupSideMargin, size.x - PopupSideMargin));
-            point.y = Mathf.Clamp(point.y, PopupTopMargin, Mathf.Max(PopupTopMargin, size.y - PopupBottomMargin));
+            var popupLeft = PopupSideMargin + safeInsets.Left;
+            var popupTop = PopupTopMargin + hudTopInset;
+            point.x = Mathf.Clamp(point.x, popupLeft, Mathf.Max(popupLeft, size.x - PopupSideMargin - safeInsets.Right));
+            point.y = Mathf.Clamp(point.y, popupTop, Mathf.Max(popupTop, size.y - PopupBottomMargin - safeInsets.Bottom));
             // The sticker is centred on its point; keep the box it springs to off the scoreboard.
             point.y += PopupHalfHeight;
             ClearScoreboard(popupLayer, ref point, PopupHalfWidth, PopupHalfHeight * 2f);
             point.y -= PopupHalfHeight;
 
-            var popup = CreatePopup(popupCount++ % 2 == 0 ? -PopupTilt : PopupTilt, isRevenge, pickup);
+            var popup = CreatePopup(popupCount++ % 2 == 0 ? -PopupTilt : PopupTilt, isRevenge, pickup, isPow);
             popup.style.left = point.x;
             popup.style.top = point.y;
             popupLayer.Add(popup);
@@ -633,7 +942,7 @@ namespace ToyCarArena.UI
 
         // The sticker: the knock-out star and KNOCKOUT! in gold, outlined (.stroke in ui_screens). The outer element
         // holds the place, centred on it; the inner one springs, tilts and flies.
-        private static VisualElement CreatePopup(float tilt, bool isRevenge, PickupKind pickup)
+        private static VisualElement CreatePopup(float tilt, bool isRevenge, ItemKind pickup, bool isPow)
         {
             var popup = new VisualElement { pickingMode = PickingMode.Ignore };
             popup.AddToClassList("ko-pop");
@@ -645,11 +954,17 @@ namespace ToyCarArena.UI
             sticker.style.rotate = new Rotate(tilt);
             popup.Add(sticker);
 
-            // A pickup's sticker is the word alone, in the kind's colour.
-            if (pickup != PickupKind.None) {
+            if (isPow) {
+                popup.AddToClassList("ko-pop--pow");
+                sticker.Add(CreateOutlinedText(Strings.Get("hud.pow"), "ko-pop__text"));
+                return popup;
+            }
+
+            // An item's sticker is the word alone, in the kind's colour.
+            if (pickup != ItemKind.None) {
                 popup.AddToClassList("ko-pop--power");
                 popup.AddToClassList($"ko-pop--{PowerName(pickup)}");
-                sticker.Add(CreateOutlinedText(Strings.Get($"hud.pickup_{PowerName(pickup)}"), "ko-pop__text"));
+                sticker.Add(CreateOutlinedText(Strings.Get($"hud.item_{PowerName(pickup)}"), "ko-pop__text"));
                 return popup;
             }
 
@@ -659,8 +974,10 @@ namespace ToyCarArena.UI
             return popup;
         }
 
-        /// <summary>The kind's name as the strings and the classes spell it: heavy, shockwave, shield, turbo.</summary>
-        private static string PowerName(PickupKind kind) => kind.ToString().ToLowerInvariant();
+        /// <summary>
+        /// The kind's name as the strings and the classes spell it: heavy, shockwave, shield, turbo, bomb, glove.
+        /// </summary>
+        private static string PowerName(ItemKind kind) => kind.ToString().ToLowerInvariant();
 
         /// <summary>
         /// The badge of the ability the player's car runs: its icon and name, and a bar that drains with the time. It
@@ -670,19 +987,19 @@ namespace ToyCarArena.UI
         {
             var ability = ViewModel.Ability;
             if (ability != shownAbility) {
-                foreach (var kind in new[] { PickupKind.Heavy, PickupKind.Shield, PickupKind.Turbo }) {
+                foreach (var kind in new[] { ItemKind.Heavy, ItemKind.Shield, ItemKind.Turbo }) {
                     power.EnableInClassList($"hud__power--{PowerName(kind)}", kind == ability);
                     powerIcon.EnableInClassList($"hud__power-icon--{PowerName(kind)}", kind == ability);
                 }
 
                 shownAbility = ability;
-                power.EnableInClassList(PowerShownClass, ability != PickupKind.None);
-                if (ability != PickupKind.None) {
-                    powerName.text = Strings.Get($"hud.pickup_{PowerName(ability)}");
+                power.EnableInClassList(PowerShownClass, ability != ItemKind.None);
+                if (ability != ItemKind.None) {
+                    powerName.text = Strings.Get($"hud.item_{PowerName(ability)}");
                 }
             }
 
-            if (ability == PickupKind.None) {
+            if (ability == ItemKind.None) {
                 return;
             }
 
@@ -690,6 +1007,117 @@ namespace ToyCarArena.UI
             var isBlinking = ViewModel.AbilityTimeLeft < PowerBlinkTime
                 && Mathf.Repeat(Time.unscaledTime * PowerBlinkRate, 1f) < 0.5f;
             power.style.opacity = isBlinking ? 0.45f : 1f;
+        }
+
+        /// <summary>
+        /// The item slot: an empty slot is a faint "?"; a box the player broke spins it through the items, on unscaled
+        /// time for as long as the roll lasts (nothing skips it: the item cannot be used until it lands), and it lands
+        /// with a pop on the item; used, it is empty again. Small with its E key on a desktop. The first item of a visit
+        /// also says how to use it.
+        /// </summary>
+        private void RefreshItem()
+        {
+            var isTouch = controls.CheckTouchScreen();
+            itemButton.EnableInClassList(ItemDesktopClass, !isTouch);
+            itemHint.EnableInClassList(ItemHintDesktopClass, !isTouch);
+            boostSlot.EnableInClassList(SlotItemsClass, isTouch);
+
+            var held = ViewModel.HeldItem;
+            if (ViewModel.IsItemRolling) {
+                isItemShownRolling = true;
+                itemButton.AddToClassList(ItemRollingClass);
+                SetItemIcon(ItemKinds[(int)(Time.unscaledTime * ItemSpinRate) % ItemKinds.Length]);
+            }
+            else {
+                if (isItemShownRolling) {
+                    isItemShownRolling = false;
+                    itemButton.RemoveFromClassList(ItemRollingClass);
+                    if (held != ItemKind.None) {
+                        Pulse(itemButton, ItemPopClass);
+                        audioService.PlayUiClick();
+                    }
+                }
+
+                SetItemIcon(held);
+            }
+
+            itemButton.EnableInClassList(ItemEmptyClass, held == ItemKind.None);
+            RefreshItemHint(isTouch);
+        }
+
+        private void OnItemRolled(ItemKind kind)
+        {
+            Pulse(itemButton, ItemPopClass);
+        }
+
+        private void SetItemIcon(ItemKind kind)
+        {
+            if (kind == shownItem) {
+                return;
+            }
+
+            if (shownItem != ItemKind.None) {
+                itemIcon.RemoveFromClassList($"hud__item-icon--{PowerName(shownItem)}");
+            }
+
+            shownItem = kind;
+            if (kind != ItemKind.None) {
+                itemIcon.AddToClassList($"hud__item-icon--{PowerName(kind)}");
+            }
+        }
+
+        /// <summary>
+        /// TAP TO USE, or RIGHT CLICK with the E key cap on a desktop, over the slot the first time in a visit an item
+        /// lands in it, the button pulsing with it, for a moment; the visit's controls remember it was shown.
+        /// </summary>
+        private void RefreshItemHint(bool isTouch)
+        {
+            var now = Time.unscaledTime;
+            if (!isItemHintShown) {
+                if (controls.HasShownItemHint || !ViewModel.IsItemReady || isItemShownRolling) {
+                    return;
+                }
+
+                controls.HasShownItemHint = true;
+                isItemHintShown = true;
+                itemHintTime = now;
+                nextItemPulse = now;
+                var text = Strings.Get(isTouch ? "hud.tap_to_use" : "hud.right_click");
+                itemHintText.text = text;
+                itemHintFace.text = text;
+                itemHint.AddToClassList(ItemHintShownClass);
+            }
+
+            if (now - itemHintTime >= ItemHintDuration || !ViewModel.IsItemReady) {
+                HideItemHint();
+                return;
+            }
+
+            if (now >= nextItemPulse) {
+                nextItemPulse = now + ItemHintPulsePeriod;
+                Pulse(itemButton, ItemHintPulseClass);
+            }
+        }
+
+        private void HideItemHint()
+        {
+            if (!isItemHintShown) {
+                return;
+            }
+
+            isItemHintShown = false;
+            itemHint.RemoveFromClassList(ItemHintShownClass);
+        }
+
+        private void OnItemPointerDown(PointerDownEvent evt)
+        {
+            evt.StopPropagation();
+            // As with boost, Enhanced Touch owns touch presses; only a mouse or a pen is passed on from here.
+            if (evt.pointerType != UnityEngine.UIElements.PointerType.touch) {
+                ViewModel.PressItem();
+            }
+
+            Pulse(itemButton, ItemPressedClass);
         }
 
         internal static VisualElement CreateLevelBadge(int level, string className)
@@ -772,8 +1200,10 @@ namespace ToyCarArena.UI
                 // Leave room for the outline and the rival's pulse. Clear just the central pills, not a whole band.
                 var halfWidth = tag.layout.width * 0.6f + NameMargin;
                 var height = tag.layout.height * 1.2f + NameMargin;
-                point.x = Mathf.Clamp(point.x, halfWidth, Mathf.Max(halfWidth, size.x - halfWidth));
-                point.y = Mathf.Clamp(point.y, height, Mathf.Max(height, size.y - NameMargin));
+                var left = halfWidth + safeInsets.Left;
+                var top = height + contentTopInset;
+                point.x = Mathf.Clamp(point.x, left, Mathf.Max(left, size.x - halfWidth - safeInsets.Right));
+                point.y = Mathf.Clamp(point.y, top, Mathf.Max(top, size.y - NameMargin - safeInsets.Bottom));
                 ClearPill(timePill, ref point, halfWidth, height);
                 ClearPill(carsPill, ref point, halfWidth, height);
                 ClearPill(settingsButton, ref point, halfWidth, height);
@@ -821,7 +1251,8 @@ namespace ToyCarArena.UI
                 var tag = carNames[index];
                 ref var placement = ref namePlacements[index];
                 var bounds = placement.Bounds;
-                var maxLift = Mathf.Min(tag.layout.height * NameMaxLiftHeights, bounds.yMin - NameMargin);
+                var maxLift = Mathf.Min(tag.layout.height * NameMaxLiftHeights,
+                    bounds.yMin - Mathf.Max(NameMargin, contentTopInset));
                 maxLift = LimitNameLift(timePill, bounds, maxLift);
                 maxLift = LimitNameLift(carsPill, bounds, maxLift);
                 maxLift = LimitNameLift(settingsButton, bounds, maxLift);
@@ -1085,6 +1516,7 @@ namespace ToyCarArena.UI
                     // Use the latest drag's choice if another finger started steering while the button shrank.
                     isBoostOnLeft = controls.IsBoostOnLeft;
                     boostSlot.EnableInClassList(BoostLeftClass, isBoostOnLeft);
+                    PlaceBoost();
                     boostSlot.RemoveFromClassList(BoostMovingClass);
                     isBoostMoving = false;
                 }).StartingIn(BoostMoveDuration);
@@ -1120,8 +1552,22 @@ namespace ToyCarArena.UI
                 var center = ToStick(panel, controls.JoystickCenter);
                 var radius = Vector2.Distance(center,
                     ToStick(panel, controls.JoystickCenter + Vector2.right * controls.JoystickRadius));
+                var knob = ToStick(panel, controls.JoystickKnob);
+                if (!safeInsets.Equals(default(SafeInsets))) {
+                    // Translate the whole drawing together, preserving its direction and travel. Steering still uses
+                    // the real finger; a disc near a cutout or home indicator must remain visible.
+                    var reach = radius * Mathf.Max(StickBaseScale, 1f + StickKnobScale);
+                    var size = stick.layout.size;
+                    var safeCenter = new Vector2(
+                        Mathf.Clamp(center.x, safeInsets.Left + reach,
+                            Mathf.Max(safeInsets.Left + reach, size.x - safeInsets.Right - reach)),
+                        Mathf.Clamp(center.y, safeInsets.Top + reach,
+                            Mathf.Max(safeInsets.Top + reach, size.y - safeInsets.Bottom - reach)));
+                    knob += safeCenter - center;
+                    center = safeCenter;
+                }
                 Place(stickBase, center, radius * StickBaseScale);
-                Place(stickKnob, ToStick(panel, controls.JoystickKnob), radius * StickKnobScale);
+                Place(stickKnob, knob, radius * StickKnobScale);
             }
 
             if (isShown != isStickShown) {
@@ -1160,7 +1606,7 @@ namespace ToyCarArena.UI
             // The visit's first rounds keep the ghost wherever no finger steers: it yields to a touch and comes back
             // once the finger lifts.
             var keepsGhost = isTouch && ViewModel.RoundNumber <= ViewModel.Controls.GhostStickRounds &&
-                (ViewModel.IsRunning || ViewModel.IsWaitingForPlayer);
+                (ViewModel.IsRunning || ViewModel.IsBeforeStart);
 
             if (ViewModel.LastTouchTime > seenTouchTime) {
                 seenTouchTime = ViewModel.LastTouchTime;
@@ -1235,6 +1681,17 @@ namespace ToyCarArena.UI
                 ghostCenter = controls.HasJoystickPlace && !ViewModel.IsFirstRound ? PlaceGhostAtThumb(size, radius) :
                     size.x >= size.y ? PlaceWideGhost(size, radius) :
                     new Vector2(size.x * 0.5f, size.y * GhostPortraitY);
+                if (!safeInsets.Equals(default(SafeInsets))) {
+                    var fingerHalfWidth = radius * GhostFingerWidthScale * 0.5f;
+                    var bottom = radius * GhostTravel + fingerHalfWidth +
+                        (radius * GhostFingerLengthScale - fingerHalfWidth) * Mathf.Cos(GhostFingerTilt * Mathf.Deg2Rad);
+                    var left = safeInsets.Left + GhostHalfWidth + TeachingMargin;
+                    var top = contentTopInset + GhostCaptionLift;
+                    this.ghostCenter.x = Mathf.Clamp(ghostCenter.x, left,
+                        Mathf.Max(left, size.x - safeInsets.Right - GhostHalfWidth - TeachingMargin));
+                    this.ghostCenter.y = Mathf.Clamp(ghostCenter.y, top,
+                        Mathf.Max(top, size.y - safeInsets.Bottom - bottom - TeachingMargin));
+                }
             }
 
             ghost.style.left = ghostCenter.x;
@@ -1287,6 +1744,13 @@ namespace ToyCarArena.UI
             var bottom = radius * GhostTravel + fingerHalfWidth +
                 (radius * GhostFingerLengthScale - fingerHalfWidth) * Mathf.Cos(GhostFingerTilt * Mathf.Deg2Rad);
             var buttonBounds = new Rect(Root.WorldToLocal(boostSlot.worldBound.min), boostSlot.worldBound.size);
+            if (itemButton.ClassListContains(ItemShownClass)) {
+                // The item button stands out of the slot, up and inward of BOOST: the ghost keeps off both.
+                var itemBounds = new Rect(Root.WorldToLocal(itemButton.worldBound.min), itemButton.worldBound.size);
+                buttonBounds = Rect.MinMaxRect(Mathf.Min(buttonBounds.xMin, itemBounds.xMin),
+                    Mathf.Min(buttonBounds.yMin, itemBounds.yMin), Mathf.Max(buttonBounds.xMax, itemBounds.xMax),
+                    Mathf.Max(buttonBounds.yMax, itemBounds.yMax));
+            }
             for (var row = 0; row < 2; row++) {
                 for (var column = 0; column < 4; column++) {
                     var point = preferred + new Vector2(column * radius * 2f, row * radius);

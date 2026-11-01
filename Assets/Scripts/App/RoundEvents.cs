@@ -36,6 +36,9 @@ namespace ToyCarArena.App
     /// <item><c>result / play-again / visible</c>, then <c>interact</c> when pressed; after v0.5.1 also
     /// <c>result / again-won, out, survived-rR / visible, interact</c>, the same press by how the round went, so the
     /// visits that end on a result screen read by outcome and round</item>
+    /// <item>after v0.6.0, after the first round or match of a visit only: <c>controls / again-input-boost, noboost /
+    /// visible, interact</c>, the same press by what the player first steered with and whether they boosted at all, so
+    /// the visits lost after the first round read against a boost never found</item>
     /// <item>after v0.5.1: <c>lobby / slow-arena-id / visible</c> when the next arena is still loading
     /// <see cref="SlowLobbySeconds"/> after the lobby came up, then <c>interact</c> when that round comes up after all,
     /// so a slow load can be told from a wait the player gave up on</item>
@@ -232,15 +235,26 @@ namespace ToyCarArena.App
         }
 
         /// <summary>
-        /// The player took a pickup in match number <paramref name="match"/>: <c>match / pickup-heavy, shockwave, shield,
-        /// turbo-rR / pickup</c>, R as for the match's other events.
+        /// The roll of a box the player broke landed on an item, in match number <paramref name="match"/>:
+        /// <c>match / item-heavy, shockwave, shield, turbo, bomb, glove-rR / item-get</c>, R as for the match's other
+        /// events. Replaces v0.6's <c>pickup</c> event, when a pickup was its ability.
         /// </summary>
-        public static void MeasurePickup(this IGamePlatform platform, int match, PickupKind kind) =>
-            platform.Measure(MatchCategory, $"pickup-{kind.ToString().ToLowerInvariant()}-{RoundTag(match)}", "pickup");
+        public static void MeasureItemGet(this IGamePlatform platform, int match, ItemKind kind) =>
+            platform.Measure(MatchCategory, $"item-{ItemId(kind)}-{RoundTag(match)}", "item-get");
 
         /// <summary>
-        /// How many pickups the player took in the match, at its end: <c>match / pickups-N-rR / pickups</c>, N from 0 to 9
-        /// or 10plus.
+        /// The player used the item in the slot: <c>match / item-kind-rR / item-use</c>; against item-get it tells which
+        /// items the players find and which they forget to use.
+        /// </summary>
+        public static void MeasureItemUse(this IGamePlatform platform, int match, ItemKind kind) =>
+            platform.Measure(MatchCategory, $"item-{ItemId(kind)}-{RoundTag(match)}", "item-use");
+
+        // The kind as the events spell it, without digits.
+        private static string ItemId(ItemKind kind) => kind.ToString().ToLowerInvariant();
+
+        /// <summary>
+        /// How many boxes the player broke in the match, an item in them or not, at its end:
+        /// <c>match / pickups-N-rR / pickups</c>, N from 0 to 9 or 10plus.
         /// </summary>
         public static void MeasureMatchPickups(this IGamePlatform platform, int match, int count) =>
             platform.Measure(MatchCategory, $"pickups-{CountBucket(count)}-{RoundTag(match)}", "pickups");
@@ -290,6 +304,24 @@ namespace ToyCarArena.App
             platform.MeasureInteract(ResultCategory, PlayAgain);
             platform.MeasureInteract(ResultCategory, AgainOf(outcome, round));
         }
+
+        /// <summary>
+        /// The NEXT MATCH press after the first round or match of a visit, by what the player first steered with and
+        /// whether they boosted: <c>controls / again-touch-noboost / visible, interact</c>. Poki counts each event on
+        /// its own, so this is the one way to see whether the visits that leave there are the ones that never found the
+        /// boost. Read from the driver before the next arena replaces it.
+        /// </summary>
+        public static string FirstAgainOf(PlayerDriver driver)
+        {
+            var input = driver.FirstInput == null ? "none" : GameEvent.Clean(driver.FirstInput.Value.ToString());
+            return $"again-{input}-{(driver.FirstBoostInput == null ? "noboost" : "boost")}";
+        }
+
+        public static void MeasureFirstAgainShown(this IGamePlatform platform, string firstAgain) =>
+            platform.MeasureVisible(ControlsCategory, firstAgain);
+
+        public static void MeasureFirstAgainPressed(this IGamePlatform platform, string firstAgain) =>
+            platform.MeasureInteract(ControlsCategory, firstAgain);
 
         private static string AgainOf(RoundOutcome outcome, int round) =>
             $"again-{GameEvent.Clean(outcome.ToString())}-{RoundTag(round)}";

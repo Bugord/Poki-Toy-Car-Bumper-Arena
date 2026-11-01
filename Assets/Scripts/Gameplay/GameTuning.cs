@@ -928,6 +928,22 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float slideWindow = 6f;
 
+            [Tooltip("The kick-off counts down from this number (3, 2, 1, GO!) before every round or match; the clock, " +
+                "the bots and the floor start at GO. 0 begins at once")]
+            [Range(0, 5)]
+            [SerializeField]
+            private int kickoffFrom = 3;
+
+            [Tooltip("Seconds each number of the kick-off stays on the screen, unscaled")]
+            [Min(0.1f)]
+            [SerializeField]
+            private float kickoffStep = 0.7f;
+
+            [Tooltip("Seconds GO! stays on the screen once the round has begun under it, unscaled")]
+            [Min(0.1f)]
+            [SerializeField]
+            private float kickoffGo = 0.8f;
+
             [Tooltip("A car below this height, in metres, is out")]
             [SerializeField]
             private float fallHeight = -3f;
@@ -945,6 +961,9 @@ namespace ToyCarArena.Gameplay
             public float RingFallWindow => ringFallWindow;
             public float BoostFallWindow => boostFallWindow;
             public float SlideWindow => slideWindow;
+            public int KickoffFrom => kickoffFrom;
+            public float KickoffStep => kickoffStep;
+            public float KickoffGo => kickoffGo;
             public float FallHeight => fallHeight;
             public float RemoveHeight => removeHeight;
         }

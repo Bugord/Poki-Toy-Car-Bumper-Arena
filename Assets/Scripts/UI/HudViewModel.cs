@@ -50,9 +50,20 @@ namespace ToyCarArena.UI
         public event Action NemesisChanged;
 
         /// <summary>
-        /// Raised in a match when the player's car takes a pickup, with its kind.
+        /// Raised in a match when the player's car breaks a box and its slot starts to spin, with the item it will land
+        /// on (the HUD spins anyway and lands on it).
         /// </summary>
-        public event Action<PickupKind> PickedUp;
+        public event Action<ItemKind> ItemRolled;
+
+        /// <summary>
+        /// Raised in a match when the player uses the item in the slot, with its kind.
+        /// </summary>
+        public event Action<ItemKind> ItemUsed;
+
+        /// <summary>
+        /// Raised in a match when an item of the player's hits a car, with its kind and where the car was.
+        /// </summary>
+        public event Action<ItemKind, Vector3> ItemHit;
 
         private readonly IScreenNavigator navigator;
         private Car player;
@@ -178,12 +189,26 @@ namespace ToyCarArena.UI
         public float SafeShareLeft => round?.Player != null && round.IsRunning ? round.SafeShareLeft(round.Player) : 0f;
 
         /// <summary>
-        /// The ability the player's car has running (<see cref="PickupKind.None"/> for none) and how much of it is left,
+        /// The ability the player's car has running (<see cref="ItemKind.None"/> for none) and how much of it is left,
         /// from 1 to 0, and in seconds.
         /// </summary>
-        public PickupKind Ability => round?.Player != null ? round.Player.Ability : PickupKind.None;
+        public ItemKind Ability => round?.Player != null ? round.Player.Ability : ItemKind.None;
         public float AbilityShare => round?.Player != null ? round.Player.AbilityShare : 0f;
         public float AbilityTimeLeft => round?.Player != null ? round.Player.AbilityTimeLeft : 0f;
+
+        /// <summary>
+        /// The item in the player's slot (<see cref="ItemKind.None"/> for an empty one), whether it still spins, and
+        /// whether it can be used now.
+        /// </summary>
+        public ItemKind HeldItem => round?.Player != null ? round.Player.HeldItem : ItemKind.None;
+        public bool IsItemRolling => round?.Player != null && round.Player.IsItemRolling;
+        public bool IsItemReady => IsRunning && round.Player.IsItemReady;
+
+        /// <summary>
+        /// The item button was clicked with a mouse: the input service hears it as the item key. A touch on it is the
+        /// input service's own.
+        /// </summary>
+        public void PressItem() => controls.PressItem();
 
         public Vector3 PlayerPosition => round?.Player != null ? round.Player.Position : Vector3.zero;
 
@@ -213,10 +238,41 @@ namespace ToyCarArena.UI
         public bool IsBoostReady => round != null && round.IsRunning && round.Player.Movement.IsBoostReady;
 
         /// <summary>
-        /// Whether the cars stand waiting for the player's first steer or boost to begin the round: the start prompt
-        /// shows meanwhile.
+        /// Whether the cars stand on the arena and the round has not begun yet: the wait for the player's first input
+        /// in a visit's first round, then the kick-off's 3, 2, 1. The ghost joystick and the feed treat both alike.
         /// </summary>
-        public bool IsWaitingForPlayer => round != null && round.IsPlaced && !round.HasBegun;
+        public bool IsBeforeStart => round != null && round.IsPlaced && !round.HasBegun;
+
+        /// <summary>
+        /// Whether the cars stand waiting for the player's first steer or boost: the start prompt shows meanwhile and
+        /// flashes away at that input, as the kick-off starts, not at GO. Only a visit's first round waits for one.
+        /// </summary>
+        public bool IsWaitingForPlayer => IsFirstRound && IsBeforeStart && (driver == null || !driver.HasActed);
+
+        /// <summary>
+        /// The kick-off's step on the screen: 3, 2 or 1, 0 for GO!, or <see cref="NoKickoff"/> before it starts. The
+        /// round state sets each step as its own timing reaches it, so the numbers, their ticks and the round's begin at
+        /// GO cannot drift apart; the view only animates the step it is given.
+        /// </summary>
+        public int KickoffStep { get; private set; } = NoKickoff;
+
+        /// <summary>The unscaled time <see cref="KickoffStep"/> was set, for the view's animation.</summary>
+        public float KickoffStepTime { get; private set; }
+
+        /// <summary>How long the current step stays on the screen, in unscaled seconds.</summary>
+        public float KickoffStepDuration { get; private set; }
+
+        public const int NoKickoff = -1;
+
+        /// <summary>
+        /// Shows a step of the kick-off (3, 2, 1, or 0 for GO!) for this many unscaled seconds.
+        /// </summary>
+        public void ShowKickoff(int step, float duration)
+        {
+            KickoffStep = step;
+            KickoffStepDuration = duration;
+            KickoffStepTime = Time.unscaledTime;
+        }
 
         /// <summary>
         /// Whether the car with this index is still on the arena.
@@ -259,6 +315,8 @@ namespace ToyCarArena.UI
             IsFirstRound = payload.IsFirstRound;
             RoundNumber = payload.RoundNumber;
             IsNewPlayer = payload.IsNewPlayer;
+            // The view model outlives a round: a GO! of the round before must not show again on this one.
+            KickoffStep = NoKickoff;
             if (round != null) {
                 round.CarOut += OnCarOut;
                 round.KnockedOut += OnKnockedOut;
@@ -267,7 +325,9 @@ namespace ToyCarArena.UI
                 round.NemesisChanged += OnNemesisChanged;
                 player = round.Player;
                 if (player != null) {
-                    player.PickedUp += OnPickedUp;
+                    player.ItemRolled += OnItemRolled;
+                    player.ItemUsed += OnItemUsed;
+                    player.ItemHit += OnItemHit;
                 }
             }
         }
@@ -289,12 +349,16 @@ namespace ToyCarArena.UI
             }
 
             if (player != null) {
-                player.PickedUp -= OnPickedUp;
+                player.ItemRolled -= OnItemRolled;
+                player.ItemUsed -= OnItemUsed;
+                player.ItemHit -= OnItemHit;
                 player = null;
             }
         }
 
-        private void OnPickedUp(PickupKind kind) => PickedUp?.Invoke(kind);
+        private void OnItemRolled(ItemKind kind) => ItemRolled?.Invoke(kind);
+        private void OnItemUsed(ItemKind kind) => ItemUsed?.Invoke(kind);
+        private void OnItemHit(ItemKind kind, Vector3 point) => ItemHit?.Invoke(kind, point);
 
         private void OnRespawned(Car car) => CarBack?.Invoke(round.IndexOf(car));
 
