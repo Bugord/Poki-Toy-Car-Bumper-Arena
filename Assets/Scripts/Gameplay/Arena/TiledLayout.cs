@@ -18,7 +18,7 @@ namespace ToyCarArena.Gameplay.Arena
     public sealed class TiledLayout : ArenaLayout
     {
         // Depth of the floor below the driving surface, in metres; the same as the ring blocks'.
-        private const float Thickness = 0.5f;
+        private const float Thickness = SlabThickness;
 
         // The most spots a wave puts dust up from.
         private const int MaxSpots = 36;
@@ -121,7 +121,19 @@ namespace ToyCarArena.Gameplay.Arena
                 return false;
             }
 
+            // The floor that comes back in cycles rebuilds the collider a few dozen times a match: the old one goes, at the
+            // end of the frame, after the floor has handed the collider the new one.
+            var previous = ColliderMesh;
             ColliderMesh = Keep(BuildCollider());
+            if (previous != null && meshes.Remove(previous)) {
+                if (Application.isPlaying) {
+                    Object.Destroy(previous);
+                }
+                else {
+                    Object.DestroyImmediate(previous);
+                }
+            }
+
             return true;
         }
 

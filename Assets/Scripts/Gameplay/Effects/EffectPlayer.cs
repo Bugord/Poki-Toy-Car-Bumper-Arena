@@ -232,6 +232,20 @@ namespace ToyCarArena.Gameplay.Effects
         [SerializeField]
         private Vector2 fallChunkSize = new(0.3f, 0.6f);
 
+        [Header("Floor coming back")]
+        [Tooltip("A ring of the floor coming back is marked about every this many metres round it")]
+        [Min(0.5f)]
+        [SerializeField]
+        private float returnSpacing = 3f;
+
+        [Tooltip("Radius a gold ring closing on a spot the floor comes back to starts at and ends at, in metres")]
+        [SerializeField]
+        private Vector2 returnRingSize = new(1.8f, 0.5f);
+
+        [Tooltip("Least and most size of a puff of dust a landing tile throws up, in metres")]
+        [SerializeField]
+        private Vector2 landPuffSize = new(0.7f, 1.1f);
+
         private enum Shape
         {
             Puff,
@@ -568,6 +582,73 @@ namespace ToyCarArena.Gameplay.Effects
                 bit.Spin = Random.Range(-400f, 400f);
                 bit.Hold = 0.7f;
             }
+        }
+
+        /// <summary>
+        /// A ring of the floor coming back, between <paramref name="inner"/> and <paramref name="outer"/> metres from the
+        /// middle: a gold ring closes on each spot of the empty band over the <paramref name="duration"/> until the ring
+        /// lands, and is gone as it does.
+        /// </summary>
+        public void PlayRingReturn(float inner, float outer, float duration)
+        {
+            var spots = Spots(inner, outer, returnSpacing);
+            for (var i = 0; i < spots; i++) {
+                var outward = Around((i + Random.Range(-0.2f, 0.2f)) / spots);
+                AddClosingRing(OnFloor(outward * ((inner + outer) * 0.5f)), duration);
+            }
+        }
+
+        /// <summary>
+        /// The tiles of a wave coming back, a floor that is not round: a gold ring closes on each spot over the
+        /// <paramref name="duration"/> until the tiles land, and is gone as they do.
+        /// </summary>
+        public void PlayTileReturn(Vector4[] spots, float duration)
+        {
+            foreach (var spot in spots) {
+                AddClosingRing(OnFloor(new Vector3(spot.x, 0f, spot.y)), duration);
+            }
+        }
+
+        /// <summary>
+        /// A ring of the floor landing back in place: a puff of dust squeezed out round it.
+        /// </summary>
+        public void PlayRingLand(float inner, float outer)
+        {
+            var spots = Spots(inner, outer, returnSpacing);
+            for (var i = 0; i < spots; i++) {
+                var outward = Around((i + Random.Range(-0.3f, 0.3f)) / spots);
+                AddLandingPuff(OnRing(outward, inner, outer), outward);
+            }
+        }
+
+        /// <summary>
+        /// The tiles of a wave landing back in place, a floor that is not round: a puff of dust squeezed out over each spot.
+        /// </summary>
+        public void PlayTileLand(Vector4[] spots)
+        {
+            foreach (var spot in spots) {
+                var outward = new Vector3(spot.z, 0f, spot.w);
+                var position = new Vector3(spot.x, 0.1f, spot.y)
+                    + new Vector3(Random.Range(-0.8f, 0.8f), 0f, Random.Range(-0.8f, 0.8f));
+                AddLandingPuff(position, outward);
+            }
+        }
+
+        private void AddClosingRing(Vector3 position, float duration)
+        {
+            ref var ring = ref Add(Shape.Ring, gold, position, returnRingSize.y, duration);
+            ring.StartSize = returnRingSize.x * sizeScale;
+        }
+
+        private void AddLandingPuff(Vector3 position, Vector3 outward)
+        {
+            ref var cloud = ref Add(Shape.Puff, dust, position, Random.Range(landPuffSize.x, landPuffSize.y),
+                Random.Range(0.45f, 0.65f));
+            cloud.Velocity = outward * Random.Range(1.5f, 3f) + Vector3.up * Random.Range(0.5f, 1.2f);
+            cloud.Gravity = -0.5f;
+            cloud.Drag = 3f;
+            cloud.Delay = Random.Range(0f, 0.05f);
+            cloud.Hold = 0.3f;
         }
 
         private void LateUpdate()
