@@ -33,10 +33,10 @@ namespace ToyCarArena.Tests.PlayMode
         private static readonly PropertyInfo LastHitTimeProperty = typeof(Car).GetProperty(nameof(Car.LastHitTime));
 
         [Test]
-        public void TheGameTuningAssetPlaysTheLastCarStanding()
+        public void TheGameTuningAssetPlaysTheLongMatch()
         {
-            Assert.That(LoadTuning().Mode, Is.EqualTo(GameTuning.GameMode.LastStanding),
-                "The long match is chosen per build; the asset must keep the mode the game ships with.");
+            Assert.That(LoadTuning().Mode, Is.EqualTo(GameTuning.GameMode.Match),
+                "The mode is chosen per build; since v0.6.0 the asset ships the long match.");
         }
 
         [Test]
