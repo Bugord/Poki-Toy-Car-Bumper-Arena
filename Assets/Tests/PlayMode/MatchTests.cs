@@ -342,7 +342,7 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(condition(), Is.True, message);
         }
 
-        private sealed class RecordingPlatform : IGamePlatform
+        internal sealed class RecordingPlatform : IGamePlatform
         {
             public readonly List<(string, string, string)> Events = new();
 

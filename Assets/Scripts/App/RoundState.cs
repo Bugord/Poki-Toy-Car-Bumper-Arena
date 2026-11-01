@@ -77,6 +77,14 @@ namespace ToyCarArena.App
             var playedMap = arenaMap.Id;
             var playedVariant = arenaMap.Variant;
             var waitsForPlayer = roundNumber == 1;
+            // The pickups the player takes in a match, each reported as it is taken and counted for the end.
+            var pickupCount = 0;
+            Car pickupCar = null;
+            void OnPickedUp(PickupKind kind)
+            {
+                pickupCount++;
+                platform.MeasurePickup(roundNumber, kind);
+            }
 
             void BeginRound()
             {
@@ -99,6 +107,8 @@ namespace ToyCarArena.App
 
             try {
                 round.Place();
+                pickupCar = round.Player;
+                pickupCar.PickedUp += OnPickedUp;
                 if (!waitsForPlayer) {
                     BeginRound();
                 }
@@ -124,6 +134,10 @@ namespace ToyCarArena.App
                 levelScene.Resolve<ISessionRoster>().NextRound(result.CarCount - 1,
                     RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis, tuning.Players);
                 platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, driver);
+                if (result.IsMatch) {
+                    platform.MeasureMatchPickups(roundNumber, pickupCount);
+                }
+
                 platform.MeasureVariantEnd(playedMap, playedVariant, result.Outcome);
                 platform.MeasureRoundCar(roundNumber, playedCar);
                 platform.MeasureProgress(record.XpGain);
@@ -137,6 +151,10 @@ namespace ToyCarArena.App
             }
             finally {
                 round.Finished -= OnFinished;
+                if (pickupCar != null) {
+                    pickupCar.PickedUp -= OnPickedUp;
+                }
+
                 // Cancelled with the app, or failed: the platform must not think the game still plays.
                 if (isPlaying) {
                     platform.GameplayStop();

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Cars;
+using ToyCarArena.Gameplay.Pickups;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
 using VContainer.Unity;
@@ -16,6 +17,11 @@ namespace ToyCarArena.Gameplay.Bots
     /// finish), whether it hit this bot lately (a grudge), and a little chance. Each bot boosts on its own, as the
     /// player does: into a car it pushes, and back from the edge (<see cref="Bot.Steer"/>). Once the round is over the
     /// bots roll to a stop, as the player's car does.
+    /// <para>
+    /// In a long match a pickup lying on the floor (<see cref="ArenaPickups"/>) is weighed in the same pick: against the
+    /// best car to hit, by how near it is, more the further the bot trails the leader in knock-outs, less for each bot
+    /// already going for it. The bot's safety logic comes first all the same (<see cref="Bot.Steer"/>).
+    /// </para>
     /// <para>
     /// How hard the bots play the player is the round's <see cref="RoundDifficulty"/>, from the player's progress in this
     /// visit: nobody picks the player for the first seconds of a round (longer early on), only so many bots chase the
@@ -35,17 +41,23 @@ namespace ToyCarArena.Gameplay.Bots
         private readonly RoundDifficulty difficulty;
         private readonly BallLane ballLane;
         private readonly ArenaHazards hazards;
+        private readonly ArenaPickups pickups;
         private readonly List<Bot> bots = new();
 
         private int seed;
         private bool isDriving;
 
+        // The score of the car the last pick chose, to weigh a pickup against; and the pickups seen so far.
+        private float pickedScore;
+        private int seenPickups;
+
         // The one bot whose grudge against the player is counted, while it is after the player.
         private Bot playerGrudge;
 
         public BotDriver(GameTuning tuning, ArenaRound round, RoundDifficulty difficulty, BallLane ballLane,
-            ArenaHazards hazards)
+            ArenaHazards hazards, ArenaPickups pickups)
         {
+            this.pickups = pickups;
             this.tuning = tuning;
             this.round = round;
             this.difficulty = difficulty;
@@ -91,13 +103,21 @@ namespace ToyCarArena.Gameplay.Bots
             var deltaTime = Time.deltaTime;
             var edge = round.Edge;
             var isDuel = round.IsDuel;
+            // A new pickup is worth a look at once, not at the next pick.
+            var hasNewPickup = pickups.IsEnabled && pickups.Version != seenPickups;
+            seenPickups = pickups.Version;
             foreach (var bot in bots) {
                 if (bot.Car.IsOut) {
                     continue;
                 }
 
+                if (hasNewPickup) {
+                    bot.Reconsider();
+                }
+
                 if (bot.WantsTarget) {
                     bot.SetTarget(PickTarget(bot, edge));
+                    ChoosePickup(bot, edge);
                 }
 
                 bot.Steer(edge, deltaTime, isDuel);
@@ -218,7 +238,79 @@ namespace ToyCarArena.Gameplay.Bots
                 playerGrudge = null;
             }
 
+            pickedScore = bestScore;
             return best;
+        }
+
+        /// <summary>
+        /// Sends the bot to the pickup that beats the car it has just picked, or to none: its score is the pickup's weight
+        /// and a bonus for trailing the leader, less the distance and the other bots going for it. A bot that is safe
+        /// after coming back cannot take one yet; the edge-return of <see cref="Bot.Steer"/> still comes before it.
+        /// </summary>
+        private void ChoosePickup(Bot bot, IArenaEdge edge)
+        {
+            if (!pickups.IsEnabled || !bot.Car.IsTargetable) {
+                bot.SetPickup(null);
+                return;
+            }
+
+            var settings = tuning.Pickups.Bots;
+            var need = TrailingNeed(bot.Car);
+            var position = bot.Car.Position;
+            var diameter = edge.Span;
+            FloorPickup best = null;
+            var bestScore = pickedScore;
+            var live = pickups.Live;
+            for (var i = 0; i < live.Count; i++) {
+                var pickup = live[i];
+                var offset = pickup.Position - position;
+                offset.y = 0f;
+                var distance = offset.magnitude;
+                if (distance > settings.Range) {
+                    continue;
+                }
+
+                var score = settings.Weight + settings.TrailingBonus * need
+                    - tuning.Bots.DistanceWeight * distance / diameter
+                    - settings.CrowdPenalty * CountChasers(pickup, bot);
+                if (pickup == bot.Pickup) {
+                    score += tuning.Bots.StickWeight;
+                }
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    best = pickup;
+                }
+            }
+
+            bot.SetPickup(best);
+        }
+
+        /// <summary>
+        /// How far a car trails the match's leader in knock-outs, from 0 (level or leading) towards 1; a gap of one is a
+        /// third, and it takes a wide gap to come near 1.
+        /// </summary>
+        private float TrailingNeed(Car car)
+        {
+            var score = round.Score;
+            if (score == null) {
+                return 0f;
+            }
+
+            var gap = score.KnockoutsOf(score.Leader) - score.KnockoutsOf(round.IndexOf(car));
+            return gap <= 0 ? 0f : gap / (gap + 2f);
+        }
+
+        private int CountChasers(FloorPickup pickup, Bot except)
+        {
+            var count = 0;
+            foreach (var bot in bots) {
+                if (bot != except && !bot.Car.IsOut && bot.Pickup == pickup) {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         /// <summary>

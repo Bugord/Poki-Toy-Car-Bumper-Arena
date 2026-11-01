@@ -2,6 +2,7 @@ using System.Threading;
 using Bugord.App.Localization;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.Audio;
+using ToyCarArena.Gameplay;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -58,6 +59,11 @@ namespace ToyCarArena.UI
         private const string RespawnPopClass = "hud__respawn--pop";
         private const string ShieldShownClass = "hud__shield--shown";
         private const string RevengeClass = "car-name--revenge";
+        private const string PowerShownClass = "hud__power--shown";
+
+        // The badge of a running ability blinks over the last seconds, as the ability ends.
+        private const float PowerBlinkTime = 2f;
+        private const float PowerBlinkRate = 5f;
 
         // The safe sticker floats this high over the player's car, in metres: above its marker's arrow.
         private const float ShieldHeight = 4.2f;
@@ -172,6 +178,12 @@ namespace ToyCarArena.UI
         private Label respawnCountFace;
         private VisualElement shield;
         private VisualElement shieldFill;
+        // A match's pickups: the badge of the ability the player's car runs, with its icon, name and draining bar.
+        private PickupKind shownAbility;
+        private VisualElement power;
+        private VisualElement powerIcon;
+        private Label powerName;
+        private VisualElement powerFill;
         private VisualElement popupLayer;
         private VisualElement nameLayer;
         private VisualElement[] carNames;
@@ -250,6 +262,10 @@ namespace ToyCarArena.UI
             respawnCountFace = Root.Q<Label>("respawn-count-face");
             shield = Root.Q<VisualElement>("shield");
             shieldFill = Root.Q<VisualElement>("shield-fill");
+            power = Root.Q<VisualElement>("power");
+            powerIcon = Root.Q<VisualElement>("power-icon");
+            powerName = Root.Q<Label>("power-name");
+            powerFill = Root.Q<VisualElement>("power-fill");
             // In a match the player's score is always there, 0 included: it is the point of the match.
             knockoutBadge.EnableInClassList(KnockoutShownClass, ViewModel.IsMatch);
             popupLayer = Root.Q<VisualElement>("ko-layer");
@@ -284,6 +300,7 @@ namespace ToyCarArena.UI
             ViewModel.CarOut += OnCarOut;
             ViewModel.CarBack += OnCarBack;
             ViewModel.NemesisChanged += OnNemesisChanged;
+            ViewModel.PickedUp += OnPickedUp;
 
             // On the press, not the release: a boost is all about the moment.
             boostButton.RegisterCallback<PointerDownEvent>(OnBoostPointerDown);
@@ -300,6 +317,7 @@ namespace ToyCarArena.UI
             RefreshBoost();
             Root.schedule.Execute(Refresh).Every(RefreshInterval);
             Root.schedule.Execute(RefreshBoost).Every(BoostRefreshInterval);
+            Root.schedule.Execute(RefreshPower).Every(BoostRefreshInterval);
             Root.schedule.Execute(RefreshStick).Every(BoostRefreshInterval);
             Root.schedule.Execute(RefreshTeaching).Every(BoostRefreshInterval);
             Root.schedule.Execute(RefreshNames).Every(BoostRefreshInterval);
@@ -312,6 +330,7 @@ namespace ToyCarArena.UI
             ViewModel.CarOut -= OnCarOut;
             ViewModel.CarBack -= OnCarBack;
             ViewModel.NemesisChanged -= OnNemesisChanged;
+            ViewModel.PickedUp -= OnPickedUp;
 
             if (boostButton != null) {
                 boostButton.UnregisterCallback<PointerDownEvent>(OnBoostPointerDown);
@@ -528,7 +547,15 @@ namespace ToyCarArena.UI
         /// Pops a KNOCKOUT! sticker up over the point where the car the player knocked out went over the edge, kept
         /// clear of the screen's sides and the HUD: it springs in, holds, and flies up and away.
         /// </summary>
-        private void ShowKnockout(Vector3 worldPosition, bool isRevenge)
+        private void ShowKnockout(Vector3 worldPosition, bool isRevenge) =>
+            ShowPopup(worldPosition, isRevenge, PickupKind.None);
+
+        /// <summary>
+        /// The same sticker for a pickup the player's car took (HEAVY!, SHOCKWAVE!, SHIELD!, TURBO!), over the car.
+        /// </summary>
+        private void OnPickedUp(PickupKind kind) => ShowPopup(ViewModel.PlayerPosition, false, kind);
+
+        private void ShowPopup(Vector3 worldPosition, bool isRevenge, PickupKind pickup)
         {
             var panel = popupLayer.panel;
             if (panel == null) {
@@ -547,7 +574,7 @@ namespace ToyCarArena.UI
             point.x = Mathf.Clamp(point.x, PopupSideMargin, Mathf.Max(PopupSideMargin, size.x - PopupSideMargin));
             point.y = Mathf.Clamp(point.y, PopupTopMargin, Mathf.Max(PopupTopMargin, size.y - PopupBottomMargin));
 
-            var popup = CreatePopup(popupCount++ % 2 == 0 ? -PopupTilt : PopupTilt, isRevenge);
+            var popup = CreatePopup(popupCount++ % 2 == 0 ? -PopupTilt : PopupTilt, isRevenge, pickup);
             popup.style.left = point.x;
             popup.style.top = point.y;
             popupLayer.Add(popup);
@@ -568,7 +595,7 @@ namespace ToyCarArena.UI
 
         // The sticker: the knock-out star and KNOCKOUT! in gold, outlined (.stroke in ui_screens). The outer element
         // holds the place, centred on it; the inner one springs, tilts and flies.
-        private static VisualElement CreatePopup(float tilt, bool isRevenge)
+        private static VisualElement CreatePopup(float tilt, bool isRevenge, PickupKind pickup)
         {
             var popup = new VisualElement { pickingMode = PickingMode.Ignore };
             popup.AddToClassList("ko-pop");
@@ -580,10 +607,51 @@ namespace ToyCarArena.UI
             sticker.style.rotate = new Rotate(tilt);
             popup.Add(sticker);
 
+            // A pickup's sticker is the word alone, in the kind's colour.
+            if (pickup != PickupKind.None) {
+                popup.AddToClassList("ko-pop--power");
+                popup.AddToClassList($"ko-pop--{PowerName(pickup)}");
+                sticker.Add(CreateOutlinedText(Strings.Get($"hud.pickup_{PowerName(pickup)}"), "ko-pop__text"));
+                return popup;
+            }
+
             sticker.Add(CreateStar("ko-star--big"));
 
             sticker.Add(CreateOutlinedText(Strings.Get(isRevenge ? "hud.revenge_taken" : "hud.knockout"), "ko-pop__text"));
             return popup;
+        }
+
+        /// <summary>The kind's name as the strings and the classes spell it: heavy, shockwave, shield, turbo.</summary>
+        private static string PowerName(PickupKind kind) => kind.ToString().ToLowerInvariant();
+
+        /// <summary>
+        /// The badge of the ability the player's car runs: its icon and name, and a bar that drains with the time. It
+        /// blinks over the last seconds, and a shield, which can also go with a hit, is gone as it does.
+        /// </summary>
+        private void RefreshPower()
+        {
+            var ability = ViewModel.Ability;
+            if (ability != shownAbility) {
+                foreach (var kind in new[] { PickupKind.Heavy, PickupKind.Shield, PickupKind.Turbo }) {
+                    power.EnableInClassList($"hud__power--{PowerName(kind)}", kind == ability);
+                    powerIcon.EnableInClassList($"hud__power-icon--{PowerName(kind)}", kind == ability);
+                }
+
+                shownAbility = ability;
+                power.EnableInClassList(PowerShownClass, ability != PickupKind.None);
+                if (ability != PickupKind.None) {
+                    powerName.text = Strings.Get($"hud.pickup_{PowerName(ability)}");
+                }
+            }
+
+            if (ability == PickupKind.None) {
+                return;
+            }
+
+            powerFill.style.width = Length.Percent(ViewModel.AbilityShare * 100f);
+            var isBlinking = ViewModel.AbilityTimeLeft < PowerBlinkTime
+                && Mathf.Repeat(Time.unscaledTime * PowerBlinkRate, 1f) < 0.5f;
+            power.style.opacity = isBlinking ? 0.45f : 1f;
         }
 
         internal static VisualElement CreateLevelBadge(int level, string className)

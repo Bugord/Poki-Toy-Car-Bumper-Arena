@@ -49,7 +49,13 @@ namespace ToyCarArena.UI
         /// </summary>
         public event Action NemesisChanged;
 
+        /// <summary>
+        /// Raised in a match when the player's car takes a pickup, with its kind.
+        /// </summary>
+        public event Action<PickupKind> PickedUp;
+
         private readonly IScreenNavigator navigator;
+        private Car player;
         private readonly HudControls controls;
         private ArenaRound round;
         private PlayerDriver driver;
@@ -164,6 +170,14 @@ namespace ToyCarArena.UI
         /// </summary>
         public float SafeShareLeft => round?.Player != null && round.IsRunning ? round.SafeShareLeft(round.Player) : 0f;
 
+        /// <summary>
+        /// The ability the player's car has running (<see cref="PickupKind.None"/> for none) and how much of it is left,
+        /// from 1 to 0, and in seconds.
+        /// </summary>
+        public PickupKind Ability => round?.Player != null ? round.Player.Ability : PickupKind.None;
+        public float AbilityShare => round?.Player != null ? round.Player.AbilityShare : 0f;
+        public float AbilityTimeLeft => round?.Player != null ? round.Player.AbilityTimeLeft : 0f;
+
         public Vector3 PlayerPosition => round?.Player != null ? round.Player.Position : Vector3.zero;
 
         /// <summary>
@@ -244,6 +258,10 @@ namespace ToyCarArena.UI
                 round.Eliminated += OnEliminated;
                 round.Respawned += OnRespawned;
                 round.NemesisChanged += OnNemesisChanged;
+                player = round.Player;
+                if (player != null) {
+                    player.PickedUp += OnPickedUp;
+                }
             }
         }
 
@@ -262,7 +280,14 @@ namespace ToyCarArena.UI
                 round.Respawned -= OnRespawned;
                 round.NemesisChanged -= OnNemesisChanged;
             }
+
+            if (player != null) {
+                player.PickedUp -= OnPickedUp;
+                player = null;
+            }
         }
+
+        private void OnPickedUp(PickupKind kind) => PickedUp?.Invoke(kind);
 
         private void OnRespawned(Car car) => CarBack?.Invoke(round.IndexOf(car));
 

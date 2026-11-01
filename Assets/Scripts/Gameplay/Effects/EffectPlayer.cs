@@ -246,6 +246,26 @@ namespace ToyCarArena.Gameplay.Effects
         [SerializeField]
         private Vector2 landPuffSize = new(0.7f, 1.1f);
 
+        [Header("Pickups")]
+        [Tooltip("Stars thrown up when a car takes a pickup, and their size in metres")]
+        [Min(0)]
+        [SerializeField]
+        private int pickupStars = 6;
+
+        [Tooltip("Size of a star of a pickup being taken, in metres")]
+        [Min(0f)]
+        [SerializeField]
+        private float pickupStarSize = 0.75f;
+
+        [Tooltip("Seconds the shockwave's ring takes to go out to its full reach")]
+        [Min(0.05f)]
+        [SerializeField]
+        private float shockwaveLife = 0.45f;
+
+        [Tooltip("Least and most size of a flame puff a car with a turbo leaves, in metres")]
+        [SerializeField]
+        private Vector2 flamePuffSize = new(0.4f, 0.7f);
+
         private enum Shape
         {
             Puff,
@@ -466,6 +486,102 @@ namespace ToyCarArena.Gameplay.Effects
                 shape.Angle = Random.Range(-15f, 15f);
                 shape.Delay = 0.05f * i;
                 shape.Hold = 0.5f;
+            }
+        }
+
+        /// <summary>
+        /// A car taking a pickup at <paramref name="point"/>: gold stars thrown up and a ring on the floor.
+        /// </summary>
+        public void PlayPickup(Vector3 point)
+        {
+            var origin = point + Vector3.up * 0.9f;
+            for (var i = 0; i < pickupStars; i++) {
+                var outward = Around((i + Random.value * 0.4f) / pickupStars);
+                ref var shape = ref Add(i % 2 == 0 ? Shape.Star : Shape.Sparkle, gold, origin,
+                    pickupStarSize * Random.Range(0.8f, 1.1f), Random.Range(0.45f, 0.65f));
+                shape.Velocity = outward * 4f + Vector3.up * Random.Range(3f, 5f);
+                shape.Gravity = gravity * 0.6f;
+                shape.Drag = 1.5f;
+                shape.Angle = Random.Range(0f, 360f);
+                shape.Spin = Random.Range(-360f, 360f);
+                shape.Hold = 0.5f;
+            }
+
+            ref var ring = ref Add(Shape.Ring, white, OnFloor(point), 2.2f, 0.35f);
+            ring.StartSize = ring.Size * 0.3f;
+        }
+
+        /// <summary>
+        /// A pickup fading off the floor unclaimed: a puff of dust where it lay.
+        /// </summary>
+        public void PlayPickupFade(Vector3 point)
+        {
+            ref var cloud = ref Add(Shape.Puff, dust, point + Vector3.up * 0.5f, Random.Range(0.9f, 1.3f), 0.45f);
+            cloud.Velocity = Vector3.up * 1.2f;
+            cloud.Gravity = -0.5f;
+            cloud.Drag = 3f;
+            cloud.Hold = 0.3f;
+        }
+
+        /// <summary>
+        /// The shockwave of a pickup going out from <paramref name="point"/> to <paramref name="radius"/> metres: two rings
+        /// on the floor, one after the other, and dust blown out along the first.
+        /// </summary>
+        public void PlayShockwave(Vector3 point, float radius)
+        {
+            for (var i = 0; i < 2; i++) {
+                ref var ring = ref Add(Shape.Ring, i == 0 ? white : gold, OnFloor(point), radius * (i == 0 ? 1f : 0.7f) / sizeScale,
+                    shockwaveLife * (i == 0 ? 1f : 0.8f));
+                ring.StartSize = ring.Size * 0.2f;
+                ring.Delay = 0.07f * i;
+            }
+
+            const int Puffs = 10;
+            for (var i = 0; i < Puffs; i++) {
+                var outward = Around((i + Random.value * 0.5f) / Puffs);
+                ref var cloud = ref Add(Shape.Puff, dust, OnFloor(point) + outward * 0.8f, Random.Range(0.8f, 1.3f),
+                    Random.Range(0.4f, 0.6f));
+                cloud.Velocity = outward * (radius / shockwaveLife * 0.8f) + Vector3.up * Random.Range(0.4f, 1.2f);
+                cloud.Gravity = -0.5f;
+                cloud.Drag = 3.5f;
+                cloud.Hold = 0.3f;
+            }
+        }
+
+        /// <summary>
+        /// A shield taking a hit at <paramref name="point"/> and going: a white ring and sparkles thrown out.
+        /// </summary>
+        public void PlayShieldPop(Vector3 point)
+        {
+            ref var ring = ref Add(Shape.Ring, white, OnFloor(point), 2.4f, 0.3f);
+            ring.StartSize = ring.Size * 0.4f;
+            const int Sparkles = 6;
+            for (var i = 0; i < Sparkles; i++) {
+                var outward = Around((i + Random.value * 0.4f) / Sparkles);
+                ref var shape = ref Add(Shape.Sparkle, white, point + Vector3.up * 0.9f + outward * 0.8f,
+                    pickupStarSize * Random.Range(0.7f, 1f), 0.5f);
+                shape.Velocity = outward * 5f + Vector3.up * 1.5f;
+                shape.Drag = 3f;
+                shape.Angle = Random.Range(-15f, 15f);
+                shape.Hold = 0.5f;
+            }
+        }
+
+        /// <summary>
+        /// A car with a turbo leaving flame puffs behind it; called a few times a second while the turbo lasts.
+        /// </summary>
+        public void PlayTurboFlame(Car car)
+        {
+            var direction = MoveDirection(car);
+            var side = Vector3.Cross(Vector3.up, direction);
+            var rear = car.Position - direction * carRear + Vector3.up * 0.4f;
+            for (var i = 0; i < 2; i++) {
+                ref var flame = ref Add(Shape.Puff, i == 0 ? gold : white, rear + side * Random.Range(-0.3f, 0.3f),
+                    Random.Range(flamePuffSize.x, flamePuffSize.y), Random.Range(0.25f, 0.4f));
+                flame.Velocity = -direction * Random.Range(3f, 5f) + Vector3.up * Random.Range(0.2f, 1f);
+                flame.Gravity = -1f;
+                flame.Drag = 4f;
+                flame.Hold = 0.3f;
             }
         }
 

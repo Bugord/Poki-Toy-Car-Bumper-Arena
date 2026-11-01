@@ -99,6 +99,9 @@ def summarise(data):
     s["match_falls"] = other(o, r"match-falls-([0-9a-z]+-r[0-9a-z]+)-falls")
     s["match_pushed"] = other(o, r"match-pushed-([0-9a-z]+-r[0-9a-z]+)-pushed")
     s["match_revenge"] = other(o, r"match-revenge-((?:got|missed)-r[0-9a-z]+)-revenge")
+    # способности матча: что подобрал игрок (kind-rR) и сколько за матч (N-rR)
+    s["match_pickup"] = other(o, r"match-pickup-((?:heavy|shockwave|shield|turbo)-r[0-9a-z]+)-pickup")
+    s["match_pickups"] = other(o, r"match-pickups-([0-9a-z]+-r[0-9a-z]+)-pickups")
     return s
 
 
@@ -219,6 +222,8 @@ def report(version, previous):
         ("Матч: падения игрока по матчу (визиты)", "match_falls", None),
         ("Матч: из них столкнули по матчу (визиты)", "match_pushed", None),
         ("Матч: REVENGE по матчу (визиты)", "match_revenge", None),
+        ("Матч: подобранные способности (heavy, shockwave, shield, turbo; визиты)", "match_pickup", None),
+        ("Матч: сколько способностей подобрал игрок за матч (визиты)", "match_pickups", None),
     ):
         keys = order if order is not None else keys_of(key)
         if keys:
