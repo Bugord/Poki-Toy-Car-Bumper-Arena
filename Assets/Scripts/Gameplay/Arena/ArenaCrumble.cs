@@ -15,7 +15,7 @@ namespace ToyCarArena.Gameplay.Arena
     /// begins and no new wave starts once it is decided; a wave already shaking then still falls, so the arena does not
     /// freeze mid-shake under the result.
     /// <para>
-    /// With <see cref="GameTuning.FloorCycleSettings.Enabled"/> the floor goes in cycles instead
+    /// In a match, or with <see cref="GameTuning.FloorCycleSettings.Enabled"/>, the floor goes in cycles instead
     /// (<see cref="FloorCycleSchedule"/>): open, shrink (every wave falls), peak (the core alone) and return (the tiles
     /// drop back from above), again and again, so a long match tenses and eases in waves. The cycle and its phase, and an
     /// event at the start of each cycle and of each return, are here for what changes with the cycles. A tile lands only
@@ -91,8 +91,9 @@ namespace ToyCarArena.Gameplay.Arena
             this.settings = settings;
             this.round = round;
             this.floor = floor;
-            // The one place the switch is read: off, nothing of the cycles runs and the edge crumbles once.
-            this.isCycling = tuning.FloorCycles.Enabled;
+            // The one place the switch is read: off, nothing of the cycles runs and the edge crumbles once. A match
+            // always cycles, since respawned cars need the floor back; the switch also lets a round cycle for testing.
+            this.isCycling = tuning.IsMatch || tuning.FloorCycles.Enabled;
         }
 
         /// <summary>Whether the floor goes in cycles and comes back, instead of crumbling once.</summary>
