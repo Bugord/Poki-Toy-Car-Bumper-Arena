@@ -357,7 +357,7 @@ namespace ToyCarArena.Gameplay.Arena
 
             var reach = settings.Radius + CarReach;
             foreach (var car in Round.Cars) {
-                if (car.IsOut || car.Position.y > 1.5f) {
+                if (!car.IsTargetable || car.Position.y > 1.5f) {
                     continue;
                 }
 

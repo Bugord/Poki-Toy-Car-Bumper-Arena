@@ -83,13 +83,36 @@ namespace ToyCarArena.Gameplay.Round
         /// <summary>The player got knockout credit for the marked rival.</summary>
         public readonly bool RevengeTaken;
 
+        /// <summary>
+        /// A long match rather than a last-car-standing round: the place is by knock-outs, <see cref="Outcome"/> is
+        /// <see cref="RoundOutcome.Won"/> for first place and <see cref="RoundOutcome.Survived"/> otherwise, and the
+        /// player is never out at the end, so <see cref="KnockedOutBy"/> is <see cref="Nobody"/>.
+        /// </summary>
+        public readonly bool IsMatch;
+
+        /// <summary>
+        /// Times the player fell off in a match, knocked off or not; 0 in a round, which ends at the first.
+        /// </summary>
+        public readonly int Falls;
+
+        /// <summary>
+        /// The player's falls in a match that a car got the credit for.
+        /// </summary>
+        public readonly int KnockedOff;
+
+        /// <summary>
+        /// Whether the round counts as lost for the visit's losing streak, which eases the bots: a fall in a round, a
+        /// place below <see cref="GameTuning.MatchSettings.TopPlaces"/> in a match.
+        /// </summary>
+        public readonly bool IsLoss;
+
         public IReadOnlyList<RoundStanding> Standings { get; }
         public IReadOnlyList<int> Colors { get; }
         public int ColorOf(int index) => Colors[index];
 
         public RoundResult(RoundOutcome outcome, int place, int carCount, float seconds, int knockouts, int knockedOutBy,
             FallCause fallCause, bool hadNemesis, bool revengeTaken, IReadOnlyList<RoundStanding> standings = null,
-            IReadOnlyList<int> colors = null)
+            IReadOnlyList<int> colors = null, bool isMatch = false, int falls = 0, int knockedOff = 0, bool? isLoss = null)
         {
             Outcome = outcome;
             Place = place;
@@ -102,6 +125,10 @@ namespace ToyCarArena.Gameplay.Round
             RevengeTaken = revengeTaken;
             Standings = standings ?? Array.Empty<RoundStanding>();
             Colors = colors ?? Array.Empty<int>();
+            IsMatch = isMatch;
+            Falls = falls;
+            KnockedOff = knockedOff;
+            IsLoss = isLoss ?? outcome == RoundOutcome.Out;
         }
     }
 }

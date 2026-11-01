@@ -260,7 +260,7 @@ namespace ToyCarArena.Gameplay.Arena
             var reachAxis = halfLength + EndReach;
             for (var i = 0; i < Round.Cars.Count; i++) {
                 var car = Round.Cars[i];
-                if (car.IsOut || car.Position.y > settings.HitHeight || hitCars.Contains(car)) {
+                if (!car.IsTargetable || car.Position.y > settings.HitHeight || hitCars.Contains(car)) {
                     continue;
                 }
 

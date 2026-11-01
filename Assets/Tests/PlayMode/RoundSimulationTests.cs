@@ -33,6 +33,10 @@ namespace ToyCarArena.Tests.PlayMode
             var progress = new SimulationProgress();
             var report = new SimulationReport(runs, seed, SimMap, SimVariant);
             var stopwatch = Stopwatch.StartNew();
+            // SIM_MODE=match measures long matches; anything else plays the build's own mode, as before.
+            if (SimMatch) {
+                UseMode(GameTuning.GameMode.Match);
+            }
 
             CreateParent(input, progress);
 
@@ -50,7 +54,7 @@ namespace ToyCarArena.Tests.PlayMode
                     // BotDriver is registered as an entry point's interfaces, without AsSelf in the game.
                     container.Resolve<IEnumerable<ITickable>>().OfType<BotDriver>().Single().Seed = roundSeed;
                     var novice = new NoviceDriver(roundSeed, round, container.Resolve<ArenaCamera>(), input);
-                    var limit = container.Resolve<GameTuning>().Round.Duration + 10f;
+                    var limit = container.Resolve<GameTuning>().PlayDuration + 10f;
                     RoundResult? result = null;
                     round.Finished += value => result = value;
                     round.Begin();

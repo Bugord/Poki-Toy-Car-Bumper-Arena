@@ -44,6 +44,26 @@ namespace ToyCarArena.Gameplay.Round
             this.lastContact.Time = float.NegativeInfinity;
         }
 
+        /// <summary>
+        /// Starts observing afresh when the player comes back in a match: the last fall's summary and samples belong to
+        /// that fall, and the next one is recorded on its own. The observer notices it itself, so the round needs no
+        /// development-only code of its own for it.
+        /// </summary>
+        private void Restart()
+        {
+            FallSummary = null;
+            next = 0;
+            count = 0;
+            contactNext = 0;
+            contactCount = 0;
+            hasGrounded = false;
+            lastContact.Other = RoundResult.Nobody;
+            lastContact.Time = float.NegativeInfinity;
+            EnterContacts = 0;
+            CreditWrites = 0;
+            PeakSpeed = 0f;
+        }
+
         public void Assist(float share)
         {
             this.assist = share;
@@ -82,8 +102,12 @@ namespace ToyCarArena.Gameplay.Round
 
         public void Sample()
         {
-            if (!round.IsRunning || player.IsOut || FallSummary != null) {
+            if (!round.IsRunning || player.IsOut) {
                 return;
+            }
+
+            if (FallSummary != null) {
+                Restart();
             }
 
             var sample = Read();

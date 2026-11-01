@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
 using VContainer;
@@ -46,6 +47,17 @@ namespace ToyCarArena.Gameplay.Cars
         public bool IsOut { get; private set; }
 
         /// <summary>
+        /// Whether a car that came back in a match is still safe: it passes through the other cars, neither pushing nor
+        /// pushed, so it earns and gives no knock-out credit, hazards leave it be and bots do not pick it.
+        /// </summary>
+        public bool IsInvulnerable { get; private set; }
+
+        /// <summary>
+        /// Whether the car is in play for others to go after: on the arena and not safe.
+        /// </summary>
+        public bool IsTargetable => !IsOut && !IsInvulnerable;
+
+        /// <summary>
         /// Whether the player drives this car; set by the round when it places the car.
         /// </summary>
         public bool IsPlayer { get; set; }
@@ -77,9 +89,14 @@ namespace ToyCarArena.Gameplay.Cars
             this.difficulty = difficulty;
         }
 
+        private Collider[] colliders;
+        private CarLook look;
+
         private void Awake()
         {
             Movement = GetComponent<CarMovement>();
+            colliders = GetComponents<Collider>();
+            look = GetComponent<CarLook>();
         }
 
         private void Update()
@@ -96,6 +113,86 @@ namespace ToyCarArena.Gameplay.Cars
         {
             IsOut = true;
             Movement.Drive(Vector3.zero, 0f);
+        }
+
+        /// <summary>
+        /// Brings the car back into a match after a fall, at rest at <paramref name="position"/>, as fresh as when it was
+        /// placed: nobody hit it, it has not boosted, it is not off balance, and it is safe until the round says
+        /// otherwise (<see cref="SetInvulnerable"/>). The same object comes back, so everything that holds the car
+        /// (the drivers, the HUD, the effects) keeps it.
+        /// </summary>
+        public void Respawn(Vector3 position, Quaternion rotation, IReadOnlyList<Car> cars)
+        {
+            // Put away far below the arena, it is woken up first: a collider out of play has nothing to ignore.
+            if (!gameObject.activeSelf) {
+                gameObject.SetActive(true);
+            }
+
+            IsOut = false;
+            LastHitBy = null;
+            LastHitTime = float.NegativeInfinity;
+            LastHazardTime = float.NegativeInfinity;
+            LastRingFallTime = float.NegativeInfinity;
+            Movement.Respawn(position, rotation);
+            IsInvulnerable = false;
+            SetInvulnerable(true, cars);
+        }
+
+        /// <summary>
+        /// Makes the car safe or ends it: while safe, the physics ignores it against every other car in
+        /// <paramref name="cars"/>, so it neither pushes nor is pushed, and it is drawn half seen through. A pair of two
+        /// safe cars keeps ignoring each other until the second ends.
+        /// </summary>
+        public void SetInvulnerable(bool value, IReadOnlyList<Car> cars)
+        {
+            if (IsInvulnerable == value) {
+                return;
+            }
+
+            IsInvulnerable = value;
+            for (var i = 0; i < cars.Count; i++) {
+                var other = cars[i];
+                // An inactive collider forgets what it ignores anyway, and the physics refuses to be told about it.
+                if (other == this || !other.gameObject.activeInHierarchy || (!value && other.IsInvulnerable)) {
+                    continue;
+                }
+
+                foreach (var mine in colliders) {
+                    foreach (var theirs in other.colliders) {
+                        Physics.IgnoreCollision(mine, theirs, value);
+                    }
+                }
+            }
+
+            if (look != null) {
+                look.SetGhost(value);
+            }
+        }
+
+        /// <summary>
+        /// Whether the car's colliders overlap another solid car still in play, where ending its safe time would make the
+        /// physics push the two apart at once. Another safe car does not count: the pair keeps ignoring each other until
+        /// the second ends (<see cref="SetInvulnerable"/>), which then waits for this one, so two safe cars that came back
+        /// on top of each other never wait for each other for good.
+        /// </summary>
+        public bool OverlapsCar(IReadOnlyList<Car> cars)
+        {
+            for (var i = 0; i < cars.Count; i++) {
+                var other = cars[i];
+                if (other == this || other.IsOut || other.IsInvulnerable) {
+                    continue;
+                }
+
+                foreach (var mine in colliders) {
+                    foreach (var theirs in other.colliders) {
+                        if (mine.bounds.Intersects(theirs.bounds)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -130,7 +227,8 @@ namespace ToyCarArena.Gameplay.Cars
         private void OnCollisionEnter(Collision collision)
         {
             var otherBody = collision.rigidbody;
-            if (IsOut || otherBody == null || !otherBody.TryGetComponent<Car>(out var other) || other.IsOut) {
+            if (IsOut || otherBody == null || !otherBody.TryGetComponent<Car>(out var other) || other.IsOut
+                || IsInvulnerable || other.IsInvulnerable) {
                 return;
             }
 
@@ -219,7 +317,8 @@ namespace ToyCarArena.Gameplay.Cars
         private void OnCollisionStay(Collision collision)
         {
             var otherBody = collision.rigidbody;
-            if (IsOut || otherBody == null || !otherBody.TryGetComponent<Car>(out var other) || other.IsOut) {
+            if (IsOut || otherBody == null || !otherBody.TryGetComponent<Car>(out var other) || other.IsOut
+                || IsInvulnerable || other.IsInvulnerable) {
                 return;
             }
 

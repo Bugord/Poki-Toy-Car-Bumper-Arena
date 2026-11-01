@@ -269,7 +269,7 @@ namespace ToyCarArena.Gameplay.Arena
             var reach = settings.HitRadius;
             for (var i = 0; i < Round.Cars.Count; i++) {
                 var car = Round.Cars[i];
-                if (car.IsOut || car.Position.y > settings.HitHeight || i >= lastFling.Length
+                if (!car.IsTargetable || car.Position.y > settings.HitHeight || i >= lastFling.Length
                     || Time.time - lastFling[i] < settings.Retrigger) {
                     continue;
                 }

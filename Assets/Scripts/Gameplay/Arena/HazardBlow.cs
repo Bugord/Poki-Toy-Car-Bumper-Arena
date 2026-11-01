@@ -36,6 +36,11 @@ namespace ToyCarArena.Gameplay.Arena
         /// </summary>
         public void Apply(Car car, Vector3 direction, float push, float up, float stagger, float easyShare, float power = 0.85f)
         {
+            // A car just back in a match is safe from the arena too; the mechanics already pass it by.
+            if (car.IsInvulnerable) {
+                return;
+            }
+
             direction.y = 0f;
             direction = direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.forward;
             var share = car.IsPlayer ? Mathf.Lerp(easyShare, 1f, difficulty.Level) : 1f;

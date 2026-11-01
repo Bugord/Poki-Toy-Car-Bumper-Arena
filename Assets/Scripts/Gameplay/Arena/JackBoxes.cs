@@ -340,7 +340,7 @@ namespace ToyCarArena.Gameplay.Arena
             }
 
             foreach (var car in round.Cars) {
-                if (car.IsOut || car.Position.y > settings.HitHeight) {
+                if (!car.IsTargetable || car.Position.y > settings.HitHeight) {
                     continue;
                 }
 

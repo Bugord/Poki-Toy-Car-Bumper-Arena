@@ -18,7 +18,8 @@ namespace ToyCarArena.Gameplay.Round
         public int Nemesis { get; private set; } = RoundResult.Nobody;
 
         /// <summary>
-        /// Counts the round just decided: a fall adds to the losing streak, a win or a round survived ends it.
+        /// Counts the round just decided: a loss (a fall, or a match placed low) adds to the losing streak, anything else
+        /// ends it.
         /// </summary>
         public void Record(RoundResult result)
         {
@@ -30,7 +31,7 @@ namespace ToyCarArena.Gameplay.Round
                 Nemesis = RoundResult.Nobody;
             }
 
-            this.LosingStreak = result.Outcome == RoundOutcome.Out ? LosingStreak + 1 : 0;
+            this.LosingStreak = result.IsLoss ? LosingStreak + 1 : 0;
             this.Round = Round + 1;
         }
     }

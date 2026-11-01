@@ -6,6 +6,8 @@
         "VContainer",
         "Bugord.Core",
         "Bugord.Core.VContainer",
+        "Bugord.App",
+        "UniTask",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

@@ -80,7 +80,7 @@ namespace ToyCarArena.Tests.PlayMode
             Car nearest = null;
             var distance = float.PositiveInfinity;
             foreach (var car in round.Cars) {
-                if (car == player || car.IsOut) {
+                if (car == player || !car.IsTargetable) {
                     continue;
                 }
 

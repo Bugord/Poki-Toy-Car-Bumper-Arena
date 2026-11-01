@@ -39,6 +39,16 @@ namespace ToyCarArena.UI
         public event Action<int> CarOut;
         public event Action<int, int> Eliminated;
 
+        /// <summary>
+        /// Raised in a match when a car that fell comes back onto the floor, with its index.
+        /// </summary>
+        public event Action<int> CarBack;
+
+        /// <summary>
+        /// Raised in a match when the player's marked rival changes (<see cref="IsNemesis"/>).
+        /// </summary>
+        public event Action NemesisChanged;
+
         private readonly IScreenNavigator navigator;
         private readonly HudControls controls;
         private ArenaRound round;
@@ -130,6 +140,33 @@ namespace ToyCarArena.UI
         public int CarsLeft => round?.CarsLeft ?? 0;
 
         /// <summary>
+        /// Whether the round is a long match: the HUD shows the score instead of the cars still in.
+        /// </summary>
+        public bool IsMatch => round != null && round.IsMatch;
+
+        /// <summary>
+        /// The index of the match's leader by knock-outs (the player's while nobody has scored).
+        /// </summary>
+        public int LeaderIndex => round?.Score?.Leader ?? 0;
+
+        /// <summary>
+        /// The knock-outs a car has scored in the match.
+        /// </summary>
+        public int ScoreOf(int index) => round?.Score?.KnockoutsOf(index) ?? 0;
+
+        /// <summary>
+        /// Seconds until the player's car comes back after a fall in a match; 0 while it is in play.
+        /// </summary>
+        public float RespawnTimeLeft => round?.Player != null ? round.RespawnTimeLeft(round.Player) : 0f;
+
+        /// <summary>
+        /// How much of the player's safe time after coming back is left, 1 to 0; 0 when not safe.
+        /// </summary>
+        public float SafeShareLeft => round?.Player != null && round.IsRunning ? round.SafeShareLeft(round.Player) : 0f;
+
+        public Vector3 PlayerPosition => round?.Player != null ? round.Player.Position : Vector3.zero;
+
+        /// <summary>
         /// How many cars started the round, so their indices run from 0 to one less.
         /// </summary>
         public int CarCount => round?.Cars.Count ?? 0;
@@ -205,6 +242,8 @@ namespace ToyCarArena.UI
                 round.CarOut += OnCarOut;
                 round.KnockedOut += OnKnockedOut;
                 round.Eliminated += OnEliminated;
+                round.Respawned += OnRespawned;
+                round.NemesisChanged += OnNemesisChanged;
             }
         }
 
@@ -220,8 +259,14 @@ namespace ToyCarArena.UI
                 round.CarOut -= OnCarOut;
                 round.KnockedOut -= OnKnockedOut;
                 round.Eliminated -= OnEliminated;
+                round.Respawned -= OnRespawned;
+                round.NemesisChanged -= OnNemesisChanged;
             }
         }
+
+        private void OnRespawned(Car car) => CarBack?.Invoke(round.IndexOf(car));
+
+        private void OnNemesisChanged() => NemesisChanged?.Invoke();
 
         private void OnCarOut(Car car)
         {

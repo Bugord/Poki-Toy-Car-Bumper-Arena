@@ -89,9 +89,10 @@ namespace ToyCarArena.Gameplay.Bots
         public Car Target { get; private set; }
 
         /// <summary>
-        /// Whether it is time to pick a target: there is none, it fell off, or the bot has chased it long enough.
+        /// Whether it is time to pick a target: there is none, it fell off (or came back and is safe), or the bot has
+        /// chased it long enough.
         /// </summary>
-        public bool WantsTarget => Target == null || Target.IsOut || retargetTimer <= 0f;
+        public bool WantsTarget => Target == null || !Target.IsTargetable || retargetTimer <= 0f;
 
         public void SetTarget(Car target)
         {

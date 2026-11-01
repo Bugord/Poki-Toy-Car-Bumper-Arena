@@ -82,7 +82,15 @@ namespace ToyCarArena.App
             {
                 round.Begin();
                 platform.GameplayStart();
-                platform.MeasureRoundStart(roundNumber);
+                // A build of long matches reports its own progress events, so the rounds of the versions before stay
+                // comparable.
+                if (round.IsMatch) {
+                    platform.MeasureMatchStart(roundNumber);
+                }
+                else {
+                    platform.MeasureRoundStart(roundNumber);
+                }
+
                 platform.MeasureVariantStart(playedMap, playedVariant);
                 arenaRotation.MarkSeen(playedMap);
                 arenaRotation.MarkPlayed(playedMap, playedVariant);

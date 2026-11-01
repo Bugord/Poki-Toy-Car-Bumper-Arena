@@ -932,6 +932,108 @@
     transition-timing-function: ease-in;
 }
 
+/* A match: while the player's car is out, BACK IN and the seconds to its comeback on a tilted white sticker in the
+   middle of the screen, where the car is not (HudView shows it with hud__respawn--shown and pops it each second). */
+.hud__respawn {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 36%;
+    align-items: center;
+}
+
+.hud__respawn--shown {
+    display: flex;
+}
+
+.hud__respawn-sticker {
+    padding: 0 44px 0 48px;
+    rotate: -3deg;
+    transition-property: scale;
+    transition-duration: 0.2s;
+    transition-timing-function: ease-out-back;
+}
+
+.hud__respawn--pop .hud__respawn-sticker {
+    scale: 1.15 1.15;
+    transition-duration: 0.05s;
+}
+
+.hud__respawn-text {
+    margin: 0;
+    padding: 0 0 6px 0;
+    font-size: 64px;
+    color: var(--navy);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.hud__respawn-count {
+    min-width: 76px;
+    margin-left: 22px;
+}
+
+.hud__respawn-number {
+    margin: 0;
+    padding: 0 0 10px 0;
+    font-size: 112px;
+    color: var(--orange);
+    -unity-text-outline-width: 14px;
+    -unity-text-outline-color: var(--navy);
+    text-shadow: 0 10px 0 rgb(29, 43, 79);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+/* A match: SAFE over the player's car while it is safe after coming back (HudView places it over the car's marker),
+   on the dark backdrop of the bots' handles, with a bar that runs down with the safe time. */
+.hud__shield {
+    display: none;
+    position: absolute;
+    translate: -50% -100%;
+    align-items: center;
+}
+
+.hud__shield--shown {
+    display: flex;
+}
+
+.hud__shield-sticker {
+    align-items: center;
+    padding: 2px 20px 12px 20px;
+    border-radius: 24px;
+    background-color: var(--name-backdrop);
+}
+
+.hud__shield-text {
+    margin: 0;
+    padding: 0 0 3px 0;
+    font-size: 44px;
+    color: var(--blue);
+    -unity-text-outline-width: 6px;
+    -unity-text-outline-color: var(--navy);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.hud__shield-bar {
+    width: 140px;
+    height: 18px;
+    margin-top: 2px;
+    border-width: 4px;
+    border-color: var(--navy);
+    border-radius: 9px;
+    background-color: var(--white);
+    overflow: hidden;
+}
+
+.hud__shield-fill {
+    width: 100%;
+    height: 100%;
+    background-color: var(--blue);
+}
+
 /* The joystick under a steering finger (HudView places and sizes both parts from the driver's joystick): a pale
    see-through disc with a navy outline where the finger came down, and on it a white knob sticker with its navy drop
    under the finger. They spring in as the finger starts to steer and shrink away as it lets go. The layer covers the

@@ -447,7 +447,7 @@ namespace ToyCarArena.Gameplay.Arena
             var cars = round.Cars;
             for (var i = 0; i < cars.Count; i++) {
                 var car = cars[i];
-                if (car.IsOut || car.Position.y > settings.HitHeight || clock < nextHit[i]) {
+                if (!car.IsTargetable || car.Position.y > settings.HitHeight || clock < nextHit[i]) {
                     continue;
                 }
 

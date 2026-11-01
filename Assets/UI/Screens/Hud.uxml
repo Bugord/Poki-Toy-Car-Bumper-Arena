@@ -2,6 +2,25 @@
     <ui:VisualElement name="hud" picking-mode="Ignore" class="hud">
         <Style src="../ui_screens.uss" />
         <ui:VisualElement name="name-layer" picking-mode="Ignore" class="hud__popups" />
+        <ui:VisualElement name="shield" picking-mode="Ignore" class="hud__shield">
+            <ui:VisualElement picking-mode="Ignore" class="hud__shield-sticker">
+                <ui:VisualElement picking-mode="Ignore" class="stroke">
+                    <ui:Label text="SAFE" picking-mode="Ignore" class="hud__shield-text">
+                        <Bindings>
+                            <Bugord.App.Localization.LocalizedText property="text" key="hud.safe" />
+                        </Bindings>
+                    </ui:Label>
+                    <ui:Label text="SAFE" picking-mode="Ignore" class="hud__shield-text stroke__face">
+                        <Bindings>
+                            <Bugord.App.Localization.LocalizedText property="text" key="hud.safe" />
+                        </Bindings>
+                    </ui:Label>
+                </ui:VisualElement>
+                <ui:VisualElement picking-mode="Ignore" class="hud__shield-bar">
+                    <ui:VisualElement name="shield-fill" picking-mode="Ignore" class="hud__shield-fill" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
         <ui:VisualElement name="emotion-layer" picking-mode="Ignore" class="hud__popups" />
         <ui:VisualElement name="feed" picking-mode="Ignore" class="feed" />
         <ui:VisualElement name="hud-bar" picking-mode="Ignore" class="pill hud__bar">
@@ -129,6 +148,19 @@
             </ui:VisualElement>
         </ui:Button>
         <ui:VisualElement name="ko-layer" picking-mode="Ignore" class="hud__popups" />
+        <ui:VisualElement name="respawn" picking-mode="Ignore" class="hud__respawn">
+            <ui:VisualElement picking-mode="Ignore" class="pill hud__respawn-sticker">
+                <ui:Label text="BACK IN" picking-mode="Ignore" class="hud__respawn-text">
+                    <Bindings>
+                        <Bugord.App.Localization.LocalizedText property="text" key="hud.back_in" />
+                    </Bindings>
+                </ui:Label>
+                <ui:VisualElement picking-mode="Ignore" class="stroke hud__respawn-count">
+                    <ui:Label name="respawn-count" text="2" picking-mode="Ignore" class="hud__respawn-number" />
+                    <ui:Label name="respawn-count-face" text="2" picking-mode="Ignore" class="hud__respawn-number stroke__face" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
         <ui:VisualElement name="boost-slot" picking-mode="Ignore" class="hud__boost-slot">
             <ui:VisualElement name="boost-button" class="hud__boost">
                 <ui:VisualElement name="boost-charge" picking-mode="Ignore" class="hud__boost-charge" />

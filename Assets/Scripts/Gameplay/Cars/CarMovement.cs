@@ -226,6 +226,27 @@ namespace ToyCarArena.Gameplay.Cars
             transform.SetPositionAndRotation(position, rotation);
         }
 
+        /// <summary>
+        /// Puts a car that comes back in a match at rest at <paramref name="position"/>, with nothing left of its fall:
+        /// no drive, no boost running and the next one ready, not off balance, and not on the floor until a ground
+        /// probe finds it.
+        /// </summary>
+        public void Respawn(Vector3 position, Quaternion rotation)
+        {
+            Place(position, rotation);
+            direction = Vector3.zero;
+            throttle = 0f;
+            boostEndTime = float.NegativeInfinity;
+            boostReadyTime = Time.time;
+            LastBoostTime = float.NegativeInfinity;
+            staggerEndTime = float.NegativeInfinity;
+            edgeHoldContactTime = float.NegativeInfinity;
+            IsGrounded = false;
+            LastGroundedTime = float.NegativeInfinity;
+            Surface = SurfaceFeel.Neutral;
+            StepVelocity = Vector3.zero;
+        }
+
         private void FixedUpdate()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

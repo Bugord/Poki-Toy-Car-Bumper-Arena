@@ -25,5 +25,16 @@ namespace ToyCarArena.Rendering
                 renderer.renderingLayerMask |= Layer;
             }
         }
+
+        /// <summary>
+        /// Takes the outline off every renderer of the object and its children, for a moment it is drawn see-through:
+        /// the hull is opaque and would wrap the object in a solid shell.
+        /// </summary>
+        public static void Remove(GameObject root)
+        {
+            foreach (var renderer in root.GetComponentsInChildren<Renderer>(true)) {
+                renderer.renderingLayerMask &= ~Layer;
+            }
+        }
     }
 }

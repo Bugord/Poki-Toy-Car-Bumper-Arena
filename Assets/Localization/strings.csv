@@ -17,6 +17,8 @@ hud.knockout,Sticker when the player knocks a car off,KNOCKOUT!,K.-O. !,K.O.!,K.
 hud.revenge_taken,Sticker when the player knocks off the bot that beat them,REVENGE!,VENGEANCE !,VENDETTA!,RACHE!,¡VENGANZA!,İNTİKAM!,VINGANÇA!,МЕСТЬ!
 hud.revenge,Small heading over the rival bot name,REVENGE,VENGEANCE,VENDETTA,RACHE,VENGANZA,İNTİKAM,VINGANÇA,МЕСТЬ
 hud.fell_off,Feed line: the car fell by itself,FELL OFF,EST TOMBÉ,È CADUTO,GEFALLEN,SE CAYÓ,DÜŞTÜ,CAIU,УПАЛ
+hud.back_in,Match: before the seconds until the player's car comes back,BACK IN,RETOUR DANS,RIENTRI TRA,ZURÜCK IN,VUELVES EN,GERİ DÖNÜŞ,VOLTA EM,ВОЗВРАТ ЧЕРЕЗ
+hud.safe,Match: over the player's car while it cannot be pushed after coming back; max ~10 chars,SAFE,PROTÉGÉ,PROTETTO,GESCHÜTZT,A SALVO,KORUMADA,PROTEGIDO,ЗАЩИТА
 social.gg,Bot chat bubble,GG,GG,GG,GG,GG,GG,GG,GG
 social.ez,Bot chat bubble: too easy,EZ,EZ,EZ,EZ,EZ,EZ,EZ,ИЗИ
 social.bye,Bot chat bubble,BYE!,CIAO !,CIAO!,TSCHAU!,¡CHAO!,BAY BAY!,FLW!,ПОКЕДА!
@@ -48,6 +50,8 @@ result.out,Result title when knocked out; long titles get smaller,KNOCKED OUT,É
 result.out_subtitle,Result subtitle when the player fell by themselves,FELL OFF THE ARENA,TOMBÉ DE L'ARÈNE,CADUTO DALL'ARENA,VON DER ARENA GEFALLEN,TE CAÍSTE DE LA ARENA,ARENADAN DÜŞTÜN,CAIU DA ARENA,УПАЛ С АРЕНЫ
 result.time_up,Result title when time ran out,TIME UP!,TEMPS ÉCOULÉ !,TEMPO SCADUTO!,ZEIT UM!,¡TIEMPO!,SÜRE BİTTİ!,ACABOU O TEMPO!,ВРЕМЯ ВЫШЛО!
 result.time_up_subtitle,Result subtitle when time ran out,STILL ON THE ARENA,ENCORE SUR L'ARÈNE,ANCORA NELL'ARENA,NOCH IN DER ARENA,SIGUES EN LA ARENA,HÂLÂ ARENADASIN,AINDA NA ARENA,ЕЩЁ НА АРЕНЕ
+result.match_won_subtitle,Match result subtitle for first place,MOST KNOCKOUTS!,LE PLUS DE K.-O. !,PIÙ K.O. DI TUTTI!,DIE MEISTEN K.O.!,¡MÁS K.O. QUE NADIE!,EN ÇOK NAKAVT!,MAIS NOCAUTES!,БОЛЬШЕ ВСЕХ НОКАУТОВ!
+result.match_place,"Match result subtitle: place, then knock-outs, e.g. PLACE 3 · 5 KO","PLACE {0} · {1} KO","PLACE {0} · {1} K.-O.","{0}° POSTO · {1} K.O.","PLATZ {0} · {1} K.O.","PUESTO {0} · {1} K.O.","{0}. SIRA · {1} NAKAVT","{0}º LUGAR · {1} NOCAUTES","{0} МЕСТО · НОКАУТОВ: {1}"
 result.pushed_by,Before the name of the bot that knocked the player off,PUSHED OFF BY,POUSSÉ PAR,SPINTO DA,RUNTERGESCHUBST VON,TE EMPUJÓ,SENİ İTEN,EMPURRADO POR,ТЕБЯ СТОЛКНУЛ
 result.or_press,Before the SPACE key cap under NEXT MATCH,OR PRESS,OU APPUIE SUR,O PREMI,ODER DRÜCKE,O PULSA,YA DA BAS,OU APERTE,ИЛИ НАЖМИ
 result.car,Round garage button caption; max ~6 chars,CAR,AUTO,AUTO,AUTO,COCHE,ARABA,CARRO,АВТО

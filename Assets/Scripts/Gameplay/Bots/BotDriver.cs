@@ -178,7 +178,8 @@ namespace ToyCarArena.Gameplay.Bots
             var cars = round.Cars;
             for (var i = 0; i < cars.Count; i++) {
                 var car = cars[i];
-                if (car == bot.Car || car.IsOut || (isPlayerSpared && car == player)) {
+                // A car just back in a match is safe and cannot be pushed: no target until it is in play again.
+                if (car == bot.Car || !car.IsTargetable || (isPlayerSpared && car == player)) {
                     continue;
                 }
 

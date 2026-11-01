@@ -315,14 +315,14 @@ namespace ToyCarArena.Gameplay.Effects
 
         /// <summary>
         /// The jingle of the round's end, a moment later. Running out the clock still on the arena is no loss, so it
-        /// gets the win's.
+        /// gets the win's; a match placed low is one (<see cref="RoundResult.IsLoss"/>).
         /// </summary>
         private void OnFinished(RoundResult result)
         {
             // The round's last moments play out at full speed, and nothing slowed is left under the result.
             hitStop.Release();
             var library = audioService.Library;
-            pendingJingle = result.Outcome == RoundOutcome.Out ? library.Lose : library.Win;
+            pendingJingle = result.IsLoss ? library.Lose : library.Win;
             jingleTime = Time.unscaledTime + jingleDelay;
         }
 

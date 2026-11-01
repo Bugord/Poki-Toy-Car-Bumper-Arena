@@ -38,6 +38,12 @@ namespace ToyCarArena.Gameplay.Cars
             new(0, 0), // dark
         };
 
+        [Header("Comeback")]
+        [Tooltip("The see-through look of a car that came back in a match and is still safe: the model's atlas on a " +
+            "transparent material, so the variant ships with the build")]
+        [SerializeField]
+        private Material ghostMaterial;
+
         [Header("Player marker")]
         [Tooltip("Colour of the marker, an unlit material")]
         [SerializeField]
@@ -76,6 +82,7 @@ namespace ToyCarArena.Gameplay.Cars
 
         private Mesh ownBody;
         private GameObject model;
+        private bool isGhost;
         private Car car;
         private Transform ring;
         private Transform arrow;
@@ -90,6 +97,26 @@ namespace ToyCarArena.Gameplay.Cars
             ReplaceModel(entry);
             ownBody = CarModel.PaintBody(CarModel.FindBody(model, out _), entry.BodySwatch, swatches[CarPaint.OrGreen(colorId)]);
             SetMarker(index == 0);
+        }
+
+        /// <summary>
+        /// Draws the car half seen through while it is safe after coming back in a match, or as usual again. The comic
+        /// outline goes while it is see-through: the hull is opaque and would wrap the car in a solid shell.
+        /// </summary>
+        public void SetGhost(bool value)
+        {
+            if (isGhost == value || model == null || ghostMaterial == null) {
+                return;
+            }
+
+            isGhost = value;
+            CarModel.SetMaterial(model, value ? ghostMaterial : ModelMaterial);
+            if (value) {
+                Outline.Remove(model);
+            }
+            else {
+                Outline.Apply(model);
+            }
         }
 
         // Shared by the catalog's portrait renderer; the palette stays authored on the prefab.
@@ -144,6 +171,12 @@ namespace ToyCarArena.Gameplay.Cars
                 ring.gameObject.SetActive(false);
                 arrow.gameObject.SetActive(false);
                 return;
+            }
+
+            // A car that came back in a match shows its marker again.
+            if (!ring.gameObject.activeSelf) {
+                ring.gameObject.SetActive(true);
+                arrow.gameObject.SetActive(true);
             }
 
             // The marker lives in the world, not on the car, so it stays level and under or over the car however the
