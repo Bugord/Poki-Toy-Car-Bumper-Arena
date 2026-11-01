@@ -1,0 +1,294 @@
+using System;
+using ToyCarArena.Gameplay.Round;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+namespace ToyCarArena.UI
+{
+    /// <summary>
+    /// The end of a match on the result screen: the winner's car turning on its podium over slow white rays, with a
+    /// crowned name pill above it (level and name: the car itself shows its colour), and the results table, a row per car in place order. A phone held upright shows the
+    /// top three and, apart, the player's own row; a wide screen every car, the table at the left of the podium.
+    /// <para>
+    /// Everything springs in once, on the panel's scheduler (real time, so a hit-stop at the buzzer slows nothing), and
+    /// nothing waits for it: NEXT MATCH works from the start.
+    /// </para>
+    /// </summary>
+    internal sealed class RoundOverMatch : IDisposable
+    {
+        private const string MatchClass = "round-over--match";
+        private const string EnterClass = "results--enter";
+        private const string RowEnterClass = "results__row--enter";
+        private const string RowPopClass = "results__row--pop";
+        private const string RaysEnterClass = "podium__rays--enter";
+        private const string WinnerEnterClass = "podium__winner--enter";
+        private const string CrownEnterClass = "podium__crown--enter";
+
+        // The narrow form shows this many leaders, then the player's own row when it is lower.
+        private const int CompactLeaders = 3;
+
+        // When each part comes in after the screen shows, in milliseconds (the design's timings).
+        private const long RaysAt = 100;
+        private const long TableAt = 500;
+        private const long FirstRowAt = 600;
+        private const long RowStep = 70;
+        private const long WinnerAt = 750;
+        private const long CrownAt = 950;
+        private const long YouPopAt = 1800;
+        private const long YouPopAgainAt = 2150;
+        private const long PopHold = 150;
+
+        // The rays turn once in this many seconds; the car's podium has its own, faster turn.
+        private const float RaysTurnSeconds = 14f;
+        private const int RayCount = 12;
+        // The rays reach past the podium's square a little, so their tips fade off its corners.
+        private const float RaysScale = 1.25f;
+
+        private readonly VisualElement root;
+        private readonly RoundOverViewModel model;
+        private readonly VisualElement podium;
+        private readonly VisualElement rays;
+        private readonly VisualElement car;
+        private readonly VisualElement winner;
+        private readonly VisualElement crown;
+        private readonly VisualElement table;
+        private readonly VisualElement rows;
+        private readonly LiveText text = new();
+        private VisualElement youRow;
+        private IVisualElementScheduledItem turn;
+        private bool isWide;
+        private bool isPlayed;
+        private float shownAt;
+
+        private RoundOverMatch(VisualElement root, RoundOverViewModel model)
+        {
+            this.root = root;
+            this.model = model;
+            root.AddToClassList(MatchClass);
+            podium = root.Q<VisualElement>("podium");
+            rays = root.Q<VisualElement>("podium-rays");
+            rays.generateVisualContent += DrawRays;
+            car = root.Q<VisualElement>("podium-car");
+            winner = root.Q<VisualElement>("podium-winner");
+            crown = root.Q<VisualElement>("podium-crown");
+            crown.generateVisualContent += DrawCrown;
+            table = root.Q<VisualElement>("results");
+            rows = root.Q<VisualElement>("results-rows");
+            podium.RegisterCallback<GeometryChangedEvent>(OnPodiumGeometry);
+
+            if (model.Podium != null) {
+                car.style.backgroundImage = Background.FromRenderTexture((RenderTexture)model.Podium);
+            }
+
+            BuildWinner();
+            Layout(false);
+
+            table.AddToClassList(EnterClass);
+            rays.AddToClassList(RaysEnterClass);
+            winner.AddToClassList(WinnerEnterClass);
+            crown.AddToClassList(CrownEnterClass);
+        }
+
+        /// <summary>The match part of the result, or null after a round of the last car standing.</summary>
+        public static RoundOverMatch Create(VisualElement root, RoundOverViewModel model) =>
+            model.Standings.Count > 0 ? new RoundOverMatch(root, model) : null;
+
+        /// <summary>Every car on a wide screen, the leaders and the player's own row on a narrow one.</summary>
+        public void SetWide(bool wide)
+        {
+            if (wide != isWide) {
+                Layout(wide);
+            }
+        }
+
+        public void Play()
+        {
+            isPlayed = true;
+            shownAt = Time.realtimeSinceStartup;
+            turn = rays.schedule.Execute(Turn).Every(16);
+            After(RaysAt, () => rays.RemoveFromClassList(RaysEnterClass));
+            After(TableAt, () => table.RemoveFromClassList(EnterClass));
+            var index = 0;
+            foreach (var row in rows.Children()) {
+                var each = row;
+                After(FirstRowAt + RowStep * index++, () => each.RemoveFromClassList(RowEnterClass));
+            }
+
+            After(WinnerAt, () => winner.RemoveFromClassList(WinnerEnterClass));
+            After(CrownAt, () => crown.RemoveFromClassList(CrownEnterClass));
+            After(YouPopAt, PopYou);
+            After(YouPopAgainAt, PopYou);
+        }
+
+        /// <summary>
+        /// Lets go of the podium's texture: the arena that draws it unloads while this screen fades out under the curtain.
+        /// </summary>
+        public void ReleasePodium()
+        {
+            car.style.backgroundImage = StyleKeyword.None;
+            turn?.Pause();
+        }
+
+        public void Dispose()
+        {
+            ReleasePodium();
+            rays.generateVisualContent -= DrawRays;
+            crown.generateVisualContent -= DrawCrown;
+            podium.UnregisterCallback<GeometryChangedEvent>(OnPodiumGeometry);
+            text.Dispose();
+        }
+
+        private void After(long delay, Action action) => root.schedule.Execute(action).StartingIn(delay);
+
+        private void PopYou()
+        {
+            if (youRow == null) {
+                return;
+            }
+
+            youRow.AddToClassList(RowPopClass);
+            youRow.schedule.Execute(() => youRow.RemoveFromClassList(RowPopClass)).StartingIn(PopHold);
+        }
+
+        private void Turn()
+        {
+            rays.style.rotate = new Rotate((Time.realtimeSinceStartup - shownAt) / RaysTurnSeconds * 360f % 360f);
+        }
+
+        // The rays and the car are as big as the podium's box allows, centred in it.
+        private void OnPodiumGeometry(GeometryChangedEvent evt)
+        {
+            var size = Mathf.Min(evt.newRect.width, evt.newRect.height);
+            var raySize = size * RaysScale;
+            rays.style.width = raySize;
+            rays.style.height = raySize;
+            rays.style.left = (evt.newRect.width - raySize) * 0.5f;
+            rays.style.top = (evt.newRect.height - raySize) * 0.5f;
+        }
+
+        private void BuildWinner()
+        {
+            var index = model.Standings[0].Index;
+            var name = root.Q<Label>("podium-name");
+            name.parent.Insert(name.parent.IndexOf(name), HudView.CreateLevelBadge(model.LevelOf(index), "podium__level"));
+            name.EnableInClassList("podium__name--revenge", index != 0 && index == model.Nemesis);
+            text.Set(name, () => model.NameOf(index));
+        }
+
+        // The rows again for the form: every car, or the leaders and, a little apart, the player when lower.
+        private void Layout(bool wide)
+        {
+            isWide = wide;
+            table.EnableInClassList("results--wide", wide);
+            rows.Clear();
+            youRow = null;
+            var standings = model.Standings;
+            var playerAt = 0;
+            for (var i = 0; i < standings.Count; i++) {
+                if (standings[i].Index == 0) {
+                    playerAt = i;
+                }
+            }
+
+            for (var i = 0; i < standings.Count; i++) {
+                if (!wide && i >= CompactLeaders && i != playerAt) {
+                    continue;
+                }
+
+                if (!wide && i == playerAt && i > CompactLeaders) {
+                    var gap = new Label("···") { pickingMode = PickingMode.Ignore };
+                    gap.AddToClassList("results__gap");
+                    gap.EnableInClassList(RowEnterClass, !isPlayed);
+                    rows.Add(gap);
+                }
+
+                rows.Add(CreateRow(standings[i]));
+            }
+        }
+
+        private VisualElement CreateRow(RoundStanding standing)
+        {
+            var index = standing.Index;
+            var isPlayer = index == 0;
+            var row = new VisualElement { pickingMode = PickingMode.Ignore };
+            row.AddToClassList("results__row");
+            // Rows laid out again for a turned screen after the entrance are simply there.
+            row.EnableInClassList(RowEnterClass, !isPlayed);
+            row.EnableInClassList("results__row--you", isPlayer);
+            row.EnableInClassList("results__row--revenge", !isPlayer && index == model.Nemesis);
+
+            var rank = new VisualElement { pickingMode = PickingMode.Ignore };
+            rank.AddToClassList("results__rank");
+            if (standing.Place <= 3) {
+                rank.AddToClassList($"results__rank--{standing.Place}");
+            }
+
+            var place = new Label(standing.Place.ToString()) { pickingMode = PickingMode.Ignore };
+            place.AddToClassList("results__rank-text");
+            rank.Add(place);
+            row.Add(rank);
+
+            row.Add(HudView.CreateLevelBadge(model.LevelOf(index), "results__level"));
+
+            var name = new Label { pickingMode = PickingMode.Ignore };
+            name.AddToClassList("results__name");
+            text.Set(name, () => model.NameOf(index));
+            row.Add(name);
+
+            var knockouts = new Label(standing.Knockouts.ToString()) { pickingMode = PickingMode.Ignore };
+            knockouts.AddToClassList("results__ko");
+            knockouts.EnableInClassList("results__ko--zero", standing.Knockouts == 0);
+            row.Add(knockouts);
+            if (isPlayer) {
+                youRow = row;
+            }
+
+            return row;
+        }
+
+        // White wedges from the middle, every other gap empty: the sunburst of a winner's stage, drawn as triangles so it
+        // stays sharp at any size (USS has no conic gradient).
+        private static void DrawRays(MeshGenerationContext context)
+        {
+            var rect = context.visualElement.contentRect;
+            var centre = rect.center;
+            var radius = Mathf.Min(rect.width, rect.height) * 0.5f;
+            var painter = context.painter2D;
+            painter.fillColor = new Color(1f, 1f, 1f, 0.42f);
+            var half = Mathf.PI / RayCount * 0.42f;
+            for (var i = 0; i < RayCount; i++) {
+                var angle = i * Mathf.PI * 2f / RayCount;
+                painter.BeginPath();
+                painter.MoveTo(centre);
+                painter.LineTo(centre + new Vector2(Mathf.Cos(angle - half), Mathf.Sin(angle - half)) * radius);
+                painter.LineTo(centre + new Vector2(Mathf.Cos(angle + half), Mathf.Sin(angle + half)) * radius);
+                painter.ClosePath();
+                painter.Fill();
+            }
+        }
+
+        // A gold three-point crown with the navy outline of the stickers.
+        private static void DrawCrown(MeshGenerationContext context)
+        {
+            var rect = context.visualElement.contentRect;
+            var w = rect.width;
+            var h = rect.height;
+            var painter = context.painter2D;
+            painter.BeginPath();
+            painter.MoveTo(new Vector2(0.06f * w, 0.94f * h));
+            painter.LineTo(new Vector2(0.06f * w, 0.26f * h));
+            painter.LineTo(new Vector2(0.3f * w, 0.58f * h));
+            painter.LineTo(new Vector2(0.5f * w, 0.06f * h));
+            painter.LineTo(new Vector2(0.7f * w, 0.58f * h));
+            painter.LineTo(new Vector2(0.94f * w, 0.26f * h));
+            painter.LineTo(new Vector2(0.94f * w, 0.94f * h));
+            painter.ClosePath();
+            painter.fillColor = new Color32(0xff, 0xc9, 0x3c, 0xff);
+            painter.Fill();
+            painter.strokeColor = new Color32(0x1d, 0x2b, 0x4f, 0xff);
+            painter.lineWidth = Mathf.Max(4f, w * 0.07f);
+            painter.lineJoin = LineJoin.Round;
+            painter.Stroke();
+        }
+    }
+}

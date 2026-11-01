@@ -31,6 +31,8 @@ namespace ToyCarArena.UI
 
         private Button playAgainButton;
         private Button garageButton;
+        private Button garageWideButton;
+        private RoundOverMatch match;
         private Button settingsButton;
         private CarPortrait garagePortrait;
         private CancellationTokenSource lifetime;
@@ -59,6 +61,13 @@ namespace ToyCarArena.UI
             garageButton = Root.Q<Button>("garage-button");
             garageButton.RemoveFromClassList(Button.ussClassName);
             garageButton.clicked += OpenGarage;
+            garageWideButton = Root.Q<Button>("garage-wide-button");
+            garageWideButton.RemoveFromClassList(Button.ussClassName);
+            garageWideButton.clicked += OpenGarage;
+            // Steering with a mouse, the garage is a plain button under NEXT MATCH with its key; a thumb keeps the round
+            // CAR button beside it.
+            var isTouch = controls.CheckTouchScreen();
+            Root.EnableInClassList("round-over--desktop", !isTouch);
             settingsButton = Root.Q<Button>("settings-button");
             settingsButton.RemoveFromClassList(Button.ussClassName);
             settingsButton.clicked += OpenSettings;
@@ -68,18 +77,20 @@ namespace ToyCarArena.UI
             });
             garagePortrait = new CarPortrait(Root.Q<VisualElement>("garage-portrait"));
             RefreshGarage();
-            Root.Q<VisualElement>("garage-dot").style.display =
-                ViewModel.HasNewCar ? DisplayStyle.Flex : DisplayStyle.None;
+            ShowNewCar(ViewModel.HasNewCar);
 
-            // The key hint is for a keyboard; a phone or a tablet has none to press.
-            Root.Q<VisualElement>("hint").style.display =
-                controls.CheckTouchScreen() ? DisplayStyle.None : DisplayStyle.Flex;
+            // The key hint is for a keyboard; a phone or a tablet has none to press. A wide desktop screen shows the key on
+            // NEXT MATCH itself (ui_screens), so the style sheet decides there.
+            if (isTouch) {
+                Root.Q<VisualElement>("hint").style.display = DisplayStyle.None;
+            }
 
             ShowTitle();
             // The settings popup can change the language over this screen: the code-set text follows it.
             Strings.Changed += ShowTitle;
             Root.Q<Label>("revenge").EnableInClassList(BestShownClass, ViewModel.RevengeTaken);
             xpProgress = new RoundOverProgress(Root, ViewModel);
+            match = RoundOverMatch.Create(Root, ViewModel);
         }
 
         public override async UniTask ShowAsync(CancellationToken token)
@@ -90,6 +101,7 @@ namespace ToyCarArena.UI
             if (ViewModel.Outcome == RoundOutcome.Won) {
                 Celebrate(lifetime.Token).Forget();
             }
+            match?.Play();
             await base.ShowAsync(token);
             // The reward runs beside input; no part of it delays NEXT MATCH, Space or Enter.
             xpProgress.Play(token);
@@ -98,6 +110,7 @@ namespace ToyCarArena.UI
         public override async UniTask HideAsync(CancellationToken token)
         {
             xpProgress.Stop();
+            match?.ReleasePodium();
             await base.HideAsync(token);
         }
 
@@ -109,11 +122,16 @@ namespace ToyCarArena.UI
             lifetime?.Cancel();
             lifetime?.Dispose();
             xpProgress?.Dispose();
+            match?.Dispose();
             if (playAgainButton != null) {
                 playAgainButton.clicked -= PlayAgain;
             }
             if (garageButton != null) {
                 garageButton.clicked -= OpenGarage;
+            }
+
+            if (garageWideButton != null) {
+                garageWideButton.clicked -= OpenGarage;
             }
             if (settingsButton != null) {
                 settingsButton.clicked -= OpenSettings;
@@ -123,7 +141,9 @@ namespace ToyCarArena.UI
 
         private void OnGeometryChanged(GeometryChangedEvent evt)
         {
-            Root.EnableInClassList("round-over--landscape", evt.newRect.width > evt.newRect.height);
+            var isLandscape = evt.newRect.width > evt.newRect.height;
+            Root.EnableInClassList("round-over--landscape", isLandscape);
+            match?.SetWide(isLandscape);
         }
 
         private async UniTaskVoid Celebrate(CancellationToken token)
@@ -135,6 +155,14 @@ namespace ToyCarArena.UI
             }
 
             await confetti.Play(Root.Q<VisualElement>("title"), token).SuppressCancellationThrow();
+        }
+
+        // The red dot on CAR, the NEW badge on GARAGE: a car this round opened waits in the garage until it is visited.
+        private void ShowNewCar(bool shown)
+        {
+            var display = shown ? DisplayStyle.Flex : DisplayStyle.None;
+            Root.Q<VisualElement>("garage-dot").style.display = display;
+            Root.Q<VisualElement>("garage-new").style.display = display;
         }
 
         private void RefreshGarage() => garagePortrait.Set(ViewModel.SelectedCar, ViewModel.SelectedColor);
@@ -165,7 +193,7 @@ namespace ToyCarArena.UI
             token.ThrowIfCancellationRequested();
             RefreshGarage();
             xpProgress.RefreshColor();
-            Root.Q<VisualElement>("garage-dot").style.display = DisplayStyle.None;
+            ShowNewCar(false);
             if (isNextMatch) {
                 // The garage already clicked for its NEXT MATCH.
                 isPlayAgainPressed = true;
@@ -215,6 +243,10 @@ namespace ToyCarArena.UI
             if (evt.keyCode is KeyCode.Space or KeyCode.Return or KeyCode.KeypadEnter) {
                 evt.StopPropagation();
                 PlayAgain();
+            }
+            else if (evt.keyCode == KeyCode.G) {
+                evt.StopPropagation();
+                OpenGarage();
             }
         }
 

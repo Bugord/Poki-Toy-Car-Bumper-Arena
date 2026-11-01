@@ -2927,7 +2927,8 @@
 /* UIKit disables the screen under a popup; keep the existing result looking the same. */
 .round-over:disabled,
 .round-over:disabled .button,
-.round-over:disabled .round-over__garage {
+.round-over:disabled .round-over__garage,
+.round-over:disabled .round-over__garage-wide {
     opacity: 1;
 }
 
@@ -3947,3 +3948,435 @@
 
 /* The face of each two-label text has no outline of its own, as everywhere else (.stroke > .stroke__face). */
 .scoreboard__row .stroke > .stroke__face { -unity-text-outline-width: 0; }
+
+/* The end of a match (RoundOverMatch): the winner turning on its podium over slow white rays (drawn in code), a white
+   pill with a crown over it, and the results table beside it: at its right on a phone held upright, where the two
+   stacked would not fit over the level card. A wide screen sets them apart on both sides of the level card, the table
+   at the left and a bigger podium at the right. The match part takes the height left between the title and the level
+   card. */
+.round-over__match {
+    display: none;
+    flex-direction: row;
+    flex-grow: 1;
+    flex-shrink: 1;
+    align-self: stretch;
+    min-height: 0;
+    margin: 12px 30px 0 30px;
+}
+
+.round-over--match .round-over__match {
+    display: flex;
+}
+
+.round-over--match .round-over__spacer {
+    flex-grow: 0;
+    min-height: 12px;
+}
+
+.podium {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    min-height: 380px;
+    align-items: center;
+}
+
+.podium__rays {
+    position: absolute;
+    transition-property: scale, opacity;
+    transition-duration: 0.45s;
+    transition-timing-function: ease-out-back;
+}
+
+.podium__rays--enter {
+    scale: 0 0;
+    opacity: 0;
+}
+
+.podium__car {
+    position: absolute;
+    left: 0;
+    top: 96px;
+    right: 0;
+    bottom: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.podium__winner {
+    position: absolute;
+    top: 46px;
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 36px 10px 12px;
+    border-width: 7px;
+    border-bottom-width: 14px;
+    border-color: var(--navy);
+    border-radius: 50px;
+    background-color: var(--white);
+    transition-property: scale, opacity, translate;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-out-back;
+}
+
+.podium__winner--enter {
+    translate: 0 40px;
+    scale: 0.4 0.4;
+    opacity: 0;
+}
+
+.podium__crown {
+    position: absolute;
+    left: 50%;
+    top: -60px;
+    width: 92px;
+    height: 64px;
+    margin-left: -46px;
+    transition-property: translate, rotate, opacity;
+    transition-duration: 0.35s;
+    transition-timing-function: ease-out-back;
+}
+
+.podium__crown--enter {
+    translate: 0 -110px;
+    rotate: -25deg;
+    opacity: 0;
+}
+
+.podium__level {
+    margin-left: 6px;
+}
+
+.podium__name {
+    margin: 0 0 0 12px;
+    padding: 0;
+    font-size: 40px;
+    color: var(--navy);
+    white-space: nowrap;
+}
+
+.podium__name--revenge { color: var(--red); }
+
+.podium__tag {
+    position: absolute;
+    left: 50%;
+    bottom: -44px;
+    translate: -50% 0;
+    margin: 0;
+    padding: 0 22px 2px 22px;
+    border-width: 5px;
+    border-color: var(--navy);
+    border-radius: 22px;
+    background-color: var(--gold);
+    font-size: 28px;
+    letter-spacing: 3px;
+    color: var(--navy);
+    white-space: nowrap;
+}
+
+.results {
+    flex-shrink: 0;
+    align-self: center;
+    width: 560px;
+    margin-left: 16px;
+    padding: 12px 18px 18px 18px;
+    border-width: 7px;
+    border-bottom-width: 14px;
+    border-color: var(--navy);
+    border-radius: 40px;
+    background-color: var(--white);
+    transform-origin: 50% 0;
+    transition-property: scale, opacity, translate;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-out-back;
+}
+
+.results--enter {
+    translate: 0 -40px;
+    scale: 0.7 0.7;
+    opacity: 0;
+}
+
+.results__header {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 0 30px 6px 16px;
+}
+
+.results__title {
+    margin: 0;
+    padding: 0;
+    font-size: 28px;
+    letter-spacing: 2px;
+    color: #5b6b8c;
+}
+
+.results__row {
+    flex-direction: row;
+    align-items: center;
+    height: 62px;
+    margin-top: 8px;
+    padding: 0 30px 0 6px;
+    border-radius: 31px;
+    background-color: #eef3fb;
+    transition-property: translate, scale, opacity;
+    transition-duration: 0.25s;
+    transition-timing-function: ease-out-back;
+}
+
+.results__row--enter {
+    translate: -70px 0;
+    scale: 0.6 0.6;
+    opacity: 0;
+}
+
+.results__row--pop {
+    scale: 1.07 1.07;
+}
+
+.results__row--you {
+    border-width: 6px;
+    border-color: var(--navy);
+    background-color: var(--gold);
+}
+
+.results__rank {
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    border-width: 5px;
+    border-color: var(--navy);
+    border-radius: 25px;
+    background-color: var(--white);
+}
+
+.results__rank--1 { background-color: var(--gold); }
+.results__rank--2 { background-color: #d7e0ee; }
+.results__rank--3 { background-color: #e8a46a; }
+
+.results__rank-text {
+    margin: 0;
+    padding: 0;
+    font-size: 26px;
+    color: var(--navy);
+    -unity-text-align: middle-center;
+}
+
+.results__level {
+    min-width: 46px;
+    height: 38px;
+    margin-left: 12px;
+    padding: 0 6px;
+    border-width: 4px;
+    border-bottom-width: 7px;
+    border-radius: 12px;
+}
+
+.results__level .level-badge__value { font-size: 22px; }
+
+.results__name {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin: 0 0 0 14px;
+    padding: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 36px;
+    color: var(--navy);
+}
+
+.results__row--revenge .results__name { color: var(--red); }
+
+.results__ko {
+    flex-shrink: 0;
+    min-width: 50px;
+    margin: 0;
+    padding: 0;
+    font-size: 36px;
+    color: var(--navy);
+    -unity-text-align: middle-right;
+}
+
+.results__ko--zero { color: #9aa8c0; }
+
+.results__gap {
+    height: 30px;
+    margin: 4px 0 -4px 0;
+    padding: 0;
+    font-size: 30px;
+    letter-spacing: 6px;
+    color: #9aa8c0;
+    -unity-text-align: middle-center;
+    transition-property: opacity;
+    transition-duration: 0.25s;
+}
+
+/* A wide screen: every car, a size up, at the left; the podium at the right, as tall as the table and the card beside
+   it allow. */
+.round-over--landscape .round-over__match {
+    flex-direction: column;
+    margin-top: 0;
+}
+
+.round-over--landscape .podium {
+    position: absolute;
+    right: 80px;
+    top: -60px;
+    width: 900px;
+    height: 1040px;
+}
+
+/* The desktop layout of the design: the podium in the middle over one bottom row, the level card and beside it NEXT
+   MATCH with its SPACE key and GARAGE under it. */
+.round-over--landscape.round-over--desktop .podium {
+    position: relative;
+    right: auto;
+    top: 0;
+    width: 1100px;
+    height: auto;
+    flex-grow: 1;
+    align-self: center;
+}
+
+.results--wide {
+    position: absolute;
+    left: 80px;
+    top: 0;
+    width: 820px;
+    margin-left: 0;
+    transform-origin: 0 0;
+}
+
+.results--wide .results__title { font-size: 34px; }
+.results--wide .results__row { height: 80px; margin-top: 10px; border-radius: 40px; }
+.results--wide .results__rank { width: 62px; height: 62px; border-radius: 31px; }
+.results--wide .results__rank-text { font-size: 32px; }
+.results--wide .results__level { min-width: 56px; height: 46px; }
+.results--wide .results__level .level-badge__value { font-size: 26px; }
+.results--wide .results__name { font-size: 44px; }
+.results--wide .results__ko { font-size: 44px; min-width: 60px; }
+
+/* With a mouse the garage is a plain button under NEXT MATCH, with its key and, after an unlock, a NEW badge; the round
+   CAR button is for a thumb. */
+.round-over__garage-wide {
+    display: none;
+    width: 981px;
+    height: 120px;
+    margin: 28px 0 0 0;
+    padding: 0;
+    border-width: 7px;
+    border-bottom-width: 14px;
+    border-radius: 40px;
+}
+
+.round-over__garage-wide:hover,
+.round-over__garage-wide:focus {
+    background-color: var(--soft);
+}
+
+.round-over__garage-wide:active {
+    translate: 0 6px;
+}
+
+.round-over__garage-wide-label {
+    margin: 0;
+    padding: 0;
+    font-size: 46px;
+    letter-spacing: 2px;
+    color: var(--navy);
+}
+
+.round-over__garage-key {
+    padding: 0 18px 2px 18px;
+    border-width: 5px;
+    border-bottom-width: 9px;
+    border-radius: 14px;
+}
+
+.round-over__garage-key .key__text { font-size: 32px; }
+
+.round-over__garage-new {
+    position: absolute;
+    top: -26px;
+    right: -20px;
+    margin: 0;
+    padding: 0 14px 2px 14px;
+    border-width: 5px;
+    border-color: var(--navy);
+    border-radius: 14px;
+    background-color: var(--gold);
+    font-size: 28px;
+    color: var(--navy);
+    rotate: 6deg;
+}
+
+.round-over--desktop .round-over__garage-wide { display: flex; }
+.round-over--desktop .round-over__garage { display: none; }
+.round-over--desktop .round-over__buttons { justify-content: center; }
+.round-over--desktop .round-over__buttons .round-over__button { width: 981px; }
+
+.round-over--landscape .podium__name { font-size: 50px; }
+
+/* The bottom of the result: the level card over the buttons, or (a wide desktop screen) beside them. */
+.round-over__bottom {
+    flex-shrink: 0;
+    align-self: stretch;
+    align-items: center;
+}
+
+.round-over__next-key {
+    display: none;
+}
+
+.round-over--landscape.round-over--desktop .round-over__bottom {
+    flex-direction: row;
+    justify-content: center;
+    align-items: stretch;
+    margin-top: 24px;
+}
+
+.round-over--landscape.round-over--desktop .level-card {
+    width: 1333px;
+    margin: 0 32px 0 0;
+    justify-content: center;
+}
+
+.round-over--landscape.round-over--desktop .round-over__actions {
+    justify-content: center;
+}
+
+.round-over--landscape.round-over--desktop .round-over__buttons,
+.round-over--landscape.round-over--desktop .round-over__buttons .round-over__button,
+.round-over--landscape.round-over--desktop .round-over__garage-wide {
+    width: 693px;
+}
+
+.round-over--landscape.round-over--desktop .round-over__button {
+    padding: 14px 24px 36px 24px;
+}
+
+.round-over--landscape.round-over--desktop .round-over__button .button__label {
+    font-size: 76px;
+}
+
+.round-over--landscape.round-over--desktop .round-over__next-key {
+    display: flex;
+    margin-left: 24px;
+    padding: 0 18px 2px 18px;
+    border-width: 5px;
+    border-bottom-width: 9px;
+    border-radius: 14px;
+}
+
+.round-over--landscape.round-over--desktop .round-over__next-key .key__text { font-size: 30px; }
+
+.round-over--landscape.round-over--desktop .round-over__garage-wide {
+    height: 107px;
+    margin-top: 21px;
+}
+
+.round-over--landscape.round-over--desktop .round-over__hint {
+    display: none;
+}

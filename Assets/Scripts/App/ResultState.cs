@@ -47,7 +47,13 @@ namespace ToyCarArena.App
 
         public override async UniTask<StateTransitionInfo> Execute(CancellationToken token)
         {
-            var screen = await navigator.OpenAsync<RoundOverViewModel, RoundRecord>(Payload, token);
+            // A match ends on its winner turning on a podium, drawn by the arena still loaded behind the screen.
+            var record = Payload;
+            if (record.Result.IsMatch && record.Result.Standings.Count > 0) {
+                record = record.WithPodium(levelScene.Resolve<WinnerPodium>().Show(record.Result.Standings[0].Index));
+            }
+
+            var screen = await navigator.OpenAsync<RoundOverViewModel, RoundRecord>(record, token);
             // RoundState already moved the session on, so the round on this screen is the one before Round.
             var outcome = Payload.Result.Outcome;
             var playedRound = progress.Round - 1;
@@ -61,6 +67,10 @@ namespace ToyCarArena.App
                 }
 
                 platform.MeasureGarageShown();
+                if (record.Result.IsMatch) {
+                    platform.MeasureScoreboardShown();
+                }
+
                 await screen.ViewModel.WaitForResultAsync(token);
                 platform.MeasurePlayAgainPressed(outcome, playedRound);
                 if (firstAgain != null) {
