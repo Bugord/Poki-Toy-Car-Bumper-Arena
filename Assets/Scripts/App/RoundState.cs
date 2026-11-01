@@ -83,6 +83,7 @@ namespace ToyCarArena.App
                 round.Begin();
                 platform.GameplayStart();
                 platform.MeasureRoundStart(roundNumber);
+                platform.MeasureVariantStart(playedMap, playedVariant);
                 arenaRotation.MarkSeen(playedMap);
                 arenaRotation.MarkPlayed(playedMap, playedVariant);
                 isPlaying = true;
@@ -115,6 +116,7 @@ namespace ToyCarArena.App
                 levelScene.Resolve<ISessionRoster>().NextRound(result.CarCount - 1,
                     RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis, tuning.Players);
                 platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, driver);
+                platform.MeasureVariantEnd(playedMap, playedVariant, result.Outcome);
                 platform.MeasureRoundCar(roundNumber, playedCar);
                 platform.MeasureProgress(record.XpGain);
                 platform.MeasureRoundMap(roundNumber, playedMap);

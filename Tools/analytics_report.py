@@ -72,6 +72,10 @@ def summarise(data):
         "again": i.get("result-play-again"),
         "garage": i.get("garage-button"),
         "lobby": i.get("lobby-shown"),
+        # после v0.5.1: NEXT MATCH по исходу и раунду, медленное лобби по арене, раунды по варианту арены
+        "again_by": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"result-again-([a-z]+-r(?:1|2|3|4plus))", e))},
+        "slow": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"lobby-slow-([a-z]+)", e))},
+        "arenas": {m.group(1): row for e, row in p.items() if (m := re.fullmatch(r"arena-([a-z]+-[a-z]+)", e))},
         "scoreboard": i.get("scoreboard-shown"),
         "levels": other(o, r"progress-level-(2|3|4|5|6|7|8|9|10|10plus)-level-up"),
         "unlocks": other(o, r"progress-(?!map-)([a-z]+(?:-[a-z]+)*)-unlock"),
@@ -142,6 +146,30 @@ def report(version, previous):
     out += ["", "## По всем раундам", "", head, sep]
     out.append(line("Победы / раунды", lambda s: f"{wins(s)} / {starts(s)} ({pct(wins(s), starts(s))})"))
 
+    # Visits lost at each step of the first minutes. The sum through R1 matches the 0-1 min bar of the Poki dashboard.
+    def steps(s):
+        loads, loaded = s["loads"]
+        r = lambda n: s["rounds"].get(str(n), (0, 0, 0, 0))
+        out = [("загрузка", loads - loaded), ("загрузились, нет ввода", loaded - r(1)[0])]
+        for n in range(1, 6):
+            done = r(n)[1] + r(n)[2]
+            out += [(f"посреди R{n}", r(n)[0] - done), (f"после R{n}", done - r(n + 1)[0])]
+        return out, loads
+
+    def lost(s, i):
+        rows, loads = steps(s)
+        before = sum(n for _, n in rows[:i + 1])
+        return f"{rows[i][1]} ({pct(rows[i][1], loads)}; всего {pct(before, loads)})"
+
+    out += ["", "## Где уходят (визиты, от начавших загрузку; всего = накопленно)", "", head, sep]
+    for i, (label, _) in enumerate(steps(cur)[0]):
+        out.append(line(label, lambda s, i=i: lost(s, i)))
+
+    # Totals count rounds, not visits: presses of NEXT MATCH (lobby since v0.4.0) whose next round never started.
+    later = lambda s: starts(s) - s["rounds"].get("1", (0,))[0]
+    out.append(line("нажали NEXT MATCH, раунд не начался (события)", lambda s: str(num(s["again"], "total_interacted") - later(s))))
+    out.append(line("ушли с первого результата, не нажав", lambda s: f"{num(s['again'], 'seen') - num(s['again'], 'interacted')} / {num(s['again'], 'seen')}"))
+
     def share(key):
         return lambda s, k: f"{s[key].get(k, 0)} ({pct(s[key].get(k, 0), sum(s[key].values()))})"
 
@@ -169,6 +197,31 @@ def report(version, previous):
 
     out += ["", "## PLAY AGAIN (нажали / показано, последний показ)", "", head, sep]
     out.append(line("result-play-again", lambda s: f"{num(s['again'], 'interacted')} / {num(s['again'], 'seen')} ({pct(num(s['again'], 'interacted'), num(s['again'], 'seen'))})"))
+
+    def pressed(s, field, k):
+        row = s[field].get(k)
+        if not row:
+            return "-"
+        seen, shows = num(row, "seen"), num(row, "total_seen")
+        return (f"{num(row, 'interacted')} / {seen} визитов ({pct(num(row, 'interacted'), seen)}), "
+                f"{num(row, 'total_interacted')} / {shows} показов ({pct(num(row, 'total_interacted'), shows)})")
+
+    def arena(s, k):
+        row = s["arenas"].get(k)
+        if not row:
+            return "-"
+        starts = num(row, "starts")
+        return (f"{starts} / {num(row, 'completes')} / {num(row, 'fails')} / {num(row, 'lefts')} "
+                f"(ушли {pct(num(row, 'lefts'), starts)}); раундов {num(row, 'total_starts')}")
+
+    for title, key, fmt in (
+        ("NEXT MATCH по исходу и раунду (после v0.5.1; нажали / показано)", "again_by", lambda s, k: pressed(s, "again_by", k)),
+        ("Медленное лобби, загрузка дольше 4 с (после v0.5.1; дождались / медленных)", "slow", lambda s, k: pressed(s, "slow", k)),
+        ("Раунды по варианту арены (после v0.5.1; визиты: старты / победы / поражения / ушли посреди)", "arenas", arena),
+    ):
+        keys = keys_of(key)
+        if keys:
+            out += table(title, cur, old, version, previous, keys, fmt)
 
     # Milestones count gameplays containing an event, as the rest of other-events above; they are not event totals.
     for title, key in (
