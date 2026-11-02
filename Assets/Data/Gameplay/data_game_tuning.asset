@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.GameTuning
   car:
-    maxSpeed: 10
-    acceleration: 20
-    braking: 12
-    turnSpeed: 300
-    turnAcceleration: 2000
+    maxSpeed: 11
+    acceleration: 30
+    braking: 20
+    turnSpeed: 360
+    turnAcceleration: 3000
     mass: 1
     centerOfMassHeight: 0.3
     grip: 6
@@ -50,9 +50,11 @@ MonoBehaviour:
     autoRamClosing: 1
     autoRamHold: 0.12
     autoRamContact: 2.6
-    autoRescueMargin: 3.5
-    autoRescueSpeed: 2
+    autoRescueMargin: 2.5
+    autoRescueSpeed: 4
     autoRescueWindow: 1
+    autoRescueLookAhead: 0.5
+    autoRescueCooldown: 4
   boost:
     impulse: 10
     duration: 0.3
@@ -320,7 +322,7 @@ MonoBehaviour:
   jelly:
     padCount: 4
     padRadius: 1.3
-    jumpSpeed: 4.5
+    jumpSpeed: 6.5
     range: 7
     minSpeed: 2
     landingMargin: 0.8
@@ -377,7 +379,7 @@ MonoBehaviour:
     hold: 1.5
     hitRadius: 1.8
     push: 7
-    lift: 3.5
+    lift: 4.7
     stagger: 0.5
     easyPlayerShare: 0.5
     edgeClearance: 3.5
@@ -407,7 +409,7 @@ MonoBehaviour:
     radius: 1.6
     height: 0.6
     bounceOut: 6
-    bounceUp: 3.5
+    bounceUp: 4.7
     stagger: 0.4
     easyPlayerShare: 0.5
     speed: 0.6

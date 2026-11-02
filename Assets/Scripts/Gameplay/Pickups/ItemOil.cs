@@ -17,8 +17,8 @@ namespace ToyCarArena.Gameplay.Pickups
     /// every car on it, the spiller's too, so a car slides on with what speed it had and a hit there carries further. A
     /// car on someone else's slick counts as hit by the spiller for as long as it is on it, so sliding off the edge is
     /// the spiller's knock-out. A car that drove through a slick has oily tyres for
-    /// <see cref="GameTuning.OilSettings.OilyTime"/> and lays two dark tracks behind its rear wheels, thinning as the oil
-    /// wears off; every track narrows away a few seconds later. A slick whose floor goes is gone, and so are the tracks
+    /// <see cref="GameTuning.OilSettings.OilyTime"/>: they keep sliding off the slick, less as the oil wears off
+    /// (<see cref="CarMovement.Tyres"/>), and lay two dark tracks behind its rear wheels, thinning as it does; every track narrows away a few seconds later. A slick whose floor goes is gone, and so are the tracks
     /// over floor that fell.
     /// <para>
     /// The tracks are one mesh rebuilt in place while any is there, a ring of quads, so however many there are they cost
@@ -80,6 +80,7 @@ namespace ToyCarArena.Gameplay.Pickups
         private readonly List<Vector3> lastLeft = new();
         private readonly List<Vector3> lastRight = new();
         private readonly List<bool> isLaying = new();
+        private readonly List<bool> isOnSlick = new();
         private int nextTrack;
         private bool isTracksDirty;
         private bool hasSlick;
@@ -250,6 +251,10 @@ namespace ToyCarArena.Gameplay.Pickups
         {
             hasSlick = false;
             var cars = round.Cars;
+            for (var i = 0; i < isOnSlick.Count; i++) {
+                isOnSlick[i] = false;
+            }
+
             foreach (var slick in slicks) {
                 if (!slick.IsLive) {
                     continue;
@@ -273,6 +278,7 @@ namespace ToyCarArena.Gameplay.Pickups
 
                     EnsureCar(i);
                     oilyUntil[i] = Time.time + settings.OilyTime;
+                    isOnSlick[i] = true;
                     // A slide off the edge from here is the spiller's, as long as the car is on the oil.
                     if (slick.Owner != null && car != slick.Owner && !slick.Owner.IsOut) {
                         car.HitByItem(slick.Owner);
@@ -281,13 +287,22 @@ namespace ToyCarArena.Gameplay.Pickups
             }
         }
 
-        /// <summary>Lays the tracks of the cars whose tyres are oily, a quad behind each rear wheel each step it drives.</summary>
+        /// <summary>
+        /// Gives the cars whose tyres are oily their slide off the slick, and lays their tracks, a quad behind each rear
+        /// wheel each step it drives. On a slick the floor already slides, so the tyres add nothing there.
+        /// </summary>
         private void TickTyres()
         {
             var cars = round.Cars;
             for (var i = 0; i < cars.Count && i < oilyUntil.Count; i++) {
                 var car = cars[i];
                 var left = oilyUntil[i] - Time.time;
+                if (car.IsOut) {
+                    oilyUntil[i] = float.NegativeInfinity;
+                }
+
+                var share = car.IsOut || isOnSlick[i] ? 0f : Mathf.Clamp01(left / settings.OilyTime);
+                car.Movement.Tyres = SurfaceFeel.Neutral.Lerp(oily, share);
                 if (left <= 0f || car.IsOut || !car.Movement.IsGrounded) {
                     isLaying[i] = false;
                     continue;
@@ -382,6 +397,7 @@ namespace ToyCarArena.Gameplay.Pickups
                 lastLeft.Add(Vector3.zero);
                 lastRight.Add(Vector3.zero);
                 isLaying.Add(false);
+                isOnSlick.Add(false);
             }
         }
 

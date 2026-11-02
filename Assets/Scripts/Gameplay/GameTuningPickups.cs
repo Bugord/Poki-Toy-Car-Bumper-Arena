@@ -310,7 +310,7 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Speed a hit throws a car up at, in metres per second")]
             [Min(0f)]
             [SerializeField]
-            private float lift = 2.5f;
+            private float lift = 3.4f;
 
             [Tooltip("Seconds a car the ball hits is off balance")]
             [Min(0f)]
@@ -479,7 +479,7 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Speed the ring throws a car up at in the middle, in metres per second; it eases like the push")]
             [Min(0f)]
             [SerializeField]
-            private float lift = 3.5f;
+            private float lift = 4.7f;
 
             [Tooltip("Seconds a car the ring hits is off balance")]
             [Min(0f)]
@@ -597,7 +597,7 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Speed the blast throws a car up at in the middle, in metres per second; it eases like the push")]
             [Min(0f)]
             [SerializeField]
-            private float lift = 5f;
+            private float lift = 6.8f;
 
             [Tooltip("Seconds a car the blast hits is off balance")]
             [Min(0f)]
@@ -663,7 +663,7 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Speed the punch throws a car up at, in metres per second")]
             [Min(0f)]
             [SerializeField]
-            private float lift = 1.5f;
+            private float lift = 2f;
 
             [Tooltip("Seconds a punched car is off balance")]
             [Min(0f)]

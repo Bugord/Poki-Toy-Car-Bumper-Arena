@@ -19,8 +19,8 @@ namespace ToyCarArena.Gameplay.Pickups
     /// it appears leans towards the cars behind in knock-outs. A car on the floor, in play and not just back from a fall,
     /// breaks it by driving within <see cref="GameTuning.PickupSettings.PickRadius"/>: an empty slot spins for
     /// <see cref="GameTuning.PickupSettings.RollTime"/> and lands on an item drawn by <see cref="ItemRoll"/> (the car
-    /// behind gets the items that knock cars off more often); a car that already holds one breaks the box and gets
-    /// nothing, as in a kart racer. The item is kept until its car uses it (<see cref="Use"/>) or falls.
+    /// behind gets the items that knock cars off more often); a car that already holds one drives through the box and
+    /// leaves it for a car that can take it. The item is kept until its car uses it (<see cref="Use"/>) or falls.
     /// <para>
     /// Used, mega, shield, turbo and balloon start running on the car, each beside the others (<see cref="Car.StartAbility"/>;
     /// a balloon's catch is <see cref="ItemBalloons"/>); the shockwave is a ring sent from the car at once, the bomb is thrown ahead
@@ -47,8 +47,7 @@ namespace ToyCarArena.Gameplay.Pickups
         private const float PickupVolume = 0.7f;
 
         /// <summary>
-        /// Raised when a car breaks a box, with what it got (<see cref="ItemKind.None"/> when its slot was full) and the
-        /// car's place; after the slot has started to spin.
+        /// Raised when a car breaks a box, with what it got and the car's place; after the slot has started to spin.
         /// </summary>
         public event Action<Car, ItemKind, Vector3> Collected;
 
@@ -390,24 +389,18 @@ namespace ToyCarArena.Gameplay.Pickups
         }
 
         /// <summary>
-        /// A car broke a box: an empty slot starts to spin on an item drawn for how far the car trails the leader; a full
-        /// one gets nothing.
+        /// A car broke a box: its empty slot starts to spin on an item drawn for how far the car trails the leader.
         /// </summary>
         private void Break(Car car)
         {
-            var kind = ItemKind.None;
-            if (!car.HasItem) {
-                var trailing = ItemRoll.TrailingOf(round.Score, round.IndexOf(car), settings);
-                kind = ItemRoll.Choose(random, settings, trailing);
-                car.GiveItem(kind, settings.RollTime);
-            }
-
+            var trailing = ItemRoll.TrailingOf(round.Score, round.IndexOf(car), settings);
+            var kind = ItemRoll.Choose(random, settings, trailing);
+            car.GiveItem(kind, settings.RollTime);
             if (effects != null) {
                 effects.PlayPickup(car.Position);
             }
 
-            var volume = kind == ItemKind.None ? PickupVolume * 0.5f : PickupVolume;
-            audioService?.Play(audioService.Library.KnockoutCredit, car.IsPlayer ? volume : volume * 0.5f);
+            audioService?.Play(audioService.Library.KnockoutCredit, car.IsPlayer ? PickupVolume : PickupVolume * 0.5f);
             Collected?.Invoke(car, kind, car.Position);
         }
 
@@ -418,8 +411,9 @@ namespace ToyCarArena.Gameplay.Pickups
             var cars = round.Cars;
             for (var i = 0; i < cars.Count; i++) {
                 var car = cars[i];
-                // A car that is safe after coming back is a ghost, and a car in the air takes nothing.
-                if (!car.IsTargetable || !car.Movement.IsGrounded || car.Position.y > TakeHeight) {
+                // A car that is safe after coming back is a ghost, a car in the air takes nothing, and a car that holds
+                // an item (its slot spinning too) leaves the box lying for one that can take it.
+                if (!car.IsTargetable || car.HasItem || !car.Movement.IsGrounded || car.Position.y > TakeHeight) {
                     continue;
                 }
 

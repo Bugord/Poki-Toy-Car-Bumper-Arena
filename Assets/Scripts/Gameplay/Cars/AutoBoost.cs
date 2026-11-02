@@ -36,6 +36,7 @@ namespace ToyCarArena.Gameplay.Cars
         private bool mayRam;
 
         private float rescueHitTime = float.NegativeInfinity;
+        private float rescueTime = float.NegativeInfinity;
         private bool mayRescue;
 
         public AutoBoost(GameTuning tuning, RoundDifficulty difficulty, ArenaRound round)
@@ -71,13 +72,16 @@ namespace ToyCarArena.Gameplay.Cars
         }
 
         /// <summary>
-        /// A hit pushes the car outward near the edge: boost back inward, as a player saves a car on the edge. Rolled
-        /// once for each hit, later hits of a long shove included.
+        /// A hit pushes the car outward near the edge fast enough to reach it soon: boost back inward, as a player saves
+        /// a car on the edge. Only a shove that would really throw the car off, not every bump near the rim, and not
+        /// again soon after a rescue, or the car twitches away from every touch. Rolled once for each hit, later hits of
+        /// a long shove included.
         /// </summary>
         private bool TryRescue(Car car)
         {
             var controls = tuning.Controls;
-            if (Time.time - car.LastHitTime > controls.AutoRescueWindow) {
+            if (Time.time - car.LastHitTime > controls.AutoRescueWindow
+                || Time.time - rescueTime < controls.AutoRescueCooldown) {
                 return false;
             }
 
@@ -103,7 +107,9 @@ namespace ToyCarArena.Gameplay.Cars
             }
 
             inward.Normalize();
-            if (Vector3.Dot(car.Movement.Velocity, -inward) < controls.AutoRescueSpeed) {
+            var outward = Vector3.Dot(car.Movement.Velocity, -inward);
+            if (outward < controls.AutoRescueSpeed
+                || edge.DistanceToEdge(position, 0f) > outward * controls.AutoRescueLookAhead) {
                 return false;
             }
 
@@ -114,6 +120,7 @@ namespace ToyCarArena.Gameplay.Cars
             }
 
             mayRescue = false;
+            rescueTime = Time.time;
             return true;
         }
 

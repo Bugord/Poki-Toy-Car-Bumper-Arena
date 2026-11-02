@@ -382,17 +382,28 @@ namespace ToyCarArena.Gameplay
                 "to the edge, in metres")]
             [Min(0f)]
             [SerializeField]
-            private float autoRescueMargin = 3.5f;
+            private float autoRescueMargin = 2.5f;
 
             [Tooltip("Least outward speed, in metres per second, of a pushed car for a rescue")]
             [Min(0f)]
             [SerializeField]
-            private float autoRescueSpeed = 2f;
+            private float autoRescueSpeed = 4f;
 
             [Tooltip("Seconds after a hit during which a rescue may fire")]
             [Min(0f)]
             [SerializeField]
             private float autoRescueWindow = 1f;
+
+            [Tooltip("A rescue fires only if the car's outward speed would carry it to the edge within this many " +
+                "seconds: a bump that the car rides out on the floor is left to the player")]
+            [Min(0f)]
+            [SerializeField]
+            private float autoRescueLookAhead = 0.5f;
+
+            [Tooltip("Least seconds between two rescues")]
+            [Min(0f)]
+            [SerializeField]
+            private float autoRescueCooldown = 4f;
 
             public TouchSteering TouchSteering => touchSteering;
             public float JoystickRadius => joystickRadius;
@@ -421,6 +432,8 @@ namespace ToyCarArena.Gameplay
             public float AutoRescueMargin => autoRescueMargin;
             public float AutoRescueSpeed => autoRescueSpeed;
             public float AutoRescueWindow => autoRescueWindow;
+            public float AutoRescueLookAhead => autoRescueLookAhead;
+            public float AutoRescueCooldown => autoRescueCooldown;
         }
 
         /// <summary>
@@ -1730,7 +1743,7 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Speed, in metres per second, a mound throws a car on it upwards")]
             [Min(0f)]
             [SerializeField]
-            private float bounceUp = 3.5f;
+            private float bounceUp = 4.7f;
 
             [Tooltip("Seconds the toss knocks the car off balance")]
             [Min(0f)]
