@@ -25,6 +25,11 @@ namespace ToyCarArena.Gameplay.Cars
         private static readonly Vector2Int Sky = new(6, 1);
         private static readonly Vector2Int Pink = new(0, 2);
 
+        /// <summary>Every topper this builds, for the bots that wear one now and then.</summary>
+        public static readonly IReadOnlyList<string> Ids = new[] {
+            "party-hat", "cone", "antenna", "flag", "horns", "propeller", "fin", "crown",
+        };
+
         /// <summary>
         /// Where on the roof the topper stands, from the roof's middle in metres: a pole stands at the back corner, the
         /// rest in the middle.

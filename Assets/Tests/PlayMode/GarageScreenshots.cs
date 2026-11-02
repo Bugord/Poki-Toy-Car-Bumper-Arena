@@ -38,7 +38,9 @@ namespace ToyCarArena.Tests.PlayMode
             var showTab = typeof(GarageView).GetMethod("ShowTab", BindingFlags.Instance | BindingFlags.NonPublic);
             foreach (var (width, height) in new[] { (1080, 1920), (1920, 1080) }) {
                 var storage = new RoundOverScreenshots.MemoryStorage();
-                storage.SetInt("xp_total", 400);
+                // Level 7: every car open, the speedster and the monster truck still to buy.
+                storage.SetInt("xp_total", 540);
+                storage.SetString("cars_owned", "");
                 storage.SetInt("coins", 260);
                 storage.SetString("toppers_owned", "party-hat");
                 storage.SetString("topper_selected", "party-hat");

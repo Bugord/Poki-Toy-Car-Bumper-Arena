@@ -101,6 +101,18 @@ namespace ToyCarArena.Gameplay.Round
             return new CoinGain(before, after, round, knockouts, win, streak, missionCoins);
         }
 
+        /// <summary>Takes <paramref name="amount"/> coins for something bought; false, with nothing spent, when short.</summary>
+        public bool Spend(int amount)
+        {
+            if (amount < 0 || Coins < amount) {
+                return false;
+            }
+
+            storage.SetInt(CoinsKey, Coins - amount);
+            Changed?.Invoke();
+            return true;
+        }
+
         /// <summary>Development commands and tests edit the same key as real rounds.</summary>
         public void SetCoins(int coins)
         {

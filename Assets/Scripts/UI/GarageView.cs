@@ -29,6 +29,7 @@ namespace ToyCarArena.UI
         private CancellationTokenSource bounce;
         private VisualElement bouncingCard;
         private readonly List<(string Id, Button Button, Label Status, VisualElement Coin)> topperCards = new();
+        private readonly Dictionary<string, VisualElement> carCoins = new();
         private VisualElement carGrid;
         private VisualElement topperGrid;
         private VisualElement colorRow;
@@ -109,6 +110,10 @@ namespace ToyCarArena.UI
                 var check = new VisualElement { pickingMode = PickingMode.Ignore };
                 check.AddToClassList("garage__check");
                 statusRow.Add(check);
+                var carCoin = RoundOverMeta.Coin();
+                carCoin.AddToClassList("garage__price-coin");
+                statusRow.Add(carCoin);
+                carCoins[car.Id] = carCoin;
                 var status = new Label { pickingMode = PickingMode.Ignore };
                 statusRow.Add(status);
                 button.Add(statusRow);
@@ -248,8 +253,8 @@ namespace ToyCarArena.UI
                 var isOwned = topper == null || ViewModel.IsOwned(id);
                 var isWorn = id == worn;
                 button.EnableInClassList("garage__car--selected", isWorn);
-                button.EnableInClassList("garage__topper--price", !isOwned);
-                button.EnableInClassList("garage__topper--dear", !isOwned && !ViewModel.CanAfford(topper));
+                button.EnableInClassList("garage__card--price", !isOwned);
+                button.EnableInClassList("garage__card--dear", !isOwned && !ViewModel.CanAfford(topper));
                 coin.style.display = isOwned ? DisplayStyle.None : DisplayStyle.Flex;
                 status.text = isWorn ? Strings.Get("garage.in_use") : isOwned ? Strings.Get("garage.use")
                     : topper.Price.ToString();
@@ -282,10 +287,14 @@ namespace ToyCarArena.UI
             foreach (var (car, button, status, portrait) in cards) {
                 var selected = car.Id == ViewModel.SelectedCar;
                 var unlocked = ViewModel.IsUnlocked(car.Id);
+                var forSale = ViewModel.IsForSale(car.Id);
                 button.EnableInClassList("garage__car--selected", selected);
                 button.EnableInClassList("garage__car--locked", !unlocked);
-                status.text = selected ? Strings.Get("garage.in_use") : unlocked ? Strings.Get("garage.use")
-                    : GameText.Level(car.UnlockLevel);
+                button.EnableInClassList("garage__card--price", forSale);
+                button.EnableInClassList("garage__card--dear", forSale && !ViewModel.CanAffordCar(car.Id));
+                carCoins[car.Id].style.display = forSale ? DisplayStyle.Flex : DisplayStyle.None;
+                status.text = selected ? Strings.Get("garage.in_use") : forSale ? ViewModel.PriceOf(car.Id).ToString()
+                    : unlocked ? Strings.Get("garage.use") : GameText.Level(car.UnlockLevel);
                 button.tooltip = unlocked ? GameText.Car(car) : Strings.Format("garage.unlock_at", car.UnlockLevel);
                 portrait.SetColor(ViewModel.SelectedColor);
             }
@@ -310,8 +319,17 @@ namespace ToyCarArena.UI
                 return;
             }
 
+            // An open car with a price is bought by the click, when the coins pay for it.
+            if (ViewModel.IsForSale(car.Id)) {
+                if (!ViewModel.BuyCar(car.Id)) {
+                    return;
+                }
+            }
+            else {
+                ViewModel.Select(car.Id);
+            }
+
             audioService.PlayUiClick();
-            ViewModel.Select(car.Id);
             RefreshSelection();
             StartBounce(button);
         }
@@ -424,6 +442,7 @@ namespace ToyCarArena.UI
             text.Dispose();
             cards.Clear();
             topperCards.Clear();
+            carCoins.Clear();
             base.Dispose();
         }
     }

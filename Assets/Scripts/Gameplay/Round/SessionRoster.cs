@@ -21,6 +21,9 @@ namespace ToyCarArena.Gameplay.Round
         private const int VeteranMin = 10;
         private const int VeteranMax = 40;
 
+        // Now and then a seated player wears a topper of the garage's: the cosmetics are seen on others before bought.
+        private const float TopperChance = 0.15f;
+
         private readonly CarCatalog catalog;
         private readonly IPlayerCar playerCar;
         private readonly int[] colors = new int[MaxBots];
@@ -54,7 +57,7 @@ namespace ToyCarArena.Gameplay.Round
                 colors[slot] = playerColor;
                 var player = players[slot];
                 if (player != null) {
-                    players[slot] = new SessionPlayer(player.Name, player.Car, playerColor, player.Level);
+                    players[slot] = new SessionPlayer(player.Name, player.Car, playerColor, player.Level, player.Topper);
                 }
                 break;
             }
@@ -135,7 +138,8 @@ namespace ToyCarArena.Gameplay.Round
                 Refill();
             }
             var car = catalog.Cars[Random.Range(0, catalog.Cars.Count)];
-            players[slot] = new SessionPlayer(deck[nextName++], car, colors[slot], LevelNear(playerCar.Level));
+            players[slot] = new SessionPlayer(deck[nextName++], car, colors[slot], LevelNear(playerCar.Level),
+                Random.value < TopperChance ? CarTopper.Ids[Random.Range(0, CarTopper.Ids.Count)] : "");
             joined[slot] = true;
         }
 
@@ -191,12 +195,16 @@ namespace ToyCarArena.Gameplay.Round
         public int ColorId { get; }
         public int Level { get; }
 
-        public SessionPlayer(string name, CarCatalog.Entry car, int colorId, int level)
+        /// <summary>The topper on the roof, empty for none.</summary>
+        public string Topper { get; }
+
+        public SessionPlayer(string name, CarCatalog.Entry car, int colorId, int level, string topper = "")
         {
             this.Name = name;
             this.Car = car;
             this.ColorId = colorId;
             this.Level = level;
+            this.Topper = topper ?? "";
         }
     }
 }

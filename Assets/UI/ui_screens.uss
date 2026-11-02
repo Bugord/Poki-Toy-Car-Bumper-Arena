@@ -2733,6 +2733,53 @@
     font-size: 36px;
 }
 
+/* A car with a price: one green BUY button with its price on a white pill, under the caption. */
+.level-reward__buy {
+    flex-direction: row;
+    align-items: center;
+    height: 136px;
+    margin: 28px 0 0 0;
+    padding: 0 20px 0 48px;
+    border-width: 9px;
+    border-bottom-width: 20px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--green);
+}
+
+.level-reward__buy:active {
+    translate: 0 8px;
+}
+
+.level-reward__buy-label-text {
+    margin: 0;
+    padding: 0;
+    font-size: 72px;
+    color: var(--white);
+    -unity-text-outline-width: 12px;
+    -unity-text-outline-color: var(--navy);
+}
+
+.level-reward__price {
+    flex-direction: row;
+    align-items: center;
+    height: 84px;
+    margin-left: 28px;
+    padding: 0 26px 0 14px;
+    border-width: 6px;
+    border-bottom-width: 10px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+}
+
+.level-reward__price-value {
+    margin: 0 0 0 10px;
+    padding: 0;
+    font-size: 52px;
+    color: var(--navy);
+}
+
 .level-reward__hint {
     margin: 60px 0 0 0;
     -unity-text-align: middle-center;
@@ -3431,11 +3478,11 @@
     border-bottom-width: 6px;
 }
 
-.garage__topper--price .garage__status {
+.garage__card--price .garage__status {
     background-color: var(--gold);
 }
 
-.garage__topper--dear .garage__status {
+.garage__card--dear .garage__status {
     background-color: var(--soft);
     opacity: 0.7;
 }

@@ -57,9 +57,29 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private int winCoins = 12;
 
+            [Tooltip("Cars bought for coins once their level opens them: the first one is cheap enough for the coins a " +
+                "new player has after one round, with some left over; the others are long goals")]
+            [SerializeField]
+            private CarPrice[] carPrices = {
+                new("speedster", 25),
+                new("monster-truck", 300),
+            };
+
             public int RoundCoins => roundCoins;
             public int KnockoutCoins => knockoutCoins;
             public int WinCoins => winCoins;
+
+            /// <summary>What the car costs in coins once open; 0 for one its level alone gives.</summary>
+            public int PriceOf(string carId)
+            {
+                foreach (var car in carPrices) {
+                    if (car.Id == carId) {
+                        return car.Price;
+                    }
+                }
+
+                return 0;
+            }
         }
 
         /// <summary>
@@ -234,6 +254,27 @@ namespace ToyCarArena.Gameplay
 
                 return null;
             }
+        }
+
+        [Serializable]
+        public sealed class CarPrice
+        {
+            [Tooltip("The car's id in the catalog")]
+            [SerializeField]
+            private string id;
+
+            [Min(0)]
+            [SerializeField]
+            private int price;
+
+            public CarPrice(string id, int price)
+            {
+                this.id = id;
+                this.price = price;
+            }
+
+            public string Id => id;
+            public int Price => Mathf.Max(0, price);
         }
 
         [Serializable]

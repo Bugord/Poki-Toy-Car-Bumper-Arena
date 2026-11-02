@@ -115,7 +115,9 @@ def summarise(data):
     s["mission_complete"] = other(o, r"mission-([a-z]+(?:-[a-z]+)*)-complete")
     s["streak"] = other(o, r"result-streak-([0-9a-z]+-r[0-9a-z]+)-streak")
     s["coins"] = other(o, r"result-coins-((?:few|mid|many)-r[0-9a-z]+)-coins")
-    s["topper_buy"] = other(o, r"shop-([a-z]+(?:-[a-z]+)*)-buy")
+    s["topper_buy"] = other(o, r"shop-(?!car-)([a-z]+(?:-[a-z]+)*)-buy")
+    s["car_buy"] = other(o, r"shop-car-([a-z]+(?:-[a-z]+)*)-buy")
+    s["car_offer"] = {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"shop-offer-([a-z]+(?:-[a-z]+)*)", e))}
     s["topper_equip"] = other(o, r"garage-topper-([a-z]+(?:-[a-z]+)*)-equip")
     s["missions_shown"] = i.get("mission-shown")
     s["toppers_tab"] = i.get("garage-toppers")
@@ -275,6 +277,7 @@ def report(version, previous):
          lambda s, k: pressed(s, "again_first", k)),
         ("NEXT MATCH по исходу и серии побед (v0.10; нажали / показано)", "again_streak",
          lambda s, k: pressed(s, "again_streak", k)),
+        ("Попап новой машинки с ценой (v0.10; купили / показано)", "car_offer", lambda s, k: pressed(s, "car_offer", k)),
         ("Медленное лобби, загрузка дольше 4 с (после v0.5.1; дождались / медленных)", "slow", lambda s, k: pressed(s, "slow", k)),
         # В долгом матче вариант сменяется с каждым циклом пола: старт и complete на цикл, поражений нет, «ушли посреди»
         # это ушли посреди цикла этого варианта, а «раундов» это циклов.
@@ -303,6 +306,7 @@ def report(version, previous):
         ("Серия побед после раунда (v0.10, визиты с streak; lost: серия прервана)", "streak"),
         ("Монеты после раунда против цен шапок (v0.10, визиты с coins)", "coins"),
         ("Покупка шапок (v0.10, визиты с buy)", "topper_buy"),
+        ("Покупка машинок за монеты (v0.10, визиты с buy)", "car_buy"),
         ("Шапка надета в гараже (v0.10, визиты с equip; none: снята)", "topper_equip"),
     ):
         keys = keys_of(key)

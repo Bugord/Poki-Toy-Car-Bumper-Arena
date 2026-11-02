@@ -47,6 +47,7 @@ namespace ToyCarArena.UI
             CoinPill.AddToClassList("coin-pill");
             CoinPill.Add(Coin());
             coinCount = Text(viewModel.Coins.Before.ToString(), "coin-pill__count");
+            viewModel.CarBought += OnCarBought;
             CoinPill.Add(coinCount);
             // Inside the screen's own element, which carries the style sheet.
             (root.Q<VisualElement>("round-over") ?? root).Add(CoinPill);
@@ -123,6 +124,7 @@ namespace ToyCarArena.UI
         public void Dispose()
         {
             Stop();
+            viewModel.CarBought -= OnCarBought;
             text.Dispose();
         }
 
@@ -150,6 +152,13 @@ namespace ToyCarArena.UI
             }
         }
 
+        private void OnCarBought()
+        {
+            coinCount.text = viewModel.CoinsNow.ToString();
+            CoinPill.AddToClassList("coin-pill--bump");
+            CoinPill.schedule.Execute(() => CoinPill.RemoveFromClassList("coin-pill--bump")).StartingIn(150);
+        }
+
         private async UniTaskVoid CountCoins(CancellationToken token)
         {
             var coins = viewModel.Coins;
@@ -163,7 +172,8 @@ namespace ToyCarArena.UI
             var start = Time.unscaledTime;
             while (!token.IsCancellationRequested) {
                 var share = Mathf.Clamp01((Time.unscaledTime - start) / CountDuration);
-                coinCount.text = Mathf.RoundToInt(Mathf.Lerp(coins.Before, coins.After, share)).ToString();
+                // Towards the coins now: a car bought from a level's popup meanwhile is already taken off.
+                coinCount.text = Mathf.RoundToInt(Mathf.Lerp(coins.Before, viewModel.CoinsNow, share)).ToString();
                 if (share >= 1f) {
                     CoinPill.AddToClassList("coin-pill--bump");
                     CoinPill.schedule.Execute(() => CoinPill.RemoveFromClassList("coin-pill--bump")).StartingIn(150);

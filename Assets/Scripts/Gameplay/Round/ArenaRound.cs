@@ -596,7 +596,7 @@ namespace ToyCarArena.Gameplay.Round
                 car.name = NameOf(i);
                 car.IsPlayer = i == 0;
                 var entry = i == 0 ? catalog.Find(playerCar.SelectedCar) : players[i - 1].Car;
-                car.GetComponent<CarLook>().Apply(i, entry, ColorOf(i), i == 0 ? playerTopper.SelectedTopper : null);
+                car.GetComponent<CarLook>().Apply(i, entry, ColorOf(i), i == 0 ? playerTopper.SelectedTopper : players[i - 1].Topper);
                 cars.Add(car);
             }
         }

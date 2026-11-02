@@ -153,3 +153,6 @@ topper.propeller.name,Topper name: a propeller hat,PROPELLER,HÉLICE,ELICA,PROPE
 topper.fin.name,Topper name: a shark fin,FIN,AILERON,PINNA,FLOSSE,ALETA,YÜZGEÇ,BARBATANA,ПЛАВНИК
 topper.crown.name,Topper name,CROWN,COURONNE,CORONA,KRONE,CORONA,TAÇ,COROA,КОРОНА
 lobby.mission,"Lobby line under the seats instead of a tip: the mission closest to done; {0} is the task, {1} its progress like 5/6",MISSION: {0} {1},MISSION : {0} {1},MISSIONE: {0} {1},MISSION: {0} {1},MISIÓN: {0} {1},GÖREV: {0} {1},MISSÃO: {0} {1},МИССИЯ: {0} {1}
+result.buy,Button on the level popup that buys the new car for coins; short,BUY,ACHETER,COMPRA,KAUFEN,COMPRAR,AL,COMPRAR,КУПИТЬ
+result.buy_to_drive,Under a new car with a price on the level popup,BUY IT TO DRIVE IT,ACHÈTE-LA POUR LA CONDUIRE,COMPRALA PER GUIDARLA,KAUF ES ZUM FAHREN,CÓMPRALO PARA CONDUCIRLO,SÜRMEK İÇİN SATIN AL,COMPRE PARA DIRIGIR,КУПИ И ПОЕХАЛИ
+result.buy_in_garage,Under a new car with a price when coins are short,BUY IT IN THE GARAGE,À ACHETER AU GARAGE,COMPRALA IN GARAGE,IN DER GARAGE KAUFEN,CÓMPRALO EN EL GARAJE,GARAJDAN SATIN AL,COMPRE NA GARAGEM,КУПИ В ГАРАЖЕ

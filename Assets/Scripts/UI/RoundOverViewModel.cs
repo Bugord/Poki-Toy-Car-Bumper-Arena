@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using Bugord.App.Localization;
@@ -64,8 +65,39 @@ namespace ToyCarArena.UI
         public bool IsGarageOpen { get; private set; }
         public bool HasNewCar => XpGain.UnlockedCarIds.Count > 0;
 
-        /// <summary>The coins buy a topper not owned yet: the garage button carries its red dot for it too.</summary>
-        public bool CanBuyTopper => GarageViewModel.CanBuyAnyTopper(wallet, tuning);
+        /// <summary>
+        /// The coins buy a topper not owned yet or a car its level opened: the garage button carries its red dot for
+        /// it too.
+        /// </summary>
+        public bool CanShop => GarageViewModel.CanBuyAnyTopper(wallet, tuning) ||
+            GarageViewModel.CanBuyAnyCar(progress, wallet, catalog);
+
+        /// <summary>The player's coins now: the round's, less what the screen has bought since.</summary>
+        public int CoinsNow => wallet.Coins;
+
+        /// <summary>A car was bought on this screen: the coins and the CAR button follow.</summary>
+        public event Action CarBought;
+
+        public bool IsForSale(CarCatalog.Entry car) => progress.IsForSale(car.Id);
+        public int PriceOf(CarCatalog.Entry car) => progress.PriceOf(car.Id);
+        public bool CanAfford(CarCatalog.Entry car) => wallet.Coins >= progress.PriceOf(car.Id);
+
+        /// <summary>The level's popup offers a car for coins.</summary>
+        public void CarOffered(CarCatalog.Entry car) => platform.MeasureCarOfferShown(car.Id);
+
+        /// <summary>Buys a car from its level's popup and drives it next; false when the coins are short.</summary>
+        public bool BuyCar(CarCatalog.Entry car)
+        {
+            if (!progress.Buy(car.Id, wallet)) {
+                return false;
+            }
+
+            platform.MeasureCarOfferPressed(car.Id);
+            platform.MeasureCarBought(car.Id);
+            platform.MeasureGarageEquip(car.Id);
+            CarBought?.Invoke();
+            return true;
+        }
         public CarCatalog.Entry SelectedCar => catalog.Find(progress.SelectedCar);
         public int SelectedColor => progress.SelectedColor;
         public int ColorOf(int index) => colors[index];

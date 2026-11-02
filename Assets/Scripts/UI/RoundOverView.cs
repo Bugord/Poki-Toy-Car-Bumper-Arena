@@ -81,7 +81,8 @@ namespace ToyCarArena.UI
             });
             garagePortrait = new CarPortrait(Root.Q<VisualElement>("garage-portrait"));
             RefreshGarage();
-            ShowNewCar(ViewModel.HasNewCar, ViewModel.CanBuyTopper);
+            ShowNewCar(ViewModel.HasNewCar, ViewModel.CanShop);
+            ViewModel.CarBought += RefreshGarage;
 
             // The key hint is for a keyboard; a phone or a tablet has none to press. A wide desktop screen shows the key on
             // NEXT MATCH itself (ui_screens), so the style sheet decides there.
@@ -125,6 +126,10 @@ namespace ToyCarArena.UI
             Root?.UnregisterCallback<KeyDownEvent>(OnKeyDown);
             Root?.UnregisterCallback<GeometryChangedEvent>(OnGeometryChanged);
             Strings.Changed -= ShowTitle;
+            if (ViewModel != null) {
+                ViewModel.CarBought -= RefreshGarage;
+            }
+
             lifetime?.Cancel();
             lifetime?.Dispose();
             xpProgress?.Dispose();
@@ -165,11 +170,11 @@ namespace ToyCarArena.UI
         }
 
         // The red dot on CAR, the NEW badge on GARAGE: a car this round opened waits in the garage until it is visited.
-        // A topper the coins buy lights the dot alone; a visit puts both out.
-        private void ShowNewCar(bool isNewCar, bool canBuyTopper)
+        // Something the coins buy lights the dot alone; a visit puts both out.
+        private void ShowNewCar(bool isNewCar, bool canShop)
         {
             Root.Q<VisualElement>("garage-dot").style.display =
-                isNewCar || canBuyTopper ? DisplayStyle.Flex : DisplayStyle.None;
+                isNewCar || canShop ? DisplayStyle.Flex : DisplayStyle.None;
             Root.Q<VisualElement>("garage-new").style.display = isNewCar ? DisplayStyle.Flex : DisplayStyle.None;
         }
 

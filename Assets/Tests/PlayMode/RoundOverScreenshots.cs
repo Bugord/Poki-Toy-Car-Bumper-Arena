@@ -41,7 +41,7 @@ namespace ToyCarArena.Tests.PlayMode
             var directory = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "round-over");
             Directory.CreateDirectory(directory);
             var shots = new[] { (1080, 1920, false), (1920, 1080, false), (1080, 1920, true), (2340, 1080, true) };
-            var cases = new[] { "lost", "won" };
+            var cases = new[] { "lost", "won", "offer" };
             var moments = new[] { 0.6f, 3.0f };
             foreach (var name in cases) {
                 foreach (var (width, height, isTouch) in shots) {
@@ -102,8 +102,9 @@ namespace ToyCarArena.Tests.PlayMode
             var storage = new MemoryStorage();
             storage.SetString("missions", "round-knockouts:0|knockouts:4|revenge:0");
             storage.SetInt("coins", 85);
-            storage.SetInt("xp_total", 70);
-            var isWon = name == "won";
+            // The offer: the round lifts a new player to level 2, which opens the speedster for coins.
+            storage.SetInt("xp_total", name == "offer" ? 5 : 70);
+            var isWon = name != "lost";
             var result = new RoundResult(isWon ? RoundOutcome.Won : RoundOutcome.Out, isWon ? 1 : 3, 4, 40f,
                 isWon ? 2 : 1, RoundResult.Nobody, FallCause.Drive, false, false);
             var missions = new MissionTracker(storage, tuning);

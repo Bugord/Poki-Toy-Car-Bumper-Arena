@@ -58,6 +58,21 @@ namespace ToyCarArena.UI
         public CarCatalog.Entry SelectedEntry => catalog.Find(progress.SelectedCar);
         public int SelectedColor => progress.SelectedColor;
         public bool IsUnlocked(string id) => progress.IsUnlocked(id);
+        public bool IsForSale(string id) => progress.IsForSale(id);
+        public int PriceOf(string id) => progress.PriceOf(id);
+        public bool CanAffordCar(string id) => wallet.Coins >= progress.PriceOf(id);
+
+        /// <summary>Buys an open car the coins pay for and drives it next; false when it is not for sale or too dear.</summary>
+        public bool BuyCar(string id)
+        {
+            if (!progress.Buy(id, wallet)) {
+                return false;
+            }
+
+            platform.MeasureCarBought(id);
+            platform.MeasureGarageEquip(id);
+            return true;
+        }
 
         public bool Select(string id)
         {
@@ -77,6 +92,18 @@ namespace ToyCarArena.UI
 
         /// <summary>Whether coins buy a topper not owned yet: the tab, and CAR on the result, show a dot.</summary>
         public bool CanBuyTopper => CanBuyAnyTopper(wallet, tuning);
+
+        /// <summary>Whether coins buy a car its level has opened: CAR on the result shows a dot for it too.</summary>
+        public static bool CanBuyAnyCar(PlayerProgress progress, PlayerWallet wallet, CarCatalog catalog)
+        {
+            foreach (var car in catalog.Cars) {
+                if (progress.IsForSale(car.Id) && wallet.Coins >= progress.PriceOf(car.Id)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         public static bool CanBuyAnyTopper(PlayerWallet wallet, GameTuning tuning)
         {
