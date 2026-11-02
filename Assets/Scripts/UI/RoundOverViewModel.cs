@@ -45,6 +45,20 @@ namespace ToyCarArena.UI
         }
 
         public XpGain XpGain { get; private set; }
+
+        /// <summary>The saved coin reward: the result counts the player's coins up from before to after.</summary>
+        public CoinGain Coins { get; private set; }
+
+        /// <summary>What the round did for the missions; null where nothing tracks them.</summary>
+        public MissionRound Missions { get; private set; }
+
+        public StreakChange Streak { get; private set; }
+
+        public int MissionXp(GameTuning.MissionDefinition mission) => tuning.Missions.XpOf(mission.Tier);
+
+        /// <summary>A mission's task in the language shown, its arena named.</summary>
+        public string MissionText(GameTuning.MissionDefinition mission) =>
+            GameText.Mission(mission, mission.Map.Length > 0 ? GameText.Arena(arenaCatalog.Find(mission.Map)) : null);
         public bool IsGarageOpen { get; private set; }
         public bool HasNewCar => XpGain.UnlockedCarIds.Count > 0;
         public CarCatalog.Entry SelectedCar => catalog.Find(progress.SelectedCar);
@@ -214,6 +228,9 @@ namespace ToyCarArena.UI
             PodiumCar = result.PodiumCar;
             Standings = result.IsMatch ? result.Standings : System.Array.Empty<RoundStanding>();
             XpGain = payload.XpGain;
+            Coins = payload.Coins;
+            Missions = payload.Missions;
+            Streak = payload.Streak;
             Outcome = result.Outcome;
             IsMatch = result.IsMatch;
             Place = result.Place;

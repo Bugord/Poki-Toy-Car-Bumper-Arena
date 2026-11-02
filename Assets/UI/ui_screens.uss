@@ -4656,3 +4656,233 @@
     -unity-text-align: middle-center;
     white-space: nowrap;
 }
+
+/* Coins (RoundOverMeta, the garage): a gold disc with a navy ring and a paler disc inside, built of elements. */
+.coin {
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-width: 5px;
+    border-bottom-width: 8px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--gold);
+}
+
+.coin__inner {
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background-color: #ffe39a;
+}
+
+/* The player's coins in the result's corner, left of the gear; it bumps as the round's coins land. */
+.coin-pill {
+    position: absolute;
+    flex-direction: row;
+    align-items: center;
+    height: 96px;
+    margin: 0;
+    padding: 0 30px 0 20px;
+    border-width: 7px;
+    border-bottom-width: 13px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+    transition-property: scale;
+    transition-duration: 0.15s;
+    transition-timing-function: ease-out;
+}
+
+.coin-pill--bump {
+    scale: 1.15 1.15;
+}
+
+.coin-pill__count {
+    margin: 0 0 0 12px;
+    padding: 0;
+    font-size: 48px;
+    color: var(--navy);
+}
+
+/* The round's coins beside its XP on the level card. */
+.coin-gain {
+    flex-direction: row;
+    align-items: center;
+    margin-left: 26px;
+    transition-property: scale, opacity;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-out-back;
+}
+
+.coin-gain--enter {
+    scale: 0.3 0.3;
+    opacity: 0;
+}
+
+.coin-gain__value {
+    margin: 0 0 0 10px;
+    padding: 0;
+    font-size: 56px;
+    color: #c98a00;
+}
+
+/* STREAK xN under the title (gold, as NEW BEST!), or STREAK LOST (grey): shares the stickers' entrance. */
+.round-over__streak {
+    flex-shrink: 0;
+    margin-top: 24px;
+    rotate: -3deg;
+}
+
+.round-over__streak--lost {
+    border-width: 6px;
+    border-color: var(--navy);
+    background-color: var(--soft);
+    color: var(--muted);
+}
+
+/* The three missions over the level card (RoundOverMeta builds the rows). A done one ticks gold and shows its XP, then
+   turns into the mission that replaces it. */
+.missions {
+    flex-shrink: 0;
+    align-self: center;
+    align-items: stretch;
+    margin: 4px 0 0 0;
+    padding: 10px 34px 14px 34px;
+    border-bottom-width: 18px;
+    border-radius: 44px;
+    transition-property: translate, opacity;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-out;
+}
+
+.round-over--enter .missions {
+    translate: 0 120px;
+    opacity: 0;
+}
+
+.missions__title {
+    margin: 0;
+    padding: 0;
+    font-size: 28px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    -unity-text-align: middle-left;
+}
+
+.mission {
+    flex-direction: row;
+    align-items: center;
+    height: 54px;
+    transition-property: translate, opacity, scale;
+    transition-duration: 0.25s;
+    transition-timing-function: ease-out-back;
+}
+
+.mission--enter {
+    translate: -60px 0;
+    opacity: 0;
+}
+
+.mission--swap {
+    scale: 0.9 0.9;
+    opacity: 0;
+}
+
+.mission__check {
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border-width: 5px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--soft);
+    transition-property: background-color, scale;
+    transition-duration: 0.25s;
+    transition-timing-function: ease-out-back;
+}
+
+.mission__mark {
+    width: 13px;
+    height: 23px;
+    border-right-width: 6px;
+    border-bottom-width: 6px;
+    border-color: var(--navy);
+    rotate: 45deg;
+    translate: 0 -3px;
+    opacity: 0;
+}
+
+.mission--done .mission__check {
+    background-color: var(--gold);
+    scale: 1.2 1.2;
+}
+
+.mission--done .mission__mark {
+    opacity: 1;
+}
+
+.mission__task {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin: 0 0 0 18px;
+    padding: 0;
+    font-size: 34px;
+    color: var(--navy);
+    -unity-text-align: middle-left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mission__progress {
+    flex-shrink: 0;
+    margin: 0 0 0 14px;
+    padding: 0;
+    font-size: 36px;
+    color: var(--muted);
+}
+
+.mission--done .mission__progress {
+    color: var(--green-shade);
+}
+
+/* With the missions over it, the level card and the podium give up a little height, so a 16:9 portrait still fits. */
+.round-over--meta .level-card {
+    margin: 14px 0 30px 0;
+}
+
+.round-over--meta .podium {
+    min-height: 300px;
+}
+
+.round-over--landscape.round-over--desktop.round-over--meta .level-card {
+    margin: 0 32px 0 0;
+}
+
+/* Landscape on a touch screen the podium stands over the middle column: the missions go to the empty left of it, and
+   the podium comes down a little so its crown clears the streak sticker under the title. */
+.round-over--landscape.round-over--meta .missions {
+    position: absolute;
+    left: 96px;
+    top: 380px;
+    width: 640px;
+}
+
+.round-over--landscape.round-over--meta .podium {
+    top: 10px;
+}
+
+.round-over--landscape.round-over--desktop.round-over--meta .missions {
+    position: relative;
+    left: auto;
+    top: auto;
+}
+
+.round-over--landscape.round-over--desktop.round-over--meta .podium {
+    top: 0;
+}

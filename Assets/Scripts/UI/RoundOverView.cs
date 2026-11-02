@@ -38,6 +38,7 @@ namespace ToyCarArena.UI
         private CancellationTokenSource lifetime;
         private bool isPlayAgainPressed;
         private RoundOverProgress xpProgress;
+        private RoundOverMeta meta;
 
         public RoundOverView(IAudioService audioService, HudControls controls)
         {
@@ -71,9 +72,12 @@ namespace ToyCarArena.UI
             settingsButton = Root.Q<Button>("settings-button");
             settingsButton.RemoveFromClassList(Button.ussClassName);
             settingsButton.clicked += OpenSettings;
+            meta = new RoundOverMeta(Root, ViewModel);
             SafeArea.Watch(Root, insets => {
                 settingsButton.style.top = 40f + insets.Top;
                 settingsButton.style.right = 40f + insets.Right;
+                meta.CoinPill.style.top = 52f + insets.Top;
+                meta.CoinPill.style.right = 184f + insets.Right;
             });
             garagePortrait = new CarPortrait(Root.Q<VisualElement>("garage-portrait"));
             RefreshGarage();
@@ -105,11 +109,13 @@ namespace ToyCarArena.UI
             await base.ShowAsync(token);
             // The reward runs beside input; no part of it delays NEXT MATCH, Space or Enter.
             xpProgress.Play(token);
+            meta.Play(token);
         }
 
         public override async UniTask HideAsync(CancellationToken token)
         {
             xpProgress.Stop();
+            meta.Stop();
             match?.ReleasePodium();
             await base.HideAsync(token);
         }
@@ -122,6 +128,7 @@ namespace ToyCarArena.UI
             lifetime?.Cancel();
             lifetime?.Dispose();
             xpProgress?.Dispose();
+            meta?.Dispose();
             match?.Dispose();
             if (playAgainButton != null) {
                 playAgainButton.clicked -= PlayAgain;
