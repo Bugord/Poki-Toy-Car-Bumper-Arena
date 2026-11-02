@@ -212,7 +212,9 @@ namespace ToyCarArena.Gameplay.Arena
             var down = Vector3.down * Thickness;
             for (var i = 0; i < Segments; i++) {
                 var from = i * Mathf.PI * 2f / Segments;
-                var to = (i + 1) * Mathf.PI * 2f / Segments;
+                // The last segment closes on angle 0 itself: the point at 2π differs from it in the last bit, so the
+                // cooked collider kept an open seam along +x that a car sliding over it caught on and stopped dead.
+                var to = (i + 1) % Segments * Mathf.PI * 2f / Segments;
                 var a = Point(radius, from);
                 var b = Point(radius, to);
                 builder.AddTriangle(Vector3.zero, a, b, Vector3.up, uv.Top(0f, 0f), uv.Top(a.x, a.z), uv.Top(b.x, b.z));

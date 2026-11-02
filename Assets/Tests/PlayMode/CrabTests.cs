@@ -51,14 +51,16 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(crab.TryAvoid(crab.Position - path * 6f, Tuning.Bots.HazardMargin, Edge, 1f, out _), Is.False,
                 "A car the crab has left behind is out of its way.");
 
-            yield return Until(() => crab.IsWalking, 10f, "The crab never set out.");
+            // The other bots stay parked throughout: one driving into the shoved car would stop its slide.
+            yield return Until(() => { ParkOthers(car); return crab.IsWalking; }, 10f, "The crab never set out.");
             Assert.That(crab.Version, Is.EqualTo(version), "The threat was announced when the crab appeared, not as it set out.");
             Assert.That(Round.Elapsed, Is.GreaterThanOrEqualTo(Tuning.Crab.Delay - 0.1f));
 
-            yield return Until(() => !float.IsNegativeInfinity(car.LastHazardTime), 10f, "The crab never touched the car.");
+            yield return Until(() => { ParkOthers(car); return !float.IsNegativeInfinity(car.LastHazardTime); }, 10f,
+                "The crab never touched the car.");
             Assert.That(car.LastHitBy, Is.Null, "A crab shove is nobody's hit.");
             var settled = Time.time + 0.4f;
-            yield return Until(() => Time.time > settled, 2f, "Time stood still.");
+            yield return Until(() => { ParkOthers(car); return Time.time > settled; }, 2f, "Time stood still.");
             var offset = Mathf.Abs(Vector3.Dot(Flat(car.Position) - spot, across));
             Assert.That(offset, Is.GreaterThan(0.8f), "The car should have been shoved out of the crab's path.");
         }
