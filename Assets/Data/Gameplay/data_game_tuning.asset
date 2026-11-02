@@ -437,6 +437,11 @@ MonoBehaviour:
     roundCoins: 12
     knockoutCoins: 6
     winCoins: 12
+    carPrices:
+    - id: speedster
+      price: 25
+    - id: monster-truck
+      price: 300
   streaks:
     start: 2
     multiplier: 1.5
