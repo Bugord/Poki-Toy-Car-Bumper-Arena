@@ -28,7 +28,7 @@ namespace ToyCarArena.Gameplay
         public sealed class PickupSettings
         {
             /// <summary>The kinds an item can be, in the order of the weight lists.</summary>
-            public const int KindCount = 6;
+            public const int KindCount = 9;
 
             [Tooltip("Whether there are boxes at all")]
             [SerializeField]
@@ -121,16 +121,17 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float trailingGap = 3f;
 
-            [Tooltip("How likely each item is for a car level with the leader (or leading), in this order: heavy, " +
-                "shockwave, shield, turbo, bomb, glove. A round, which keeps no score, always rolls this row. Shield, " +
-                "turbo and glove are weighted out since v0.7.1: the players did not take to them")]
+            [Tooltip("How likely each item is for a car level with the leader (or leading), in this order: mega, " +
+                "shockwave, shield, turbo, bomb, glove, bowling, balloon, oil. A round, which keeps no score, always " +
+                "rolls this row. Shield, turbo and glove are weighted out since v0.7.1: the players did not take to them. " +
+                "A list shorter than the kinds gives the missing ones a weight of 1")]
             [SerializeField]
-            private float[] leaderWeights = { 1f, 1f, 0f, 0f, 1f, 0f };
+            private float[] leaderWeights = { 1f, 1f, 0f, 0f, 1f, 0f, 1f, 0.7f, 0.8f };
 
             [Tooltip("How likely each item is for a car far behind the leader, same order: the items that knock cars " +
-                "off (shockwave, bomb, glove) come up more, to catch up")]
+                "off (shockwave, bomb, bowling) and the balloon that saves a fall come up more, to catch up")]
             [SerializeField]
-            private float[] trailingWeights = { 0.7f, 1.3f, 0f, 0f, 1.5f, 0f };
+            private float[] trailingWeights = { 0.5f, 1.3f, 0f, 0f, 1.5f, 0f, 1.4f, 1.1f, 0.6f };
 
             [Tooltip("Share of an item's push and stagger the player takes on the easiest match (blended to all of it " +
                 "by the difficulty), as for the arena's hazards")]
@@ -140,7 +141,7 @@ namespace ToyCarArena.Gameplay
 
             [Header("Items")]
             [SerializeField]
-            private HeavySettings heavy = new();
+            private MegaSettings mega = new();
 
             [SerializeField]
             private ShockwaveSettings shockwave = new();
@@ -156,6 +157,15 @@ namespace ToyCarArena.Gameplay
 
             [SerializeField]
             private GloveSettings glove = new();
+
+            [SerializeField]
+            private BowlingSettings bowling = new();
+
+            [SerializeField]
+            private BalloonSettings balloon = new();
+
+            [SerializeField]
+            private OilSettings oil = new();
 
             [Header("Bots")]
             [SerializeField]
@@ -179,12 +189,15 @@ namespace ToyCarArena.Gameplay
             public float RollTime => rollTime;
             public float TrailingGap => trailingGap;
             public float EasyPlayerShare => easyPlayerShare;
-            public HeavySettings Heavy => heavy;
+            public MegaSettings Mega => mega;
             public ShockwaveSettings Shockwave => shockwave;
             public ShieldSettings Shield => shield;
             public TurboSettings Turbo => turbo;
             public BombSettings Bomb => bomb;
             public GloveSettings Glove => glove;
+            public BowlingSettings Bowling => bowling;
+            public BalloonSettings Balloon => balloon;
+            public OilSettings Oil => oil;
             public PickupBotSettings Bots => bots;
 
             /// <summary>
@@ -202,9 +215,10 @@ namespace ToyCarArena.Gameplay
             {
                 return kind switch
                 {
-                    ItemKind.Heavy => heavy.Duration,
+                    ItemKind.Mega => mega.Duration,
                     ItemKind.Shield => shield.Duration,
                     ItemKind.Turbo => turbo.Duration,
+                    ItemKind.Balloon => balloon.Duration,
                     _ => 0f,
                 };
             }
@@ -215,9 +229,12 @@ namespace ToyCarArena.Gameplay
             }
         }
 
-        /// <summary>The car weighs several times as much: it moves others, and is moved, as a heavy car does.</summary>
+        /// <summary>
+        /// The car grows big and heavy: its model and its collider grow by the size scale, so it is hard to miss and
+        /// covers more of the floor, and its mass, which the push of its hits goes by, by the mass scale.
+        /// </summary>
         [Serializable]
-        public sealed class HeavySettings
+        public sealed class MegaSettings
         {
             [Tooltip("What the car's mass is multiplied by: in the push of its hits, which goes by the ratio of the masses, " +
                 "and in the physics")]
@@ -225,13 +242,206 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float massScale = 3f;
 
+            [Tooltip("What the car's size is multiplied by, the model and the collider alike")]
+            [Range(1f, 2.5f)]
+            [SerializeField]
+            private float sizeScale = 1.6f;
+
+            [Tooltip("Seconds the car takes to grow, and to shrink back: growing at once into a car beside it would " +
+                "fling that car away")]
+            [Min(0.01f)]
+            [SerializeField]
+            private float growTime = 0.3f;
+
             [Tooltip("Seconds it lasts")]
             [Min(0.5f)]
             [SerializeField]
             private float duration = 6f;
 
             public float MassScale => massScale;
+            public float SizeScale => sizeScale;
+            public float GrowTime => growTime;
             public float Duration => duration;
+        }
+
+        /// <summary>
+        /// A bowling ball rolled out of the car's nose straight along its heading: it rolls across the floor, knocks aside
+        /// every car on its line once (credited to the roller) and keeps rolling, until it rolls off the floor and falls.
+        /// </summary>
+        [Serializable]
+        public sealed class BowlingSettings
+        {
+            [Tooltip("Radius of the ball in metres")]
+            [Min(0.2f)]
+            [SerializeField]
+            private float radius = 0.9f;
+
+            [Tooltip("Speed it rolls at, in metres per second")]
+            [Min(1f)]
+            [SerializeField]
+            private float speed = 17f;
+
+            [Tooltip("Metres it rolls at most before it fades, if it never leaves the floor")]
+            [Min(1f)]
+            [SerializeField]
+            private float range = 40f;
+
+            [Tooltip("Metres from the ball's line a car's middle may be and still be hit, besides the ball's radius")]
+            [Min(0f)]
+            [SerializeField]
+            private float hitReach = 1f;
+
+            [Tooltip("Speed, in metres per second, a hit adds to a car")]
+            [Min(0f)]
+            [SerializeField]
+            private float push = 15f;
+
+            [Tooltip("Share of the push that goes out to the side of the ball's line the car is on; the rest goes along " +
+                "the line, so a car is bowled aside and not only carried ahead")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float sideShare = 0.55f;
+
+            [Tooltip("The most a hit may leave a car going, as a share of Car.MaxBumpSpeed")]
+            [Min(0.5f)]
+            [SerializeField]
+            private float maxSpeedShare = 1.3f;
+
+            [Tooltip("Speed a hit throws a car up at, in metres per second")]
+            [Min(0f)]
+            [SerializeField]
+            private float lift = 2.5f;
+
+            [Tooltip("Seconds a car the ball hits is off balance")]
+            [Min(0f)]
+            [SerializeField]
+            private float stagger = 0.7f;
+
+            public float Radius => radius;
+            public float Speed => speed;
+            public float Range => range;
+            public float HitReach => hitReach;
+            public float Push => push;
+            public float SideShare => sideShare;
+            public float MaxSpeedShare => maxSpeedShare;
+            public float Lift => lift;
+            public float Stagger => stagger;
+        }
+
+        /// <summary>
+        /// A balloon tied to the car for a few seconds: a fall off the edge while it lasts is caught, and the balloon
+        /// carries the car up and back over safe floor, drops it there and pops.
+        /// </summary>
+        [Serializable]
+        public sealed class BalloonSettings
+        {
+            [Tooltip("Seconds it lasts if the car does not fall")]
+            [Min(0.5f)]
+            [SerializeField]
+            private float duration = 10f;
+
+            [Tooltip("Metres below the top of the floor a car off the floor must sink to before the balloon catches it; " +
+                "well above Round.FallHeight, so the round never takes it out first")]
+            [Min(0.05f)]
+            [SerializeField]
+            private float catchDepth = 0.4f;
+
+            [Tooltip("Seconds the balloon takes to carry the car back")]
+            [Min(0.2f)]
+            [SerializeField]
+            private float carryTime = 1.2f;
+
+            [Tooltip("Metres above the floor the car is carried at, over the other cars")]
+            [Min(1f)]
+            [SerializeField]
+            private float carryHeight = 4.5f;
+
+            [Tooltip("Metres above the floor the balloon lets the car go")]
+            [Min(0f)]
+            [SerializeField]
+            private float dropHeight = 1.5f;
+
+            [Tooltip("Metres inside the safe edge the car is set down")]
+            [Min(0f)]
+            [SerializeField]
+            private float landMargin = 3f;
+
+            [Tooltip("Metres from every other car the car is set down")]
+            [Min(0f)]
+            [SerializeField]
+            private float landClearance = 3f;
+
+            public float Duration => duration;
+            public float CatchDepth => catchDepth;
+            public float CarryTime => carryTime;
+            public float CarryHeight => carryHeight;
+            public float DropHeight => dropHeight;
+            public float LandMargin => landMargin;
+            public float LandClearance => landClearance;
+        }
+
+        /// <summary>
+        /// A slick of oil spilled on the floor behind the car: every car on it slides (little grip) and a car that crosses
+        /// it counts as hit by the spiller, so a slide off the edge is the spiller's knock-out. A car that drove through it
+        /// leaves oily tyre tracks for a while.
+        /// </summary>
+        [Serializable]
+        public sealed class OilSettings
+        {
+            [Tooltip("Metres behind the car's middle the slick is spilled")]
+            [Min(0f)]
+            [SerializeField]
+            private float dropBehind = 2.6f;
+
+            [Tooltip("Radius of the slick in metres")]
+            [Min(0.5f)]
+            [SerializeField]
+            private float radius = 2.6f;
+
+            [Tooltip("Seconds the slick lies there")]
+            [Min(1f)]
+            [SerializeField]
+            private float lifetime = 9f;
+
+            [Tooltip("Metres over which the slick's feel fades in at its rim")]
+            [Min(0.01f)]
+            [SerializeField]
+            private float blendWidth = 0.5f;
+
+            [Tooltip("What a car's grip is multiplied by on the slick")]
+            [Range(0.02f, 1f)]
+            [SerializeField]
+            private float grip = 0.12f;
+
+            [Tooltip("What a car's top speed is multiplied by on the slick")]
+            [Range(0.2f, 2f)]
+            [SerializeField]
+            private float speed = 1.1f;
+
+            [Tooltip("What a car's acceleration is multiplied by on the slick: the wheels spin")]
+            [Range(0.05f, 2f)]
+            [SerializeField]
+            private float acceleration = 0.45f;
+
+            [Tooltip("What the push of a hit taken on the slick is multiplied by")]
+            [Range(0.2f, 3f)]
+            [SerializeField]
+            private float push = 1.3f;
+
+            [Tooltip("Seconds a car's tyres stay oily after it leaves the slick, leaving tracks")]
+            [Min(0f)]
+            [SerializeField]
+            private float oilyTime = 3.5f;
+
+            public float DropBehind => dropBehind;
+            public float Radius => radius;
+            public float Lifetime => lifetime;
+            public float BlendWidth => blendWidth;
+            public float Grip => grip;
+            public float Speed => speed;
+            public float Acceleration => acceleration;
+            public float Push => push;
+            public float OilyTime => oilyTime;
         }
 
         /// <summary>A ring from the user pushes every other car on the floor near it outward, credited to the user.</summary>
@@ -243,21 +453,33 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float radius = 9f;
 
-            [Tooltip("Speed, in metres per second, the ring pushes a car at the user's side; it eases to the share below " +
-                "at the edge of the ring. Never past a hit's most, Car.MaxBumpSpeed")]
+            [Tooltip("Speed, in metres per second, the ring pushes a car at the user's side; it falls to the share below " +
+                "at the edge of the ring, steeper with the falloff")]
             [Min(0f)]
             [SerializeField]
-            private float push = 12f;
+            private float push = 22f;
 
             [Tooltip("Share of the push a car at the edge of the ring gets")]
             [Range(0f, 1f)]
             [SerializeField]
-            private float edgeShare = 0.5f;
+            private float edgeShare = 0.35f;
 
-            [Tooltip("Speed the ring throws a car up at, in metres per second")]
+            [Tooltip("How steeply the push falls from the middle to the edge: 1 falls evenly, more keeps the full push " +
+                "only right by the middle")]
+            [Min(1f)]
+            [SerializeField]
+            private float falloff = 1.5f;
+
+            [Tooltip("The most the push may leave a car going, as a share of Car.MaxBumpSpeed: a blast throws harder " +
+                "than a hit")]
+            [Min(0.5f)]
+            [SerializeField]
+            private float maxSpeedShare = 1.4f;
+
+            [Tooltip("Speed the ring throws a car up at in the middle, in metres per second; it eases like the push")]
             [Min(0f)]
             [SerializeField]
-            private float lift = 2f;
+            private float lift = 3.5f;
 
             [Tooltip("Seconds a car the ring hits is off balance")]
             [Min(0f)]
@@ -267,6 +489,8 @@ namespace ToyCarArena.Gameplay
             public float Radius => radius;
             public float Push => push;
             public float EdgeShare => edgeShare;
+            public float Falloff => falloff;
+            public float MaxSpeedShare => maxSpeedShare;
             public float Lift => lift;
             public float Stagger => stagger;
         }
@@ -347,21 +571,33 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float radius = 4.5f;
 
-            [Tooltip("Speed, in metres per second, the blast pushes a car right by the bomb; it eases to the share below " +
-                "at the edge. Never past a hit's most, Car.MaxBumpSpeed")]
+            [Tooltip("Speed, in metres per second, the blast pushes a car right by the bomb; it falls to the share below " +
+                "at the edge, steeper with the falloff")]
             [Min(0f)]
             [SerializeField]
-            private float push = 13f;
+            private float push = 24f;
 
             [Tooltip("Share of the push a car at the edge of the blast gets")]
             [Range(0f, 1f)]
             [SerializeField]
-            private float edgeShare = 0.55f;
+            private float edgeShare = 0.35f;
 
-            [Tooltip("Speed the blast throws a car up at, in metres per second")]
+            [Tooltip("How steeply the push falls from the middle to the edge: 1 falls evenly, more keeps the full push " +
+                "only right by the middle")]
+            [Min(1f)]
+            [SerializeField]
+            private float falloff = 1.5f;
+
+            [Tooltip("The most the push may leave a car going, as a share of Car.MaxBumpSpeed: a blast throws harder " +
+                "than a hit")]
+            [Min(0.5f)]
+            [SerializeField]
+            private float maxSpeedShare = 1.4f;
+
+            [Tooltip("Speed the blast throws a car up at in the middle, in metres per second; it eases like the push")]
             [Min(0f)]
             [SerializeField]
-            private float lift = 3f;
+            private float lift = 5f;
 
             [Tooltip("Seconds a car the blast hits is off balance")]
             [Min(0f)]
@@ -375,6 +611,8 @@ namespace ToyCarArena.Gameplay
             public float Radius => radius;
             public float Push => push;
             public float EdgeShare => edgeShare;
+            public float Falloff => falloff;
+            public float MaxSpeedShare => maxSpeedShare;
             public float Lift => lift;
             public float Stagger => stagger;
         }
@@ -474,12 +712,12 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private Vector2 useDelay = new(0.2f, 0.7f);
 
-            [Tooltip("Metres ahead within which a target makes a bot use a heavy or a turbo")]
+            [Tooltip("Metres ahead within which a target makes a bot use a mega or a turbo")]
             [Min(0f)]
             [SerializeField]
             private float pushRange = 6f;
 
-            [Tooltip("Degrees off the nose a target may be and still count as ahead, for the heavy, the turbo and the bomb")]
+            [Tooltip("Degrees off the nose a target may be and still count as ahead, for the mega, the turbo and the bomb")]
             [Range(0f, 90f)]
             [SerializeField]
             private float aheadAngle = 30f;
@@ -492,6 +730,20 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Metres, least and most, ahead a target must be for a bot to throw a bomb at it")]
             [SerializeField]
             private Vector2 bombRange = new(7f, 11f);
+
+            [Tooltip("Metres, least and most, ahead a target must be for a bot to roll the bowling ball at it")]
+            [SerializeField]
+            private Vector2 bowlingRange = new(3f, 16f);
+
+            [Tooltip("Degrees off the nose a target may be for a bot to roll the bowling ball at it")]
+            [Range(0f, 45f)]
+            [SerializeField]
+            private float bowlingAngle = 10f;
+
+            [Tooltip("Metres behind a bot within which a car chasing it makes it spill its oil")]
+            [Min(0f)]
+            [SerializeField]
+            private float oilChaser = 9f;
 
             [Tooltip("Other cars in play within the shockwave's reach that make a bot use it")]
             [Min(1)]
@@ -517,6 +769,9 @@ namespace ToyCarArena.Gameplay
             public float AheadAngle => aheadAngle;
             public float PunchAngle => punchAngle;
             public Vector2 BombRange => bombRange;
+            public Vector2 BowlingRange => bowlingRange;
+            public float BowlingAngle => bowlingAngle;
+            public float OilChaser => oilChaser;
             public int ShockwaveCars => shockwaveCars;
             public float ShieldThreat => shieldThreat;
             public float ShieldThreatSpeed => shieldThreatSpeed;

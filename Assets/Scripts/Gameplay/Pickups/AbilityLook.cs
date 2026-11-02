@@ -9,7 +9,7 @@ namespace ToyCarArena.Gameplay.Pickups
 {
     /// <summary>
     /// What a car shows while an ability runs, so the others can see it: a see-through bubble round a car with a shield
-    /// (it blinks as it runs out), a dark pad pressing on the floor under a heavy car, and flame puffs behind a car with a
+    /// (it blinks as it runs out), a dark pad pressing on the floor under a mega car, and flame puffs behind a car with a
     /// turbo. Flat stickers and a transparent bubble carry no outline of their own. The numbers are looks, not rules.
     /// Everything is built on the first car that needs it and freed with the look.
     /// </summary>
@@ -54,15 +54,18 @@ namespace ToyCarArena.Gameplay.Pickups
             time += deltaTime;
             for (var i = 0; i < cars.Count; i++) {
                 var car = cars[i];
-                var ability = car.IsOut ? ItemKind.None : car.Ability;
-                if (ability == ItemKind.None && (i >= slots.Count || slots[i] == null)) {
+                var isIn = !car.IsOut;
+                var isShielded = isIn && car.IsRunning(ItemKind.Shield);
+                var isMega = isIn && car.IsRunning(ItemKind.Mega);
+                var isTurbo = isIn && car.IsRunning(ItemKind.Turbo);
+                if (!isShielded && !isMega && !isTurbo && (i >= slots.Count || slots[i] == null)) {
                     continue;
                 }
 
                 var slot = SlotFor(i);
-                ShowBubble(slot, car, ability == ItemKind.Shield);
-                ShowPad(slot, car, ability == ItemKind.Heavy);
-                if (ability == ItemKind.Turbo && effects != null) {
+                ShowBubble(slot, car, isShielded);
+                ShowPad(slot, car, isMega);
+                if (isTurbo && effects != null) {
                     slot.Flame -= deltaTime;
                     if (slot.Flame <= 0f && car.Movement.Velocity.sqrMagnitude > MinFlameSpeed * MinFlameSpeed) {
                         slot.Flame = FlameInterval;
@@ -93,7 +96,7 @@ namespace ToyCarArena.Gameplay.Pickups
 
         private void ShowBubble(Slot slot, Car car, bool isShown)
         {
-            if (isShown && car.AbilityTimeLeft < BlinkTime) {
+            if (isShown && car.TimeLeft(ItemKind.Shield) < BlinkTime) {
                 // Off for half of each blink, so a shield about to go is hard to miss.
                 isShown = Mathf.Repeat(time * BlinkRate, 1f) < 0.5f;
             }
@@ -127,7 +130,8 @@ namespace ToyCarArena.Gameplay.Pickups
             var pulse = 1f + Mathf.Sin(time * 5f) * 0.07f;
             slot.Pad.SetPositionAndRotation(new Vector3(position.x, PadHeight, position.z),
                 Quaternion.Euler(0f, car.transform.eulerAngles.y, 0f));
-            slot.Pad.localScale = new Vector3(1.9f * pulse, 1f, 1.9f * pulse);
+            var size = 1.9f * pulse * car.Growth;
+            slot.Pad.localScale = new Vector3(size, 1f, size);
         }
 
         private Slot SlotFor(int index)
@@ -152,7 +156,7 @@ namespace ToyCarArena.Gameplay.Pickups
             bubble.gameObject.SetActive(false);
             slot.Bubble = bubble;
 
-            var pad = ToyMeshes.Decal(parent, "Heavy Pad", padMesh, art.Get("mound_ring"), -5);
+            var pad = ToyMeshes.Decal(parent, "Mega Pad", padMesh, art.Get("mound_ring"), -5);
             block.SetColor(ColorId, new Color(0.114f, 0.169f, 0.31f, 0.4f));
             pad.SetPropertyBlock(block);
             pad.gameObject.SetActive(false);

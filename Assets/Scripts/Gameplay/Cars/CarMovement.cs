@@ -286,6 +286,84 @@ namespace ToyCarArena.Gameplay.Cars
         }
 
         /// <summary>
+        /// Whether something carries the car through the air along a path (a balloon item): it neither drives nor feels
+        /// the floor, and nothing but the path moves it until the path ends.
+        /// </summary>
+        public bool IsCarried { get; private set; }
+
+        /// <summary>
+        /// Raised on the physics step a carry ends, the car let go to fall the last bit.
+        /// </summary>
+        public event Action CarryEnded;
+
+        private Vector3 carryFrom;
+        private Vector3 carryTo;
+        private float carryHeight;
+        private float carryTime;
+        private float carryStart;
+
+        /// <summary>
+        /// Carries the car from where it is up to <paramref name="height"/> above the floor, across to over
+        /// <paramref name="to"/> and down to it, in <paramref name="seconds"/>; then lets it go at rest. The path rises
+        /// straight up first, so a car caught under the rim of the floor clears it before it crosses.
+        /// </summary>
+        public void Carry(Vector3 to, float height, float seconds)
+        {
+            carryFrom = body.position;
+            carryTo = to;
+            carryHeight = height;
+            carryTime = Mathf.Max(0.05f, seconds);
+            carryStart = Time.time;
+            IsCarried = true;
+            IsGrounded = false;
+            direction = Vector3.zero;
+            throttle = 0f;
+            boostEndTime = float.NegativeInfinity;
+            staggerEndTime = float.NegativeInfinity;
+            body.angularVelocity = Vector3.zero;
+        }
+
+        /// <summary>
+        /// Ends a carry where the car is, without letting it fall from its end: a fall or a respawn took over.
+        /// </summary>
+        public void StopCarry()
+        {
+            IsCarried = false;
+        }
+
+        /// <summary>
+        /// One physics step of a carry: the car's velocity is set to reach the next point of the path, so the physics
+        /// still moves it (and the interpolation smooths it), and it turns level as it goes.
+        /// </summary>
+        private void StepCarry()
+        {
+            var t = Mathf.Clamp01((Time.time + Time.fixedDeltaTime - carryStart) / carryTime);
+            var next = CarryPoint(t);
+            body.linearVelocity = (next - body.position) / Time.fixedDeltaTime;
+            body.angularVelocity = Vector3.zero;
+            var yaw = Quaternion.Euler(0f, body.rotation.eulerAngles.y, 0f);
+            body.MoveRotation(Quaternion.RotateTowards(body.rotation, yaw, 360f * Time.fixedDeltaTime));
+            if (t < 1f) {
+                return;
+            }
+
+            IsCarried = false;
+            body.linearVelocity = Vector3.zero;
+            CarryEnded?.Invoke();
+        }
+
+        // A cubic curve: straight up from the start to the carry height, across, and down to the end.
+        private Vector3 CarryPoint(float t)
+        {
+            var rise = new Vector3(carryFrom.x, carryHeight, carryFrom.z);
+            var over = new Vector3(carryTo.x, carryHeight, carryTo.z);
+            var eased = t * t * (3f - 2f * t);
+            var u = 1f - eased;
+            return u * u * u * carryFrom + 3f * u * u * eased * rise + 3f * u * eased * eased * over
+                + eased * eased * eased * carryTo;
+        }
+
+        /// <summary>
         /// Puts the car somewhere at rest, as a spawn does.
         /// </summary>
         public void Place(Vector3 position, Quaternion rotation)
@@ -304,6 +382,7 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public void Respawn(Vector3 position, Quaternion rotation)
         {
+            IsCarried = false;
             Place(position, rotation);
             direction = Vector3.zero;
             throttle = 0f;
@@ -327,6 +406,11 @@ namespace ToyCarArena.Gameplay.Cars
 #endif
             body.mass = settings.Mass * massScale;
             body.centerOfMass = new Vector3(0f, settings.CenterOfMassHeight, 0f);
+            if (IsCarried) {
+                StepCarry();
+                StepVelocity = body.linearVelocity;
+                return;
+            }
 
             var up = body.rotation * Vector3.up;
             IsGrounded = Physics.Raycast(body.position + up * GroundProbeHeight, -up, GroundProbeHeight + GroundProbeDepth,

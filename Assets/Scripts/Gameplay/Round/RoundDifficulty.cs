@@ -31,7 +31,8 @@ namespace ToyCarArena.Gameplay.Round
             this.AimError = Mathf.Lerp(easy.AimError, normal.AimError, level);
             this.BoostDelay = Vector2.Lerp(easy.BoostDelay, normal.BoostDelay, level);
             this.EscapeBoostChance = Mathf.Lerp(easy.EscapeBoostChance, normal.EscapeBoostChance, level);
-            this.EdgeAssist = Mathf.Lerp(easy.EdgeAssist, normal.EdgeAssist, level);
+            this.EdgeAssist = Mathf.Lerp(easy.EdgeAssist, normal.EdgeAssist,
+                LevelFor(settings, progress, settings.EdgeAssistRounds));
             this.AutoBoost = Mathf.Lerp(easy.AutoBoost, normal.AutoBoost, level);
             this.PlayerBump = Mathf.Lerp(easy.PlayerBump, normal.PlayerBump, level);
             this.PlayerStaggerScale = Mathf.Lerp(easy.PlayerStaggerScale, normal.PlayerStaggerScale, level);
@@ -55,9 +56,12 @@ namespace ToyCarArena.Gameplay.Round
         public static int BotCountFor(GameTuning tuning, ISessionProgress progress) =>
             Mathf.RoundToInt(Mathf.Lerp(tuning.Bots.Easy.Bots, tuning.Bots.Normal.Bots, LevelFor(tuning.Bots, progress)));
 
-        private static float LevelFor(GameTuning.BotSettings settings, ISessionProgress progress)
+        private static float LevelFor(GameTuning.BotSettings settings, ISessionProgress progress) =>
+            LevelFor(settings, progress, settings.RampRounds);
+
+        private static float LevelFor(GameTuning.BotSettings settings, ISessionProgress progress, int rampRounds)
         {
-            var ramp = settings.RampRounds > 0 ? Mathf.Clamp01((progress.Round - 1f) / settings.RampRounds) : 1f;
+            var ramp = rampRounds > 0 ? Mathf.Clamp01((progress.Round - 1f) / rampRounds) : 1f;
             var streak = progress.LosingStreak - settings.StreakStart + 1;
             var ease = streak > 0 ? Mathf.Min(settings.MaxStreakEase, settings.StreakEase * streak) : 0f;
             return Mathf.Clamp01(ramp - ease);
@@ -73,7 +77,8 @@ namespace ToyCarArena.Gameplay.Round
         public float EscapeBoostChance { get; }
 
         /// <summary>
-        /// Share of the player's steer off the arena that is taken away near the edge, from 0 to 1.
+        /// Share of the player's steer off the arena that is taken away near the edge, from 0 to 1. Ramps over
+        /// <see cref="GameTuning.BotSettings.EdgeAssistRounds"/>, longer than the bots.
         /// </summary>
         public float EdgeAssist { get; }
 

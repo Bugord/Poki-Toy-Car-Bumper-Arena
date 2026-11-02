@@ -64,6 +64,11 @@ namespace ToyCarArena.Gameplay.Cars
         private Material ownMaterial;
 
         /// <summary>
+        /// What the spot's size is multiplied by while the car is grown (a mega item); 1 at its own size.
+        /// </summary>
+        public float Growth { get; set; } = 1f;
+
+        /// <summary>
         /// Sizes the spot to the car's model, its width and length in metres.
         /// </summary>
         public void Fit(Vector2 size)
@@ -143,7 +148,7 @@ namespace ToyCarArena.Gameplay.Cars
             }
 
             var closeness = 1f - Mathf.Clamp01(height / fadeHeight);
-            var size = footprint * Mathf.Lerp(minScale, 1f, closeness);
+            var size = footprint * (Growth * Mathf.Lerp(minScale, 1f, closeness));
             var color = material.color;
             color.a *= visible * closeness;
             ownMaterial.SetColor(BaseColorId, color);

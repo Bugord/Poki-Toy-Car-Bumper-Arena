@@ -82,6 +82,8 @@ namespace ToyCarArena.Gameplay.Cars
 
         private Mesh ownBody;
         private GameObject model;
+        private Vector3 modelScale = Vector3.one;
+        private Vector3 modelPosition;
         private bool isGhost;
         private Car car;
         private Transform ring;
@@ -126,6 +128,23 @@ namespace ToyCarArena.Gameplay.Cars
         /// <summary>The catalog model as this car shows it, painted; null before <see cref="Apply"/>.</summary>
         public GameObject Model => model;
 
+        /// <summary>The model's scale at the car's own size, whatever a mega item makes of it for now.</summary>
+        public Vector3 ModelScale => modelScale;
+
+        /// <summary>
+        /// Shows the car <paramref name="growth"/> times its own size (a mega item), grown from the middle of the floor
+        /// under it, so its wheels stay on the floor. Looks only: the collider is the car's business.
+        /// </summary>
+        public void SetGrowth(float growth)
+        {
+            if (model == null) {
+                return;
+            }
+
+            model.transform.localScale = modelScale * growth;
+            model.transform.localPosition = modelPosition * growth;
+        }
+
         private void ReplaceModel(CarCatalog.Entry entry)
         {
             if (entry == null || entry.Model == null) {
@@ -163,6 +182,8 @@ namespace ToyCarArena.Gameplay.Cars
             bounds = CarModel.BoundsIn(model, transform.worldToLocalMatrix);
             model.transform.localPosition = new Vector3(reference.center.x - bounds.center.x,
                 reference.min.y - bounds.min.y, reference.center.z - bounds.center.z);
+            modelScale = model.transform.localScale;
+            modelPosition = model.transform.localPosition;
             if (TryGetComponent<CarShadow>(out var shadow)) {
                 shadow.Fit(new Vector2(bounds.size.x, bounds.size.z));
             }

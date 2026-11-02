@@ -29,6 +29,8 @@ namespace ToyCarArena.Tests.PlayMode
     {
         private const string ReportPath = "Logs/edge-fall-report.md";
         private const int TotalTrials = 121;
+        // Normal for the bots and for the edge assist alike: the assist ramps over GameTuning.Bots.EdgeAssistRounds (12).
+        private const int NormalRound = 13;
         private readonly StringBuilder details = new();
         private readonly List<Observation> observations = new();
         private readonly SimulationInput input = new();
@@ -76,7 +78,7 @@ namespace ToyCarArena.Tests.PlayMode
                 }
 
                 for (var run = 0; run < 3; run++) {
-                    yield return Measure(scenario, 7100 + run, run * 137f, 7);
+                    yield return Measure(scenario, 7100 + run, run * 137f, NormalRound);
                     WriteReport(false);
                     yield return UnloadGame();
                     UnityEngine.Debug.Log($"Edge falls: Normal {scenario}, {run + 1}/3, " +
@@ -305,7 +307,7 @@ namespace ToyCarArena.Tests.PlayMode
             report.AppendLine($"Status: {(complete ? "COMPLETE" : "IN PROGRESS; completed trials only")}; " +
                 $"{observations.Count}/{TotalTrials} trials; wall={stopwatch.Elapsed.TotalSeconds:0.0}s; hit-stop recoveries={hitStopRecoveries}.");
             report.AppendLine("\nEasy: visit round 1, 18 scenarios x 3 seeds/angles plus 40 novice rounds. " +
-                "Normal: visit round 7, Tangent/Diagonal30/Diagonal60 and six Boost/Tap scenarios x 3 seeds/angles. " +
+                "Normal: visit round 13 (normal bots and edge assist), Tangent/Diagonal30/Diagonal60 and six Boost/Tap scenarios x 3 seeds/angles. " +
                 "Losing streak=0. Real Game scene, captureDeltaTime=1/30; fixedDeltaTime unchanged. " +
                 "Outcomes are measurements, never assertions.\n");
             report.AppendLine("Idle explicitly begins the round, then sends no input. IdleRing stands on the outer ring; " +
