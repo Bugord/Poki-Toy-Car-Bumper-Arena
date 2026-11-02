@@ -11,7 +11,7 @@
                 <ui:VisualElement class="lobby__bar" picking-mode="Ignore">
                     <ui:VisualElement name="lobby-bar-fill" class="lobby__bar-fill" picking-mode="Ignore" />
                 </ui:VisualElement>
-                <ui:Label name="lobby-loading-text" text="LOADING ARENA..." class="lobby__loading-text" picking-mode="Ignore" />
+                <ui:Label name="lobby-loading-text" text="PLAYERS 1/7" class="lobby__loading-text" picking-mode="Ignore" />
             </ui:VisualElement>
             <ui:Label name="lobby-tip" class="lobby__tip" picking-mode="Ignore" />
         </ui:VisualElement>

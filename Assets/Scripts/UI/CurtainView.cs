@@ -7,8 +7,10 @@ using UnityEngine.UIElements;
 namespace ToyCarArena.UI
 {
     /// <summary>
-    /// The curtain between rounds. After NEXT MATCH it shows the coming match on it: MATCH FOUND!, the arena, the seats
-    /// popping in, a loading bar and a tip, then READY! once the arena has loaded.
+    /// The curtain between rounds. After NEXT MATCH it shows the coming match on it as a search for players: FINDING
+    /// PLAYERS..., the arena, the seats searching and filling one by one, a bar of players found and a tip, MATCH FOUND!
+    /// once every seat is taken and READY! once the arena has loaded. The search runs inside the lobby's least time, so it
+    /// adds nothing to the wait; the scene loads behind it the whole while.
     /// </summary>
     public sealed class CurtainView : FadingView<CurtainViewModel>
     {
@@ -16,10 +18,17 @@ namespace ToyCarArena.UI
         private const float EnterDuration = 0.2f;
         private const float LeftHold = 0.12f;
         private const float LeftEnd = 0.24f;
-        // The scene load reports no progress, so the bar eases towards most of the way and fills the rest on READY!.
-        private const float LoadingShare = 0.9f;
-        private const float LoadingTime = CurtainViewModel.LobbyDuration / 3f;
+        // When the first and the last seat are found, in seconds from the lobby: all of them before its least time ends,
+        // so MATCH FOUND! shows a moment before READY!. Each find is shifted a little, so they do not come like a clock.
+        private const float FirstFind = 0.3f;
+        private const float LastFind = CurtainViewModel.LobbyDuration - 0.4f;
+        private const float FindJitter = 0.06f;
+        // A found seat's searching strip shrinks away under the player popping in.
+        private const float SearchOut = 0.12f;
+        // The bar fills with the seats found and the rest on READY!.
+        private const float FoundShare = 0.9f;
         private const float FillSpeed = 4f;
+        private const float SpinSpeed = 540f;
 
         private static readonly string[] Tips = {
             "lobby.tip.boost_hit",
@@ -31,7 +40,7 @@ namespace ToyCarArena.UI
 
         private static readonly string[] Dots = { ".", "..", "..." };
 
-        private readonly List<(VisualElement slot, VisualElement incoming, VisualElement outgoing)> rows = new();
+        private readonly List<Seat> seats = new();
         private VisualElement lobby;
         private Label title;
         private Label titleFace;
@@ -44,6 +53,18 @@ namespace ToyCarArena.UI
         private IVisualElementScheduledItem animation;
 
         protected override float FadeDuration => 0.25f;
+
+        private sealed class Seat
+        {
+            public VisualElement Slot;
+            public VisualElement Incoming;
+            public VisualElement Outgoing;
+            public VisualElement Searching;
+            public VisualElement Spinner;
+            public Label SearchingText;
+            // When the seat's player is found, in seconds from the lobby; 0 for the player's own, there from the start.
+            public float FoundAt;
+        }
 
         protected override void OnAttached()
         {
@@ -70,29 +91,58 @@ namespace ToyCarArena.UI
         {
             var container = Root.Q<VisualElement>("lobby-rows");
             container.Clear();
-            rows.Clear();
+            seats.Clear();
             lobby.style.display = DisplayStyle.Flex;
             BuildArenaLine();
             fill = 0f;
             fillTime = 0f;
             Root.Q<Label>("lobby-tip").text = Strings.Get(Tips[Random.Range(0, Tips.Length)]);
             foreach (var row in ViewModel.Rows) {
-                var slot = Element("lobby__slot");
-                var incoming = row.Name != null ? CreateRow(row, false) : null;
-                var outgoing = row.LeftName != null ? CreateRow(row, true) : null;
-                if (incoming != null) {
-                    slot.Add(incoming);
+                var seat = new Seat { Slot = Element("lobby__slot") };
+                if (row.Name != null && row.Index != 0) {
+                    seat.Searching = CreateSearching(out seat.Spinner, out seat.SearchingText);
+                    seat.Slot.Add(seat.Searching);
                 }
-                if (outgoing != null) {
-                    slot.Add(outgoing);
+                if (row.Name != null) {
+                    seat.Incoming = CreateRow(row, false);
+                    seat.Slot.Add(seat.Incoming);
                 }
-                rows.Add((slot, incoming, outgoing));
-                container.Add(slot);
+                if (row.LeftName != null) {
+                    seat.Outgoing = CreateRow(row, true);
+                    seat.Slot.Add(seat.Outgoing);
+                }
+                seats.Add(seat);
+                container.Add(seat.Slot);
             }
+            ScheduleFinds();
             PillShape.Keep(lobby);
             animation?.Pause();
             UpdateLobby();
             animation = Root.schedule.Execute(UpdateLobby).Every(16);
+        }
+
+        /// <summary>
+        /// Spreads the finds of the searched seats over the search, in a shuffled order: a real queue fills seats in no
+        /// order of their own.
+        /// </summary>
+        private void ScheduleFinds()
+        {
+            var searched = new List<Seat>();
+            foreach (var seat in seats) {
+                if (seat.Searching != null) {
+                    searched.Add(seat);
+                }
+            }
+            for (var i = searched.Count - 1; i > 0; i--) {
+                var j = Random.Range(0, i + 1);
+                (searched[i], searched[j]) = (searched[j], searched[i]);
+            }
+            for (var i = 0; i < searched.Count; i++) {
+                var share = searched.Count > 1 ? i / (float)(searched.Count - 1) : 1f;
+                var at = Mathf.Lerp(FirstFind, LastFind, share) + Random.Range(-FindJitter, FindJitter);
+                // A seat a player is leaving only searches once the old row has gone.
+                searched[i].FoundAt = Mathf.Max(at, (searched[i].Outgoing != null ? LeftEnd : 0f) + EnterDuration);
+            }
         }
 
         private void BuildArenaLine()
@@ -115,46 +165,92 @@ namespace ToyCarArena.UI
         private void UpdateLobby()
         {
             var time = (float)(Time.realtimeSinceStartupAsDouble - ViewModel.StartedAt);
+            var isReady = ViewModel.IsReady;
             if (arenaBadge != null) {
                 // The tag lands after the pill itself, with the same overshoot as the rows.
-                var t = ViewModel.IsReady ? 1f : Mathf.Clamp01((time - 0.15f) / EnterDuration);
-                var shifted = t - 1f;
-                arenaBadge.style.scale = new Scale(Vector3.one * (1f + 2.70158f * shifted * shifted * shifted + 1.70158f * shifted * shifted));
+                arenaBadge.style.scale = new Scale(Vector3.one * Pop(isReady ? 1f : Mathf.Clamp01((time - 0.15f) / EnterDuration)));
             }
-            var text = Strings.Get(ViewModel.IsReady ? "lobby.ready" : "lobby.match_found");
+
+            var dots = Dots[(int)(time / 0.18f) % Dots.Length];
+            var found = 0;
+            var total = 0;
+            for (var i = 0; i < seats.Count; i++) {
+                var seat = seats[i];
+                if (seat.Outgoing != null) {
+                    var scale = isReady ? 0f : 1f - Mathf.Clamp01((time - LeftHold) / (LeftEnd - LeftHold));
+                    seat.Outgoing.style.scale = new Scale(Vector3.one * scale);
+                    seat.Outgoing.style.opacity = scale;
+                    if (seat.Incoming == null) {
+                        seat.Slot.style.height = 122f * scale;
+                        seat.Slot.style.marginBottom = 12f * scale;
+                    }
+                }
+                if (seat.Incoming == null) {
+                    continue;
+                }
+
+                total++;
+                var isFound = isReady || time >= seat.FoundAt;
+                if (isFound) {
+                    found++;
+                }
+
+                var enter = Mathf.Max(i * RowStep, seat.Outgoing != null ? LeftEnd : 0f);
+                if (seat.Searching != null) {
+                    // The searching strip pops in with the seat and gives way to the player found for it.
+                    var t = isReady ? 1f : Mathf.Clamp01((time - enter) / EnterDuration);
+                    var away = isFound ? Mathf.Clamp01((time - seat.FoundAt) / SearchOut) : 0f;
+                    var scale = isReady ? 0f : Pop(t) * (1f - away);
+                    seat.Searching.style.scale = new Scale(Vector3.one * scale);
+                    seat.Searching.style.opacity = Mathf.Clamp01(t * 4f) * (1f - away);
+                    if (!isFound) {
+                        seat.Spinner.style.rotate = new Rotate(time * SpinSpeed);
+                        seat.SearchingText.text = Strings.Get("lobby.searching") + dots;
+                    }
+                    enter = seat.FoundAt;
+                }
+
+                var shown = isReady ? 1f : Mathf.Clamp01((time - enter) / EnterDuration);
+                seat.Incoming.style.scale = new Scale(Vector3.one * Pop(shown));
+                seat.Incoming.style.translate = new Translate(0f, 30f * (1f - shown));
+                seat.Incoming.style.opacity = Mathf.Clamp01(shown * 4f);
+            }
+
+            var isComplete = found >= total;
+            var text = isReady ? Strings.Get("lobby.ready")
+                : isComplete ? Strings.Get("lobby.match_found") : Strings.Get("lobby.finding_players");
             title.text = text;
             titleFace.text = text;
-            title.EnableInClassList("lobby__title--ready", ViewModel.IsReady);
-            titleFace.EnableInClassList("lobby__title--ready", ViewModel.IsReady);
-            var target = ViewModel.IsReady ? 1f : LoadingShare * (1f - Mathf.Exp(-time / LoadingTime));
+            title.EnableInClassList("lobby__title--ready", isReady);
+            titleFace.EnableInClassList("lobby__title--ready", isReady);
+            title.EnableInClassList("lobby__title--search", !isComplete);
+            titleFace.EnableInClassList("lobby__title--search", !isComplete);
+
+            var target = isReady ? 1f : FoundShare * (total > 0 ? found / (float)total : 1f);
             fill = Mathf.MoveTowards(fill, target, FillSpeed * Mathf.Max(0f, time - fillTime));
             fillTime = time;
             barFill.style.width = Length.Percent(100f * fill);
-            loadingText.text = ViewModel.IsReady ? Strings.Get("lobby.ready_to_roll")
-                : Strings.Get("lobby.loading") + Dots[(int)(time / 0.18f) % Dots.Length];
+            loadingText.text = isReady ? Strings.Get("lobby.ready_to_roll")
+                : isComplete ? Strings.Get("lobby.starting") + dots : Strings.Format("lobby.players", found, total);
+        }
 
-            for (var i = 0; i < rows.Count; i++) {
-                var (slot, incoming, outgoing) = rows[i];
-                if (outgoing != null) {
-                    var scale = ViewModel.IsReady ? 0f : 1f - Mathf.Clamp01((time - LeftHold) / (LeftEnd - LeftHold));
-                    outgoing.style.scale = new Scale(Vector3.one * scale);
-                    outgoing.style.opacity = scale;
-                    if (incoming == null) {
-                        slot.style.height = 122f * scale;
-                        slot.style.marginBottom = 12f * scale;
-                    }
-                }
-                if (incoming == null) {
-                    continue;
-                }
-                var start = Mathf.Max(i * RowStep, outgoing != null ? LeftEnd : 0f);
-                var t = ViewModel.IsReady ? 1f : Mathf.Clamp01((time - start) / EnterDuration);
-                var shifted = t - 1f;
-                var pop = 1f + 2.70158f * shifted * shifted * shifted + 1.70158f * shifted * shifted;
-                incoming.style.scale = new Scale(Vector3.one * pop);
-                incoming.style.translate = new Translate(0f, 30f * (1f - t));
-                incoming.style.opacity = Mathf.Clamp01(t * 4f);
-            }
+        // An ease out with an overshoot, 0 to 1: the pop of a sticker landing.
+        private static float Pop(float t)
+        {
+            var shifted = t - 1f;
+            return 1f + 2.70158f * shifted * shifted * shifted + 1.70158f * shifted * shifted;
+        }
+
+        private static VisualElement CreateSearching(out VisualElement spinner, out Label text)
+        {
+            var sticker = Element("lobby__row");
+            sticker.AddToClassList("lobby__row--searching");
+            spinner = Element("lobby__spinner");
+            sticker.Add(spinner);
+            text = new Label(Strings.Get("lobby.searching")) { pickingMode = PickingMode.Ignore };
+            text.AddToClassList("lobby__searching-text");
+            sticker.Add(text);
+            return sticker;
         }
 
         private static VisualElement CreateRow(LobbyRow row, bool isLeft)
@@ -176,9 +272,9 @@ namespace ToyCarArena.UI
                 target.Add(Element("revenge-target__center"));
                 sticker.Add(target);
             }
-            if (isLeft || row.IsNew) {
-                var badge = OutlinedText(Strings.Get(isLeft ? "lobby.left" : "common.new"), "lobby__badge");
-                badge.EnableInClassList("lobby__badge--left", isLeft);
+            if (isLeft) {
+                var badge = OutlinedText(Strings.Get("lobby.left"), "lobby__badge");
+                badge.AddToClassList("lobby__badge--left");
                 sticker.Add(badge);
             }
             return sticker;

@@ -355,9 +355,11 @@
 }
 
 .lobby__title {
+    height: 140px;
     margin: 0 0 48px 0;
     padding: 0;
     font-size: 112px;
+    -unity-text-align: middle-center;
     rotate: -3deg;
     color: var(--gold);
     -unity-text-outline-width: 10px;
@@ -365,6 +367,10 @@
 }
 
 .lobby__title--ready { color: var(--green); }
+
+/* FINDING PLAYERS is longer than the other titles, and longer still in French or Portuguese: smaller, in a title of
+   the same height, so the seats below do not jump when it turns to MATCH FOUND!. */
+.lobby__title--search { font-size: 84px; }
 
 /* The arena of the coming round, a compact pill between the title and the seven seats (about 150 px with its margins). */
 .lobby__arena {
@@ -476,6 +482,31 @@
 .lobby__row--left .hud__chip { background-color: var(--muted); }
 .lobby__row--left .lobby__name { color: var(--muted); }
 .lobby__badge--left { background-color: var(--silver); }
+
+/* A seat still searching: a dimmer strip with a spinning ring where the chip goes and SEARCHING..., until a player is
+   found for it and pops in over it. */
+.lobby__row--searching { background-color: rgba(255, 255, 255, 0.05); }
+
+.lobby__spinner {
+    flex-shrink: 0;
+    width: 66px;
+    height: 66px;
+    margin-right: 22px;
+    border-width: 9px;
+    border-radius: 33px;
+    border-color: rgba(255, 255, 255, 0.18);
+    border-top-color: var(--gold);
+}
+
+.lobby__searching-text {
+    margin: 0;
+    padding: 0;
+    font-size: 46px;
+    color: var(--silver);
+    opacity: 0.75;
+    -unity-text-align: middle-left;
+    white-space: nowrap;
+}
 
 .lobby__badge > .stroke__face {
     width: auto;
