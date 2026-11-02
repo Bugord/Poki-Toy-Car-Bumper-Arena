@@ -20,6 +20,9 @@ namespace ToyCarArena.App
     /// knockouts</c>, R the round 1, 2, 3 or 4plus, so the first round can be told from the later ones</item>
     /// <item><c>result / pushed, fell / out-cause</c> when the player is out: pushed off by a car, or drove off alone</item>
     /// <item><c>result / boosts-0, boosts-1-2, boosts-3plus / boosts</c></item>
+    /// <item>after v0.7.1, for a round and a match alike: <c>result / boosts-none, few, many-rR / round-boosts</c>, the
+    /// player's own boosts by round (none, 1 or 2, 3 and more; the old event has no round), and <c>result / auto-none,
+    /// few, many-rR / auto-boosts</c>, the boosts the game fired for the player (<see cref="AutoBoost"/>)</item>
     /// <item>first round only: <c>controls / keyboard, mouse, touch, gamepad, none / input</c>, what the player first
     /// steered with, and <c>controls / move-0-3, move-3-10, move-10plus, never / first-move</c>, seconds from the cars
     /// standing on the arena to it (the round waits for the player's first steer or boost, so mostly the wait)</item>
@@ -203,6 +206,7 @@ namespace ToyCarArena.App
             }
 
             platform.Measure(ResultCategory, BoostBucketOf(driver.Boosts), "boosts");
+            MeasureBoosts(platform, tag, driver);
             if (round <= 1) {
                 MeasureControls(platform, driver);
             }
@@ -229,6 +233,7 @@ namespace ToyCarArena.App
 
             platform.Measure(ResultCategory, $"color-{CarPaint.NameOf(result.ColorOf(0))}-{tag}", "color");
             platform.Measure(ResultCategory, $"cars-{result.CarCount}-{tag}", "cars");
+            MeasureBoosts(platform, tag, driver);
             if (match <= 1) {
                 MeasureControls(platform, driver);
             }
@@ -287,6 +292,22 @@ namespace ToyCarArena.App
         {
             return seconds < 15f ? "early" : seconds < 30f ? "mid" : seconds < 60f ? "late" : "full";
         }
+
+        /// <summary>
+        /// The player's own boosts and the game's for them in a round or match tagged <paramref name="tag"/>, without
+        /// numbers but the round's, so neither event goes over <see cref="GameEvent.MaxNumbers"/>.
+        /// </summary>
+        private static void MeasureBoosts(IGamePlatform platform, string tag, PlayerDriver driver)
+        {
+            if (driver == null) {
+                return;
+            }
+
+            platform.Measure(ResultCategory, $"boosts-{AmountOf(driver.Boosts)}-{tag}", "round-boosts");
+            platform.Measure(ResultCategory, $"auto-{AmountOf(driver.AutoBoosts)}-{tag}", "auto-boosts");
+        }
+
+        private static string AmountOf(int count) => count == 0 ? "none" : count <= 2 ? "few" : "many";
 
         private static string BoostBucketOf(int boosts)
         {

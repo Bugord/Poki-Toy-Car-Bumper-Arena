@@ -851,6 +851,7 @@
 .ko-pop--turbo .ko-pop__text { color: var(--gold); }
 .ko-pop--bomb .ko-pop__text { color: var(--red); }
 .ko-pop--glove .ko-pop__text { color: var(--red); }
+.ko-pop--boost .ko-pop__text { color: var(--orange); }
 
 /* Visit handles follow the bots; the inner sticker animates independently of its projected anchor. */
 .car-name {

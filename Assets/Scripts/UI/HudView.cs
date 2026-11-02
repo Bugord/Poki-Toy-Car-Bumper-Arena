@@ -409,6 +409,7 @@ namespace ToyCarArena.UI
             ViewModel.NemesisChanged += OnNemesisChanged;
             ViewModel.ItemRolled += OnItemRolled;
             ViewModel.ItemUsed += OnItemUsed;
+            ViewModel.AutoBoosted += OnAutoBoosted;
             ViewModel.ItemHit += OnItemHit;
 
             // On the press, not the release: a boost is all about the moment.
@@ -452,6 +453,7 @@ namespace ToyCarArena.UI
             ViewModel.NemesisChanged -= OnNemesisChanged;
             ViewModel.ItemRolled -= OnItemRolled;
             ViewModel.ItemUsed -= OnItemUsed;
+            ViewModel.AutoBoosted -= OnAutoBoosted;
             ViewModel.ItemHit -= OnItemHit;
 
             if (boostButton != null) {
@@ -891,6 +893,18 @@ namespace ToyCarArena.UI
             HideItemHint();
         }
 
+        /// <summary>
+        /// BOOST! over the player's car and a pop of the boost button when the game boosts for the player, so a new
+        /// player sees what the button does and that it was a boost that sent the car.
+        /// </summary>
+        private void OnAutoBoosted()
+        {
+            ShowPopup(ViewModel.PlayerPosition, false, ItemKind.None, false, true);
+            if (boostButton != null) {
+                Pulse(boostButton, BoostPopClass);
+            }
+        }
+
         /// <summary>A comic POW! where the player's glove lands on a car.</summary>
         private void OnItemHit(ItemKind kind, Vector3 point)
         {
@@ -899,7 +913,7 @@ namespace ToyCarArena.UI
             }
         }
 
-        private void ShowPopup(Vector3 worldPosition, bool isRevenge, ItemKind pickup, bool isPow)
+        private void ShowPopup(Vector3 worldPosition, bool isRevenge, ItemKind pickup, bool isPow, bool isBoost = false)
         {
             var panel = popupLayer.panel;
             if (panel == null) {
@@ -924,7 +938,7 @@ namespace ToyCarArena.UI
             ClearScoreboard(popupLayer, ref point, PopupHalfWidth, PopupHalfHeight * 2f);
             point.y -= PopupHalfHeight;
 
-            var popup = CreatePopup(popupCount++ % 2 == 0 ? -PopupTilt : PopupTilt, isRevenge, pickup, isPow);
+            var popup = CreatePopup(popupCount++ % 2 == 0 ? -PopupTilt : PopupTilt, isRevenge, pickup, isPow, isBoost);
             popup.style.left = point.x;
             popup.style.top = point.y;
             popupLayer.Add(popup);
@@ -945,7 +959,7 @@ namespace ToyCarArena.UI
 
         // The sticker: the knock-out star and KNOCKOUT! in gold, outlined (.stroke in ui_screens). The outer element
         // holds the place, centred on it; the inner one springs, tilts and flies.
-        private static VisualElement CreatePopup(float tilt, bool isRevenge, ItemKind pickup, bool isPow)
+        private static VisualElement CreatePopup(float tilt, bool isRevenge, ItemKind pickup, bool isPow, bool isBoost)
         {
             var popup = new VisualElement { pickingMode = PickingMode.Ignore };
             popup.AddToClassList("ko-pop");
@@ -960,6 +974,13 @@ namespace ToyCarArena.UI
             if (isPow) {
                 popup.AddToClassList("ko-pop--pow");
                 sticker.Add(CreateOutlinedText(Strings.Get("hud.pow"), "ko-pop__text"));
+                return popup;
+            }
+
+            if (isBoost) {
+                popup.AddToClassList("ko-pop--power");
+                popup.AddToClassList("ko-pop--boost");
+                sticker.Add(CreateOutlinedText(Strings.Get("hud.boost_pop"), "ko-pop__text"));
                 return popup;
             }
 

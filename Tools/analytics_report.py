@@ -89,6 +89,8 @@ def summarise(data):
         "driven": other(o, r"result-car-([a-z]+(?:-[a-z]+)*-r(?:1|2|3|4plus))-car"),
         "colors": other(o, r"garage-color-(green|red|blue|yellow|purple|orange|pink|dark)-color"),
         "played_colors": other(o, r"result-color-((?:green|red|blue|yellow|purple|orange|pink|dark)-r(?:1|2|3|4plus))-color"),
+        "round_boosts": other(o, r"result-boosts-((?:none|few|many)-r(?:1|2|3|4plus))-round-boosts"),
+        "auto_boosts": other(o, r"result-auto-((?:none|few|many)-r(?:1|2|3|4plus))-auto-boosts"),
         "progress": p,
     }
     # с v0.2: на раунд (R = 1, 2, 3, 4plus)
@@ -280,6 +282,8 @@ def report(version, previous):
         ("Открытия арен (визиты с map unlock)", "map_unlocks"),
         ("Арены по раундам (визиты с map)", "maps"),
         ("Варианты арен по раундам (визиты с map-variant)", "variants"),
+        ("Свои рывки по раундам (после v0.7.1, визиты с round-boosts)", "round_boosts"),
+        ("Рывки автобуста по раундам (после v0.7.1, визиты с auto-boosts)", "auto_boosts"),
     ):
         keys = keys_of(key)
         if key == "levels":
