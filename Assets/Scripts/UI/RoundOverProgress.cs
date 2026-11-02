@@ -321,8 +321,7 @@ namespace ToyCarArena.UI
                 new CarPortrait(portrait).Set(car, viewModel.SelectedColor);
                 var isForSale = viewModel.IsForSale(car);
                 await ShowReward(level, Strings.Get("result.new_car_tag"), GameText.Car(car),
-                    Strings.Get(!isForSale ? "result.drives_next" : viewModel.CanAfford(car) ? "result.buy_to_drive"
-                        : "result.buy_in_garage"), portrait, token, isForSale ? car : null);
+                    isForSale ? null : Strings.Get("result.drives_next"), portrait, token, isForSale ? car : null);
             }
 
             foreach (var arena in viewModel.NewArenasAt(level)) {
@@ -369,9 +368,8 @@ namespace ToyCarArena.UI
             frame.Add(art);
             card.Add(frame);
             card.Add(Text(name, "level-reward__name"));
-            Label captionLabel = null;
             if (caption != null) {
-                captionLabel = Text(caption, "caption");
+                var captionLabel = Text(caption, "caption");
                 captionLabel.AddToClassList("level-reward__caption");
                 card.Add(captionLabel);
             }
@@ -400,8 +398,6 @@ namespace ToyCarArena.UI
 
                     buy.SetEnabled(false);
                     buy.style.display = DisplayStyle.None;
-                    captionLabel.text = Strings.Get("result.drives_next");
-                    // Long enough to read that it drives next, then the popup goes.
                     card.schedule.Execute(() => isClosed = true).StartingIn(900);
                 };
                 card.Add(buy);
