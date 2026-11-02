@@ -47,6 +47,9 @@ namespace ToyCarArena.UI
         private Button settingsButton;
         private Button playButton;
         private CancellationTokenSource lifetime;
+        // The 3D car on the plinth and its stage; with no stage (no arena loaded) the catalog's portrait instead.
+        private GarageStage garageStage;
+        private VisualElement hero;
         private CarPortrait preview;
         private bool isClosing;
         private VisualElement body;
@@ -111,7 +114,19 @@ namespace ToyCarArena.UI
             });
             lifetime = new CancellationTokenSource();
             stage = Root.Q<VisualElement>("garage-stage");
-            preview = new CarPortrait(Root.Q<VisualElement>("garage-preview"));
+            garageStage = ViewModel.Stage;
+            var previewCar = Root.Q<VisualElement>("garage-preview");
+            if (garageStage != null) {
+                previewCar.RemoveFromClassList("car-portrait");
+                // A background, not an Image: an Image measures itself by its texture and widened the hero's column.
+                hero = new VisualElement { pickingMode = PickingMode.Ignore };
+                hero.AddToClassList("garage__hero-car");
+                previewCar.Add(hero);
+            }
+            else {
+                preview = new CarPortrait(previewCar);
+            }
+
             previewName = Root.Q<Label>("garage-preview-name");
             previewNameFace = Root.Q<Label>("garage-preview-name-face");
             BuildToast();
@@ -223,9 +238,25 @@ namespace ToyCarArena.UI
                 ids.Add(topper.Id);
             }
 
+            // The toppers' 3D models, all drawn into one texture that each card crops to its own; NONE keeps its icon.
+            var models = garageStage?.ShowToppers(ids.GetRange(1, ids.Count - 1));
             foreach (var id in ids) {
                 var topperId = id;
-                var icon = TopperIcon.Create(id, "garage__topper-icon");
+                VisualElement icon;
+                if (models != null && id.Length > 0) {
+                    icon = new Image {
+                        image = models,
+                        uv = garageStage.CellOf(id),
+                        scaleMode = ScaleMode.ScaleToFit,
+                        pickingMode = PickingMode.Ignore,
+                    };
+                    icon.AddToClassList("garage__topper-icon");
+                    icon.AddToClassList("garage__topper-model");
+                }
+                else {
+                    icon = TopperIcon.Create(id, "garage__topper-icon");
+                }
+
                 var card = new Card($"garage-topper-{(id.Length == 0 ? "none" : id)}", icon, text,
                     () => topperId.Length == 0 ? Strings.Get("garage.none") : GameText.Topper(topperId));
                 card.Button.AddToClassList("garage__card--topper");
@@ -234,8 +265,12 @@ namespace ToyCarArena.UI
                 topperGrid.Add(card.Button);
             }
 
-            previewTopper = TopperIcon.Create(ViewModel.SelectedTopper, "garage__preview-topper");
-            Root.Q<VisualElement>("garage-preview").Add(previewTopper);
+            // The 3D car wears its topper itself; the portrait gets a flat one over its roof.
+            if (garageStage == null) {
+                previewTopper = TopperIcon.Create(ViewModel.SelectedTopper, "garage__preview-topper");
+                Root.Q<VisualElement>("garage-preview").Add(previewTopper);
+            }
+
             ViewModel.ToppersShown();
             ShowTab(false);
         }
@@ -306,9 +341,11 @@ namespace ToyCarArena.UI
             var worn = ViewModel.SelectedTopper;
             coinCount.text = ViewModel.Coins.ToString();
             toppersDot.style.display = ViewModel.CanBuyTopper ? DisplayStyle.Flex : DisplayStyle.None;
-            TopperIcon.Set(previewTopper, worn);
-            // No topper is no topper on the hero: the NONE card's crossed circle belongs to the shop.
-            previewTopper.style.display = string.IsNullOrEmpty(worn) ? DisplayStyle.None : DisplayStyle.Flex;
+            if (previewTopper != null) {
+                TopperIcon.Set(previewTopper, worn);
+                // No topper is no topper on the hero: the NONE card's crossed circle belongs to the shop.
+                previewTopper.style.display = string.IsNullOrEmpty(worn) ? DisplayStyle.None : DisplayStyle.Flex;
+            }
             foreach (var (id, card) in topperCards) {
                 var topper = id.Length == 0 ? null : FindTopper(id);
                 var isOwned = topper == null || ViewModel.IsOwned(id);
@@ -335,7 +372,14 @@ namespace ToyCarArena.UI
         private void RefreshSelection()
         {
             var selectedCar = ViewModel.SelectedEntry;
-            preview.Set(selectedCar, ViewModel.SelectedColor);
+            if (garageStage != null) {
+                hero.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(
+                    garageStage.ShowCar(selectedCar, ViewModel.SelectedColor, ViewModel.SelectedTopper)));
+            }
+            else {
+                preview.Set(selectedCar, ViewModel.SelectedColor);
+            }
+
             previewName.text = GameText.Car(selectedCar);
             previewNameFace.text = GameText.Car(selectedCar);
             for (var id = 0; id < colors.Length; id++) {
@@ -565,11 +609,13 @@ namespace ToyCarArena.UI
             isClosing = true;
             StopAnimations();
             await base.HideAsync(token);
+            garageStage?.Hide();
         }
 
         public override void Dispose()
         {
             StopAnimations();
+            garageStage?.Hide();
             Root?.UnregisterCallback<KeyDownEvent>(OnKeyDown, TrickleDown.TrickleDown);
             Root?.UnregisterCallback<NavigationCancelEvent>(OnCancel);
             Root?.UnregisterCallback<GeometryChangedEvent>(OnGeometryChanged);

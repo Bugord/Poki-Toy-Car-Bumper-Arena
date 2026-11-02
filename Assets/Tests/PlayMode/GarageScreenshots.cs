@@ -75,7 +75,13 @@ namespace ToyCarArena.Tests.PlayMode
             var document = host.AddComponent<UIDocument>();
             document.panelSettings = panelSettings;
             var model = new GarageViewModel(new PlayerProgress(storage, tuning, catalog), catalog,
-                new MatchTests.RecordingPlatform(), null, new PlayerWallet(storage, tuning), tuning);
+                new MatchTests.RecordingPlatform(), null, new PlayerWallet(storage, tuning), tuning, null);
+            // The 3D car and toppers as the arena scene would give them, under a light like its sun.
+            var light = new GameObject("Garage screenshot light").AddComponent<Light>();
+            light.type = LightType.Directional;
+            light.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+            var stage = new GarageStage(AssetDatabase.LoadAssetAtPath<Car>("Assets/Prefabs/Cars/Car.prefab"), host.transform);
+            model.Stage = stage;
             var view = new GarageView(new SilentAudioService(library), new HudControls());
             try {
                 var screen = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/Screens/Garage.uxml").Instantiate();
@@ -107,6 +113,8 @@ namespace ToyCarArena.Tests.PlayMode
             }
             finally {
                 view.Dispose();
+                stage.Dispose();
+                Object.Destroy(light.gameObject);
                 Object.Destroy(host);
                 Object.DestroyImmediate(target);
                 Object.Destroy(panelSettings);

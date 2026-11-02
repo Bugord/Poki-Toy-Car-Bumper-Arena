@@ -3284,6 +3284,22 @@
     height: auto;
 }
 
+/* The 3D car: the stage's texture, a little taller than the plinth's box so the topper on the roof has room. */
+.garage__hero-car {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -60px;
+    bottom: 0;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.garage--landscape .garage__hero-car {
+    top: -90px;
+}
+
 /* The worn topper on the preview car's roof: a quarter of the picture's height down, as the portraits frame the car. */
 .garage__preview-topper {
     position: absolute;
