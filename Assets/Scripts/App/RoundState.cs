@@ -47,10 +47,15 @@ namespace ToyCarArena.App
         private readonly PersonalBests bests;
         private readonly PlayerProgress playerProgress;
         private readonly IArenaRotation arenaRotation;
+        private readonly PlayerWallet wallet;
+        private readonly MissionTracker missions;
 
         public RoundState(LevelScene levelScene, IScreenNavigator navigator, ScreenCurtain curtain, IGamePlatform platform,
-            SessionProgress progress, PersonalBests bests, PlayerProgress playerProgress, IArenaRotation arenaRotation)
+            SessionProgress progress, PersonalBests bests, PlayerProgress playerProgress, IArenaRotation arenaRotation,
+            PlayerWallet wallet, MissionTracker missions)
         {
+            this.wallet = wallet;
+            this.missions = missions;
             this.levelScene = levelScene;
             this.navigator = navigator;
             this.curtain = curtain;
@@ -99,6 +104,15 @@ namespace ToyCarArena.App
                 }
             }
 
+            // Knock-outs of cars the player's item hit last, for the item missions.
+            var itemKnockouts = 0;
+            void OnKnockedOut(Car car, Car by)
+            {
+                if (by == round.Player && car.LastHitByItem) {
+                    itemKnockouts++;
+                }
+            }
+
             void OnItemLanded(ItemKind kind) => platform.MeasureItemGet(roundNumber, kind, round.IsMatch);
             void OnItemUsed(ItemKind kind) => platform.MeasureItemUse(roundNumber, kind, round.IsMatch);
 
@@ -131,6 +145,7 @@ namespace ToyCarArena.App
             }
 
             variants.VariantChanged += OnVariantChanged;
+            round.KnockedOut += OnKnockedOut;
             try {
                 round.Place();
                 pickupCar = round.Player;
@@ -154,9 +169,21 @@ namespace ToyCarArena.App
                 platform.GameplayStop();
                 isPlaying = false;
 
-                progress.Record(result);
-                var record = bests.Record(result).WithXp(playerProgress.Record(result)).WithKnocker(
-                    result.KnockedOutBy == RoundResult.Nobody ? "" : round.NameOf(result.KnockedOutBy)).WithRoster(round.Names, round.Levels, IndexOf(round, round.Nemesis));
+                // A streak round's reward is multiplied by the streak it was played on, before this round moves it.
+                var streaks = tuning.Streaks;
+                var streakBefore = progress.WinStreak;
+                var isStreakRound = streakBefore >= streaks.Start;
+                progress.Record(result, streaks.Start);
+                // Missions count first, so their XP lands in the same saved reward and fills the same bar.
+                var missionRound = missions.Record(new MissionStats(true, result.Outcome, result.Place,
+                        result.Knockouts, driver.Boosts, result.RevengeTaken, driver.ItemsUsed, pickupCount,
+                        itemKnockouts, playedMap), playerProgress.Level, progress.Round);
+                var xpGain = playerProgress.Record(result, isStreakRound ? streaks : null, missionRound.Xp);
+                var coinGain = wallet.Record(result, isStreakRound, missionRound.Coins);
+                var record = bests.Record(result).WithXp(xpGain).WithKnocker(
+                    result.KnockedOutBy == RoundResult.Nobody ? "" : round.NameOf(result.KnockedOutBy)).WithRoster(
+                    round.Names, round.Levels, IndexOf(round, round.Nemesis)).WithMeta(coinGain, missionRound,
+                    new StreakChange(streakBefore, progress.WinStreak, streaks.Start));
                 arenaRotation.Next(record.XpGain.After.Level);
                 levelScene.Resolve<ISessionRoster>().NextRound(result.CarCount - 1,
                     RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis, tuning.Players);
@@ -181,6 +208,7 @@ namespace ToyCarArena.App
             }
             finally {
                 round.Finished -= OnFinished;
+                round.KnockedOut -= OnKnockedOut;
                 variants.VariantChanged -= OnVariantChanged;
                 pickups.Collected -= OnCollected;
                 if (pickupCar != null) {

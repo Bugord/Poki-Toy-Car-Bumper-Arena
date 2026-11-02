@@ -1,3 +1,5 @@
+using System;
+
 namespace ToyCarArena.Gameplay.Round
 {
     /// <summary>
@@ -17,11 +19,15 @@ namespace ToyCarArena.Gameplay.Round
 
         public int Nemesis { get; private set; } = RoundResult.Nobody;
 
+        public int WinStreak { get; private set; }
+
         /// <summary>
         /// Counts the round just decided: a loss (a fall, or a match placed low) adds to the losing streak, anything else
-        /// ends it.
+        /// ends it. A win adds to the win streak; REVENGE counts as a win and starts a streak of <paramref name=
+        /// "streakStart"/> by itself, even in a round the player then fell from; a fall without it ends the streak, and a
+        /// round survived to the time leaves it as it was.
         /// </summary>
-        public void Record(RoundResult result)
+        public void Record(RoundResult result, int streakStart = 2)
         {
             // A new knockout gives the next round a new rival, even if the old one was beaten earlier this round.
             if (result.Outcome == RoundOutcome.Out && result.KnockedOutBy != RoundResult.Nobody) {
@@ -29,6 +35,16 @@ namespace ToyCarArena.Gameplay.Round
             }
             else if (result.Outcome == RoundOutcome.Won || result.RevengeTaken) {
                 Nemesis = RoundResult.Nobody;
+            }
+
+            if (result.RevengeTaken) {
+                WinStreak = Math.Max(WinStreak + 1, streakStart);
+            }
+            else if (result.Outcome == RoundOutcome.Won) {
+                WinStreak++;
+            }
+            else if (result.IsLoss) {
+                WinStreak = 0;
             }
 
             this.LosingStreak = result.IsLoss ? LosingStreak + 1 : 0;

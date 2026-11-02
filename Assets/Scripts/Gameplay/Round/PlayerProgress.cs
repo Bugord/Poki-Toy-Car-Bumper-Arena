@@ -97,7 +97,11 @@ namespace ToyCarArena.Gameplay.Round
             return new XpLevel(settings.LevelXp.Length + 1 + xp / lastCost, xp % lastCost, lastCost);
         }
 
-        public XpGain Record(RoundResult result)
+        /// <summary>
+        /// Saves a decided round's XP: its own (a streak round's multiplied, <paramref name="streakBonus"/> being the
+        /// streak's share of it) plus the XP of the missions it completed.
+        /// </summary>
+        public XpGain Record(RoundResult result, GameTuning.StreakSettings streakBonus = null, int missionXp = 0)
         {
             var totalBefore = TotalXp;
             var before = At(totalBefore);
@@ -105,7 +109,8 @@ namespace ToyCarArena.Gameplay.Round
             var placeXp = Math.Max(0, result.CarCount - result.Place) * settings.PlaceXp;
             var winXp = result.Outcome == RoundOutcome.Won ? settings.WinXp : 0;
             var knockoutXp = result.Knockouts * settings.KnockoutXp;
-            var totalAfter = checked(totalBefore + roundXp + placeXp + winXp + knockoutXp);
+            var streakXp = streakBonus?.Bonus(roundXp + placeXp + winXp + knockoutXp) ?? 0;
+            var totalAfter = checked(totalBefore + roundXp + placeXp + winXp + knockoutXp + streakXp + missionXp);
             var after = At(totalAfter);
             var unlocked = new List<string>();
             foreach (var car in catalog.Cars) {
@@ -120,7 +125,7 @@ namespace ToyCarArena.Gameplay.Round
             }
 
             return new XpGain(totalBefore, totalAfter, roundXp, placeXp, winXp, knockoutXp, before, after,
-                unlocked.AsReadOnly());
+                unlocked.AsReadOnly(), streakXp, missionXp);
         }
 
         /// <summary>
