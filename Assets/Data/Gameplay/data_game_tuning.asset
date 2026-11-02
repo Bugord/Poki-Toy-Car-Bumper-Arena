@@ -78,6 +78,7 @@ MonoBehaviour:
     distanceWeight: 1
     edgeWeight: 0.6
     maxPlayerWeight: 0.25
+    streakWeight: 0.08
     crowdPenalty: 0.4
     pickNoise: 0.5
     stickWeight: 0.3
@@ -126,14 +127,7 @@ MonoBehaviour:
     streakStart: 2
     streakEase: 0.25
     maxStreakEase: 0.75
-    mix:
-    - 0
-    - 1
-    - 2
-    - 3
-    - 0
-    - 1
-    - 2
+    mix: 00000000010000000200000003000000000000000100000002000000i
     bully:
       caution: 0.75
       playerWeight: 0.35
@@ -309,83 +303,55 @@ MonoBehaviour:
     placeXp: 5
     winXp: 15
     knockoutXp: 10
-    levelXp:
-    - 40
-    - 60
-    - 80
-    - 100
-    - 120
-    - 140
+    levelXp: 280000003c0000005000000064000000780000008c000000i
   players:
     leaveChance: 0.25
     maxLeaves: 2
-  jelly:
-    padCount: 4
-    padRadius: 1.3
-    jumpSpeed: 6.5
-    range: 7
-    minSpeed: 2
-    landingMargin: 0.8
-    cooldown: 1
-    edgeClearance: 2.6
-    padSpacing: 4
-    spawnClearance: 3.8
-  stirrer:
-    delay: 5
-    angularSpeed: 35
-    reverseInterval: 9
-    pause: 1
-    easeTime: 0.5
-    length: 15.5
-    hubRadius: 1.5
-    reach: 1.3
-    wedgeAhead: 1
-    push: 9
-    sweepShare: 0.85
-    stagger: 0.5
-    hitCooldown: 1.5
+  ball:
+    delay: 6
+    interval: 9
+    jitter: 1.5
+    warning: 1.3
+    radius: 1.4
+    easySpeed: 10
+    speed: 13
+    maxOffset: 0.4
+    push: 11
+    sideShare: 0.8
+    stagger: 0.7
     easyPlayerShare: 0.5
+    botMargin: 1.2
+    botReaction: {x: 0.15, y: 0.45}
     hitHeight: 1.5
-    botLookAhead: 1.3
-  train:
-    delay: 5
-    easySpeed: 5.5
-    speed: 7
-    warning: 1.2
-    railInset: 1.5
-    partLength: {x: 2.6, y: 2.2}
-    gap: 0.4
-    carriages: 2
-    sideReach: 1.7
-    endReach: 0.8
-    push: 10
-    sideShare: 0.7
-    stagger: 0.6
-    easyPlayerShare: 0.5
-    botLookAhead: 1.6
-    hitHeight: 1.5
-    startRamp: 1
-    stationOffset: 4
-    hitCooldown: 1.2
-    respawnDelay: 3
-    respawnRun: 20
-  jack:
-    spotCount: 6
-    delay: 4
-    interval: 5
-    jitter: 1
-    doubleChance: 0.4
-    warning: 1.2
-    hold: 1.5
-    hitRadius: 1.8
-    push: 7
-    lift: 4.7
-    stagger: 0.5
-    easyPlayerShare: 0.5
-    edgeClearance: 3.5
-    spotSpacing: 4.5
-    spawnClearance: 4
-    hitHeight: 1.2
+  candy:
+    caramelSpeed: 0.55
+    caramelAcceleration: 0.6
+    caramelGrip: 1.6
+    caramelPush: 0.6
+    caramelStagger: 0.6
+    icingGrip: 0.2
+    icingSpeed: 1.15
+    icingAcceleration: 1
+    blendWidth: 0.5
+    vanishTime: 0.3
+    vanishMargin: 0.4
+    innerDistance: 4.2
+    innerRadius: 2.8
+    outerDistance: 12.6
+    outerRadius: 2.1
+    ringInnerDistance: 5.2
+    ringInnerRadius: 1.4
+    ringOuterDistance: 11.4
+    ringOuterRadius: 1.6
+  carousel:
+    radius: 7
+    angularSpeed: 30
+    startDelay: 3
+    reverseInterval: 10
+    easeTime: 1
+    telegraph: 0.8
+    rimBlend: 0.5
+    shrinkSpeed: 6
   crab:
     delay: 5
     speed: 3
@@ -458,6 +424,370 @@ MonoBehaviour:
   mode: 0
   match:
     duration: 60
+    respawnDelay: 2
+    invulnerability: 1.5
+    dropHeight: 3
+    maxDropTime: 2
+    spawnMargin: 2.5
+    spawnSpread: 8
+    spawnGridStep: 1
+    topPlaces: 3
+    resultDelay: 0.8
+  coins:
+    roundCoins: 30
+    knockoutCoins: 15
+    winCoins: 30
+    carPrices:
+    - id: speedster
+      price: 30
+    - id: suv
+      price: 80
+    - id: truck
+      price: 150
+    - id: monster-truck
+      price: 300
+  streaks:
+    start: 2
+    multiplier: 1.5
+  missions:
+    tierXp: 1e0000002d0000003c000000i
+    tierCoins: 280000003c0000005a000000i
+    pool:
+    - id: final-two
+      slot: 0
+      counter: 3
+      target: 1
+      tier: 0
+      starter: 1
+      starterOnly: 0
+      map: 
+    - id: round-boosts
+      slot: 0
+      counter: 4
+      target: 4
+      tier: 0
+      starter: 0
+      starterOnly: 0
+      map: 
+    - id: round-knockouts
+      slot: 0
+      counter: 2
+      target: 2
+      tier: 1
+      starter: 0
+      starterOnly: 0
+      map: 
+    - id: round-win
+      slot: 0
+      counter: 1
+      target: 1
+      tier: 1
+      starter: 0
+      starterOnly: 0
+      map: 
+    - id: round-hat-trick
+      slot: 0
+      counter: 2
+      target: 3
+      tier: 2
+      starter: 0
+      starterOnly: 0
+      map: 
+    - id: first-round
+      slot: 1
+      counter: 0
+      target: 1
+      tier: 0
+      starter: 1
+      starterOnly: 1
+      map: 
+    - id: rounds
+      slot: 1
+      counter: 0
+      target: 3
+      tier: 0
+      starter: 0
+      starterOnly: 0
+      map: 
+    - id: knockouts
+      slot: 1
+      counter: 2
+      target: 6
+      tier: 1
+      starter: 0
+      starterOnly: 0
+      map: 
+    - id: wins
+      slot: 1
+      counter: 1
+      target: 3
+      tier: 2
+      starter: 0
+      starterOnly: 0
+      map: 
+    - id: arena-tabletop
+      slot: 1
+      counter: 9
+      target: 2
+      tier: 0
+      starter: 0
+      starterOnly: 0
+      map: tabletop
+    - id: arena-candy
+      slot: 1
+      counter: 9
+      target: 2
+      tier: 0
+      starter: 0
+      starterOnly: 0
+      map: candy
+    - id: arena-playroom
+      slot: 1
+      counter: 9
+      target: 2
+      tier: 0
+      starter: 0
+      starterOnly: 0
+      map: playroom
+    - id: revenge
+      slot: 2
+      counter: 5
+      target: 1
+      tier: 1
+      starter: 1
+      starterOnly: 0
+      map: 
+    - id: items
+      slot: 2
+      counter: 6
+      target: 3
+      tier: 0
+      starter: 0
+      starterOnly: 0
+      map: 
+    - id: boxes
+      slot: 2
+      counter: 7
+      target: 4
+      tier: 0
+      starter: 0
+      starterOnly: 0
+      map: 
+    - id: item-knockout
+      slot: 2
+      counter: 8
+      target: 1
+      tier: 2
+      starter: 0
+      starterOnly: 0
+      map: 
+  toppers:
+    toppers:
+    - id: party-hat
+      price: 40
+    - id: cone
+      price: 40
+    - id: antenna
+      price: 60
+    - id: flag
+      price: 60
+    - id: horns
+      price: 90
+    - id: propeller
+      price: 90
+    - id: fin
+      price: 180
+    - id: crown
+      price: 300
+  jelly:
+    padCount: 4
+    padRadius: 1.3
+    jumpSpeed: 6.5
+    range: 7
+    minSpeed: 2
+    landingMargin: 0.8
+    cooldown: 1
+    edgeClearance: 2.6
+    padSpacing: 4
+    spawnClearance: 3.8
+  stirrer:
+    delay: 5
+    angularSpeed: 35
+    reverseInterval: 9
+    pause: 1
+    easeTime: 0.5
+    length: 15.5
+    hubRadius: 1.5
+    reach: 1.3
+    wedgeAhead: 1
+    push: 9
+    sweepShare: 0.85
+    stagger: 0.5
+    hitCooldown: 1.5
+    easyPlayerShare: 0.5
+    hitHeight: 1.5
+    botLookAhead: 1.3
+  train:
+    delay: 5
+    easySpeed: 5.5
+    speed: 7
+    warning: 1.2
+    railInset: 1.5
+    partLength: {x: 2.6, y: 2.2}
+    gap: 0.4
+    carriages: 2
+    sideReach: 1.7
+    endReach: 0.8
+    push: 10
+    sideShare: 0.7
+    stagger: 0.6
+    easyPlayerShare: 0.5
+    botLookAhead: 1.6
+    hitHeight: 1.5
+    startRamp: 1
+    stationOffset: 4
+    hitCooldown: 1.2
+    respawnDelay: 3
+    respawnRun: 20
+  jack:
+    spotCount: 6
+    delay: 4
+    interval: 5
+    jitter: 1
+    doubleChance: 0.4
+    warning: 1.2
+    hold: 1.5
+    hitRadius: 1.8
+    push: 7
+    lift: 4.7
+    stagger: 0.5
+    easyPlayerShare: 0.5
+    edgeClearance: 3.5
+    spotSpacing: 4.5
+    spawnClearance: 4
+    hitHeight: 1.2
   pickups:
+    enabled: 1
+    firstRound: 2
     firstDelay: 3
     interval: 4
+    jitter: 1
+    maxCount: 3
+    lifetime: 12
+    edgeMargin: 3.5
+    vanishMargin: 1
+    carClearance: 4
+    spacing: 6
+    pickRadius: 1.9
+    leanPerKnockout: 0.2
+    leanMax: 0.8
+    leanRange: {x: 4, y: 9}
+    rollTime: 0.7
+    trailingGap: 3
+    leaderWeights:
+    - 1
+    - 1
+    - 0
+    - 0
+    - 1
+    - 0
+    - 1
+    - 0.7
+    - 0.8
+    trailingWeights:
+    - 0.5
+    - 1.3
+    - 0
+    - 0
+    - 1.5
+    - 0
+    - 1.4
+    - 1.1
+    - 0.6
+    easyPlayerShare: 0.6
+    mega:
+      massScale: 3
+      sizeScale: 1.6
+      growTime: 0.3
+      duration: 6
+    shockwave:
+      radius: 9
+      push: 22
+      edgeShare: 0.35
+      falloff: 1.5
+      maxSpeedShare: 1.4
+      lift: 4.7
+      stagger: 0.6
+    shield:
+      duration: 10
+      minStrength: 1.5
+      grace: 0.5
+    turbo:
+      duration: 5
+      boostCooldown: 0.3
+    bomb:
+      throwDistance: 9
+      flightTime: 0.6
+      arcHeight: 2.5
+      fuse: 1
+      radius: 4.5
+      push: 24
+      edgeShare: 0.35
+      falloff: 1.5
+      maxSpeedShare: 1.4
+      lift: 6.8
+      stagger: 0.7
+    glove:
+      reach: 6
+      extendTime: 0.15
+      holdTime: 0.06
+      retractTime: 0.2
+      hitRadius: 1.4
+      push: 15
+      maxSpeedShare: 1.2
+      lift: 2
+      stagger: 0.8
+    bowling:
+      radius: 0.9
+      speed: 17
+      range: 40
+      hitReach: 1
+      push: 15
+      sideShare: 0.55
+      maxSpeedShare: 1.3
+      lift: 3.4
+      stagger: 0.7
+    balloon:
+      duration: 10
+      catchDepth: 0.4
+      carryTime: 1.2
+      carryHeight: 4.5
+      dropHeight: 1.5
+      landMargin: 3
+      landClearance: 3
+    oil:
+      dropBehind: 2.6
+      radius: 2.6
+      lifetime: 9
+      blendWidth: 0.5
+      grip: 0.12
+      speed: 1.1
+      acceleration: 0.45
+      push: 1.3
+      oilyTime: 3.5
+    bots:
+      weight: 0.6
+      trailingBonus: 0.6
+      crowdPenalty: 0.5
+      range: 20
+      useDelay: {x: 0.2, y: 0.7}
+      pushRange: 6
+      aheadAngle: 30
+      punchAngle: 14
+      bombRange: {x: 7, y: 11}
+      bowlingRange: {x: 3, y: 16}
+      bowlingAngle: 10
+      oilChaser: 9
+      shockwaveCars: 2
+      shieldThreat: 4
+      shieldThreatSpeed: 4

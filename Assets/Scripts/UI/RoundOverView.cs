@@ -38,6 +38,7 @@ namespace ToyCarArena.UI
         private CancellationTokenSource lifetime;
         private bool isPlayAgainPressed;
         private RoundOverProgress xpProgress;
+        private RoundOverMeta meta;
 
         public RoundOverView(IAudioService audioService, HudControls controls)
         {
@@ -71,13 +72,17 @@ namespace ToyCarArena.UI
             settingsButton = Root.Q<Button>("settings-button");
             settingsButton.RemoveFromClassList(Button.ussClassName);
             settingsButton.clicked += OpenSettings;
+            meta = new RoundOverMeta(Root, ViewModel);
             SafeArea.Watch(Root, insets => {
                 settingsButton.style.top = 40f + insets.Top;
                 settingsButton.style.right = 40f + insets.Right;
+                meta.CoinPill.style.top = 52f + insets.Top;
+                meta.CoinPill.style.right = 184f + insets.Right;
             });
             garagePortrait = new CarPortrait(Root.Q<VisualElement>("garage-portrait"));
             RefreshGarage();
-            ShowNewCar(ViewModel.HasNewCar);
+            ShowNewCar(ViewModel.HasNewCar, ViewModel.CanShop);
+            ViewModel.CarBought += RefreshGarage;
 
             // The key hint is for a keyboard; a phone or a tablet has none to press. A wide desktop screen shows the key on
             // NEXT MATCH itself (ui_screens), so the style sheet decides there.
@@ -105,11 +110,13 @@ namespace ToyCarArena.UI
             await base.ShowAsync(token);
             // The reward runs beside input; no part of it delays NEXT MATCH, Space or Enter.
             xpProgress.Play(token);
+            meta.Play(token);
         }
 
         public override async UniTask HideAsync(CancellationToken token)
         {
             xpProgress.Stop();
+            meta.Stop();
             match?.ReleasePodium();
             await base.HideAsync(token);
         }
@@ -119,9 +126,14 @@ namespace ToyCarArena.UI
             Root?.UnregisterCallback<KeyDownEvent>(OnKeyDown);
             Root?.UnregisterCallback<GeometryChangedEvent>(OnGeometryChanged);
             Strings.Changed -= ShowTitle;
+            if (ViewModel != null) {
+                ViewModel.CarBought -= RefreshGarage;
+            }
+
             lifetime?.Cancel();
             lifetime?.Dispose();
             xpProgress?.Dispose();
+            meta?.Dispose();
             match?.Dispose();
             if (playAgainButton != null) {
                 playAgainButton.clicked -= PlayAgain;
@@ -158,11 +170,12 @@ namespace ToyCarArena.UI
         }
 
         // The red dot on CAR, the NEW badge on GARAGE: a car this round opened waits in the garage until it is visited.
-        private void ShowNewCar(bool shown)
+        // Something the coins buy lights the dot alone; a visit puts both out.
+        private void ShowNewCar(bool isNewCar, bool canShop)
         {
-            var display = shown ? DisplayStyle.Flex : DisplayStyle.None;
-            Root.Q<VisualElement>("garage-dot").style.display = display;
-            Root.Q<VisualElement>("garage-new").style.display = display;
+            Root.Q<VisualElement>("garage-dot").style.display =
+                isNewCar || canShop ? DisplayStyle.Flex : DisplayStyle.None;
+            Root.Q<VisualElement>("garage-new").style.display = isNewCar ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
         private void RefreshGarage() => garagePortrait.Set(ViewModel.SelectedCar, ViewModel.SelectedColor);
@@ -193,7 +206,7 @@ namespace ToyCarArena.UI
             token.ThrowIfCancellationRequested();
             RefreshGarage();
             xpProgress.RefreshColor();
-            ShowNewCar(false);
+            ShowNewCar(false, false);
             if (isNextMatch) {
                 // The garage already clicked for its NEXT MATCH.
                 isPlayAgainPressed = true;

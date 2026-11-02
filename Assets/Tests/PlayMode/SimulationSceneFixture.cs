@@ -26,6 +26,9 @@ namespace ToyCarArena.Tests.PlayMode
     public abstract class SimulationSceneFixture
     {
         protected LifetimeScope parentScope;
+
+        /// <summary>The topper the player's car wears in the scene loaded next; none unless a test sets it.</summary>
+        protected string PlayerTopper { get; set; } = "";
         private Scene originalScene;
         private float originalCaptureDeltaTime;
         private float originalTimeScale;
@@ -163,6 +166,7 @@ namespace ToyCarArena.Tests.PlayMode
                     typeof(FixedArenaRotation))
                     .As(typeof(IArenaRotation));
                 builder.Register<IPlayerCar, FirstPlayerCar>(Lifetime.Singleton);
+                builder.RegisterInstance<IPlayerTopper>(new FixedTopper(PlayerTopper));
                 builder.Register<SessionRoster>(Lifetime.Singleton).As<ISessionRoster>();
                 builder.RegisterInstance<IAudioService>(audio);
                 builder.RegisterInstance<IInputService>(input);
@@ -278,5 +282,12 @@ namespace ToyCarArena.Tests.PlayMode
 #endif
         }
 
+    }
+
+    internal sealed class FixedTopper : IPlayerTopper
+    {
+        public FixedTopper(string topper) => SelectedTopper = topper ?? "";
+
+        public string SelectedTopper { get; }
     }
 }

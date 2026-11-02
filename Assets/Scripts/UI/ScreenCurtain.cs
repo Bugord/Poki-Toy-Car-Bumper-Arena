@@ -40,8 +40,9 @@ namespace ToyCarArena.UI
             return closing?.CloseAsync() ?? UniTask.CompletedTask;
         }
 
-        public void ShowLobby(ISessionRoster roster, int botCount, int nemesis, string arenaName = null, bool arenaIsNew = false) =>
-            handle.ViewModel.ShowLobby(roster, botCount, nemesis, arenaName, arenaIsNew);
+        public void ShowLobby(ISessionRoster roster, int botCount, int nemesis, string arenaName = null, bool arenaIsNew = false,
+            int streak = 0, string mission = null) =>
+            handle.ViewModel.ShowLobby(roster, botCount, nemesis, arenaName, arenaIsNew, streak, mission);
 
         public UniTask Ready(CancellationToken token) => handle.ViewModel.Ready(token);
     }

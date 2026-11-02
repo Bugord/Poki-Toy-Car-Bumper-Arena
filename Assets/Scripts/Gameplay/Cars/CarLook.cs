@@ -18,6 +18,8 @@ namespace ToyCarArena.Gameplay.Cars
     public sealed class CarLook : MonoBehaviour
     {
         private const int RingSegments = 48;
+        // How fast a propeller topper turns, in degrees a second.
+        private const float PropellerSpeed = 540f;
 
         [Header("Body")]
         [Tooltip("The mesh of the car's body, the one that is painted in a single swatch of the atlas")]
@@ -90,15 +92,85 @@ namespace ToyCarArena.Gameplay.Cars
         private Transform arrow;
         private Transform viewpoint;
         private readonly System.Collections.Generic.List<Mesh> markerMeshes = new();
+        private readonly System.Collections.Generic.List<Mesh> topperMeshes = new();
+        private Transform topperSpinner;
 
         /// <summary>
-        /// Paints the chosen colour; only the index decides whether to show the player's marker.
+        /// Paints the chosen colour and puts on the topper (<see cref="CarTopper"/>, none for an empty id); only the
+        /// index decides whether to show the player's marker.
         /// </summary>
-        public void Apply(int index, CarCatalog.Entry entry, int colorId)
+        public void Apply(int index, CarCatalog.Entry entry, int colorId, string topper = null)
         {
             ReplaceModel(entry);
             ownBody = CarModel.PaintBody(CarModel.FindBody(model, out _), entry.BodySwatch, swatches[CarPaint.OrGreen(colorId)]);
+            WearTopper(topper);
             SetMarker(index == 0);
+        }
+
+        /// <summary>
+        /// Stands the topper on the roof: over the highest part of the model (the cab), at its foot's offset, on the
+        /// model's own top there. It goes under the model, so it grows with a mega item, turns see-through with the
+        /// car and comes along when the podium copies the model.
+        /// </summary>
+        private void WearTopper(string id)
+        {
+            var topper = CarTopper.Build(id, transform, ModelMaterial, topperMeshes, out topperSpinner);
+            if (topper == null) {
+                return;
+            }
+
+            var toCar = transform.worldToLocalMatrix;
+            var roof = RoofPeak(toCar);
+            var foot = CarTopper.FootOf(id);
+            var x = roof.x + foot.x;
+            var z = roof.z + foot.y;
+            topper.localPosition = new Vector3(x, TopAt(toCar, x, z, roof.y) - 0.03f, z);
+            topper.SetParent(model.transform, true);
+            Outline.Apply(topper.gameObject);
+        }
+
+        // The middle of the model's highest vertices, in the car's space: x on the car's middle, z where the roof is.
+        private Vector3 RoofPeak(Matrix4x4 toCar)
+        {
+            var bounds = CarModel.BoundsIn(model, toCar);
+            var sum = 0f;
+            var count = 0;
+            foreach (var point in ModelPoints(toCar)) {
+                if (point.y > bounds.max.y - 0.06f) {
+                    sum += point.z;
+                    count++;
+                }
+            }
+
+            return new Vector3(bounds.center.x, bounds.max.y, count > 0 ? sum / count : bounds.center.z);
+        }
+
+        // The model's top within a hand's breadth of this spot, or the roof's height where nothing is under it.
+        private float TopAt(Matrix4x4 toCar, float x, float z, float fallback)
+        {
+            const float reach = 0.22f;
+            var top = float.MinValue;
+            foreach (var point in ModelPoints(toCar)) {
+                if (Mathf.Abs(point.x - x) < reach && Mathf.Abs(point.z - z) < reach && point.y > top) {
+                    top = point.y;
+                }
+            }
+
+            return top > float.MinValue ? top : fallback;
+        }
+
+        private System.Collections.Generic.IEnumerable<Vector3> ModelPoints(Matrix4x4 toCar)
+        {
+            foreach (var filter in model.GetComponentsInChildren<MeshFilter>()) {
+                if (filter.sharedMesh == null) {
+                    continue;
+                }
+
+                var matrix = toCar * filter.transform.localToWorldMatrix;
+                foreach (var vertex in filter.sharedMesh.vertices) {
+                    yield return matrix.MultiplyPoint3x4(vertex);
+                }
+            }
         }
 
         /// <summary>
@@ -191,6 +263,10 @@ namespace ToyCarArena.Gameplay.Cars
 
         private void LateUpdate()
         {
+            if (topperSpinner != null) {
+                topperSpinner.Rotate(0f, PropellerSpeed * Time.deltaTime, 0f, Space.Self);
+            }
+
             if (car != null && car.IsOut) {
                 ring.gameObject.SetActive(false);
                 arrow.gameObject.SetActive(false);
@@ -223,6 +299,10 @@ namespace ToyCarArena.Gameplay.Cars
             if (ring != null) {
                 Destroy(ring.gameObject);
                 Destroy(arrow.gameObject);
+            }
+
+            foreach (var mesh in topperMeshes) {
+                Destroy(mesh);
             }
 
             foreach (var mesh in markerMeshes) {

@@ -100,6 +100,11 @@ namespace ToyCarArena.Gameplay.Cars
         public Car LastHitBy { get; private set; }
 
         /// <summary>
+        /// Whether that last hit was an item of <see cref="LastHitBy"/> rather than the car itself, for the item missions.
+        /// </summary>
+        public bool LastHitByItem { get; private set; }
+
+        /// <summary>
         /// When <see cref="LastHitBy"/> last drove into this car, in <see cref="Time.time"/>.
         /// </summary>
         public float LastHitTime { get; private set; } = float.NegativeInfinity;
@@ -434,6 +439,7 @@ namespace ToyCarArena.Gameplay.Cars
         public void HitByItem(Car user)
         {
             LastHitBy = user;
+            LastHitByItem = true;
             LastHitTime = Time.time;
         }
 
@@ -452,6 +458,7 @@ namespace ToyCarArena.Gameplay.Cars
 
             IsOut = false;
             LastHitBy = null;
+            LastHitByItem = false;
             LastHitTime = float.NegativeInfinity;
             LastHazardTime = float.NegativeInfinity;
             LastRingFallTime = float.NegativeInfinity;
@@ -541,6 +548,7 @@ namespace ToyCarArena.Gameplay.Cars
             }
 
             LastHitBy = null;
+            LastHitByItem = false;
             LastHitTime = Time.time;
             LastHazardTime = Time.time;
         }
@@ -644,6 +652,7 @@ namespace ToyCarArena.Gameplay.Cars
 
             if (otherApproach > 0f) {
                 LastHitBy = other;
+                LastHitByItem = false;
                 LastHitTime = Time.time;
             }
 
@@ -684,6 +693,7 @@ namespace ToyCarArena.Gameplay.Cars
 
             if (Vector3.Dot(other.Movement.Velocity, away.normalized) > 0f) {
                 LastHitBy = other;
+                LastHitByItem = false;
                 LastHitTime = Time.time;
             }
 

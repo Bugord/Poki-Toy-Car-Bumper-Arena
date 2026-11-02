@@ -111,6 +111,9 @@ namespace ToyCarArena.App
                 .WithParameter("touchMaxShortSide", touchMaxShortSide)
                 .WithParameter("desktopMaxShortSide", desktopMaxShortSide);
             builder.Register<PlayerProgress>(Lifetime.Singleton).AsSelf().As<IPlayerCar>();
+            // Coins, toppers and missions are saved and outlive the arena scene, as XP does.
+            builder.Register<PlayerWallet>(Lifetime.Singleton).AsSelf().As<IPlayerTopper>();
+            builder.Register<MissionTracker>(Lifetime.Singleton);
 #if BUGORD_SUPERCONSOLE
             if (Debug.isDebugBuild) {
                 builder.RegisterEntryPoint<ProgressDevConsole>();

@@ -76,7 +76,54 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(reloaded.Level, Is.EqualTo(2));
             Assert.That(reloaded.IsUnlocked("speedster"), Is.True);
             Assert.That(reloaded.NextCar.Id, Is.EqualTo("vintage"));
+            Assert.That(reloaded.SelectedCar, Is.EqualTo("racer"), "The speedster has a price: it waits to be bought.");
+        }
+
+        [Test]
+        public void AnOpenCarWithAPriceIsBoughtWithCoinsAndDrivesNext()
+        {
+            var wallet = new PlayerWallet(storage, tuning);
+            var price = tuning.Coins.PriceOf("speedster");
+            Assert.That(price, Is.GreaterThan(0));
+            Assert.That(progress.IsForSale("speedster"), Is.False, "Not before its level.");
+            progress.Record(Result(RoundOutcome.Won, 1, 4, 2));
+            Assert.That(progress.IsUnlocked("speedster"), Is.True);
+            Assert.That(progress.IsOwned("speedster"), Is.False);
+            Assert.That(progress.IsForSale("speedster"), Is.True);
+            Assert.That(progress.Select("speedster"), Is.False);
+
+            wallet.SetCoins(price - 1);
+            Assert.That(progress.Buy("speedster", wallet), Is.False);
+            Assert.That(wallet.Coins, Is.EqualTo(price - 1));
+
+            wallet.SetCoins(price + 7);
+            Assert.That(progress.Buy("speedster", wallet), Is.True);
+            Assert.That(wallet.Coins, Is.EqualTo(7));
+            Assert.That(progress.SelectedCar, Is.EqualTo("speedster"));
+            Assert.That(progress.Buy("speedster", wallet), Is.False, "Bought once.");
+            var reloaded = new PlayerProgress(storage, tuning, catalog);
+            Assert.That(reloaded.IsOwned("speedster"), Is.True);
             Assert.That(reloaded.SelectedCar, Is.EqualTo("speedster"));
+        }
+
+        [Test]
+        public void PlayersFromBeforeThePricesKeepTheCarsTheirLevelGave()
+        {
+            storage.DeleteAll();
+            storage.SetInt("xp_total", 100);
+            var reloaded = new PlayerProgress(storage, tuning, catalog);
+            Assert.That(reloaded.IsOwned("speedster"), Is.True);
+            Assert.That(reloaded.IsForSale("speedster"), Is.False);
+        }
+
+        [Test]
+        public void TheFirstRoundPaysForTheFirstPaidCarWithCoinsToSpare()
+        {
+            // The weakest first round: last place, no knock-outs, only the first-round mission done.
+            var coins = tuning.Coins.RoundCoins + tuning.Missions.CoinsOf(MissionTier.Easy);
+            var xp = tuning.Progress.RoundXp + tuning.Missions.XpOf(MissionTier.Easy);
+            Assert.That(xp, Is.GreaterThanOrEqualTo(tuning.Progress.LevelXp[0]), "The first round reaches level 2.");
+            Assert.That(coins, Is.GreaterThan(tuning.Coins.PriceOf("speedster")), "Coins are left after buying it.");
         }
 
         [Test]

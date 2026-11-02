@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using Bugord.App.Localization;
 using Bugord.App.Platform;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.Gameplay;
@@ -29,11 +30,13 @@ namespace ToyCarArena.App
         private readonly GameTuning tuning;
         private readonly IArenaRotation arenaRotation;
         private readonly ArenaCatalog arenaCatalog;
+        private readonly MissionTracker missions;
 
         public ResultState(LevelScene levelScene, IScreenNavigator navigator, ScreenCurtain curtain, IGamePlatform platform,
             ISessionRoster roster, ISessionProgress progress, GameTuning tuning, IArenaRotation arenaRotation,
-            ArenaCatalog arenaCatalog)
+            ArenaCatalog arenaCatalog, MissionTracker missions)
         {
+            this.missions = missions;
             this.arenaRotation = arenaRotation;
             this.arenaCatalog = arenaCatalog;
             this.levelScene = levelScene;
@@ -62,7 +65,11 @@ namespace ToyCarArena.App
             // The played arena is still loaded, and with it the driver that knows whether the player found the boost.
             var firstAgain = playedRound <= 1 ? RoundEvents.FirstAgainOf(levelScene.Resolve<PlayerDriver>()) : null;
             try {
-                platform.MeasurePlayAgainShown(outcome, playedRound);
+                platform.MeasurePlayAgainShown(outcome, playedRound, Payload);
+                if (Payload.Missions != null && missions.MarkShown()) {
+                    platform.MeasureMissionsShown();
+                }
+
                 if (firstAgain != null) {
                     platform.MeasureFirstAgainShown(firstAgain);
                 }
@@ -73,7 +80,7 @@ namespace ToyCarArena.App
                 }
 
                 await screen.ViewModel.WaitForResultAsync(token);
-                platform.MeasurePlayAgainPressed(outcome, playedRound);
+                platform.MeasurePlayAgainPressed(outcome, playedRound, Payload);
                 if (firstAgain != null) {
                     platform.MeasureFirstAgainPressed(firstAgain);
                 }
@@ -82,7 +89,8 @@ namespace ToyCarArena.App
                 // RoundState already moved the rotation on, so Current is the arena of the round this lobby leads to.
                 var arena = arenaCatalog.Find(mapId);
                 curtain.ShowLobby(roster, RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis,
-                    GameText.Arena(arena), arena != null && arenaRotation.IsNew(arena.Id));
+                    GameText.Arena(arena), arena != null && arenaRotation.IsNew(arena.Id),
+                    progress.WinStreak >= tuning.Streaks.Start ? progress.WinStreak : 0, NearestMission());
                 platform.MeasureLobbyShown();
             }
             catch {
@@ -108,6 +116,30 @@ namespace ToyCarArena.App
             }
 
             return Transition.GoTo<RoundState>();
+        }
+
+        /// <summary>
+        /// The lobby's line about the mission closest to done (the most of its target already counted), so the next
+        /// round starts with something to go for; null before the missions are saved.
+        /// </summary>
+        private string NearestMission()
+        {
+            MissionState nearest = null;
+            foreach (var slot in missions.Slots) {
+                if (nearest == null || slot.Progress * nearest.Definition.Target
+                    > nearest.Progress * slot.Definition.Target) {
+                    nearest = slot;
+                }
+            }
+
+            if (nearest == null) {
+                return null;
+            }
+
+            var definition = nearest.Definition;
+            var task = GameText.Mission(definition,
+                definition.Map.Length > 0 ? GameText.Arena(arenaCatalog.Find(definition.Map)) : null);
+            return Strings.Format("lobby.mission", task, $"{nearest.Progress}/{definition.Target}");
         }
     }
 }

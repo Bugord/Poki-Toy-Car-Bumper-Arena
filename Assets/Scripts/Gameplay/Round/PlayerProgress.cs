@@ -7,24 +7,29 @@ namespace ToyCarArena.Gameplay.Round
 {
     /// <summary>
     /// Saves total XP, cosmetic model and free colour selection. Levels and available cars follow the tuning and
-    /// catalog, so unlocks never disagree with saved experience. Lives in the app scope to survive arena reloads.
+    /// catalog, so unlocks never disagree with saved experience. A car with a price in coins
+    /// (<see cref="GameTuning.CoinSettings.PriceOf"/>) is opened by its level and then bought; the bought ones are
+    /// saved. Lives in the app scope to survive arena reloads.
     /// </summary>
     public sealed class PlayerProgress : IPlayerCar
     {
         private const string TotalKey = "xp_total";
         private const string SelectedKey = "car_selected";
         private const string ColorKey = "car_color";
+        private const string OwnedKey = "cars_owned";
 
         public event Action<int> ColorChanged;
 
         private readonly IKeyValueStorage storage;
         private readonly GameTuning.ProgressSettings settings;
+        private readonly GameTuning.CoinSettings coins;
         private readonly CarCatalog catalog;
 
         public PlayerProgress(IKeyValueStorage storage, GameTuning tuning, CarCatalog catalog)
         {
             this.storage = storage;
             this.settings = tuning.Progress;
+            this.coins = tuning.Coins;
             this.catalog = catalog;
 
             if (settings.LevelXp == null || settings.LevelXp.Length == 0) {
@@ -35,6 +40,18 @@ namespace ToyCarArena.Gameplay.Round
                 if (cost <= 0) {
                     throw new ArgumentException("GameTuning.Progress.LevelXp prices must be positive.");
                 }
+            }
+
+            // Players from before the paid cars keep every car their level had already given them.
+            if (!storage.HasKey(OwnedKey)) {
+                var owned = new List<string>();
+                foreach (var car in catalog.Cars) {
+                    if (coins.PriceOf(car.Id) > 0 && car.UnlockLevel <= Level) {
+                        owned.Add(car.Id);
+                    }
+                }
+
+                storage.SetString(OwnedKey, string.Join(",", owned));
             }
         }
 
@@ -58,13 +75,13 @@ namespace ToyCarArena.Gameplay.Round
         {
             get {
                 var saved = storage.GetString(SelectedKey);
-                return IsUnlocked(saved) ? saved : catalog.Cars[0].Id;
+                return IsOwned(saved) ? saved : catalog.Cars[0].Id;
             }
         }
 
         public bool Select(string id)
         {
-            if (!IsUnlocked(id)) {
+            if (!IsOwned(id)) {
                 return false;
             }
 
@@ -76,6 +93,48 @@ namespace ToyCarArena.Gameplay.Round
         {
             var car = catalog.Find(id);
             return car != null && car.UnlockLevel <= Level;
+        }
+
+        /// <summary>The car's price in coins once its level opens it; 0 when the level alone gives it.</summary>
+        public int PriceOf(string id) => coins.PriceOf(id);
+
+        /// <summary>Open and, where it has a price, bought: the cars that can be driven.</summary>
+        public bool IsOwned(string id)
+        {
+            if (!IsUnlocked(id)) {
+                return false;
+            }
+
+            if (PriceOf(id) == 0) {
+                return true;
+            }
+
+            foreach (var owned in storage.GetString(OwnedKey).Split(',')) {
+                if (owned == id) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>Open, priced and not bought yet: what coins can buy.</summary>
+        public bool IsForSale(string id) => IsUnlocked(id) && !IsOwned(id);
+
+        /// <summary>
+        /// Pays for an open car from <paramref name="wallet"/> and drives it next. False, with nothing spent, when it is
+        /// not for sale or the coins are short.
+        /// </summary>
+        public bool Buy(string id, PlayerWallet wallet)
+        {
+            if (!IsForSale(id) || !wallet.Spend(PriceOf(id))) {
+                return false;
+            }
+
+            var saved = storage.GetString(OwnedKey);
+            storage.SetString(OwnedKey, saved.Length == 0 ? id : saved + "," + id);
+            Select(id);
+            return true;
         }
 
         /// <summary>
@@ -97,7 +156,11 @@ namespace ToyCarArena.Gameplay.Round
             return new XpLevel(settings.LevelXp.Length + 1 + xp / lastCost, xp % lastCost, lastCost);
         }
 
-        public XpGain Record(RoundResult result)
+        /// <summary>
+        /// Saves a decided round's XP: its own (a streak round's multiplied, <paramref name="streakBonus"/> being the
+        /// streak's share of it) plus the XP of the missions it completed.
+        /// </summary>
+        public XpGain Record(RoundResult result, GameTuning.StreakSettings streakBonus = null, int missionXp = 0)
         {
             var totalBefore = TotalXp;
             var before = At(totalBefore);
@@ -105,7 +168,8 @@ namespace ToyCarArena.Gameplay.Round
             var placeXp = Math.Max(0, result.CarCount - result.Place) * settings.PlaceXp;
             var winXp = result.Outcome == RoundOutcome.Won ? settings.WinXp : 0;
             var knockoutXp = result.Knockouts * settings.KnockoutXp;
-            var totalAfter = checked(totalBefore + roundXp + placeXp + winXp + knockoutXp);
+            var streakXp = streakBonus?.Bonus(roundXp + placeXp + winXp + knockoutXp) ?? 0;
+            var totalAfter = checked(totalBefore + roundXp + placeXp + winXp + knockoutXp + streakXp + missionXp);
             var after = At(totalAfter);
             var unlocked = new List<string>();
             foreach (var car in catalog.Cars) {
@@ -115,12 +179,15 @@ namespace ToyCarArena.Gameplay.Round
             }
 
             storage.SetInt(TotalKey, totalAfter);
-            if (unlocked.Count > 0) {
-                Select(unlocked[unlocked.Count - 1]);
+            // The newest car that is free drives next; one with a price waits for the player to buy it.
+            for (var index = unlocked.Count - 1; index >= 0; index--) {
+                if (Select(unlocked[index])) {
+                    break;
+                }
             }
 
             return new XpGain(totalBefore, totalAfter, roundXp, placeXp, winXp, knockoutXp, before, after,
-                unlocked.AsReadOnly());
+                unlocked.AsReadOnly(), streakXp, missionXp);
         }
 
         /// <summary>

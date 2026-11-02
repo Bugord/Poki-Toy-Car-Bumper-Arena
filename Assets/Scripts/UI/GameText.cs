@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Bugord.App.Localization;
+using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Cars;
 using UnityEngine.UIElements;
@@ -21,6 +22,30 @@ namespace ToyCarArena.UI
             arena == null ? null : Strings.Get($"arena.{arena.Id}.name");
 
         public static string Level(int level) => Strings.Format("common.level_short", level);
+
+        public static string Topper(string id) => Strings.Get($"topper.{id}.name");
+
+        /// <summary>
+        /// A mission's task with its number: the text follows what it counts and whether it asks for it in one round, so
+        /// a new mission in the pool needs no new string; <paramref name="arena"/> names the arena of one on an arena.
+        /// </summary>
+        public static string Mission(GameTuning.MissionDefinition mission, string arena)
+        {
+            var target = mission.Target;
+            var key = mission.Counter switch {
+                MissionCounter.Rounds => target == 1 ? "mission.rounds_one" : "mission.rounds",
+                MissionCounter.Wins => target == 1 ? "mission.win_one" : "mission.wins",
+                MissionCounter.Knockouts => mission.IsInOneRound ? "mission.round_knockouts" : "mission.knockouts",
+                MissionCounter.FinalTwo => "mission.final_two",
+                MissionCounter.Boosts => mission.IsInOneRound ? "mission.round_boosts" : "mission.boosts",
+                MissionCounter.Revenge => "mission.revenge",
+                MissionCounter.ItemsUsed => "mission.items_used",
+                MissionCounter.Boxes => "mission.boxes",
+                MissionCounter.ItemKnockouts => "mission.item_knockouts",
+                _ => "mission.arena_rounds",
+            };
+            return Strings.Format(key, target, arena ?? "");
+        }
     }
 
     /// <summary>

@@ -85,6 +85,7 @@ namespace ToyCarArena.Gameplay
                 Require(carCatalog, nameof(carCatalog));
                 builder.RegisterInstance(carCatalog, typeof(CarCatalog));
                 builder.Register<IPlayerCar, FirstPlayerCar>(Lifetime.Singleton);
+                builder.Register<IPlayerTopper, NoTopper>(Lifetime.Singleton);
                 // On its own the scene plays the first arena round after round: there is no level to open the others.
                 Require(arenaCatalog, nameof(arenaCatalog));
                 builder.RegisterInstance(arenaCatalog, typeof(ArenaCatalog));

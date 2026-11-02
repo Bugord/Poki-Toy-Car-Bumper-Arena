@@ -60,7 +60,7 @@ namespace ToyCarArena.Tests.PlayMode
                     view.Bind(model);
                     view.Attach(curtain);
                     view.ShowAsync(CancellationToken.None).Forget();
-                    model.ShowLobby(roster, 6, 3, "SANDBOX", true);
+                    model.ShowLobby(roster, 6, 3, "SANDBOX", true, 3, Strings.Format("lobby.mission", "KNOCK OUT 6 CARS", "5/6"));
                     foreach (var moment in moments) {
                         while (Time.realtimeSinceStartupAsDouble - model.StartedAt < moment) {
                             yield return null;

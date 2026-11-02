@@ -39,6 +39,10 @@ namespace ToyCarArena.App
     /// </summary>
     public sealed class RoundState : StateBase
     {
+        // How often a played round's missions are counted for MISSION!, in milliseconds: well under the sticker's own
+        // spring, and nothing a frame would notice.
+        private const int MissionWatchInterval = 200;
+
         private readonly LevelScene levelScene;
         private readonly IScreenNavigator navigator;
         private readonly ScreenCurtain curtain;
@@ -47,10 +51,15 @@ namespace ToyCarArena.App
         private readonly PersonalBests bests;
         private readonly PlayerProgress playerProgress;
         private readonly IArenaRotation arenaRotation;
+        private readonly PlayerWallet wallet;
+        private readonly MissionTracker missions;
 
         public RoundState(LevelScene levelScene, IScreenNavigator navigator, ScreenCurtain curtain, IGamePlatform platform,
-            SessionProgress progress, PersonalBests bests, PlayerProgress playerProgress, IArenaRotation arenaRotation)
+            SessionProgress progress, PersonalBests bests, PlayerProgress playerProgress, IArenaRotation arenaRotation,
+            PlayerWallet wallet, MissionTracker missions)
         {
+            this.wallet = wallet;
+            this.missions = missions;
             this.levelScene = levelScene;
             this.navigator = navigator;
             this.curtain = curtain;
@@ -99,6 +108,15 @@ namespace ToyCarArena.App
                 }
             }
 
+            // Knock-outs of cars the player's item hit last, for the item missions.
+            var itemKnockouts = 0;
+            void OnKnockedOut(Car car, Car by)
+            {
+                if (by == round.Player && car.LastHitByItem) {
+                    itemKnockouts++;
+                }
+            }
+
             void OnItemLanded(ItemKind kind) => platform.MeasureItemGet(roundNumber, kind, round.IsMatch);
             void OnItemUsed(ItemKind kind) => platform.MeasureItemUse(roundNumber, kind, round.IsMatch);
 
@@ -109,6 +127,28 @@ namespace ToyCarArena.App
                 }
 
                 currentVariant = variant;
+            }
+
+            // Missions the round completes while it is played (knock-outs, boosts, revenge, items, boxes) pop MISSION!
+            // on the HUD at once; the ones only a decided round counts show on the result.
+            MissionStats LiveStats() => new(false, RoundOutcome.Survived, 0, round.PlayerKnockouts, driver.Boosts,
+                round.RevengeTaken, driver.ItemsUsed, pickupCount, itemKnockouts, playedMap);
+
+            async UniTaskVoid WatchMissions(HudViewModel hudModel)
+            {
+                var shown = missions.CountDone(LiveStats());
+                while (!round.IsFinished) {
+                    if (await UniTask.Delay(MissionWatchInterval, true, cancellationToken: token)
+                            .SuppressCancellationThrow()) {
+                        return;
+                    }
+
+                    var done = missions.CountDone(LiveStats());
+                    if (done > shown && !round.IsFinished) {
+                        shown = done;
+                        hudModel.ShowMissionDone();
+                    }
+                }
             }
 
             void BeginRound()
@@ -131,6 +171,7 @@ namespace ToyCarArena.App
             }
 
             variants.VariantChanged += OnVariantChanged;
+            round.KnockedOut += OnKnockedOut;
             try {
                 round.Place();
                 pickupCar = round.Player;
@@ -139,7 +180,8 @@ namespace ToyCarArena.App
                 pickups.Collected += OnCollected;
 
                 var hudRound = new HudRound(round, driver, tuning.Controls, waitsForPlayer, roundNumber,
-                    playerProgress.TotalXp == 0);
+                    playerProgress.TotalXp == 0,
+                    progress.WinStreak >= tuning.Streaks.Start ? progress.WinStreak : 0);
                 hud = await navigator.OpenAsync<HudViewModel, HudRound>(hudRound, token);
                 await curtain.Hide();
 
@@ -149,14 +191,27 @@ namespace ToyCarArena.App
 
                 await Kickoff(hud.ViewModel, tuning.Round, token);
                 BeginRound();
+                WatchMissions(hud.ViewModel).Forget();
 
                 var result = await finished.Task.AttachExternalCancellation(token);
                 platform.GameplayStop();
                 isPlaying = false;
 
-                progress.Record(result);
-                var record = bests.Record(result).WithXp(playerProgress.Record(result)).WithKnocker(
-                    result.KnockedOutBy == RoundResult.Nobody ? "" : round.NameOf(result.KnockedOutBy)).WithRoster(round.Names, round.Levels, IndexOf(round, round.Nemesis));
+                // A streak round's reward is multiplied by the streak it was played on, before this round moves it.
+                var streaks = tuning.Streaks;
+                var streakBefore = progress.WinStreak;
+                var isStreakRound = streakBefore >= streaks.Start;
+                progress.Record(result, streaks.Start);
+                // Missions count first, so their XP lands in the same saved reward and fills the same bar.
+                var missionRound = missions.Record(new MissionStats(true, result.Outcome, result.Place,
+                        result.Knockouts, driver.Boosts, result.RevengeTaken, driver.ItemsUsed, pickupCount,
+                        itemKnockouts, playedMap), playerProgress.Level, progress.Round);
+                var xpGain = playerProgress.Record(result, isStreakRound ? streaks : null, missionRound.Xp);
+                var coinGain = wallet.Record(result, isStreakRound, missionRound.Coins);
+                var record = bests.Record(result).WithXp(xpGain).WithKnocker(
+                    result.KnockedOutBy == RoundResult.Nobody ? "" : round.NameOf(result.KnockedOutBy)).WithRoster(
+                    round.Names, round.Levels, IndexOf(round, round.Nemesis)).WithMeta(coinGain, missionRound,
+                    new StreakChange(streakBefore, progress.WinStreak, streaks.Start));
                 arenaRotation.Next(record.XpGain.After.Level);
                 levelScene.Resolve<ISessionRoster>().NextRound(result.CarCount - 1,
                     RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis, tuning.Players);
@@ -172,6 +227,7 @@ namespace ToyCarArena.App
                 platform.MeasureRoundMap(roundNumber, playedMap);
                 platform.MeasureRoundVariant(roundNumber, playedMap, playedVariant);
                 platform.MeasureMapUnlocks(record.XpGain, tuning);
+                platform.MeasureMeta(roundNumber, record, missions.DoneThisVisit, tuning);
 
                 var delay = result.IsMatch ? tuning.Match.ResultDelay :
                     result.Outcome == RoundOutcome.Out ? tuning.Round.OutResultDelay : tuning.Round.ResultDelay;
@@ -181,6 +237,7 @@ namespace ToyCarArena.App
             }
             finally {
                 round.Finished -= OnFinished;
+                round.KnockedOut -= OnKnockedOut;
                 variants.VariantChanged -= OnVariantChanged;
                 pickups.Collected -= OnCollected;
                 if (pickupCar != null) {

@@ -3,6 +3,7 @@ using System.Threading;
 using Bugord.App.Platform;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.App;
+using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
 using UIKit.Runtime.Abstractions;
@@ -19,10 +20,15 @@ namespace ToyCarArena.UI
         private readonly CarCatalog catalog;
         private readonly IGamePlatform platform;
         private readonly IScreenNavigator navigator;
+        private readonly PlayerWallet wallet;
+        private readonly GameTuning tuning;
+        private bool isToppersPressed;
 
         public GarageViewModel(PlayerProgress progress, CarCatalog catalog, IGamePlatform platform,
-            IScreenNavigator navigator)
+            IScreenNavigator navigator, PlayerWallet wallet, GameTuning tuning)
         {
+            this.wallet = wallet;
+            this.tuning = tuning;
             this.progress = progress;
             this.catalog = catalog;
             this.platform = platform;
@@ -52,6 +58,21 @@ namespace ToyCarArena.UI
         public CarCatalog.Entry SelectedEntry => catalog.Find(progress.SelectedCar);
         public int SelectedColor => progress.SelectedColor;
         public bool IsUnlocked(string id) => progress.IsUnlocked(id);
+        public bool IsForSale(string id) => progress.IsForSale(id);
+        public int PriceOf(string id) => progress.PriceOf(id);
+        public bool CanAffordCar(string id) => wallet.Coins >= progress.PriceOf(id);
+
+        /// <summary>Buys an open car the coins pay for and drives it next; false when it is not for sale or too dear.</summary>
+        public bool BuyCar(string id)
+        {
+            if (!progress.Buy(id, wallet)) {
+                return false;
+            }
+
+            platform.MeasureCarBought(id);
+            platform.MeasureGarageEquip(id);
+            return true;
+        }
 
         public bool Select(string id)
         {
@@ -60,6 +81,73 @@ namespace ToyCarArena.UI
             }
 
             platform.MeasureGarageEquip(id);
+            return true;
+        }
+
+        public int Coins => wallet.Coins;
+        public IReadOnlyList<GameTuning.TopperDefinition> Toppers => tuning.Toppers.All;
+        public string SelectedTopper => wallet.SelectedTopper;
+        public bool IsOwned(string id) => wallet.IsOwned(id);
+        public bool CanAfford(GameTuning.TopperDefinition topper) => wallet.Coins >= topper.Price;
+
+        /// <summary>Whether coins buy a topper not owned yet: the tab, and CAR on the result, show a dot.</summary>
+        public bool CanBuyTopper => CanBuyAnyTopper(wallet, tuning);
+
+        /// <summary>Whether coins buy a car its level has opened: CAR on the result shows a dot for it too.</summary>
+        public static bool CanBuyAnyCar(PlayerProgress progress, PlayerWallet wallet, CarCatalog catalog)
+        {
+            foreach (var car in catalog.Cars) {
+                if (progress.IsForSale(car.Id) && wallet.Coins >= progress.PriceOf(car.Id)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static bool CanBuyAnyTopper(PlayerWallet wallet, GameTuning tuning)
+        {
+            foreach (var topper in tuning.Toppers.All) {
+                if (!wallet.IsOwned(topper.Id) && wallet.Coins >= topper.Price) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>The garage shows its TOPPERS tab; the first press of it this time is counted too.</summary>
+        public void ToppersShown() => platform.MeasureToppersShown();
+
+        public void ToppersPressed()
+        {
+            if (!isToppersPressed) {
+                isToppersPressed = true;
+                platform.MeasureToppersPressed();
+            }
+        }
+
+        /// <summary>
+        /// Wears an owned topper (or none for an empty id), or buys and wears one the coins pay for. False when nothing
+        /// changes: it is worn already, or too dear.
+        /// </summary>
+        public bool PickTopper(string id)
+        {
+            if (string.IsNullOrEmpty(id) || wallet.IsOwned(id)) {
+                if (!wallet.Wear(id)) {
+                    return false;
+                }
+
+                platform.MeasureTopperEquip(id);
+                return true;
+            }
+
+            if (!wallet.Buy(id)) {
+                return false;
+            }
+
+            platform.MeasureTopperBought(id);
+            platform.MeasureTopperEquip(id);
             return true;
         }
 
