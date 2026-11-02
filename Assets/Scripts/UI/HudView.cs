@@ -81,7 +81,7 @@ namespace ToyCarArena.UI
         // The kinds the slot can hold, in the order its roulette shows them.
         private static readonly ItemKind[] ItemKinds =
         {
-            ItemKind.Heavy, ItemKind.Shockwave, ItemKind.Shield, ItemKind.Turbo, ItemKind.Bomb, ItemKind.Glove,
+            ItemKind.Heavy, ItemKind.Shockwave, ItemKind.Bomb,
         };
 
         // The badge of a running ability blinks over the last seconds, as the ability ends.
@@ -361,8 +361,8 @@ namespace ToyCarArena.UI
             itemHint = Root.Q<VisualElement>("item-hint");
             itemHintText = Root.Q<Label>("item-hint-text");
             itemHintFace = Root.Q<Label>("item-hint-face");
-            // Only a match has items; a round of last-car-standing keeps the slot as it was.
-            itemButton.EnableInClassList(ItemShownClass, ViewModel.IsMatch);
+            // Only a round with boxes has items; one without keeps the slot as it was.
+            itemButton.EnableInClassList(ItemShownClass, ViewModel.HasItems);
             itemButton.AddToClassList(ItemEmptyClass);
             // In a match the player's score is always there, 0 included: it is the point of the match. The scoreboard
             // shows the leader and everyone else, so the bar keeps only the time and the player's own knock-outs.
@@ -415,7 +415,7 @@ namespace ToyCarArena.UI
             // On the press, not the release: a boost is all about the moment.
             boostButton.RegisterCallback<PointerDownEvent>(OnBoostPointerDown);
             controls.SetBoostButton(boostButton);
-            if (ViewModel.IsMatch) {
+            if (ViewModel.HasItems) {
                 itemButton.RegisterCallback<PointerDownEvent>(OnItemPointerDown);
                 controls.SetItemButton(itemButton);
             }
@@ -432,7 +432,7 @@ namespace ToyCarArena.UI
             Root.schedule.Execute(Refresh).Every(RefreshInterval);
             Root.schedule.Execute(RefreshBoost).Every(BoostRefreshInterval);
             Root.schedule.Execute(RefreshPower).Every(BoostRefreshInterval);
-            if (ViewModel.IsMatch) {
+            if (ViewModel.HasItems) {
                 Root.schedule.Execute(RefreshItem).Every(BoostRefreshInterval);
             }
 
@@ -1034,7 +1034,7 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>
-        /// The item slot: an empty slot is a faint "?"; a box the player broke spins it through the items, on unscaled
+        /// The item slot: an empty slot is hidden; a box the player broke spins it through the items, on unscaled
         /// time for as long as the roll lasts (nothing skips it: the item cannot be used until it lands), and it lands
         /// with a pop on the item; used, it is empty again. Small with its E key on a desktop. The first item of a visit
         /// also says how to use it.
@@ -1065,7 +1065,10 @@ namespace ToyCarArena.UI
                 SetItemIcon(held);
             }
 
-            itemButton.EnableInClassList(ItemEmptyClass, held == ItemKind.None);
+            // An empty slot is hidden and lets a finger through to steer, as if the button were not there.
+            var isEmpty = held == ItemKind.None;
+            itemButton.EnableInClassList(ItemEmptyClass, isEmpty);
+            itemButton.pickingMode = isEmpty ? PickingMode.Ignore : PickingMode.Position;
             RefreshItemHint(isTouch);
         }
 

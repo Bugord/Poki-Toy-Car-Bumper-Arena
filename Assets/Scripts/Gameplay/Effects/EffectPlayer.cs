@@ -524,23 +524,25 @@ namespace ToyCarArena.Gameplay.Effects
         }
 
         /// <summary>
-        /// The shockwave of a pickup going out from <paramref name="point"/> to <paramref name="radius"/> metres: two rings
-        /// on the floor, one after the other, and dust blown out along the first.
+        /// The shockwave of an item going out from <paramref name="point"/> to <paramref name="radius"/> metres: a big white
+        /// ring that reaches the edge of the push, a gold one and a second white one behind it, and a wall of dust blown
+        /// out along the first, so the whole reach reads from a phone's camera.
         /// </summary>
         public void PlayShockwave(Vector3 point, float radius)
         {
-            for (var i = 0; i < 2; i++) {
-                ref var ring = ref Add(Shape.Ring, i == 0 ? white : gold, OnFloor(point), radius * (i == 0 ? 1f : 0.7f) / sizeScale,
-                    shockwaveLife * (i == 0 ? 1f : 0.8f));
-                ring.StartSize = ring.Size * 0.2f;
-                ring.Delay = 0.07f * i;
+            for (var i = 0; i < 3; i++) {
+                var reach = i == 0 ? 1f : i == 1 ? 0.8f : 0.6f;
+                ref var ring = ref Add(Shape.Ring, i == 1 ? gold : white, OnFloor(point), radius * reach / sizeScale,
+                    shockwaveLife * (1f - 0.12f * i));
+                ring.StartSize = ring.Size * 0.15f;
+                ring.Delay = 0.08f * i;
             }
 
-            const int Puffs = 10;
+            const int Puffs = 18;
             for (var i = 0; i < Puffs; i++) {
                 var outward = Around((i + Random.value * 0.5f) / Puffs);
-                ref var cloud = ref Add(Shape.Puff, dust, OnFloor(point) + outward * 0.8f, Random.Range(0.8f, 1.3f),
-                    Random.Range(0.4f, 0.6f));
+                ref var cloud = ref Add(Shape.Puff, dust, OnFloor(point) + outward * 0.8f, Random.Range(1.1f, 1.7f),
+                    Random.Range(0.45f, 0.65f));
                 cloud.Velocity = outward * (radius / shockwaveLife * 0.8f) + Vector3.up * Random.Range(0.4f, 1.2f);
                 cloud.Gravity = -0.5f;
                 cloud.Drag = 3.5f;

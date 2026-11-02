@@ -47,14 +47,22 @@ namespace ToyCarArena.Gameplay.Pickups
             }
 
             var roll = (float)random.NextDouble() * total;
+            var last = ItemKind.Heavy;
             for (var kind = ItemKind.Heavy; kind <= ItemKind.Glove; kind++) {
-                roll -= settings.WeightOf(kind, trailing);
+                var weight = settings.WeightOf(kind, trailing);
+                if (weight <= 0f) {
+                    continue;
+                }
+
+                last = kind;
+                roll -= weight;
                 if (roll < 0f) {
                     return kind;
                 }
             }
 
-            return ItemKind.Glove;
+            // Rounding can leave a sliver of the roll: the last kind that can come up takes it, never one weighted out.
+            return last;
         }
     }
 }

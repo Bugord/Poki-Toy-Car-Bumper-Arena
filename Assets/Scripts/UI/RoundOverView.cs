@@ -89,7 +89,7 @@ namespace ToyCarArena.UI
             // The settings popup can change the language over this screen: the code-set text follows it.
             Strings.Changed += ShowTitle;
             Root.Q<Label>("revenge").EnableInClassList(BestShownClass, ViewModel.RevengeTaken);
-            xpProgress = new RoundOverProgress(Root, ViewModel);
+            xpProgress = new RoundOverProgress(Root, ViewModel, isTouch);
             match = RoundOverMatch.Create(Root, ViewModel);
         }
 
@@ -226,6 +226,12 @@ namespace ToyCarArena.UI
             // Knocked out by a car, the subtitle names it by its visit handle and colour: someone to beat next round.
             var knockedOutBy = ViewModel.Outcome == RoundOutcome.Out ? ViewModel.KnockedOutBy : RoundResult.Nobody;
             var isKnockedByCar = knockedOutBy != RoundResult.Nobody;
+            // With that car turning on the podium under the title, the podium names it: the subtitle only says so.
+            if (isKnockedByCar && ViewModel.Podium != null) {
+                subtitle = Strings.Get("result.pushed_by");
+                isKnockedByCar = false;
+            }
+
             var subtitleLabel = Root.Q<Label>("subtitle");
             subtitleLabel.text = subtitle;
             subtitleLabel.style.display = isKnockedByCar ? DisplayStyle.None : DisplayStyle.Flex;

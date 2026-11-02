@@ -845,11 +845,11 @@
     font-size: 100px;
 }
 
-.ko-pop--heavy .ko-pop__text { color: var(--orange); }
-.ko-pop--shockwave .ko-pop__text { color: var(--purple); }
+.ko-pop--heavy .ko-pop__text { color: rgb(127, 147, 234); }
+.ko-pop--shockwave .ko-pop__text { color: rgb(79, 214, 220); }
 .ko-pop--shield .ko-pop__text { color: var(--blue); }
 .ko-pop--turbo .ko-pop__text { color: var(--gold); }
-.ko-pop--bomb .ko-pop__text { color: var(--red); }
+.ko-pop--bomb .ko-pop__text { color: rgb(255, 106, 85); }
 .ko-pop--glove .ko-pop__text { color: var(--red); }
 .ko-pop--boost .ko-pop__text { color: var(--orange); }
 
@@ -1167,7 +1167,7 @@
     background-color: var(--soft);
 }
 
-.hud__power-icon--heavy { background-color: var(--orange); }
+.hud__power-icon--heavy { background-color: rgb(95, 116, 203); }
 .hud__power-icon--shield { background-color: var(--blue); }
 .hud__power-icon--turbo { background-color: var(--gold); }
 
@@ -1228,7 +1228,7 @@
     background-color: var(--blue);
 }
 
-.hud__power--heavy .hud__power-fill { background-color: var(--orange); }
+.hud__power--heavy .hud__power-fill { background-color: rgb(95, 116, 203); }
 .hud__power--shield .hud__power-fill { background-color: var(--blue); }
 .hud__power--turbo .hud__power-fill { background-color: var(--gold); }
 
@@ -1371,8 +1371,11 @@
     left: 265px;
 }
 
+/* With nothing in the slot the button is gone (it picks nothing either, see HudView), and pops back as a box
+   is broken. */
 .hud__item--empty {
-    opacity: 0.45;
+    opacity: 0;
+    scale: 0.5 0.5;
 }
 
 .hud__item--rolling {
@@ -1405,11 +1408,11 @@
     background-color: var(--soft);
 }
 
-.hud__item-icon--heavy { background-color: var(--orange); }
-.hud__item-icon--shockwave { background-color: var(--purple); }
+.hud__item-icon--heavy { background-color: rgb(95, 116, 203); }
+.hud__item-icon--shockwave { background-color: rgb(79, 214, 220); }
 .hud__item-icon--shield { background-color: var(--blue); }
 .hud__item-icon--turbo { background-color: var(--gold); }
-.hud__item-icon--bomb { background-color: var(--soft); }
+.hud__item-icon--bomb { background-color: rgb(255, 106, 85); }
 .hud__item-icon--glove { background-color: var(--red); }
 
 .hud__item-mark {
@@ -1456,42 +1459,19 @@
     position: absolute;
 }
 
-/* A weight: a navy block with a ring on top. */
-.hud__item-icon--heavy .hud__item-glyph {
-    width: 84px;
-    height: 58px;
-    margin-top: 22px;
-    border-radius: 16px;
-    background-color: var(--navy);
+/* Heavy, shockwave and bomb are drawn pictures (the round's items since v0.7.1): an anvil, a broken ring round a
+   smaller one, a bomb with a lit fuse. The others keep their glyphs from parts. */
+.hud__item-icon--heavy .hud__item-glyph,
+.hud__item-icon--shockwave .hud__item-glyph,
+.hud__item-icon--bomb .hud__item-glyph {
+    width: 112px;
+    height: 112px;
+    -unity-background-scale-mode: scale-to-fit;
 }
 
-.hud__item-icon--heavy .hud__item-glyph-part {
-    display: flex;
-    left: 22px;
-    top: -30px;
-    width: 40px;
-    height: 36px;
-    border-width: 10px;
-    border-color: var(--navy);
-    border-radius: 999px;
-}
-
-/* A shockwave: a navy ring round a dot. */
-.hud__item-icon--shockwave .hud__item-glyph {
-    width: 96px;
-    height: 96px;
-    border-width: 11px;
-    border-color: var(--navy);
-    border-radius: 999px;
-}
-
-.hud__item-icon--shockwave .hud__item-glyph-part {
-    display: flex;
-    width: 30px;
-    height: 30px;
-    border-radius: 999px;
-    background-color: var(--navy);
-}
+.hud__item-icon--heavy .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_heavy.svg"); }
+.hud__item-icon--shockwave .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_shockwave.svg"); }
+.hud__item-icon--bomb .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_bomb.svg"); }
 
 /* A shield: a white bubble with a navy rim. */
 .hud__item-icon--shield .hud__item-glyph {
@@ -1516,28 +1496,6 @@
     width: 20px;
     height: 20px;
     background-color: var(--white);
-}
-
-/* A bomb: a navy ball with a gold fuse. */
-.hud__item-icon--bomb .hud__item-glyph {
-    width: 84px;
-    height: 84px;
-    margin-top: 12px;
-    border-radius: 999px;
-    background-color: var(--navy);
-}
-
-.hud__item-icon--bomb .hud__item-glyph-part {
-    display: flex;
-    left: 52px;
-    top: -18px;
-    width: 18px;
-    height: 32px;
-    rotate: 35deg;
-    border-width: 4px;
-    border-color: var(--navy);
-    border-radius: 6px;
-    background-color: var(--gold);
 }
 
 /* A glove: a white fist with a thumb, outlined. */
@@ -2180,23 +2138,6 @@
     min-height: 40px;
 }
 
-.round-over__unlock-slot {
-    height: 120px;
-    margin-top: 24px;
-    align-items: center;
-    justify-content: center;
-}
-
-.round-over__new-car {
-    flex-direction: row;
-    align-items: center;
-    max-width: 981px;
-    height: 120px;
-    font-size: 40px;
-    border-bottom-width: 12px;
-    transition-property: none;
-}
-
 /* The level card: the player's level badge, the XP the round gave and how far the level is, over the level track
    (RoundOverProgress builds its stops). The meta goal is the one thing on the result besides the buttons. */
 .level-card {
@@ -2482,6 +2423,161 @@
     width: 0;
     height: 100%;
     background-color: var(--gold);
+}
+
+/* The first step of the XP: a plain bar from the level to the next, laid over the still empty track, the two levels on
+   badges at its ends and LEVEL UP! under it when it fills. */
+.xp-bar {
+    position: absolute;
+    left: 30px;
+    right: 30px;
+    top: 4px;
+    height: 120px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.xp-bar__level {
+    min-width: 116px;
+    height: 104px;
+}
+
+.xp-bar__line {
+    flex-grow: 1;
+    height: 56px;
+    margin: 0 -10px;
+    border-width: 7px;
+    border-bottom-width: 12px;
+    border-color: var(--navy);
+    background-color: var(--soft);
+    overflow: hidden;
+}
+
+.xp-bar__fill {
+    width: 0;
+    height: 100%;
+    background-color: var(--gold);
+}
+
+.xp-bar__level-up {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 112px;
+    rotate: -4deg;
+}
+
+.xp-bar__level-up-text {
+    margin: 0;
+    padding: 0;
+    font-size: 72px;
+    color: var(--gold);
+    -unity-text-outline-width: 12px;
+    text-shadow: 0 10px 0 rgb(29, 43, 79);
+}
+
+/* The second step: a level's reward over the whole result, dimmed, gold rays turning behind a white card. */
+.level-reward {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(29, 43, 79, 0.62);
+}
+
+.level-reward__rays {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 1400px;
+    height: 1400px;
+    margin-left: -700px;
+    margin-top: -800px;
+}
+
+.level-reward__card {
+    width: 760px;
+    padding: 110px 40px 50px 40px;
+    align-items: center;
+    border-radius: 70px;
+}
+
+.level-reward__title {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -90px;
+    rotate: -5deg;
+}
+
+.level-reward__title-text {
+    margin: 0;
+    padding: 0;
+    font-size: 130px;
+    color: var(--gold);
+    -unity-text-auto-size: best-fit 60px 130px;
+}
+
+.level-reward__tag {
+    margin: 0;
+    padding: 4px 34px 8px 34px;
+    border-width: 6px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--orange);
+    font-size: 44px;
+    color: var(--white);
+}
+
+.level-reward__art {
+    width: 520px;
+    height: 320px;
+    margin-top: 16px;
+    align-items: center;
+    justify-content: center;
+}
+
+.level-reward__arena {
+    width: 240px;
+    height: 240px;
+    border-width: 12px;
+    border-bottom-width: 22px;
+    border-color: var(--navy);
+    border-radius: 999px;
+}
+
+.level-reward__rank {
+    min-width: 220px;
+    height: 200px;
+}
+
+.level-reward__rank .level-badge__value {
+    font-size: 120px;
+}
+
+.level-reward__name {
+    margin: 8px 0 0 0;
+    padding: 0;
+    font-size: 96px;
+    color: var(--navy);
+    -unity-text-auto-size: best-fit 48px 96px;
+    white-space: nowrap;
+}
+
+.level-reward__caption {
+    margin: 4px 0 0 0;
+    font-size: 36px;
+}
+
+.level-reward__hint {
+    margin: 60px 0 0 0;
+    -unity-text-align: middle-center;
+    font-size: 42px;
+    color: var(--white);
+    opacity: 0.85;
 }
 
 /* NEXT MATCH and, where there is a keyboard, the key that presses it. The entrance moves this wrapper, not the
@@ -2811,32 +2907,6 @@
     -unity-background-image-tint-color: var(--white);
 }
 
-.round-over__ready {
-    margin: 0;
-    padding: 0;
-    font-size: 28px;
-    color: var(--navy);
-    -unity-text-align: middle-left;
-    visibility: hidden;
-}
-
-.round-over__new-car-portrait {
-    flex-shrink: 0;
-    width: 88px;
-    height: 88px;
-    margin-right: 16px;
-}
-
-.round-over__new-car-copy {
-    justify-content: center;
-}
-
-.round-over__new-car-name {
-    margin: 0;
-    padding: 0;
-    font-size: 40px;
-}
-
 .round-over__buttons {
     width: 981px;
     flex-direction: row;
@@ -2904,34 +2974,6 @@
 
 .round-over--landscape .round-over__button {
     width: 981px;
-}
-
-/* On a wide screen the unlock is the round's news: a bigger sticker with a bigger car. */
-.round-over--landscape .round-over__unlock-slot {
-    height: 180px;
-}
-
-.round-over--landscape .round-over__new-car {
-    max-width: 1240px;
-    height: 180px;
-    padding-left: 36px;
-    padding-right: 44px;
-    font-size: 60px;
-    border-bottom-width: 16px;
-}
-
-.round-over--landscape .round-over__new-car-portrait {
-    width: 140px;
-    height: 140px;
-    margin-right: 24px;
-}
-
-.round-over--landscape .round-over__new-car-name {
-    font-size: 60px;
-}
-
-.round-over--landscape .round-over__ready {
-    font-size: 34px;
 }
 
 /* UIKit disables the screen under a popup; keep the existing result looking the same. */
@@ -3983,6 +4025,25 @@
     min-height: 12px;
 }
 
+/* After a round the podium alone, in the middle: no table beside it. */
+.round-over--podium .round-over__match {
+    display: flex;
+}
+
+.round-over--podium .round-over__spacer {
+    flex-grow: 0;
+    min-height: 12px;
+}
+
+.round-over--podium .results {
+    display: none;
+}
+
+/* The crown sits over the podium's box: room for it under the subtitle. */
+.round-over--podium .podium {
+    margin-top: 40px;
+}
+
 .podium {
     flex-grow: 1;
     flex-shrink: 1;
@@ -4066,6 +4127,20 @@
 
 .podium__name--revenge { color: var(--red); }
 
+.podium__target {
+    width: 40px;
+    height: 40px;
+    margin: 0 0 0 12px;
+    border-width: 5px;
+    border-radius: 20px;
+}
+
+.podium__target .revenge-target__center {
+    width: 14px;
+    height: 14px;
+    border-radius: 7px;
+}
+
 .podium__tag {
     position: absolute;
     left: 50%;
@@ -4081,6 +4156,12 @@
     letter-spacing: 3px;
     color: var(--navy);
     white-space: nowrap;
+}
+
+.podium__tag--rival {
+    background-color: var(--red);
+    color: var(--white);
+    letter-spacing: 1px;
 }
 
 .results {
@@ -4240,9 +4321,17 @@
 
 /* The desktop layout of the design: the podium in the middle over one bottom row, the level card and beside it NEXT
    MATCH with its SPACE key and GARAGE under it. */
+.round-over--landscape.round-over--podium .podium {
+    right: auto;
+    left: 50%;
+    margin-left: -450px;
+}
+
 .round-over--landscape.round-over--desktop .podium {
     position: relative;
     right: auto;
+    left: auto;
+    margin-left: 0;
     top: 0;
     width: 1100px;
     height: auto;

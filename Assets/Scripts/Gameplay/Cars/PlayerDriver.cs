@@ -104,6 +104,11 @@ namespace ToyCarArena.Gameplay.Cars
         public event Action<AutoBoostKind> AutoBoosted;
 
         /// <summary>
+        /// Whether this round has boxes and items, so the HUD has an item button.
+        /// </summary>
+        public bool HasItems => pickups.IsEnabled;
+
+        /// <summary>
         /// Items the player used this round.
         /// </summary>
         public int ItemsUsed { get; private set; }
@@ -233,7 +238,7 @@ namespace ToyCarArena.Gameplay.Cars
         // The press that starts the round only starts it, as with boost; an empty or spinning slot does nothing.
         private void OnItemPressed()
         {
-            // A round of last-car-standing has no items: the key does nothing there, not even start the round.
+            // A round without boxes has no items: the key does nothing there, not even start the round.
             if (!pickups.IsEnabled) {
                 return;
             }
