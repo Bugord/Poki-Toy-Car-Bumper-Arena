@@ -2043,6 +2043,45 @@
     background-color: var(--orange);
 }
 
+/* Without a touch screen the sticker reads SPACE OR CLICK! over the smaller gauge in the slot's bottom-right corner:
+   flush with the slot's outer edge so the longer words stay on screen, its arrow on the gauge's middle. */
+.hud__boost-hint-desktop {
+    display: none;
+}
+
+.hud__boost-hint--desktop .hud__boost-hint-desktop {
+    display: flex;
+}
+
+.hud__boost-hint--desktop .hud__boost-hint-touch {
+    display: none;
+}
+
+.hud__boost-hint--desktop {
+    left: -260px;
+    top: -170px;
+    width: 560px;
+    align-items: flex-end;
+}
+
+.hud__boost-slot--left .hud__boost-hint--desktop {
+    left: 0;
+    align-items: flex-start;
+}
+
+.hud__boost-hint--desktop .hud__teaching-text {
+    font-size: 52px;
+    white-space: nowrap;
+}
+
+.hud__boost-hint--desktop .hud__boost-hint-arrow {
+    left: 409px;
+}
+
+.hud__boost-slot--left .hud__boost-hint--desktop .hud__boost-hint-arrow {
+    left: 149px;
+}
+
 .hud__boost-hint-arrow {
     position: absolute;
     left: 114px;

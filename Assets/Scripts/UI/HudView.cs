@@ -156,6 +156,7 @@ namespace ToyCarArena.UI
         private const float BoostHintDuration = 2f;
         private const float BoostHintPulsePeriod = 0.7f;
         private const string BoostHintPulseClass = "hud__boost--hint-pulse";
+        private const string BoostHintDesktopClass = "hud__boost-hint--desktop";
         private const float TapHintDuration = 1f;
         private const float TapHintWidth = 560f;
         private const float TapHintHeight = 110f;
@@ -1781,7 +1782,9 @@ namespace ToyCarArena.UI
                 DrawGhost(now - ghostTime);
             }
 
-            var canHintBoost = enabled && ViewModel.CanHintBoost;
+            // The desktop gets the same first-round nudge over its gauge, in its own words; no finger to hint beside.
+            var canHintBoost = IsShown && ViewModel.IsFirstRound && ViewModel.CanHintBoost;
+            boostHint.EnableInClassList(BoostHintDesktopClass, !isTouch);
             if (!canHintBoost || now - boostHintTime >= BoostHintDuration) {
                 isBoostHintShown = false;
             }
@@ -1803,7 +1806,7 @@ namespace ToyCarArena.UI
                 tapHintTime = now;
             }
 
-            var showTap = canHintBoost && hasTapHint && controls.IsJoystickShown && now - tapHintTime < TapHintDuration;
+            var showTap = canHintBoost && isTouch && hasTapHint && controls.IsJoystickShown && now - tapHintTime < TapHintDuration;
             AnimateTeaching(tapHint, ref tapHintProgress, showTap, elapsed);
             if (showTap) {
                 PlaceTapHint();

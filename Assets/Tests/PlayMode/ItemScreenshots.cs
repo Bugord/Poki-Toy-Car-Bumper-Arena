@@ -148,6 +148,83 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         /// <summary>
+        /// The first round's boost nudge on a desktop, SPACE OR CLICK! over the gauge, with a bot beside the player:
+        /// Logs/items/boost_hint_1920x1080.png.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator CaptureTheDesktopBoostHint()
+        {
+            var tuning = LoadTuning();
+            CreateParent(new SimulationInput(), new SimulationProgress { Round = 1 }, "sandbox");
+            yield return LoadGame();
+            var container = GameScope().Container;
+            var round = container.Resolve<ArenaRound>();
+            var botDriver = container.Resolve<IEnumerable<ITickable>>().OfType<BotDriver>().Single();
+            typeof(BotDriver).GetField("isDriving", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(botDriver, true);
+            Strings.Load(new StringTable(AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Localization/strings.csv").text));
+            round.Place();
+            round.Begin();
+            var player = round.Player.transform;
+            round.Cars[1].Movement.Place(player.position + player.right * 4f, player.rotation);
+
+            var panelSettings = Object.Instantiate(
+                AssetDatabase.LoadAssetAtPath<PanelSettings>("Assets/UI/ui_panel_settings.asset"));
+            panelSettings.clearColor = true;
+            panelSettings.colorClearValue = Color.clear;
+            var host = new GameObject("Screenshot HUD");
+            var document = host.AddComponent<UIDocument>();
+            document.panelSettings = panelSettings;
+            var controls = new HudControls();
+            var model = new HudViewModel(null, controls);
+            model.SetPayload(new HudRound(
+                round, container.Resolve<IEnumerable<ITickable>>().OfType<PlayerDriver>().Single(), tuning.Controls, true, 1,
+                false));
+            var view = new HudView(controls, container.Resolve<IAudioService>());
+            view.Bind(model);
+            var hud = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/Screens/Hud.uxml").Instantiate();
+            hud.style.position = Position.Absolute;
+            hud.style.left = 0;
+            hud.style.top = 0;
+            hud.style.right = 0;
+            hud.style.bottom = 0;
+            var camera = Camera.main;
+            var directory = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "items");
+            Directory.CreateDirectory(directory);
+            var scene = new RenderTexture(1920, 1080, 24, RenderTextureFormat.ARGB32);
+            var interface_ = new RenderTexture(1920, 1080, 24, RenderTextureFormat.ARGB32);
+            var screenWidth = Screen.width;
+            var screenHeight = Screen.height;
+            try {
+                document.rootVisualElement.Add(hud);
+                view.Attach(hud);
+                view.ShowAsync(CancellationToken.None).Forget();
+                PlayModeWindow.SetCustomRenderingResolution(1920, 1080, "Boost hint screenshot");
+                camera.targetTexture = scene;
+                panelSettings.targetTexture = interface_;
+                var settled = Time.realtimeSinceStartup + 1f;
+                while (Time.realtimeSinceStartup < settled) {
+                    yield return null;
+                }
+
+                Assert.That(model.CanHintBoost, Is.True, "the bot beside the player should bring the nudge up");
+                camera.Render();
+                var picture = Compose(Read(scene), Read(interface_));
+                File.WriteAllBytes(Path.Combine(directory, "boost_hint_1920x1080.png"), picture.EncodeToPNG());
+                Object.DestroyImmediate(picture);
+            }
+            finally {
+                camera.targetTexture = null;
+                PlayModeWindow.SetCustomRenderingResolution((uint)screenWidth, (uint)screenHeight, "Boost hint screenshot");
+                view.Dispose();
+                Object.DestroyImmediate(scene);
+                Object.DestroyImmediate(interface_);
+                Object.Destroy(panelSettings);
+                Object.Destroy(host);
+                typeof(Strings).GetField("table", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
+            }
+        }
+
+        /// <summary>
         /// The items of v0.9 at work on the arena, in Logs/items/items_*.png at 1920×1080 and 1080×1920: the player's car
         /// grown big by a mega, a bowling ball rolling at a bot, a balloon over a bot, an oil slick with a bot's oily tracks
         /// across it, and the slot holding each new item in turn.
