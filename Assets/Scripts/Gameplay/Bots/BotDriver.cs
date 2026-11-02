@@ -184,7 +184,8 @@ namespace ToyCarArena.Gameplay.Bots
             var now = Time.time;
             var isPlayerSpared = round.Elapsed < difficulty.PlayerGrace
                 || CountHunters(player, bot) >= difficulty.MaxPlayerHunters;
-            var playerWeight = Mathf.Min(settings.MaxPlayerWeight, difficulty.PlayerWeight + traits.PlayerWeight);
+            var playerWeight = Mathf.Min(settings.MaxPlayerWeight, difficulty.PlayerWeight + traits.PlayerWeight) +
+                difficulty.StreakWeight;
             if (playerGrudge != null && (playerGrudge.Car.IsOut || playerGrudge.Target != player)) {
                 playerGrudge = null;
             }

@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using Bugord.Core.Storage;
 using NUnit.Framework;
+using System.Text.RegularExpressions;
+using ToyCarArena.App;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
@@ -184,6 +186,30 @@ namespace ToyCarArena.Tests.PlayMode
                 MissionCounter.ArenaRounds, 2, MissionTier.Easy, map: "candy");
             Assert.That(MissionTracker.Gained(definition, Stats(RoundOutcome.Out, 3, map: "candy")), Is.EqualTo(1));
             Assert.That(MissionTracker.Gained(definition, Stats(RoundOutcome.Out, 3, map: "sandbox")), Is.Zero);
+        }
+
+        [Test]
+        public void MetaEventsNameTheMissionsTheStreakAndTheCoinsWithinTwoNumbers()
+        {
+            var missions = new MissionTracker(storage, tuning);
+            var round = missions.Record(Stats(RoundOutcome.Out, 3), 1, 7);
+            var result = Result(RoundOutcome.Out, 3, 0);
+            var record = new RoundRecord(result, 1, 0, false, false).WithMeta(new CoinGain(0, 120, 12, 0, 0, 0, 20),
+                round, new StreakChange(6, 0, 2));
+            var platform = new MatchTests.RecordingPlatform();
+            platform.MeasureMeta(7, record, 12, tuning);
+            platform.MeasurePlayAgainShown(RoundOutcome.Out, 7, record);
+
+            Assert.That(platform.Events, Does.Contain(("mission", "first-round", "complete")));
+            Assert.That(platform.Events, Does.Contain(("mission", "done-10plus-r4plus", "missions")));
+            Assert.That(platform.Events, Does.Contain(("result", "streak-0-r4plus", "streak")));
+            Assert.That(platform.Events, Does.Contain(("result", "streak-lost-r4plus", "streak")));
+            Assert.That(platform.Events, Does.Contain(("result", "coins-mid-r4plus", "coins")));
+            Assert.That(platform.Events, Does.Contain(("result", "again-out-mission-r4plus", "visible")));
+            Assert.That(platform.Events, Does.Contain(("result", "again-out-lost-r4plus", "visible")));
+            foreach (var (category, what, action) in platform.Events) {
+                Assert.That(Regex.Matches($"{category}{what}{action}", "[0-9]+").Count, Is.LessThanOrEqualTo(2), what);
+            }
         }
 
         private static string[] Ids(MissionTracker missions)

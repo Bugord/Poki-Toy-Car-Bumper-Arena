@@ -199,6 +199,7 @@ namespace ToyCarArena.App
                 platform.MeasureRoundMap(roundNumber, playedMap);
                 platform.MeasureRoundVariant(roundNumber, playedMap, playedVariant);
                 platform.MeasureMapUnlocks(record.XpGain, tuning);
+                platform.MeasureMeta(roundNumber, record, missions.DoneThisVisit, tuning);
 
                 var delay = result.IsMatch ? tuning.Match.ResultDelay :
                     result.Outcome == RoundOutcome.Out ? tuning.Round.OutResultDelay : tuning.Round.ResultDelay;

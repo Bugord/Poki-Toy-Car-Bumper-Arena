@@ -29,11 +29,13 @@ namespace ToyCarArena.App
         private readonly GameTuning tuning;
         private readonly IArenaRotation arenaRotation;
         private readonly ArenaCatalog arenaCatalog;
+        private readonly MissionTracker missions;
 
         public ResultState(LevelScene levelScene, IScreenNavigator navigator, ScreenCurtain curtain, IGamePlatform platform,
             ISessionRoster roster, ISessionProgress progress, GameTuning tuning, IArenaRotation arenaRotation,
-            ArenaCatalog arenaCatalog)
+            ArenaCatalog arenaCatalog, MissionTracker missions)
         {
+            this.missions = missions;
             this.arenaRotation = arenaRotation;
             this.arenaCatalog = arenaCatalog;
             this.levelScene = levelScene;
@@ -62,7 +64,11 @@ namespace ToyCarArena.App
             // The played arena is still loaded, and with it the driver that knows whether the player found the boost.
             var firstAgain = playedRound <= 1 ? RoundEvents.FirstAgainOf(levelScene.Resolve<PlayerDriver>()) : null;
             try {
-                platform.MeasurePlayAgainShown(outcome, playedRound);
+                platform.MeasurePlayAgainShown(outcome, playedRound, Payload);
+                if (Payload.Missions != null && missions.MarkShown()) {
+                    platform.MeasureMissionsShown();
+                }
+
                 if (firstAgain != null) {
                     platform.MeasureFirstAgainShown(firstAgain);
                 }
@@ -73,7 +79,7 @@ namespace ToyCarArena.App
                 }
 
                 await screen.ViewModel.WaitForResultAsync(token);
-                platform.MeasurePlayAgainPressed(outcome, playedRound);
+                platform.MeasurePlayAgainPressed(outcome, playedRound, Payload);
                 if (firstAgain != null) {
                     platform.MeasureFirstAgainPressed(firstAgain);
                 }
