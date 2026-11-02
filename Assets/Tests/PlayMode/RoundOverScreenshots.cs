@@ -58,7 +58,7 @@ namespace ToyCarArena.Tests.PlayMode
                         ?.SetValue(controls, isTouch);
                     var progress = new PlayerProgress(record.storage, tuning, catalog);
                     var model = new RoundOverViewModel(catalog, arenas, tuning, progress, null,
-                        new MatchTests.RecordingPlatform());
+                        new MatchTests.RecordingPlatform(), new PlayerWallet(record.storage, tuning));
                     model.SetPayload(record.record);
                     var view = new RoundOverView(new SilentAudioService(library), controls);
                     var start = Time.realtimeSinceStartup;
@@ -143,7 +143,7 @@ namespace ToyCarArena.Tests.PlayMode
             Debug.Log($"Result screenshot: {path}");
         }
 
-        private sealed class MemoryStorage : IKeyValueStorage
+        internal sealed class MemoryStorage : IKeyValueStorage
         {
             private readonly Dictionary<string, string> values = new();
 

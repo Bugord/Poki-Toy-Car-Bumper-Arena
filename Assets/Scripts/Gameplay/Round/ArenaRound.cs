@@ -75,6 +75,7 @@ namespace ToyCarArena.Gameplay.Round
         private readonly ISessionRoster roster;
         private readonly CarCatalog catalog;
         private readonly IPlayerCar playerCar;
+        private readonly IPlayerTopper playerTopper;
         private readonly int nemesisIndex;
         private readonly bool isMatch;
         private readonly List<Car> cars = new();
@@ -98,7 +99,7 @@ namespace ToyCarArena.Gameplay.Round
 
         public ArenaRound(GameTuning tuning, IObjectResolver resolver, Car carPrefab, Transform carParent, IArenaEdge edge,
             GameTuning.ArenaSettings arena, RoundDifficulty difficulty, ISessionProgress progress, ISessionRoster roster,
-            CarCatalog catalog, IPlayerCar playerCar)
+            CarCatalog catalog, IPlayerCar playerCar, IPlayerTopper playerTopper)
         {
             this.tuning = tuning;
             this.resolver = resolver;
@@ -110,6 +111,7 @@ namespace ToyCarArena.Gameplay.Round
             this.roster = roster;
             this.catalog = catalog;
             this.playerCar = playerCar;
+            this.playerTopper = playerTopper;
             this.isMatch = tuning.IsMatch;
             // A match's rival lives within the match: it starts with none.
             this.nemesisIndex = isMatch ? RoundResult.Nobody : progress.Nemesis;
@@ -594,7 +596,7 @@ namespace ToyCarArena.Gameplay.Round
                 car.name = NameOf(i);
                 car.IsPlayer = i == 0;
                 var entry = i == 0 ? catalog.Find(playerCar.SelectedCar) : players[i - 1].Car;
-                car.GetComponent<CarLook>().Apply(i, entry, ColorOf(i));
+                car.GetComponent<CarLook>().Apply(i, entry, ColorOf(i), i == 0 ? playerTopper.SelectedTopper : null);
                 cars.Add(car);
             }
         }

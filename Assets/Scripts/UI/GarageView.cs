@@ -28,6 +28,16 @@ namespace ToyCarArena.UI
         private bool isClosing;
         private CancellationTokenSource bounce;
         private VisualElement bouncingCard;
+        private readonly List<(string Id, Button Button, Label Status, VisualElement Coin)> topperCards = new();
+        private VisualElement carGrid;
+        private VisualElement topperGrid;
+        private VisualElement colorRow;
+        private Button carsTab;
+        private Button toppersTab;
+        private VisualElement toppersDot;
+        private VisualElement previewTopper;
+        private Label coinCount;
+        private bool isToppersTab;
 
         public GarageView(IAudioService audioService)
         {
@@ -57,7 +67,7 @@ namespace ToyCarArena.UI
             });
             lifetime = new CancellationTokenSource();
             preview = new CarPortrait(Root.Q<VisualElement>("garage-preview"));
-            var colorRow = Root.Q<VisualElement>("garage-colors");
+            colorRow = Root.Q<VisualElement>("garage-colors");
             for (var id = 0; id < colors.Length; id++) {
                 var colorId = id;
                 var button = new Button {
@@ -78,6 +88,7 @@ namespace ToyCarArena.UI
                 colorRow.Add(button);
             }
             var grid = Root.Q<VisualElement>("garage-grid");
+            carGrid = grid;
             foreach (var car in ViewModel.Cars) {
                 var button = new Button { name = $"garage-car-{car.Id}" };
                 button.RemoveFromClassList(Button.ussClassName);
@@ -106,9 +117,154 @@ namespace ToyCarArena.UI
                 grid.Add(button);
             }
 
+            BuildToppers();
             RefreshSelection();
             // The settings popup can change the language over the garage.
             text.OnChanged(RefreshSelection);
+        }
+
+        /// <summary>
+        /// The CARS and TOPPERS tabs over the grid, the toppers' own grid (none first, then each with its price in
+        /// coins until it is owned), the player's coins after the tabs, and the topper worn over the preview.
+        /// </summary>
+        private void BuildToppers()
+        {
+            var tabs = new VisualElement { pickingMode = PickingMode.Ignore };
+            tabs.AddToClassList("garage__tabs");
+            carsTab = Tab("garage.cars", () => ShowTab(false));
+            toppersTab = Tab("garage.toppers", () => ShowTab(true));
+            toppersDot = new VisualElement { pickingMode = PickingMode.Ignore };
+            toppersDot.AddToClassList("garage__tab-dot");
+            toppersTab.Add(toppersDot);
+            tabs.Add(carsTab);
+            tabs.Add(toppersTab);
+            colorRow.parent.Insert(colorRow.parent.IndexOf(colorRow), tabs);
+
+            topperGrid = new VisualElement { name = "garage-toppers", pickingMode = PickingMode.Ignore };
+            topperGrid.AddToClassList("garage__grid");
+            topperGrid.AddToClassList("garage__grid--toppers");
+            carGrid.parent.Insert(carGrid.parent.IndexOf(carGrid) + 1, topperGrid);
+            var ids = new List<string> { "" };
+            foreach (var topper in ViewModel.Toppers) {
+                ids.Add(topper.Id);
+            }
+
+            foreach (var id in ids) {
+                var button = new Button { name = $"garage-topper-{(id.Length == 0 ? "none" : id)}" };
+                button.RemoveFromClassList(Button.ussClassName);
+                button.AddToClassList("garage__car");
+                button.AddToClassList("garage__topper");
+                button.Add(TopperIcon.Create(id, "garage__topper-icon"));
+                var name = new Label { pickingMode = PickingMode.Ignore };
+                var topperId = id;
+                text.Set(name, () => topperId.Length == 0 ? Strings.Get("garage.none") : GameText.Topper(topperId));
+                name.AddToClassList("garage__name");
+                button.Add(name);
+                var statusRow = new VisualElement { pickingMode = PickingMode.Ignore };
+                statusRow.AddToClassList("pill");
+                statusRow.AddToClassList("garage__status");
+                var check = new VisualElement { pickingMode = PickingMode.Ignore };
+                check.AddToClassList("garage__check");
+                statusRow.Add(check);
+                var coin = RoundOverMeta.Coin();
+                coin.AddToClassList("garage__price-coin");
+                statusRow.Add(coin);
+                var status = new Label { pickingMode = PickingMode.Ignore };
+                statusRow.Add(status);
+                button.Add(statusRow);
+                button.clicked += () => PickTopper(topperId, button);
+                topperCards.Add((id, button, status, coin));
+                topperGrid.Add(button);
+            }
+
+            var pill = new VisualElement { pickingMode = PickingMode.Ignore };
+            pill.AddToClassList("pill");
+            pill.AddToClassList("coin-pill");
+            pill.AddToClassList("garage__coins");
+            pill.Add(RoundOverMeta.Coin());
+            coinCount = new Label { pickingMode = PickingMode.Ignore };
+            coinCount.AddToClassList("coin-pill__count");
+            pill.Add(coinCount);
+            tabs.Add(pill);
+
+            previewTopper = TopperIcon.Create(ViewModel.SelectedTopper, "garage__preview-topper");
+            Root.Q<VisualElement>("garage-preview").Add(previewTopper);
+            ViewModel.ToppersShown();
+            ShowTab(false);
+        }
+
+        private Button Tab(string key, System.Action pressed)
+        {
+            var tab = new Button();
+            tab.RemoveFromClassList(Button.ussClassName);
+            tab.AddToClassList("pill");
+            tab.AddToClassList("garage__tab");
+            var label = new Label { pickingMode = PickingMode.Ignore };
+            label.AddToClassList("garage__tab-text");
+            text.Set(label, () => Strings.Get(key));
+            tab.Add(label);
+            tab.clicked += () => {
+                if (IsShown && !isClosing) {
+                    audioService.PlayUiClick();
+                    pressed();
+                }
+            };
+            return tab;
+        }
+
+        private void ShowTab(bool toppers)
+        {
+            if (toppers && !isToppersTab) {
+                ViewModel.ToppersPressed();
+            }
+
+            isToppersTab = toppers;
+            carsTab.EnableInClassList("garage__tab--active", !toppers);
+            toppersTab.EnableInClassList("garage__tab--active", toppers);
+            carGrid.style.display = toppers ? DisplayStyle.None : DisplayStyle.Flex;
+            colorRow.style.display = toppers ? DisplayStyle.None : DisplayStyle.Flex;
+            topperGrid.style.display = toppers ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        private void PickTopper(string id, Button button)
+        {
+            if (!IsShown || isClosing || !ViewModel.PickTopper(id)) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            RefreshSelection();
+            StartBounce(button);
+        }
+
+        private void RefreshToppers()
+        {
+            var worn = ViewModel.SelectedTopper;
+            coinCount.text = ViewModel.Coins.ToString();
+            toppersDot.style.display = ViewModel.CanBuyTopper ? DisplayStyle.Flex : DisplayStyle.None;
+            TopperIcon.Set(previewTopper, worn);
+            foreach (var (id, button, status, coin) in topperCards) {
+                var topper = id.Length == 0 ? null : FindTopper(id);
+                var isOwned = topper == null || ViewModel.IsOwned(id);
+                var isWorn = id == worn;
+                button.EnableInClassList("garage__car--selected", isWorn);
+                button.EnableInClassList("garage__topper--price", !isOwned);
+                button.EnableInClassList("garage__topper--dear", !isOwned && !ViewModel.CanAfford(topper));
+                coin.style.display = isOwned ? DisplayStyle.None : DisplayStyle.Flex;
+                status.text = isWorn ? Strings.Get("garage.in_use") : isOwned ? Strings.Get("garage.use")
+                    : topper.Price.ToString();
+            }
+        }
+
+        private ToyCarArena.Gameplay.GameTuning.TopperDefinition FindTopper(string id)
+        {
+            foreach (var topper in ViewModel.Toppers) {
+                if (topper.Id == id) {
+                    return topper;
+                }
+            }
+
+            return null;
         }
 
         private void OnGeometryChanged(GeometryChangedEvent evt) =>
@@ -133,6 +289,8 @@ namespace ToyCarArena.UI
                 button.tooltip = unlocked ? GameText.Car(car) : Strings.Format("garage.unlock_at", car.UnlockLevel);
                 portrait.SetColor(ViewModel.SelectedColor);
             }
+
+            RefreshToppers();
         }
 
         private void SelectColor(int id, Button button)
@@ -265,6 +423,7 @@ namespace ToyCarArena.UI
             lifetime?.Dispose();
             text.Dispose();
             cards.Clear();
+            topperCards.Clear();
             base.Dispose();
         }
     }

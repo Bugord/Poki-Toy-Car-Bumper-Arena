@@ -81,7 +81,7 @@ namespace ToyCarArena.UI
             });
             garagePortrait = new CarPortrait(Root.Q<VisualElement>("garage-portrait"));
             RefreshGarage();
-            ShowNewCar(ViewModel.HasNewCar);
+            ShowNewCar(ViewModel.HasNewCar, ViewModel.CanBuyTopper);
 
             // The key hint is for a keyboard; a phone or a tablet has none to press. A wide desktop screen shows the key on
             // NEXT MATCH itself (ui_screens), so the style sheet decides there.
@@ -165,11 +165,12 @@ namespace ToyCarArena.UI
         }
 
         // The red dot on CAR, the NEW badge on GARAGE: a car this round opened waits in the garage until it is visited.
-        private void ShowNewCar(bool shown)
+        // A topper the coins buy lights the dot alone; a visit puts both out.
+        private void ShowNewCar(bool isNewCar, bool canBuyTopper)
         {
-            var display = shown ? DisplayStyle.Flex : DisplayStyle.None;
-            Root.Q<VisualElement>("garage-dot").style.display = display;
-            Root.Q<VisualElement>("garage-new").style.display = display;
+            Root.Q<VisualElement>("garage-dot").style.display =
+                isNewCar || canBuyTopper ? DisplayStyle.Flex : DisplayStyle.None;
+            Root.Q<VisualElement>("garage-new").style.display = isNewCar ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
         private void RefreshGarage() => garagePortrait.Set(ViewModel.SelectedCar, ViewModel.SelectedColor);
@@ -200,7 +201,7 @@ namespace ToyCarArena.UI
             token.ThrowIfCancellationRequested();
             RefreshGarage();
             xpProgress.RefreshColor();
-            ShowNewCar(false);
+            ShowNewCar(false, false);
             if (isNextMatch) {
                 // The garage already clicked for its NEXT MATCH.
                 isPlayAgainPressed = true;

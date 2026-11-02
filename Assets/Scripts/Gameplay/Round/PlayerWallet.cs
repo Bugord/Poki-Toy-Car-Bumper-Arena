@@ -129,6 +129,12 @@ namespace ToyCarArena.Gameplay.Round
         string SelectedTopper { get; }
     }
 
+    /// <summary>The standalone scene and the simulations have no wallet: the player's car wears nothing.</summary>
+    public sealed class NoTopper : IPlayerTopper
+    {
+        public string SelectedTopper => "";
+    }
+
     /// <summary>A saved coin reward's before/after and its parts, as the result screen counts them up.</summary>
     public readonly struct CoinGain
     {

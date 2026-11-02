@@ -29,13 +29,15 @@ namespace ToyCarArena.UI
         private readonly PlayerProgress progress;
         private readonly IScreenNavigator navigator;
         private readonly IGamePlatform platform;
+        private readonly PlayerWallet wallet;
         private IReadOnlyList<int> colors;
         private IReadOnlyList<string> names;
         private IReadOnlyList<int> levels;
 
         public RoundOverViewModel(CarCatalog catalog, ArenaCatalog arenaCatalog, GameTuning tuning,
-            PlayerProgress progress, IScreenNavigator navigator, IGamePlatform platform)
+            PlayerProgress progress, IScreenNavigator navigator, IGamePlatform platform, PlayerWallet wallet)
         {
+            this.wallet = wallet;
             this.catalog = catalog;
             this.arenaCatalog = arenaCatalog;
             this.tuning = tuning;
@@ -61,6 +63,9 @@ namespace ToyCarArena.UI
             GameText.Mission(mission, mission.Map.Length > 0 ? GameText.Arena(arenaCatalog.Find(mission.Map)) : null);
         public bool IsGarageOpen { get; private set; }
         public bool HasNewCar => XpGain.UnlockedCarIds.Count > 0;
+
+        /// <summary>The coins buy a topper not owned yet: the garage button carries its red dot for it too.</summary>
+        public bool CanBuyTopper => GarageViewModel.CanBuyAnyTopper(wallet, tuning);
         public CarCatalog.Entry SelectedCar => catalog.Find(progress.SelectedCar);
         public int SelectedColor => progress.SelectedColor;
         public int ColorOf(int index) => colors[index];

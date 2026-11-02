@@ -3309,6 +3309,116 @@
     display: flex;
 }
 
+/* The CARS and TOPPERS tabs over the grid: white pills, the open one green; a red dot when coins buy a topper. */
+.garage__tabs {
+    flex-shrink: 0;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    margin: 0 0 12px 0;
+}
+
+.garage__tab {
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    height: 80px;
+    margin: 0 10px;
+    padding: 0 40px;
+    border-width: 6px;
+    border-bottom-width: 12px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+}
+
+.garage__tab--active {
+    background-color: var(--green);
+}
+
+.garage__tab-text {
+    margin: 0;
+    padding: 0;
+    font-size: 40px;
+    color: var(--navy);
+}
+
+.garage__tab--active .garage__tab-text {
+    color: var(--white);
+}
+
+.garage__tab-dot {
+    display: none;
+    position: absolute;
+    top: -10px;
+    right: -6px;
+    width: 34px;
+    height: 34px;
+    border-width: 5px;
+    border-color: var(--navy);
+    border-radius: 17px;
+    background-color: var(--red);
+}
+
+/* The toppers' grid: smaller cards, three to a row upright and five across a wide screen. */
+.garage__grid--toppers .garage__topper {
+    width: 290px;
+    height: 230px;
+    margin: 8px 8px;
+}
+
+.garage--landscape .garage__grid--toppers .garage__topper {
+    width: 330px;
+    height: 300px;
+}
+
+.garage__topper-icon {
+    flex-shrink: 0;
+    width: 100px;
+    height: 100px;
+}
+
+.garage--landscape .garage__topper-icon {
+    width: 150px;
+    height: 150px;
+}
+
+.garage__price-coin {
+    display: none;
+    width: 34px;
+    height: 34px;
+    margin-right: 8px;
+    border-width: 4px;
+    border-bottom-width: 6px;
+}
+
+.garage__topper--price .garage__status {
+    background-color: var(--gold);
+}
+
+.garage__topper--dear .garage__status {
+    background-color: var(--soft);
+    opacity: 0.7;
+}
+
+/* The worn topper on the preview car's roof. */
+.garage__preview-topper {
+    position: absolute;
+    left: 50%;
+    top: -34px;
+    width: 80px;
+    height: 80px;
+    margin-left: -40px;
+}
+
+/* The player's coins at the end of the tabs' row, where the title above leaves them room in portrait too. */
+.coin-pill.garage__coins {
+    position: relative;
+    height: 80px;
+    margin-left: 10px;
+    border-bottom-width: 12px;
+}
+
 .garage__play {
     flex-shrink: 0;
     margin-top: 20px;
