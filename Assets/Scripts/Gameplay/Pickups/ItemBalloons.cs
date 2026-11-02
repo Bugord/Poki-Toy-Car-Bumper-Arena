@@ -11,8 +11,8 @@ using Object = UnityEngine.Object;
 namespace ToyCarArena.Gameplay.Pickups
 {
     /// <summary>
-    /// The balloons of a match. While a car runs a balloon (<see cref="ItemKind.Balloon"/>, a timed item) it floats on a
-    /// string over the car, and a fall off the floor is caught: once the car has sunk
+    /// The balloons of a match. A used balloon (<see cref="ItemKind.Balloon"/>) runs beside whatever else the car holds or
+    /// runs (<see cref="Car.IsRunning"/>): it floats on a string over the car, and a fall off the floor is caught: once the car has sunk
     /// <see cref="GameTuning.BalloonSettings.CatchDepth"/> below the floor with no floor under it, well before the round
     /// takes it out, the balloon swells and carries it (<see cref="CarMovement.Carry"/>) up over the other cars, across to
     /// the nearest safe floor clear of them, and lets it drop there, then pops. The car is not in play while it is carried,
@@ -85,7 +85,7 @@ namespace ToyCarArena.Gameplay.Pickups
             var cars = round.Cars;
             for (var i = 0; i < cars.Count; i++) {
                 var car = cars[i];
-                var isArmed = !car.IsOut && car.Ability == ItemKind.Balloon;
+                var isArmed = !car.IsOut && car.IsRunning(ItemKind.Balloon);
                 if (!isArmed && (i >= slots.Count || slots[i] == null)) {
                     continue;
                 }
@@ -142,7 +142,7 @@ namespace ToyCarArena.Gameplay.Pickups
                 return;
             }
 
-            car.ClearAbility();
+            car.ClearAbility(ItemKind.Balloon);
             slot.IsCarrying = true;
             car.Movement.Carry(landing + Vector3.up * settings.DropHeight, settings.CarryHeight, settings.CarryTime);
             Caught?.Invoke(car);
@@ -248,7 +248,7 @@ namespace ToyCarArena.Gameplay.Pickups
         private void Show(Slot slot, bool isShown)
         {
             var car = slot.Car;
-            if (isShown && !slot.IsCarrying && car.AbilityTimeLeft < BlinkTime) {
+            if (isShown && !slot.IsCarrying && car.TimeLeft(ItemKind.Balloon) < BlinkTime) {
                 isShown = Mathf.Repeat(time * BlinkRate, 1f) < 0.5f;
             }
 

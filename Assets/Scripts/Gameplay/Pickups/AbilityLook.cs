@@ -54,15 +54,18 @@ namespace ToyCarArena.Gameplay.Pickups
             time += deltaTime;
             for (var i = 0; i < cars.Count; i++) {
                 var car = cars[i];
-                var ability = car.IsOut ? ItemKind.None : car.Ability;
-                if (ability == ItemKind.None && (i >= slots.Count || slots[i] == null)) {
+                var isIn = !car.IsOut;
+                var isShielded = isIn && car.IsRunning(ItemKind.Shield);
+                var isMega = isIn && car.IsRunning(ItemKind.Mega);
+                var isTurbo = isIn && car.IsRunning(ItemKind.Turbo);
+                if (!isShielded && !isMega && !isTurbo && (i >= slots.Count || slots[i] == null)) {
                     continue;
                 }
 
                 var slot = SlotFor(i);
-                ShowBubble(slot, car, ability == ItemKind.Shield);
-                ShowPad(slot, car, ability == ItemKind.Mega);
-                if (ability == ItemKind.Turbo && effects != null) {
+                ShowBubble(slot, car, isShielded);
+                ShowPad(slot, car, isMega);
+                if (isTurbo && effects != null) {
                     slot.Flame -= deltaTime;
                     if (slot.Flame <= 0f && car.Movement.Velocity.sqrMagnitude > MinFlameSpeed * MinFlameSpeed) {
                         slot.Flame = FlameInterval;
@@ -93,7 +96,7 @@ namespace ToyCarArena.Gameplay.Pickups
 
         private void ShowBubble(Slot slot, Car car, bool isShown)
         {
-            if (isShown && car.AbilityTimeLeft < BlinkTime) {
+            if (isShown && car.TimeLeft(ItemKind.Shield) < BlinkTime) {
                 // Off for half of each blink, so a shield about to go is hard to miss.
                 isShown = Mathf.Repeat(time * BlinkRate, 1f) < 0.5f;
             }

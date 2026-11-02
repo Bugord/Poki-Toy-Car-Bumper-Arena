@@ -314,6 +314,37 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator TimedItemsRunSideBySideAndLeaveTheSlotFree()
+        {
+            tuning = UseMode(GameTuning.GameMode.Match, 40f);
+            yield return Load(true, 1);
+            var player = round.Player;
+            yield return StandOnTheMiddle(player);
+
+            foreach (var kind in new[] { ItemKind.Balloon, ItemKind.Mega, ItemKind.Shield }) {
+                Assert.That(pickups.Give(player, kind), Is.True, $"the slot is free for {kind} while the others run");
+                Assert.That(pickups.Use(player), Is.True);
+                yield return Frames(2);
+            }
+
+            Assert.That(player.IsRunning(ItemKind.Balloon), Is.True, "a mega and a shield used after it keep the balloon");
+            Assert.That(player.IsRunning(ItemKind.Mega), Is.True, "a shield used after it keeps the mega");
+            Assert.That(player.IsShielded, Is.True);
+            Assert.That(player.Ability, Is.EqualTo(ItemKind.Shield), "the badge shows the one used last");
+            Assert.That(player.Movement.Mass, Is.EqualTo(tuning.Car.Mass * tuning.Pickups.Mega.MassScale).Within(0.001f));
+
+            Assert.That(player.TryAbsorbHit(), Is.True);
+            Assert.That(player.IsShielded, Is.False, "the hit spends the shield");
+            Assert.That(player.IsRunning(ItemKind.Mega) && player.IsRunning(ItemKind.Balloon), Is.True,
+                "and nothing else");
+            Assert.That(player.Ability, Is.Not.EqualTo(ItemKind.None), "the badge moves on to what still runs");
+
+            player.TakeOut();
+            Assert.That(player.Ability, Is.EqualTo(ItemKind.None), "a fall ends them all");
+            Assert.That(player.Movement.Mass, Is.EqualTo(tuning.Car.Mass).Within(0.001f));
+        }
+
+        [UnityTest]
         public IEnumerator ABowlingBallKnocksAsideEveryCarOnItsLineForTheRoller()
         {
             tuning = UseMode(GameTuning.GameMode.Match, 60f);

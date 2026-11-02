@@ -200,7 +200,7 @@ namespace ToyCarArena.UI
 
         /// <summary>
         /// The ability the player's car has running (<see cref="ItemKind.None"/> for none) and how much of it is left,
-        /// from 1 to 0, and in seconds.
+        /// from 1 to 0, and in seconds. Several can run at once; the badge has room for one, the one used last.
         /// </summary>
         public ItemKind Ability => round?.Player != null ? round.Player.Ability : ItemKind.None;
         public float AbilityShare => round?.Player != null ? round.Player.AbilityShare : 0f;

@@ -110,36 +110,55 @@ namespace ToyCarArena.Gameplay.Cars
         public float LastRingFallTime { get; private set; } = float.NegativeInfinity;
 
         /// <summary>
-        /// The timed item the car used and that is still running (<see cref="ItemKind.None"/> for none): mega, shield,
-        /// turbo or balloon, one at a time, a new one replacing the old. It ends with its time, a shield also with the hit it takes,
-        /// and a fall ends any.
+        /// Whether the timed item <paramref name="kind"/> (mega, shield, turbo or balloon) the car used is still running.
+        /// Each runs on its own clock beside the others: using one never ends another, so the car goes on taking boxes
+        /// and using what they give without losing what runs. One ends with its time, a shield also with the hit it
+        /// takes, a balloon with the fall it catches, and a fall of the car ends all.
         /// </summary>
-        public ItemKind Ability { get; private set; }
+        public bool IsRunning(ItemKind kind) => Time.time < abilityEnds[(int)kind];
 
-        /// <summary>
-        /// How much of the running ability is left, from 1 when it was used to 0; 0 for none.
-        /// </summary>
-        public float AbilityShare
+        /// <summary>Seconds the running <paramref name="kind"/> has left; 0 when it does not run.</summary>
+        public float TimeLeft(ItemKind kind) => Mathf.Max(0f, abilityEnds[(int)kind] - Time.time);
+
+        /// <summary>How much of the running <paramref name="kind"/> is left, from 1 when it was used to 0.</summary>
+        public float ShareLeft(ItemKind kind)
         {
-            get
-            {
-                if (Ability == ItemKind.None || abilityLength <= 0f) {
-                    return 0f;
-                }
-
-                return Mathf.Clamp01((abilityEndTime - Time.time) / abilityLength);
-            }
+            var length = pickupSettings.DurationOf(kind);
+            return length > 0f ? Mathf.Clamp01(TimeLeft(kind) / length) : 0f;
         }
 
         /// <summary>
-        /// Seconds the running ability has left; 0 for none.
+        /// The timed item used last that still runs, else any other that runs (<see cref="ItemKind.None"/> for none):
+        /// the one the player's badge shows.
         /// </summary>
-        public float AbilityTimeLeft => Ability == ItemKind.None ? 0f : Mathf.Max(0f, abilityEndTime - Time.time);
+        public ItemKind Ability
+        {
+            get
+            {
+                if (IsRunning(lastAbility)) {
+                    return lastAbility;
+                }
+
+                for (var i = 1; i < abilityEnds.Length; i++) {
+                    if (IsRunning((ItemKind)i)) {
+                        return (ItemKind)i;
+                    }
+                }
+
+                return ItemKind.None;
+            }
+        }
+
+        /// <summary>How much of <see cref="Ability"/> is left, from 1 to 0; 0 for none.</summary>
+        public float AbilityShare => ShareLeft(Ability);
+
+        /// <summary>Seconds <see cref="Ability"/> has left; 0 for none.</summary>
+        public float AbilityTimeLeft => TimeLeft(Ability);
 
         /// <summary>
         /// Whether a shield is up: the next real hit, of a car, an item or the arena, is taken whole.
         /// </summary>
-        public bool IsShielded => Ability == ItemKind.Shield;
+        public bool IsShielded => IsRunning(ItemKind.Shield);
 
         /// <summary>
         /// The item in the car's slot (<see cref="ItemKind.None"/> for an empty one): one at a time, kept until used or
@@ -161,8 +180,13 @@ namespace ToyCarArena.Gameplay.Cars
         // The roll has not been reported landed yet.
         private bool isRollPending;
 
-        private float abilityEndTime;
-        private float abilityLength;
+        private static readonly int AbilityKinds = Enum.GetValues(typeof(ItemKind)).Length;
+
+        // When each timed item ends, by kind (None never runs), and whether its effect on the car is still on: it is
+        // taken off in the frame after its time is up.
+        private readonly float[] abilityEnds = NoAbilities();
+        private readonly bool[] abilityOn = new bool[AbilityKinds];
+        private ItemKind lastAbility;
         // Until this time (Time.time) the car that made a hit the shield took is not credited, however long it presses on.
         private float shieldGraceEnd = float.NegativeInfinity;
 
@@ -211,8 +235,10 @@ namespace ToyCarArena.Gameplay.Cars
                 gameObject.SetActive(false);
             }
 
-            if (Ability != ItemKind.None && Time.time >= abilityEndTime) {
-                ClearAbility();
+            for (var i = 1; i < AbilityKinds; i++) {
+                if (abilityOn[i] && !IsRunning((ItemKind)i)) {
+                    ClearAbility((ItemKind)i);
+                }
             }
 
             if (growth != growthTarget && pickupSettings != null) {
@@ -222,8 +248,7 @@ namespace ToyCarArena.Gameplay.Cars
             }
 
             if (isRollPending && Time.time >= itemReadyTime) {
-                isRollPending = false;
-                ItemLanded?.Invoke(HeldItem);
+                Land();
             }
         }
 
@@ -233,7 +258,7 @@ namespace ToyCarArena.Gameplay.Cars
         public void TakeOut()
         {
             IsOut = true;
-            ClearAbility();
+            ClearAbilities();
             ClearItem();
             Movement.StopCarry();
             Movement.Drive(Vector3.zero, 0f);
@@ -254,11 +279,16 @@ namespace ToyCarArena.Gameplay.Cars
             isRollPending = true;
             ItemRolled?.Invoke(kind);
             if (rollTime <= 0f) {
-                isRollPending = false;
-                ItemLanded?.Invoke(kind);
+                Land();
             }
 
             return true;
+        }
+
+        private void Land()
+        {
+            isRollPending = false;
+            ItemLanded?.Invoke(HeldItem);
         }
 
         /// <summary>
@@ -278,8 +308,8 @@ namespace ToyCarArena.Gameplay.Cars
         }
 
         /// <summary>
-        /// A used timed item starts running: mega, shield, turbo or balloon replaces whatever ran before. The other kinds leave
-        /// nothing running.
+        /// A used timed item starts running: mega, shield, turbo or balloon, beside whatever else runs; one already running
+        /// starts its time again. The other kinds leave nothing running.
         /// </summary>
         public void StartAbility(ItemKind kind)
         {
@@ -288,10 +318,9 @@ namespace ToyCarArena.Gameplay.Cars
                 return;
             }
 
-            ClearAbility();
-            Ability = kind;
-            abilityLength = length;
-            abilityEndTime = Time.time + length;
+            abilityEnds[(int)kind] = Time.time + length;
+            abilityOn[(int)kind] = true;
+            lastAbility = kind;
             switch (kind) {
                 case ItemKind.Mega:
                     Movement.SetMassScale(pickupSettings.Mega.MassScale);
@@ -319,20 +348,46 @@ namespace ToyCarArena.Gameplay.Cars
         }
 
         /// <summary>
-        /// Ends the running ability, if any, and puts the car's weight and boost back as tuned.
+        /// Ends the timed item <paramref name="kind"/>, if it runs, and takes its effect off the car: a mega's weight and
+        /// size, a turbo's quick boost.
         /// </summary>
-        public void ClearAbility()
+        public void ClearAbility(ItemKind kind)
         {
-            if (Ability == ItemKind.None) {
+            var index = (int)kind;
+            if (index <= 0 || !abilityOn[index]) {
                 return;
             }
 
-            Ability = ItemKind.None;
-            abilityLength = 0f;
-            Movement.SetMassScale(1f);
-            Movement.SetBoostCooldown(-1f);
-            // Shrinks back over the grow time: at once, a car grown over the edge of another would leave a gap.
-            growthTarget = 1f;
+            abilityEnds[index] = float.NegativeInfinity;
+            abilityOn[index] = false;
+            switch (kind) {
+                case ItemKind.Mega:
+                    Movement.SetMassScale(1f);
+                    // Shrinks back over the grow time: at once, a car grown over the edge of another would leave a gap.
+                    growthTarget = 1f;
+                    break;
+                case ItemKind.Turbo:
+                    Movement.SetBoostCooldown(-1f);
+                    break;
+            }
+        }
+
+        /// <summary>Ends every timed item that runs: the car fell, or is back from a fall.</summary>
+        public void ClearAbilities()
+        {
+            for (var i = 1; i < AbilityKinds; i++) {
+                ClearAbility((ItemKind)i);
+            }
+        }
+
+        private static float[] NoAbilities()
+        {
+            var ends = new float[AbilityKinds];
+            for (var i = 0; i < ends.Length; i++) {
+                ends[i] = float.NegativeInfinity;
+            }
+
+            return ends;
         }
 
         /// <summary>
@@ -362,11 +417,11 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public bool TryAbsorbHit()
         {
-            if (Ability != ItemKind.Shield) {
+            if (!IsShielded) {
                 return false;
             }
 
-            ClearAbility();
+            ClearAbility(ItemKind.Shield);
             shieldGraceEnd = Time.time + pickupSettings.Shield.Grace;
             ShieldPopped?.Invoke();
             return true;
@@ -400,7 +455,7 @@ namespace ToyCarArena.Gameplay.Cars
             LastHitTime = float.NegativeInfinity;
             LastHazardTime = float.NegativeInfinity;
             LastRingFallTime = float.NegativeInfinity;
-            ClearAbility();
+            ClearAbilities();
             ClearItem();
             growthTarget = 1f;
             SetGrowth(1f);
@@ -479,7 +534,7 @@ namespace ToyCarArena.Gameplay.Cars
         public void HitByHazard()
         {
             // A hazard pushes and staggers before it reports the hit: a shield takes all of it back.
-            if (Ability == ItemKind.Shield) {
+            if (IsShielded) {
                 Movement.UndoHazardKick();
                 TryAbsorbHit();
                 return;

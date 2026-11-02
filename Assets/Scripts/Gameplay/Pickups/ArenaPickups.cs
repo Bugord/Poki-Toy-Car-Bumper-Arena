@@ -22,8 +22,8 @@ namespace ToyCarArena.Gameplay.Pickups
     /// behind gets the items that knock cars off more often); a car that already holds one breaks the box and gets
     /// nothing, as in a kart racer. The item is kept until its car uses it (<see cref="Use"/>) or falls.
     /// <para>
-    /// Used, mega, shield, turbo and balloon start running on the car (<see cref="Car.StartAbility"/>; a balloon's catch
-    /// is <see cref="ItemBalloons"/>); the shockwave is a ring sent from the car at once, the bomb is thrown ahead
+    /// Used, mega, shield, turbo and balloon start running on the car, each beside the others (<see cref="Car.StartAbility"/>;
+    /// a balloon's catch is <see cref="ItemBalloons"/>); the shockwave is a ring sent from the car at once, the bomb is thrown ahead
     /// (<see cref="ItemBombs"/>), the glove punches from the nose (<see cref="ItemGloves"/>), the bowling ball rolls out
     /// of it (<see cref="ItemBowls"/>) and the oil is spilled behind (<see cref="ItemOil"/>, a layer of the floor). Every hit of an item goes through <see cref="ItemBlow"/>: credited to its user, taken
     /// by a shield, passing a car just back from a fall.
