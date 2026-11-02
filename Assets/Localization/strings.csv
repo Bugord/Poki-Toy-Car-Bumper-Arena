@@ -41,6 +41,10 @@ lobby.match_found,Lobby title while the arena loads,MATCH FOUND!,MATCH TROUVÉ !
 lobby.ready,Lobby title once loaded,READY!,PRÊTS !,PRONTI!,BEREIT!,¡LISTOS!,HAZIR!,PRONTOS!,ГОТОВО!
 lobby.loading,Loading bar text; dots are added after it,LOADING ARENA,CHARGEMENT DE L'ARÈNE,CARICAMENTO ARENA,ARENA LÄDT,CARGANDO ARENA,ARENA YÜKLENİYOR,CARREGANDO ARENA,ЗАГРУЗКА АРЕНЫ
 lobby.ready_to_roll,Loading bar text once loaded,READY TO ROLL!,C'EST PARTI !,SI PARTE!,LOS GEHT’S!,¡A RODAR!,HAYDİ GAZLA!,BORA RODAR!,ПОЕХАЛИ!
+lobby.finding_players,Lobby title while players are being found; max ~20 chars,FINDING PLAYERS,RECHERCHE DE JOUEURS,CERCO GIOCATORI,SUCHE SPIELER,BUSCANDO JUGADORES,OYUNCU ARANIYOR,PROCURANDO JOGADORES,ПОИСК ИГРОКОВ
+lobby.searching,"A lobby seat with no player yet; dots are added after it; max ~12 chars",SEARCHING,RECHERCHE,RICERCA,SUCHE,BUSCANDO,ARANIYOR,BUSCANDO,ПОИСК
+lobby.players,"Bar text while players are being found: {0} found of {1} seats",PLAYERS {0}/{1},JOUEURS {0}/{1},GIOCATORI {0}/{1},SPIELER {0}/{1},JUGADORES {0}/{1},OYUNCU {0}/{1},JOGADORES {0}/{1},ИГРОКИ {0}/{1}
+lobby.starting,Bar text once every seat is found and the match is about to start; dots are added after it,STARTING MATCH,LANCEMENT DU MATCH,AVVIO SFIDA,MATCH STARTET,EMPEZANDO PARTIDA,MAÇ BAŞLIYOR,COMEÇANDO PARTIDA,НАЧИНАЕМ МАТЧ
 lobby.arena,Label before the arena name,ARENA,ARÈNE,ARENA,ARENA,ARENA,ARENA,ARENA,АРЕНА
 lobby.left,Grey badge: the player left; max ~6 chars,LEFT,PARTI,USCITO,WEG,SALIÓ,ÇIKTI,SAIU,УШЁЛ
 lobby.tip.boost_hit,Loading tip,TIP: BOOST RIGHT BEFORE YOU HIT,ASTUCE : TURBO JUSTE AVANT LE CHOC,CONSIGLIO: TURBO PRIMA DELLO SCONTRO,TIPP: BOOST KURZ VOR DEM AUFPRALL,CONSEJO: TURBO JUSTO ANTES DEL GOLPE,İPUCU: ÇARPMADAN HEMEN ÖNCE HIZLAN,DICA: TURBO LOGO ANTES DE BATER,СОВЕТ: УСКОРЯЙСЯ ПЕРЕД УДАРОМ
