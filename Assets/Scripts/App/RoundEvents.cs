@@ -240,29 +240,32 @@ namespace ToyCarArena.App
         }
 
         /// <summary>
-        /// The roll of a box the player broke landed on an item, in match number <paramref name="match"/>:
+        /// The roll of a box the player broke landed on an item, in match or round number <paramref name="match"/>:
         /// <c>match / item-heavy, shockwave, shield, turbo, bomb, glove-rR / item-get</c>, R as for the match's other
-        /// events. Replaces v0.6's <c>pickup</c> event, when a pickup was its ability.
+        /// events; in a round of last-car-standing (after v0.7.1) the same under <c>result</c>. Replaces v0.6's
+        /// <c>pickup</c> event, when a pickup was its ability.
         /// </summary>
-        public static void MeasureItemGet(this IGamePlatform platform, int match, ItemKind kind) =>
-            platform.Measure(MatchCategory, $"item-{ItemId(kind)}-{RoundTag(match)}", "item-get");
+        public static void MeasureItemGet(this IGamePlatform platform, int match, ItemKind kind, bool isMatch = true) =>
+            platform.Measure(ItemCategory(isMatch), $"item-{ItemId(kind)}-{RoundTag(match)}", "item-get");
 
         /// <summary>
-        /// The player used the item in the slot: <c>match / item-kind-rR / item-use</c>; against item-get it tells which
-        /// items the players find and which they forget to use.
+        /// The player used the item in the slot: <c>match / item-kind-rR / item-use</c> (<c>result</c> in a round);
+        /// against item-get it tells which items the players find and which they forget to use.
         /// </summary>
-        public static void MeasureItemUse(this IGamePlatform platform, int match, ItemKind kind) =>
-            platform.Measure(MatchCategory, $"item-{ItemId(kind)}-{RoundTag(match)}", "item-use");
+        public static void MeasureItemUse(this IGamePlatform platform, int match, ItemKind kind, bool isMatch = true) =>
+            platform.Measure(ItemCategory(isMatch), $"item-{ItemId(kind)}-{RoundTag(match)}", "item-use");
+
+        private static string ItemCategory(bool isMatch) => isMatch ? MatchCategory : ResultCategory;
 
         // The kind as the events spell it, without digits.
         private static string ItemId(ItemKind kind) => kind.ToString().ToLowerInvariant();
 
         /// <summary>
         /// How many boxes the player broke in the match, an item in them or not, at its end:
-        /// <c>match / pickups-N-rR / pickups</c>, N from 0 to 9 or 10plus.
+        /// <c>match / pickups-N-rR / pickups</c>, N from 0 to 9 or 10plus; <c>result</c> in a round with boxes.
         /// </summary>
-        public static void MeasureMatchPickups(this IGamePlatform platform, int match, int count) =>
-            platform.Measure(MatchCategory, $"pickups-{CountBucket(count)}-{RoundTag(match)}", "pickups");
+        public static void MeasureMatchPickups(this IGamePlatform platform, int match, int count, bool isMatch = true) =>
+            platform.Measure(ItemCategory(isMatch), $"pickups-{CountBucket(count)}-{RoundTag(match)}", "pickups");
 
         // One number, so the match's tag still fits beside it.
         private static string CountBucket(int count)

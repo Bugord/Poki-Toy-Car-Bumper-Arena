@@ -210,6 +210,9 @@ namespace ToyCarArena.UI
         /// The item in the player's slot (<see cref="ItemKind.None"/> for an empty one), whether it still spins, and
         /// whether it can be used now.
         /// </summary>
+        /// <summary>Whether the round has boxes and items: a match, or a round from the visit's second.</summary>
+        public bool HasItems => driver != null && driver.HasItems;
+
         public ItemKind HeldItem => round?.Player != null ? round.Player.HeldItem : ItemKind.None;
         public bool IsItemRolling => round?.Player != null && round.Player.IsItemRolling;
         public bool IsItemReady => IsRunning && round.Player.IsItemReady;

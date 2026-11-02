@@ -845,11 +845,11 @@
     font-size: 100px;
 }
 
-.ko-pop--heavy .ko-pop__text { color: var(--orange); }
-.ko-pop--shockwave .ko-pop__text { color: var(--purple); }
+.ko-pop--heavy .ko-pop__text { color: rgb(127, 147, 234); }
+.ko-pop--shockwave .ko-pop__text { color: rgb(79, 214, 220); }
 .ko-pop--shield .ko-pop__text { color: var(--blue); }
 .ko-pop--turbo .ko-pop__text { color: var(--gold); }
-.ko-pop--bomb .ko-pop__text { color: var(--red); }
+.ko-pop--bomb .ko-pop__text { color: rgb(255, 106, 85); }
 .ko-pop--glove .ko-pop__text { color: var(--red); }
 .ko-pop--boost .ko-pop__text { color: var(--orange); }
 
@@ -1167,7 +1167,7 @@
     background-color: var(--soft);
 }
 
-.hud__power-icon--heavy { background-color: var(--orange); }
+.hud__power-icon--heavy { background-color: rgb(95, 116, 203); }
 .hud__power-icon--shield { background-color: var(--blue); }
 .hud__power-icon--turbo { background-color: var(--gold); }
 
@@ -1228,7 +1228,7 @@
     background-color: var(--blue);
 }
 
-.hud__power--heavy .hud__power-fill { background-color: var(--orange); }
+.hud__power--heavy .hud__power-fill { background-color: rgb(95, 116, 203); }
 .hud__power--shield .hud__power-fill { background-color: var(--blue); }
 .hud__power--turbo .hud__power-fill { background-color: var(--gold); }
 
@@ -1371,8 +1371,11 @@
     left: 265px;
 }
 
+/* With nothing in the slot the button is gone (it picks nothing either, see HudView), and pops back as a box
+   is broken. */
 .hud__item--empty {
-    opacity: 0.45;
+    opacity: 0;
+    scale: 0.5 0.5;
 }
 
 .hud__item--rolling {
@@ -1405,11 +1408,11 @@
     background-color: var(--soft);
 }
 
-.hud__item-icon--heavy { background-color: var(--orange); }
-.hud__item-icon--shockwave { background-color: var(--purple); }
+.hud__item-icon--heavy { background-color: rgb(95, 116, 203); }
+.hud__item-icon--shockwave { background-color: rgb(79, 214, 220); }
 .hud__item-icon--shield { background-color: var(--blue); }
 .hud__item-icon--turbo { background-color: var(--gold); }
-.hud__item-icon--bomb { background-color: var(--soft); }
+.hud__item-icon--bomb { background-color: rgb(255, 106, 85); }
 .hud__item-icon--glove { background-color: var(--red); }
 
 .hud__item-mark {
@@ -1456,42 +1459,19 @@
     position: absolute;
 }
 
-/* A weight: a navy block with a ring on top. */
-.hud__item-icon--heavy .hud__item-glyph {
-    width: 84px;
-    height: 58px;
-    margin-top: 22px;
-    border-radius: 16px;
-    background-color: var(--navy);
+/* Heavy, shockwave and bomb are drawn pictures (the round's items since v0.7.1): an anvil, a broken ring round a
+   smaller one, a bomb with a lit fuse. The others keep their glyphs from parts. */
+.hud__item-icon--heavy .hud__item-glyph,
+.hud__item-icon--shockwave .hud__item-glyph,
+.hud__item-icon--bomb .hud__item-glyph {
+    width: 112px;
+    height: 112px;
+    -unity-background-scale-mode: scale-to-fit;
 }
 
-.hud__item-icon--heavy .hud__item-glyph-part {
-    display: flex;
-    left: 22px;
-    top: -30px;
-    width: 40px;
-    height: 36px;
-    border-width: 10px;
-    border-color: var(--navy);
-    border-radius: 999px;
-}
-
-/* A shockwave: a navy ring round a dot. */
-.hud__item-icon--shockwave .hud__item-glyph {
-    width: 96px;
-    height: 96px;
-    border-width: 11px;
-    border-color: var(--navy);
-    border-radius: 999px;
-}
-
-.hud__item-icon--shockwave .hud__item-glyph-part {
-    display: flex;
-    width: 30px;
-    height: 30px;
-    border-radius: 999px;
-    background-color: var(--navy);
-}
+.hud__item-icon--heavy .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_heavy.svg"); }
+.hud__item-icon--shockwave .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_shockwave.svg"); }
+.hud__item-icon--bomb .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_bomb.svg"); }
 
 /* A shield: a white bubble with a navy rim. */
 .hud__item-icon--shield .hud__item-glyph {
@@ -1516,28 +1496,6 @@
     width: 20px;
     height: 20px;
     background-color: var(--white);
-}
-
-/* A bomb: a navy ball with a gold fuse. */
-.hud__item-icon--bomb .hud__item-glyph {
-    width: 84px;
-    height: 84px;
-    margin-top: 12px;
-    border-radius: 999px;
-    background-color: var(--navy);
-}
-
-.hud__item-icon--bomb .hud__item-glyph-part {
-    display: flex;
-    left: 52px;
-    top: -18px;
-    width: 18px;
-    height: 32px;
-    rotate: 35deg;
-    border-width: 4px;
-    border-color: var(--navy);
-    border-radius: 6px;
-    background-color: var(--gold);
 }
 
 /* A glove: a white fist with a thumb, outlined. */

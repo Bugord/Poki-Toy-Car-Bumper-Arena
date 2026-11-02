@@ -452,7 +452,7 @@ MonoBehaviour:
     returnTime: 3
     returnWarning: 1.2
     matchFallShare: 0.5
-  mode: 1
+  mode: 0
   match:
     duration: 60
   pickups:
