@@ -10,10 +10,13 @@ using UnityEngine.UIElements;
 namespace ToyCarArena.UI
 {
     /// <summary>
-    /// Replays an already saved reward on the level track: the level badge, +XP, and a row of stops from the level the
-    /// round started at to the next rewards and the next rank. The track first builds left to right empty, then fills;
-    /// each stop it reaches turns gold. Its lifetime belongs to the result view, so NEXT MATCH can leave at any point,
-    /// including halfway through several level-ups, without holding up the next round or touching a detached screen.
+    /// Replays an already saved reward in three steps: first a plain bar from the level the round started at to the
+    /// next fills with the round's XP (LEVEL UP! and the badge bumps on each level crossed), then each level crossed
+    /// that gives something (a car, an arena, a rank) shows it in a popup over the screen until a tap or a few seconds,
+    /// and last the level track: a row of stops from the level the round started at to the next rewards and the next
+    /// rank, which builds left to right empty, then fills, each stop it reaches turning gold. Its lifetime belongs to
+    /// the result view, so NEXT MATCH can leave at any point, including halfway through a popup, without holding up
+    /// the next round or touching a detached screen.
     /// </summary>
     internal sealed class RoundOverProgress : IDisposable
     {
@@ -22,57 +25,83 @@ namespace ToyCarArena.UI
         private const float GrowDuration = 0.15f;
         // After the screen's own fade, so the track builds on a settled card.
         private const int BuildDelay = 150;
-        // How long a new car celebrates before the fill goes on; its sticker stays afterwards.
-        private const int UnlockHold = 600;
+        private const float BarFillDuration = 0.9f;
+        // LEVEL UP! holds this long before the level's reward pops up.
+        private const int LevelUpHold = 450;
+        // The bar holds this long full of the round's XP before it gives way to the track.
+        private const int BarHold = 600;
+        private const float ShrinkDuration = 0.2f;
+        // A reward popup closes on its own after this long, so a player who just watches is not stuck under it.
+        private const float RewardAutoClose = 4f;
+        private const float RewardFadeIn = 0.15f;
+        private const float RewardRaysTurnSeconds = 10f;
+        private static readonly Color RewardRaysColor = new(1f, 0.79f, 0.24f, 0.32f);
 
         private const string ReachedClass = "track__node--reached";
         private const string DoneClass = "track__node--done";
 
+        private readonly VisualElement root;
         private readonly RoundOverViewModel viewModel;
+        private readonly bool isTouch;
+        private readonly VisualElement bar;
+        private readonly Label barFrom;
+        private readonly Label barTo;
+        private readonly VisualElement barFill;
+        private readonly VisualElement levelUp;
         private readonly VisualElement levelBadge;
         private readonly Label levelLabel;
         private readonly Label rankLabel;
         private readonly Label gain;
         private readonly Label total;
-        private readonly VisualElement newCar;
-        private readonly Label newCarName;
-        private readonly CarPortrait newCarPortrait;
-        private readonly Label ready;
         private readonly List<Waypoint> stops = new();
         private readonly List<Segment> segments = new();
         private readonly List<CarPortrait> trackCars = new();
         private readonly LiveText text = new();
-        private CarCatalog.Entry shownCar;
         private int shownLevel;
         private CancellationTokenSource animation;
         private string rankClass;
 
-        public RoundOverProgress(VisualElement root, RoundOverViewModel viewModel)
+        public RoundOverProgress(VisualElement root, RoundOverViewModel viewModel, bool isTouch)
         {
+            this.root = root;
             this.viewModel = viewModel;
+            this.isTouch = isTouch;
             this.levelBadge = root.Q<VisualElement>("xp-level");
             this.levelLabel = root.Q<Label>("xp-level-value");
             this.rankLabel = root.Q<Label>("xp-rank");
             this.gain = root.Q<Label>("xp-gain");
             this.total = root.Q<Label>("xp-total");
-            this.newCar = root.Q<VisualElement>("xp-new-car");
-            this.newCarName = root.Q<Label>("xp-new-car-name");
-            this.newCarPortrait = new CarPortrait(root.Q<VisualElement>("xp-new-car-portrait"));
-            this.ready = root.Q<Label>("xp-ready");
 
             var reward = viewModel.XpGain;
             SetLevel(reward.Before.Level);
             text.Set(gain, () => Strings.Format("result.xp_gain", reward.Total));
             text.Set(total, () => Strings.Format("result.xp_total", reward.Before.Xp, reward.Before.Cost));
-            text.Set(ready, () => Strings.Get("result.drives_next"));
-            text.Set(newCarName, () => shownCar == null ? "" : Strings.Format("result.new_car", GameText.Car(shownCar)));
             text.Set(rankLabel, () => Strings.Format("result.rank_level", PlayerRank.NameOf(shownLevel), shownLevel));
-            BuildTrack(root.Q<VisualElement>("xp-track"), reward.Before.Level);
+            var track = root.Q<VisualElement>("xp-track");
+            BuildTrack(track, reward.Before.Level);
+
+            // The bar of the first step lies over the track, which is still empty then: nothing in the card moves.
+            bar = new VisualElement { pickingMode = PickingMode.Ignore };
+            bar.AddToClassList("xp-bar");
+            barFrom = BarLevel(bar);
+            var line = new VisualElement { pickingMode = PickingMode.Ignore };
+            line.AddToClassList("xp-bar__line");
+            barFill = new VisualElement { pickingMode = PickingMode.Ignore };
+            barFill.AddToClassList("xp-bar__fill");
+            line.Add(barFill);
+            bar.Insert(1, line);
+            barTo = BarLevel(bar);
+            levelUp = Outlined("", "xp-bar__level-up", out var levelUpLabels);
+            foreach (var label in levelUpLabels) {
+                text.Set(label, () => Strings.Get("result.level_up"));
+            }
+            bar.Add(levelUp);
+            track.Add(bar);
 
             SetScale(levelBadge, 0f);
             SetScale(gain, 0f);
-            SetScale(newCar, 0f);
-            ready.style.visibility = Visibility.Hidden;
+            SetScale(bar, 0f);
+            SetScale(levelUp, 0f);
             foreach (var stop in stops) {
                 SetScale(stop.Node, 0f);
             }
@@ -104,7 +133,6 @@ namespace ToyCarArena.UI
 
         public void RefreshColor()
         {
-            newCarPortrait.SetColor(viewModel.SelectedColor);
             foreach (var car in trackCars) {
                 car.SetColor(viewModel.SelectedColor);
             }
@@ -222,6 +250,9 @@ namespace ToyCarArena.UI
             await UniTask.Delay(BuildDelay, ignoreTimeScale: true, cancellationToken: token);
             Pop(levelBadge, token).Forget();
             Pop(gain, token).Forget();
+            await FillBar(token);
+            await Shrink(bar, token);
+            bar.style.display = DisplayStyle.None;
             await Pop(stops[0].Node, token);
             for (var i = 0; i < segments.Count; i++) {
                 await Grow(segments[i].Root, token);
@@ -232,8 +263,39 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>
-        /// Moves the track's position, a level and the share of it earned, level by level from before the round to
-        /// after: each level crossed bumps the badge, turns its stops gold and shows its new cars.
+        /// The first two steps: the bar from a level to the next fills with the round's XP, level by level; each level
+        /// crossed bumps the badge, says LEVEL UP! and shows what it gives in a popup before the bar starts the next.
+        /// </summary>
+        private async UniTask FillBar(CancellationToken token)
+        {
+            var reward = viewModel.XpGain;
+            var level = reward.Before.Level;
+            var share = (float)reward.Before.Xp / reward.Before.Cost;
+            SetBarLevels(level);
+            SetBarFill(share);
+            await Pop(bar, token);
+            while (level < reward.After.Level) {
+                await BarTo(share, 1f, token);
+                level++;
+                SetLevel(level);
+                Pop(levelUp, token).Forget();
+                await Bounce(levelBadge, token);
+                await UniTask.Delay(LevelUpHold, ignoreTimeScale: true, cancellationToken: token);
+                await ShowRewards(level, token);
+                SetScale(levelUp, 0f);
+                share = 0f;
+                SetBarLevels(level);
+                SetBarFill(0f);
+            }
+
+            text.Set(total, () => Strings.Format("result.xp_total", reward.After.Xp, reward.After.Cost));
+            await BarTo(share, (float)reward.After.Xp / reward.After.Cost, token);
+            await UniTask.Delay(BarHold, ignoreTimeScale: true, cancellationToken: token);
+        }
+
+        /// <summary>
+        /// The last step: moves the track's position, a level and the share of it earned, level by level from before
+        /// the round to after, turning the stops of each level crossed gold. The badge already shows the level reached.
         /// </summary>
         private async UniTask FillLevels(CancellationToken token)
         {
@@ -244,12 +306,166 @@ namespace ToyCarArena.UI
                 await Fill(from, level + 1, token);
                 level++;
                 from = level;
-                SetLevel(level);
-                await UniTask.WhenAll(Bounce(levelBadge, token), Reach(level, token));
+                await Reach(level, token);
             }
 
-            text.Set(total, () => Strings.Format("result.xp_total", reward.After.Xp, reward.After.Cost));
             await Fill(from, level + (float)reward.After.Xp / reward.After.Cost, token);
+        }
+
+        /// <summary>The second step: a popup for each thing the level gives, one after another.</summary>
+        private async UniTask ShowRewards(int level, CancellationToken token)
+        {
+            foreach (var car in viewModel.NewCarsAt(level)) {
+                var portrait = new VisualElement { pickingMode = PickingMode.Ignore };
+                portrait.AddToClassList("car-portrait");
+                new CarPortrait(portrait).Set(car, viewModel.SelectedColor);
+                await ShowReward(level, Strings.Get("result.new_car_tag"), GameText.Car(car),
+                    Strings.Get("result.drives_next"), portrait, token);
+            }
+
+            foreach (var arena in viewModel.NewArenasAt(level)) {
+                var disc = new VisualElement { pickingMode = PickingMode.Ignore };
+                disc.style.backgroundColor = arena.Background;
+                await ShowReward(level, Strings.Get("result.new_arena_tag"), GameText.Arena(arena),
+                    Strings.Get("result.arena_next"), disc, token);
+            }
+
+            if (PlayerRank.TierOf(level) > PlayerRank.TierOf(level - 1)) {
+                var badge = HudView.CreateLevelBadge(level, "level-badge--big");
+                await ShowReward(level, Strings.Get("result.new_rank_tag"), PlayerRank.NameOf(level), null, badge, token);
+            }
+        }
+
+        /// <summary>
+        /// One reward over the whole screen, as in the design: dimmed, gold rays turning behind a white card with the
+        /// level over it, a tag, the reward and its name. A tap anywhere or a few seconds close it; NEXT MATCH by key
+        /// still works under it, and leaving the screen takes it away.
+        /// </summary>
+        private async UniTask ShowReward(int level, string tag, string name, string caption, VisualElement art,
+            CancellationToken token)
+        {
+            var overlay = new VisualElement();
+            overlay.AddToClassList("level-reward");
+            var rays = new VisualElement { pickingMode = PickingMode.Ignore };
+            rays.AddToClassList("level-reward__rays");
+            rays.generateVisualContent += context => RoundOverMatch.DrawSunburst(context, RewardRaysColor);
+            overlay.Add(rays);
+
+            var card = new VisualElement { pickingMode = PickingMode.Ignore };
+            card.AddToClassList("card");
+            card.AddToClassList("level-reward__card");
+            card.Add(Outlined(Strings.Format("result.level_title", level), "level-reward__title", out _));
+            card.Add(Text(tag, "level-reward__tag"));
+            var frame = new VisualElement { pickingMode = PickingMode.Ignore };
+            frame.AddToClassList("level-reward__art");
+            art.AddToClassList("level-reward__" + (art.ClassListContains("car-portrait") ? "car"
+                : art.ClassListContains("level-badge") ? "rank" : "arena"));
+            frame.Add(art);
+            card.Add(frame);
+            card.Add(Text(name, "level-reward__name"));
+            if (caption != null) {
+                var captionLabel = Text(caption, "caption");
+                captionLabel.AddToClassList("level-reward__caption");
+                card.Add(captionLabel);
+            }
+
+            overlay.Add(card);
+            overlay.Add(Text(Strings.Get(isTouch ? "result.tap_continue" : "result.click_continue"), "level-reward__hint"));
+            var isClosed = false;
+            overlay.RegisterCallback<PointerDownEvent>(evt => {
+                evt.StopPropagation();
+                isClosed = true;
+            });
+
+            overlay.style.opacity = 0f;
+            SetScale(card, 0f);
+            root.Add(overlay);
+            try {
+                var popping = Pop(card, token);
+                var shownAt = Time.realtimeSinceStartup;
+                while (!isClosed && Time.realtimeSinceStartup - shownAt < RewardAutoClose) {
+                    var shown = Time.realtimeSinceStartup - shownAt;
+                    rays.style.rotate = new Rotate(shown / RewardRaysTurnSeconds * 360f % 360f);
+                    overlay.style.opacity = Mathf.Clamp01(shown / RewardFadeIn);
+                    await UniTask.Yield(PlayerLoopTiming.Update, token);
+                }
+
+                await popping;
+                await Shrink(card, token);
+            }
+            finally {
+                overlay.RemoveFromHierarchy();
+            }
+        }
+
+        private void SetBarLevels(int level)
+        {
+            barFrom.text = level.ToString();
+            barTo.text = (level + 1).ToString();
+            SetRank(barFrom.parent, level);
+            SetRank(barTo.parent, level + 1);
+        }
+
+        private static void SetRank(VisualElement badge, int level)
+        {
+            foreach (var className in new List<string>(badge.GetClasses())) {
+                if (className.StartsWith("level-badge--") && className != "level-badge--big") {
+                    badge.RemoveFromClassList(className);
+                }
+            }
+            badge.AddToClassList(PlayerRank.ClassOf(level));
+        }
+
+        private void SetBarFill(float share) => barFill.style.width = Length.Percent(Mathf.Clamp01(share) * 100f);
+
+        private async UniTask BarTo(float from, float to, CancellationToken token)
+        {
+            for (var time = 0f; time < BarFillDuration; time += Time.unscaledDeltaTime) {
+                var t = time / BarFillDuration;
+                SetBarFill(Mathf.Lerp(from, to, 1f - Mathf.Pow(1f - t, 3f)));
+                await UniTask.Yield(PlayerLoopTiming.Update, token);
+            }
+
+            SetBarFill(to);
+        }
+
+        private static Label BarLevel(VisualElement bar)
+        {
+            var badge = new VisualElement { pickingMode = PickingMode.Ignore };
+            badge.AddToClassList("level-badge");
+            badge.AddToClassList("level-badge--big");
+            badge.AddToClassList("xp-bar__level");
+            var value = Text("", "level-badge__value");
+            badge.Add(value);
+            bar.Add(badge);
+            return value;
+        }
+
+        /// <summary>Text with the outline of the titles: the same text twice, the face over the outline.</summary>
+        private static VisualElement Outlined(string value, string className, out Label[] labels)
+        {
+            var element = new VisualElement { pickingMode = PickingMode.Ignore };
+            element.AddToClassList("stroke");
+            element.AddToClassList(className);
+            var outline = Text(value, "display");
+            outline.AddToClassList(className + "-text");
+            var face = Text(value, "display");
+            face.AddToClassList(className + "-text");
+            face.AddToClassList("stroke__face");
+            element.Add(outline);
+            element.Add(face);
+            labels = new[] { outline, face };
+            return element;
+        }
+
+        private static async UniTask Shrink(VisualElement element, CancellationToken token)
+        {
+            for (var time = 0f; time < ShrinkDuration; time += Time.unscaledDeltaTime) {
+                SetScale(element, 1f - time / ShrinkDuration);
+                await UniTask.Yield(PlayerLoopTiming.Update, token);
+            }
+
+            SetScale(element, 0f);
         }
 
         private async UniTask Reach(int level, CancellationToken token)
@@ -264,15 +480,6 @@ namespace ToyCarArena.UI
                 }
             }
             await UniTask.WhenAll(celebrations);
-
-            foreach (var car in viewModel.NewCarsAt(level)) {
-                shownCar = car;
-                text.Set(newCarName, () => Strings.Format("result.new_car", GameText.Car(shownCar)));
-                newCarPortrait.Set(car, viewModel.SelectedColor);
-                ready.style.visibility = Visibility.Visible;
-                await Pop(newCar, token);
-                await UniTask.Delay(UnlockHold, ignoreTimeScale: true, cancellationToken: token);
-            }
         }
 
         private void SetLevel(int level)
