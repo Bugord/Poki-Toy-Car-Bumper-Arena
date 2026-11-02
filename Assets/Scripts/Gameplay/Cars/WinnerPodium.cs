@@ -3,7 +3,6 @@ using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Round;
 using ToyCarArena.Rendering;
 using UnityEngine;
-using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using VContainer.Unity;
 using Object = UnityEngine.Object;
@@ -40,8 +39,7 @@ namespace ToyCarArena.Gameplay.Cars
         // The car first faces three quarters to the camera, as the portraits do.
         private const float StartYaw = 215f;
         // The texture shows at about half its size, so its comic outline is drawn thicker to read as the arena's.
-        private const float OutlineBoost = 2.4f;
-        private static readonly int OutlineBoostId = Shader.PropertyToID("_OutlineBoost");
+        private const float LineBoost = 2.4f;
 
         private readonly ArenaRound round;
         private readonly MechanicArt art;
@@ -81,8 +79,7 @@ namespace ToyCarArena.Gameplay.Cars
             car = CopyCar(look);
             shownAt = Time.unscaledTime;
             camera.enabled = true;
-            RenderPipelineManager.beginCameraRendering -= OnBeginCamera;
-            RenderPipelineManager.beginCameraRendering += OnBeginCamera;
+            OutlineBoost.Set(camera, LineBoost);
             Tick();
             return texture;
         }
@@ -105,8 +102,10 @@ namespace ToyCarArena.Gameplay.Cars
 
         public void Dispose()
         {
-            RenderPipelineManager.beginCameraRendering -= OnBeginCamera;
-            Shader.SetGlobalFloat(OutlineBoostId, 1f);
+            if (camera != null) {
+                OutlineBoost.Clear(camera);
+            }
+
             if (root != null) {
                 Object.Destroy(root);
             }
@@ -122,10 +121,6 @@ namespace ToyCarArena.Gameplay.Cars
                 }
             }
         }
-
-        // Every camera sets the line for its own render: thick for the podium, as usual for the arena.
-        private void OnBeginCamera(ScriptableRenderContext context, Camera rendered) =>
-            Shader.SetGlobalFloat(OutlineBoostId, rendered == camera ? OutlineBoost : 1f);
 
         private void Build()
         {

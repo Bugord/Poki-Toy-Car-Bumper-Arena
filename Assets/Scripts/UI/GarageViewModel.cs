@@ -22,11 +22,14 @@ namespace ToyCarArena.UI
         private readonly IScreenNavigator navigator;
         private readonly PlayerWallet wallet;
         private readonly GameTuning tuning;
+        private readonly LevelScene levelScene;
+        private GarageStage stage;
         private bool isToppersPressed;
 
         public GarageViewModel(PlayerProgress progress, CarCatalog catalog, IGamePlatform platform,
-            IScreenNavigator navigator, PlayerWallet wallet, GameTuning tuning)
+            IScreenNavigator navigator, PlayerWallet wallet, GameTuning tuning, LevelScene levelScene)
         {
+            this.levelScene = levelScene;
             this.wallet = wallet;
             this.tuning = tuning;
             this.progress = progress;
@@ -36,6 +39,16 @@ namespace ToyCarArena.UI
         }
 
         public bool IsSettingsOpen { get; private set; }
+
+        /// <summary>
+        /// The 3D pictures of the car and the toppers, from the arena scene under the result (or the one a test gives);
+        /// null with no arena loaded, when the screen falls back to the catalog's portraits and flat icons.
+        /// </summary>
+        public GarageStage Stage
+        {
+            get => stage ?? (levelScene is { IsLoaded: true } ? levelScene.Resolve<GarageStage>() : null);
+            set => stage = value;
+        }
 
         /// <summary>The settings popup over this screen, which stays attached under it.</summary>
         public async UniTask OpenSettings(CancellationToken token)

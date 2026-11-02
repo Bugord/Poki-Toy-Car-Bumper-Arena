@@ -102,40 +102,78 @@ namespace ToyCarArena.Gameplay.Cars
         public void Apply(int index, CarCatalog.Entry entry, int colorId, string topper = null)
         {
             ReplaceModel(entry);
-            ownBody = CarModel.PaintBody(CarModel.FindBody(model, out _), entry.BodySwatch, swatches[CarPaint.OrGreen(colorId)]);
-            WearTopper(topper);
+            ownBody = CarModel.PaintBody(CarModel.FindBody(model, out _), entry.BodySwatch, SwatchOf(colorId));
+            WearTopper(topper, transform, model, ModelMaterial, topperMeshes, out topperSpinner);
             SetMarker(index == 0);
         }
 
+        /// <summary>The atlas swatch the body is painted with for a colour id; green for an unknown one.</summary>
+        public Vector2Int SwatchOf(int colorId) => swatches[CarPaint.OrGreen(colorId)];
+
         /// <summary>
-        /// Stands the topper on the roof: over the highest part of the model (the cab), at its foot's offset, on the
-        /// model's own top there. It goes under the model, so it grows with a mega item, turns see-through with the
-        /// car and comes along when the podium copies the model.
+        /// The hidden racer's geometry in the car's space: every catalog model is scaled to its length and stood on its
+        /// floor, so the garage builds a car exactly as big as on the arena from the prefab alone.
         /// </summary>
-        private void WearTopper(string id)
+        public Bounds Reference => CarModel.BoundsIn(body.gameObject, transform.worldToLocalMatrix);
+
+        /// <summary>
+        /// Stands the topper on the roof of <paramref name="model"/>, which stands under <paramref name="car"/>: over
+        /// the highest part of the model (the cab), at its foot's offset, on the model's own top there. It goes under
+        /// the model, so it grows with a mega item, turns see-through with the car and comes along when the podium
+        /// copies the model. Null for no topper.
+        /// </summary>
+        public static Transform WearTopper(string id, Transform car, GameObject model, Material material,
+            System.Collections.Generic.List<Mesh> meshes, out Transform spinner)
         {
-            var topper = CarTopper.Build(id, transform, ModelMaterial, topperMeshes, out topperSpinner);
+            var topper = CarTopper.Build(id, car, material, meshes, out spinner);
             if (topper == null) {
-                return;
+                return null;
             }
 
-            var toCar = transform.worldToLocalMatrix;
-            var roof = RoofPeak(toCar);
+            var toCar = car.worldToLocalMatrix;
+            var roof = RoofPeak(model, toCar);
             var foot = CarTopper.FootOf(id);
             var x = roof.x + foot.x;
             var z = roof.z + foot.y;
-            topper.localPosition = new Vector3(x, TopAt(toCar, x, z, roof.y) - 0.03f, z);
+            topper.localPosition = new Vector3(x, TopAt(model, toCar, x, z, roof.y) - 0.03f, z);
             topper.SetParent(model.transform, true);
             Outline.Apply(topper.gameObject);
+            return topper;
+        }
+
+        /// <summary>
+        /// Puts a copy of the catalog model under <paramref name="car"/> on the shared material and outlined, scaled
+        /// to the length of <paramref name="reference"/> (in the car's space), centred on it and stood on its floor.
+        /// </summary>
+        public static GameObject BuildModel(CarCatalog.Entry entry, Transform car, Quaternion rotation, Material material,
+            Bounds reference)
+        {
+            var model = new GameObject("Catalog Model");
+            model.transform.SetParent(car, false);
+            model.transform.localRotation = rotation;
+            var instance = Instantiate(entry.Model, model.transform, false);
+            CarModel.SetMaterial(instance, material);
+            // The cars carry the comic-book outline; the marker and the shadow, flat stickers, do not.
+            Outline.Apply(instance);
+            var bounds = CarModel.BoundsIn(model, car.worldToLocalMatrix);
+            if (bounds.size.z <= Mathf.Epsilon) {
+                throw new System.InvalidOperationException($"Car model {entry.Id} has no length along Z.");
+            }
+
+            model.transform.localScale = Vector3.one * (reference.size.z / bounds.size.z);
+            bounds = CarModel.BoundsIn(model, car.worldToLocalMatrix);
+            model.transform.localPosition = new Vector3(reference.center.x - bounds.center.x,
+                reference.min.y - bounds.min.y, reference.center.z - bounds.center.z);
+            return model;
         }
 
         // The middle of the model's highest vertices, in the car's space: x on the car's middle, z where the roof is.
-        private Vector3 RoofPeak(Matrix4x4 toCar)
+        private static Vector3 RoofPeak(GameObject model, Matrix4x4 toCar)
         {
             var bounds = CarModel.BoundsIn(model, toCar);
             var sum = 0f;
             var count = 0;
-            foreach (var point in ModelPoints(toCar)) {
+            foreach (var point in ModelPoints(model, toCar)) {
                 if (point.y > bounds.max.y - 0.06f) {
                     sum += point.z;
                     count++;
@@ -146,11 +184,11 @@ namespace ToyCarArena.Gameplay.Cars
         }
 
         // The model's top within a hand's breadth of this spot, or the roof's height where nothing is under it.
-        private float TopAt(Matrix4x4 toCar, float x, float z, float fallback)
+        private static float TopAt(GameObject model, Matrix4x4 toCar, float x, float z, float fallback)
         {
             const float reach = 0.22f;
             var top = float.MinValue;
-            foreach (var point in ModelPoints(toCar)) {
+            foreach (var point in ModelPoints(model, toCar)) {
                 if (Mathf.Abs(point.x - x) < reach && Mathf.Abs(point.z - z) < reach && point.y > top) {
                     top = point.y;
                 }
@@ -159,7 +197,7 @@ namespace ToyCarArena.Gameplay.Cars
             return top > float.MinValue ? top : fallback;
         }
 
-        private System.Collections.Generic.IEnumerable<Vector3> ModelPoints(Matrix4x4 toCar)
+        private static System.Collections.Generic.IEnumerable<Vector3> ModelPoints(GameObject model, Matrix4x4 toCar)
         {
             foreach (var filter in model.GetComponentsInChildren<MeshFilter>()) {
                 if (filter.sharedMesh == null) {
@@ -226,7 +264,7 @@ namespace ToyCarArena.Gameplay.Cars
 
             // The original racer remains a hidden reference, including its wheel hierarchy. Its geometry defines
             // the cosmetic length and floor level, without reading or changing any physics component.
-            var reference = CarModel.BoundsIn(body.gameObject, transform.worldToLocalMatrix);
+            var reference = Reference;
             body.gameObject.SetActive(false);
             if (ownBody != null) {
                 Destroy(ownBody);
@@ -238,22 +276,8 @@ namespace ToyCarArena.Gameplay.Cars
                 Destroy(model);
             }
 
-            model = new GameObject("Catalog Model");
-            model.transform.SetParent(transform, false);
-            model.transform.localRotation = ModelRotation;
-            var instance = Instantiate(entry.Model, model.transform, false);
-            CarModel.SetMaterial(instance, ModelMaterial);
-            // The cars carry the comic-book outline; the marker and the shadow, flat stickers, do not.
-            Outline.Apply(instance);
+            model = BuildModel(entry, transform, ModelRotation, ModelMaterial, reference);
             var bounds = CarModel.BoundsIn(model, transform.worldToLocalMatrix);
-            if (bounds.size.z <= Mathf.Epsilon) {
-                throw new System.InvalidOperationException($"Car model {entry.Id} has no length along Z.");
-            }
-
-            model.transform.localScale = Vector3.one * (reference.size.z / bounds.size.z);
-            bounds = CarModel.BoundsIn(model, transform.worldToLocalMatrix);
-            model.transform.localPosition = new Vector3(reference.center.x - bounds.center.x,
-                reference.min.y - bounds.min.y, reference.center.z - bounds.center.z);
             modelScale = model.transform.localScale;
             modelPosition = model.transform.localPosition;
             if (TryGetComponent<CarShadow>(out var shadow)) {
