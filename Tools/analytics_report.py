@@ -108,8 +108,8 @@ def summarise(data):
     # ящики матча: сколько разбил за матч (N-rR), какой предмет выпал (item-get) и какой применил (item-use)
     # после v0.7.1 то же в раундах «последний оставшийся» под result
     s["match_pickups"] = other(o, r"(?:match|result)-pickups-([0-9a-z]+-r[0-9a-z]+)-pickups")
-    s["match_item_get"] = other(o, r"(?:match|result)-item-((?:heavy|shockwave|shield|turbo|bomb|glove)-r[0-9a-z]+)-item-get")
-    s["match_item_use"] = other(o, r"(?:match|result)-item-((?:heavy|shockwave|shield|turbo|bomb|glove)-r[0-9a-z]+)-item-use")
+    s["match_item_get"] = other(o, r"(?:match|result)-item-((?:heavy|mega|shockwave|shield|turbo|bomb|glove|bowling|balloon|oil)-r[0-9a-z]+)-item-get")
+    s["match_item_use"] = other(o, r"(?:match|result)-item-((?:heavy|mega|shockwave|shield|turbo|bomb|glove|bowling|balloon|oil)-r[0-9a-z]+)-item-use")
     return s
 
 

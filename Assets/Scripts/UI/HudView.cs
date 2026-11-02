@@ -81,7 +81,13 @@ namespace ToyCarArena.UI
         // The kinds the slot can hold, in the order its roulette shows them.
         private static readonly ItemKind[] ItemKinds =
         {
-            ItemKind.Heavy, ItemKind.Shockwave, ItemKind.Bomb,
+            ItemKind.Mega, ItemKind.Shockwave, ItemKind.Bomb, ItemKind.Bowling, ItemKind.Balloon, ItemKind.Oil,
+        };
+
+        // The kinds that run for a while once used, with a badge of their own.
+        private static readonly ItemKind[] TimedKinds =
+        {
+            ItemKind.Mega, ItemKind.Shield, ItemKind.Turbo, ItemKind.Balloon,
         };
 
         // The badge of a running ability blinks over the last seconds, as the ability ends.
@@ -881,7 +887,7 @@ namespace ToyCarArena.UI
         /// clear of the screen's sides and the HUD: it springs in, holds, and flies up and away.
         /// </summary>
         private void ShowKnockout(Vector3 worldPosition, bool isRevenge) =>
-            ShowPopup(worldPosition, isRevenge, ItemKind.None, false);
+            ShowPopup(worldPosition, isRevenge, ItemKind.None, null);
 
         /// <summary>
         /// The same sticker for an item the player used (HEAVY!, SHOCKWAVE!, SHIELD!, TURBO!, BOMB!, GLOVE!), over the
@@ -889,7 +895,7 @@ namespace ToyCarArena.UI
         /// </summary>
         private void OnItemUsed(ItemKind kind)
         {
-            ShowPopup(ViewModel.PlayerPosition, false, kind, false);
+            ShowPopup(ViewModel.PlayerPosition, false, kind, null);
             HideItemHint();
         }
 
@@ -899,21 +905,33 @@ namespace ToyCarArena.UI
         /// </summary>
         private void OnAutoBoosted()
         {
-            ShowPopup(ViewModel.PlayerPosition, false, ItemKind.None, false, true);
+            ShowPopup(ViewModel.PlayerPosition, false, ItemKind.None, null, true);
             if (boostButton != null) {
                 Pulse(boostButton, BoostPopClass);
             }
         }
 
-        /// <summary>A comic POW! where the player's glove lands on a car.</summary>
+        /// <summary>
+        /// A comic word where the player's item lands: POW! where the glove punches a car, STRIKE! on each car the
+        /// bowling ball knocks aside, and SAVED! over the player's car when its balloon catches a fall.
+        /// </summary>
         private void OnItemHit(ItemKind kind, Vector3 point)
         {
-            if (kind == ItemKind.Glove) {
-                ShowPopup(point, false, ItemKind.Glove, true);
+            var word = kind switch
+            {
+                ItemKind.Glove => "pow",
+                ItemKind.Bowling => "strike",
+                ItemKind.Balloon => "saved",
+                _ => null,
+            };
+
+            if (word != null) {
+                ShowPopup(point, false, kind, word);
             }
         }
 
-        private void ShowPopup(Vector3 worldPosition, bool isRevenge, ItemKind pickup, bool isPow, bool isBoost = false)
+        /// <param name="word">The comic word to show alone (pow, strike, saved: its string and class), or null.</param>
+        private void ShowPopup(Vector3 worldPosition, bool isRevenge, ItemKind pickup, string word, bool isBoost = false)
         {
             var panel = popupLayer.panel;
             if (panel == null) {
@@ -938,7 +956,7 @@ namespace ToyCarArena.UI
             ClearScoreboard(popupLayer, ref point, PopupHalfWidth, PopupHalfHeight * 2f);
             point.y -= PopupHalfHeight;
 
-            var popup = CreatePopup(popupCount++ % 2 == 0 ? -PopupTilt : PopupTilt, isRevenge, pickup, isPow, isBoost);
+            var popup = CreatePopup(popupCount++ % 2 == 0 ? -PopupTilt : PopupTilt, isRevenge, pickup, word, isBoost);
             popup.style.left = point.x;
             popup.style.top = point.y;
             popupLayer.Add(popup);
@@ -959,7 +977,7 @@ namespace ToyCarArena.UI
 
         // The sticker: the knock-out star and KNOCKOUT! in gold, outlined (.stroke in ui_screens). The outer element
         // holds the place, centred on it; the inner one springs, tilts and flies.
-        private static VisualElement CreatePopup(float tilt, bool isRevenge, ItemKind pickup, bool isPow, bool isBoost)
+        private static VisualElement CreatePopup(float tilt, bool isRevenge, ItemKind pickup, string word, bool isBoost)
         {
             var popup = new VisualElement { pickingMode = PickingMode.Ignore };
             popup.AddToClassList("ko-pop");
@@ -971,9 +989,9 @@ namespace ToyCarArena.UI
             sticker.style.rotate = new Rotate(tilt);
             popup.Add(sticker);
 
-            if (isPow) {
-                popup.AddToClassList("ko-pop--pow");
-                sticker.Add(CreateOutlinedText(Strings.Get("hud.pow"), "ko-pop__text"));
+            if (word != null) {
+                popup.AddToClassList($"ko-pop--{word}");
+                sticker.Add(CreateOutlinedText(Strings.Get($"hud.{word}"), "ko-pop__text"));
                 return popup;
             }
 
@@ -999,7 +1017,8 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>
-        /// The kind's name as the strings and the classes spell it: heavy, shockwave, shield, turbo, bomb, glove.
+        /// The kind's name as the strings and the classes spell it: mega, shockwave, shield, turbo, bomb, glove, bowling,
+        /// balloon, oil.
         /// </summary>
         private static string PowerName(ItemKind kind) => kind.ToString().ToLowerInvariant();
 
@@ -1011,7 +1030,7 @@ namespace ToyCarArena.UI
         {
             var ability = ViewModel.Ability;
             if (ability != shownAbility) {
-                foreach (var kind in new[] { ItemKind.Heavy, ItemKind.Shield, ItemKind.Turbo }) {
+                foreach (var kind in TimedKinds) {
                     power.EnableInClassList($"hud__power--{PowerName(kind)}", kind == ability);
                     powerIcon.EnableInClassList($"hud__power-icon--{PowerName(kind)}", kind == ability);
                 }

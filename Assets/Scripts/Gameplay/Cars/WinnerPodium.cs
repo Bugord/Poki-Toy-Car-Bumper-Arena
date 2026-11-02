@@ -186,7 +186,8 @@ namespace ToyCarArena.Gameplay.Cars
             model.SetActive(true);
             model.transform.localPosition = Vector3.zero;
             model.transform.localRotation = look.ModelRotation;
-            model.transform.localScale = look.Model.transform.localScale;
+            // The car's own size: a match can end with a mega item still running.
+            model.transform.localScale = look.ModelScale;
             CarModel.SetMaterial(model, look.ModelMaterial);
             Outline.Apply(model);
 

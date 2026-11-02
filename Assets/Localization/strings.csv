@@ -101,14 +101,19 @@ arena.sandbox.name,Arena name,SANDBOX,BAC À SABLE,SABBIERA,SANDKASTEN,ARENERO,K
 arena.tabletop.name,Arena name,TABLETOP,TABLE,TAVOLO,TISCH,MESA,MASA,MESA,СТОЛ
 arena.candy.name,Arena name,CANDY,BONBONS,CARAMELLE,SÜSSES,DULCES,ŞEKER,DOCES,КОНФЕТЫ
 arena.playroom.name,Arena name,PLAYROOM,SALLE DE JEUX,STANZA GIOCHI,SPIELZIMMER,CUARTO DE JUEGOS,OYUN ODASI,BRINQUEDOTECA,ДЕТСКАЯ
-hud.item_heavy,"Match: item name; sticker on use and badge when the player uses the heavy item (mass x3); max ~12 chars",HEAVY!,LOURD !,PESANTE!,SCHWER!,¡PESADO!,AĞIR!,PESADO!,ТЯЖЁЛЫЙ!
+hud.item_mega,"Match: item name; sticker on use and badge when the player uses the mega item (the car grows big and heavy); max ~12 chars",MEGA!,MÉGA !,MEGA!,MEGA!,¡MEGA!,MEGA!,MEGA!,МЕГА!
 hud.item_shockwave,"Match: item name; sticker when the player uses the shockwave item (a ring pushes the cars near); max ~14 chars",SHOCKWAVE!,ONDE DE CHOC !,ONDA URTO!,DRUCKWELLE!,¡ONDA!,ŞOK DALGASI!,ONDA DE CHOQUE!,УДАРНАЯ ВОЛНА!
 hud.item_shield,"Match: item name; sticker on use and badge when the player uses the shield item (absorbs the next hit); max ~12 chars",SHIELD!,BOUCLIER !,SCUDO!,SCHILD!,¡ESCUDO!,KALKAN!,ESCUDO!,ЩИТ!
 hud.item_turbo,"Match: item name; sticker on use and badge when the player uses the turbo item (boost without cooldown); max ~12 chars",TURBO!,TURBO !,TURBO!,TURBO!,¡TURBO!,TURBO!,TURBO!,ТУРБО!
 hud.item_bomb,"Match: item name; sticker when the player throws the bomb item (blasts cars near where it lands); max ~12 chars",BOMB!,BOMBE !,BOMBA!,BOMBE!,¡BOMBA!,BOMBA!,BOMBA!,БОМБА!
 hud.item_glove,"Match: item name; sticker when the player uses the boxing glove item (punches the car ahead); max ~12 chars",GLOVE!,GANT !,GUANTONE!,BOXHANDSCHUH!,¡GUANTE!,ELDİVEN!,LUVA!,ПЕРЧАТКА!
+hud.item_bowling,"Match: item name; sticker when the player rolls the bowling ball item (it knocks aside the cars on its line); max ~12 chars",BOWLING!,BOWLING !,BOWLING!,BOWLING!,¡BOLOS!,BOWLING!,BOLICHE!,БОУЛИНГ!
+hud.item_balloon,"Match: item name; sticker on use and badge when the player uses the balloon item (a fall off the edge is carried back); max ~12 chars",BALLOON!,BALLON !,PALLONCINO!,BALLON!,¡GLOBO!,BALON!,BALÃO!,ШАРИК!
+hud.item_oil,"Match: item name; sticker when the player spills the oil slick item (cars on it slide); max ~12 chars",OIL SLICK!,HUILE !,OLIO!,ÖLFLECK!,¡ACEITE!,YAĞ!,ÓLEO!,МАСЛО!
 hud.boost_pop,"Sticker over the player's car when the game fires the boost for them (a ram or a save from the edge); max ~8 chars",BOOST!,TURBO !,TURBO!,BOOST!,¡TURBO!,HIZ!,TURBO!,РЫВОК!
 hud.pow,"Match: comic sticker where the player's boxing glove hits a car; max ~6 chars",POW!,PAF !,POW!,BUMM!,¡PUM!,PAT!,POW!,БАЦ!
+hud.strike,"Match: comic sticker on each car the player's bowling ball knocks aside; max ~8 chars",STRIKE!,STRIKE !,STRIKE!,STRIKE!,¡STRIKE!,STRIKE!,STRIKE!,СТРАЙК!
+hud.saved,"Match: comic sticker over the player's car when its balloon catches a fall off the edge; max ~10 chars",SAVED!,SAUVÉ !,SALVO!,GERETTET!,¡SALVADO!,KURTULDUN!,SALVO!,СПАСЁН!
 hud.tap_to_use,"Match: first-time hint over the touch item button; max ~14 chars",TAP TO USE,TOUCHE POUR UTILISER,TOCCA PER USARE,TIPPEN ZUM NUTZEN,TOCA PARA USAR,KULLANMAK İÇİN DOKUN,TOQUE PARA USAR,"ЖМИ, ЧТОБЫ ПРИМЕНИТЬ"
 hud.press_e,"Match: first-time hint over the item button on a desktop: the E key uses the item; keep the letter E",PRESS E,APPUIE SUR E,PREMI E,DRÜCKE E,PULSA E,E TUŞUNA BAS,APERTE E,НАЖМИ E
 hud.right_click,"Match: first-time hint over the item button on a desktop: the right mouse button uses the item (the E key cap shows beside it); max ~12 chars",RIGHT CLICK,CLIC DROIT,CLIC DESTRO,RECHTSKLICK,CLIC DERECHO,SAĞ TIK,BOTÃO DIREITO,ПРАВЫЙ КЛИК

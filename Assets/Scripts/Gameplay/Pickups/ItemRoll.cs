@@ -5,11 +5,14 @@ namespace ToyCarArena.Gameplay.Pickups
 {
     /// <summary>
     /// Which item a mystery box gives: drawn at random, weighted by how far the car trails the match's leader in
-    /// knock-outs, so a car behind gets the items that knock cars off (shockwave, bomb, glove) more often and a leader
-    /// the ones that hold its place (shield, heavy). A pure function of the dice and the score, so a test can count it.
+    /// knock-outs, so a car behind gets the items that knock cars off (shockwave, bomb, bowling) more often and a leader
+    /// the ones that hold its place (mega). A pure function of the dice and the score, so a test can count it.
     /// </summary>
     public static class ItemRoll
     {
+        // The last kind a box can give; the kinds run from mega to it.
+        private const ItemKind LastKind = ItemKind.Oil;
+
         /// <summary>
         /// Knock-outs the car at <paramref name="index"/> trails the leader by; 0 level or leading, or without a score.
         /// </summary>
@@ -38,17 +41,17 @@ namespace ToyCarArena.Gameplay.Pickups
         public static ItemKind Choose(System.Random random, GameTuning.PickupSettings settings, float trailing)
         {
             var total = 0f;
-            for (var kind = ItemKind.Heavy; kind <= ItemKind.Glove; kind++) {
+            for (var kind = ItemKind.Mega; kind <= LastKind; kind++) {
                 total += settings.WeightOf(kind, trailing);
             }
 
             if (total <= 0f) {
-                return ItemKind.Heavy;
+                return ItemKind.Mega;
             }
 
             var roll = (float)random.NextDouble() * total;
-            var last = ItemKind.Heavy;
-            for (var kind = ItemKind.Heavy; kind <= ItemKind.Glove; kind++) {
+            var last = ItemKind.Mega;
+            for (var kind = ItemKind.Mega; kind <= LastKind; kind++) {
                 var weight = settings.WeightOf(kind, trailing);
                 if (weight <= 0f) {
                     continue;

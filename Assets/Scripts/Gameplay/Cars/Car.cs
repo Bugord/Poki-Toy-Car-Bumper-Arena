@@ -84,7 +84,7 @@ namespace ToyCarArena.Gameplay.Cars
         /// <summary>
         /// Whether the car is in play for others to go after: on the arena and not safe.
         /// </summary>
-        public bool IsTargetable => !IsOut && !IsInvulnerable;
+        public bool IsTargetable => !IsOut && !IsInvulnerable && !Movement.IsCarried;
 
         /// <summary>
         /// Whether the player drives this car; set by the round when it places the car.
@@ -110,8 +110,8 @@ namespace ToyCarArena.Gameplay.Cars
         public float LastRingFallTime { get; private set; } = float.NegativeInfinity;
 
         /// <summary>
-        /// The timed item the car used and that is still running (<see cref="ItemKind.None"/> for none): heavy, shield or
-        /// turbo, one at a time, a new one replacing the old. It ends with its time, a shield also with the hit it takes,
+        /// The timed item the car used and that is still running (<see cref="ItemKind.None"/> for none): mega, shield,
+        /// turbo or balloon, one at a time, a new one replacing the old. It ends with its time, a shield also with the hit it takes,
         /// and a fall ends any.
         /// </summary>
         public ItemKind Ability { get; private set; }
@@ -178,12 +178,31 @@ namespace ToyCarArena.Gameplay.Cars
 
         private Collider[] colliders;
         private CarLook look;
+        private CarShadow shadow;
+        // The car's box colliders at its own size, grown with a mega item.
+        private BoxCollider[] boxes;
+        private Vector3[] boxSizes;
+        private Vector3[] boxCenters;
+        // How many times its own size the car is now, and is growing or shrinking to.
+        private float growth = 1f;
+        private float growthTarget = 1f;
+
+        /// <summary>How many times its own size the car is now: above 1 while a mega item runs, or as it shrinks back.</summary>
+        public float Growth => growth;
 
         private void Awake()
         {
             Movement = GetComponent<CarMovement>();
             colliders = GetComponents<Collider>();
             look = GetComponent<CarLook>();
+            shadow = GetComponent<CarShadow>();
+            boxes = GetComponents<BoxCollider>();
+            boxSizes = new Vector3[boxes.Length];
+            boxCenters = new Vector3[boxes.Length];
+            for (var i = 0; i < boxes.Length; i++) {
+                boxSizes[i] = boxes[i].size;
+                boxCenters[i] = boxes[i].center;
+            }
         }
 
         private void Update()
@@ -194,6 +213,12 @@ namespace ToyCarArena.Gameplay.Cars
 
             if (Ability != ItemKind.None && Time.time >= abilityEndTime) {
                 ClearAbility();
+            }
+
+            if (growth != growthTarget && pickupSettings != null) {
+                var mega = pickupSettings.Mega;
+                var rate = Mathf.Max(0.01f, mega.SizeScale - 1f) / mega.GrowTime;
+                SetGrowth(Mathf.MoveTowards(growth, growthTarget, rate * Time.deltaTime));
             }
 
             if (isRollPending && Time.time >= itemReadyTime) {
@@ -210,6 +235,7 @@ namespace ToyCarArena.Gameplay.Cars
             IsOut = true;
             ClearAbility();
             ClearItem();
+            Movement.StopCarry();
             Movement.Drive(Vector3.zero, 0f);
         }
 
@@ -252,7 +278,7 @@ namespace ToyCarArena.Gameplay.Cars
         }
 
         /// <summary>
-        /// A used timed item starts running: heavy, shield or turbo replaces whatever ran before. The other kinds leave
+        /// A used timed item starts running: mega, shield, turbo or balloon replaces whatever ran before. The other kinds leave
         /// nothing running.
         /// </summary>
         public void StartAbility(ItemKind kind)
@@ -267,8 +293,9 @@ namespace ToyCarArena.Gameplay.Cars
             abilityLength = length;
             abilityEndTime = Time.time + length;
             switch (kind) {
-                case ItemKind.Heavy:
-                    Movement.SetMassScale(pickupSettings.Heavy.MassScale);
+                case ItemKind.Mega:
+                    Movement.SetMassScale(pickupSettings.Mega.MassScale);
+                    growthTarget = pickupSettings.Mega.SizeScale;
                     break;
                 case ItemKind.Turbo:
                     Movement.SetBoostCooldown(pickupSettings.Turbo.BoostCooldown);
@@ -277,7 +304,8 @@ namespace ToyCarArena.Gameplay.Cars
         }
 
         /// <summary>
-        /// Reports that this car's <paramref name="kind"/> hit another car at <paramref name="point"/>.
+        /// Reports that this car's <paramref name="kind"/> hit another car at <paramref name="point"/>; for a balloon,
+        /// that it caught this car's own fall, where the car was.
         /// </summary>
         public void ReportItemHit(ItemKind kind, Vector3 point)
         {
@@ -303,6 +331,29 @@ namespace ToyCarArena.Gameplay.Cars
             abilityLength = 0f;
             Movement.SetMassScale(1f);
             Movement.SetBoostCooldown(-1f);
+            // Shrinks back over the grow time: at once, a car grown over the edge of another would leave a gap.
+            growthTarget = 1f;
+        }
+
+        /// <summary>
+        /// Makes the car <paramref name="value"/> times its own size at once: the model, its shadow and its colliders,
+        /// grown from the floor under its middle, so the wheels stay on the floor.
+        /// </summary>
+        private void SetGrowth(float value)
+        {
+            growth = value;
+            for (var i = 0; i < boxes.Length; i++) {
+                boxes[i].size = boxSizes[i] * value;
+                boxes[i].center = boxCenters[i] * value;
+            }
+
+            if (look != null) {
+                look.SetGrowth(value);
+            }
+
+            if (shadow != null) {
+                shadow.Growth = value;
+            }
         }
 
         /// <summary>
@@ -351,6 +402,8 @@ namespace ToyCarArena.Gameplay.Cars
             LastRingFallTime = float.NegativeInfinity;
             ClearAbility();
             ClearItem();
+            growthTarget = 1f;
+            SetGrowth(1f);
             Movement.Respawn(position, rotation);
             IsInvulnerable = false;
             SetInvulnerable(true, cars);
