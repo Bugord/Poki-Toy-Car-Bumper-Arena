@@ -482,6 +482,7 @@
 .lobby__row--left .hud__chip { background-color: var(--muted); }
 .lobby__row--left .lobby__name { color: var(--muted); }
 .lobby__badge--left { background-color: var(--silver); }
+.lobby__badge--streak { width: auto; padding: 8px 18px; rotate: -3deg; }
 
 /* A seat still searching: a dimmer strip with a spinning ring where the chip goes and SEARCHING..., until a player is
    found for it and pops in over it. */
@@ -1084,6 +1085,34 @@
     border-radius: 9px;
     background-color: var(--white);
     overflow: hidden;
+}
+
+/* The win streak over the player's car (HudView places it like SAFE): a gold crown over ×N. */
+.hud__streak {
+    display: none;
+    position: absolute;
+    translate: -50% -100%;
+    align-items: center;
+}
+
+.hud__streak--shown {
+    display: flex;
+}
+
+.hud__streak-crown {
+    width: 72px;
+    height: 50px;
+}
+
+.hud__streak-text {
+    margin: -6px 0 0 0;
+    padding: 0;
+    font-size: 44px;
+    color: var(--gold);
+    -unity-text-outline-width: 6px;
+    -unity-text-outline-color: var(--navy);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
 }
 
 .hud__shield-fill {
@@ -1779,6 +1808,13 @@
 .ko-pop--strike .ko-pop__text { color: rgb(62, 196, 160); }
 .ko-pop--saved .ko-pop__text { color: rgb(255, 92, 160); }
 
+/* A mission done during the round: MISSION! over the player's car, green as the XP it pays. */
+.ko-pop--mission .ko-pop__text {
+    margin-left: 0;
+    font-size: 96px;
+    color: rgb(91, 214, 77);
+}
+
 /* The start prompt of a visit's first round, while the cars wait for the player's first steer or boost (HudView shows
    it): TAP TO START or CLICK TO START, outlined, and under it a dark plate: an orange dot and TAP TO BOOST on a touch
    screen (the full joystick demonstration sits separately in the thumb area), a mouse, HOLD TO DRIVE,
@@ -2005,6 +2041,45 @@
 .hud__boost-hint-label {
     padding: 4px 28px;
     background-color: var(--orange);
+}
+
+/* Without a touch screen the sticker reads SPACE OR CLICK! over the smaller gauge in the slot's bottom-right corner:
+   flush with the slot's outer edge so the longer words stay on screen, its arrow on the gauge's middle. */
+.hud__boost-hint-desktop {
+    display: none;
+}
+
+.hud__boost-hint--desktop .hud__boost-hint-desktop {
+    display: flex;
+}
+
+.hud__boost-hint--desktop .hud__boost-hint-touch {
+    display: none;
+}
+
+.hud__boost-hint--desktop {
+    left: -260px;
+    top: -170px;
+    width: 560px;
+    align-items: flex-end;
+}
+
+.hud__boost-slot--left .hud__boost-hint--desktop {
+    left: 0;
+    align-items: flex-start;
+}
+
+.hud__boost-hint--desktop .hud__teaching-text {
+    font-size: 52px;
+    white-space: nowrap;
+}
+
+.hud__boost-hint--desktop .hud__boost-hint-arrow {
+    left: 409px;
+}
+
+.hud__boost-slot--left .hud__boost-hint--desktop .hud__boost-hint-arrow {
+    left: 149px;
 }
 
 .hud__boost-hint-arrow {
@@ -2350,6 +2425,24 @@
 .level-badge--gold { background-color: var(--gold); }
 .level-badge--legend { background-color: #ff7aa8; }
 
+/* The REVENGE rival's badge: a red frame and two red horns sprouting from its top corners (HudView draws them). */
+.level-badge.level-badge--rival {
+    border-left-color: rgb(255, 77, 77);
+    border-right-color: rgb(255, 77, 77);
+    border-top-color: rgb(255, 77, 77);
+    border-bottom-color: rgb(255, 77, 77);
+}
+
+.level-badge__horn {
+    position: absolute;
+    top: -62%;
+    width: 50%;
+    height: 76%;
+}
+
+.level-badge__horn--left { left: -20%; }
+.level-badge__horn--right { right: -20%; }
+
 .track__level {
     margin: 0;
     padding: 0 0 4px 0;
@@ -2638,6 +2731,53 @@
 .level-reward__caption {
     margin: 4px 0 0 0;
     font-size: 36px;
+}
+
+/* A car with a price: one green BUY button with its price on a white pill, under the caption. */
+.level-reward__buy {
+    flex-direction: row;
+    align-items: center;
+    height: 136px;
+    margin: 28px 0 0 0;
+    padding: 0 20px 0 48px;
+    border-width: 9px;
+    border-bottom-width: 20px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--green);
+}
+
+.level-reward__buy:active {
+    translate: 0 8px;
+}
+
+.level-reward__buy-label-text {
+    margin: 0;
+    padding: 0;
+    font-size: 72px;
+    color: var(--white);
+    -unity-text-outline-width: 12px;
+    -unity-text-outline-color: var(--navy);
+}
+
+.level-reward__price {
+    flex-direction: row;
+    align-items: center;
+    height: 84px;
+    margin-left: 28px;
+    padding: 0 26px 0 14px;
+    border-width: 6px;
+    border-bottom-width: 10px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+}
+
+.level-reward__price-value {
+    margin: 0 0 0 10px;
+    padding: 0;
+    font-size: 52px;
+    color: var(--navy);
 }
 
 .level-reward__hint {
@@ -3052,54 +3192,114 @@
     opacity: 1;
 }
 
+/* The garage (GarageView). Upright: the title, the car the player drives next on its plinth with the paint under it,
+   the shop (tabs, coins, cards) and NEXT MATCH, top to bottom; nothing moves when the tabs change. Wide: the hero
+   fills the left and the shop with NEXT MATCH the right. garage--touch makes every target big enough for a thumb,
+   which a wide phone needs most: there one reference pixel is the smallest. */
 .garage {
-    justify-content: center;
-    padding: 24px 0;
+    padding: 0;
     /* Popup leaves RoundOver drawn underneath. Only the transition fades this opaque cover. */
     background-color: var(--navy);
 }
 
+.garage__body {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    flex-direction: column;
+    align-items: center;
+}
+
+.garage__hero {
+    flex-shrink: 0;
+    align-items: center;
+    width: 100%;
+    max-width: 1000px;
+}
+
 .garage__title {
     flex-shrink: 0;
-    margin-bottom: 16px;
+    height: 110px;
+    justify-content: center;
     rotate: -4deg;
 }
 
 .garage__title-text {
     margin: 0;
     padding: 0;
-    font-size: 116px;
+    font-size: 100px;
     color: var(--gold);
 }
 
-/* The car the player drives next, large and in the chosen colour; the grid below is where it is changed. */
-.garage__preview {
+/* The hero: a soft spotlight, a plinth (a lighter disc over a dark one) and the car in its paint standing on it. */
+.garage__stage {
     flex-shrink: 0;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    width: 940px;
-    height: 180px;
-    margin-bottom: 8px;
+    width: 640px;
+    height: 250px;
+    margin-top: 30px;
+}
+
+.garage__spot {
+    position: absolute;
+    left: 130px;
+    right: 130px;
+    top: -10px;
+    bottom: 20px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.035);
+    /* Read as a grey oval rather than light: the plinth alone carries the hero. */
+    display: none;
+}
+
+.garage__plinth,
+.garage__plinth-drop {
+    position: absolute;
+    left: 110px;
+    right: 110px;
+    height: 96px;
+    border-radius: 50%;
+}
+
+.garage__plinth-drop {
+    bottom: 0;
+    background-color: #111a33;
+}
+
+.garage__plinth {
+    bottom: 22px;
+    border-width: 6px;
+    border-color: #4a64a3;
+    background-color: #2d4580;
 }
 
 .garage__preview-car {
-    flex-shrink: 0;
-    width: 280px;
-    height: 180px;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 10px;
+    bottom: 34px;
+    width: auto;
+    height: auto;
 }
 
-.garage__preview-copy {
-    flex-shrink: 0;
-    margin-left: 24px;
-    align-items: flex-start;
+/* The worn topper on the preview car's roof: a quarter of the picture's height down, as the portraits frame the car. */
+.garage__preview-topper {
+    position: absolute;
+    left: 50%;
+    top: -52px;
+    width: 124px;
+    height: 124px;
+    margin-left: -62px;
 }
 
-.garage__preview-caption {
-    margin: 0;
-    padding: 0;
-    font-size: 34px;
-    color: var(--soft);
+.garage__plate {
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    height: 100px;
+    margin-top: 4px;
 }
 
 .garage__preview-name {
@@ -3110,44 +3310,63 @@
     white-space: nowrap;
 }
 
-/* Eight colours fit in one row above either grid; selection changes scale without moving its neighbours. */
+/* The paint: a white bar, so the stickers' navy outlines read on the navy page. Each button is a larger target than
+   its sticker; the chosen one grows without moving its neighbours. */
 .garage__colors {
     flex-shrink: 0;
     flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
-    width: 940px;
-    height: 128px;
-    margin-bottom: 10px;
+    justify-content: center;
+    margin-top: 20px;
+    padding: 4px 16px;
+    border-width: 8px;
+    border-bottom-width: 18px;
+    border-color: var(--navy);
+    border-radius: 72px;
+    background-color: var(--white);
 }
 
 .garage__color {
     flex-shrink: 0;
-    width: 92px;
-    height: 100px;
+    width: 116px;
+    height: 120px;
     margin: 0;
     padding: 0;
-    border-width: 7px;
-    border-bottom-width: 15px;
-    border-color: var(--navy);
-    border-radius: 999px;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: none;
     align-items: center;
     justify-content: center;
 }
 
-.garage__color:hover,
-.garage__color:focus { scale: 1.08 1.08; }
-.garage__color--selected,
-.garage__color--selected:hover,
-.garage__color--selected:focus { scale: 1.18 1.18; }
+.garage__color-dot {
+    width: 86px;
+    height: 94px;
+    border-width: 6px;
+    border-bottom-width: 14px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    align-items: center;
+    justify-content: center;
+    transition-property: scale;
+    transition-duration: 0.12s;
+    transition-timing-function: ease-out-back;
+}
+
+.garage__color:hover .garage__color-dot,
+.garage__color:focus .garage__color-dot { scale: 1.08 1.08; }
+.garage__color--selected .garage__color-dot,
+.garage__color--selected:hover .garage__color-dot,
+.garage__color--selected:focus .garage__color-dot { scale: 1.22 1.22; }
 
 .garage__color-ring {
     display: none;
     position: absolute;
-    left: 1px;
-    right: 1px;
-    top: 1px;
-    bottom: 1px;
+    left: 2px;
+    right: 2px;
+    top: 2px;
+    bottom: 2px;
     border-width: 5px;
     border-color: var(--white);
     border-radius: 999px;
@@ -3157,87 +3376,224 @@
 
 .garage__color--selected .garage__color-ring { display: flex; }
 .garage__color-check {
-    width: 25px;
+    width: 26px;
     height: 15px;
-    margin-bottom: 7px;
+    margin-bottom: 6px;
     border-left-width: 6px;
     border-bottom-width: 6px;
     border-color: var(--white);
     rotate: -45deg;
 }
 
-.garage__grid {
-    flex-shrink: 0;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
-    width: 981px;
+/* The shop: a white panel of cards with its tabs and the player's coins on top. */
+.garage__side {
+    flex-grow: 1;
+    flex-shrink: 1;
+    align-items: center;
+    /* A taller phone spreads the spare height around the shop instead of inside it. */
+    justify-content: space-around;
+    width: 100%;
+    max-width: 1000px;
+    margin-top: 24px;
 }
 
-.garage__car {
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
-    width: 456px;
-    height: 252px;
-    margin: 8px 10px;
-    padding: 4px 16px 6px 16px;
+.garage__shop {
+    flex-grow: 0;
+    align-self: stretch;
+    padding: 16px 14px 18px 14px;
     border-width: 9px;
     border-bottom-width: 20px;
     border-color: var(--navy);
-    border-radius: 42px;
-    background-color: var(--white);
-    color: var(--navy);
-}
-
-.garage__car:hover,
-.garage__car:focus {
+    border-radius: 52px;
     background-color: var(--soft);
 }
 
-.garage__car--selected {
-    border-color: var(--green);
+.garage__head {
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 6px 10px 6px;
 }
 
-.garage__portrait {
+.garage__tabs {
+    flex-direction: row;
+    align-items: center;
+}
+
+.garage__tab {
     flex-shrink: 0;
-    height: 112px;
+    align-items: center;
+    justify-content: center;
+    height: 96px;
+    margin: 0 14px 0 0;
+    padding: 0 36px;
+    border-width: 6px;
+    border-bottom-width: 14px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+}
+
+.garage__tab:hover,
+.garage__tab:focus { background-color: var(--pick); }
+
+.garage__tab--active,
+.garage__tab--active:hover,
+.garage__tab--active:focus {
+    background-color: var(--green);
+}
+
+.garage__tab-text {
+    margin: 0;
+    padding: 0;
+    font-size: 42px;
+    color: var(--navy);
+}
+
+.garage__tab--active .garage__tab-text {
+    color: var(--navy);
+}
+
+.garage__tab-dot {
+    display: none;
+    position: absolute;
+    top: -14px;
+    right: -10px;
+    width: 38px;
+    height: 38px;
+    border-width: 5px;
+    border-color: var(--navy);
+    border-radius: 19px;
+    background-color: var(--red);
+}
+
+.coin-pill.garage__coins {
+    position: relative;
+    height: 96px;
+    border-bottom-width: 14px;
+}
+
+.coin-pill.garage__coins--short {
+    background-color: #ffd6d6;
+}
+
+.garage__coins--short .coin-pill__count {
+    color: var(--red);
+}
+
+/* The cards: three to a row upright, so seven cars and nine toppers each fill three rows of the same slot. */
+.garage__grid {
+    flex-grow: 1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: center;
+}
+
+.garage__card {
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    width: 31%;
+    height: 236px;
+    margin: 6px 1%;
+    padding: 4px 8px 8px 8px;
+    border-width: 7px;
+    border-bottom-width: 16px;
+    border-color: var(--navy);
+    border-radius: 38px;
+    background-color: var(--white);
+    background-image: none;
+    color: var(--navy);
+}
+
+.garage__card:hover,
+.garage__card:focus {
+    background-color: var(--pick);
+}
+
+.garage__card--selected,
+.garage__card--selected:hover,
+.garage__card--selected:focus {
+    border-color: var(--green-shade);
+    background-color: #e9f9e4;
+}
+
+.garage__card--locked,
+.garage__card--locked:hover,
+.garage__card--locked:focus {
+    background-color: var(--track);
+}
+
+.garage__art {
+    flex-grow: 1;
+    flex-shrink: 1;
+    align-self: stretch;
+    align-items: center;
+    justify-content: center;
+}
+
+/* The portraits keep an empty margin round the car; upright, where the cards are short, it is spent on the car. */
+.garage__portrait {
+    position: absolute;
+    left: 0;
+    top: -14px;
+    right: 0;
+    bottom: -14px;
+    width: auto;
+    height: auto;
+}
+
+.garage__topper-icon {
+    flex-shrink: 0;
+    width: 92px;
+    height: 92px;
 }
 
 .garage__name {
     flex-shrink: 0;
     align-self: stretch;
-    margin: 0 10px 4px 10px;
+    height: 36px;
+    margin: 0 4px 4px 4px;
     padding: 0;
     overflow: hidden;
-    -unity-text-auto-size: best-fit 20px 40px;
-    font-size: 40px;
+    -unity-text-auto-size: best-fit 18px 34px;
+    font-size: 34px;
     -unity-text-align: middle-center;
     white-space: nowrap;
 }
 
-.garage__status {
-    flex-shrink: 0;
-    height: 48px;
-    padding: 0 18px;
-    border-width: 5px;
-    border-bottom-width: 9px;
-    background-color: var(--soft);
-    font-size: 28px;
+.garage__card--locked .garage__name {
+    color: var(--muted);
 }
 
-.garage__status Label {
+/* The tag says what a tap does: USE (soft), IN USE with a check (green), a coin and the price (gold, or grey when the
+   coins fall short), or a padlock and the level (navy). */
+.garage__tag {
+    flex-shrink: 0;
+    height: 54px;
+    padding: 0 20px;
+    border-width: 5px;
+    border-bottom-width: 10px;
+    background-color: var(--white);
+}
+
+.garage__tag-text {
     margin: 0;
     padding: 0;
+    font-size: 30px;
+    color: var(--navy);
+    white-space: nowrap;
 }
 
-.garage__car--selected .garage__status {
-    background-color: var(--green);
-}
-
-.garage__car--locked .garage__status {
-    background-color: var(--gold);
-}
+.garage__card--selected .garage__tag { background-color: var(--green); }
+.garage__card--price .garage__tag { background-color: var(--gold); padding-left: 8px; }
+.garage__card--dear .garage__tag { background-color: var(--shade); }
+.garage__card--dear .garage__tag-text { color: var(--muted); }
+.garage__card--dear .coin.garage__price-coin { opacity: 0.55; }
+.garage__card--locked .garage__tag { background-color: var(--navy); padding-left: 12px; }
+.garage__card--locked .garage__tag-text { color: var(--white); }
 
 .garage__check {
     display: none;
@@ -3251,20 +3607,106 @@
     rotate: -45deg;
 }
 
-.garage__car--selected .garage__check {
-    display: flex;
+.garage__card--selected .garage__check { display: flex; }
+
+.coin.garage__price-coin {
+    display: none;
+    width: 38px;
+    height: 38px;
+    margin-right: 8px;
+    border-width: 4px;
+    border-bottom-width: 6px;
+}
+
+.garage__price-coin .coin__inner {
+    width: 14px;
+    height: 14px;
+}
+
+.garage__lock {
+    display: none;
+    flex-shrink: 0;
+    align-items: center;
+    width: 28px;
+    height: 34px;
+    margin-right: 10px;
+}
+
+.garage__lock-shackle {
+    width: 20px;
+    height: 16px;
+    border-width: 5px;
+    border-bottom-width: 0;
+    border-color: var(--gold);
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+.garage__lock-body {
+    width: 28px;
+    height: 18px;
+    border-radius: 4px;
+    background-color: var(--gold);
 }
 
 .garage__play {
     flex-shrink: 0;
-    margin-top: 20px;
+    margin-top: 22px;
 }
 
-/* Back to the result, top right; Esc does the same. */
-.garage__close {
+/* The key on NEXT MATCH, for a keyboard; a finger has none to press. */
+.garage__play-key {
+    margin-left: 30px;
+}
+
+.garage__play-key .key__text { font-size: 38px; }
+.garage--touch .garage__play-key { display: none; }
+
+/* The line over a tapped card: the price paid in gold, or the reason nothing happened in white. */
+.garage__toast {
+    display: none;
+    position: absolute;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: 900px;
+    height: 120px;
+}
+
+.garage__toast-text {
+    margin: 0;
+    padding: 0;
+    font-size: 58px;
+    color: var(--white);
+    -unity-text-outline-width: 14px;
+    text-shadow: 0 10px 0 rgb(29, 43, 79);
+}
+
+.garage__toast--gold .garage__toast-text { color: var(--gold); }
+
+.coin.garage__toast-coin {
+    width: 66px;
+    height: 66px;
+    margin-right: 14px;
+}
+
+/* Back to the result and the settings, top right: the top left corner is where Poki's inspector and the browser
+   chrome sit. Esc goes back too. */
+.garage__corner {
     position: absolute;
     top: 40px;
     right: 40px;
+    flex-direction: row;
+}
+
+.garage__corner .gear-button {
+    position: relative;
+    top: 0;
+    right: 0;
+    margin-right: 24px;
+}
+
+.garage__close {
     width: 120px;
     height: 120px;
     margin: 0;
@@ -3293,6 +3735,170 @@
 }
 
 .garage__close-bar--turned { rotate: -45deg; }
+
+/* Wide: the hero on the left half, the shop and NEXT MATCH on the right, below the corner buttons. */
+.garage--landscape .garage__body {
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: center;
+}
+
+.garage--landscape .garage__hero {
+    width: 44%;
+    max-width: 1500px;
+    justify-content: center;
+    margin-right: 60px;
+}
+
+.garage--landscape .garage__title { height: 150px; }
+.garage--landscape .garage__title-text { font-size: 124px; }
+
+.garage--landscape .garage__stage {
+    width: 1000px;
+    height: 640px;
+    margin-top: 130px;
+}
+
+.garage--landscape .garage__spot { left: 120px; right: 120px; }
+
+.garage--landscape .garage__plinth,
+.garage--landscape .garage__plinth-drop {
+    left: 170px;
+    right: 170px;
+    height: 170px;
+}
+
+.garage--landscape .garage__plinth { bottom: 36px; border-width: 8px; }
+
+.garage--landscape .garage__preview-car {
+    top: 20px;
+    bottom: 64px;
+}
+
+.garage--landscape .garage__preview-topper {
+    top: -100px;
+    width: 240px;
+    height: 240px;
+    margin-left: -120px;
+}
+
+.garage--landscape .garage__preview-name { font-size: 110px; }
+.garage--landscape .garage__plate { height: 140px; }
+
+.garage--landscape .garage__colors { margin-top: 36px; }
+
+.garage--landscape .garage__color {
+    width: 120px;
+    height: 132px;
+}
+
+.garage--landscape .garage__color-dot {
+    width: 96px;
+    height: 104px;
+}
+
+.garage--landscape .garage__side {
+    max-width: 2000px;
+    margin-top: 180px;
+    justify-content: center;
+}
+
+
+.garage--landscape .garage__shop {
+    padding: 22px 20px 24px 20px;
+}
+
+.garage--landscape .garage__head { margin-bottom: 16px; }
+
+/* Wide, four cars or five toppers to a row: two rows each. */
+.garage--landscape .garage__card {
+    width: 23%;
+    height: 440px;
+    margin: 12px 1%;
+    padding: 10px 12px 14px 12px;
+}
+
+.garage--landscape .garage__card--topper {
+    width: 18%;
+}
+
+.garage--landscape .garage__portrait { top: 0; bottom: 0; }
+
+.garage--landscape .garage__topper-icon {
+    width: 180px;
+    height: 180px;
+}
+
+.garage--landscape .garage__name {
+    height: 56px;
+    -unity-text-auto-size: best-fit 22px 46px;
+    font-size: 46px;
+}
+
+.garage--landscape .garage__tag { height: 68px; }
+.garage--landscape .garage__tag-text { font-size: 36px; }
+
+.garage--landscape .garage__play {
+    margin-top: 26px;
+}
+
+/* A wide phone: one reference pixel is about a fifth of a CSS pixel there, so a thumb needs everything twice as big. */
+.garage--landscape.garage--touch .garage__corner .gear-button,
+.garage--landscape.garage--touch .garage__close {
+    width: 200px;
+    height: 200px;
+    border-width: 10px;
+    border-bottom-width: 22px;
+}
+
+.garage--landscape.garage--touch .garage__corner .gear { scale: 1.6 1.6; }
+.garage--landscape.garage--touch .garage__close-bar { scale: 1.6 1.6; }
+.garage--landscape.garage--touch .garage__side { margin-top: 260px; }
+
+/* Four to a row in two rows: a thumb-sized target each, and the hero column has the height for it. */
+.garage--landscape.garage--touch .garage__colors {
+    width: 900px;
+    padding: 10px 16px;
+    border-radius: 100px;
+}
+
+.garage--landscape.garage--touch .garage__color {
+    width: 210px;
+    height: 200px;
+}
+
+.garage--landscape.garage--touch .garage__color-dot {
+    width: 150px;
+    height: 162px;
+    border-width: 8px;
+    border-bottom-width: 18px;
+}
+
+.garage--landscape.garage--touch .garage__color-check {
+    width: 40px;
+    height: 22px;
+    border-left-width: 9px;
+    border-bottom-width: 9px;
+}
+
+.garage--landscape.garage--touch .garage__tab {
+    height: 150px;
+    padding: 0 56px;
+    border-width: 8px;
+    border-bottom-width: 18px;
+}
+
+.garage--landscape.garage--touch .garage__tab-text { font-size: 64px; }
+
+.garage--landscape.garage--touch .coin-pill.garage__coins {
+    height: 150px;
+    padding: 0 44px 0 30px;
+    border-bottom-width: 18px;
+}
+
+.garage--landscape.garage--touch .garage__coins .coin-pill__count { font-size: 72px; }
+
+.garage--landscape.garage--touch .garage__card { height: 500px; }
 
 /* The settings gear, a round white sticker at the top right of the result and beside the garage's close button: the
    top left corner is where Poki's inspector and the browser chrome sit. */
@@ -3623,18 +4229,6 @@
     background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_check_white.svg?fileID=7388822144124034973&guid=3cb9172530394ad689efe9d0761fd4f5&type=3#sprite_ui_check_white");
 }
 
-.garage--landscape .garage__grid {
-    width: 1800px;
-}
-
-.garage--landscape .garage__car {
-    width: 414px;
-    height: 350px;
-}
-
-.garage--landscape .garage__portrait {
-    height: 200px;
-}
 /* Two sibling labels in a measured container, shared by the lobby and the social overlays. */
 .sticker-text { flex-shrink: 0; }
 .sticker-text__text {
@@ -4655,4 +5249,234 @@
     text-shadow: 0 26px 0 rgb(29, 43, 79);
     -unity-text-align: middle-center;
     white-space: nowrap;
+}
+
+/* Coins (RoundOverMeta, the garage): a gold disc with a navy ring and a paler disc inside, built of elements. */
+.coin {
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-width: 5px;
+    border-bottom-width: 8px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--gold);
+}
+
+.coin__inner {
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background-color: #ffe39a;
+}
+
+/* The player's coins in the result's corner, left of the gear; it bumps as the round's coins land. */
+.coin-pill {
+    position: absolute;
+    flex-direction: row;
+    align-items: center;
+    height: 96px;
+    margin: 0;
+    padding: 0 30px 0 20px;
+    border-width: 7px;
+    border-bottom-width: 13px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+    transition-property: scale;
+    transition-duration: 0.15s;
+    transition-timing-function: ease-out;
+}
+
+.coin-pill--bump {
+    scale: 1.15 1.15;
+}
+
+.coin-pill__count {
+    margin: 0 0 0 12px;
+    padding: 0;
+    font-size: 48px;
+    color: var(--navy);
+}
+
+/* The round's coins beside its XP on the level card. */
+.coin-gain {
+    flex-direction: row;
+    align-items: center;
+    margin-left: 26px;
+    transition-property: scale, opacity;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-out-back;
+}
+
+.coin-gain--enter {
+    scale: 0.3 0.3;
+    opacity: 0;
+}
+
+.coin-gain__value {
+    margin: 0 0 0 10px;
+    padding: 0;
+    font-size: 56px;
+    color: #c98a00;
+}
+
+/* STREAK xN under the title (gold, as NEW BEST!), or STREAK LOST (grey): shares the stickers' entrance. */
+.round-over__streak {
+    flex-shrink: 0;
+    margin-top: 24px;
+    rotate: -3deg;
+}
+
+.round-over__streak--lost {
+    border-width: 6px;
+    border-color: var(--navy);
+    background-color: var(--soft);
+    color: var(--muted);
+}
+
+/* The three missions over the level card (RoundOverMeta builds the rows). A done one ticks gold and shows its XP, then
+   turns into the mission that replaces it. */
+.missions {
+    flex-shrink: 0;
+    align-self: center;
+    align-items: stretch;
+    margin: 4px 0 0 0;
+    padding: 10px 34px 14px 34px;
+    border-bottom-width: 18px;
+    border-radius: 44px;
+    transition-property: translate, opacity;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-out;
+}
+
+.round-over--enter .missions {
+    translate: 0 120px;
+    opacity: 0;
+}
+
+.missions__title {
+    margin: 0;
+    padding: 0;
+    font-size: 28px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    -unity-text-align: middle-left;
+}
+
+.mission {
+    flex-direction: row;
+    align-items: center;
+    height: 54px;
+    transition-property: translate, opacity, scale;
+    transition-duration: 0.25s;
+    transition-timing-function: ease-out-back;
+}
+
+.mission--enter {
+    translate: -60px 0;
+    opacity: 0;
+}
+
+.mission--swap {
+    scale: 0.9 0.9;
+    opacity: 0;
+}
+
+.mission__check {
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border-width: 5px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--soft);
+    transition-property: background-color, scale;
+    transition-duration: 0.25s;
+    transition-timing-function: ease-out-back;
+}
+
+.mission__mark {
+    width: 13px;
+    height: 23px;
+    border-right-width: 6px;
+    border-bottom-width: 6px;
+    border-color: var(--navy);
+    rotate: 45deg;
+    translate: 0 -3px;
+    opacity: 0;
+}
+
+.mission--done .mission__check {
+    background-color: var(--gold);
+    scale: 1.2 1.2;
+}
+
+.mission--done .mission__mark {
+    opacity: 1;
+}
+
+.mission__task {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin: 0 0 0 18px;
+    padding: 0;
+    font-size: 34px;
+    color: var(--navy);
+    -unity-text-align: middle-left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mission__progress {
+    flex-shrink: 0;
+    margin: 0 0 0 14px;
+    padding: 0;
+    font-size: 36px;
+    color: var(--muted);
+}
+
+.mission--done .mission__progress {
+    color: var(--green-shade);
+}
+
+/* With the missions over it, the level card and the podium give up a little height, so a 16:9 portrait still fits. */
+.round-over--meta .level-card {
+    margin: 14px 0 30px 0;
+}
+
+.round-over--meta .podium {
+    min-height: 300px;
+}
+
+.round-over--landscape.round-over--desktop.round-over--meta .level-card {
+    margin: 0 32px 0 0;
+}
+
+/* Landscape on a touch screen the podium stands over the middle column: the missions go to the empty left of it, and
+   the podium comes down a little so its crown clears the streak sticker under the title. */
+.round-over--landscape.round-over--meta .missions {
+    position: absolute;
+    left: 96px;
+    top: 380px;
+    width: 640px;
+}
+
+.round-over--landscape.round-over--meta .podium {
+    top: 10px;
+}
+
+.round-over--landscape.round-over--desktop.round-over--meta .missions {
+    position: relative;
+    left: auto;
+    top: auto;
+}
+
+.round-over--landscape.round-over--desktop.round-over--meta .podium {
+    top: 0;
 }

@@ -13,14 +13,20 @@ namespace ToyCarArena.Gameplay.Round
         public readonly int PlaceXp;
         public readonly int WinXp;
         public readonly int KnockoutXp;
+
+        /// <summary>A streak round's extra on the round's own XP.</summary>
+        public readonly int StreakXp;
+
+        /// <summary>The XP of the missions the round completed.</summary>
+        public readonly int MissionXp;
         public readonly XpLevel Before;
         public readonly XpLevel After;
         public readonly IReadOnlyList<string> UnlockedCarIds;
 
-        public int Total => RoundXp + PlaceXp + WinXp + KnockoutXp;
+        public int Total => RoundXp + PlaceXp + WinXp + KnockoutXp + StreakXp + MissionXp;
 
         public XpGain(int totalBefore, int totalAfter, int roundXp, int placeXp, int winXp, int knockoutXp,
-            XpLevel before, XpLevel after, IReadOnlyList<string> unlockedCarIds)
+            XpLevel before, XpLevel after, IReadOnlyList<string> unlockedCarIds, int streakXp = 0, int missionXp = 0)
         {
             this.TotalBefore = totalBefore;
             this.TotalAfter = totalAfter;
@@ -28,6 +34,8 @@ namespace ToyCarArena.Gameplay.Round
             this.PlaceXp = placeXp;
             this.WinXp = winXp;
             this.KnockoutXp = knockoutXp;
+            this.StreakXp = streakXp;
+            this.MissionXp = missionXp;
             this.Before = before;
             this.After = after;
             this.UnlockedCarIds = unlockedCarIds;

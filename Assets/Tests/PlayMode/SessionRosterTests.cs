@@ -67,6 +67,44 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [Test]
+        public void NowAndThenABotSitsDownWearingAHat()
+        {
+            var seated = 0;
+            var hats = 0;
+            roster.ForRound(6);
+            for (var round = 0; round < 200; round++) {
+                roster.NextRound(6, 6, RoundResult.Nobody, tuning.Players);
+                foreach (var player in roster.ForRound(6)) {
+                    seated++;
+                    if (player.Topper.Length > 0) {
+                        hats++;
+                        Assert.That(CarTopper.Ids, Does.Contain(player.Topper));
+                    }
+                }
+            }
+
+            Assert.That((float)hats / seated, Is.InRange(0.08f, 0.25f));
+        }
+
+        [Test]
+        public void ABotKeepsItsHatWhenThePlayerTakesItsColour()
+        {
+            Random.InitState(5);
+            var players = roster.ForRound(6);
+            var index = players.ToList().FindIndex(player => player.Topper.Length > 0);
+            for (var tries = 0; index < 0 && tries < 100; tries++) {
+                roster.NextRound(6, 6, RoundResult.Nobody, tuning.Players);
+                players = roster.ForRound(6);
+                index = players.ToList().FindIndex(player => player.Topper.Length > 0);
+            }
+
+            Assume.That(index, Is.GreaterThanOrEqualTo(0));
+            var hat = players[index].Topper;
+            playerCar.SelectColor(players[index].ColorId);
+            Assert.That(roster.ForRound(6)[index].Topper, Is.EqualTo(hat));
+        }
+
+        [Test]
         public void NemesisKeepsNameAndCarEvenWhileItsSlotIsAbsent()
         {
             var rival = roster.ForRound(6)[5];

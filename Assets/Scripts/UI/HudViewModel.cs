@@ -70,6 +70,9 @@ namespace ToyCarArena.UI
         /// </summary>
         public event Action AutoBoosted;
 
+        /// <summary>A mission was done during the round: the state counts them, the view pops MISSION!.</summary>
+        public event Action MissionDone;
+
         private readonly IScreenNavigator navigator;
         private Car player;
         private readonly HudControls controls;
@@ -91,6 +94,9 @@ namespace ToyCarArena.UI
 
         /// <summary>The player has never finished a round, so the start screen also says what the game is about.</summary>
         public bool IsNewPlayer { get; private set; }
+
+        /// <summary>The win streak this round is played on (it multiplies the reward), or 0 when it is no streak.</summary>
+        public int Streak { get; private set; }
 
         public bool IsRunning => round != null && round.IsRunning && !round.Player.IsOut;
 
@@ -277,6 +283,8 @@ namespace ToyCarArena.UI
 
         public const int NoKickoff = -1;
 
+        public void ShowMissionDone() => MissionDone?.Invoke();
+
         /// <summary>
         /// Shows a step of the kick-off (3, 2, 1, or 0 for GO!) for this many unscaled seconds.
         /// </summary>
@@ -332,6 +340,7 @@ namespace ToyCarArena.UI
             IsFirstRound = payload.IsFirstRound;
             RoundNumber = payload.RoundNumber;
             IsNewPlayer = payload.IsNewPlayer;
+            Streak = payload.Streak;
             // The view model outlives a round: a GO! of the round before must not show again on this one.
             KickoffStep = NoKickoff;
             if (round != null) {
@@ -419,11 +428,13 @@ namespace ToyCarArena.UI
         public bool IsFirstRound { get; }
         public int RoundNumber { get; }
         public bool IsNewPlayer { get; }
+        public int Streak { get; }
 
         public HudRound(ArenaRound round, PlayerDriver driver, GameTuning.ControlSettings controls, bool isFirstRound,
-            int roundNumber, bool isNewPlayer)
+            int roundNumber, bool isNewPlayer, int streak = 0)
         {
             IsNewPlayer = isNewPlayer;
+            Streak = streak;
             Round = round;
             Driver = driver;
             Controls = controls;

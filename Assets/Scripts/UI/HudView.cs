@@ -58,6 +58,7 @@ namespace ToyCarArena.UI
         private const string RespawnShownClass = "hud__respawn--shown";
         private const string RespawnPopClass = "hud__respawn--pop";
         private const string ShieldShownClass = "hud__shield--shown";
+        private const string StreakShownClass = "hud__streak--shown";
         private const string RevengeClass = "car-name--revenge";
         private const string PowerShownClass = "hud__power--shown";
         private const string ItemShownClass = "hud__item--shown";
@@ -155,6 +156,7 @@ namespace ToyCarArena.UI
         private const float BoostHintDuration = 2f;
         private const float BoostHintPulsePeriod = 0.7f;
         private const string BoostHintPulseClass = "hud__boost--hint-pulse";
+        private const string BoostHintDesktopClass = "hud__boost-hint--desktop";
         private const float TapHintDuration = 1f;
         private const float TapHintWidth = 560f;
         private const float TapHintHeight = 110f;
@@ -253,6 +255,8 @@ namespace ToyCarArena.UI
         private Label respawnCountFace;
         private VisualElement shield;
         private VisualElement shieldFill;
+        private VisualElement streak;
+        private int streakShown = -1;
         // A match's pickups: the badge of the ability the player's car runs, with its icon, name and draining bar.
         private ItemKind shownAbility;
         private VisualElement power;
@@ -358,6 +362,7 @@ namespace ToyCarArena.UI
             respawnCountFace = Root.Q<Label>("respawn-count-face");
             shield = Root.Q<VisualElement>("shield");
             shieldFill = Root.Q<VisualElement>("shield-fill");
+            streak = CreateStreak(shield);
             power = Root.Q<VisualElement>("power");
             powerIcon = Root.Q<VisualElement>("power-icon");
             powerName = Root.Q<Label>("power-name");
@@ -416,6 +421,7 @@ namespace ToyCarArena.UI
             ViewModel.ItemRolled += OnItemRolled;
             ViewModel.ItemUsed += OnItemUsed;
             ViewModel.AutoBoosted += OnAutoBoosted;
+            ViewModel.MissionDone += OnMissionDone;
             ViewModel.ItemHit += OnItemHit;
 
             // On the press, not the release: a boost is all about the moment.
@@ -460,6 +466,7 @@ namespace ToyCarArena.UI
             ViewModel.ItemRolled -= OnItemRolled;
             ViewModel.ItemUsed -= OnItemUsed;
             ViewModel.AutoBoosted -= OnAutoBoosted;
+            ViewModel.MissionDone -= OnMissionDone;
             ViewModel.ItemHit -= OnItemHit;
 
             if (boostButton != null) {
@@ -623,6 +630,53 @@ namespace ToyCarArena.UI
             shield.style.left = point.x;
             shield.style.top = point.y;
             shieldFill.style.width = Length.Percent(share * 100f);
+        }
+
+        /// <summary>
+        /// On a win streak a gold crown with ×N floats over the player's car: the round pays more, and the bots go for
+        /// it a little more. It makes way for SAFE, and goes with the car when it falls.
+        /// </summary>
+        private void ShowStreak(Camera camera)
+        {
+            var isShown = ViewModel.Streak > 0 && camera != null && streak.panel != null && ViewModel.IsCarIn(0)
+                && !shield.ClassListContains(ShieldShownClass);
+            streak.EnableInClassList(StreakShownClass, isShown);
+            if (!isShown) {
+                return;
+            }
+
+            if (streakShown != ViewModel.Streak) {
+                streakShown = ViewModel.Streak;
+                streak.Query<Label>().ForEach(label => label.text = $"×{streakShown}");
+            }
+
+            var position = ViewModel.PlayerPosition + Vector3.up * ShieldHeight;
+            var panelPoint = RuntimePanelUtils.CameraTransformWorldToPanel(streak.panel, position, camera);
+            var point = nameLayer.WorldToLocal(panelPoint);
+            var size = nameLayer.layout.size;
+            var halfWidth = streak.layout.width * 0.5f + NameMargin;
+            var height = streak.layout.height + NameMargin;
+            var left = halfWidth + safeInsets.Left;
+            var top = height + contentTopInset;
+            point.x = Mathf.Clamp(point.x, left, Mathf.Max(left, size.x - halfWidth - safeInsets.Right));
+            point.y = Mathf.Clamp(point.y, top, Mathf.Max(top, size.y - NameMargin - safeInsets.Bottom));
+            ClearScoreboard(nameLayer, ref point, halfWidth, height);
+            streak.style.left = point.x;
+            streak.style.top = point.y;
+        }
+
+        // The crown and ×N, built once beside the SAFE sticker (the same layer, the same anchor over the car).
+        private VisualElement CreateStreak(VisualElement beside)
+        {
+            var element = new VisualElement { name = "streak", pickingMode = PickingMode.Ignore };
+            element.AddToClassList("hud__streak");
+            var crown = new VisualElement { pickingMode = PickingMode.Ignore };
+            crown.AddToClassList("hud__streak-crown");
+            crown.generateVisualContent += RoundOverMatch.DrawCrown;
+            element.Add(crown);
+            element.Add(CreateOutlinedText("", "hud__streak-text"));
+            beside.parent.Insert(beside.parent.IndexOf(beside), element);
+            return element;
         }
 
         /// <summary>
@@ -911,6 +965,9 @@ namespace ToyCarArena.UI
             }
         }
 
+        /// <summary>MISSION! over the player's car when the round completes one of the result's missions.</summary>
+        private void OnMissionDone() => ShowPopup(ViewModel.PlayerPosition, false, ItemKind.None, "mission");
+
         /// <summary>
         /// A comic word where the player's item lands: POW! where the glove punches a car, STRIKE! on each car the
         /// bowling ball knocks aside, and SAVED! over the player's car when its balloon catches a fall.
@@ -1166,7 +1223,11 @@ namespace ToyCarArena.UI
             Pulse(itemButton, ItemPressedClass);
         }
 
-        internal static VisualElement CreateLevelBadge(int level, string className)
+        /// <summary>
+        /// A level badge in its rank's colour. The REVENGE rival's (<paramref name="isRival"/>) is framed red with two
+        /// red horns: the frame reads before the name does, in the HUD, the lobby and on the result alike.
+        /// </summary>
+        internal static VisualElement CreateLevelBadge(int level, string className, bool isRival = false)
         {
             var badge = new VisualElement { pickingMode = PickingMode.Ignore };
             badge.AddToClassList("level-badge");
@@ -1175,7 +1236,46 @@ namespace ToyCarArena.UI
             var value = new Label(level.ToString()) { pickingMode = PickingMode.Ignore };
             value.AddToClassList("level-badge__value");
             badge.Add(value);
+            if (isRival) {
+                badge.AddToClassList("level-badge--rival");
+                foreach (var isLeft in new[] { true, false }) {
+                    var horn = new VisualElement { pickingMode = PickingMode.Ignore };
+                    horn.AddToClassList("level-badge__horn");
+                    horn.AddToClassList(isLeft ? "level-badge__horn--left" : "level-badge__horn--right");
+                    horn.generateVisualContent += isLeft ? DrawLeftHorn : DrawRightHorn;
+                    badge.Add(horn);
+                }
+            }
+
             return badge;
+        }
+
+        private static void DrawLeftHorn(MeshGenerationContext context) => DrawHorn(context, false);
+        private static void DrawRightHorn(MeshGenerationContext context) => DrawHorn(context, true);
+
+        // A little devil's horn: a broad root along the bottom, curving up and out to a point; red with a navy outline.
+        private static void DrawHorn(MeshGenerationContext context, bool isMirrored)
+        {
+            var rect = context.visualElement.contentRect;
+            var w = rect.width;
+            var h = rect.height;
+            Vector2 At(float x, float y) => new(isMirrored ? (1f - x) * w : x * w, y * h);
+            var painter = context.painter2D;
+            painter.BeginPath();
+            painter.MoveTo(At(0.3f, 1f));
+            painter.LineTo(At(0.2f, 0.7f));
+            painter.LineTo(At(0.12f, 0.4f));
+            painter.LineTo(At(0.06f, 0.06f));
+            painter.LineTo(At(0.4f, 0.28f));
+            painter.LineTo(At(0.72f, 0.56f));
+            painter.LineTo(At(0.98f, 1f));
+            painter.ClosePath();
+            painter.fillColor = new Color32(0xff, 0x4d, 0x4d, 0xff);
+            painter.Fill();
+            painter.strokeColor = new Color32(0x1d, 0x2b, 0x4f, 0xff);
+            painter.lineWidth = Mathf.Max(3f, w * 0.14f);
+            painter.lineJoin = LineJoin.Round;
+            painter.Stroke();
         }
 
         private static VisualElement CreateOutlinedText(string value, string textClass)
@@ -1212,6 +1312,8 @@ namespace ToyCarArena.UI
                 ShowScoreboard();
                 ShowShield(camera);
             }
+
+            ShowStreak(camera);
 
             if (carNames == null || camera == null || nameLayer.panel == null) {
                 return;
@@ -1411,25 +1513,17 @@ namespace ToyCarArena.UI
             var sticker = new VisualElement { pickingMode = PickingMode.Ignore };
             sticker.AddToClassList("car-name__sticker");
             tag.Add(sticker);
-            if (ViewModel.IsNemesis(index)) {
+            // The rival has no caption of its own: its badge is framed red with horns and its name is red.
+            var isRival = ViewModel.IsNemesis(index);
+            if (isRival) {
                 tag.AddToClassList(RevengeClass);
                 tag.AddToClassList(NameEnterClass);
-                var heading = new VisualElement { pickingMode = PickingMode.Ignore };
-                heading.AddToClassList("car-name__revenge");
-                var target = new VisualElement { pickingMode = PickingMode.Ignore };
-                target.AddToClassList("revenge-target");
-                var center = new VisualElement { pickingMode = PickingMode.Ignore };
-                center.AddToClassList("revenge-target__center");
-                target.Add(center);
-                heading.Add(target);
-                heading.Add(CreateOutlinedText(Strings.Get("hud.revenge"), "car-name__revenge-text"));
-                sticker.Add(heading);
             }
 
             // The bot's level on a small badge in its rank's colour, before the handle, as a player's would be.
             var line = new VisualElement { pickingMode = PickingMode.Ignore };
             line.AddToClassList("car-name__line");
-            line.Add(CreateLevelBadge(ViewModel.LevelOf(index), "car-name__level"));
+            line.Add(CreateLevelBadge(ViewModel.LevelOf(index), "car-name__level", isRival));
             line.Add(CreateOutlinedText(ViewModel.NameOf(index), "car-name__text"));
             sticker.Add(line);
             nameLayer.Add(tag);
@@ -1688,7 +1782,9 @@ namespace ToyCarArena.UI
                 DrawGhost(now - ghostTime);
             }
 
-            var canHintBoost = enabled && ViewModel.CanHintBoost;
+            // The desktop gets the same first-round nudge over its gauge, in its own words; no finger to hint beside.
+            var canHintBoost = IsShown && ViewModel.IsFirstRound && ViewModel.CanHintBoost;
+            boostHint.EnableInClassList(BoostHintDesktopClass, !isTouch);
             if (!canHintBoost || now - boostHintTime >= BoostHintDuration) {
                 isBoostHintShown = false;
             }
@@ -1710,7 +1806,7 @@ namespace ToyCarArena.UI
                 tapHintTime = now;
             }
 
-            var showTap = canHintBoost && hasTapHint && controls.IsJoystickShown && now - tapHintTime < TapHintDuration;
+            var showTap = canHintBoost && isTouch && hasTapHint && controls.IsJoystickShown && now - tapHintTime < TapHintDuration;
             AnimateTeaching(tapHint, ref tapHintProgress, showTap, elapsed);
             if (showTap) {
                 PlaceTapHint();

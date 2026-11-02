@@ -66,6 +66,17 @@ namespace ToyCarArena.App
     /// for each arena a crossed level opened</item>
     /// <item><c>result / car-car-id-rR / car</c>: the car played, before an unlock auto-equips the next one;
     /// catalog IDs contain no numbers, including drag-racer and monster-truck</item>
+    /// <item>since v0.10: <c>mission / mission-id / complete</c> for each done mission, <c>mission / done-N-rR /
+    /// missions</c> at the end of every round (missions done this visit, N 0..9 or 10plus) and <c>mission / shown /
+    /// visible</c> the first time a player sees missions; <c>result / streak-N-rR / streak</c> (the win streak going
+    /// into the next round, N 0..4 or 5plus) and <c>result / streak-lost-rR / streak</c> when a streak ended;
+    /// <c>result / coins-few, mid, many-rR / coins</c>, the coins held after the round against the toppers' prices;
+    /// <c>shop / topper-id / buy</c>, <c>garage / topper-topper-id / equip</c> and <c>garage / toppers / visible,
+    /// interact</c> for the toppers tab</item>
+    /// <item>since v0.10, beside <c>again-outcome-rR</c>, the same NEXT MATCH press by whether the round completed a
+    /// mission (<c>result / again-outcome-mission, nomission-rR</c>) and by the streak (<c>result /
+    /// again-outcome-streak, nostreak, lost-rR</c>): Poki does not link a visit's events, so this is the one way to tell
+    /// the missions' and the streaks' part apart</item>
     /// </list>
     /// </summary>
     public static class RoundEvents
@@ -77,6 +88,10 @@ namespace ToyCarArena.App
         private const string PlayAgain = "play-again";
         private const string LobbyCategory = "lobby";
         private const string ArenaCategory = "arena";
+        private const string MissionCategory = "mission";
+
+        // A streak this long or longer goes in one bucket, so its number and the round's still fit.
+        private const int LastStreakBucket = 5;
 
         // Rounds past this one share one bucket: few sessions get there, and the event names stay few.
         private const int LastRoundBucket = 10;
@@ -317,17 +332,100 @@ namespace ToyCarArena.App
             return boosts == 0 ? "boosts-0" : boosts <= 2 ? "boosts-1-2" : "boosts-3plus";
         }
 
-        public static void MeasurePlayAgainShown(this IGamePlatform platform, RoundOutcome outcome, int round)
+        public static void MeasurePlayAgainShown(this IGamePlatform platform, RoundOutcome outcome, int round,
+            RoundRecord record = default)
         {
             platform.MeasureVisible(ResultCategory, PlayAgain);
             platform.MeasureVisible(ResultCategory, AgainOf(outcome, round));
+            if (record.Missions != null) {
+                platform.MeasureVisible(ResultCategory, AgainOfMissions(outcome, round, record));
+                platform.MeasureVisible(ResultCategory, AgainOfStreak(outcome, round, record.Streak));
+            }
         }
 
-        public static void MeasurePlayAgainPressed(this IGamePlatform platform, RoundOutcome outcome, int round)
+        public static void MeasurePlayAgainPressed(this IGamePlatform platform, RoundOutcome outcome, int round,
+            RoundRecord record = default)
         {
             platform.MeasureInteract(ResultCategory, PlayAgain);
             platform.MeasureInteract(ResultCategory, AgainOf(outcome, round));
+            if (record.Missions != null) {
+                platform.MeasureInteract(ResultCategory, AgainOfMissions(outcome, round, record));
+                platform.MeasureInteract(ResultCategory, AgainOfStreak(outcome, round, record.Streak));
+            }
         }
+
+        private static string AgainOfMissions(RoundOutcome outcome, int round, RoundRecord record) =>
+            $"again-{GameEvent.Clean(outcome.ToString())}-{(record.Missions.Completed.Count > 0 ? "mission" : "nomission")}-{RoundTag(round)}";
+
+        private static string AgainOfStreak(RoundOutcome outcome, int round, StreakChange streak) =>
+            $"again-{GameEvent.Clean(outcome.ToString())}-{(streak.IsLost ? "lost" : streak.IsStreak ? "streak" : "nostreak")}-{RoundTag(round)}";
+
+        /// <summary>
+        /// What a decided round did for the missions, the streak and the coins (<see cref="RoundRecord.Missions"/>,
+        /// <see cref="RoundRecord.Streak"/>, <see cref="RoundRecord.Coins"/>), from the saved record.
+        /// </summary>
+        public static void MeasureMeta(this IGamePlatform platform, int round, RoundRecord record, int missionsDone,
+            GameTuning tuning)
+        {
+            var tag = RoundTag(round);
+            if (record.Missions != null) {
+                foreach (var mission in record.Missions.Completed) {
+                    platform.Measure(MissionCategory, mission.Id, "complete");
+                }
+
+                platform.Measure(MissionCategory, $"done-{CountBucket(missionsDone)}-{tag}", "missions");
+            }
+
+            var streak = record.Streak.After;
+            var length = streak >= LastStreakBucket ? $"{LastStreakBucket}plus" : Mathf.Max(0, streak).ToString();
+            platform.Measure(ResultCategory, $"streak-{length}-{tag}", "streak");
+            if (record.Streak.IsLost) {
+                platform.Measure(ResultCategory, $"streak-lost-{tag}", "streak");
+            }
+
+            platform.Measure(ResultCategory, $"coins-{CoinsBucketOf(record.Coins.After, tuning)}-{tag}", "coins");
+        }
+
+        // Against the toppers' prices: short of the cheapest, short of the middle one, or more.
+        private static string CoinsBucketOf(int coins, GameTuning tuning)
+        {
+            var prices = new System.Collections.Generic.List<int>();
+            foreach (var topper in tuning.Toppers.All) {
+                prices.Add(topper.Price);
+            }
+
+            if (prices.Count == 0) {
+                return "few";
+            }
+
+            prices.Sort();
+            return coins < prices[0] ? "few" : coins < prices[prices.Count / 2] ? "mid" : "many";
+        }
+
+        public static void MeasureMissionsShown(this IGamePlatform platform) =>
+            platform.Measure(MissionCategory, "shown", "visible");
+
+        public static void MeasureTopperBought(this IGamePlatform platform, string topperId) =>
+            platform.Measure("shop", topperId, "buy");
+
+        /// <summary>A car bought for coins, in the garage or from its level's popup.</summary>
+        public static void MeasureCarBought(this IGamePlatform platform, string carId) =>
+            platform.Measure("shop", $"car-{carId}", "buy");
+
+        /// <summary>The popup that offers a car its level just opened, and its BUY pressed.</summary>
+        public static void MeasureCarOfferShown(this IGamePlatform platform, string carId) =>
+            platform.MeasureVisible("shop", $"offer-{carId}");
+
+        public static void MeasureCarOfferPressed(this IGamePlatform platform, string carId) =>
+            platform.MeasureInteract("shop", $"offer-{carId}");
+
+        public static void MeasureTopperEquip(this IGamePlatform platform, string topperId) =>
+            platform.Measure("garage", $"topper-{(string.IsNullOrEmpty(topperId) ? "none" : topperId)}", "equip");
+
+        public static void MeasureToppersShown(this IGamePlatform platform) => platform.MeasureVisible("garage", "toppers");
+
+        public static void MeasureToppersPressed(this IGamePlatform platform) =>
+            platform.MeasureInteract("garage", "toppers");
 
         /// <summary>
         /// The NEXT MATCH press after the first round or match of a visit, by what the player first steered with and

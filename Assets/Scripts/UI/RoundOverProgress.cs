@@ -319,8 +319,9 @@ namespace ToyCarArena.UI
                 var portrait = new VisualElement { pickingMode = PickingMode.Ignore };
                 portrait.AddToClassList("car-portrait");
                 new CarPortrait(portrait).Set(car, viewModel.SelectedColor);
+                var isForSale = viewModel.IsForSale(car);
                 await ShowReward(level, Strings.Get("result.new_car_tag"), GameText.Car(car),
-                    Strings.Get("result.drives_next"), portrait, token);
+                    isForSale ? null : Strings.Get("result.drives_next"), portrait, token, isForSale ? car : null);
             }
 
             foreach (var arena in viewModel.NewArenasAt(level)) {
@@ -341,8 +342,12 @@ namespace ToyCarArena.UI
         /// level over it, a tag, the reward and its name. A tap anywhere or a few seconds close it; NEXT MATCH by key
         /// still works under it, and leaving the screen takes it away.
         /// </summary>
+        /// <para>
+        /// A car with a price (<paramref name="forSale"/>) is offered with its BUY button and price while the coins pay
+        /// for it; the offer waits for the player instead of closing by itself, and a tap beside it leaves it for later.
+        /// </para>
         private async UniTask ShowReward(int level, string tag, string name, string caption, VisualElement art,
-            CancellationToken token)
+            CancellationToken token, CarCatalog.Entry forSale = null)
         {
             var overlay = new VisualElement();
             overlay.AddToClassList("level-reward");
@@ -369,9 +374,38 @@ namespace ToyCarArena.UI
                 card.Add(captionLabel);
             }
 
+            var isOffer = forSale != null && viewModel.CanAfford(forSale);
+            var closeAt = isOffer ? float.MaxValue : RewardAutoClose;
+            var isClosed = false;
+            if (isOffer) {
+                var buy = new Button();
+                buy.RemoveFromClassList(Button.ussClassName);
+                buy.AddToClassList("pill");
+                buy.AddToClassList("level-reward__buy");
+                buy.Add(Outlined(Strings.Get("result.buy"), "level-reward__buy-label", out _));
+                var price = new VisualElement { pickingMode = PickingMode.Ignore };
+                price.AddToClassList("pill");
+                price.AddToClassList("level-reward__price");
+                price.Add(RoundOverMeta.Coin());
+                price.Add(Text(viewModel.PriceOf(forSale).ToString(), "level-reward__price-value"));
+                buy.Add(price);
+                // The overlay closes on any press: the button keeps its own press.
+                buy.RegisterCallback<PointerDownEvent>(evt => evt.StopPropagation());
+                buy.clicked += () => {
+                    if (isClosed || !viewModel.BuyCar(forSale)) {
+                        return;
+                    }
+
+                    buy.SetEnabled(false);
+                    buy.style.display = DisplayStyle.None;
+                    card.schedule.Execute(() => isClosed = true).StartingIn(900);
+                };
+                card.Add(buy);
+                viewModel.CarOffered(forSale);
+            }
+
             overlay.Add(card);
             overlay.Add(Text(Strings.Get(isTouch ? "result.tap_continue" : "result.click_continue"), "level-reward__hint"));
-            var isClosed = false;
             overlay.RegisterCallback<PointerDownEvent>(evt => {
                 evt.StopPropagation();
                 isClosed = true;
@@ -379,11 +413,12 @@ namespace ToyCarArena.UI
 
             overlay.style.opacity = 0f;
             SetScale(card, 0f);
-            root.Add(overlay);
+            // Inside the screen's own element, which carries the style sheet.
+            (root.Q<VisualElement>("round-over") ?? root).Add(overlay);
             try {
                 var popping = Pop(card, token);
                 var shownAt = Time.realtimeSinceStartup;
-                while (!isClosed && Time.realtimeSinceStartup - shownAt < RewardAutoClose) {
+                while (!isClosed && Time.realtimeSinceStartup - shownAt < closeAt) {
                     var shown = Time.realtimeSinceStartup - shownAt;
                     rays.style.rotate = new Rotate(shown / RewardRaysTurnSeconds * 360f % 360f);
                     overlay.style.opacity = Mathf.Clamp01(shown / RewardFadeIn);

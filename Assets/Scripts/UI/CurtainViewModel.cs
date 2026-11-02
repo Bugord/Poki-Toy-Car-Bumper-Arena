@@ -31,8 +31,17 @@ namespace ToyCarArena.UI
         /// <summary>Whether the player has not yet played that arena.</summary>
         public bool ArenaIsNew { get; private set; }
 
-        public void ShowLobby(ISessionRoster roster, int botCount, int nemesis, string arenaName = null, bool arenaIsNew = false)
+        /// <summary>The win streak the coming round is played on, or 0.</summary>
+        public int Streak { get; private set; }
+
+        /// <summary>The line about a mission under the seats, or null for a tip.</summary>
+        public string Mission { get; private set; }
+
+        public void ShowLobby(ISessionRoster roster, int botCount, int nemesis, string arenaName = null, bool arenaIsNew = false,
+            int streak = 0, string mission = null)
         {
+            Streak = streak;
+            Mission = mission;
             ArenaName = arenaName;
             ArenaIsNew = arenaIsNew;
             var rows = new List<LobbyRow> { new(0, roster.ColorOf(0), GameText.You, roster.LevelOf(0), null, false) };

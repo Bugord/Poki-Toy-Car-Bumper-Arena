@@ -25,6 +25,8 @@ namespace ToyCarArena.Gameplay.Round
             this.BotCount = BotCountFor(tuning, progress);
             this.PlayerPace = Mathf.Lerp(easy.PlayerPace, normal.PlayerPace, level);
             this.PlayerWeight = Mathf.Lerp(easy.PlayerWeight, normal.PlayerWeight, level);
+            // A player on a streak is the leader to stop: a little more wanted, beyond the usual cap.
+            this.StreakWeight = progress.WinStreak >= tuning.Streaks.Start ? settings.StreakWeight : 0f;
             this.PlayerGrace = Mathf.Lerp(easy.PlayerGrace, normal.PlayerGrace, level);
             this.MaxPlayerHunters = Mathf.RoundToInt(Mathf.Lerp(easy.MaxPlayerHunters, normal.MaxPlayerHunters, level));
             this.ReactionTime = Vector2.Lerp(easy.ReactionTime, normal.ReactionTime, level);
@@ -69,6 +71,9 @@ namespace ToyCarArena.Gameplay.Round
 
         public float PlayerPace { get; }
         public float PlayerWeight { get; }
+
+        /// <summary>What the player's car counts for in the bots' picks on top of the capped weight, on a streak.</summary>
+        public float StreakWeight { get; }
         public float PlayerGrace { get; }
         public int MaxPlayerHunters { get; }
         public Vector2 ReactionTime { get; }

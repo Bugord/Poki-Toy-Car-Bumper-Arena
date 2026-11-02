@@ -86,10 +86,10 @@ rank.silver,Rank name,SILVER,ARGENT,ARGENTO,SILBER,PLATA,GÜMÜŞ,PRATA,СЕРЕ
 rank.gold,Rank name,GOLD,OR,ORO,GOLD,ORO,ALTIN,OURO,ЗОЛОТО
 rank.legend,Rank name,LEGEND,LÉGENDE,LEGGENDA,LEGENDE,LEYENDA,EFSANE,LENDA,ЛЕГЕНДА
 garage.title,Garage screen title,GARAGE,GARAGE,GARAGE,GARAGE,GARAJE,GARAJ,GARAGEM,ГАРАЖ
-garage.driving_next,Over the selected car,DRIVING NEXT,PROCHAINE COURSE,PROSSIMA GUIDA,ALS NÄCHSTES,SIGUIENTE,SIRADAKİ,PRÓXIMO,СЛЕДУЮЩАЯ
-garage.in_use,Selected car card status,IN USE,CHOISIE,IN USO,AKTIV,EN USO,SEÇİLİ,EM USO,ВЫБРАНА
-garage.use,Unlocked car card status,USE,CHOISIR,USA,NUTZEN,USAR,SEÇ,USAR,ВЫБРАТЬ
+garage.in_use,Selected car or hat card status,EQUIPPED,ÉQUIPÉ,IN USO,AKTIV,EQUIPADO,SEÇİLİ,EQUIPADO,ВЫБРАНО
+garage.use,Owned car or hat card status: tap to put it on,EQUIP,ÉQUIPER,SCEGLI,WÄHLEN,EQUIPAR,SEÇ,EQUIPAR,ВЫБРАТЬ
 garage.unlock_at,Locked car tooltip,UNLOCK AT LVL {0},DÉBLOQUÉE AU NIV. {0},SBLOCCO AL LIV. {0},AB LVL {0},SE DESBLOQUEA EN NIV. {0},{0}. SEVİYEDE AÇILIR,LIBERA NO NÍV. {0},ОТКРОЕТСЯ НА УР. {0}
+garage.need_more,Over a too dear card: how many coins are missing; max ~16 chars,NEED {0} MORE,ENCORE {0},NE MANCANO {0},NOCH {0},FALTAN {0},{0} DAHA LAZIM,FALTAM {0},НУЖНО ЕЩЁ {0}
 settings.title,Settings popup title,SETTINGS,RÉGLAGES,IMPOSTAZIONI,EINSTELLUNGEN,AJUSTES,AYARLAR,CONFIGURAÇÕES,НАСТРОЙКИ
 settings.music,Music toggle caption,MUSIC,MUSIQUE,MUSICA,MUSIK,MÚSICA,MÜZİK,MÚSICA,МУЗЫКА
 settings.sound,Sound toggle caption,SOUND,SON,SUONI,SOUND,SONIDO,SES,SOM,ЗВУК
@@ -121,3 +121,36 @@ hud.saved,"Match: comic sticker over the player's car when its balloon catches a
 hud.tap_to_use,"Match: first-time hint over the touch item button; max ~14 chars",TAP TO USE,TOUCHE POUR UTILISER,TOCCA PER USARE,TIPPEN ZUM NUTZEN,TOCA PARA USAR,KULLANMAK İÇİN DOKUN,TOQUE PARA USAR,"ЖМИ, ЧТОБЫ ПРИМЕНИТЬ"
 hud.press_e,"Match: first-time hint over the item button on a desktop: the E key uses the item; keep the letter E",PRESS E,APPUIE SUR E,PREMI E,DRÜCKE E,PULSA E,E TUŞUNA BAS,APERTE E,НАЖМИ E
 hud.right_click,"Match: first-time hint over the item button on a desktop: the right mouse button uses the item (the E key cap shows beside it); max ~12 chars",RIGHT CLICK,CLIC DROIT,CLIC DESTRO,RECHTSKLICK,CLIC DERECHO,SAĞ TIK,BOTÃO DIREITO,ПРАВЫЙ КЛИК
+mission.title,Header over the three missions on the result and the lobby,MISSIONS,MISSIONS,MISSIONI,MISSIONEN,MISIONES,GÖREVLER,MISSÕES,МИССИИ
+mission.final_two,Mission: end a round among the last two cars,MAKE THE FINAL TWO,FINIS DANS LES 2 DERNIERS,ARRIVA TRA GLI ULTIMI 2,KOMM UNTER DIE LETZTEN 2,LLEGA A LOS 2 ÚLTIMOS,SON İKİYE KAL,CHEGUE AOS 2 ÚLTIMOS,ДОЖИВИ ДО ПОСЛЕДНЕЙ ДВОЙКИ
+mission.round_boosts,Mission: boost {0} times in one round,BOOST {0} TIMES IN A ROUND,FAIS {0} TURBOS EN 1 MANCHE,USA {0} TURBO IN UN ROUND,BOOSTE {0}× IN EINER RUNDE,USA {0} TURBOS EN UNA RONDA,BİR TURDA {0} KEZ HIZLAN,USE {0} TURBOS NUMA RODADA,УСКОРЬСЯ {0} РАЗ ЗА РАУНД
+mission.boosts,Mission: boost {0} times in total,BOOST {0} TIMES,FAIS {0} TURBOS,USA {0} TURBO,BOOSTE {0}×,USA {0} TURBOS,{0} KEZ HIZLAN,USE {0} TURBOS,УСКОРЬСЯ {0} РАЗ
+mission.round_knockouts,Mission: knock {0} cars off in one round,KNOCK OUT {0} CARS IN A ROUND,ÉJECTE {0} VOITURES EN 1 MANCHE,BUTTA FUORI {0} AUTO IN UN ROUND,WIRF {0} AUTOS IN EINER RUNDE RAUS,ECHA {0} COCHES EN UNA RONDA,BİR TURDA {0} ARABA DÜŞÜR,DERRUBE {0} CARROS NUMA RODADA,ВЫБЕЙ {0} МАШИНКИ ЗА РАУНД
+mission.knockouts,Mission: knock {0} cars off in total,KNOCK OUT {0} CARS,ÉJECTE {0} VOITURES,BUTTA FUORI {0} AUTO,WIRF {0} AUTOS RAUS,ECHA {0} COCHES,{0} ARABA DÜŞÜR,DERRUBE {0} CARROS,ВЫБЕЙ {0} МАШИНОК
+mission.win_one,Mission: win one round,WIN A ROUND,GAGNE UNE MANCHE,VINCI UN ROUND,GEWINNE EINE RUNDE,GANA UNA RONDA,BİR TUR KAZAN,VENÇA UMA RODADA,ВЫИГРАЙ РАУНД
+mission.wins,Mission: win {0} rounds in total,WIN {0} ROUNDS,GAGNE {0} MANCHES,VINCI {0} ROUND,GEWINNE {0} RUNDEN,GANA {0} RONDAS,{0} TUR KAZAN,VENÇA {0} RODADAS,ВЫИГРАЙ {0} РАУНДА
+mission.rounds_one,"Mission: finish one round, the very first mission",PLAY A ROUND,JOUE UNE MANCHE,GIOCA UN ROUND,SPIELE EINE RUNDE,JUEGA UNA RONDA,BİR TUR OYNA,JOGUE UMA RODADA,СЫГРАЙ РАУНД
+mission.rounds,Mission: finish {0} rounds,PLAY {0} ROUNDS,JOUE {0} MANCHES,GIOCA {0} ROUND,SPIELE {0} RUNDEN,JUEGA {0} RONDAS,{0} TUR OYNA,JOGUE {0} RODADAS,СЫГРАЙ {0} РАУНДА
+mission.arena_rounds,Mission: finish {0} rounds on the arena named {1},PLAY {0} ROUNDS ON {1},JOUE {0} MANCHES SUR {1},GIOCA {0} ROUND SU {1},SPIELE {0} RUNDEN AUF {1},JUEGA {0} RONDAS EN {1},{1} ARENASINDA {0} TUR OYNA,JOGUE {0} RODADAS EM {1},СЫГРАЙ {0} РАУНДА НА {1}
+mission.revenge,Mission: knock off the bot marked REVENGE,TAKE REVENGE,PRENDS TA REVANCHE,PRENDITI LA RIVINCITA,HOL DIR DIE REVANCHE,CONSIGUE TU VENGANZA,RÖVANŞINI AL,DÊ O TROCO,ОТОМСТИ
+mission.items_used,Mission: use {0} items from the boxes,USE {0} ITEMS,UTILISE {0} OBJETS,USA {0} OGGETTI,NUTZE {0} ITEMS,USA {0} OBJETOS,{0} EŞYA KULLAN,USE {0} ITENS,ПРИМЕНИ {0} ПРЕДМЕТА
+mission.boxes,Mission: break {0} mystery boxes,BREAK {0} BOXES,CASSE {0} BOÎTES,ROMPI {0} SCATOLE,KNACK {0} KISTEN,ROMPE {0} CAJAS,{0} KUTU KIR,QUEBRE {0} CAIXAS,РАЗБЕЙ {0} КОРОБКИ
+mission.item_knockouts,Mission: knock a car off with an item,KNOCK OUT A CAR WITH AN ITEM,ÉJECTE UNE VOITURE AVEC UN OBJET,BUTTA FUORI UN'AUTO CON UN OGGETTO,WIRF EIN AUTO MIT EINEM ITEM RAUS,ECHA UN COCHE CON UN OBJETO,EŞYAYLA BİR ARABA DÜŞÜR,DERRUBE UM CARRO COM UM ITEM,ВЫБЕЙ МАШИНКУ ПРЕДМЕТОМ
+result.streak,"Gold tag: the player's win streak, next round pays x1.5; {0} is its length",STREAK ×{0},SÉRIE ×{0},SERIE ×{0},SERIE ×{0},RACHA ×{0},SERİ ×{0},SEQUÊNCIA ×{0},СЕРИЯ ×{0}
+result.streak_lost,Grey tag: the player's win streak ended,STREAK LOST,SÉRIE PERDUE,SERIE PERSA,SERIE VORBEI,RACHA PERDIDA,SERİ BİTTİ,SEQUÊNCIA PERDIDA,СЕРИЯ ПРЕРВАНА
+result.streak_bonus,Under the streak in the lobby: the round's XP and coins are multiplied,BONUS ×1.5,"BONUS ×1,5","BONUS ×1,5","BONUS ×1,5","BONO ×1,5","BONUS ×1,5","BÔNUS ×1,5","БОНУС ×1,5"
+hud.mission,Sticker over the player's car when a mission is done; max ~9 chars,MISSION!,MISSION !,MISSIONE!,MISSION!,¡MISIÓN!,GÖREV!,MISSÃO!,МИССИЯ!
+hud.space_or_click,Desktop arrow sticker over the boost indicator,SPACE OR CLICK!,ESPACE OU CLIC !,SPAZIO O CLIC!,LEERTASTE ODER KLICK!,¡ESPACIO O CLIC!,BOŞLUK YA DA TIKLA!,ESPAÇO OU CLIQUE!,ПРОБЕЛ ИЛИ КЛИК!
+garage.cars,Garage tab with the cars; max ~10 chars,CARS,VOITURES,AUTO,AUTOS,COCHES,ARABALAR,CARROS,МАШИНКИ
+garage.toppers,Garage tab with the roof hats bought for coins; max ~10 chars,HATS,CHAPEAUX,CAPPELLI,HÜTE,GORROS,ŞAPKALAR,CHAPÉUS,ШАПКИ
+garage.none,Topper card that takes the topper off,NONE,AUCUN,NESSUNO,KEINER,NINGUNO,YOK,NENHUM,БЕЗ ШАПКИ
+topper.party-hat.name,Topper name,PARTY HAT,CHAPEAU DE FÊTE,CAPPELLO PARTY,PARTYHUT,GORRO DE FIESTA,PARTİ ŞAPKASI,CHAPÉU DE FESTA,КОЛПАК
+topper.cone.name,Topper name: a traffic cone,CONE,CÔNE,CONO,PYLONE,CONO,KONİ,CONE,КОНУС
+topper.antenna.name,Topper name: an antenna with a ball,ANTENNA,ANTENNE,ANTENNA,ANTENNE,ANTENA,ANTEN,ANTENA,АНТЕННА
+topper.flag.name,Topper name,FLAG,DRAPEAU,BANDIERA,FLAGGE,BANDERA,BAYRAK,BANDEIRA,ФЛАЖОК
+topper.horns.name,Topper name,HORNS,CORNES,CORNA,HÖRNER,CUERNOS,BOYNUZLAR,CHIFRES,РОЖКИ
+topper.propeller.name,Topper name: a propeller hat,PROPELLER,HÉLICE,ELICA,PROPELLER,HÉLICE,PERVANE,HÉLICE,ПРОПЕЛЛЕР
+topper.fin.name,Topper name: a shark fin,FIN,AILERON,PINNA,FLOSSE,ALETA,YÜZGEÇ,BARBATANA,ПЛАВНИК
+topper.crown.name,Topper name,CROWN,COURONNE,CORONA,KRONE,CORONA,TAÇ,COROA,КОРОНА
+lobby.mission,"Lobby line under the seats instead of a tip: the mission closest to done; {0} is the task, {1} its progress like 5/6",MISSION: {0} {1},MISSION : {0} {1},MISSIONE: {0} {1},MISSION: {0} {1},MISIÓN: {0} {1},GÖREV: {0} {1},MISSÃO: {0} {1},МИССИЯ: {0} {1}
+result.buy,Button on the level popup that buys the new car for coins; short,BUY,ACHETER,COMPRA,KAUFEN,COMPRAR,AL,COMPRAR,КУПИТЬ

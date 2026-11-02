@@ -576,6 +576,12 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float maxPlayerWeight = 0.25f;
 
+            [Tooltip("What the player's car counts for on top of that cap while the player is on a win streak " +
+                "(GameTuning.Streaks): the leader to stop, a little more wanted")]
+            [Min(0f)]
+            [SerializeField]
+            private float streakWeight = 0.08f;
+
             [Tooltip("What a target counts against it for each other bot already after it, so the bots spread out " +
                 "instead of mobbing one car")]
             [Min(0f)]
@@ -714,6 +720,7 @@ namespace ToyCarArena.Gameplay
             public float DistanceWeight => distanceWeight;
             public float EdgeWeight => edgeWeight;
             public float MaxPlayerWeight => maxPlayerWeight;
+            public float StreakWeight => streakWeight;
             public float CrowdPenalty => crowdPenalty;
             public float PickNoise => pickNoise;
             public float StickWeight => stickWeight;
