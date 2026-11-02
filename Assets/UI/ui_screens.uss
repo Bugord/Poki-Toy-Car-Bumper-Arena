@@ -3298,16 +3298,8 @@
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    height: 124px;
+    height: 100px;
     margin-top: 4px;
-}
-
-.garage__preview-caption {
-    margin: 0;
-    padding: 0;
-    font-size: 34px;
-    letter-spacing: 3px;
-    color: var(--shade);
 }
 
 .garage__preview-name {
@@ -3790,9 +3782,8 @@
     margin-left: -120px;
 }
 
-.garage--landscape .garage__preview-caption { font-size: 44px; }
 .garage--landscape .garage__preview-name { font-size: 110px; }
-.garage--landscape .garage__plate { height: 190px; }
+.garage--landscape .garage__plate { height: 140px; }
 
 .garage--landscape .garage__colors { margin-top: 36px; }
 

@@ -22,11 +22,6 @@
                     <ui:VisualElement name="garage-preview" picking-mode="Ignore" class="car-portrait garage__preview-car" />
                 </ui:VisualElement>
                 <ui:VisualElement picking-mode="Ignore" class="garage__plate">
-                    <ui:Label text="DRIVING NEXT" picking-mode="Ignore" class="garage__preview-caption">
-                        <Bindings>
-                            <Bugord.App.Localization.LocalizedText property="text" key="garage.driving_next" />
-                        </Bindings>
-                    </ui:Label>
                     <ui:VisualElement picking-mode="Ignore" class="stroke">
                         <ui:Label name="garage-preview-name" picking-mode="Ignore" class="display garage__preview-name" />
                         <ui:Label name="garage-preview-name-face" picking-mode="Ignore" class="display garage__preview-name stroke__face" />
