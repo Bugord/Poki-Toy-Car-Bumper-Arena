@@ -58,6 +58,7 @@ namespace ToyCarArena.UI
         private const string RespawnShownClass = "hud__respawn--shown";
         private const string RespawnPopClass = "hud__respawn--pop";
         private const string ShieldShownClass = "hud__shield--shown";
+        private const string StreakShownClass = "hud__streak--shown";
         private const string RevengeClass = "car-name--revenge";
         private const string PowerShownClass = "hud__power--shown";
         private const string ItemShownClass = "hud__item--shown";
@@ -253,6 +254,8 @@ namespace ToyCarArena.UI
         private Label respawnCountFace;
         private VisualElement shield;
         private VisualElement shieldFill;
+        private VisualElement streak;
+        private int streakShown = -1;
         // A match's pickups: the badge of the ability the player's car runs, with its icon, name and draining bar.
         private ItemKind shownAbility;
         private VisualElement power;
@@ -358,6 +361,7 @@ namespace ToyCarArena.UI
             respawnCountFace = Root.Q<Label>("respawn-count-face");
             shield = Root.Q<VisualElement>("shield");
             shieldFill = Root.Q<VisualElement>("shield-fill");
+            streak = CreateStreak(shield);
             power = Root.Q<VisualElement>("power");
             powerIcon = Root.Q<VisualElement>("power-icon");
             powerName = Root.Q<Label>("power-name");
@@ -416,6 +420,7 @@ namespace ToyCarArena.UI
             ViewModel.ItemRolled += OnItemRolled;
             ViewModel.ItemUsed += OnItemUsed;
             ViewModel.AutoBoosted += OnAutoBoosted;
+            ViewModel.MissionDone += OnMissionDone;
             ViewModel.ItemHit += OnItemHit;
 
             // On the press, not the release: a boost is all about the moment.
@@ -460,6 +465,7 @@ namespace ToyCarArena.UI
             ViewModel.ItemRolled -= OnItemRolled;
             ViewModel.ItemUsed -= OnItemUsed;
             ViewModel.AutoBoosted -= OnAutoBoosted;
+            ViewModel.MissionDone -= OnMissionDone;
             ViewModel.ItemHit -= OnItemHit;
 
             if (boostButton != null) {
@@ -623,6 +629,53 @@ namespace ToyCarArena.UI
             shield.style.left = point.x;
             shield.style.top = point.y;
             shieldFill.style.width = Length.Percent(share * 100f);
+        }
+
+        /// <summary>
+        /// On a win streak a gold crown with ×N floats over the player's car: the round pays more, and the bots go for
+        /// it a little more. It makes way for SAFE, and goes with the car when it falls.
+        /// </summary>
+        private void ShowStreak(Camera camera)
+        {
+            var isShown = ViewModel.Streak > 0 && camera != null && streak.panel != null && ViewModel.IsCarIn(0)
+                && !shield.ClassListContains(ShieldShownClass);
+            streak.EnableInClassList(StreakShownClass, isShown);
+            if (!isShown) {
+                return;
+            }
+
+            if (streakShown != ViewModel.Streak) {
+                streakShown = ViewModel.Streak;
+                streak.Query<Label>().ForEach(label => label.text = $"×{streakShown}");
+            }
+
+            var position = ViewModel.PlayerPosition + Vector3.up * ShieldHeight;
+            var panelPoint = RuntimePanelUtils.CameraTransformWorldToPanel(streak.panel, position, camera);
+            var point = nameLayer.WorldToLocal(panelPoint);
+            var size = nameLayer.layout.size;
+            var halfWidth = streak.layout.width * 0.5f + NameMargin;
+            var height = streak.layout.height + NameMargin;
+            var left = halfWidth + safeInsets.Left;
+            var top = height + contentTopInset;
+            point.x = Mathf.Clamp(point.x, left, Mathf.Max(left, size.x - halfWidth - safeInsets.Right));
+            point.y = Mathf.Clamp(point.y, top, Mathf.Max(top, size.y - NameMargin - safeInsets.Bottom));
+            ClearScoreboard(nameLayer, ref point, halfWidth, height);
+            streak.style.left = point.x;
+            streak.style.top = point.y;
+        }
+
+        // The crown and ×N, built once beside the SAFE sticker (the same layer, the same anchor over the car).
+        private VisualElement CreateStreak(VisualElement beside)
+        {
+            var element = new VisualElement { name = "streak", pickingMode = PickingMode.Ignore };
+            element.AddToClassList("hud__streak");
+            var crown = new VisualElement { pickingMode = PickingMode.Ignore };
+            crown.AddToClassList("hud__streak-crown");
+            crown.generateVisualContent += RoundOverMatch.DrawCrown;
+            element.Add(crown);
+            element.Add(CreateOutlinedText("", "hud__streak-text"));
+            beside.parent.Insert(beside.parent.IndexOf(beside), element);
+            return element;
         }
 
         /// <summary>
@@ -910,6 +963,9 @@ namespace ToyCarArena.UI
                 Pulse(boostButton, BoostPopClass);
             }
         }
+
+        /// <summary>MISSION! over the player's car when the round completes one of the result's missions.</summary>
+        private void OnMissionDone() => ShowPopup(ViewModel.PlayerPosition, false, ItemKind.None, "mission");
 
         /// <summary>
         /// A comic word where the player's item lands: POW! where the glove punches a car, STRIKE! on each car the
@@ -1212,6 +1268,8 @@ namespace ToyCarArena.UI
                 ShowScoreboard();
                 ShowShield(camera);
             }
+
+            ShowStreak(camera);
 
             if (carNames == null || camera == null || nameLayer.panel == null) {
                 return;

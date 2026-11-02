@@ -482,6 +482,7 @@
 .lobby__row--left .hud__chip { background-color: var(--muted); }
 .lobby__row--left .lobby__name { color: var(--muted); }
 .lobby__badge--left { background-color: var(--silver); }
+.lobby__badge--streak { width: auto; padding: 8px 18px; rotate: -3deg; }
 
 /* A seat still searching: a dimmer strip with a spinning ring where the chip goes and SEARCHING..., until a player is
    found for it and pops in over it. */
@@ -1084,6 +1085,34 @@
     border-radius: 9px;
     background-color: var(--white);
     overflow: hidden;
+}
+
+/* The win streak over the player's car (HudView places it like SAFE): a gold crown over ×N. */
+.hud__streak {
+    display: none;
+    position: absolute;
+    translate: -50% -100%;
+    align-items: center;
+}
+
+.hud__streak--shown {
+    display: flex;
+}
+
+.hud__streak-crown {
+    width: 72px;
+    height: 50px;
+}
+
+.hud__streak-text {
+    margin: -6px 0 0 0;
+    padding: 0;
+    font-size: 44px;
+    color: var(--gold);
+    -unity-text-outline-width: 6px;
+    -unity-text-outline-color: var(--navy);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
 }
 
 .hud__shield-fill {
@@ -1778,6 +1807,13 @@
 
 .ko-pop--strike .ko-pop__text { color: rgb(62, 196, 160); }
 .ko-pop--saved .ko-pop__text { color: rgb(255, 92, 160); }
+
+/* A mission done during the round: MISSION! over the player's car, green as the XP it pays. */
+.ko-pop--mission .ko-pop__text {
+    margin-left: 0;
+    font-size: 96px;
+    color: rgb(91, 214, 77);
+}
 
 /* The start prompt of a visit's first round, while the cars wait for the player's first steer or boost (HudView shows
    it): TAP TO START or CLICK TO START, outlined, and under it a dark plate: an orange dot and TAP TO BOOST on a touch

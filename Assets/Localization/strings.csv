@@ -152,3 +152,4 @@ topper.horns.name,Topper name,HORNS,CORNES,CORNA,HÖRNER,CUERNOS,BOYNUZLAR,CHIFR
 topper.propeller.name,Topper name: a propeller hat,PROPELLER,HÉLICE,ELICA,PROPELLER,HÉLICE,PERVANE,HÉLICE,ПРОПЕЛЛЕР
 topper.fin.name,Topper name: a shark fin,FIN,AILERON,PINNA,FLOSSE,ALETA,YÜZGEÇ,BARBATANA,ПЛАВНИК
 topper.crown.name,Topper name,CROWN,COURONNE,CORONA,KRONE,CORONA,TAÇ,COROA,КОРОНА
+lobby.mission,"Lobby line under the seats instead of a tip: the mission closest to done; {0} is the task, {1} its progress like 5/6",MISSION: {0} {1},MISSION : {0} {1},MISSIONE: {0} {1},MISSION: {0} {1},MISIÓN: {0} {1},GÖREV: {0} {1},MISSÃO: {0} {1},МИССИЯ: {0} {1}

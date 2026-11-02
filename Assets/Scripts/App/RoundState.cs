@@ -39,6 +39,10 @@ namespace ToyCarArena.App
     /// </summary>
     public sealed class RoundState : StateBase
     {
+        // How often a played round's missions are counted for MISSION!, in milliseconds: well under the sticker's own
+        // spring, and nothing a frame would notice.
+        private const int MissionWatchInterval = 200;
+
         private readonly LevelScene levelScene;
         private readonly IScreenNavigator navigator;
         private readonly ScreenCurtain curtain;
@@ -125,6 +129,28 @@ namespace ToyCarArena.App
                 currentVariant = variant;
             }
 
+            // Missions the round completes while it is played (knock-outs, boosts, revenge, items, boxes) pop MISSION!
+            // on the HUD at once; the ones only a decided round counts show on the result.
+            MissionStats LiveStats() => new(false, RoundOutcome.Survived, 0, round.PlayerKnockouts, driver.Boosts,
+                round.RevengeTaken, driver.ItemsUsed, pickupCount, itemKnockouts, playedMap);
+
+            async UniTaskVoid WatchMissions(HudViewModel hudModel)
+            {
+                var shown = missions.CountDone(LiveStats());
+                while (!round.IsFinished) {
+                    if (await UniTask.Delay(MissionWatchInterval, true, cancellationToken: token)
+                            .SuppressCancellationThrow()) {
+                        return;
+                    }
+
+                    var done = missions.CountDone(LiveStats());
+                    if (done > shown && !round.IsFinished) {
+                        shown = done;
+                        hudModel.ShowMissionDone();
+                    }
+                }
+            }
+
             void BeginRound()
             {
                 round.Begin();
@@ -154,7 +180,8 @@ namespace ToyCarArena.App
                 pickups.Collected += OnCollected;
 
                 var hudRound = new HudRound(round, driver, tuning.Controls, waitsForPlayer, roundNumber,
-                    playerProgress.TotalXp == 0);
+                    playerProgress.TotalXp == 0,
+                    progress.WinStreak >= tuning.Streaks.Start ? progress.WinStreak : 0);
                 hud = await navigator.OpenAsync<HudViewModel, HudRound>(hudRound, token);
                 await curtain.Hide();
 
@@ -164,6 +191,7 @@ namespace ToyCarArena.App
 
                 await Kickoff(hud.ViewModel, tuning.Round, token);
                 BeginRound();
+                WatchMissions(hud.ViewModel).Forget();
 
                 var result = await finished.Task.AttachExternalCancellation(token);
                 platform.GameplayStop();

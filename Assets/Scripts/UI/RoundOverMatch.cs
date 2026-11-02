@@ -292,7 +292,8 @@ namespace ToyCarArena.UI
         }
 
         // A gold three-point crown with the navy outline of the stickers.
-        private static void DrawCrown(MeshGenerationContext context)
+        /// <summary>A gold crown with a navy outline filling the element; the HUD's streak crown draws the same.</summary>
+        internal static void DrawCrown(MeshGenerationContext context)
         {
             var rect = context.visualElement.contentRect;
             var w = rect.width;

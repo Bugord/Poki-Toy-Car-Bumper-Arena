@@ -96,7 +96,8 @@ namespace ToyCarArena.UI
             BuildArenaLine();
             fill = 0f;
             fillTime = 0f;
-            Root.Q<Label>("lobby-tip").text = Strings.Get(Tips[Random.Range(0, Tips.Length)]);
+            // The mission closest to done, while there is one; a tip otherwise.
+            Root.Q<Label>("lobby-tip").text = ViewModel.Mission ?? Strings.Get(Tips[Random.Range(0, Tips.Length)]);
             foreach (var row in ViewModel.Rows) {
                 var seat = new Seat { Slot = Element("lobby__slot") };
                 if (row.Name != null && row.Index != 0) {
@@ -104,11 +105,11 @@ namespace ToyCarArena.UI
                     seat.Slot.Add(seat.Searching);
                 }
                 if (row.Name != null) {
-                    seat.Incoming = CreateRow(row, false);
+                    seat.Incoming = CreateRow(row, false, ViewModel.Streak);
                     seat.Slot.Add(seat.Incoming);
                 }
                 if (row.LeftName != null) {
-                    seat.Outgoing = CreateRow(row, true);
+                    seat.Outgoing = CreateRow(row, true, 0);
                     seat.Slot.Add(seat.Outgoing);
                 }
                 seats.Add(seat);
@@ -253,7 +254,7 @@ namespace ToyCarArena.UI
             return sticker;
         }
 
-        private static VisualElement CreateRow(LobbyRow row, bool isLeft)
+        private static VisualElement CreateRow(LobbyRow row, bool isLeft, int streak)
         {
             var sticker = Element("lobby__row");
             sticker.EnableInClassList("lobby__row--left", isLeft);
@@ -271,6 +272,12 @@ namespace ToyCarArena.UI
                 var target = Element("revenge-target");
                 target.Add(Element("revenge-target__center"));
                 sticker.Add(target);
+            }
+            // The player's own win streak: the round it leads to pays more.
+            if (row.Index == 0 && streak > 0) {
+                var badge = OutlinedText(Strings.Format("result.streak", streak), "lobby__badge");
+                badge.AddToClassList("lobby__badge--streak");
+                sticker.Add(badge);
             }
             if (isLeft) {
                 var badge = OutlinedText(Strings.Get("lobby.left"), "lobby__badge");
