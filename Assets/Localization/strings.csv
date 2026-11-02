@@ -90,6 +90,7 @@ garage.driving_next,Over the selected car,DRIVING NEXT,PROCHAINE COURSE,PROSSIMA
 garage.in_use,Selected car card status,IN USE,CHOISIE,IN USO,AKTIV,EN USO,SEÇİLİ,EM USO,ВЫБРАНА
 garage.use,Unlocked car card status,USE,CHOISIR,USA,NUTZEN,USAR,SEÇ,USAR,ВЫБРАТЬ
 garage.unlock_at,Locked car tooltip,UNLOCK AT LVL {0},DÉBLOQUÉE AU NIV. {0},SBLOCCO AL LIV. {0},AB LVL {0},SE DESBLOQUEA EN NIV. {0},{0}. SEVİYEDE AÇILIR,LIBERA NO NÍV. {0},ОТКРОЕТСЯ НА УР. {0}
+garage.need_more,Over a too dear card: how many coins are missing; max ~16 chars,NEED {0} MORE,ENCORE {0},NE MANCANO {0},NOCH {0},FALTAN {0},{0} DAHA LAZIM,FALTAM {0},НУЖНО ЕЩЁ {0}
 settings.title,Settings popup title,SETTINGS,RÉGLAGES,IMPOSTAZIONI,EINSTELLUNGEN,AJUSTES,AYARLAR,CONFIGURAÇÕES,НАСТРОЙКИ
 settings.music,Music toggle caption,MUSIC,MUSIQUE,MUSICA,MUSIK,MÚSICA,MÜZİK,MÚSICA,МУЗЫКА
 settings.sound,Sound toggle caption,SOUND,SON,SUONI,SOUND,SONIDO,SES,SOM,ЗВУК
