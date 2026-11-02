@@ -37,7 +37,9 @@ namespace ToyCarArena.Gameplay
         public TopperSettings Toppers => toppers;
 
         /// <summary>
-        /// A round's coins: about 15–40, so the first topper is 3–4 rounds away and the dearest about 25–30.
+        /// A round's coins: about 30–100, plus the missions it completes. Generous on purpose: about three minutes of play
+        /// (four or five rounds) buy most of the shop, the cheap toppers and the first paid cars, and only the crown
+        /// and the last cars stay long goals.
         /// </summary>
         [Serializable]
         public sealed class CoinSettings
@@ -45,23 +47,25 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Coins for every finished round, whatever its outcome")]
             [Min(0)]
             [SerializeField]
-            private int roundCoins = 12;
+            private int roundCoins = 30;
 
             [Tooltip("Coins for each knock-out credited to the player")]
             [Min(0)]
             [SerializeField]
-            private int knockoutCoins = 6;
+            private int knockoutCoins = 15;
 
             [Tooltip("Extra coins for being the last car standing")]
             [Min(0)]
             [SerializeField]
-            private int winCoins = 12;
+            private int winCoins = 30;
 
-            [Tooltip("Cars bought for coins once their level opens them: the first one is cheap enough for the coins a " +
-                "new player has after one round, with some left over; the others are long goals")]
+            [Tooltip("Cars bought for coins once their level opens them, every other one of the catalog: the first is " +
+                "cheap enough for the coins a new player has after one round, with some left over; the last two are long goals")]
             [SerializeField]
             private CarPrice[] carPrices = {
-                new("speedster", 25),
+                new("speedster", 30),
+                new("suv", 80),
+                new("truck", 150),
                 new("monster-truck", 300),
             };
 
@@ -121,7 +125,7 @@ namespace ToyCarArena.Gameplay
 
             [Tooltip("Coins for a done mission of each tier: easy, medium, hard")]
             [SerializeField]
-            private int[] tierCoins = { 20, 35, 50 };
+            private int[] tierCoins = { 40, 60, 90 };
 
             [Tooltip("Every mission that can be drawn; ids are saved and measured, so they never change and carry no " +
                 "digits")]
@@ -232,14 +236,14 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Each topper's id (saved and measured: no digits) and price in coins")]
             [SerializeField]
             private TopperDefinition[] toppers = {
-                new("party-hat", 50),
-                new("cone", 50),
-                new("antenna", 100),
-                new("flag", 100),
-                new("horns", 200),
-                new("propeller", 200),
-                new("fin", 400),
-                new("crown", 400),
+                new("party-hat", 40),
+                new("cone", 40),
+                new("antenna", 60),
+                new("flag", 60),
+                new("horns", 90),
+                new("propeller", 90),
+                new("fin", 180),
+                new("crown", 300),
             };
 
             public IReadOnlyList<TopperDefinition> All => toppers;

@@ -33,12 +33,14 @@ namespace ToyCarArena.Tests.PlayMode
         {
             var wallet = new PlayerWallet(storage, tuning);
             var gain = wallet.Record(Result(RoundOutcome.Won, 1, 2), false, 0);
-            Assert.That(gain.RoundCoins, Is.EqualTo(12));
-            Assert.That(gain.KnockoutCoins, Is.EqualTo(12));
-            Assert.That(gain.WinCoins, Is.EqualTo(12));
+            var pay = tuning.Coins;
+            var total = pay.RoundCoins + 2 * pay.KnockoutCoins + pay.WinCoins;
+            Assert.That(gain.RoundCoins, Is.EqualTo(pay.RoundCoins));
+            Assert.That(gain.KnockoutCoins, Is.EqualTo(2 * pay.KnockoutCoins));
+            Assert.That(gain.WinCoins, Is.EqualTo(pay.WinCoins));
             Assert.That(gain.StreakCoins, Is.Zero);
-            Assert.That(gain.Total, Is.EqualTo(36));
-            Assert.That(new PlayerWallet(storage, tuning).Coins, Is.EqualTo(36));
+            Assert.That(gain.Total, Is.EqualTo(total));
+            Assert.That(new PlayerWallet(storage, tuning).Coins, Is.EqualTo(total));
         }
 
         [Test]
@@ -46,8 +48,9 @@ namespace ToyCarArena.Tests.PlayMode
         {
             var wallet = new PlayerWallet(storage, tuning);
             var coins = wallet.Record(Result(RoundOutcome.Out, 3, 0), true, 20);
-            Assert.That(coins.StreakCoins, Is.EqualTo(6));
-            Assert.That(coins.Total, Is.EqualTo(12 + 6 + 20));
+            var round = tuning.Coins.RoundCoins;
+            Assert.That(coins.StreakCoins, Is.EqualTo(tuning.Streaks.Bonus(round)));
+            Assert.That(coins.Total, Is.EqualTo(round + tuning.Streaks.Bonus(round) + 20));
 
             var catalog = ScriptableObject.CreateInstance<Gameplay.Cars.CarCatalog>();
             try {
@@ -71,7 +74,8 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(wallet.Buy("party-hat"), Is.False, "No coins yet.");
             wallet.SetCoins(120);
             Assert.That(wallet.Buy("party-hat"), Is.True);
-            Assert.That(wallet.Coins, Is.EqualTo(70));
+            var left = 120 - tuning.Toppers.Find("party-hat").Price;
+            Assert.That(wallet.Coins, Is.EqualTo(left));
             Assert.That(wallet.SelectedTopper, Is.EqualTo("party-hat"));
             Assert.That(wallet.Buy("party-hat"), Is.False, "Owned already.");
             Assert.That(wallet.Buy("crown"), Is.False, "Too dear.");
@@ -82,7 +86,7 @@ namespace ToyCarArena.Tests.PlayMode
 
             var reloaded = new PlayerWallet(storage, tuning);
             Assert.That(reloaded.IsOwned("party-hat"), Is.True);
-            Assert.That(reloaded.Coins, Is.EqualTo(70));
+            Assert.That(reloaded.Coins, Is.EqualTo(left));
             Assert.That(reloaded.SelectedTopper, Is.Empty);
         }
 
@@ -123,7 +127,7 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(round.Completed, Has.Count.EqualTo(1));
             Assert.That(round.Completed[0].Id, Is.EqualTo("first-round"));
             Assert.That(round.Xp, Is.EqualTo(30));
-            Assert.That(round.Coins, Is.EqualTo(20));
+            Assert.That(round.Coins, Is.EqualTo(tuning.Missions.CoinsOf(MissionTier.Easy)));
             Assert.That(round.Lines[1].IsDone, Is.True);
             Assert.That(missions.Slots[1].Definition.Id, Is.Not.EqualTo("first-round"),
                 "A starter-only mission is never drawn again.");
@@ -194,7 +198,7 @@ namespace ToyCarArena.Tests.PlayMode
             var missions = new MissionTracker(storage, tuning);
             var round = missions.Record(Stats(RoundOutcome.Out, 3), 1, 7);
             var result = Result(RoundOutcome.Out, 3, 0);
-            var record = new RoundRecord(result, 1, 0, false, false).WithMeta(new CoinGain(0, 120, 12, 0, 0, 0, 20),
+            var record = new RoundRecord(result, 1, 0, false, false).WithMeta(new CoinGain(0, 80, 12, 0, 0, 0, 20),
                 round, new StreakChange(6, 0, 2));
             var platform = new MatchTests.RecordingPlatform();
             platform.MeasureMeta(7, record, 12, tuning);

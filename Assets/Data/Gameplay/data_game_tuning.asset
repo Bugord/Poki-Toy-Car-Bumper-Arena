@@ -434,12 +434,16 @@ MonoBehaviour:
     topPlaces: 3
     resultDelay: 0.8
   coins:
-    roundCoins: 12
-    knockoutCoins: 6
-    winCoins: 12
+    roundCoins: 30
+    knockoutCoins: 15
+    winCoins: 30
     carPrices:
     - id: speedster
-      price: 25
+      price: 30
+    - id: suv
+      price: 80
+    - id: truck
+      price: 150
     - id: monster-truck
       price: 300
   streaks:
@@ -447,7 +451,7 @@ MonoBehaviour:
     multiplier: 1.5
   missions:
     tierXp: 1e0000002d0000003c000000i
-    tierCoins: 140000002300000032000000i
+    tierCoins: 280000003c0000005a000000i
     pool:
     - id: final-two
       slot: 0
@@ -580,21 +584,21 @@ MonoBehaviour:
   toppers:
     toppers:
     - id: party-hat
-      price: 50
+      price: 40
     - id: cone
-      price: 50
+      price: 40
     - id: antenna
-      price: 100
+      price: 60
     - id: flag
-      price: 100
+      price: 60
     - id: horns
-      price: 200
+      price: 90
     - id: propeller
-      price: 200
+      price: 90
     - id: fin
-      price: 400
+      price: 180
     - id: crown
-      price: 400
+      price: 300
   jelly:
     padCount: 4
     padRadius: 1.3
