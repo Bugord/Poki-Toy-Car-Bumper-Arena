@@ -254,20 +254,25 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(player.HeldItem, Is.EqualTo(got), "the item is kept until it is used");
             Assert.That(player.Ability, Is.EqualTo(ItemKind.None), "nothing runs before it is used");
 
-            // A second box broken with the slot full gives nothing, as in a kart racer.
-            got = ItemKind.Mega;
+            // With the slot full the car drives through a box and leaves it lying.
             var heldBefore = player.HeldItem;
+            var broken = 0;
+            pickups.Collected += (_, _, _) => broken++;
             yield return StandOnTheMiddle(player);
             var second = pickups.Spawn(Vector3.zero);
-            yield return Until(() => !second.IsLive, 2f, "the second box was not broken");
-            Assert.That(got, Is.EqualTo(ItemKind.None), "a full slot breaks the box for nothing");
+            yield return Frames(FramesPerSecond);
+            Assert.That(second.IsLive, Is.True, "a full slot leaves the box lying");
+            Assert.That(broken, Is.Zero);
             Assert.That(player.HeldItem, Is.EqualTo(heldBefore));
 
             // The item key uses it: the driver hears the press and the slot empties.
             input.PressItem();
             yield return Frames(2);
             Assert.That(used, Is.EqualTo(new[] { heldBefore }));
-            Assert.That(player.HasItem, Is.False);
+            // With the slot empty again the car takes the box it was standing on.
+            yield return Until(() => !second.IsLive, 2f, "the emptied slot did not take the box");
+            Assert.That(broken, Is.EqualTo(1));
+            Assert.That(player.HasItem, Is.True);
         }
 
         // --- The items, on use ---
@@ -466,7 +471,10 @@ namespace ToyCarArena.Tests.PlayMode
             var tracks = GameObject.Find("Oil Tracks");
             Assert.That(tracks, Is.Not.Null);
             Assert.That(tracks.GetComponent<MeshRenderer>().enabled, Is.True, "an oily car leaves tracks");
+            Assert.That(victim.Movement.Surface.Grip, Is.LessThan(0.5f), "oily tyres slide off the slick too");
             victim.Movement.Drive(Vector3.zero, 0f);
+            yield return Seconds(oil.OilyTime + 0.2f);
+            Assert.That(victim.Movement.Surface.Grip, Is.EqualTo(1f).Within(0.01f), "the tyres dry up");
 
             // The slick dries up, and the tracks narrow away a few seconds after.
             yield return Seconds(oil.Lifetime);
