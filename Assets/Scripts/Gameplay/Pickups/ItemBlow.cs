@@ -22,6 +22,17 @@ namespace ToyCarArena.Gameplay.Pickups
         }
 
         /// <summary>
+        /// The share of a blast's push a car <paramref name="distance"/> metres from its middle gets: all of it in the
+        /// middle, <paramref name="edgeShare"/> at <paramref name="radius"/>, falling faster near the middle the steeper
+        /// the <paramref name="falloff"/>, so a car right by the blast flies and one at its rim is only nudged.
+        /// </summary>
+        public static float Share(float distance, float radius, float edgeShare, float falloff)
+        {
+            var near = 1f - Mathf.Clamp01(distance / radius);
+            return Mathf.Lerp(edgeShare, 1f, Mathf.Pow(near, falloff));
+        }
+
+        /// <summary>
         /// Hits <paramref name="car"/> for <paramref name="user"/> along the flat <paramref name="direction"/>; false when
         /// nothing happened to it (safe after a fall, or its shield took it).
         /// </summary>

@@ -233,8 +233,9 @@ namespace ToyCarArena.Gameplay.Pickups
                 }
 
                 var direction = distance > 0.05f ? offset / distance : Flat(car.transform.forward);
-                var share = Mathf.Lerp(1f, settings.EdgeShare, distance / settings.Radius);
-                if (!blow.Apply(car, thrower, direction, settings.Push * share, tuning.Car.MaxBumpSpeed, settings.Lift,
+                var share = ItemBlow.Share(distance, settings.Radius, settings.EdgeShare, settings.Falloff);
+                var cap = tuning.Car.MaxBumpSpeed * settings.MaxSpeedShare;
+                if (!blow.Apply(car, thrower, direction, settings.Push * share, cap, settings.Lift * share,
                         settings.Stagger)) {
                     continue;
                 }

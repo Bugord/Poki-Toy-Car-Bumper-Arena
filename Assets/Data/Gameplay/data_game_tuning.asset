@@ -120,6 +120,7 @@ MonoBehaviour:
       duelPace: 1
       duelEscapeBoostChance: 0.5
     rampRounds: 6
+    edgeAssistRounds: 12
     streakStart: 2
     streakEase: 0.25
     maxStreakEase: 0.75
