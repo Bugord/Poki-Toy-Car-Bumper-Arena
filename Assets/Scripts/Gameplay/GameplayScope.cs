@@ -145,6 +145,8 @@ namespace ToyCarArena.Gameplay
             builder.RegisterEntryPoint<ArenaRound>().AsSelf().WithParameter(carPrefab).WithParameter(transform);
             builder.RegisterEntryPoint<PlayerDriver>().AsSelf();
             builder.RegisterEntryPoint<WinnerPodium>().AsSelf().WithParameter(transform);
+            // The garage opens over the result, so its 3D pictures live with the podium and the car prefab here.
+            builder.RegisterEntryPoint<GarageStage>().AsSelf().WithParameter(carPrefab).WithParameter(transform);
             builder.Register<BallLane>(Lifetime.Singleton);
             builder.Register<ArenaHazards>(Lifetime.Singleton);
             builder.RegisterInstance(mechanicArt, typeof(MechanicArt));
