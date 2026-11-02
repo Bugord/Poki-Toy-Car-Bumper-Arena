@@ -1222,7 +1222,11 @@ namespace ToyCarArena.UI
             Pulse(itemButton, ItemPressedClass);
         }
 
-        internal static VisualElement CreateLevelBadge(int level, string className)
+        /// <summary>
+        /// A level badge in its rank's colour. The REVENGE rival's (<paramref name="isRival"/>) is framed red with two
+        /// red horns: the frame reads before the name does, in the HUD, the lobby and on the result alike.
+        /// </summary>
+        internal static VisualElement CreateLevelBadge(int level, string className, bool isRival = false)
         {
             var badge = new VisualElement { pickingMode = PickingMode.Ignore };
             badge.AddToClassList("level-badge");
@@ -1231,7 +1235,46 @@ namespace ToyCarArena.UI
             var value = new Label(level.ToString()) { pickingMode = PickingMode.Ignore };
             value.AddToClassList("level-badge__value");
             badge.Add(value);
+            if (isRival) {
+                badge.AddToClassList("level-badge--rival");
+                foreach (var isLeft in new[] { true, false }) {
+                    var horn = new VisualElement { pickingMode = PickingMode.Ignore };
+                    horn.AddToClassList("level-badge__horn");
+                    horn.AddToClassList(isLeft ? "level-badge__horn--left" : "level-badge__horn--right");
+                    horn.generateVisualContent += isLeft ? DrawLeftHorn : DrawRightHorn;
+                    badge.Add(horn);
+                }
+            }
+
             return badge;
+        }
+
+        private static void DrawLeftHorn(MeshGenerationContext context) => DrawHorn(context, false);
+        private static void DrawRightHorn(MeshGenerationContext context) => DrawHorn(context, true);
+
+        // A little devil's horn: a broad root along the bottom, curving up and out to a point; red with a navy outline.
+        private static void DrawHorn(MeshGenerationContext context, bool isMirrored)
+        {
+            var rect = context.visualElement.contentRect;
+            var w = rect.width;
+            var h = rect.height;
+            Vector2 At(float x, float y) => new(isMirrored ? (1f - x) * w : x * w, y * h);
+            var painter = context.painter2D;
+            painter.BeginPath();
+            painter.MoveTo(At(0.3f, 1f));
+            painter.LineTo(At(0.2f, 0.7f));
+            painter.LineTo(At(0.12f, 0.4f));
+            painter.LineTo(At(0.06f, 0.06f));
+            painter.LineTo(At(0.4f, 0.28f));
+            painter.LineTo(At(0.72f, 0.56f));
+            painter.LineTo(At(0.98f, 1f));
+            painter.ClosePath();
+            painter.fillColor = new Color32(0xff, 0x4d, 0x4d, 0xff);
+            painter.Fill();
+            painter.strokeColor = new Color32(0x1d, 0x2b, 0x4f, 0xff);
+            painter.lineWidth = Mathf.Max(3f, w * 0.14f);
+            painter.lineJoin = LineJoin.Round;
+            painter.Stroke();
         }
 
         private static VisualElement CreateOutlinedText(string value, string textClass)
@@ -1469,25 +1512,17 @@ namespace ToyCarArena.UI
             var sticker = new VisualElement { pickingMode = PickingMode.Ignore };
             sticker.AddToClassList("car-name__sticker");
             tag.Add(sticker);
-            if (ViewModel.IsNemesis(index)) {
+            // The rival has no caption of its own: its badge is framed red with horns and its name is red.
+            var isRival = ViewModel.IsNemesis(index);
+            if (isRival) {
                 tag.AddToClassList(RevengeClass);
                 tag.AddToClassList(NameEnterClass);
-                var heading = new VisualElement { pickingMode = PickingMode.Ignore };
-                heading.AddToClassList("car-name__revenge");
-                var target = new VisualElement { pickingMode = PickingMode.Ignore };
-                target.AddToClassList("revenge-target");
-                var center = new VisualElement { pickingMode = PickingMode.Ignore };
-                center.AddToClassList("revenge-target__center");
-                target.Add(center);
-                heading.Add(target);
-                heading.Add(CreateOutlinedText(Strings.Get("hud.revenge"), "car-name__revenge-text"));
-                sticker.Add(heading);
             }
 
             // The bot's level on a small badge in its rank's colour, before the handle, as a player's would be.
             var line = new VisualElement { pickingMode = PickingMode.Ignore };
             line.AddToClassList("car-name__line");
-            line.Add(CreateLevelBadge(ViewModel.LevelOf(index), "car-name__level"));
+            line.Add(CreateLevelBadge(ViewModel.LevelOf(index), "car-name__level", isRival));
             line.Add(CreateOutlinedText(ViewModel.NameOf(index), "car-name__text"));
             sticker.Add(line);
             nameLayer.Add(tag);

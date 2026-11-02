@@ -177,19 +177,12 @@ namespace ToyCarArena.UI
             var index = model.PodiumCar;
             var isRival = model.IsPodiumRival;
             var name = root.Q<Label>("podium-name");
-            name.parent.Insert(name.parent.IndexOf(name), HudView.CreateLevelBadge(model.LevelOf(index), "podium__level"));
-            if (isRival) {
-                // The same target as over the REVENGE bot on the arena, which this car is next round.
-                var target = new VisualElement { pickingMode = PickingMode.Ignore };
-                target.AddToClassList("revenge-target");
-                target.AddToClassList("podium__target");
-                var centre = new VisualElement { pickingMode = PickingMode.Ignore };
-                centre.AddToClassList("revenge-target__center");
-                target.Add(centre);
-                name.parent.Insert(name.parent.IndexOf(name), target);
-            }
+            // The rival's badge horned, as over the REVENGE bot on the arena, which this car is next round.
+            var isMarked = isRival || (index != 0 && index == model.Nemesis);
+            name.parent.Insert(name.parent.IndexOf(name),
+                HudView.CreateLevelBadge(model.LevelOf(index), "podium__level", isMarked));
 
-            name.EnableInClassList("podium__name--revenge", isRival || (index != 0 && index == model.Nemesis));
+            name.EnableInClassList("podium__name--revenge", isMarked);
             text.Set(name, () => model.NameOf(index));
             crown.style.display = model.IsPodiumWinner ? DisplayStyle.Flex : DisplayStyle.None;
             root.Q<Label>("podium-winner-tag").style.display = model.IsPodiumWinner ? DisplayStyle.Flex : DisplayStyle.None;
@@ -249,7 +242,7 @@ namespace ToyCarArena.UI
             rank.Add(place);
             row.Add(rank);
 
-            row.Add(HudView.CreateLevelBadge(model.LevelOf(index), "results__level"));
+            row.Add(HudView.CreateLevelBadge(model.LevelOf(index), "results__level", index != 0 && index == model.Nemesis));
 
             var name = new Label { pickingMode = PickingMode.Ignore };
             name.AddToClassList("results__name");

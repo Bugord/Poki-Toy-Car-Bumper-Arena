@@ -263,16 +263,11 @@ namespace ToyCarArena.UI
             chip.EnableInClassList("lobby__you-chip", row.Index == 0);
             sticker.Add(chip);
             if (!isLeft && row.Level > 0) {
-                sticker.Add(HudView.CreateLevelBadge(row.Level, "lobby__level"));
+                sticker.Add(HudView.CreateLevelBadge(row.Level, "lobby__level", row.IsNemesis));
             }
             var name = OutlinedText(isLeft ? row.LeftName : row.Name, "lobby__name");
             name.EnableInClassList("lobby__name--revenge", row.IsNemesis && !isLeft);
             sticker.Add(name);
-            if (row.IsNemesis && !isLeft) {
-                var target = Element("revenge-target");
-                target.Add(Element("revenge-target__center"));
-                sticker.Add(target);
-            }
             // The player's own win streak: the round it leads to pays more.
             if (row.Index == 0 && streak > 0) {
                 var badge = OutlinedText(Strings.Format("result.streak", streak), "lobby__badge");

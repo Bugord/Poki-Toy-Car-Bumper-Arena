@@ -2386,6 +2386,24 @@
 .level-badge--gold { background-color: var(--gold); }
 .level-badge--legend { background-color: #ff7aa8; }
 
+/* The REVENGE rival's badge: a red frame and two red horns sprouting from its top corners (HudView draws them). */
+.level-badge.level-badge--rival {
+    border-left-color: rgb(255, 77, 77);
+    border-right-color: rgb(255, 77, 77);
+    border-top-color: rgb(255, 77, 77);
+    border-bottom-color: rgb(255, 77, 77);
+}
+
+.level-badge__horn {
+    position: absolute;
+    top: -62%;
+    width: 50%;
+    height: 76%;
+}
+
+.level-badge__horn--left { left: -20%; }
+.level-badge__horn--right { right: -20%; }
+
 .track__level {
     margin: 0;
     padding: 0 0 4px 0;
