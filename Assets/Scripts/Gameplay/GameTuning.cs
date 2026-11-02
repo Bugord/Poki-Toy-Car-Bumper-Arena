@@ -626,6 +626,13 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private int rampRounds = 6;
 
+            [Tooltip("Rounds the help against driving off the edge (EdgeAssist, and with it the edge hold) takes from " +
+                "easy to normal, apart from the bots' ramp: driving off on one's own is no fun at any round, so it stays " +
+                "longer; a losing streak steps it back the same way")]
+            [Min(0)]
+            [SerializeField]
+            private int edgeAssistRounds = 12;
+
             [Tooltip("Rounds lost in a row from which the bots ease off")]
             [Min(1)]
             [SerializeField]
@@ -704,6 +711,7 @@ namespace ToyCarArena.Gameplay
             public DifficultySettings Easy => easy;
             public DifficultySettings Normal => normal;
             public int RampRounds => rampRounds;
+            public int EdgeAssistRounds => edgeAssistRounds;
             public int StreakStart => streakStart;
             public float StreakEase => streakEase;
             public float MaxStreakEase => maxStreakEase;

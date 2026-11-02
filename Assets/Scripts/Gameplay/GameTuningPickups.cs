@@ -243,21 +243,33 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float radius = 9f;
 
-            [Tooltip("Speed, in metres per second, the ring pushes a car at the user's side; it eases to the share below " +
-                "at the edge of the ring. Never past a hit's most, Car.MaxBumpSpeed")]
+            [Tooltip("Speed, in metres per second, the ring pushes a car at the user's side; it falls to the share below " +
+                "at the edge of the ring, steeper with the falloff")]
             [Min(0f)]
             [SerializeField]
-            private float push = 12f;
+            private float push = 22f;
 
             [Tooltip("Share of the push a car at the edge of the ring gets")]
             [Range(0f, 1f)]
             [SerializeField]
-            private float edgeShare = 0.5f;
+            private float edgeShare = 0.35f;
 
-            [Tooltip("Speed the ring throws a car up at, in metres per second")]
+            [Tooltip("How steeply the push falls from the middle to the edge: 1 falls evenly, more keeps the full push " +
+                "only right by the middle")]
+            [Min(1f)]
+            [SerializeField]
+            private float falloff = 1.5f;
+
+            [Tooltip("The most the push may leave a car going, as a share of Car.MaxBumpSpeed: a blast throws harder " +
+                "than a hit")]
+            [Min(0.5f)]
+            [SerializeField]
+            private float maxSpeedShare = 1.4f;
+
+            [Tooltip("Speed the ring throws a car up at in the middle, in metres per second; it eases like the push")]
             [Min(0f)]
             [SerializeField]
-            private float lift = 2f;
+            private float lift = 3.5f;
 
             [Tooltip("Seconds a car the ring hits is off balance")]
             [Min(0f)]
@@ -267,6 +279,8 @@ namespace ToyCarArena.Gameplay
             public float Radius => radius;
             public float Push => push;
             public float EdgeShare => edgeShare;
+            public float Falloff => falloff;
+            public float MaxSpeedShare => maxSpeedShare;
             public float Lift => lift;
             public float Stagger => stagger;
         }
@@ -347,21 +361,33 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float radius = 4.5f;
 
-            [Tooltip("Speed, in metres per second, the blast pushes a car right by the bomb; it eases to the share below " +
-                "at the edge. Never past a hit's most, Car.MaxBumpSpeed")]
+            [Tooltip("Speed, in metres per second, the blast pushes a car right by the bomb; it falls to the share below " +
+                "at the edge, steeper with the falloff")]
             [Min(0f)]
             [SerializeField]
-            private float push = 13f;
+            private float push = 24f;
 
             [Tooltip("Share of the push a car at the edge of the blast gets")]
             [Range(0f, 1f)]
             [SerializeField]
-            private float edgeShare = 0.55f;
+            private float edgeShare = 0.35f;
 
-            [Tooltip("Speed the blast throws a car up at, in metres per second")]
+            [Tooltip("How steeply the push falls from the middle to the edge: 1 falls evenly, more keeps the full push " +
+                "only right by the middle")]
+            [Min(1f)]
+            [SerializeField]
+            private float falloff = 1.5f;
+
+            [Tooltip("The most the push may leave a car going, as a share of Car.MaxBumpSpeed: a blast throws harder " +
+                "than a hit")]
+            [Min(0.5f)]
+            [SerializeField]
+            private float maxSpeedShare = 1.4f;
+
+            [Tooltip("Speed the blast throws a car up at in the middle, in metres per second; it eases like the push")]
             [Min(0f)]
             [SerializeField]
-            private float lift = 3f;
+            private float lift = 5f;
 
             [Tooltip("Seconds a car the blast hits is off balance")]
             [Min(0f)]
@@ -375,6 +401,8 @@ namespace ToyCarArena.Gameplay
             public float Radius => radius;
             public float Push => push;
             public float EdgeShare => edgeShare;
+            public float Falloff => falloff;
+            public float MaxSpeedShare => maxSpeedShare;
             public float Lift => lift;
             public float Stagger => stagger;
         }

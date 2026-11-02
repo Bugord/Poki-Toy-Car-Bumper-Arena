@@ -573,8 +573,9 @@ namespace ToyCarArena.Gameplay.Pickups
 
                 // Straight out; from the very spot, the way the car faces away from the user.
                 var direction = distance > 0.05f ? offset / distance : car.transform.forward;
-                var share = Mathf.Lerp(1f, wave.EdgeShare, distance / wave.Radius);
-                if (!blow.Apply(car, user, direction, wave.Push * share, tuning.Car.MaxBumpSpeed, wave.Lift, wave.Stagger)) {
+                var share = ItemBlow.Share(distance, wave.Radius, wave.EdgeShare, wave.Falloff);
+                var cap = tuning.Car.MaxBumpSpeed * wave.MaxSpeedShare;
+                if (!blow.Apply(car, user, direction, wave.Push * share, cap, wave.Lift * share, wave.Stagger)) {
                     continue;
                 }
 
