@@ -85,7 +85,7 @@ def summarise(data):
         "map_unlocks": other(o, r"progress-map-([a-z]+)-unlock"),
         "maps": other(o, r"result-map-([a-z]+-r(?:1|2|3|4plus))-map"),
         "variants": other(o, r"result-variant-([a-z]+-[a-z]+-r(?:1|2|3|4plus))-map-variant"),
-        "equips": other(o, r"garage-([a-z]+(?:-[a-z]+)*)-equip"),
+        "equips": other(o, r"garage-(?!topper-)([a-z]+(?:-[a-z]+)*)-equip"),
         "driven": other(o, r"result-car-([a-z]+(?:-[a-z]+)*-r(?:1|2|3|4plus))-car"),
         "colors": other(o, r"garage-color-(green|red|blue|yellow|purple|orange|pink|dark)-color"),
         "played_colors": other(o, r"result-color-((?:green|red|blue|yellow|purple|orange|pink|dark)-r(?:1|2|3|4plus))-color"),
@@ -110,6 +110,17 @@ def summarise(data):
     s["match_pickups"] = other(o, r"(?:match|result)-pickups-([0-9a-z]+-r[0-9a-z]+)-pickups")
     s["match_item_get"] = other(o, r"(?:match|result)-item-((?:heavy|mega|shockwave|shield|turbo|bomb|glove|bowling|balloon|oil)-r[0-9a-z]+)-item-get")
     s["match_item_use"] = other(o, r"(?:match|result)-item-((?:heavy|mega|shockwave|shield|turbo|bomb|glove|bowling|balloon|oil)-r[0-9a-z]+)-item-use")
+    # v0.10: миссии, серии побед, монеты и шапки (toppers)
+    s["missions_done"] = other(o, r"mission-done-([0-9a-z]+-r[0-9a-z]+)-missions")
+    s["mission_complete"] = other(o, r"mission-([a-z]+(?:-[a-z]+)*)-complete")
+    s["streak"] = other(o, r"result-streak-([0-9a-z]+-r[0-9a-z]+)-streak")
+    s["coins"] = other(o, r"result-coins-((?:few|mid|many)-r[0-9a-z]+)-coins")
+    s["topper_buy"] = other(o, r"shop-([a-z]+(?:-[a-z]+)*)-buy")
+    s["topper_equip"] = other(o, r"garage-topper-([a-z]+(?:-[a-z]+)*)-equip")
+    s["missions_shown"] = i.get("mission-shown")
+    s["toppers_tab"] = i.get("garage-toppers")
+    s["again_streak"] = {m.group(1): row for e, row in i.items()
+                         if (m := re.fullmatch(r"result-again-([a-z]+-(?:lost|streak|nostreak)-r(?:1|2|3|4plus))", e))}
     return s
 
 
@@ -262,6 +273,8 @@ def report(version, previous):
         ("NEXT MATCH по исходу и раунду (после v0.5.1; нажали / показано)", "again_by", lambda s, k: pressed(s, "again_by", k)),
         ("NEXT MATCH после первого матча по устройству и бусту (после v0.6.0; нажали / показано)", "again_first",
          lambda s, k: pressed(s, "again_first", k)),
+        ("NEXT MATCH по исходу и серии побед (v0.10; нажали / показано)", "again_streak",
+         lambda s, k: pressed(s, "again_streak", k)),
         ("Медленное лобби, загрузка дольше 4 с (после v0.5.1; дождались / медленных)", "slow", lambda s, k: pressed(s, "slow", k)),
         # В долгом матче вариант сменяется с каждым циклом пола: старт и complete на цикл, поражений нет, «ушли посреди»
         # это ушли посреди цикла этого варианта, а «раундов» это циклов.
@@ -285,6 +298,12 @@ def report(version, previous):
         ("Варианты арен по раундам (визиты с map-variant)", "variants"),
         ("Свои рывки по раундам (после v0.7.1, визиты с round-boosts)", "round_boosts"),
         ("Рывки автобуста по раундам (после v0.7.1, визиты с auto-boosts)", "auto_boosts"),
+        ("Миссии: сколько выполнено за раунд (v0.10, визиты с missions)", "missions_done"),
+        ("Миссии: какие выполнены (v0.10, визиты с complete)", "mission_complete"),
+        ("Серия побед после раунда (v0.10, визиты с streak; lost: серия прервана)", "streak"),
+        ("Монеты после раунда против цен шапок (v0.10, визиты с coins)", "coins"),
+        ("Покупка шапок (v0.10, визиты с buy)", "topper_buy"),
+        ("Шапка надета в гараже (v0.10, визиты с equip; none: снята)", "topper_equip"),
     ):
         keys = keys_of(key)
         if key == "levels":
@@ -296,6 +315,8 @@ def report(version, previous):
 
     out += ["", "## GARAGE (нажали / показано, последний показ)", "", head, sep]
     out.append(line("garage-button", lambda s: f"{num(s['garage'], 'interacted')} / {num(s['garage'], 'seen')} ({pct(num(s['garage'], 'interacted'), num(s['garage'], 'seen'))})"))
+    out.append(line("garage-toppers (вкладка TOPPERS, v0.10)", lambda s: f"{num(s['toppers_tab'], 'interacted')} / {num(s['toppers_tab'], 'seen')} ({pct(num(s['toppers_tab'], 'interacted'), num(s['toppers_tab'], 'seen'))})"))
+    out.append(line("mission-shown (миссии на результате, v0.10; визиты)", lambda s: str(num(s["missions_shown"], "seen"))))
     out += ["", "## Лобби (показы)", "", head, sep]
     out.append(line("lobby-shown", lambda s: str(num(s["lobby"], "seen"))))
     out += ["", "## Таблица раунда (показы)", "", head, sep]
