@@ -33,6 +33,9 @@ namespace ToyCarArena.Gameplay.Cars
     /// driving off it, and a boost there does not throw it off either; a hit still pushes the car off.
     /// Each physics step also limits outward speed after movement, including a boost, while grounded and free of
     /// stagger or recent pressure. It removes no tangential speed and never pulls a car inward after a ring warning.
+    /// At a ram or a rescue the game may fire the boost for the player, as often as the round's
+    /// <see cref="RoundDifficulty.AutoBoost"/> says (<see cref="Cars.AutoBoost"/>); such boosts are counted apart
+    /// (<see cref="AutoBoosts"/>), so the analytics still tell whether the player found the boost.
     /// It also notes how the player plays the round (<see cref="FirstInput"/>, <see cref="FirstMoveTime"/>,
     /// <see cref="Boosts"/>), so the analytics can tell a player who never found the controls from one who was bored.
     /// </summary>
@@ -45,6 +48,7 @@ namespace ToyCarArena.Gameplay.Cars
         private readonly IOnScreenControls onScreenControls;
         private readonly RoundDifficulty difficulty;
         private readonly ArenaPickups pickups;
+        private readonly AutoBoost autoBoost;
 
         // The joystick's centre: where the finger touched, pulled along when the finger goes past the radius.
         private int joystickDragId;
@@ -52,6 +56,7 @@ namespace ToyCarArena.Gameplay.Cars
 
         // Where the player last steered, before the edge assist; zero when they did not.
         private Vector3 steer;
+        private float steerThrottle;
         private Vector3 lastSteer;
         private float lastSteerTime = float.NegativeInfinity;
 
@@ -89,6 +94,16 @@ namespace ToyCarArena.Gameplay.Cars
         public int Boosts { get; private set; }
 
         /// <summary>
+        /// Boosts the game fired for the player this round (<see cref="Cars.AutoBoost"/>), not in <see cref="Boosts"/>.
+        /// </summary>
+        public int AutoBoosts { get; private set; }
+
+        /// <summary>
+        /// The game fired the player's boost for them, so the HUD can show it was a boost.
+        /// </summary>
+        public event Action<AutoBoostKind> AutoBoosted;
+
+        /// <summary>
         /// Items the player used this round.
         /// </summary>
         public int ItemsUsed { get; private set; }
@@ -115,6 +130,7 @@ namespace ToyCarArena.Gameplay.Cars
             this.onScreenControls = onScreenControls;
             this.difficulty = difficulty;
             this.pickups = pickups;
+            this.autoBoost = new AutoBoost(tuning, difficulty, round);
         }
 
         public void Initialize()
@@ -136,6 +152,13 @@ namespace ToyCarArena.Gameplay.Cars
         public void Tick()
         {
             SetJoystickShown(Steer());
+            if (isDriving) {
+                var kind = autoBoost.Tick(round.Player, steer, steerThrottle, Time.deltaTime);
+                if (kind != AutoBoostKind.None) {
+                    AutoBoosts++;
+                    AutoBoosted?.Invoke(kind);
+                }
+            }
         }
 
         public void FixedTick()
@@ -364,6 +387,7 @@ namespace ToyCarArena.Gameplay.Cars
 #endif
             heading.y = 0f;
             steer = throttle > 0f ? heading : Vector3.zero;
+            steerThrottle = throttle;
             if (steer != Vector3.zero) {
                 lastSteer = steer;
                 lastSteerTime = Time.unscaledTime;

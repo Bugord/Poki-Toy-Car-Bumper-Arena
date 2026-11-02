@@ -32,6 +32,7 @@ namespace ToyCarArena.Gameplay.Round
             this.BoostDelay = Vector2.Lerp(easy.BoostDelay, normal.BoostDelay, level);
             this.EscapeBoostChance = Mathf.Lerp(easy.EscapeBoostChance, normal.EscapeBoostChance, level);
             this.EdgeAssist = Mathf.Lerp(easy.EdgeAssist, normal.EdgeAssist, level);
+            this.AutoBoost = Mathf.Lerp(easy.AutoBoost, normal.AutoBoost, level);
             this.PlayerBump = Mathf.Lerp(easy.PlayerBump, normal.PlayerBump, level);
             this.PlayerStaggerScale = Mathf.Lerp(easy.PlayerStaggerScale, normal.PlayerStaggerScale, level);
             this.StaggerFromPlayer = Mathf.Lerp(easy.StaggerFromPlayer, normal.StaggerFromPlayer, level);
@@ -75,6 +76,11 @@ namespace ToyCarArena.Gameplay.Round
         /// Share of the player's steer off the arena that is taken away near the edge, from 0 to 1.
         /// </summary>
         public float EdgeAssist { get; }
+
+        /// <summary>
+        /// Chance, from 0 to 1, the game boosts for the player at a ram or a rescue (<see cref="Cars.AutoBoost"/>).
+        /// </summary>
+        public float AutoBoost { get; }
         public float PlayerBump { get; }
         public float PlayerStaggerScale { get; }
         public float StaggerFromPlayer { get; }

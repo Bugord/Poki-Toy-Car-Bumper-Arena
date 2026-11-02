@@ -344,6 +344,56 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float edgeHoldContactGrace = 0.5f;
 
+            [Header("Auto boost")]
+            [Tooltip("A ram fires the player's boost on its own when the player drives at a car this close, centre to " +
+                "centre in metres; how often is the round's auto boost")]
+            [Min(0f)]
+            [SerializeField]
+            private float autoRamRange = 4.5f;
+
+            [Tooltip("Most the car the player drives at may be off the player's steer, in degrees, for a ram")]
+            [Range(0f, 90f)]
+            [SerializeField]
+            private float autoRamAngle = 25f;
+
+            [Tooltip("Least throttle the player drives with for a ram: a player who rolls or brakes does not mean to hit")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float autoRamThrottle = 0.5f;
+
+            [Tooltip("Least speed, in metres per second, at which the player closes on the car for a ram")]
+            [Min(0f)]
+            [SerializeField]
+            private float autoRamClosing = 1f;
+
+            [Tooltip("Seconds the player has to keep driving at the car before a ram fires, so a car merely passed by " +
+                "in front is not rammed")]
+            [Min(0f)]
+            [SerializeField]
+            private float autoRamHold = 0.12f;
+
+            [Tooltip("Centre to centre distance, in metres, at which the player's car meets the one it rams: a ram is " +
+                "fired only if the car stops there on the floor, short of the edge holding line")]
+            [Min(0f)]
+            [SerializeField]
+            private float autoRamContact = 2.6f;
+
+            [Tooltip("A rescue fires the player's boost inward on its own when a hit pushes the car outward this close " +
+                "to the edge, in metres")]
+            [Min(0f)]
+            [SerializeField]
+            private float autoRescueMargin = 3.5f;
+
+            [Tooltip("Least outward speed, in metres per second, of a pushed car for a rescue")]
+            [Min(0f)]
+            [SerializeField]
+            private float autoRescueSpeed = 2f;
+
+            [Tooltip("Seconds after a hit during which a rescue may fire")]
+            [Min(0f)]
+            [SerializeField]
+            private float autoRescueWindow = 1f;
+
             public TouchSteering TouchSteering => touchSteering;
             public float JoystickRadius => joystickRadius;
             public float JoystickDeadZone => joystickDeadZone;
@@ -362,6 +412,15 @@ namespace ToyCarArena.Gameplay
             public float EdgeHoldBrake => edgeHoldBrake;
             public float EdgeHoldMaxBrake => edgeHoldMaxBrake;
             public float EdgeHoldContactGrace => edgeHoldContactGrace;
+            public float AutoRamRange => autoRamRange;
+            public float AutoRamAngle => autoRamAngle;
+            public float AutoRamThrottle => autoRamThrottle;
+            public float AutoRamClosing => autoRamClosing;
+            public float AutoRamHold => autoRamHold;
+            public float AutoRamContact => autoRamContact;
+            public float AutoRescueMargin => autoRescueMargin;
+            public float AutoRescueSpeed => autoRescueSpeed;
+            public float AutoRescueWindow => autoRescueWindow;
         }
 
         /// <summary>
@@ -731,6 +790,13 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float edgeAssist;
 
+            [Tooltip("Chance the game boosts for the player at a moment a boost wins: a ram into a car the player drives " +
+                "at, or a rescue back from the edge after a hit; rolled once each moment. 0 leaves the boost to the " +
+                "player alone; the button and keys work the same either way")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float autoBoost;
+
             [Tooltip("How much harder the player's hits push than a bot's, so the player's shove is the one that " +
                 "sends cars flying and the knock-outs read as the player's")]
             [Min(0f)]
@@ -804,6 +870,7 @@ namespace ToyCarArena.Gameplay
             public Vector2 BoostDelay => boostDelay;
             public float EscapeBoostChance => escapeBoostChance;
             public float EdgeAssist => edgeAssist;
+            public float AutoBoost => autoBoost;
             public float PlayerBump => playerBump;
             public float PlayerStaggerScale => playerStaggerScale;
             public float StaggerFromPlayer => staggerFromPlayer;

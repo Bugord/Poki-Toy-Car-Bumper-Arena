@@ -98,6 +98,7 @@ hud.item_shield,"Match: item name; sticker on use and badge when the player uses
 hud.item_turbo,"Match: item name; sticker on use and badge when the player uses the turbo item (boost without cooldown); max ~12 chars",TURBO!,TURBO !,TURBO!,TURBO!,¡TURBO!,TURBO!,TURBO!,ТУРБО!
 hud.item_bomb,"Match: item name; sticker when the player throws the bomb item (blasts cars near where it lands); max ~12 chars",BOMB!,BOMBE !,BOMBA!,BOMBE!,¡BOMBA!,BOMBA!,BOMBA!,БОМБА!
 hud.item_glove,"Match: item name; sticker when the player uses the boxing glove item (punches the car ahead); max ~12 chars",GLOVE!,GANT !,GUANTONE!,BOXHANDSCHUH!,¡GUANTE!,ELDİVEN!,LUVA!,ПЕРЧАТКА!
+hud.boost_pop,"Sticker over the player's car when the game fires the boost for them (a ram or a save from the edge); max ~8 chars",BOOST!,TURBO !,TURBO!,BOOST!,¡TURBO!,HIZ!,TURBO!,РЫВОК!
 hud.pow,"Match: comic sticker where the player's boxing glove hits a car; max ~6 chars",POW!,PAF !,POW!,BUMM!,¡PUM!,PAT!,POW!,БАЦ!
 hud.tap_to_use,"Match: first-time hint over the touch item button; max ~14 chars",TAP TO USE,TOUCHE POUR UTILISER,TOCCA PER USARE,TIPPEN ZUM NUTZEN,TOCA PARA USAR,KULLANMAK İÇİN DOKUN,TOQUE PARA USAR,"ЖМИ, ЧТОБЫ ПРИМЕНИТЬ"
 hud.press_e,"Match: first-time hint over the item button on a desktop: the E key uses the item; keep the letter E",PRESS E,APPUIE SUR E,PREMI E,DRÜCKE E,PULSA E,E TUŞUNA BAS,APERTE E,НАЖМИ E

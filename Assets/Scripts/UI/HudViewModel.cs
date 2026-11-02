@@ -65,6 +65,11 @@ namespace ToyCarArena.UI
         /// </summary>
         public event Action<ItemKind, Vector3> ItemHit;
 
+        /// <summary>
+        /// The game fired the player's boost for them (a ram or a rescue).
+        /// </summary>
+        public event Action AutoBoosted;
+
         private readonly IScreenNavigator navigator;
         private Car player;
         private readonly HudControls controls;
@@ -315,6 +320,10 @@ namespace ToyCarArena.UI
             Unsubscribe();
             round = payload.Round;
             driver = payload.Driver;
+            if (driver != null) {
+                driver.AutoBoosted += OnAutoBoosted;
+            }
+
             Controls = payload.Controls;
             // Capture it now: session progress already advances as this round finishes.
             IsFirstRound = payload.IsFirstRound;
@@ -345,6 +354,10 @@ namespace ToyCarArena.UI
 
         private void Unsubscribe()
         {
+            if (driver != null) {
+                driver.AutoBoosted -= OnAutoBoosted;
+            }
+
             if (round != null) {
                 round.CarOut -= OnCarOut;
                 round.KnockedOut -= OnKnockedOut;
@@ -361,6 +374,7 @@ namespace ToyCarArena.UI
             }
         }
 
+        private void OnAutoBoosted(AutoBoostKind kind) => AutoBoosted?.Invoke();
         private void OnItemRolled(ItemKind kind) => ItemRolled?.Invoke(kind);
         private void OnItemUsed(ItemKind kind) => ItemUsed?.Invoke(kind);
         private void OnItemHit(ItemKind kind, Vector3 point) => ItemHit?.Invoke(kind, point);
