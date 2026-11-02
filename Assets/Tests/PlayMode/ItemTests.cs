@@ -22,8 +22,8 @@ namespace ToyCarArena.Tests.PlayMode
     /// The mystery boxes and items of a long match, on the real Game scene: boxes appear only in a match and only while
     /// the floor is whole or shrinking, on safe floor and leaning to the cars behind; a broken box spins the slot and
     /// lands on an item drawn for the car's standing, which is held until used (a full slot gets nothing); each of the
-    /// six items does what it says on use, with the bomb's and the glove's hits credited to their user and a shield
-    /// taking both; a car just back from a fall cannot break a box; the bots take boxes and use items. Each test changes
+    /// items does what it says on use, with the bomb's, the glove's, the bowling ball's and the oil's hits credited to
+    /// their user and a shield taking them, and a balloon carrying a fall back to the floor; a car just back from a fall cannot break a box; the bots take boxes and use items. Each test changes
     /// the shared tuning in memory and the tear-down puts it back.
     /// </summary>
     public sealed class ItemTests : SimulationSceneFixture
@@ -182,13 +182,15 @@ namespace ToyCarArena.Tests.PlayMode
                 for (var i = 0; i < Draws; i++) {
                     var kind = ItemRoll.Choose(random, settings, trailing);
                     kinds.Add(kind);
-                    if (kind is ItemKind.Shockwave or ItemKind.Bomb) {
+                    if (kind is ItemKind.Shockwave or ItemKind.Bomb or ItemKind.Bowling or ItemKind.Balloon) {
                         count++;
                     }
                 }
 
-                Assert.That(kinds, Is.EquivalentTo(new[] { ItemKind.Heavy, ItemKind.Shockwave, ItemKind.Bomb }),
-                    "only the three items come out of a box");
+                Assert.That(kinds, Is.EquivalentTo(new[]
+                    {
+                        ItemKind.Mega, ItemKind.Shockwave, ItemKind.Bomb, ItemKind.Bowling, ItemKind.Balloon, ItemKind.Oil,
+                    }), "only the items weighted in come out of a box");
                 return count / (float)Draws;
             }
 
@@ -253,7 +255,7 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(player.Ability, Is.EqualTo(ItemKind.None), "nothing runs before it is used");
 
             // A second box broken with the slot full gives nothing, as in a kart racer.
-            got = ItemKind.Heavy;
+            got = ItemKind.Mega;
             var heldBefore = player.HeldItem;
             yield return StandOnTheMiddle(player);
             var second = pickups.Spawn(Vector3.zero);
@@ -271,28 +273,206 @@ namespace ToyCarArena.Tests.PlayMode
         // --- The items, on use ---
 
         [UnityTest]
-        public IEnumerator HeavyUsedMakesTheCarThreeTimesAsHeavyForAWhileAndWearsOff()
+        public IEnumerator MegaUsedMakesTheCarBigAndHeavyForAWhileAndWearsOff()
         {
             tuning = UseMode(GameTuning.GameMode.Match, 40f);
             yield return Load(true, 1);
             var player = round.Player;
             yield return StandOnTheMiddle(player);
+            var mega = tuning.Pickups.Mega;
             var normal = player.Movement.Mass;
+            var collider = player.GetComponent<BoxCollider>();
+            var size = collider.size;
+            var bottom = collider.center.y - size.y * 0.5f;
             Assert.That(normal, Is.EqualTo(tuning.Car.Mass).Within(0.001f));
 
-            Assert.That(pickups.Give(player, ItemKind.Heavy), Is.True);
+            Assert.That(pickups.Give(player, ItemKind.Mega), Is.True);
             yield return Frames(3);
             Assert.That(player.Movement.Mass, Is.EqualTo(normal).Within(0.001f), "holding it does nothing yet");
             Assert.That(pickups.Use(player), Is.True);
-            Assert.That(player.Ability, Is.EqualTo(ItemKind.Heavy));
+            Assert.That(player.Ability, Is.EqualTo(ItemKind.Mega));
             yield return Frames(3);
-            Assert.That(player.Movement.Mass, Is.EqualTo(normal * tuning.Pickups.Heavy.MassScale).Within(0.001f),
+            Assert.That(player.Movement.Mass, Is.EqualTo(normal * mega.MassScale).Within(0.001f),
                 "the physics must see the heavy mass, and so the push of its hits");
+            Assert.That(player.Growth, Is.LessThan(mega.SizeScale), "it grows over a moment, not at once");
 
-            yield return Until(() => player.Ability == ItemKind.None, tuning.Pickups.Heavy.Duration + 1f,
-                "heavy never wore off");
-            yield return Frames(3);
+            yield return Seconds(mega.GrowTime + 0.2f);
+            Assert.That(player.Growth, Is.EqualTo(mega.SizeScale).Within(0.001f));
+            Assert.That(collider.size.x, Is.EqualTo(size.x * mega.SizeScale).Within(0.01f), "the collider grows too");
+            Assert.That(collider.center.y - collider.size.y * 0.5f, Is.EqualTo(bottom * mega.SizeScale).Within(0.01f),
+                "it grows from the floor, its wheels staying on it");
+            var model = player.GetComponent<CarLook>().Model.transform;
+            Assert.That(model.localScale.x, Is.EqualTo(player.GetComponent<CarLook>().ModelScale.x * mega.SizeScale)
+                .Within(0.001f), "the model grows with it");
+            Assert.That(player.Movement.IsGrounded, Is.True, "a grown car stays on its wheels");
+
+            yield return Until(() => player.Ability == ItemKind.None, mega.Duration + 1f, "mega never wore off");
+            yield return Seconds(mega.GrowTime + 0.2f);
             Assert.That(player.Movement.Mass, Is.EqualTo(normal).Within(0.001f));
+            Assert.That(player.Growth, Is.EqualTo(1f));
+            Assert.That(collider.size.x, Is.EqualTo(size.x).Within(0.001f));
+        }
+
+        [UnityTest]
+        public IEnumerator TimedItemsRunSideBySideAndLeaveTheSlotFree()
+        {
+            tuning = UseMode(GameTuning.GameMode.Match, 40f);
+            yield return Load(true, 1);
+            var player = round.Player;
+            yield return StandOnTheMiddle(player);
+
+            foreach (var kind in new[] { ItemKind.Balloon, ItemKind.Mega, ItemKind.Shield }) {
+                Assert.That(pickups.Give(player, kind), Is.True, $"the slot is free for {kind} while the others run");
+                Assert.That(pickups.Use(player), Is.True);
+                yield return Frames(2);
+            }
+
+            Assert.That(player.IsRunning(ItemKind.Balloon), Is.True, "a mega and a shield used after it keep the balloon");
+            Assert.That(player.IsRunning(ItemKind.Mega), Is.True, "a shield used after it keeps the mega");
+            Assert.That(player.IsShielded, Is.True);
+            Assert.That(player.Ability, Is.EqualTo(ItemKind.Shield), "the badge shows the one used last");
+            Assert.That(player.Movement.Mass, Is.EqualTo(tuning.Car.Mass * tuning.Pickups.Mega.MassScale).Within(0.001f));
+
+            Assert.That(player.TryAbsorbHit(), Is.True);
+            Assert.That(player.IsShielded, Is.False, "the hit spends the shield");
+            Assert.That(player.IsRunning(ItemKind.Mega) && player.IsRunning(ItemKind.Balloon), Is.True,
+                "and nothing else");
+            Assert.That(player.Ability, Is.Not.EqualTo(ItemKind.None), "the badge moves on to what still runs");
+
+            player.TakeOut();
+            Assert.That(player.Ability, Is.EqualTo(ItemKind.None), "a fall ends them all");
+            Assert.That(player.Movement.Mass, Is.EqualTo(tuning.Car.Mass).Within(0.001f));
+        }
+
+        [UnityTest]
+        public IEnumerator ABowlingBallKnocksAsideEveryCarOnItsLineForTheRoller()
+        {
+            tuning = UseMode(GameTuning.GameMode.Match, 60f);
+            yield return Load(true, 7);
+            var player = round.Player;
+            var first = round.Cars[1];
+            var second = round.Cars[2];
+            var shielded = round.Cars[3];
+            var aside = round.Cars[4];
+            player.Movement.Place(new Vector3(0f, 0.2f, -10f), Quaternion.identity);
+            first.Movement.Place(new Vector3(0.4f, 0.2f, -4f), Quaternion.identity);
+            second.Movement.Place(new Vector3(-0.4f, 0.2f, 2f), Quaternion.identity);
+            shielded.Movement.Place(new Vector3(0f, 0.2f, 7f), Quaternion.identity);
+            aside.Movement.Place(new Vector3(-7f, 0.2f, -10f), Quaternion.identity);
+            ParkTheRest(5);
+            yield return Until(() => player.Movement.IsGrounded && second.Movement.IsGrounded, 2f, "the cars never landed");
+            shielded.StartAbility(ItemKind.Shield);
+            var strikes = 0;
+            player.ItemHit += (kind, _) => {
+                if (kind == ItemKind.Bowling) {
+                    strikes++;
+                }
+            };
+
+            UseNow(player, ItemKind.Bowling);
+            Assert.That(GameObject.Find("Bowling Ball"), Is.Not.Null, "the ball rolls out of the nose");
+            yield return Until(() => second.LastHitBy != null, 2f, "the ball never reached the second car");
+            Assert.That(first.LastHitBy, Is.SameAs(player), "the first car on the line is the roller's");
+            Assert.That(second.LastHitBy, Is.SameAs(player), "the ball rolls on and takes the next one too");
+            Assert.That(first.Movement.Velocity.x, Is.GreaterThan(2f), "a car right of the line is bowled right");
+            Assert.That(second.Movement.Velocity.x, Is.LessThan(-2f), "a car left of the line is bowled left");
+            yield return Frames(FramesPerSecond / 2);
+            Assert.That(shielded.LastHitBy, Is.Null, "a shield takes the ball");
+            Assert.That(shielded.Ability, Is.EqualTo(ItemKind.None), "the ball spends the shield");
+            Assert.That(aside.LastHitBy, Is.Null, "a car off the line is left alone");
+            Assert.That(player.LastHitBy, Is.Null, "the roller is not hit by its own ball");
+            Assert.That(strikes, Is.EqualTo(2), "a strike for each car knocked");
+
+            yield return Until(() => GameObject.Find("Bowling Ball") == null, 3f, "the ball never left the floor");
+        }
+
+        [UnityTest]
+        public IEnumerator ABalloonCarriesAFallOffTheEdgeBackToTheFloor()
+        {
+            tuning = UseMode(GameTuning.GameMode.Match, 60f);
+            yield return Load(true, 7);
+            var player = round.Player;
+            ParkTheRest(1);
+            yield return StandOnTheMiddle(player);
+            var outs = 0;
+            round.CarOut += car => {
+                if (car == player) {
+                    outs++;
+                }
+            };
+            var saved = 0;
+            player.ItemHit += (kind, _) => {
+                if (kind == ItemKind.Balloon) {
+                    saved++;
+                }
+            };
+
+            UseNow(player, ItemKind.Balloon);
+            Assert.That(player.Ability, Is.EqualTo(ItemKind.Balloon));
+            yield return Frames(3);
+            Assert.That(GameObject.Find("Balloon"), Is.Not.Null, "the balloon floats over the car");
+
+            // Off the floor, falling: the balloon catches it before the round takes it out.
+            var extent = round.Edge.FullExtent;
+            player.Movement.Place(new Vector3(extent + 2f, 0.2f, 0f), Quaternion.identity);
+            yield return Until(() => player.Movement.IsCarried, 2f, "the balloon never caught the fall");
+            Assert.That(saved, Is.EqualTo(1));
+            Assert.That(player.IsTargetable, Is.False, "a car being carried is out of play");
+            Assert.That(player.Ability, Is.EqualTo(ItemKind.None), "the balloon is spent on the catch");
+
+            yield return Until(() => !player.Movement.IsCarried, tuning.Pickups.Balloon.CarryTime + 1f, "the carry never ended");
+            yield return Until(() => player.Movement.IsGrounded, 2f, "the car never landed");
+            Assert.That(round.Edge.DistanceToEdge(player.Position, 0f), Is.GreaterThan(1f), "it lands on safe floor");
+            Assert.That(outs, Is.Zero, "a caught fall is no fall");
+            Assert.That(player.IsOut, Is.False);
+            Assert.That(round.IsRunning, Is.True);
+            Assert.That(round.Score.FallsOf(0), Is.Zero);
+
+            // Spent: the next fall is a fall.
+            player.Movement.Place(new Vector3(extent + 2f, 0.2f, 0f), Quaternion.identity);
+            yield return Until(() => player.IsOut, 5f, "the player never fell");
+            Assert.That(outs, Is.EqualTo(1));
+        }
+
+        [UnityTest]
+        public IEnumerator AnOilSlickMakesCarsSlideCreditsTheSpillerAndLeavesTracks()
+        {
+            tuning = UseMode(GameTuning.GameMode.Match, 60f);
+            yield return Load(true, 7);
+            var player = round.Player;
+            var victim = round.Cars[1];
+            var oil = tuning.Pickups.Oil;
+            player.Movement.Place(new Vector3(0f, 0.2f, 0f), Quaternion.identity);
+            ParkTheRest(2);
+            victim.Movement.Place(new Vector3(8f, 0.2f, 0f), Quaternion.identity);
+            yield return Until(() => player.Movement.IsGrounded, 2f, "the player never landed");
+
+            UseNow(player, ItemKind.Oil);
+            var spot = new Vector3(0f, 0f, -oil.DropBehind);
+            yield return Seconds(0.5f);
+            var surface = container.Resolve<IArenaSurface>();
+            Assert.That(surface.Sample(spot).Grip, Is.EqualTo(oil.Grip).Within(0.01f), "the slick takes the grip");
+            Assert.That(surface.Sample(spot + Vector3.right * (oil.Radius + 1f)).Grip, Is.EqualTo(1f),
+                "the floor beside it is plain");
+            Assert.That(GameObject.Find("Oil Slick"), Is.Not.Null);
+
+            // Another car drives across: it counts as hit by the spiller, its tyres oily after.
+            victim.Movement.Place(spot + new Vector3(-oil.Radius - 2f, 0.2f, 0f), Quaternion.Euler(0f, 90f, 0f));
+            yield return Until(() => victim.Movement.IsGrounded, 2f, "the victim never landed");
+            victim.Movement.Drive(Vector3.right, 1f);
+            yield return Until(() => victim.LastHitBy == player, 3f, "a car on the oil was not marked as the spiller's");
+            Assert.That(player.LastHitBy, Is.Null, "the spiller's own slick does not mark it");
+            yield return Until(() => victim.Position.x > spot.x + oil.Radius + 2f, 3f, "the victim never crossed the slick");
+            var tracks = GameObject.Find("Oil Tracks");
+            Assert.That(tracks, Is.Not.Null);
+            Assert.That(tracks.GetComponent<MeshRenderer>().enabled, Is.True, "an oily car leaves tracks");
+            victim.Movement.Drive(Vector3.zero, 0f);
+
+            // The slick dries up, and the tracks narrow away a few seconds after.
+            yield return Seconds(oil.Lifetime);
+            Assert.That(surface.Sample(spot).Grip, Is.EqualTo(1f), "the slick must dry up");
+            yield return Seconds(oil.OilyTime + 6f);
+            Assert.That(tracks.GetComponent<MeshRenderer>().enabled, Is.False, "the tracks must fade");
         }
 
         [UnityTest]
@@ -547,7 +727,7 @@ namespace ToyCarArena.Tests.PlayMode
             yield return Load(true, 1);
             var player = round.Player;
             yield return StandOnTheMiddle(player);
-            UseNow(player, ItemKind.Heavy);
+            UseNow(player, ItemKind.Mega);
             pickups.Give(player, ItemKind.Bomb);
             player.Movement.Place(new Vector3(40f, 0.5f, 0f), Quaternion.identity);
             yield return Until(() => player.IsOut, 5f, "the player never fell");
@@ -616,7 +796,7 @@ namespace ToyCarArena.Tests.PlayMode
 
             var users = new HashSet<Car>();
             var kinds = new HashSet<ItemKind>();
-            var items = new[] { ItemKind.Shield, ItemKind.Shockwave, ItemKind.Heavy, ItemKind.Glove, ItemKind.Turbo, ItemKind.Bomb };
+            var items = new[] { ItemKind.Shield, ItemKind.Shockwave, ItemKind.Mega, ItemKind.Bowling, ItemKind.Turbo, ItemKind.Bomb };
             for (var i = 1; i < round.Cars.Count; i++) {
                 var bot = round.Cars[i];
                 var kind = items[(i - 1) % items.Length];
@@ -640,7 +820,8 @@ namespace ToyCarArena.Tests.PlayMode
             var platform = new MatchTests.RecordingPlatform();
             var all = new[]
             {
-                ItemKind.Heavy, ItemKind.Shockwave, ItemKind.Shield, ItemKind.Turbo, ItemKind.Bomb, ItemKind.Glove,
+                ItemKind.Mega, ItemKind.Shockwave, ItemKind.Shield, ItemKind.Turbo, ItemKind.Bomb, ItemKind.Glove,
+                ItemKind.Bowling, ItemKind.Balloon, ItemKind.Oil,
             };
             foreach (var kind in all) {
                 platform.MeasureItemGet(12, kind);
@@ -655,7 +836,7 @@ namespace ToyCarArena.Tests.PlayMode
             }
 
             var names = platform.Events.Select(e => $"{e.Item1} / {e.Item2} / {e.Item3}").ToList();
-            foreach (var id in new[] { "heavy", "shockwave", "shield", "turbo", "bomb", "glove" }) {
+            foreach (var id in new[] { "mega", "shockwave", "shield", "turbo", "bomb", "glove", "bowling", "balloon", "oil" }) {
                 Assert.That(names, Does.Contain($"match / item-{id}-r4plus / item-get"));
                 Assert.That(names, Does.Contain($"match / item-{id}-r1 / item-use"));
             }
@@ -739,6 +920,15 @@ namespace ToyCarArena.Tests.PlayMode
         private static IEnumerator Frames(int count)
         {
             for (var frame = 0; frame < count; frame++) {
+                yield return null;
+            }
+        }
+
+        /// <summary>Waits <paramref name="seconds"/> of game time.</summary>
+        private static IEnumerator Seconds(float seconds)
+        {
+            var end = Time.time + seconds;
+            while (Time.time < end) {
                 yield return null;
             }
         }

@@ -241,7 +241,7 @@ namespace ToyCarArena.App
 
         /// <summary>
         /// The roll of a box the player broke landed on an item, in match or round number <paramref name="match"/>:
-        /// <c>match / item-heavy, shockwave, shield, turbo, bomb, glove-rR / item-get</c>, R as for the match's other
+        /// <c>match / item-mega, shockwave, shield, turbo, bomb, glove, bowling, balloon, oil-rR / item-get</c>, R as for the match's other
         /// events; in a round of last-car-standing (after v0.7.1) the same under <c>result</c>. Replaces v0.6's
         /// <c>pickup</c> event, when a pickup was its ability.
         /// </summary>

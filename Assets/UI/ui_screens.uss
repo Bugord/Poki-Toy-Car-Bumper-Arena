@@ -838,19 +838,22 @@
     background-color: var(--orange);
 }
 
-/* A match's item used by the player (HEAVY!, SHOCKWAVE!, SHIELD!, TURBO!, BOMB!, GLOVE!): the word alone, in the
+/* A match's item used by the player (MEGA!, SHOCKWAVE!, BOMB!, BOWLING!, BALLOON!, OIL SLICK! and the rest): the word alone, in the
    kind's colour, the same sticker as KNOCKOUT! otherwise. */
 .ko-pop--power .ko-pop__text {
     margin-left: 0;
     font-size: 100px;
 }
 
-.ko-pop--heavy .ko-pop__text { color: rgb(127, 147, 234); }
+.ko-pop--mega .ko-pop__text { color: rgb(127, 147, 234); }
 .ko-pop--shockwave .ko-pop__text { color: rgb(79, 214, 220); }
 .ko-pop--shield .ko-pop__text { color: var(--blue); }
 .ko-pop--turbo .ko-pop__text { color: var(--gold); }
 .ko-pop--bomb .ko-pop__text { color: rgb(255, 106, 85); }
 .ko-pop--glove .ko-pop__text { color: var(--red); }
+.ko-pop--bowling .ko-pop__text { color: rgb(62, 196, 160); }
+.ko-pop--balloon .ko-pop__text { color: rgb(255, 92, 160); }
+.ko-pop--oil .ko-pop__text { color: rgb(255, 184, 46); }
 .ko-pop--boost .ko-pop__text { color: var(--orange); }
 
 /* Visit handles follow the bots; the inner sticker animates independently of its projected anchor. */
@@ -1167,9 +1170,10 @@
     background-color: var(--soft);
 }
 
-.hud__power-icon--heavy { background-color: rgb(95, 116, 203); }
+.hud__power-icon--mega { background-color: rgb(95, 116, 203); }
 .hud__power-icon--shield { background-color: var(--blue); }
 .hud__power-icon--turbo { background-color: var(--gold); }
+.hud__power-icon--balloon { background-color: rgb(255, 92, 160); }
 
 /* A weight, a bubble and a diamond (a spark), in navy and white on the kind's colour. */
 .hud__power-glyph {
@@ -1177,13 +1181,23 @@
     height: 26px;
 }
 
-.hud__power-icon--heavy .hud__power-glyph {
+.hud__power-icon--mega .hud__power-glyph {
     height: 22px;
     border-radius: 8px;
     background-color: var(--navy);
 }
 
 .hud__power-icon--shield .hud__power-glyph {
+    border-width: 5px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+}
+
+/* A balloon: a white oval with a navy rim. */
+.hud__power-icon--balloon .hud__power-glyph {
+    width: 22px;
+    height: 28px;
     border-width: 5px;
     border-color: var(--navy);
     border-radius: 999px;
@@ -1228,9 +1242,10 @@
     background-color: var(--blue);
 }
 
-.hud__power--heavy .hud__power-fill { background-color: rgb(95, 116, 203); }
+.hud__power--mega .hud__power-fill { background-color: rgb(95, 116, 203); }
 .hud__power--shield .hud__power-fill { background-color: var(--blue); }
 .hud__power--turbo .hud__power-fill { background-color: var(--gold); }
+.hud__power--balloon .hud__power-fill { background-color: rgb(255, 92, 160); }
 
 .hud__boost {
     display: none;
@@ -1408,12 +1423,15 @@
     background-color: var(--soft);
 }
 
-.hud__item-icon--heavy { background-color: rgb(95, 116, 203); }
+.hud__item-icon--mega { background-color: rgb(95, 116, 203); }
 .hud__item-icon--shockwave { background-color: rgb(79, 214, 220); }
 .hud__item-icon--shield { background-color: var(--blue); }
 .hud__item-icon--turbo { background-color: var(--gold); }
 .hud__item-icon--bomb { background-color: rgb(255, 106, 85); }
 .hud__item-icon--glove { background-color: var(--red); }
+.hud__item-icon--bowling { background-color: rgb(62, 196, 160); }
+.hud__item-icon--balloon { background-color: rgb(255, 92, 160); }
+.hud__item-icon--oil { background-color: rgb(255, 184, 46); }
 
 .hud__item-mark {
     position: absolute;
@@ -1428,12 +1446,15 @@
     -unity-text-align: middle-center;
 }
 
-.hud__item-icon--heavy .hud__item-mark,
+.hud__item-icon--mega .hud__item-mark,
 .hud__item-icon--shockwave .hud__item-mark,
 .hud__item-icon--shield .hud__item-mark,
 .hud__item-icon--turbo .hud__item-mark,
 .hud__item-icon--bomb .hud__item-mark,
-.hud__item-icon--glove .hud__item-mark {
+.hud__item-icon--glove .hud__item-mark,
+.hud__item-icon--bowling .hud__item-mark,
+.hud__item-icon--balloon .hud__item-mark,
+.hud__item-icon--oil .hud__item-mark {
     display: none;
 }
 
@@ -1445,12 +1466,15 @@
     justify-content: center;
 }
 
-.hud__item-icon--heavy .hud__item-glyph,
+.hud__item-icon--mega .hud__item-glyph,
 .hud__item-icon--shockwave .hud__item-glyph,
 .hud__item-icon--shield .hud__item-glyph,
 .hud__item-icon--turbo .hud__item-glyph,
 .hud__item-icon--bomb .hud__item-glyph,
-.hud__item-icon--glove .hud__item-glyph {
+.hud__item-icon--glove .hud__item-glyph,
+.hud__item-icon--bowling .hud__item-glyph,
+.hud__item-icon--balloon .hud__item-glyph,
+.hud__item-icon--oil .hud__item-glyph {
     display: flex;
 }
 
@@ -1459,19 +1483,26 @@
     position: absolute;
 }
 
-/* Heavy, shockwave and bomb are drawn pictures (the round's items since v0.7.1): an anvil, a broken ring round a
-   smaller one, a bomb with a lit fuse. The others keep their glyphs from parts. */
-.hud__item-icon--heavy .hud__item-glyph,
+/* Mega, shockwave, bomb, bowling, balloon and oil are drawn pictures (the round's items since v0.7.1): a big car with
+   arrows out, a broken ring round a smaller one, a bomb with a lit fuse, a bowling ball, a balloon on a string and a
+   drop of oil over a puddle. The others keep their glyphs from parts. */
+.hud__item-icon--mega .hud__item-glyph,
 .hud__item-icon--shockwave .hud__item-glyph,
-.hud__item-icon--bomb .hud__item-glyph {
+.hud__item-icon--bomb .hud__item-glyph,
+.hud__item-icon--bowling .hud__item-glyph,
+.hud__item-icon--balloon .hud__item-glyph,
+.hud__item-icon--oil .hud__item-glyph {
     width: 112px;
     height: 112px;
     -unity-background-scale-mode: scale-to-fit;
 }
 
-.hud__item-icon--heavy .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_heavy.svg"); }
+.hud__item-icon--mega .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_mega.svg"); }
 .hud__item-icon--shockwave .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_shockwave.svg"); }
 .hud__item-icon--bomb .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_bomb.svg"); }
+.hud__item-icon--bowling .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_bowling.svg"); }
+.hud__item-icon--balloon .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_balloon.svg"); }
+.hud__item-icon--oil .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_oil.svg"); }
 
 /* A shield: a white bubble with a navy rim. */
 .hud__item-icon--shield .hud__item-glyph {
@@ -1704,12 +1735,18 @@
     left: 84px;
 }
 
-/* POW!: the comic word where the player's glove lands, in red on the sticker. */
-.ko-pop--pow .ko-pop__text {
+/* POW!: the comic word where the player's glove lands, in red on the sticker; STRIKE! where the bowling ball hits, in
+   teal; SAVED! over the player's car its balloon catches, in pink. */
+.ko-pop--pow .ko-pop__text,
+.ko-pop--strike .ko-pop__text,
+.ko-pop--saved .ko-pop__text {
     margin-left: 0;
     font-size: 120px;
     color: var(--red);
 }
+
+.ko-pop--strike .ko-pop__text { color: rgb(62, 196, 160); }
+.ko-pop--saved .ko-pop__text { color: rgb(255, 92, 160); }
 
 /* The start prompt of a visit's first round, while the cars wait for the player's first steer or boost (HudView shows
    it): TAP TO START or CLICK TO START, outlined, and under it a dark plate: an orange dot and TAP TO BOOST on a touch

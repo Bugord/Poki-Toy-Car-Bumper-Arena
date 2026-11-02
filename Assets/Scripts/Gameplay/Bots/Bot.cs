@@ -389,10 +389,10 @@ namespace ToyCarArena.Gameplay.Bots
         }
 
         /// <summary>
-        /// Whether the bot uses the item it holds now, in a long match. Each item has its moment: heavy or turbo with a
-        /// target ahead within push range, the shockwave with enough cars round it, the shield when a car drives at it
-        /// or it is near the edge, the bomb at a car the throw's reach ahead, the glove at a car right in front of the
-        /// nose. The moment has to last a delay drawn once for each item (<see cref="GameTuning.PickupBotSettings.UseDelay"/>),
+        /// Whether the bot uses the item it holds now, in a long match. Each item has its moment: mega or turbo with a
+        /// target ahead within push range, the shockwave with enough cars round it, the shield and the balloon when a car
+        /// drives at it or it is near the edge, the bomb at a car the throw's reach ahead, the glove at a car right in
+        /// front of the nose, the bowling ball at a car dead ahead down the floor, the oil at a car chasing it. The moment has to last a delay drawn once for each item (<see cref="GameTuning.PickupBotSettings.UseDelay"/>),
         /// so a bot is not frame-perfect; no item is used that would carry the bot over the edge. Nothing is drawn from
         /// the bot's dice while it holds nothing, so rounds without items replay as before.
         /// </summary>
@@ -431,12 +431,24 @@ namespace ToyCarArena.Gameplay.Bots
             var forward = Flat(Car.transform.forward);
             var isSafe = edge.DistanceToEdge(position, settings.EdgeMargin) >= 0f;
             switch (item) {
-                case ItemKind.Heavy:
+                case ItemKind.Mega:
                 case ItemKind.Turbo:
                     // A turbo boosts often: only with room to boost into.
                     return isSafe && IsAhead(Target, position, forward, 0f, use.PushRange, use.AheadAngle);
                 case ItemKind.Shield:
+                case ItemKind.Balloon:
                     return !isSafe || IsThreatened(position, cars, use);
+                case ItemKind.Bowling:
+                    for (var i = 0; i < cars.Count; i++) {
+                        if (cars[i] != Car && IsAhead(cars[i], position, forward, use.BowlingRange.x, use.BowlingRange.y,
+                                use.BowlingAngle)) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                case ItemKind.Oil:
+                    return IsChased(position, forward, cars, use);
                 case ItemKind.Shockwave:
                     return CountNear(position, cars, tuning.Pickups.Shockwave.Radius) >= use.ShockwaveCars;
                 case ItemKind.Bomb:
@@ -476,6 +488,29 @@ namespace ToyCarArena.Gameplay.Bots
             var offset = Flat(car.Position) - position;
             var distance = offset.magnitude;
             return distance >= near && distance <= far && Vector3.Angle(forward, offset) <= angle;
+        }
+
+        /// <summary>
+        /// Whether a car in play is behind the bot, within the oil's reach, and gaining on it: spilled now, the slick lies
+        /// in its way.
+        /// </summary>
+        private bool IsChased(Vector3 position, Vector3 forward, IReadOnlyList<Car> cars, GameTuning.PickupBotSettings use)
+        {
+            var velocity = Flat(Car.Movement.Velocity);
+            for (var i = 0; i < cars.Count; i++) {
+                var car = cars[i];
+                if (car == Car || !IsAhead(car, position, -forward, 1f, use.OilChaser, use.AheadAngle)) {
+                    continue;
+                }
+
+                var offset = position - Flat(car.Position);
+                var closing = Vector3.Dot(Flat(car.Movement.Velocity) - velocity, offset.normalized);
+                if (closing > 0.5f) {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private bool IsThreatened(Vector3 position, IReadOnlyList<Car> cars,

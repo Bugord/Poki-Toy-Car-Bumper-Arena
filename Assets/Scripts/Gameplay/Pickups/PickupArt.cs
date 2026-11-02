@@ -8,10 +8,10 @@ namespace ToyCarArena.Gameplay.Pickups
     /// <summary>
     /// The look of the boxes and of the items that fly, built once in code like the arena objects' (<see cref="ToyMeshes"/>):
     /// a bright mystery box with a white "?" on each side and on top, a round bomb with a fuse over a red ring on the
-    /// floor, and a red boxing glove on a yellow arm. Flat colours with the navy outline of the other toys, and soft
+    /// floor, a red boxing glove on a yellow arm, a bowling ball with its finger holes, a pink balloon on a string and a
+    /// dark slick of oil with a rainbow sheen. Flat colours with the navy outline of the other toys, and soft
     /// markers on the floor. Nothing is imported: the materials are copies of ones <see cref="MechanicArt"/> already
-    /// holds, tinted here, so the build carries no new asset. The item colours are also the HUD's (orange heavy, purple
-    /// shockwave, blue shield, gold turbo, navy bomb, red glove). What it builds is freed with it.
+    /// holds, tinted here, so the build carries no new asset. The item colours are also the HUD's. What it builds is freed with it.
     /// </summary>
     internal sealed class PickupArt
     {
@@ -44,6 +44,8 @@ namespace ToyCarArena.Gameplay.Pickups
         private readonly Material gold;
         private readonly Material red;
         private readonly Material yellow;
+        private readonly Material bowling;
+        private readonly Material pink;
         private readonly Material boxMaterial;
         private readonly Material markerMaterial;
         private readonly Mesh box;
@@ -52,6 +54,7 @@ namespace ToyCarArena.Gameplay.Pickups
         private readonly Mesh cylinder;
         private readonly Mesh disc;
         private readonly Mesh ring;
+        private readonly Mesh blob;
 
         public PickupArt(MechanicArt art)
         {
@@ -61,6 +64,8 @@ namespace ToyCarArena.Gameplay.Pickups
             gold = Tinted(shine, "pickup_gold", Gold);
             red = Tinted(shine, "pickup_red", Red);
             yellow = Tinted(shine, "pickup_yellow", new Color(1f, 0.86f, 0.35f));
+            bowling = Tinted(shine, "pickup_bowling", ColorOf(ItemKind.Bowling));
+            pink = Tinted(shine, "pickup_pink", ColorOf(ItemKind.Balloon));
             boxMaterial = Tinted(shine, "pickup_box", Gold);
             markerMaterial = art.Get("mound_ring");
             box = Own(ToyMeshes.Box(Vector3.one * BoxSize));
@@ -69,6 +74,7 @@ namespace ToyCarArena.Gameplay.Pickups
             cylinder = Own(ToyMeshes.Cylinder(1f, 1f, 1f, 12));
             disc = Own(ToyMeshes.Disc(1f, 32));
             ring = Own(ToyMeshes.Ring(0.86f, 1f, 40));
+            blob = Own(BuildBlob(48));
         }
 
         /// <summary>An item's colour: its HUD icon's and its sticker's.</summary>
@@ -76,12 +82,15 @@ namespace ToyCarArena.Gameplay.Pickups
         {
             return kind switch
             {
-                ItemKind.Heavy => new Color(1f, 0.62f, 0.11f),
+                ItemKind.Mega => new Color(0.37f, 0.45f, 0.8f),
                 ItemKind.Shockwave => new Color(0.69f, 0.42f, 1f),
                 ItemKind.Shield => new Color(0.22f, 0.71f, 1f),
                 ItemKind.Turbo => new Color(1f, 0.79f, 0.24f),
                 ItemKind.Bomb => Navy,
                 ItemKind.Glove => Red,
+                ItemKind.Bowling => new Color(0.24f, 0.77f, 0.63f),
+                ItemKind.Balloon => new Color(1f, 0.36f, 0.63f),
+                ItemKind.Oil => new Color(1f, 0.72f, 0.18f),
                 _ => Color.white,
             };
         }
@@ -203,6 +212,97 @@ namespace ToyCarArena.Gameplay.Pickups
             arm.gameObject.SetActive(false);
         }
 
+        /// <summary>
+        /// A bowling ball of <paramref name="radius"/> under <paramref name="parent"/>: a teal ball with three navy
+        /// finger holes and a shine, on a spinning part (<see cref="RolledBall.Spin"/>) under a root that faces its way.
+        /// </summary>
+        public void BuildBowlingBall(Transform parent, RolledBall ball, float radius)
+        {
+            var root = new GameObject("Bowling Ball").transform;
+            root.SetParent(parent, false);
+            var spin = new GameObject("Spin").transform;
+            spin.SetParent(root, false);
+            ToyMeshes.Part(spin, "Body", sphere, bowling, Vector3.zero, default, Vector3.one * radius);
+            // The holes sit close together on one side, so the roll shows.
+            var holes = new[] { new Vector3(-0.22f, 0.9f, 0.18f), new Vector3(0.22f, 0.9f, 0.18f), new Vector3(0f, 0.86f, -0.3f) };
+            foreach (var hole in holes) {
+                ToyMeshes.Part(spin, "Hole", sphere, navy, hole.normalized * (radius * 0.93f), default,
+                    Vector3.one * (radius * 0.16f));
+            }
+
+            ToyMeshes.Part(root, "Shine", sphere, white, new Vector3(-0.35f, 0.45f, 0.35f) * radius, default,
+                Vector3.one * (radius * 0.17f));
+            ToyMeshes.Outlined(root.gameObject);
+            ball.Root = root;
+            ball.Spin = spin;
+            root.gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// A balloon under <paramref name="parent"/>: a pink balloon with a knot and a shine whose bottom is the root,
+        /// and a thin <paramref name="cord"/> hanging down from it, a unit long, stretched by its scale.
+        /// </summary>
+        public Transform BuildBalloon(Transform parent, out Transform cord)
+        {
+            var root = new GameObject("Balloon").transform;
+            root.SetParent(parent, false);
+            ToyMeshes.Part(root, "Body", sphere, pink, new Vector3(0f, 0.95f, 0f), default, new Vector3(0.8f, 0.95f, 0.8f));
+            ToyMeshes.Part(root, "Knot", cylinder, pink, new Vector3(0f, 0.02f, 0f), default, new Vector3(0.16f, 0.12f, 0.16f));
+            ToyMeshes.Part(root, "Shine", sphere, white, new Vector3(-0.3f, 1.35f, 0.42f), default,
+                new Vector3(0.14f, 0.22f, 0.14f));
+            ToyMeshes.Outlined(root.gameObject);
+            cord = new GameObject("String").transform;
+            cord.SetParent(root, false);
+            ToyMeshes.Part(cord, "Line", cylinder, white, new Vector3(0f, -0.5f, 0f), default,
+                new Vector3(0.035f, 1f, 0.035f));
+            return root;
+        }
+
+        /// <summary>
+        /// An oil slick under <paramref name="parent"/>, a unit across, scaled to its radius: a dark puddle with a wavy
+        /// rim, a navy outline round it and a rainbow sheen on it, flat on the floor under the cars' shadows.
+        /// </summary>
+        public Transform BuildOilSlick(Transform parent)
+        {
+            var root = new GameObject("Oil Slick").transform;
+            root.SetParent(parent, false);
+            var rim = ToyMeshes.Decal(root, "Rim", blob, markerMaterial, -7);
+            rim.transform.localPosition = Vector3.up * DecalHeight;
+            rim.transform.localScale = Vector3.one * 1.08f;
+            block.SetColor(ColorId, new Color(Navy.r, Navy.g, Navy.b, 1f));
+            rim.SetPropertyBlock(block);
+            var pool = ToyMeshes.Decal(root, "Pool", blob, markerMaterial, -6);
+            pool.transform.localPosition = Vector3.up * (DecalHeight * 1.2f);
+            block.SetColor(ColorId, new Color(0.16f, 0.13f, 0.22f, 1f));
+            pool.SetPropertyBlock(block);
+            var sheens = new[]
+            {
+                (new Vector3(-0.22f, 0f, 0.18f), 0.36f, new Color(0.55f, 0.35f, 1f, 0.55f)),
+                (new Vector3(0.2f, 0f, -0.1f), 0.28f, new Color(0.25f, 0.85f, 0.9f, 0.5f)),
+                (new Vector3(0.05f, 0f, 0.32f), 0.16f, new Color(1f, 0.85f, 0.35f, 0.6f)),
+            };
+            foreach (var (offset, size, colour) in sheens) {
+                var sheen = ToyMeshes.Decal(root, "Sheen", blob, markerMaterial, -5);
+                sheen.transform.localPosition = offset + Vector3.up * (DecalHeight * 1.4f);
+                sheen.transform.localRotation = Quaternion.Euler(0f, offset.x * 200f, 0f);
+                sheen.transform.localScale = Vector3.one * size;
+                block.SetColor(ColorId, colour);
+                sheen.SetPropertyBlock(block);
+            }
+
+            root.gameObject.SetActive(false);
+            return root;
+        }
+
+        /// <summary>The renderer of the oily tyre tracks' one mesh, dark and half seen through, flat on the floor.</summary>
+        public MeshRenderer BuildOilTracks(Transform parent, Mesh mesh)
+        {
+            var tracks = ToyMeshes.Decal(parent, "Oil Tracks", mesh, markerMaterial, -4);
+            block.SetColor(ColorId, new Color(0.12f, 0.11f, 0.18f, 0.7f));
+            tracks.SetPropertyBlock(block);
+            return tracks;
+        }
+
         public void Dispose()
         {
             foreach (var item in owned) {
@@ -255,6 +355,27 @@ namespace ToyCarArena.Gameplay.Pickups
             }
 
             return combined;
+        }
+
+        /// <summary>A flat puddle a unit across, facing up, whose rim wobbles in and out a little, as poured oil does.</summary>
+        private static Mesh BuildBlob(int sides)
+        {
+            var vertices = new Vector3[sides + 1];
+            var triangles = new int[sides * 3];
+            vertices[0] = Vector3.zero;
+            for (var i = 0; i < sides; i++) {
+                var angle = i * Mathf.PI * 2f / sides;
+                var radius = 1f + 0.09f * Mathf.Sin(angle * 5f) + 0.05f * Mathf.Sin(angle * 3f + 1.3f);
+                vertices[i + 1] = new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
+                triangles[i * 3] = 0;
+                triangles[i * 3 + 1] = (i + 1) % sides + 1;
+                triangles[i * 3 + 2] = i + 1;
+            }
+
+            var mesh = new Mesh { name = "Oil Blob", vertices = vertices, triangles = triangles };
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return mesh;
         }
 
         private Material Tinted(Material source, string name, Color colour)

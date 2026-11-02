@@ -11,6 +11,7 @@ using NUnit.Framework;
 using ToyCarArena.Audio;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Bots;
+using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Pickups;
 using ToyCarArena.Gameplay.Round;
 using ToyCarArena.UI;
@@ -69,7 +70,9 @@ namespace ToyCarArena.Tests.PlayMode
 
             var controls = new HudControls();
             var model = new HudViewModel(null, controls);
-            model.SetPayload(new HudRound(round, null, tuning.Controls, false, 7, false));
+            model.SetPayload(new HudRound(
+                round, container.Resolve<IEnumerable<ITickable>>().OfType<PlayerDriver>().Single(), tuning.Controls, false, 7,
+                false));
             var view = new HudView(controls, container.Resolve<IAudioService>());
             view.Bind(model);
             var hud = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/Screens/Hud.uxml").Instantiate();
@@ -131,6 +134,139 @@ namespace ToyCarArena.Tests.PlayMode
                 }
             }
             finally {
+                camera.targetTexture = null;
+                PlayModeWindow.SetCustomRenderingResolution((uint)screenWidth, (uint)screenHeight, "Item screenshot");
+                view.Dispose();
+                foreach (var texture in textures) {
+                    if (texture != null) {
+                        Object.DestroyImmediate(texture);
+                    }
+                }
+
+                typeof(Strings).GetField("table", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
+            }
+        }
+
+        /// <summary>
+        /// The items of v0.9 at work on the arena, in Logs/items/items_*.png at 1920×1080 and 1080×1920: the player's car
+        /// grown big by a mega, a bowling ball rolling at a bot, a balloon over a bot, an oil slick with a bot's oily tracks
+        /// across it, and the slot holding each new item in turn.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator CaptureTheNewItemsAtWork()
+        {
+            var tuning = UseMode(GameTuning.GameMode.Match, 120f);
+            CreateParent(new SimulationInput(), new SimulationProgress { Round = 7 }, "sandbox");
+            yield return LoadGame();
+            var container = GameScope().Container;
+            var round = container.Resolve<ArenaRound>();
+            var pickups = container.Resolve<ArenaPickups>();
+            var botDriver = container.Resolve<IEnumerable<ITickable>>().OfType<BotDriver>().Single();
+            typeof(BotDriver).GetField("isDriving", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(botDriver, true);
+            Strings.Load(new StringTable(AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Localization/strings.csv").text));
+            round.Place();
+            round.Begin();
+
+            var panelSettings = Object.Instantiate(
+                AssetDatabase.LoadAssetAtPath<PanelSettings>("Assets/UI/ui_panel_settings.asset"));
+            panelSettings.clearColor = true;
+            panelSettings.colorClearValue = Color.clear;
+            var host = new GameObject("Screenshot HUD");
+            var document = host.AddComponent<UIDocument>();
+            document.panelSettings = panelSettings;
+            var controls = new HudControls();
+            var model = new HudViewModel(null, controls);
+            model.SetPayload(new HudRound(
+                round, container.Resolve<IEnumerable<ITickable>>().OfType<PlayerDriver>().Single(), tuning.Controls, false, 7,
+                false));
+            var view = new HudView(controls, container.Resolve<IAudioService>());
+            view.Bind(model);
+            var hud = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/Screens/Hud.uxml").Instantiate();
+            hud.style.position = Position.Absolute;
+            hud.style.left = 0;
+            hud.style.top = 0;
+            hud.style.right = 0;
+            hud.style.bottom = 0;
+            var camera = Camera.main;
+            var directory = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "items");
+            Directory.CreateDirectory(directory);
+            var textures = new List<Object> { panelSettings, host };
+            var screenWidth = Screen.width;
+            var screenHeight = Screen.height;
+            var cars = round.Cars;
+            try {
+                document.rootVisualElement.Add(hud);
+                view.Attach(hud);
+                view.ShowAsync(CancellationToken.None).Forget();
+
+                // The player's car grows; a bot with a balloon; the player spills oil and a bot drives through it.
+                var player = round.Player;
+                player.Movement.Place(new Vector3(0f, 0.2f, -6f), Quaternion.Euler(0f, 20f, 0f));
+                cars[1].Movement.Place(new Vector3(-7f, 0.2f, 3f), Quaternion.Euler(0f, 120f, 0f));
+                cars[2].Movement.Place(new Vector3(-3f, 0.2f, -10f), Quaternion.Euler(0f, 90f, 0f));
+                cars[3].Movement.Place(new Vector3(4.5f, 0.2f, 6f), Quaternion.Euler(0f, 200f, 0f));
+                for (var i = 4; i < cars.Count; i++) {
+                    cars[i].Movement.Place(new Vector3(8f, 0.2f, -2f + (i - 4) * 3.2f), Quaternion.Euler(0f, 270f, 0f));
+                }
+
+                for (var frame = 0; frame < 20; frame++) {
+                    yield return null;
+                }
+
+                pickups.Give(cars[1], ItemKind.Balloon);
+                pickups.Use(cars[1]);
+                pickups.Give(player, ItemKind.Oil);
+                pickups.Use(player);
+                cars[2].Movement.Drive(Vector3.right, 1f);
+                for (var frame = 0; frame < 60; frame++) {
+                    yield return null;
+                }
+
+                cars[2].Movement.Drive(Vector3.zero, 0f);
+                pickups.Give(player, ItemKind.Mega);
+                pickups.Use(player);
+                for (var frame = 0; frame < 25; frame++) {
+                    yield return null;
+                }
+
+                // A bot rolls a ball across the floor towards the far cars.
+                cars[3].transform.rotation = Quaternion.Euler(0f, 250f, 0f);
+                pickups.Give(cars[3], ItemKind.Bowling);
+                pickups.Use(cars[3]);
+                Time.timeScale = 0.15f;
+                for (var frame = 0; frame < 6; frame++) {
+                    yield return null;
+                }
+
+                var held = new[] { ItemKind.Bowling, ItemKind.Balloon, ItemKind.Oil, ItemKind.Mega };
+                var shots = new[] { (1920, 1080), (1080, 1920) };
+                for (var shot = 0; shot < held.Length; shot++) {
+                    pickups.Give(player, held[shot]);
+                    var (width, height) = shots[shot % shots.Length];
+                    var scene = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
+                    var interface_ = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
+                    textures.Add(scene);
+                    textures.Add(interface_);
+                    PlayModeWindow.SetCustomRenderingResolution((uint)width, (uint)height, "Item screenshot");
+                    camera.targetTexture = scene;
+                    panelSettings.targetTexture = interface_;
+                    for (var frame = 0; frame < SettleFrames; frame++) {
+                        yield return null;
+                    }
+
+                    camera.Render();
+                    var picture = Compose(Read(scene), Read(interface_));
+                    var path = Path.Combine(directory, $"items_{held[shot].ToString().ToLowerInvariant()}_{width}x{height}.png");
+                    File.WriteAllBytes(path, picture.EncodeToPNG());
+                    Object.DestroyImmediate(picture);
+                    Debug.Log($"Item screenshot: {path}");
+                    // Empties the slot for the next one.
+                    typeof(Gameplay.Cars.Car).GetMethod("ClearItem", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .Invoke(player, null);
+                }
+            }
+            finally {
+                Time.timeScale = 1f;
                 camera.targetTexture = null;
                 PlayModeWindow.SetCustomRenderingResolution((uint)screenWidth, (uint)screenHeight, "Item screenshot");
                 view.Dispose();

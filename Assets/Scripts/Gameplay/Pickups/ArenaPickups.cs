@@ -22,9 +22,10 @@ namespace ToyCarArena.Gameplay.Pickups
     /// behind gets the items that knock cars off more often); a car that already holds one breaks the box and gets
     /// nothing, as in a kart racer. The item is kept until its car uses it (<see cref="Use"/>) or falls.
     /// <para>
-    /// Used, heavy, shield and turbo start running on the car (<see cref="Car.StartAbility"/>); the shockwave is a ring sent
-    /// from the car at once, the bomb is thrown ahead (<see cref="ItemBombs"/>) and the glove punches from the nose
-    /// (<see cref="ItemGloves"/>). Every hit of an item goes through <see cref="ItemBlow"/>: credited to its user, taken
+    /// Used, mega, shield, turbo and balloon start running on the car, each beside the others (<see cref="Car.StartAbility"/>;
+    /// a balloon's catch is <see cref="ItemBalloons"/>); the shockwave is a ring sent from the car at once, the bomb is thrown ahead
+    /// (<see cref="ItemBombs"/>), the glove punches from the nose (<see cref="ItemGloves"/>), the bowling ball rolls out
+    /// of it (<see cref="ItemBowls"/>) and the oil is spilled behind (<see cref="ItemOil"/>, a layer of the floor). Every hit of an item goes through <see cref="ItemBlow"/>: credited to its user, taken
     /// by a shield, passing a car just back from a fall.
     /// </para>
     /// <para>
@@ -66,6 +67,7 @@ namespace ToyCarArena.Gameplay.Pickups
         private readonly MechanicArt mechanicArt;
         private readonly ArenaCamera arenaCamera;
         private readonly IAudioService audioService;
+        private readonly ArenaSurface surface;
         private readonly Transform parent;
         private readonly bool isEnabled;
         private readonly List<FloorPickup> live = new();
@@ -78,6 +80,9 @@ namespace ToyCarArena.Gameplay.Pickups
         private ItemBlow blow;
         private ItemBombs bombs;
         private ItemGloves gloves;
+        private ItemBowls bowls;
+        private ItemOil oil;
+        private ItemBalloons balloons;
         private EffectPlayer effects;
         private System.Random random;
         private float nextSpawn;
@@ -86,7 +91,7 @@ namespace ToyCarArena.Gameplay.Pickups
 
         public ArenaPickups(GameTuning tuning, ArenaRound round, ArenaCrumble crumble, IArenaEdge edge, ArenaHazards hazards,
             RoundDifficulty difficulty, MechanicArt mechanicArt, ArenaCamera arenaCamera, IAudioService audioService,
-            ISessionProgress progress, Transform parent)
+            ISessionProgress progress, ArenaSurface surface, Transform parent)
         {
             this.tuning = tuning;
             this.settings = tuning.Pickups;
@@ -98,6 +103,7 @@ namespace ToyCarArena.Gameplay.Pickups
             this.mechanicArt = mechanicArt;
             this.arenaCamera = arenaCamera;
             this.audioService = audioService;
+            this.surface = surface;
             this.parent = parent;
             // The one place the mode is read: a match always has boxes, a round from the visit's round the tuning says.
             // A scene without them never builds an object for one.
@@ -136,11 +142,16 @@ namespace ToyCarArena.Gameplay.Pickups
             AnimateSlots(deltaTime);
             bombs.Tick(deltaTime);
             gloves.Tick(deltaTime);
+            bowls.Tick(deltaTime);
+            oil.Tick(deltaTime);
+            balloons.Tick(deltaTime);
             if (!round.IsRunning) {
                 if (round.IsFinished) {
                     RemoveAll();
                     bombs.Clear();
                     gloves.Clear();
+                    bowls.Clear();
+                    oil.Clear();
                 }
 
                 return;
@@ -149,6 +160,7 @@ namespace ToyCarArena.Gameplay.Pickups
             var phase = crumble.Phase;
             if (phase is FloorPhase.Peak or FloorPhase.Return) {
                 RemoveAll();
+                oil.Clear();
                 return;
             }
 
@@ -214,10 +226,17 @@ namespace ToyCarArena.Gameplay.Pickups
             EnsureBuilt();
             var kind = car.UseItem();
             switch (kind) {
-                case ItemKind.Heavy:
+                case ItemKind.Mega:
                 case ItemKind.Shield:
                 case ItemKind.Turbo:
+                case ItemKind.Balloon:
                     car.StartAbility(kind);
+                    break;
+                case ItemKind.Bowling:
+                    bowls.Roll(car);
+                    break;
+                case ItemKind.Oil:
+                    oil.Spill(car);
                     break;
                 case ItemKind.Shockwave:
                     SendShockwave(car);
@@ -232,7 +251,7 @@ namespace ToyCarArena.Gameplay.Pickups
                     return false;
             }
 
-            if (kind is ItemKind.Heavy or ItemKind.Shield or ItemKind.Turbo) {
+            if (kind is ItemKind.Mega or ItemKind.Shield or ItemKind.Turbo or ItemKind.Balloon) {
                 if (effects != null) {
                     effects.PlayPickup(car.Position);
                 }
@@ -241,6 +260,12 @@ namespace ToyCarArena.Gameplay.Pickups
             }
 
             return true;
+        }
+
+        /// <summary>Whether a balloon is carrying <paramref name="car"/> back to the floor after it went over the edge.</summary>
+        public bool IsCarrying(Car car)
+        {
+            return balloons != null && balloons.IsCarrying(car);
         }
 
         /// <summary>Whether <paramref name="car"/>'s glove is out, so a bot does not punch twice in a row.</summary>
@@ -263,6 +288,8 @@ namespace ToyCarArena.Gameplay.Pickups
             }
 
             look?.Dispose();
+            oil?.Dispose();
+            balloons?.Dispose();
             art?.Dispose();
             if (root != null) {
                 Object.Destroy(root.gameObject);
@@ -293,6 +320,10 @@ namespace ToyCarArena.Gameplay.Pickups
             blow = new ItemBlow(settings, difficulty);
             bombs = new ItemBombs(tuning, round, edge, blow, effects, audioService, arenaCamera, art, root);
             gloves = new ItemGloves(tuning, round, blow, effects, audioService, arenaCamera, art, root);
+            bowls = new ItemBowls(tuning, round, edge, blow, effects, audioService, arenaCamera, art, root);
+            oil = new ItemOil(tuning, round, edge, effects, audioService, art, root);
+            surface.Add(oil);
+            balloons = new ItemBalloons(tuning, round, edge, effects, audioService, art, root);
 
             slots = new FloorPickup[settings.MaxCount];
             for (var i = 0; i < slots.Length; i++) {
