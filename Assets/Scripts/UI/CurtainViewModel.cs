@@ -35,13 +35,13 @@ namespace ToyCarArena.UI
         {
             ArenaName = arenaName;
             ArenaIsNew = arenaIsNew;
-            var rows = new List<LobbyRow> { new(0, roster.ColorOf(0), GameText.You, roster.LevelOf(0), null, false, false) };
+            var rows = new List<LobbyRow> { new(0, roster.ColorOf(0), GameText.You, roster.LevelOf(0), null, false) };
             for (var index = 1; index <= SessionRoster.MaxBots; index++) {
                 var left = roster.LeftNameOf(index);
                 if (index <= botCount || left != null) {
                     var isSeated = index <= botCount;
                     rows.Add(new LobbyRow(index, roster.ColorOf(index), isSeated ? roster.NameOf(index) : null,
-                        isSeated ? roster.LevelOf(index) : 0, left, roster.Joined(index), index == nemesis));
+                        isSeated ? roster.LevelOf(index) : 0, left, index == nemesis));
                 }
             }
             Rows = rows.AsReadOnly();
@@ -69,17 +69,15 @@ namespace ToyCarArena.UI
         /// <summary>The seated player's level, 0 for a row that only leaves.</summary>
         public readonly int Level;
         public readonly string LeftName;
-        public readonly bool IsNew;
         public readonly bool IsNemesis;
 
-        public LobbyRow(int index, int colorId, string name, int level, string leftName, bool isNew, bool isNemesis)
+        public LobbyRow(int index, int colorId, string name, int level, string leftName, bool isNemesis)
         {
             this.Index = index;
             this.ColorId = colorId;
             this.Name = name;
             this.Level = level;
             this.LeftName = leftName;
-            this.IsNew = isNew;
             this.IsNemesis = isNemesis;
         }
     }
