@@ -87,6 +87,12 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public SurfaceFeel Surface { get; private set; } = SurfaceFeel.Neutral;
 
+        /// <summary>
+        /// What the car's own tyres add to the floor's feel, neutral unless something set it: oily tyres keep sliding a
+        /// while after the car has left the slick.
+        /// </summary>
+        public SurfaceFeel Tyres { get; set; } = SurfaceFeel.Neutral;
+
         public Vector3 Velocity => body.linearVelocity;
 
         /// <summary>
@@ -394,6 +400,7 @@ namespace ToyCarArena.Gameplay.Cars
             IsGrounded = false;
             LastGroundedTime = float.NegativeInfinity;
             Surface = SurfaceFeel.Neutral;
+            Tyres = SurfaceFeel.Neutral;
             StepVelocity = Vector3.zero;
         }
 
@@ -417,7 +424,7 @@ namespace ToyCarArena.Gameplay.Cars
                 arenaMask, QueryTriggerInteraction.Ignore);
             if (IsGrounded) {
                 LastGroundedTime = Time.time;
-                Surface = surface != null ? surface.Sample(body.position) : SurfaceFeel.Neutral;
+                Surface = (surface != null ? surface.Sample(body.position) : SurfaceFeel.Neutral).Combine(Tyres);
                 // On a moving floor the car drives in the floor's frame: take the floor's motion off, let the arcade
                 // steering and grip work on what is left, and put it back, so an idle car is simply carried round.
                 var motion = platform != null ? platform.Sample(body.position) : PlatformMotion.None;

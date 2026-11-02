@@ -54,7 +54,7 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Upward speed a pad gives a car, in metres per second; with gravity it sets how long the car flies")]
             [Min(1f)]
             [SerializeField]
-            private float jumpSpeed = 4.5f;
+            private float jumpSpeed = 6.5f;
 
             [Tooltip("How far a car flies forward at least, in metres: it keeps its own speed if that carries it further")]
             [Min(0f)]
@@ -398,7 +398,7 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Upward speed, in metres per second, the box gives a car")]
             [Min(0f)]
             [SerializeField]
-            private float lift = 3.5f;
+            private float lift = 4.7f;
 
             [Tooltip("Seconds a toss knocks the car off balance")]
             [Min(0f)]
