@@ -44,6 +44,15 @@ MonoBehaviour:
     edgeHoldBrake: 12
     edgeHoldMaxBrake: 80
     edgeHoldContactGrace: 0.5
+    autoRamRange: 4.5
+    autoRamAngle: 25
+    autoRamThrottle: 0.5
+    autoRamClosing: 1
+    autoRamHold: 0.12
+    autoRamContact: 2.6
+    autoRescueMargin: 3.5
+    autoRescueSpeed: 2
+    autoRescueWindow: 1
   boost:
     impulse: 10
     duration: 0.3
@@ -85,6 +94,7 @@ MonoBehaviour:
       boostDelay: {x: 1.2, y: 2.5}
       escapeBoostChance: 0.3
       edgeAssist: 1
+      autoBoost: 1
       playerBump: 2.2
       playerStaggerScale: 0.4
       staggerFromPlayer: 2.5
@@ -102,6 +112,7 @@ MonoBehaviour:
       boostDelay: {x: 0.3, y: 1.2}
       escapeBoostChance: 0.5
       edgeAssist: 0.3
+      autoBoost: 0
       playerBump: 1.3
       playerStaggerScale: 0.4
       staggerFromPlayer: 1
@@ -441,7 +452,7 @@ MonoBehaviour:
     returnTime: 3
     returnWarning: 1.2
     matchFallShare: 0.5
-  mode: 1
+  mode: 0
   match:
     duration: 60
   pickups:

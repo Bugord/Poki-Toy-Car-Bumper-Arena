@@ -47,10 +47,11 @@ namespace ToyCarArena.App
 
         public override async UniTask<StateTransitionInfo> Execute(CancellationToken token)
         {
-            // A match ends on its winner turning on a podium, drawn by the arena still loaded behind the screen.
+            // The result shows a car turning on a podium (a match's winner, a round's player or the car that pushed
+            // them off), drawn by the arena still loaded behind the screen.
             var record = Payload;
-            if (record.Result.IsMatch && record.Result.Standings.Count > 0) {
-                record = record.WithPodium(levelScene.Resolve<WinnerPodium>().Show(record.Result.Standings[0].Index));
+            if (record.Result.PodiumCar != RoundResult.Nobody) {
+                record = record.WithPodium(levelScene.Resolve<WinnerPodium>().Show(record.Result.PodiumCar));
             }
 
             var screen = await navigator.OpenAsync<RoundOverViewModel, RoundRecord>(record, token);

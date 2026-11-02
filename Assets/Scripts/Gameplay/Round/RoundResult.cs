@@ -107,6 +107,13 @@ namespace ToyCarArena.Gameplay.Round
         public readonly bool IsLoss;
 
         public IReadOnlyList<RoundStanding> Standings { get; }
+
+        /// <summary>
+        /// The car the result shows on its podium: a match's winner; after a round the player's own car on a win, the
+        /// car that knocked the player off on a loss to one, and the player's own car otherwise.
+        /// </summary>
+        public int PodiumCar => IsMatch ? Standings.Count > 0 ? Standings[0].Index : Nobody
+            : Outcome == RoundOutcome.Out && KnockedOutBy != Nobody ? KnockedOutBy : 0;
         public IReadOnlyList<int> Colors { get; }
         public int ColorOf(int index) => Colors[index];
 

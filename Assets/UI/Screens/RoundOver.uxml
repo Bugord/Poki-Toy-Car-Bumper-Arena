@@ -41,9 +41,14 @@
                 <ui:VisualElement name="podium-winner" picking-mode="Ignore" class="podium__winner">
                     <ui:VisualElement name="podium-crown" picking-mode="Ignore" class="podium__crown" />
                     <ui:Label name="podium-name" picking-mode="Ignore" class="podium__name" />
-                    <ui:Label text="WINNER" picking-mode="Ignore" class="podium__tag">
+                    <ui:Label name="podium-winner-tag" text="WINNER" picking-mode="Ignore" class="podium__tag">
                         <Bindings>
                             <Bugord.App.Localization.LocalizedText property="text" key="result.winner" />
+                        </Bindings>
+                    </ui:Label>
+                    <ui:Label name="podium-rival-tag" text="REVENGE NEXT ROUND" picking-mode="Ignore" class="podium__tag podium__tag--rival">
+                        <Bindings>
+                            <Bugord.App.Localization.LocalizedText property="text" key="result.revenge_next" />
                         </Bindings>
                     </ui:Label>
                 </ui:VisualElement>
@@ -61,15 +66,6 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement picking-mode="Ignore" class="round-over__spacer" />
-        <ui:VisualElement picking-mode="Ignore" class="round-over__unlock-slot">
-            <ui:VisualElement name="xp-new-car" picking-mode="Ignore" class="best best--shown best--new round-over__new-car">
-                <ui:VisualElement name="xp-new-car-portrait" picking-mode="Ignore" class="car-portrait round-over__new-car-portrait" />
-                <ui:VisualElement picking-mode="Ignore" class="round-over__new-car-copy">
-                    <ui:Label name="xp-new-car-name" picking-mode="Ignore" class="round-over__new-car-name" />
-                    <ui:Label name="xp-ready" text="DRIVES NEXT MATCH" picking-mode="Ignore" class="round-over__ready" />
-                </ui:VisualElement>
-            </ui:VisualElement>
-        </ui:VisualElement>
         <ui:VisualElement picking-mode="Ignore" class="round-over__bottom">
             <ui:VisualElement name="level-card" picking-mode="Ignore" class="card level-card">
                 <ui:VisualElement picking-mode="Ignore" class="level-card__head">

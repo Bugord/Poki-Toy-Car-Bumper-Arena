@@ -100,6 +100,21 @@ namespace ToyCarArena.UI
             }
         }
 
+        /// <summary>Arenas the levels this reward crossed opened at <paramref name="level"/>.</summary>
+        public IEnumerable<ArenaCatalog.Entry> NewArenasAt(int level)
+        {
+            if (level <= XpGain.Before.Level || level > XpGain.After.Level) {
+                yield break;
+            }
+
+            foreach (var map in tuning.Maps) {
+                var arena = arenaCatalog.Find(map.Id);
+                if (map.UnlockLevel == level && arena != null) {
+                    yield return arena;
+                }
+            }
+        }
+
         /// <summary>
         /// The stops of the level track after the level the round started at: the next levels that open a car or an
         /// arena (a car wins a shared level, it is what the player drives), then the next rank. Read from the catalogs,
@@ -169,8 +184,17 @@ namespace ToyCarArena.UI
         /// <summary>The REVENGE target as the match ended, or <see cref="RoundResult.Nobody"/>.</summary>
         public int Nemesis { get; private set; }
 
-        /// <summary>The winner turning on its podium; null when there is none to show.</summary>
+        /// <summary>The car turning on its podium; null when there is none to show.</summary>
         public Texture Podium { get; private set; }
+
+        /// <summary>The index of the car on the podium (<see cref="RoundResult.PodiumCar"/>).</summary>
+        public int PodiumCar { get; private set; }
+
+        /// <summary>Whether the podium crowns a winner: a match's first place, or the player's own win of a round.</summary>
+        public bool IsPodiumWinner => IsMatch || Outcome == RoundOutcome.Won;
+
+        /// <summary>Whether the podium shows the car that knocked the player off a round: the one to get back at.</summary>
+        public bool IsPodiumRival => !IsMatch && Outcome == RoundOutcome.Out && KnockedOutBy != RoundResult.Nobody;
 
         public string NameOf(int index) =>
             index == 0 ? Strings.Get("common.you") : index < names.Count ? names[index] : string.Empty;
@@ -187,6 +211,7 @@ namespace ToyCarArena.UI
             levels = payload.Levels;
             Nemesis = payload.Nemesis;
             Podium = payload.Podium;
+            PodiumCar = result.PodiumCar;
             Standings = result.IsMatch ? result.Standings : System.Array.Empty<RoundStanding>();
             XpGain = payload.XpGain;
             Outcome = result.Outcome;

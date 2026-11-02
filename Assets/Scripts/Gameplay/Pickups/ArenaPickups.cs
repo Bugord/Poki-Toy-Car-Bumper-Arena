@@ -86,7 +86,7 @@ namespace ToyCarArena.Gameplay.Pickups
 
         public ArenaPickups(GameTuning tuning, ArenaRound round, ArenaCrumble crumble, IArenaEdge edge, ArenaHazards hazards,
             RoundDifficulty difficulty, MechanicArt mechanicArt, ArenaCamera arenaCamera, IAudioService audioService,
-            Transform parent)
+            ISessionProgress progress, Transform parent)
         {
             this.tuning = tuning;
             this.settings = tuning.Pickups;
@@ -99,11 +99,16 @@ namespace ToyCarArena.Gameplay.Pickups
             this.arenaCamera = arenaCamera;
             this.audioService = audioService;
             this.parent = parent;
-            // The one place the mode is read: a round of last-car-standing never has a box, or an object for one.
-            this.isEnabled = settings.Enabled && tuning.IsMatch;
+            // The one place the mode is read: a match always has boxes, a round from the visit's round the tuning says.
+            // A scene without them never builds an object for one.
+            this.isEnabled = settings.Enabled && (tuning.IsMatch ||
+                (settings.FirstRound > 0 && progress.Round >= settings.FirstRound));
         }
 
-        /// <summary>Whether this scene has boxes and items at all: a long match with them switched on.</summary>
+        /// <summary>
+        /// Whether this scene has boxes and items at all: a long match, or a round from
+        /// <see cref="GameTuning.PickupSettings.FirstRound"/> of the visit, with them switched on.
+        /// </summary>
         public bool IsEnabled => isEnabled;
 
         /// <summary>The boxes lying on the floor to be broken now.</summary>
@@ -582,7 +587,8 @@ namespace ToyCarArena.Gameplay.Pickups
             }
 
             audioService?.Play(audioService.Library.HitHeavy, isPlayerHit ? 0.9f : 0.45f);
-            if (arenaCamera != null && isPlayerHit) {
+            // The player feels their own wave too, not only one that hits them.
+            if (arenaCamera != null && (isPlayerHit || user.IsPlayer)) {
                 arenaCamera.Shake(0.5f);
             }
         }

@@ -20,6 +20,9 @@ namespace ToyCarArena.App
     /// knockouts</c>, R the round 1, 2, 3 or 4plus, so the first round can be told from the later ones</item>
     /// <item><c>result / pushed, fell / out-cause</c> when the player is out: pushed off by a car, or drove off alone</item>
     /// <item><c>result / boosts-0, boosts-1-2, boosts-3plus / boosts</c></item>
+    /// <item>after v0.7.1, for a round and a match alike: <c>result / boosts-none, few, many-rR / round-boosts</c>, the
+    /// player's own boosts by round (none, 1 or 2, 3 and more; the old event has no round), and <c>result / auto-none,
+    /// few, many-rR / auto-boosts</c>, the boosts the game fired for the player (<see cref="AutoBoost"/>)</item>
     /// <item>first round only: <c>controls / keyboard, mouse, touch, gamepad, none / input</c>, what the player first
     /// steered with, and <c>controls / move-0-3, move-3-10, move-10plus, never / first-move</c>, seconds from the cars
     /// standing on the arena to it (the round waits for the player's first steer or boost, so mostly the wait)</item>
@@ -203,6 +206,7 @@ namespace ToyCarArena.App
             }
 
             platform.Measure(ResultCategory, BoostBucketOf(driver.Boosts), "boosts");
+            MeasureBoosts(platform, tag, driver);
             if (round <= 1) {
                 MeasureControls(platform, driver);
             }
@@ -229,35 +233,39 @@ namespace ToyCarArena.App
 
             platform.Measure(ResultCategory, $"color-{CarPaint.NameOf(result.ColorOf(0))}-{tag}", "color");
             platform.Measure(ResultCategory, $"cars-{result.CarCount}-{tag}", "cars");
+            MeasureBoosts(platform, tag, driver);
             if (match <= 1) {
                 MeasureControls(platform, driver);
             }
         }
 
         /// <summary>
-        /// The roll of a box the player broke landed on an item, in match number <paramref name="match"/>:
+        /// The roll of a box the player broke landed on an item, in match or round number <paramref name="match"/>:
         /// <c>match / item-heavy, shockwave, shield, turbo, bomb, glove-rR / item-get</c>, R as for the match's other
-        /// events. Replaces v0.6's <c>pickup</c> event, when a pickup was its ability.
+        /// events; in a round of last-car-standing (after v0.7.1) the same under <c>result</c>. Replaces v0.6's
+        /// <c>pickup</c> event, when a pickup was its ability.
         /// </summary>
-        public static void MeasureItemGet(this IGamePlatform platform, int match, ItemKind kind) =>
-            platform.Measure(MatchCategory, $"item-{ItemId(kind)}-{RoundTag(match)}", "item-get");
+        public static void MeasureItemGet(this IGamePlatform platform, int match, ItemKind kind, bool isMatch = true) =>
+            platform.Measure(ItemCategory(isMatch), $"item-{ItemId(kind)}-{RoundTag(match)}", "item-get");
 
         /// <summary>
-        /// The player used the item in the slot: <c>match / item-kind-rR / item-use</c>; against item-get it tells which
-        /// items the players find and which they forget to use.
+        /// The player used the item in the slot: <c>match / item-kind-rR / item-use</c> (<c>result</c> in a round);
+        /// against item-get it tells which items the players find and which they forget to use.
         /// </summary>
-        public static void MeasureItemUse(this IGamePlatform platform, int match, ItemKind kind) =>
-            platform.Measure(MatchCategory, $"item-{ItemId(kind)}-{RoundTag(match)}", "item-use");
+        public static void MeasureItemUse(this IGamePlatform platform, int match, ItemKind kind, bool isMatch = true) =>
+            platform.Measure(ItemCategory(isMatch), $"item-{ItemId(kind)}-{RoundTag(match)}", "item-use");
+
+        private static string ItemCategory(bool isMatch) => isMatch ? MatchCategory : ResultCategory;
 
         // The kind as the events spell it, without digits.
         private static string ItemId(ItemKind kind) => kind.ToString().ToLowerInvariant();
 
         /// <summary>
         /// How many boxes the player broke in the match, an item in them or not, at its end:
-        /// <c>match / pickups-N-rR / pickups</c>, N from 0 to 9 or 10plus.
+        /// <c>match / pickups-N-rR / pickups</c>, N from 0 to 9 or 10plus; <c>result</c> in a round with boxes.
         /// </summary>
-        public static void MeasureMatchPickups(this IGamePlatform platform, int match, int count) =>
-            platform.Measure(MatchCategory, $"pickups-{CountBucket(count)}-{RoundTag(match)}", "pickups");
+        public static void MeasureMatchPickups(this IGamePlatform platform, int match, int count, bool isMatch = true) =>
+            platform.Measure(ItemCategory(isMatch), $"pickups-{CountBucket(count)}-{RoundTag(match)}", "pickups");
 
         // One number, so the match's tag still fits beside it.
         private static string CountBucket(int count)
@@ -287,6 +295,22 @@ namespace ToyCarArena.App
         {
             return seconds < 15f ? "early" : seconds < 30f ? "mid" : seconds < 60f ? "late" : "full";
         }
+
+        /// <summary>
+        /// The player's own boosts and the game's for them in a round or match tagged <paramref name="tag"/>, without
+        /// numbers but the round's, so neither event goes over <see cref="GameEvent.MaxNumbers"/>.
+        /// </summary>
+        private static void MeasureBoosts(IGamePlatform platform, string tag, PlayerDriver driver)
+        {
+            if (driver == null) {
+                return;
+            }
+
+            platform.Measure(ResultCategory, $"boosts-{AmountOf(driver.Boosts)}-{tag}", "round-boosts");
+            platform.Measure(ResultCategory, $"auto-{AmountOf(driver.AutoBoosts)}-{tag}", "auto-boosts");
+        }
+
+        private static string AmountOf(int count) => count == 0 ? "none" : count <= 2 ? "few" : "many";
 
         private static string BoostBucketOf(int boosts)
         {

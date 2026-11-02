@@ -50,13 +50,13 @@ namespace ToyCarArena.Tests.PlayMode
             saved.Clear();
         }
 
-        // --- Only in a match ---
+        // --- In a match, and in rounds from the visit's second ---
 
         [UnityTest]
-        public IEnumerator ARoundOfLastCarStandingHasNoBoxesAndNoItems()
+        public IEnumerator TheFirstRoundOfAVisitHasNoBoxesAndNoItems()
         {
             tuning = UseMode(GameTuning.GameMode.LastStanding);
-            yield return Load(false, 7);
+            yield return Load(false, 1);
             Assert.That(pickups.IsEnabled, Is.False);
             var spawned = 0;
             pickups.Spawned += _ => spawned++;
@@ -71,6 +71,19 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(round.Cars.All(car => !car.HasItem), Is.True);
             Assert.That(pickups.Use(round.Player), Is.False);
             Assert.That(GameObject.Find("ArenaPickups"), Is.Null, "a round must not build a box object");
+        }
+
+        [UnityTest]
+        public IEnumerator ALaterRoundOfLastCarStandingHasBoxes()
+        {
+            tuning = UseMode(GameTuning.GameMode.LastStanding);
+            Assert.That(tuning.Pickups.FirstRound, Is.EqualTo(2), "boxes come from the visit's second round");
+            yield return Load(true, 2);
+            Assert.That(pickups.IsEnabled, Is.True);
+            var spawned = 0;
+            pickups.Spawned += _ => spawned++;
+            yield return Until(() => spawned > 0, 8f, "no box appeared in a round");
+            Assert.That(pickups.Give(round.Player, ItemKind.Bomb), Is.True, "a round fills a slot");
         }
 
         // --- When and where boxes appear ---
@@ -169,18 +182,19 @@ namespace ToyCarArena.Tests.PlayMode
                 for (var i = 0; i < Draws; i++) {
                     var kind = ItemRoll.Choose(random, settings, trailing);
                     kinds.Add(kind);
-                    if (kind is ItemKind.Shockwave or ItemKind.Bomb or ItemKind.Glove) {
+                    if (kind is ItemKind.Shockwave or ItemKind.Bomb) {
                         count++;
                     }
                 }
 
-                Assert.That(kinds.Count, Is.EqualTo(6), "every item can come out of a box");
+                Assert.That(kinds, Is.EquivalentTo(new[] { ItemKind.Heavy, ItemKind.Shockwave, ItemKind.Bomb }),
+                    "only the three items come out of a box");
                 return count / (float)Draws;
             }
 
             var leading = Comeback(0f);
             var trailing = Comeback(1f);
-            Assert.That(trailing, Is.GreaterThan(leading + 0.15f),
+            Assert.That(trailing, Is.GreaterThan(leading + 0.1f),
                 $"a car far behind should get comeback items more often ({trailing:P0} against {leading:P0})");
 
             // Seeded: the same dice give the same items, so a simulation repeats them.

@@ -89,6 +89,8 @@ def summarise(data):
         "driven": other(o, r"result-car-([a-z]+(?:-[a-z]+)*-r(?:1|2|3|4plus))-car"),
         "colors": other(o, r"garage-color-(green|red|blue|yellow|purple|orange|pink|dark)-color"),
         "played_colors": other(o, r"result-color-((?:green|red|blue|yellow|purple|orange|pink|dark)-r(?:1|2|3|4plus))-color"),
+        "round_boosts": other(o, r"result-boosts-((?:none|few|many)-r(?:1|2|3|4plus))-round-boosts"),
+        "auto_boosts": other(o, r"result-auto-((?:none|few|many)-r(?:1|2|3|4plus))-auto-boosts"),
         "progress": p,
     }
     # с v0.2: на раунд (R = 1, 2, 3, 4plus)
@@ -104,9 +106,10 @@ def summarise(data):
     # способности матча до ящиков (v0.6): что подобрал игрок (kind-rR)
     s["match_pickup"] = other(o, r"match-pickup-((?:heavy|shockwave|shield|turbo)-r[0-9a-z]+)-pickup")
     # ящики матча: сколько разбил за матч (N-rR), какой предмет выпал (item-get) и какой применил (item-use)
-    s["match_pickups"] = other(o, r"match-pickups-([0-9a-z]+-r[0-9a-z]+)-pickups")
-    s["match_item_get"] = other(o, r"match-item-((?:heavy|shockwave|shield|turbo|bomb|glove)-r[0-9a-z]+)-item-get")
-    s["match_item_use"] = other(o, r"match-item-((?:heavy|shockwave|shield|turbo|bomb|glove)-r[0-9a-z]+)-item-use")
+    # после v0.7.1 то же в раундах «последний оставшийся» под result
+    s["match_pickups"] = other(o, r"(?:match|result)-pickups-([0-9a-z]+-r[0-9a-z]+)-pickups")
+    s["match_item_get"] = other(o, r"(?:match|result)-item-((?:heavy|shockwave|shield|turbo|bomb|glove)-r[0-9a-z]+)-item-get")
+    s["match_item_use"] = other(o, r"(?:match|result)-item-((?:heavy|shockwave|shield|turbo|bomb|glove)-r[0-9a-z]+)-item-use")
     return s
 
 
@@ -228,9 +231,9 @@ def report(version, previous):
         ("Матч: из них столкнули по матчу (визиты)", "match_pushed", None),
         ("Матч: REVENGE по матчу (визиты)", "match_revenge", None),
         ("Матч: подобранные способности до ящиков (v0.6; heavy, shockwave, shield, turbo; визиты)", "match_pickup", None),
-        ("Матч: сколько ящиков разбил игрок за матч (до ящиков: способностей; визиты)", "match_pickups", None),
-        ("Матч: какой предмет выпал из ящика (item-get; визиты)", "match_item_get", None),
-        ("Матч: какой предмет игрок применил (item-use; визиты)", "match_item_use", None),
+        ("Ящики: сколько разбил игрок за матч или раунд (до ящиков: способностей; визиты)", "match_pickups", None),
+        ("Предметы: какой выпал из ящика (item-get; визиты)", "match_item_get", None),
+        ("Предметы: какой игрок применил (item-use; визиты)", "match_item_use", None),
     ):
         keys = order if order is not None else keys_of(key)
         if keys:
@@ -280,6 +283,8 @@ def report(version, previous):
         ("Открытия арен (визиты с map unlock)", "map_unlocks"),
         ("Арены по раундам (визиты с map)", "maps"),
         ("Варианты арен по раундам (визиты с map-variant)", "variants"),
+        ("Свои рывки по раундам (после v0.7.1, визиты с round-boosts)", "round_boosts"),
+        ("Рывки автобуста по раундам (после v0.7.1, визиты с auto-boosts)", "auto_boosts"),
     ):
         keys = keys_of(key)
         if key == "levels":

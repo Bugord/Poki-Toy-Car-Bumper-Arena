@@ -4,9 +4,9 @@ using UnityEngine;
 namespace ToyCarArena.Gameplay
 {
     /// <summary>
-    /// The mystery boxes lying on the floor of a long match and the items they give, apart from the main file so they can
-    /// change side by side with the match and the floor: <see cref="PickupSettings"/>. A round of last-car-standing has
-    /// none.
+    /// The mystery boxes lying on the floor and the items they give, apart from the main file so they can change side by
+    /// side with the match and the floor: <see cref="PickupSettings"/>. A long match has them from the start, a round of
+    /// last-car-standing from <see cref="PickupSettings.FirstRound"/> of a visit, so the first round stays plain.
     /// </summary>
     public sealed partial class GameTuning
     {
@@ -30,9 +30,15 @@ namespace ToyCarArena.Gameplay
             /// <summary>The kinds an item can be, in the order of the weight lists.</summary>
             public const int KindCount = 6;
 
-            [Tooltip("Whether a long match has boxes at all; a round of last-car-standing never does")]
+            [Tooltip("Whether there are boxes at all")]
             [SerializeField]
             private bool enabled = true;
+
+            [Tooltip("Round of a visit from which a round of last-car-standing has boxes, so a new player learns to " +
+                "drive and push first; a long match always has them. 0 never in a round")]
+            [Min(0)]
+            [SerializeField]
+            private int firstRound = 2;
 
             [Header("Appearing")]
             [Tooltip("Seconds into the match, and into each cycle of the floor, before the first boxes appear")]
@@ -116,14 +122,15 @@ namespace ToyCarArena.Gameplay
             private float trailingGap = 3f;
 
             [Tooltip("How likely each item is for a car level with the leader (or leading), in this order: heavy, " +
-                "shockwave, shield, turbo, bomb, glove")]
+                "shockwave, shield, turbo, bomb, glove. A round, which keeps no score, always rolls this row. Shield, " +
+                "turbo and glove are weighted out since v0.7.1: the players did not take to them")]
             [SerializeField]
-            private float[] leaderWeights = { 1.2f, 0.6f, 1.4f, 1.2f, 0.6f, 1f };
+            private float[] leaderWeights = { 1f, 1f, 0f, 0f, 1f, 0f };
 
             [Tooltip("How likely each item is for a car far behind the leader, same order: the items that knock cars " +
                 "off (shockwave, bomb, glove) come up more, to catch up")]
             [SerializeField]
-            private float[] trailingWeights = { 0.8f, 1.4f, 0.6f, 0.9f, 1.6f, 1.6f };
+            private float[] trailingWeights = { 0.7f, 1.3f, 0f, 0f, 1.5f, 0f };
 
             [Tooltip("Share of an item's push and stagger the player takes on the easiest match (blended to all of it " +
                 "by the difficulty), as for the arena's hazards")]
@@ -155,6 +162,7 @@ namespace ToyCarArena.Gameplay
             private PickupBotSettings bots = new();
 
             public bool Enabled => enabled;
+            public int FirstRound => firstRound;
             public float FirstDelay => firstDelay;
             public float Interval => interval;
             public float Jitter => jitter;
@@ -233,7 +241,7 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Metres from the user the ring reaches")]
             [Min(0.5f)]
             [SerializeField]
-            private float radius = 6f;
+            private float radius = 9f;
 
             [Tooltip("Speed, in metres per second, the ring pushes a car at the user's side; it eases to the share below " +
                 "at the edge of the ring. Never past a hit's most, Car.MaxBumpSpeed")]

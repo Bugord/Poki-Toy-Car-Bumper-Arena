@@ -10,6 +10,11 @@ namespace ToyCarArena.UI
     /// crowned name pill above it (level and name: the car itself shows its colour), and the results table, a row per car in place order. A phone held upright shows the
     /// top three and, apart, the player's own row; a wide screen every car, the table at the left of the podium.
     /// <para>
+    /// After a round of the last car standing the podium stands alone in the middle, without the table: the player's
+    /// own car crowned on a win, the car that pushed them off on a loss to one (its name red with the REVENGE target
+    /// and a red REVENGE NEXT ROUND tag under it), and the player's own car without a crown otherwise.
+    /// </para>
+    /// <para>
     /// Everything springs in once, on the panel's scheduler (real time, so a hit-stop at the buzzer slows nothing), and
     /// nothing waits for it: NEXT MATCH works from the start.
     /// </para>
@@ -17,6 +22,7 @@ namespace ToyCarArena.UI
     internal sealed class RoundOverMatch : IDisposable
     {
         private const string MatchClass = "round-over--match";
+        private const string PodiumClass = "round-over--podium";
         private const string EnterClass = "results--enter";
         private const string RowEnterClass = "results__row--enter";
         private const string RowPopClass = "results__row--pop";
@@ -64,7 +70,7 @@ namespace ToyCarArena.UI
         {
             this.root = root;
             this.model = model;
-            root.AddToClassList(MatchClass);
+            root.AddToClassList(model.IsMatch ? MatchClass : PodiumClass);
             podium = root.Q<VisualElement>("podium");
             rays = root.Q<VisualElement>("podium-rays");
             rays.generateVisualContent += DrawRays;
@@ -89,9 +95,9 @@ namespace ToyCarArena.UI
             crown.AddToClassList(CrownEnterClass);
         }
 
-        /// <summary>The match part of the result, or null after a round of the last car standing.</summary>
+        /// <summary>The podium part of the result (with the table after a match), or null without a podium to show.</summary>
         public static RoundOverMatch Create(VisualElement root, RoundOverViewModel model) =>
-            model.Standings.Count > 0 ? new RoundOverMatch(root, model) : null;
+            model.Standings.Count > 0 || model.Podium != null ? new RoundOverMatch(root, model) : null;
 
         /// <summary>Every car on a wide screen, the leaders and the player's own row on a narrow one.</summary>
         public void SetWide(bool wide)
@@ -168,11 +174,26 @@ namespace ToyCarArena.UI
 
         private void BuildWinner()
         {
-            var index = model.Standings[0].Index;
+            var index = model.PodiumCar;
+            var isRival = model.IsPodiumRival;
             var name = root.Q<Label>("podium-name");
             name.parent.Insert(name.parent.IndexOf(name), HudView.CreateLevelBadge(model.LevelOf(index), "podium__level"));
-            name.EnableInClassList("podium__name--revenge", index != 0 && index == model.Nemesis);
+            if (isRival) {
+                // The same target as over the REVENGE bot on the arena, which this car is next round.
+                var target = new VisualElement { pickingMode = PickingMode.Ignore };
+                target.AddToClassList("revenge-target");
+                target.AddToClassList("podium__target");
+                var centre = new VisualElement { pickingMode = PickingMode.Ignore };
+                centre.AddToClassList("revenge-target__center");
+                target.Add(centre);
+                name.parent.Insert(name.parent.IndexOf(name), target);
+            }
+
+            name.EnableInClassList("podium__name--revenge", isRival || (index != 0 && index == model.Nemesis));
             text.Set(name, () => model.NameOf(index));
+            crown.style.display = model.IsPodiumWinner ? DisplayStyle.Flex : DisplayStyle.None;
+            root.Q<Label>("podium-winner-tag").style.display = model.IsPodiumWinner ? DisplayStyle.Flex : DisplayStyle.None;
+            root.Q<Label>("podium-rival-tag").style.display = isRival ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
         // The rows again for the form: every car, or the leaders and, a little apart, the player when lower.
@@ -248,13 +269,16 @@ namespace ToyCarArena.UI
 
         // White wedges from the middle, every other gap empty: the sunburst of a winner's stage, drawn as triangles so it
         // stays sharp at any size (USS has no conic gradient).
-        private static void DrawRays(MeshGenerationContext context)
+        private static void DrawRays(MeshGenerationContext context) => DrawSunburst(context, new Color(1f, 1f, 1f, 0.42f));
+
+        /// <summary>The rays as wedges of one colour, also behind the level reward of the XP sequence.</summary>
+        internal static void DrawSunburst(MeshGenerationContext context, Color color)
         {
             var rect = context.visualElement.contentRect;
             var centre = rect.center;
             var radius = Mathf.Min(rect.width, rect.height) * 0.5f;
             var painter = context.painter2D;
-            painter.fillColor = new Color(1f, 1f, 1f, 0.42f);
+            painter.fillColor = color;
             var half = Mathf.PI / RayCount * 0.42f;
             for (var i = 0; i < RayCount; i++) {
                 var angle = i * Mathf.PI * 2f / RayCount;

@@ -67,6 +67,15 @@ result.rank_level,"Rank name and level, e.g. BRONZE · LEVEL 12",{0} · LEVEL {1
 result.rank_stop,"Track caption of the next rank, e.g. SILVER RANK",{0} RANK,RANG {0},GRADO {0},RANG {0},RANGO {0},{0} RÜTBESİ,RANKING {0},РАНГ {0}
 result.match_results,Header of the results table at the end of a match,MATCH RESULTS,RÉSULTATS,RISULTATI,ERGEBNISSE,RESULTADOS,MAÇ SONUCU,RESULTADOS,ИТОГИ МАТЧА
 result.winner,Gold tag under the match winner's name; max ~8 chars,WINNER,VAINQUEUR,VINCITORE,SIEGER,GANADOR,KAZANAN,VENCEDOR,ПОБЕДИТЕЛЬ
+result.revenge_next,Red tag under the bot that knocked the player off on the result podium; max ~20 chars,REVENGE NEXT ROUND,REVANCHE AU PROCHAIN,RIVINCITA AL PROSSIMO,REVANCHE NÄCHSTE RUNDE,VENGANZA EN LA PRÓXIMA,SONRAKİ TURDA RÖVANŞ,VINGANÇA NA PRÓXIMA,РЕВАНШ В СЛЕДУЮЩЕМ
+result.level_up,Sticker when the XP bar of the result reaches the next level,LEVEL UP!,NIVEAU SUPÉRIEUR !,LIVELLO SU!,LEVEL UP!,¡SUBES DE NIVEL!,SEVİYE ATLADIN!,SUBIU DE NÍVEL!,НОВЫЙ УРОВЕНЬ!
+result.level_title,"Title of the level reward popup, e.g. LEVEL 3!",LEVEL {0}!,NIVEAU {0} !,LIVELLO {0}!,LEVEL {0}!,¡NIVEL {0}!,SEVİYE {0}!,NÍVEL {0}!,УРОВЕНЬ {0}!
+result.new_car_tag,Tag on the level reward popup for a car,NEW CAR!,NOUVELLE VOITURE !,NUOVA AUTO!,NEUES AUTO!,¡NUEVO COCHE!,YENİ ARABA!,CARRO NOVO!,НОВАЯ МАШИНКА!
+result.new_arena_tag,Tag on the level reward popup for an arena,NEW ARENA!,NOUVELLE ARÈNE !,NUOVA ARENA!,NEUE ARENA!,¡NUEVA ARENA!,YENİ ARENA!,NOVA ARENA!,НОВАЯ АРЕНА!
+result.new_rank_tag,Tag on the level reward popup for a rank,NEW RANK!,NOUVEAU RANG !,NUOVO GRADO!,NEUER RANG!,¡NUEVO RANGO!,YENİ RÜTBE!,NOVO RANKING!,НОВЫЙ РАНГ!
+result.arena_next,Under the arena on the level reward popup,COMING UP IN THE ARENAS,BIENTÔT DANS LES ARÈNES,PRESTO TRA LE ARENE,BALD IN DEN ARENEN,PRONTO EN LAS ARENAS,YAKINDA ARENALARDA,EM BREVE NAS ARENAS,СКОРО НА АРЕНАХ
+result.tap_continue,Under the level reward popup on a touch screen,TAP TO CONTINUE,TOUCHE POUR CONTINUER,TOCCA PER CONTINUARE,TIPPEN ZUM WEITERMACHEN,TOCA PARA SEGUIR,DEVAM İÇİN DOKUN,TOQUE PARA CONTINUAR,"НАЖМИ, ЧТОБЫ ПРОДОЛЖИТЬ"
+result.click_continue,Under the level reward popup on a desktop,CLICK TO CONTINUE,CLIQUE POUR CONTINUER,CLICCA PER CONTINUARE,KLICKEN ZUM WEITERMACHEN,HAZ CLIC PARA SEGUIR,DEVAM İÇİN TIKLA,CLIQUE PARA CONTINUAR,"КЛИКНИ, ЧТОБЫ ПРОДОЛЖИТЬ"
 rank.rookie,Rank name,ROOKIE,DÉBUTANT,RECLUTA,ANFÄNGER,NOVATO,ÇAYLAK,NOVATO,НОВИЧОК
 rank.bronze,Rank name,BRONZE,BRONZE,BRONZO,BRONZE,BRONCE,BRONZ,BRONZE,БРОНЗА
 rank.silver,Rank name,SILVER,ARGENT,ARGENTO,SILBER,PLATA,GÜMÜŞ,PRATA,СЕРЕБРО
@@ -98,6 +107,7 @@ hud.item_shield,"Match: item name; sticker on use and badge when the player uses
 hud.item_turbo,"Match: item name; sticker on use and badge when the player uses the turbo item (boost without cooldown); max ~12 chars",TURBO!,TURBO !,TURBO!,TURBO!,¡TURBO!,TURBO!,TURBO!,ТУРБО!
 hud.item_bomb,"Match: item name; sticker when the player throws the bomb item (blasts cars near where it lands); max ~12 chars",BOMB!,BOMBE !,BOMBA!,BOMBE!,¡BOMBA!,BOMBA!,BOMBA!,БОМБА!
 hud.item_glove,"Match: item name; sticker when the player uses the boxing glove item (punches the car ahead); max ~12 chars",GLOVE!,GANT !,GUANTONE!,BOXHANDSCHUH!,¡GUANTE!,ELDİVEN!,LUVA!,ПЕРЧАТКА!
+hud.boost_pop,"Sticker over the player's car when the game fires the boost for them (a ram or a save from the edge); max ~8 chars",BOOST!,TURBO !,TURBO!,BOOST!,¡TURBO!,HIZ!,TURBO!,РЫВОК!
 hud.pow,"Match: comic sticker where the player's boxing glove hits a car; max ~6 chars",POW!,PAF !,POW!,BUMM!,¡PUM!,PAT!,POW!,БАЦ!
 hud.tap_to_use,"Match: first-time hint over the touch item button; max ~14 chars",TAP TO USE,TOUCHE POUR UTILISER,TOCCA PER USARE,TIPPEN ZUM NUTZEN,TOCA PARA USAR,KULLANMAK İÇİN DOKUN,TOQUE PARA USAR,"ЖМИ, ЧТОБЫ ПРИМЕНИТЬ"
 hud.press_e,"Match: first-time hint over the item button on a desktop: the E key uses the item; keep the letter E",PRESS E,APPUIE SUR E,PREMI E,DRÜCKE E,PULSA E,E TUŞUNA BAS,APERTE E,НАЖМИ E

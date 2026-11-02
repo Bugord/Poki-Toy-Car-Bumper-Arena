@@ -99,8 +99,8 @@ namespace ToyCarArena.App
                 }
             }
 
-            void OnItemLanded(ItemKind kind) => platform.MeasureItemGet(roundNumber, kind);
-            void OnItemUsed(ItemKind kind) => platform.MeasureItemUse(roundNumber, kind);
+            void OnItemLanded(ItemKind kind) => platform.MeasureItemGet(roundNumber, kind, round.IsMatch);
+            void OnItemUsed(ItemKind kind) => platform.MeasureItemUse(roundNumber, kind, round.IsMatch);
 
             void OnVariantChanged(string variant)
             {
@@ -161,8 +161,8 @@ namespace ToyCarArena.App
                 levelScene.Resolve<ISessionRoster>().NextRound(result.CarCount - 1,
                     RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis, tuning.Players);
                 platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, driver);
-                if (result.IsMatch) {
-                    platform.MeasureMatchPickups(roundNumber, pickupCount);
+                if (pickups.IsEnabled) {
+                    platform.MeasureMatchPickups(roundNumber, pickupCount, result.IsMatch);
                 }
 
                 // The variant playing as it ended: the rotation's own in a round, the last cycle's in a match.
