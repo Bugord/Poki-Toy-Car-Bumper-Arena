@@ -122,6 +122,27 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [Test]
+        public void AGiftLeftUnseenWaitsForTheNextResult()
+        {
+            var gift = wallet.TryGift(true, tuning.Toppers.GiftFromRound);
+            Assert.That(Result(out _, out _).Gift, Is.EqualTo(gift));
+            // NEXT MATCH before its popup: the next result offers it again, and once shown it is gone.
+            var next = Result(out _, out _);
+            Assert.That(next.Gift, Is.EqualTo(gift));
+            next.ShowGiftHat(out _);
+            Assert.That(platform.Events, Does.Contain(("gift", gift, "visible")));
+            Assert.That(Result(out _, out _).Gift, Is.Null);
+        }
+
+        [Test]
+        public void AGiftIsNotOfferedOverAWornHat()
+        {
+            var gift = wallet.TryGift(true, tuning.Toppers.GiftFromRound);
+            Assert.That(wallet.Wear(gift), Is.True);
+            Assert.That(Result(out _, out _).Gift, Is.Null);
+        }
+
+        [Test]
         public void TheCommercialBreakWaitsForTheFreePlay()
         {
             var breaks = new AdBreaks();

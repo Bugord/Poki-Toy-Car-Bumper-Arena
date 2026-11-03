@@ -135,16 +135,20 @@ namespace ToyCarArena.UI
         private const float StickKnobScale = 0.55f;
 
         // First-round touch teaching, in unscaled seconds and reference panel pixels. The ghost uses the real
-        // joystick's proportions, with an opaque capsule finger whose tip follows the knob right, up, left, down.
+        // joystick's proportions, with an opaque pointing hand whose fingertip follows the knob right, up, left, down.
         private const float GhostCycle = 2f;
         private const float GhostOpacity = 0.9f;
         // After the first round the ghost only reminds where the joystick is, fainter and without its caption.
         private const float GhostLaterOpacity = 0.5f;
         private const float GhostMaxRadius = 120f;
         private const float GhostTravel = 0.8f;
-        private const float GhostFingerWidthScale = 0.7f;
-        private const float GhostFingerLengthScale = 2.5f;
-        private const float GhostFingerTilt = -30f;
+        // The hand's picture (sprite_ui_hand_point, Kenney's Input Prompts hand with our outline): its width against the
+        // joystick's radius, its height against its width, and where its fingertip is, as a share of each. The finger
+        // already leans left in the picture, so it is not turned.
+        private const float GhostHandWidthScale = 2f;
+        private const float GhostHandAspect = 1f;
+        private static readonly Vector2 GhostHandTip = new(0.23f, 0.07f);
+        private const float GhostFingerTilt = 0f;
         private const float GhostPortraitY = 0.8f;
         private const float GhostWideX = 0.64f;
         private const float GhostWideY = 0.84f;
@@ -886,11 +890,22 @@ namespace ToyCarArena.UI
 
             this.safeInsets = SafeArea.GetInsets(Root.panel);
             this.hudTopInset = this.contentTopInset = safeInsets.Top;
+            // Upright, the bar and the names span the width under Poki's pill, so they all go below it. Held wide,
+            // the pill keeps to the left corner, away from the centred bar, the gear and the arena: only the feed,
+            // which starts in that corner, goes below it.
+            var isWide = size.x >= size.y;
+            var feedTopInset = hudTopInset;
             if (PokiPill.TryGetRect(Root.panel, out var pill)) {
                 pill = Root.WorldToLocal(pill);
                 if (pill.xMax > 0f && pill.xMin < size.x && pill.yMax > 0f && pill.yMin < size.y) {
-                    this.contentTopInset = Mathf.Max(contentTopInset, Mathf.Ceil(pill.yMax + PillGap));
-                    this.hudTopInset = Mathf.Max(hudTopInset, contentTopInset - SettingsTop);
+                    var underPill = Mathf.Ceil(pill.yMax + PillGap);
+                    if (isWide) {
+                        feedTopInset = Mathf.Max(feedTopInset, underPill - BarTop);
+                    }
+                    else {
+                        this.contentTopInset = Mathf.Max(contentTopInset, underPill);
+                        this.hudTopInset = feedTopInset = Mathf.Max(hudTopInset, contentTopInset - SettingsTop);
+                    }
                 }
             }
 
@@ -908,7 +923,7 @@ namespace ToyCarArena.UI
                 scoreboard.Element.style.right = (wide ? 48f : 24f) + safeInsets.Right;
             }
 
-            social.Place(safeInsets, hudTopInset);
+            social.Place(safeInsets, feedTopInset);
             PlaceBoost();
             PlaceStart();
             // Find room for the ghost again even if only the browser chrome changed, with no canvas resize.
@@ -1853,9 +1868,7 @@ namespace ToyCarArena.UI
                     size.x >= size.y ? PlaceWideGhost(size, radius) :
                     new Vector2(size.x * 0.5f, size.y * GhostPortraitY);
                 if (!safeInsets.Equals(default(SafeInsets))) {
-                    var fingerHalfWidth = radius * GhostFingerWidthScale * 0.5f;
-                    var bottom = radius * GhostTravel + fingerHalfWidth +
-                        (radius * GhostFingerLengthScale - fingerHalfWidth) * Mathf.Cos(GhostFingerTilt * Mathf.Deg2Rad);
+                    var bottom = GhostReach(radius);
                     var left = safeInsets.Left + GhostHalfWidth + TeachingMargin;
                     var top = contentTopInset + GhostCaptionLift;
                     this.ghostCenter.x = Mathf.Clamp(ghostCenter.x, left,
@@ -1871,13 +1884,23 @@ namespace ToyCarArena.UI
             var knob = new Vector2(Mathf.Cos(angle), -Mathf.Sin(angle)) * (radius * GhostTravel);
             Place(ghostBase, Vector2.zero, radius * StickBaseScale);
             Place(ghostKnob, knob, radius * StickKnobScale);
-            // The capsule pivots on its top centre, so its rounded tip stays on the knob while its body points down
-            // and right. Opacity belongs to the joystick wrapper; the finger and caption keep their full white fill.
-            var fingerWidth = radius * GhostFingerWidthScale;
-            ghostFinger.style.left = knob.x - fingerWidth * 0.5f;
-            ghostFinger.style.top = knob.y;
-            ghostFinger.style.width = fingerWidth;
-            ghostFinger.style.height = radius * GhostFingerLengthScale;
+            // The hand turns about its fingertip (the style sheet's transform-origin), so the tip stays on the knob while
+            // the hand lies down and right. Opacity belongs to the joystick wrapper; the hand and caption stay opaque.
+            var handWidth = radius * GhostHandWidthScale;
+            var handHeight = handWidth * GhostHandAspect;
+            ghostFinger.style.left = knob.x - handWidth * GhostHandTip.x;
+            ghostFinger.style.top = knob.y - handHeight * GhostHandTip.y;
+            ghostFinger.style.width = handWidth;
+            ghostFinger.style.height = handHeight;
+        }
+
+        // How far below the joystick's centre the hand reaches at the lowest point of the knob's orbit.
+        private static float GhostReach(float radius)
+        {
+            var width = radius * GhostHandWidthScale;
+            var tilt = GhostFingerTilt * Mathf.Deg2Rad;
+            return radius * GhostTravel + width * GhostHandAspect * (1f - GhostHandTip.y) * Mathf.Cos(tilt) +
+                width * (1f - GhostHandTip.x) * Mathf.Abs(Mathf.Sin(tilt));
         }
 
         /// <summary>
@@ -1889,9 +1912,7 @@ namespace ToyCarArena.UI
             var center = controls.JoystickCenter;
             var panelPoint = RuntimePanelUtils.ScreenToPanel(Root.panel, new Vector2(center.x, Screen.height - center.y));
             var point = Root.WorldToLocal(panelPoint);
-            var fingerHalfWidth = radius * GhostFingerWidthScale * 0.5f;
-            var bottom = radius * GhostTravel + fingerHalfWidth +
-                (radius * GhostFingerLengthScale - fingerHalfWidth) * Mathf.Cos(GhostFingerTilt * Mathf.Deg2Rad);
+            var bottom = GhostReach(radius);
             var reach = radius * StickBaseScale + TeachingMargin;
             point.x = Mathf.Clamp(point.x, reach, Mathf.Max(reach, size.x - reach));
             point.y = Mathf.Clamp(point.y, reach, Mathf.Max(reach, size.y - bottom - TeachingMargin));
@@ -1910,10 +1931,8 @@ namespace ToyCarArena.UI
 
             var best = preferred;
             var fewestOverlaps = int.MaxValue;
-            // Reserve the capsule's bottom cap at the lowest point of the orbit, keeping the longer finger on-screen.
-            var fingerHalfWidth = radius * GhostFingerWidthScale * 0.5f;
-            var bottom = radius * GhostTravel + fingerHalfWidth +
-                (radius * GhostFingerLengthScale - fingerHalfWidth) * Mathf.Cos(GhostFingerTilt * Mathf.Deg2Rad);
+            // Reserve the hand below the lowest point of the orbit, keeping it on-screen.
+            var bottom = GhostReach(radius);
             var buttonBounds = new Rect(Root.WorldToLocal(boostSlot.worldBound.min), boostSlot.worldBound.size);
             if (itemButton.ClassListContains(ItemShownClass)) {
                 // The item button stands out of the slot, up and inward of BOOST: the ghost keeps off both.

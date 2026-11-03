@@ -77,6 +77,9 @@ namespace ToyCarArena.UI
         // A car the player does not have yet, on the plinth in place of theirs after the first tap on its card, so its
         // model and stats are seen before it is bought; the second tap buys it. Null shows the selected car.
         private CarCatalog.Entry previewedCar;
+        // The same for a hat the player does not have: tried on the hero after the first tap, bought by the second.
+        // Null shows the worn one.
+        private string previewedTopper;
 
         public GarageView(IAudioService audioService, HudControls controls)
         {
@@ -333,6 +336,7 @@ namespace ToyCarArena.UI
 
             isToppersTab = toppers;
             previewedCar = null;
+            previewedTopper = null;
             if (cards.Count > 0) {
                 RefreshSelection();
             }
@@ -352,12 +356,33 @@ namespace ToyCarArena.UI
 
             var topper = id.Length == 0 ? null : FindTopper(id);
             var wasOwned = topper == null || ViewModel.IsOwned(id);
+            // The first tap on a hat the player does not have tries it on the hero; the next one buys it, or says why
+            // it cannot.
+            if (!wasOwned && previewedTopper != id) {
+                previewedTopper = id;
+                audioService.PlayUiClick();
+                RefreshSelection();
+                StartBounce(button);
+                PopHero();
+                return;
+            }
+
             if (!wasOwned && !ViewModel.CanAfford(topper)) {
                 TooDear(button, topper.Price);
                 return;
             }
 
+            // A tap on the worn hat changes nothing but takes the tried-on one off.
+            var wasPreviewing = previewedTopper != null;
+            previewedTopper = null;
             if (!ViewModel.PickTopper(id)) {
+                if (wasPreviewing) {
+                    audioService.PlayUiClick();
+                    RefreshSelection();
+                    StartBounce(button);
+                    PopHero();
+                }
+
                 return;
             }
 
@@ -376,19 +401,23 @@ namespace ToyCarArena.UI
         private void RefreshToppers()
         {
             var worn = ViewModel.SelectedTopper;
+            var onHero = previewedTopper ?? worn;
             coinCount.text = ViewModel.Coins.ToString();
             toppersDot.style.display = ViewModel.CanBuyTopper ? DisplayStyle.Flex : DisplayStyle.None;
             if (previewTopper != null) {
-                TopperIcon.Set(previewTopper, worn);
+                TopperIcon.Set(previewTopper, onHero);
                 // No topper is no topper on the hero: the NONE card's crossed circle belongs to the shop.
-                previewTopper.style.display = string.IsNullOrEmpty(worn) ? DisplayStyle.None : DisplayStyle.Flex;
+                previewTopper.style.display = string.IsNullOrEmpty(onHero) ? DisplayStyle.None : DisplayStyle.Flex;
             }
             foreach (var (id, card) in topperCards) {
                 var topper = id.Length == 0 ? null : FindTopper(id);
                 var isOwned = topper == null || ViewModel.IsOwned(id);
                 var isWorn = id == worn;
-                card.SetState(isWorn, false, !isOwned, !isOwned && !ViewModel.CanAfford(topper),
-                    isWorn ? Strings.Get("garage.in_use") : isOwned ? Strings.Get("garage.use") : topper.Price.ToString());
+                var dear = !isOwned && !ViewModel.CanAfford(topper);
+                var previewed = id == previewedTopper;
+                card.SetState(isWorn, false, !isOwned, dear,
+                    isWorn ? Strings.Get("garage.in_use") : isOwned ? Strings.Get("garage.use") : topper.Price.ToString(),
+                    previewed, previewed && !dear);
             }
         }
 
@@ -410,8 +439,9 @@ namespace ToyCarArena.UI
         {
             var selectedCar = previewedCar ?? ViewModel.SelectedEntry;
             if (garageStage != null) {
+                var topper = previewedTopper ?? ViewModel.SelectedTopper;
                 hero.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(
-                    garageStage.ShowCar(selectedCar, ViewModel.SelectedColor, ViewModel.SelectedTopper)));
+                    garageStage.ShowCar(selectedCar, ViewModel.SelectedColor, topper)));
             }
             else {
                 preview.Set(selectedCar, ViewModel.SelectedColor);
