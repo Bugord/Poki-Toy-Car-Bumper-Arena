@@ -247,19 +247,25 @@ namespace ToyCarArena.Gameplay
                 new("crown", 300),
             };
 
-            [Tooltip("The topper given free on a win from round GiftFromRound of a visit, once, to a player who owns none: " +
-                "the result offers to wear it at once, so the player sees what the coins buy")]
+            [Tooltip("The topper given free on reaching GiftLevel, once, to a player who owns none: the result offers to " +
+                "wear it at once, so the player sees what the coins buy")]
             [SerializeField]
             private string giftTopper = "top-hat";
 
-            [Tooltip("First round of a visit whose win may bring the free topper; the first round's result is busy")]
-            [Min(1)]
+            [Tooltip("The level that brings the free topper: after the first free car, before the first car for coins")]
+            [Min(2)]
             [SerializeField]
-            private int giftFromRound = 2;
+            private int giftLevel = 3;
+
+            [Tooltip("The level from which the result offers a topper for coins, once: after the first car for coins")]
+            [Min(2)]
+            [SerializeField]
+            private int hatOfferLevel = 5;
 
             public IReadOnlyList<TopperDefinition> All => toppers;
             public string GiftTopper => giftTopper;
-            public int GiftFromRound => giftFromRound;
+            public int GiftLevel => giftLevel;
+            public int HatOfferLevel => hatOfferLevel;
 
             public TopperDefinition Find(string id)
             {

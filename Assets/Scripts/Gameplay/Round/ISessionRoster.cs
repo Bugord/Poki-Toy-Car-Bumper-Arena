@@ -27,6 +27,9 @@ namespace ToyCarArena.Gameplay.Round
         /// </summary>
         int LevelOf(int carIndex);
 
+        /// <summary>The win streak a seated bot joined on, 0 for none and for the player (whose own is the visit's).</summary>
+        int StreakOf(int carIndex);
+
         bool Joined(int carIndex);
         string LeftNameOf(int carIndex);
         IReadOnlyList<SessionPlayer> ForRound(int botCount);

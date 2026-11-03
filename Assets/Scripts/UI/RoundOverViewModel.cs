@@ -228,27 +228,24 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>
-        /// Whether a car this result opened gets its popup: only the first free car and the first car for coins ever
-        /// do (<see cref="PlayerWallet.IsIntroduced"/>), so the popups show the garage what it holds and later
-        /// unlocks wait there, behind the GARAGE dot. Asking marks it shown.
+        /// Whether a car this result opened gets its popup: every one does, each on a level of its own, so the player
+        /// sees each new car the moment it is theirs to take or buy. Asking still marks the first free and the first
+        /// paid car shown (<see cref="PlayerWallet.MarkIntroduced"/>).
         /// </summary>
         public bool IntroduceCar(CarCatalog.Entry car)
         {
-            var kind = IsForSale(car) ? "paid-car" : "free-car";
-            if (wallet.IsIntroduced(kind)) {
-                return false;
-            }
-
-            wallet.MarkIntroduced(kind);
+            wallet.MarkIntroduced(IsForSale(car) ? "paid-car" : "free-car");
             return true;
         }
 
         /// <summary>
         /// The topper the result offers for coins once ever: the cheapest the coins pay for, to a player who already
-        /// wears a hat (the free top hat of an early win, or one from the garage). Null when there is none to offer.
+        /// wears a hat (the free top hat of its level, or one from the garage), from
+        /// <see cref="GameTuning.TopperSettings.HatOfferLevel"/>. Null when there is none to offer.
         /// </summary>
         public string HatOffer() =>
-            !wallet.IsIntroduced("paid-hat") && wallet.HasAnyTopper ? wallet.AffordableTopper() : null;
+            !wallet.IsIntroduced("paid-hat") && wallet.HasAnyTopper
+            && progress.Level >= tuning.Toppers.HatOfferLevel ? wallet.AffordableTopper() : null;
 
         public void HatOffered(string id)
         {

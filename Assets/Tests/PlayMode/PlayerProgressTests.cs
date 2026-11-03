@@ -58,6 +58,18 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [Test]
+        public void AResultRaisesOneLevelAtMostWithItsBonus()
+        {
+            // 40 to level 2, 50 to level 3: a share of the second is kept, the rest is lost.
+            var gain = progress.Record(Result(RoundOutcome.Won, 1, 7, 6), missionXp: 90);
+            Assert.That(gain.After.Level, Is.EqualTo(2));
+            Assert.That(gain.TotalAfter, Is.EqualTo(40 + (int)(tuning.Progress.LevelXp[1] * tuning.Progress.LevelCarry)));
+            Assert.That(progress.AddBonus(500).After.Level, Is.EqualTo(2), "the ad's bonus counts towards the same level");
+
+            Assert.That(progress.Record(Result(RoundOutcome.Won, 1, 7, 6), missionXp: 90).After.Level, Is.EqualTo(3));
+        }
+
+        [Test]
         public void WinOfFourWithTwoKnockoutsEarnsSixtyAndPersists()
         {
             var gain = progress.Record(Result(RoundOutcome.Won, 1, 4, 2));
@@ -68,7 +80,7 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(gain.Total, Is.EqualTo(60));
             Assert.That(gain.After.Level, Is.EqualTo(2));
             Assert.That(gain.After.Xp, Is.EqualTo(20));
-            Assert.That(gain.After.Cost, Is.EqualTo(60));
+            Assert.That(gain.After.Cost, Is.EqualTo(50));
             Assert.That(gain.UnlockedCarIds, Is.EqualTo(new[] { "speedster" }));
 
             var reloaded = new PlayerProgress(storage, tuning, catalog);
@@ -127,20 +139,18 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [Test]
-        public void OneRoundCanCrossTwoLevelsAndUnlockBothCars()
+        public void EachCarComesOnARoundOfItsOwn()
         {
             storage.SetInt("xp_total", 35);
             var gain = progress.Record(Result(RoundOutcome.Won, 1, 4, 3));
             Assert.That(gain.Total, Is.EqualTo(70));
             Assert.That(gain.TotalBefore, Is.EqualTo(35));
-            Assert.That(gain.TotalAfter, Is.EqualTo(105));
+            Assert.That(gain.TotalAfter, Is.EqualTo(65), "one level and half of the next at most");
             Assert.That(gain.Before.Level, Is.EqualTo(1));
-            Assert.That(gain.Before.Xp, Is.EqualTo(35));
-            Assert.That(gain.Before.Cost, Is.EqualTo(40));
-            Assert.That(gain.After.Level, Is.EqualTo(3));
-            Assert.That(gain.After.Xp, Is.EqualTo(5));
-            Assert.That(gain.After.Cost, Is.EqualTo(80));
-            Assert.That(gain.UnlockedCarIds, Is.EqualTo(new[] { "speedster", "vintage" }));
+            Assert.That(gain.After.Level, Is.EqualTo(2));
+            Assert.That(gain.After.Xp, Is.EqualTo(25));
+            Assert.That(gain.UnlockedCarIds, Is.EqualTo(new[] { "speedster" }));
+            Assert.That(progress.Record(Result(RoundOutcome.Won, 1, 4, 3)).UnlockedCarIds, Is.EqualTo(new[] { "vintage" }));
             Assert.That(progress.NextCar, Is.Null);
             Assert.That(progress.SelectedCar, Is.EqualTo("racer"), "A new car waits for the player to equip it.");
             Assert.That(progress.Record(Result(RoundOutcome.Out, 4, 4, 0)).UnlockedCarIds, Is.Empty);
@@ -197,13 +207,13 @@ namespace ToyCarArena.Tests.PlayMode
 
         [TestCase(0, 1, 0, 40)]
         [TestCase(39, 1, 39, 40)]
-        [TestCase(40, 2, 0, 60)]
-        [TestCase(99, 2, 59, 60)]
-        [TestCase(100, 3, 0, 80)]
-        [TestCase(539, 6, 139, 140)]
-        [TestCase(540, 7, 0, 140)]
-        [TestCase(680, 8, 0, 140)]
-        [TestCase(825, 9, 5, 140)]
+        [TestCase(40, 2, 0, 50)]
+        [TestCase(89, 2, 49, 50)]
+        [TestCase(90, 3, 0, 60)]
+        [TestCase(579, 7, 139, 140)]
+        [TestCase(580, 8, 0, 140)]
+        [TestCase(720, 9, 0, 140)]
+        [TestCase(865, 10, 5, 140)]
         public void LevelPricesHaveExactBoundariesAndRepeatTheLast(int total, int level, int xp, int cost)
         {
             storage.SetInt("xp_total", total);

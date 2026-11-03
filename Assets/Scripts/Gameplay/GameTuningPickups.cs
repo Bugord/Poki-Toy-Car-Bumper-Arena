@@ -393,6 +393,16 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float dropBehind = 2.6f;
 
+            [Tooltip("Metres from the car within which another car in play gets the slick under its nose instead")]
+            [Min(0f)]
+            [SerializeField]
+            private float targetRange = 12f;
+
+            [Tooltip("Metres ahead of the targeted car, along where it drives, the slick is spilled")]
+            [Min(0f)]
+            [SerializeField]
+            private float dropAhead = 2.5f;
+
             [Tooltip("Radius of the slick in metres")]
             [Min(0.5f)]
             [SerializeField]
@@ -434,6 +444,8 @@ namespace ToyCarArena.Gameplay
             private float oilyTime = 3.5f;
 
             public float DropBehind => dropBehind;
+            public float TargetRange => targetRange;
+            public float DropAhead => dropAhead;
             public float Radius => radius;
             public float Lifetime => lifetime;
             public float BlendWidth => blendWidth;
@@ -566,6 +578,12 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float fuse = 1f;
 
+            [Tooltip("A bomb landing this close to another car in play goes off at once, without its fuse: a hit is " +
+                "a hit, not a warning to drive away from")]
+            [Min(0f)]
+            [SerializeField]
+            private float impactRadius = 2.5f;
+
             [Tooltip("Metres from the bomb the blast reaches")]
             [Min(0.5f)]
             [SerializeField]
@@ -608,6 +626,7 @@ namespace ToyCarArena.Gameplay
             public float FlightTime => flightTime;
             public float ArcHeight => arcHeight;
             public float Fuse => fuse;
+            public float ImpactRadius => impactRadius;
             public float Radius => radius;
             public float Push => push;
             public float EdgeShare => edgeShare;

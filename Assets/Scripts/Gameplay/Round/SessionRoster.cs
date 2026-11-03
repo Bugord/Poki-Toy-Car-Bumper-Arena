@@ -24,6 +24,11 @@ namespace ToyCarArena.Gameplay.Round
         // Now and then a seated player wears a topper of the garage's: the cosmetics are seen on others before bought.
         private const float TopperChance = 0.15f;
 
+        // Now and then a player joins on a win streak of their own, crowned as the player is on one: the others play too.
+        private const float StreakChance = 0.12f;
+        private const int StreakMin = 2;
+        private const int StreakMax = 5;
+
         private readonly CarCatalog catalog;
         private readonly IPlayerCar playerCar;
         private readonly int[] colors = new int[MaxBots];
@@ -57,7 +62,8 @@ namespace ToyCarArena.Gameplay.Round
                 colors[slot] = playerColor;
                 var player = players[slot];
                 if (player != null) {
-                    players[slot] = new SessionPlayer(player.Name, player.Car, playerColor, player.Level, player.Topper);
+                    players[slot] = new SessionPlayer(player.Name, player.Car, playerColor, player.Level, player.Topper,
+                        player.Streak);
                 }
                 break;
             }
@@ -68,6 +74,7 @@ namespace ToyCarArena.Gameplay.Round
         public CarCatalog.Entry CarOf(int carIndex) => PlayerOf(carIndex).Car;
         public int ColorOf(int carIndex) => carIndex == 0 ? playerColor : colors[Slot(carIndex)];
         public int LevelOf(int carIndex) => carIndex == 0 ? playerCar.Level : PlayerOf(carIndex).Level;
+        public int StreakOf(int carIndex) => carIndex == 0 ? 0 : PlayerOf(carIndex).Streak;
         public bool Joined(int carIndex) => carIndex > 0 && joined[Slot(carIndex)];
         public string LeftNameOf(int carIndex) => left[Slot(carIndex)];
 
@@ -139,7 +146,8 @@ namespace ToyCarArena.Gameplay.Round
             }
             var car = catalog.Cars[Random.Range(0, catalog.Cars.Count)];
             players[slot] = new SessionPlayer(deck[nextName++], car, colors[slot], LevelNear(playerCar.Level),
-                Random.value < TopperChance ? CarTopper.Ids[Random.Range(0, CarTopper.Ids.Count)] : "");
+                Random.value < TopperChance ? CarTopper.Ids[Random.Range(0, CarTopper.Ids.Count)] : "",
+                Random.value < StreakChance ? Random.Range(StreakMin, StreakMax + 1) : 0);
             joined[slot] = true;
         }
 
@@ -198,13 +206,18 @@ namespace ToyCarArena.Gameplay.Round
         /// <summary>The topper on the roof, empty for none.</summary>
         public string Topper { get; }
 
-        public SessionPlayer(string name, CarCatalog.Entry car, int colorId, int level, string topper = "")
+        /// <summary>The win streak this player joined on, 0 for none: only a look, as the level.</summary>
+        public int Streak { get; }
+
+        public SessionPlayer(string name, CarCatalog.Entry car, int colorId, int level, string topper = "",
+            int streak = 0)
         {
             this.Name = name;
             this.Car = car;
             this.ColorId = colorId;
             this.Level = level;
             this.Topper = topper ?? "";
+            this.Streak = streak;
         }
     }
 }

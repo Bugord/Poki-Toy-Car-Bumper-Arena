@@ -82,7 +82,7 @@ namespace ToyCarArena.Tests.PlayMode
                         var wallet = new PlayerWallet(record.storage, tuning);
                         if (name == "gift") {
                             // The free topper of an early win, before the result takes it.
-                            wallet.TryGift(true, tuning.Toppers.GiftFromRound);
+                            wallet.TryGift(tuning.Toppers.GiftLevel);
                         }
 
                         var model = new RoundOverViewModel(catalog, arenas, tuning, progress, null,

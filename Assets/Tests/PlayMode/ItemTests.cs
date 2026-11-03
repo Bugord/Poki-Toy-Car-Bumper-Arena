@@ -452,8 +452,11 @@ namespace ToyCarArena.Tests.PlayMode
             victim.Movement.Place(new Vector3(8f, 0.2f, 0f), Quaternion.identity);
             yield return Until(() => player.Movement.IsGrounded, 2f, "the player never landed");
 
+            yield return Until(() => victim.Movement.IsGrounded, 2f, "the victim never landed");
+
+            // The nearest car stands facing +z: the slick goes just ahead of its nose.
             UseNow(player, ItemKind.Oil);
-            var spot = new Vector3(0f, 0f, -oil.DropBehind);
+            var spot = new Vector3(victim.Position.x, 0f, victim.Position.z + oil.DropAhead);
             yield return Seconds(0.5f);
             var surface = container.Resolve<IArenaSurface>();
             Assert.That(surface.Sample(spot).Grip, Is.EqualTo(oil.Grip).Within(0.01f), "the slick takes the grip");
@@ -604,8 +607,8 @@ namespace ToyCarArena.Tests.PlayMode
             var shielded = round.Cars[2];
             var far = round.Cars[3];
             player.Movement.Place(new Vector3(0f, 0.2f, 0f), Quaternion.identity);
-            target.Movement.Place(landing + new Vector3(bomb.Radius * 0.4f, 0.2f, 0f), Quaternion.identity);
-            shielded.Movement.Place(landing + new Vector3(-bomb.Radius * 0.4f, 0.2f, 0f), Quaternion.identity);
+            target.Movement.Place(landing + new Vector3(bomb.Radius * 0.7f, 0.2f, 0f), Quaternion.identity);
+            shielded.Movement.Place(landing + new Vector3(-bomb.Radius * 0.7f, 0.2f, 0f), Quaternion.identity);
             // Beyond the ring on the shielded side: clear of the thrower and of the car the blast sends the other way.
             far.Movement.Place(landing + new Vector3(-(bomb.Radius + 2.5f), 0.2f, 0f), Quaternion.identity);
             ParkTheRest(4);
@@ -640,6 +643,26 @@ namespace ToyCarArena.Tests.PlayMode
             target.Movement.Place(new Vector3(40f, 0.5f, 0f), Quaternion.identity);
             yield return Until(() => target.IsOut, 5f, "the blown car never fell");
             Assert.That(round.Score.KnockoutsOf(0), Is.EqualTo(1), "a car the bomb sends off is the thrower's knock-out");
+        }
+
+        [UnityTest]
+        public IEnumerator ABombLandingNextToACarGoesOffAtOnce()
+        {
+            tuning = UseMode(GameTuning.GameMode.Match, 60f);
+            yield return Load(true, 7);
+            var player = round.Player;
+            var bomb = tuning.Pickups.Bomb;
+            var landing = new Vector3(0f, 0f, bomb.ThrowDistance);
+            var target = round.Cars[1];
+            player.Movement.Place(new Vector3(0f, 0.2f, 0f), Quaternion.identity);
+            target.Movement.Place(landing + new Vector3(bomb.ImpactRadius * 0.5f, 0.2f, 0f), Quaternion.identity);
+            ParkTheRest(2);
+            yield return Until(() => player.Movement.IsGrounded && target.Movement.IsGrounded, 2f, "the cars never landed");
+
+            UseNow(player, ItemKind.Bomb);
+            yield return Until(() => target.LastHitBy != null, bomb.FlightTime + bomb.Fuse * 0.5f,
+                "a bomb landing next to a car waits for its fuse");
+            Assert.That(target.LastHitBy, Is.SameAs(player));
         }
 
         [UnityTest]
@@ -695,6 +718,8 @@ namespace ToyCarArena.Tests.PlayMode
             // Facing the other way, at a shielded car: the shield takes the punch.
             yield return Frames(Mathf.CeilToInt(glove.Length * FramesPerSecond) + 5);
             player.Movement.Place(new Vector3(0f, 0.2f, 0f), Quaternion.LookRotation(Vector3.back));
+            // Its bot may have driven off meanwhile: back in the glove's way.
+            shielded.Movement.Place(new Vector3(0f, 0.2f, -4f), Quaternion.identity);
             yield return Frames(5);
             shielded.StartAbility(ItemKind.Shield);
             UseNow(player, ItemKind.Glove);

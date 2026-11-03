@@ -24,6 +24,8 @@ namespace ToyCarArena.Gameplay.Round
         private readonly GameTuning.ProgressSettings settings;
         private readonly GameTuning.CoinSettings coins;
         private readonly CarCatalog catalog;
+        // The cap of the last recorded result, for the ad's bonus on it (CLAIM ×2): one level a result.
+        private int resultCap = int.MaxValue;
 
         public PlayerProgress(IKeyValueStorage storage, GameTuning tuning, CarCatalog catalog)
         {
@@ -169,7 +171,10 @@ namespace ToyCarArena.Gameplay.Round
             var winXp = result.Outcome == RoundOutcome.Won ? settings.WinXp : 0;
             var knockoutXp = result.Knockouts * settings.KnockoutXp;
             var streakXp = streakBonus?.Bonus(roundXp + placeXp + winXp + knockoutXp) ?? 0;
-            var totalAfter = checked(totalBefore + roundXp + placeXp + winXp + knockoutXp + streakXp + missionXp);
+            // The ad's bonus on this result counts towards the same one level.
+            resultCap = CapAbove(before);
+            var totalAfter = Math.Min(resultCap,
+                checked(totalBefore + roundXp + placeXp + winXp + knockoutXp + streakXp + missionXp));
             var after = At(totalAfter);
             var unlocked = Save(before, after, totalAfter);
             return new XpGain(totalBefore, totalAfter, roundXp, placeXp, winXp, knockoutXp, before, after,
@@ -184,10 +189,18 @@ namespace ToyCarArena.Gameplay.Round
         {
             var totalBefore = TotalXp;
             var before = At(totalBefore);
-            var totalAfter = (int)Math.Min(int.MaxValue, (long)totalBefore + Math.Max(0, xp));
+            var totalAfter = (int)Math.Min(resultCap, (long)totalBefore + Math.Max(0, xp));
             var after = At(totalAfter);
             var unlocked = Save(before, after, totalAfter);
             return new XpGain(totalBefore, totalAfter, totalAfter - totalBefore, 0, 0, 0, before, after, unlocked);
+        }
+
+        // The most XP a result starting at this level may leave: the next level and a share of the one after.
+        private int CapAbove(XpLevel level)
+        {
+            var next = (long)TotalXp - level.Xp + level.Cost;
+            var cost = At((int)Math.Min(int.MaxValue, next)).Cost;
+            return (int)Math.Min(int.MaxValue, next + Math.Min(cost - 1, (int)(cost * settings.LevelCarry)));
         }
 
         // Saves the new total and lists the cars the levels crossed open.

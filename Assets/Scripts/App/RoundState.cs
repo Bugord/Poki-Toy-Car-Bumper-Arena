@@ -219,8 +219,8 @@ namespace ToyCarArena.App
                         itemKnockouts, playedMap), playerProgress.Level, progress.Round);
                 var xpGain = playerProgress.Record(result, isStreakRound ? streaks : null, missionRound.Xp);
                 var coinGain = wallet.Record(result, isStreakRound, missionRound.Coins);
-                // The free topper of an early win: the result offers to wear it.
-                wallet.TryGift(result.Outcome == RoundOutcome.Won, roundNumber);
+                // The free topper of its level: the result offers to wear it.
+                wallet.TryGift(xpGain.After.Level);
                 var record = bests.Record(result).WithXp(xpGain).WithKnocker(
                     result.KnockedOutBy == RoundResult.Nobody ? "" : round.NameOf(result.KnockedOutBy)).WithRoster(
                     round.Names, round.Levels, IndexOf(round, round.Nemesis)).WithMeta(coinGain, missionRound,
