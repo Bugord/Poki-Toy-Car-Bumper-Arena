@@ -3244,8 +3244,7 @@
 /* UIKit disables the screen under a popup; keep the existing result looking the same. */
 .round-over:disabled,
 .round-over:disabled .button,
-.round-over:disabled .round-over__garage,
-.round-over:disabled .round-over__garage-wide {
+.round-over:disabled .round-over__garage {
     opacity: 1;
 }
 
@@ -5103,24 +5102,10 @@
     height: 1040px;
 }
 
-/* The desktop layout of the design: the podium in the middle over one bottom row, the level card and beside it NEXT
-   MATCH with its SPACE key and GARAGE under it. */
 .round-over--landscape.round-over--podium .podium {
     right: auto;
     left: 50%;
     margin-left: -450px;
-}
-
-.round-over--landscape.round-over--desktop .podium {
-    position: relative;
-    right: auto;
-    left: auto;
-    margin-left: 0;
-    top: 0;
-    width: 1100px;
-    height: auto;
-    flex-grow: 1;
-    align-self: center;
 }
 
 .results--wide {
@@ -5141,64 +5126,6 @@
 .results--wide .results__name { font-size: 44px; }
 .results--wide .results__ko { font-size: 44px; min-width: 60px; }
 
-/* With a mouse the garage is a plain button under NEXT MATCH, with its key and, after an unlock, a NEW badge; the round
-   CAR button is for a thumb. */
-.round-over__garage-wide {
-    display: none;
-    width: 981px;
-    height: 120px;
-    margin: 28px 0 0 0;
-    padding: 0;
-    border-width: 7px;
-    border-bottom-width: 14px;
-    border-radius: 40px;
-}
-
-.round-over__garage-wide:hover,
-.round-over__garage-wide:focus {
-    background-color: var(--soft);
-}
-
-.round-over__garage-wide:active {
-    translate: 0 6px;
-}
-
-.round-over__garage-wide-label {
-    margin: 0;
-    padding: 0;
-    font-size: 46px;
-    letter-spacing: 2px;
-    color: var(--navy);
-}
-
-.round-over__garage-key {
-    padding: 0 18px 2px 18px;
-    border-width: 5px;
-    border-bottom-width: 9px;
-    border-radius: 14px;
-}
-
-.round-over__garage-key .key__text { font-size: 32px; }
-
-.round-over__garage-new {
-    position: absolute;
-    top: -26px;
-    right: -20px;
-    margin: 0;
-    padding: 0 14px 2px 14px;
-    border-width: 5px;
-    border-color: var(--navy);
-    border-radius: 14px;
-    background-color: var(--gold);
-    font-size: 28px;
-    color: var(--navy);
-    rotate: 6deg;
-}
-
-/* Only a wide desktop screen: an upright one, phone or narrow window, keeps the round CAR button beside NEXT MATCH. */
-.round-over--landscape.round-over--desktop .round-over__garage-wide { display: flex; }
-.round-over--landscape.round-over--desktop .round-over__garage { display: none; }
-.round-over--landscape.round-over--desktop .round-over__buttons { justify-content: center; }
 
 .round-over--landscape .podium__name { font-size: 50px; }
 
@@ -5210,57 +5137,6 @@
 }
 
 .round-over__next-key {
-    display: none;
-}
-
-.round-over--landscape.round-over--desktop .round-over__bottom {
-    flex-direction: row;
-    justify-content: center;
-    align-items: stretch;
-    margin-top: 24px;
-}
-
-.round-over--landscape.round-over--desktop .level-card {
-    width: 1333px;
-    margin: 0 32px 0 0;
-    justify-content: center;
-}
-
-.round-over--landscape.round-over--desktop .round-over__actions {
-    justify-content: center;
-}
-
-.round-over--landscape.round-over--desktop .round-over__buttons,
-.round-over--landscape.round-over--desktop .round-over__buttons .round-over__button,
-.round-over--landscape.round-over--desktop .round-over__garage-wide {
-    width: 693px;
-}
-
-.round-over--landscape.round-over--desktop .round-over__button {
-    padding: 14px 24px 36px 24px;
-}
-
-.round-over--landscape.round-over--desktop .round-over__button .button__label {
-    font-size: 76px;
-}
-
-.round-over--landscape.round-over--desktop .round-over__next-key {
-    display: flex;
-    margin-left: 24px;
-    padding: 0 18px 2px 18px;
-    border-width: 5px;
-    border-bottom-width: 9px;
-    border-radius: 14px;
-}
-
-.round-over--landscape.round-over--desktop .round-over__next-key .key__text { font-size: 30px; }
-
-.round-over--landscape.round-over--desktop .round-over__garage-wide {
-    height: 107px;
-    margin-top: 21px;
-}
-
-.round-over--landscape.round-over--desktop .round-over__hint {
     display: none;
 }
 
@@ -5793,10 +5669,6 @@
     min-height: 300px;
 }
 
-.round-over--landscape.round-over--desktop.round-over--meta .level-card {
-    margin: 0 32px 0 0;
-}
-
 /* Landscape on a touch screen the podium stands over the middle column: the missions go to the empty left of it, and
    the podium comes down a little so its crown clears the streak sticker under the title. */
 .round-over--landscape.round-over--meta .missions {
@@ -5808,16 +5680,6 @@
 
 .round-over--landscape.round-over--meta .podium {
     top: 10px;
-}
-
-.round-over--landscape.round-over--desktop.round-over--meta .missions {
-    position: relative;
-    left: auto;
-    top: auto;
-}
-
-.round-over--landscape.round-over--desktop.round-over--meta .podium {
-    top: 0;
 }
 
 /* A car's speed, power and boost (CarStatsView), as racing games show them: a row per stat, its name and a rounded bar
@@ -6216,10 +6078,10 @@
     left: 70px;
 }
 
-/* A touch screen held sideways (round-over--columns, a phone): the title, the streak and the podium in the left part,
-   the missions, the level card and the buttons in a column at the right, which RoundOverView scales to the height it
-   has and keeps, with the left part, off both side edges (a camera may sit in the middle of either). The podium takes
-   all the height under the title, so no card covers the car. */
+/* A wide screen (round-over--columns, a phone held sideways or a desktop): the title, the streak and the podium in
+   the left part, the missions, the level card and the buttons in a column at the right, which RoundOverView scales to
+   the height it has and keeps, with the left part, off both side edges (a phone's camera may sit in the middle of
+   either). The podium takes all the height under the title, so no card covers the car. */
 .round-over--columns.round-over--landscape .round-over__spacer-top {
     height: 60px;
     min-height: 20px;
@@ -6289,6 +6151,28 @@
 
 .round-over--columns.round-over--landscape .round-over__buttons {
     width: auto;
+}
+
+/* With a mouse the key that presses NEXT MATCH sits on it, in place of the OR PRESS SPACE line under it. */
+.round-over--columns.round-over--desktop .round-over__next-key {
+    display: flex;
+    margin-left: 24px;
+    padding: 0 18px 2px 18px;
+    border-width: 5px;
+    border-bottom-width: 9px;
+    border-radius: 14px;
+}
+
+.round-over--columns.round-over--desktop .round-over__next-key .key__text { font-size: 34px; }
+
+.round-over--columns.round-over--landscape .round-over__hint { display: none; }
+
+/* The column's CLAIM x2 is too narrow for its X key in the row: the key sits on its top edge, as the AD tag does. */
+.round-over--columns.round-over--landscape .double__key {
+    position: absolute;
+    top: -26px;
+    left: 26px;
+    margin: 0;
 }
 
 .round-over--columns.round-over--landscape .round-over__buttons .round-over__button {

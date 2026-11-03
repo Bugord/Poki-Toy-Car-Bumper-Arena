@@ -1677,12 +1677,13 @@ namespace ToyCarArena.UI
         {
             if (!ViewModel.IsBoostEnabled) {
                 // No boosts: the button is not shown or pressed, and the start prompt and hints say nothing of it. The
-                // slot stays where it is, for the item button in it.
+                // slot still follows the steering hand, for the item button in it.
                 if (!Root.ClassListContains(NoBoostClass)) {
                     Root.AddToClassList(NoBoostClass);
                     controls.ReleaseBoostButton(boostButton);
                 }
 
+                FollowSteeringSide();
                 return;
             }
 
@@ -1692,19 +1693,7 @@ namespace ToyCarArena.UI
             }
 
             boostButton.EnableInClassList(BoostDesktopClass, !controls.CheckTouchScreen());
-
-            if (!isBoostMoving && isBoostOnLeft != controls.IsBoostOnLeft) {
-                isBoostMoving = true;
-                boostSlot.AddToClassList(BoostMovingClass);
-                boostSlot.schedule.Execute(() => {
-                    // Use the latest drag's choice if another finger started steering while the button shrank.
-                    isBoostOnLeft = controls.IsBoostOnLeft;
-                    boostSlot.EnableInClassList(BoostLeftClass, isBoostOnLeft);
-                    PlaceBoost();
-                    boostSlot.RemoveFromClassList(BoostMovingClass);
-                    isBoostMoving = false;
-                }).StartingIn(BoostMoveDuration);
-            }
+            FollowSteeringSide();
 
             var readiness = ViewModel.BoostReadiness;
             boostCharge.style.scale = new Scale(new Vector3(readiness, readiness, 1f));
@@ -1716,6 +1705,26 @@ namespace ToyCarArena.UI
                 if (isReady) {
                     Pulse(boostButton, BoostPopClass);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Moves the boost slot, and the item button in it, to the side opposite the finger that began steering: the
+        /// slot shrinks, changes side and grows back.
+        /// </summary>
+        private void FollowSteeringSide()
+        {
+            if (!isBoostMoving && isBoostOnLeft != controls.IsBoostOnLeft) {
+                isBoostMoving = true;
+                boostSlot.AddToClassList(BoostMovingClass);
+                boostSlot.schedule.Execute(() => {
+                    // Use the latest drag's choice if another finger started steering while the button shrank.
+                    isBoostOnLeft = controls.IsBoostOnLeft;
+                    boostSlot.EnableInClassList(BoostLeftClass, isBoostOnLeft);
+                    PlaceBoost();
+                    boostSlot.RemoveFromClassList(BoostMovingClass);
+                    isBoostMoving = false;
+                }).StartingIn(BoostMoveDuration);
             }
         }
 
