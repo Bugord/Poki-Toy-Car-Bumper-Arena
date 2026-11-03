@@ -440,6 +440,13 @@ namespace ToyCarArena.App
         public static void MeasureCarOfferPressed(this IGamePlatform platform, string carId) =>
             platform.MeasureInteract("shop", $"offer-{carId}");
 
+        /// <summary>The result's one popup that offers a topper for coins, and its BUY &amp; EQUIP pressed.</summary>
+        public static void MeasureHatOfferShown(this IGamePlatform platform, string topperId) =>
+            platform.MeasureVisible("shop", $"hat-offer-{topperId}");
+
+        public static void MeasureHatOfferPressed(this IGamePlatform platform, string topperId) =>
+            platform.MeasureInteract("shop", $"hat-offer-{topperId}");
+
         /// <summary>The result's popup shows the free topper (<c>gift / &lt;id&gt; / visible</c>), and EQUIP on it.</summary>
         public static void MeasureGiftShown(this IGamePlatform platform, string topperId) =>
             platform.MeasureVisible("gift", topperId);

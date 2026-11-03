@@ -83,6 +83,7 @@ namespace ToyCarArena.Tests.PlayMode
 
         private IEnumerator Setup(int visitRound)
         {
+            UseBoost(true);
             progress.Round = visitRound;
             progress.LosingStreak = 0;
             input.Reset();

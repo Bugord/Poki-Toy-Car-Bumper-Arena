@@ -125,9 +125,13 @@ namespace ToyCarArena.Gameplay.Cars
         public bool IsStaggered => Time.time < staggerEndTime && !IsBoosting;
 
         /// <summary>
-        /// Whether the cooldown since the last boost is over. The car also has to be on the arena to boost.
+        /// Whether the cooldown since the last boost is over. The car also has to be on the arena to boost. Never
+        /// with boosts off (<see cref="GameTuning.BoostSettings.IsEnabled"/>).
         /// </summary>
-        public bool IsBoostReady => Time.time >= boostReadyTime;
+        public bool IsBoostReady => CanBoost && Time.time >= boostReadyTime;
+
+        /// <summary>Whether cars boost at all in this build (<see cref="GameTuning.BoostSettings.IsEnabled"/>).</summary>
+        public bool CanBoost => boostSettings == null || boostSettings.IsEnabled;
 
         /// <summary>
         /// Seconds the boost takes to cool down now: the boost's own, or a pickup's shorter one.

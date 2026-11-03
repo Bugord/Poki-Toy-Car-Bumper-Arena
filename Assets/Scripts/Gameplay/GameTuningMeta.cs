@@ -236,6 +236,7 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Each topper's id (saved and measured: no digits) and price in coins")]
             [SerializeField]
             private TopperDefinition[] toppers = {
+                new("top-hat", 60),
                 new("party-hat", 40),
                 new("cone", 40),
                 new("antenna", 60),
@@ -249,7 +250,7 @@ namespace ToyCarArena.Gameplay
             [Tooltip("The topper given free on a win from round GiftFromRound of a visit, once, to a player who owns none: " +
                 "the result offers to wear it at once, so the player sees what the coins buy")]
             [SerializeField]
-            private string giftTopper = "party-hat";
+            private string giftTopper = "top-hat";
 
             [Tooltip("First round of a visit whose win may bring the free topper; the first round's result is busy")]
             [Min(1)]

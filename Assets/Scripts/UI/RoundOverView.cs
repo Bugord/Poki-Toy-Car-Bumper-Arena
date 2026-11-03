@@ -97,6 +97,8 @@ namespace ToyCarArena.UI
             Strings.Changed += ShowTitle;
             Root.Q<Label>("revenge").EnableInClassList(BestShownClass, ViewModel.RevengeTaken);
             xpProgress = new RoundOverProgress(Root, ViewModel, isTouch);
+            xpProgress.RewardTaken += OnRewardTaken;
+            xpProgress.RewardRefused += OnRewardRefused;
             rewards = new RoundOverRewards(Root, ViewModel, isTouch);
             rewards.Claim.clicked += ClaimDouble;
             match = RoundOverMatch.Create(Root, ViewModel);
@@ -138,7 +140,12 @@ namespace ToyCarArena.UI
 
             lifetime?.Cancel();
             lifetime?.Dispose();
-            xpProgress?.Dispose();
+            if (xpProgress != null) {
+                xpProgress.RewardTaken -= OnRewardTaken;
+                xpProgress.RewardRefused -= OnRewardRefused;
+                xpProgress.Dispose();
+            }
+
             meta?.Dispose();
             if (rewards != null) {
                 rewards.Claim.clicked -= ClaimDouble;
@@ -190,6 +197,16 @@ namespace ToyCarArena.UI
         }
 
         private void RefreshGarage() => garagePortrait.Set(ViewModel.SelectedCar, ViewModel.SelectedColor);
+
+        // A popup's reward taken: the click and the garage's purchase chime, the win jingle over them.
+        private void OnRewardTaken()
+        {
+            audioService.PlayUiClick();
+            audioService.Play(audioService.Library.KnockoutCredit);
+            audioService.PlayJingle(audioService.Library.Win);
+        }
+
+        private void OnRewardRefused() => audioService.PlayUiClick();
 
         private void OpenSettings()
         {

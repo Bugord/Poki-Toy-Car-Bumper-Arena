@@ -94,8 +94,42 @@ namespace ToyCarArena.Tests.PlayMode
                 Application.runInBackground = originalRunInBackground;
                 UnityEngine.Random.state = originalRandomState;
                 RestoreMode();
+                RestoreBoost();
             }
         }
+
+        /// <summary>
+        /// Lets cars boost, or not, in the Game scenes loaded after this call, whatever the build ships
+        /// (<see cref="GameTuning.BoostSettings.IsEnabled"/>): in memory only, put back by the tear-down, as
+        /// <see cref="UseMode"/>.
+        /// </summary>
+        protected void UseBoost(bool isEnabled)
+        {
+            var boost = LoadTuning().Boost;
+            if (savedBoost == null) {
+                savedBoost = boost;
+                savedBoostEnabled = boost.IsEnabled;
+            }
+
+            BoostEnabledField.SetValue(boost, isEnabled);
+        }
+
+        private void RestoreBoost()
+        {
+            if (savedBoost == null) {
+                return;
+            }
+
+            BoostEnabledField.SetValue(savedBoost, savedBoostEnabled);
+            savedBoost = null;
+        }
+
+        private static readonly System.Reflection.FieldInfo BoostEnabledField =
+            typeof(GameTuning.BoostSettings).GetField("enabled",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+        private GameTuning.BoostSettings savedBoost;
+        private bool savedBoostEnabled;
 
         /// <summary>
         /// Plays the Game scenes loaded after this call in <paramref name="mode"/> (and, when given, matches of

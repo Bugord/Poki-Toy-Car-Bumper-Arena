@@ -59,6 +59,7 @@ namespace ToyCarArena.UI
         private VisualElement stage;
         private VisualElement carGrid;
         private VisualElement topperGrid;
+        private ScrollView shopScroll;
         private VisualElement colorRow;
         private Button carsTab;
         private Button toppersTab;
@@ -134,17 +135,36 @@ namespace ToyCarArena.UI
                 preview = new CarPortrait(previewCar);
             }
 
-            // The stats of the car on the plinth under its name; the cards stay calm, a tap brings a car's here.
+            // The car on its plinth at the left, its name and stats at the right: side by side both read large, where
+            // stacked they left the bars small. The cards stay calm, a tap brings a car's stats here.
             heroStats = CarStatsView.Create("garage__stats");
             var plate = Root.Q<VisualElement>(className: "garage__plate");
-            plate.parent.Insert(plate.parent.IndexOf(plate) + 1, heroStats);
+            var showcase = new VisualElement { pickingMode = PickingMode.Ignore };
+            showcase.AddToClassList("garage__showcase");
+            stage.parent.Insert(stage.parent.IndexOf(stage), showcase);
+            showcase.Add(stage);
+            var info = new VisualElement { pickingMode = PickingMode.Ignore };
+            info.AddToClassList("garage__info");
+            showcase.Add(info);
+            info.Add(plate);
+            info.Add(heroStats);
             previewName = Root.Q<Label>("garage-preview-name");
             previewNameFace = Root.Q<Label>("garage-preview-name-face");
             BuildToast();
             BuildColors();
             var shop = Root.Q<VisualElement>("garage-shop");
             BuildHead(shop);
+            // The cards scroll under the shop's head: on a short screen the grid keeps its card size instead of
+            // squeezing the cards or running under NEXT MATCH.
+            shopScroll = new ScrollView(ScrollViewMode.Vertical) {
+                horizontalScrollerVisibility = ScrollerVisibility.Hidden,
+                verticalScrollerVisibility = ScrollerVisibility.Hidden,
+                touchScrollBehavior = ScrollView.TouchScrollBehavior.Elastic,
+            };
+            shopScroll.AddToClassList("garage__scroll");
+            shop.Add(shopScroll);
             carGrid = Root.Q<VisualElement>("garage-grid");
+            shopScroll.Add(carGrid);
             carGrid.AddToClassList("garage__grid--cars");
             foreach (var car in ViewModel.Cars) {
                 var portrait = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -158,7 +178,7 @@ namespace ToyCarArena.UI
                 carGrid.Add(card.Button);
             }
 
-            BuildToppers(shop);
+            BuildToppers(shopScroll);
             RefreshSelection();
             // The settings popup can change the language over the garage.
             text.OnChanged(RefreshSelection);
@@ -321,6 +341,7 @@ namespace ToyCarArena.UI
             toppersTab.EnableInClassList("garage__tab--active", toppers);
             carGrid.style.display = toppers ? DisplayStyle.None : DisplayStyle.Flex;
             topperGrid.style.display = toppers ? DisplayStyle.Flex : DisplayStyle.None;
+            shopScroll.scrollOffset = Vector2.zero;
         }
 
         private void PickTopper(string id, Button button)
@@ -396,7 +417,7 @@ namespace ToyCarArena.UI
                 preview.Set(selectedCar, ViewModel.SelectedColor);
             }
 
-            CarStatsView.Set(heroStats, ViewModel.StatsOf(selectedCar));
+            CarStatsView.Set(heroStats, ViewModel.StatsOf(selectedCar), ViewModel.HasBoost);
             previewName.text = GameText.Car(selectedCar);
             previewNameFace.text = GameText.Car(selectedCar);
             for (var id = 0; id < colors.Length; id++) {

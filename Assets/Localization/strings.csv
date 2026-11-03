@@ -149,6 +149,7 @@ hud.space_or_click,Desktop arrow sticker over the boost indicator,SPACE OR CLICK
 garage.cars,Garage tab with the cars; max ~10 chars,CARS,VOITURES,AUTO,AUTOS,COCHES,ARABALAR,CARROS,МАШИНКИ
 garage.toppers,Garage tab with the roof hats bought for coins; max ~10 chars,HATS,CHAPEAUX,CAPPELLI,HÜTE,GORROS,ŞAPKALAR,CHAPÉUS,ШАПКИ
 garage.none,Topper card that takes the topper off,NONE,AUCUN,NESSUNO,KEINER,NINGUNO,YOK,NENHUM,БЕЗ ШАПКИ
+topper.top-hat.name,Topper name: a tall black top hat,TOP HAT,HAUT-DE-FORME,CILINDRO,ZYLINDER,CHISTERA,SİLİNDİR ŞAPKA,CARTOLA,ЦИЛИНДР
 topper.party-hat.name,Topper name,PARTY HAT,CHAPEAU DE FÊTE,CAPPELLO PARTY,PARTYHUT,GORRO DE FIESTA,PARTİ ŞAPKASI,CHAPÉU DE FESTA,КОЛПАК
 topper.cone.name,Topper name: a traffic cone,CONE,CÔNE,CONO,PYLONE,CONO,KONİ,CONE,КОНУС
 topper.antenna.name,Topper name: an antenna with a ball,ANTENNA,ANTENNE,ANTENNA,ANTENNE,ANTENA,ANTEN,ANTENA,АНТЕННА
@@ -158,7 +159,11 @@ topper.propeller.name,Topper name: a propeller hat,PROPELLER,HÉLICE,ELICA,PROPE
 topper.fin.name,Topper name: a shark fin,FIN,AILERON,PINNA,FLOSSE,ALETA,YÜZGEÇ,BARBATANA,ПЛАВНИК
 topper.crown.name,Topper name,CROWN,COURONNE,CORONA,KRONE,CORONA,TAÇ,COROA,КОРОНА
 lobby.mission,"Lobby line under the seats instead of a tip: the mission closest to done; {0} is the task, {1} its progress like 5/6",MISSION: {0} {1},MISSION : {0} {1},MISSIONE: {0} {1},MISSION: {0} {1},MISIÓN: {0} {1},GÖREV: {0} {1},MISSÃO: {0} {1},МИССИЯ: {0} {1}
+result.hat_offer_title,Title of the popup that offers a hat for coins once; short,NEW LOOK!,NOUVEAU LOOK !,NUOVO LOOK!,NEUER LOOK!,¡NUEVO LOOK!,YENİ TARZ!,VISUAL NOVO!,НОВЫЙ ОБРАЗ!
+result.new_hat_tag,Tag on the popup that offers a hat for coins; short,HAT SHOP,BOUTIQUE,NEGOZIO,HUTLADEN,TIENDA,ŞAPKACI,LOJA,МАГАЗИН
 result.buy,Button on the level popup that buys the new car for coins; short,BUY,ACHETER,COMPRA,KAUFEN,COMPRAR,AL,COMPRAR,КУПИТЬ
+result.buy_equip,Button on the new-car popup: buys the car for coins and drives it next; short,BUY & EQUIP,ACHETER ET ÉQUIPER,COMPRA E SCEGLI,KAUFEN & WÄHLEN,COMPRAR Y EQUIPAR,AL VE SEÇ,COMPRAR E EQUIPAR,КУПИТЬ И ВЫБРАТЬ
+result.equipped,Stamp slammed over a bought car or a gift hat once it is put on,EQUIPPED!,ÉQUIPÉ !,SCELTO!,GEWÄHLT!,¡EQUIPADO!,SEÇİLDİ!,EQUIPADO!,ВЫБРАНО!
 result.gift_title,"Title of the popup giving a free hat after a win; short",GIFT!,CADEAU !,REGALO!,GESCHENK!,¡REGALO!,HEDİYE!,PRESENTE!,ПОДАРОК!
 result.free_hat_tag,"Tag on the free hat popup",FREE HAT!,CHAPEAU OFFERT !,CAPPELLO GRATIS!,GRATIS-HUT!,¡GORRO GRATIS!,BEDAVA ŞAPKA!,CHAPÉU GRÁTIS!,ШАПКА В ПОДАРОК!
 result.reward_xp,Name on the XP sticker of the result,XP,XP,XP,XP,XP,XP,XP,ОПЫТ

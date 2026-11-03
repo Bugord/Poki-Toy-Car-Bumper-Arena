@@ -257,6 +257,12 @@ namespace ToyCarArena.UI
         public bool IsBoostReady => round != null && round.IsRunning && round.Player.Movement.IsBoostReady;
 
         /// <summary>
+        /// Whether cars boost in this build (<see cref="GameTuning.BoostSettings.IsEnabled"/>): without, the HUD has no
+        /// BOOST button and teaches no boost.
+        /// </summary>
+        public bool IsBoostEnabled => round == null || round.Player == null || round.Player.Movement.CanBoost;
+
+        /// <summary>
         /// Whether the cars stand on the arena and the round has not begun yet: the wait for the player's first input
         /// in a visit's first round, then the kick-off's 3, 2, 1. The ghost joystick and the feed treat both alike.
         /// </summary>

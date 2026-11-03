@@ -57,19 +57,50 @@ namespace ToyCarArena.Gameplay.Effects
         private float botHitVolume = 0.6f;
 
         [Header("Hit-stop")]
-        [Tooltip("Real seconds the game nearly stops on a heavy hit with the player in it, and on a boosted one")]
+        [Tooltip("The player's hits from this closing speed on, in metres per second, freeze the game: every real " +
+            "hit the player lands, not only the heavy ones")]
+        [Min(0f)]
         [SerializeField]
-        private Vector2 hitStopDuration = new(0.06f, 0.08f);
+        private float playerStopStrength = 4f;
 
-        [Tooltip("How slow the game runs during a hit-stop, as a share of normal speed")]
+        [Tooltip("Real seconds the game freezes on the player's hit, from the weakest that freezes to a full one")]
+        [SerializeField]
+        private Vector2 playerStopDuration = new(0.09f, 0.16f);
+
+        [Tooltip("A bot ramming at this closing speed or faster, in metres per second, into a bot or the player can " +
+            "freeze the game too: a run-up hit, a car at top speed into a still one closes at 11")]
+        [Min(0f)]
+        [SerializeField]
+        private float ramStrength = 8f;
+
+        [Tooltip("Share of the bots' run-up hits that freeze the game: now and then, or eight cars would stutter it")]
         [Range(0f, 1f)]
         [SerializeField]
-        private float hitStopTimeScale = 0.05f;
+        private float ramStopChance = 0.3f;
 
-        [Tooltip("Real seconds after a hit-stop before the next one can come, so a pile-up does not stutter")]
+        [Tooltip("Real seconds the game freezes on a bot's run-up hit, from the weakest to a full one")]
+        [SerializeField]
+        private Vector2 ramStopDuration = new(0.07f, 0.11f);
+
+        [Tooltip("Real seconds after a bot's run-up freeze before the next freeze can come")]
+        [Min(0f)]
+        [SerializeField]
+        private float ramStopGap = 0.6f;
+
+        [Tooltip("How slow the game runs during a hit's freeze, as a share of normal speed")]
+        [Range(0f, 1f)]
+        [SerializeField]
+        private float hitStopTimeScale = 0.02f;
+
+        [Tooltip("Real seconds after the player's freeze before the next one can come, so a pile-up does not stutter")]
         [Min(0f)]
         [SerializeField]
         private float hitStopGap = 0.25f;
+
+        [Tooltip("Shake of a hit that freezes the game, from 0 (none) to 1 (the camera's most), at full strength")]
+        [Range(0f, 1f)]
+        [SerializeField]
+        private float stopShake = 0.6f;
 
         [Header("Player's knock-out")]
         [Tooltip("Real seconds the game runs slow when a car the player pushed goes over, so the player sees it fall")]
@@ -318,16 +349,36 @@ namespace ToyCarArena.Gameplay.Effects
             }
 
             var power = Mathf.InverseLerp(minStrength, fullStrength, hit.Strength);
-            var isHeavy = hit.Strength >= heavyStrength;
             var player = round.Player;
             var hasPlayer = player != null && (car == player || hit.Other == player);
 
-            // The normal points from the hit car to the hitter; the effect sprays the way the hit car is pushed.
-            effects.PlayHit(hit.Point, -hit.Normal, power, isHeavy, hit.IsBoosted);
+            // Every real hit the player lands freezes the game for a moment, so it is felt; a bot's run-up hit, on a bot
+            // or on the player, only now and then: eight cars bump all the time and would stutter it.
+            var isPlayerStop = car == player && hit.Strength >= playerStopStrength;
+            var isRamStop = car != player && hit.Strength >= ramStrength && UnityEngine.Random.value < ramStopChance;
+            var isStop = (isPlayerStop || isRamStop) && round.IsRunning;
+            var isHeavy = hit.Strength >= heavyStrength || isStop;
+
+            // The normal points from the hit car to the hitter; the effect sprays the way the hit car is pushed. A hit
+            // that freezes the game gets the bigger, boosted burst.
+            effects.PlayHit(hit.Point, -hit.Normal, power, isHeavy, hit.IsBoosted || isStop);
 
             var library = audioService.Library;
-            var volume = Mathf.Lerp(quietestHit, 1f, power) * (hasPlayer ? 1f : botHitVolume);
+            var volume = Mathf.Lerp(quietestHit, 1f, power) * (hasPlayer || isStop ? 1f : botHitVolume);
             audioService.Play(isHeavy ? library.HitHeavy : library.HitLight, volume);
+
+            if (isStop) {
+                arenaCamera.Shake(stopShake * Mathf.Lerp(0.6f, 1f, power) * (hasPlayer ? 1f : 0.7f));
+                if (isPlayerStop) {
+                    hitStop.Stop(Mathf.Lerp(playerStopDuration.x, playerStopDuration.y, power), hitStopTimeScale,
+                        hitStopGap);
+                }
+                else {
+                    hitStop.Stop(Mathf.Lerp(ramStopDuration.x, ramStopDuration.y, power), hitStopTimeScale, ramStopGap);
+                }
+
+                return;
+            }
 
             if (!isHeavy) {
                 return;
@@ -335,11 +386,6 @@ namespace ToyCarArena.Gameplay.Effects
 
             var shake = hitShake * Mathf.Lerp(0.6f, 1f, power) * (hasPlayer ? 1f : botHitShake);
             arenaCamera.Shake(shake * (hit.IsBoosted ? boostedHitShake : 1f));
-
-            // Only the player's hits stop the game: eight cars bump all the time, and the bots' hits would stutter it.
-            if (hasPlayer && round.IsRunning) {
-                hitStop.Stop(hit.IsBoosted ? hitStopDuration.y : hitStopDuration.x, hitStopTimeScale, hitStopGap);
-            }
         }
 
         private void OnBoosted(Car car)

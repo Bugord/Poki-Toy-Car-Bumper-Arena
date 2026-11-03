@@ -32,6 +32,7 @@ namespace ToyCarArena.UI
         private const string ChipHopClass = "hud__chip--hop";
         private const string ChipFallClass = "hud__chip--fall";
         private const string BoostShownClass = "hud__boost--shown";
+        private const string NoBoostClass = "hud--no-boost";
         private const string BoostReadyClass = "hud__boost--ready";
         private const string BoostDesktopClass = "hud__boost--desktop";
         private const string BoostPopClass = "hud__boost--pop";
@@ -1538,6 +1539,11 @@ namespace ToyCarArena.UI
             line.Add(CreateLevelBadge(ViewModel.LevelOf(index), "car-name__level", isRival));
             line.Add(CreateOutlinedText(ViewModel.NameOf(index), "car-name__text"));
             sticker.Add(line);
+            // The visit's first round shows no handles: a new player has the cars, the floor and the edge to read.
+            // The tag stays, empty, so what follows it (the bots' quips) still knows where the car is.
+            if (ViewModel.IsFirstRound) {
+                sticker.style.display = DisplayStyle.None;
+            }
             nameLayer.Add(tag);
             return tag;
         }
@@ -1654,6 +1660,17 @@ namespace ToyCarArena.UI
         /// </summary>
         private void RefreshBoost()
         {
+            if (!ViewModel.IsBoostEnabled) {
+                // No boosts: the button is not shown or pressed, and the start prompt and hints say nothing of it. The
+                // slot stays where it is, for the item button in it.
+                if (!Root.ClassListContains(NoBoostClass)) {
+                    Root.AddToClassList(NoBoostClass);
+                    controls.ReleaseBoostButton(boostButton);
+                }
+
+                return;
+            }
+
             if (!isBoostShown) {
                 isBoostShown = true;
                 boostButton.AddToClassList(BoostShownClass);

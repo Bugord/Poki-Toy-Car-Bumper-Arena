@@ -86,6 +86,11 @@ namespace ToyCarArena.UI
                 Shape(fill, new(x0, y0), new(x1, y0), new(x1, y1), new(x0, y1));
 
             switch (element.userData as string) {
+                case "top-hat":
+                    Rect(Dark, 0.1f, 0.78f, 0.9f, 0.88f);
+                    Shape(Dark, new(0.27f, 0.12f), new(0.73f, 0.12f), new(0.69f, 0.78f), new(0.31f, 0.78f));
+                    Rect(Red, 0.3f, 0.6f, 0.7f, 0.72f);
+                    break;
                 case "party-hat":
                     Shape(Pink, new(0.5f, 0.14f), new(0.78f, 0.88f), new(0.22f, 0.88f));
                     Shape(Gold, new(0.33f, 0.62f), new(0.67f, 0.62f), new(0.72f, 0.75f), new(0.28f, 0.75f));

@@ -27,7 +27,7 @@ namespace ToyCarArena.Gameplay.Cars
 
         /// <summary>Every topper this builds, for the bots that wear one now and then.</summary>
         public static readonly IReadOnlyList<string> Ids = new[] {
-            "party-hat", "cone", "antenna", "flag", "horns", "propeller", "fin", "crown",
+            "top-hat", "party-hat", "cone", "antenna", "flag", "horns", "propeller", "fin", "crown",
         };
 
         /// <summary>
@@ -74,6 +74,12 @@ namespace ToyCarArena.Gameplay.Cars
             }
 
             switch (id) {
+                case "top-hat":
+                    // A gentleman's top hat: a wide black brim, a tall crown a little wider at the top, a red band.
+                    Part(ToyMeshes.Cylinder(0.44f, 0.44f, 0.07f, 20), Dark, new Vector3(0f, 0.035f, 0f));
+                    Part(ToyMeshes.Cylinder(0.26f, 0.3f, 0.56f, 20), Dark, new Vector3(0f, 0.35f, 0f));
+                    Part(ToyMeshes.Cylinder(0.27f, 0.28f, 0.11f, 20), Red, new Vector3(0f, 0.14f, 0f));
+                    break;
                 case "party-hat":
                     Part(ToyMeshes.Cylinder(0.3f, 0f, 0.7f, 14), Pink, new Vector3(0f, 0.35f, 0f), new Vector3(-8f, 0f, 0f));
                     Part(ToyMeshes.Cylinder(0.25f, 0.18f, 0.12f, 14), Gold, new Vector3(0f, 0.2f, 0.02f), new Vector3(-8f, 0f, 0f));
