@@ -154,7 +154,8 @@ namespace ToyCarArena.Gameplay.Round
             }
 
             var definition = Find(part.Substring(0, colon));
-            if (definition == null || definition.Slot != slot) {
+            // A saved boost mission in a build without boosts could never be done: a fresh one takes its slot.
+            if (definition == null || definition.Slot != slot || !CanCount(definition)) {
                 return false;
             }
 
@@ -227,8 +228,16 @@ namespace ToyCarArena.Gameplay.Round
             return candidates[random.Next(candidates.Count)];
         }
 
+        // Boosts count only in a build where cars boost (GameTuning.Boost).
+        private bool CanCount(GameTuning.MissionDefinition definition) =>
+            definition.Counter != MissionCounter.Boosts || tuning.Boost.IsEnabled;
+
         private bool IsAvailable(GameTuning.MissionDefinition definition, int level, int nextRound)
         {
+            if (!CanCount(definition)) {
+                return false;
+            }
+
             if (definition.NeedsItems) {
                 var first = tuning.Pickups.FirstRound;
                 if (!tuning.Pickups.Enabled || (!tuning.IsMatch && (first <= 0 || nextRound < first))) {

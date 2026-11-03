@@ -234,7 +234,7 @@ namespace ToyCarArena.Tests.PlayMode
             var missions = new MissionTracker(storage, tuning);
             var round = missions.Record(Stats(RoundOutcome.Out, 3), 1, 7);
             var result = Result(RoundOutcome.Out, 3, 0);
-            var record = new RoundRecord(result, 1, 0, false, false).WithMeta(new CoinGain(0, 80, 12, 0, 0, 0, 20),
+            var record = new RoundRecord(result, 1, 0, false, false).WithMeta(new CoinGain(0, 50, 12, 0, 0, 0, 20),
                 round, new StreakChange(6, 0, 2));
             var platform = new MatchTests.RecordingPlatform();
             platform.MeasureMeta(7, record, 12, tuning);

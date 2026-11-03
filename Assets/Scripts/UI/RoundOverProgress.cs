@@ -68,6 +68,7 @@ namespace ToyCarArena.UI
         // The levels whose popups have shown, and whether the gift's has, so a replay cut short shows what it skipped.
         private int rewardsShownTo;
         private bool isGiftShown;
+        private int popupsShown;
         private XpLevel reached;
         private CancellationTokenSource animation;
         private string rankClass;
@@ -130,6 +131,12 @@ namespace ToyCarArena.UI
 
         /// <summary>A reward popup is up: it takes the presses, so the keys under it wait too.</summary>
         public bool IsPopupOpen { get; private set; }
+
+        /// <summary>A popup's reward was taken (bought or put on): the view plays its sound.</summary>
+        public event Action RewardTaken;
+
+        /// <summary>A popup's BUY &amp; EQUIP was pressed without the coins: the view plays its refusal.</summary>
+        public event Action RewardRefused;
 
         public void Stop()
         {
@@ -267,6 +274,7 @@ namespace ToyCarArena.UI
             var reward = viewModel.XpGain;
             await FillBar(reward.Before, reward.After, token);
             await ShowGift(token);
+            await ShowHatOffer(token);
             await Shrink(bar, token);
             bar.style.display = DisplayStyle.None;
             await Pop(stops[0].Node, token);
@@ -325,6 +333,7 @@ namespace ToyCarArena.UI
             }
 
             await ShowGift(token);
+            await ShowHatOffer(token);
             if (bonus is not { } gain || gain.After.Level == 0) {
                 return;
             }
@@ -413,24 +422,22 @@ namespace ToyCarArena.UI
             }
 
             foreach (var car in viewModel.NewCarsAt(level)) {
+                if (!viewModel.IntroduceCar(car)) {
+                    continue;
+                }
+
                 var portrait = new VisualElement { pickingMode = PickingMode.Ignore };
                 portrait.AddToClassList("car-portrait");
                 new CarPortrait(portrait).Set(car, viewModel.SelectedColor);
                 var isForSale = viewModel.IsForSale(car);
                 var stats = CarStatsView.Create("level-reward__stats");
-                CarStatsView.Set(stats, viewModel.StatsOf(car));
+                CarStatsView.Set(stats, viewModel.StatsOf(car), viewModel.HasBoost);
                 await ShowReward(LevelTitle(level), Strings.Get("result.new_car_tag"), GameText.Car(car),
                     isForSale ? null : Strings.Get("result.drives_next"), portrait, token, isForSale ? car : null,
                     null, stats);
             }
 
-            foreach (var arena in viewModel.NewArenasAt(level)) {
-                var disc = new VisualElement { pickingMode = PickingMode.Ignore };
-                disc.style.backgroundColor = arena.Background;
-                await ShowReward(LevelTitle(level), Strings.Get("result.new_arena_tag"), GameText.Arena(arena),
-                    Strings.Get("result.arena_next"), disc, token);
-            }
-
+            // A new arena has no popup: the lobby names it with NEW before its round, and the track shows it ahead.
             if (PlayerRank.TierOf(level) > PlayerRank.TierOf(level - 1)) {
                 var badge = HudView.CreateLevelBadge(level, "level-badge--big");
                 await ShowReward(LevelTitle(level), Strings.Get("result.new_rank_tag"), PlayerRank.NameOf(level), null,
@@ -438,6 +445,47 @@ namespace ToyCarArena.UI
             }
 
             rewardsShownTo = level;
+        }
+
+        /// <summary>
+        /// The one topper for coins the result ever offers (<see cref="RoundOverViewModel.HatOffer"/>), with its 3D
+        /// model and BUY &amp; EQUIP, on a result that showed no other popup.
+        /// </summary>
+        private async UniTask ShowHatOffer(CancellationToken token)
+        {
+            if (popupsShown > 0) {
+                return;
+            }
+
+            var hat = viewModel.HatOffer();
+            if (hat == null) {
+                return;
+            }
+
+            viewModel.HatOffered(hat);
+            var art = new VisualElement { pickingMode = PickingMode.Ignore };
+            art.AddToClassList("level-reward__gift");
+            var models = viewModel.ShowHat(hat, out var cell);
+            if (models != null && cell.width > 0f) {
+                art.Add(new Image {
+                    image = models,
+                    uv = cell,
+                    scaleMode = ScaleMode.ScaleToFit,
+                    pickingMode = PickingMode.Ignore,
+                });
+                art[0].AddToClassList("level-reward__gift-model");
+            }
+            else {
+                art.Add(TopperIcon.Create(hat, "level-reward__gift-icon"));
+            }
+
+            try {
+                await ShowReward(Strings.Get("result.hat_offer_title"), Strings.Get("result.new_hat_tag"),
+                    GameText.Topper(hat), null, art, token, hatForSale: hat);
+            }
+            finally {
+                viewModel.HideGiftHat();
+            }
         }
 
         private static string LevelTitle(int level) => Strings.Format("result.level_title", level);
@@ -485,16 +533,20 @@ namespace ToyCarArena.UI
         /// still works under it, and leaving the screen takes it away.
         /// </summary>
         /// <para>
-        /// A car with a price (<paramref name="forSale"/>) is offered with its BUY button and price while the coins pay
-        /// for it; the offer waits for the player instead of closing by itself, and a tap beside it leaves it for later.
+        /// A car with a price (<paramref name="forSale"/>) comes with BUY &amp; EQUIP and its price. While the coins pay
+        /// for it the offer waits for the player instead of closing by itself, and a tap beside it leaves it for later;
+        /// without them the button is grey, a press shakes the card and says how many coins are missing, and the popup
+        /// closes by itself as any other.
         /// </para>
         /// <para>
         /// A gift (<paramref name="wear"/>) is offered with EQUIP, which puts it on, and waits for the player too.
+        /// Either taken, the popup celebrates (<see cref="RewardCelebration"/>) before it closes.
         /// </para>
         private async UniTask ShowReward(string title, string tag, string name, string caption, VisualElement art,
             CancellationToken token, CarCatalog.Entry forSale = null, System.Func<bool> wear = null,
-            VisualElement details = null)
+            VisualElement details = null, string hatForSale = null)
         {
+            popupsShown++;
             var overlay = new VisualElement();
             overlay.AddToClassList("level-reward");
             var rays = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -529,12 +581,14 @@ namespace ToyCarArena.UI
             var isOffer = forSale != null && viewModel.CanAfford(forSale);
             var closeAt = isOffer || wear != null ? float.MaxValue : RewardAutoClose;
             var isClosed = false;
-            if (isOffer) {
+            var isTaken = false;
+            if (forSale != null) {
                 var buy = new Button();
                 buy.RemoveFromClassList(Button.ussClassName);
                 buy.AddToClassList("pill");
                 buy.AddToClassList("level-reward__buy");
-                buy.Add(Outlined(Strings.Get("result.buy"), "level-reward__buy-label", out _));
+                buy.EnableInClassList("level-reward__buy--dear", !isOffer);
+                buy.Add(Outlined(Strings.Get("result.buy_equip"), "level-reward__buy-label", out _));
                 var price = new VisualElement { pickingMode = PickingMode.Ignore };
                 price.AddToClassList("pill");
                 price.AddToClassList("level-reward__price");
@@ -544,16 +598,62 @@ namespace ToyCarArena.UI
                 // The overlay closes on any press: the button keeps its own press.
                 buy.RegisterCallback<PointerDownEvent>(evt => evt.StopPropagation());
                 buy.clicked += () => {
-                    if (isClosed || !viewModel.BuyCar(forSale)) {
+                    if (isClosed || isTaken) {
                         return;
                     }
 
+                    if (!viewModel.BuyCar(forSale)) {
+                        RewardRefused?.Invoke();
+                        RewardCelebration.Refuse(overlay, card, buy,
+                            Strings.Format("garage.need_more", viewModel.PriceOf(forSale) - viewModel.CoinsNow), token);
+                        return;
+                    }
+
+                    isTaken = true;
+                    // The coins fly from the price, so it is measured before the button gives way.
+                    RewardCelebration.Play(overlay, card, art, Strings.Get("result.equipped"), price,
+                        root.Q<VisualElement>("coin-pill"), token);
                     buy.SetEnabled(false);
-                    buy.style.display = DisplayStyle.None;
-                    card.schedule.Execute(() => isClosed = true).StartingIn(900);
+                    buy.style.visibility = Visibility.Hidden;
+                    RewardTaken?.Invoke();
+                    card.schedule.Execute(() => isClosed = true)
+                        .StartingIn((long)(RewardCelebration.Duration * 1000f));
                 };
                 card.Add(buy);
-                viewModel.CarOffered(forSale);
+                if (isOffer) {
+                    viewModel.CarOffered(forSale);
+                }
+            }
+
+            if (hatForSale != null) {
+                var buyHat = new Button();
+                buyHat.RemoveFromClassList(Button.ussClassName);
+                buyHat.AddToClassList("pill");
+                buyHat.AddToClassList("level-reward__buy");
+                buyHat.Add(Outlined(Strings.Get("result.buy_equip"), "level-reward__buy-label", out _));
+                var hatPrice = new VisualElement { pickingMode = PickingMode.Ignore };
+                hatPrice.AddToClassList("pill");
+                hatPrice.AddToClassList("level-reward__price");
+                hatPrice.Add(RoundOverMeta.Coin());
+                hatPrice.Add(Text(viewModel.TopperPrice(hatForSale).ToString(), "level-reward__price-value"));
+                buyHat.Add(hatPrice);
+                buyHat.RegisterCallback<PointerDownEvent>(evt => evt.StopPropagation());
+                buyHat.clicked += () => {
+                    if (isClosed || isTaken || !viewModel.BuyHat(hatForSale)) {
+                        return;
+                    }
+
+                    isTaken = true;
+                    RewardCelebration.Play(overlay, card, art, Strings.Get("result.equipped"), hatPrice,
+                        root.Q<VisualElement>("coin-pill"), token);
+                    buyHat.SetEnabled(false);
+                    buyHat.style.visibility = Visibility.Hidden;
+                    RewardTaken?.Invoke();
+                    card.schedule.Execute(() => isClosed = true)
+                        .StartingIn((long)(RewardCelebration.Duration * 1000f));
+                };
+                card.Add(buyHat);
+                closeAt = float.MaxValue;
             }
 
             if (wear != null) {
@@ -565,13 +665,17 @@ namespace ToyCarArena.UI
                 button.Add(Outlined(Strings.Get("garage.use"), "level-reward__buy-label", out _));
                 button.RegisterCallback<PointerDownEvent>(evt => evt.StopPropagation());
                 button.clicked += () => {
-                    if (isClosed || !wear()) {
+                    if (isClosed || isTaken || !wear()) {
                         return;
                     }
 
+                    isTaken = true;
+                    RewardCelebration.Play(overlay, card, art, Strings.Get("result.equipped"), null, null, token);
                     button.SetEnabled(false);
-                    button.style.display = DisplayStyle.None;
-                    card.schedule.Execute(() => isClosed = true).StartingIn(900);
+                    button.style.visibility = Visibility.Hidden;
+                    RewardTaken?.Invoke();
+                    card.schedule.Execute(() => isClosed = true)
+                        .StartingIn((long)(RewardCelebration.Duration * 1000f));
                 };
                 card.Add(button);
             }
@@ -580,7 +684,10 @@ namespace ToyCarArena.UI
             overlay.Add(Text(Strings.Get(isTouch ? "result.tap_continue" : "result.click_continue"), "level-reward__hint"));
             overlay.RegisterCallback<PointerDownEvent>(evt => {
                 evt.StopPropagation();
-                isClosed = true;
+                // A tap mid-celebration waits for it: the popup closes on its own once it is over.
+                if (!isTaken) {
+                    isClosed = true;
+                }
             });
 
             // Built after the screen's pills were kept round, so its own pills (the tag, BUY, EQUIP) ask again.

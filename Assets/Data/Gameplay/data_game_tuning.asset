@@ -63,6 +63,7 @@ MonoBehaviour:
     autoRescueLookAhead: 0.5
     autoRescueCooldown: 4
   boost:
+    enabled: 0
     impulse: 10
     duration: 0.3
     bumpMultiplier: 1.5
@@ -591,6 +592,8 @@ MonoBehaviour:
       map: 
   toppers:
     toppers:
+    - id: top-hat
+      price: 60
     - id: party-hat
       price: 40
     - id: cone

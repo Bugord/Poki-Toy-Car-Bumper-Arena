@@ -15,6 +15,7 @@ namespace ToyCarArena.Gameplay.Round
         private const string OwnedKey = "toppers_owned";
         private const string SelectedKey = "topper_selected";
         private const string GiftKey = "topper_gift";
+        private const string IntroKey = "intro_";
 
         public event Action Changed;
 
@@ -28,6 +29,40 @@ namespace ToyCarArena.Gameplay.Round
         }
 
         public int Coins => Math.Max(0, storage.GetInt(CoinsKey));
+
+        /// <summary>Whether the player owns any topper: one bought, or the gift.</summary>
+        public bool HasAnyTopper
+        {
+            get {
+                foreach (var _ in Owned()) {
+                    return true;
+                }
+
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Whether the result's popup already introduced this kind of reward (<c>free-car</c>, <c>paid-car</c>,
+        /// <c>paid-hat</c>). Each shows once per player, so the popups bring the garage to the player's notice and
+        /// then leave the rewards to it instead of interrupting every result.
+        /// </summary>
+        public bool IsIntroduced(string kind) => storage.GetBool(IntroKey + kind);
+
+        public void MarkIntroduced(string kind) => storage.SetBool(IntroKey + kind, true);
+
+        /// <summary>The cheapest topper not owned yet that the coins pay for, or null.</summary>
+        public string AffordableTopper()
+        {
+            GameTuning.TopperDefinition best = null;
+            foreach (var topper in tuning.Toppers.All) {
+                if (!IsOwned(topper.Id) && topper.Price <= Coins && (best == null || topper.Price < best.Price)) {
+                    best = topper;
+                }
+            }
+
+            return best?.Id;
+        }
 
         /// <summary>The topper worn, or empty for none; one no longer owned or on sale reads as none.</summary>
         public string SelectedTopper

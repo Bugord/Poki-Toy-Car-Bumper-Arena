@@ -30,6 +30,7 @@ namespace ToyCarArena.Tests.PlayMode
     public sealed class RoundOverScreenshots
     {
         [UnityTest]
+        [Timeout(900000)]
         public IEnumerator CaptureTheResultWithMissions()
         {
             Strings.Load(new StringTable(AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Localization/strings.csv").text));
@@ -41,12 +42,18 @@ namespace ToyCarArena.Tests.PlayMode
             var directory = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "round-over");
             Directory.CreateDirectory(directory);
             var shots = new[] { (1080, 1920, false), (1920, 1080, false), (1080, 1920, true), (2340, 1080, true) };
-            var cases = new[] { "lost", "won", "offer", "gift", "double" };
+            var cases = new[] { "lost", "won", "offer", "gift", "double", "bought", "hat" };
+            if (System.Environment.GetEnvironmentVariable("SHOTS_CASES") is { Length: > 0 } only) {
+                cases = only.Split(',');
+            }
+
             foreach (var name in cases) {
                 // The gift waits behind the popup of the level the round opens, each closing by itself after 4 s.
                 // CLAIM ×2 is pressed after the first picture, its ad paying at once.
                 var moments = name == "gift" ? new[] { 0.6f, 3.0f, 20.0f }
-                    : name == "double" ? new[] { 0.6f, 1.2f, 4.0f } : new[] { 0.6f, 3.0f };
+                    : name == "double" ? new[] { 0.6f, 1.2f, 4.0f }
+                    // The popup's BUY & EQUIP is pressed after the first picture: the celebration plays on.
+                    : name is "bought" or "hat" ? new[] { 3.0f, 3.3f, 3.7f, 4.4f, 6.0f } : new[] { 0.6f, 3.0f };
                 foreach (var (width, height, isTouch) in shots) {
                     var record = Record(name, tuning, catalog);
                     var panelSettings = Object.Instantiate(
@@ -72,7 +79,7 @@ namespace ToyCarArena.Tests.PlayMode
                     // The gift's 3D hat as the arena scene's garage stage draws it, under a light like its sun.
                     Light light = null;
                     GarageStage stage = null;
-                    if (name == "gift") {
+                    if (name is "gift" or "hat") {
                         light = new GameObject("Gift screenshot light").AddComponent<Light>();
                         light.type = LightType.Directional;
                         light.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
@@ -102,6 +109,15 @@ namespace ToyCarArena.Tests.PlayMode
 
                             Save(target, Path.Combine(directory,
                                 $"{name}_{moment:0.0}_{width}x{height}_{(isTouch ? "touch" : "desktop")}.png"));
+                            if (name is "bought" or "hat" && moment < 3.1f) {
+                                var buy = screen.Q<Button>(className: "level-reward__buy");
+                                if (buy != null) {
+                                    using var submit = NavigationSubmitEvent.GetPooled();
+                                    submit.target = buy;
+                                    buy.SendEvent(submit);
+                                }
+                            }
+
                             if (name == "double" && moment < 1f) {
                                 typeof(RoundOverView).GetMethod("ClaimDouble",
                                     BindingFlags.Instance | BindingFlags.NonPublic)?.Invoke(view, null);
@@ -133,7 +149,12 @@ namespace ToyCarArena.Tests.PlayMode
             storage.SetString("missions", "round-knockouts:0|knockouts:4|revenge:0");
             storage.SetInt("coins", 85);
             // The offer: the round lifts a new player to level 2, which opens the speedster for coins.
-            storage.SetInt("xp_total", name == "offer" ? 5 : 70);
+            storage.SetInt("xp_total", name is "offer" or "bought" ? 5 : 70);
+            if (name == "hat") {
+                // A player with the free top hat, past the car popups, at a plain level: the hat offer comes alone.
+                storage.SetString("toppers_owned", "top-hat");
+                storage.SetInt("xp_total", 1250);
+            }
             if (name == "gift") {
                 // Owned paid cars: their level popups close by themselves, and the gift comes after them.
                 storage.SetString("cars_owned", "speedster,suv,truck,monster-truck");

@@ -569,6 +569,7 @@ namespace ToyCarArena.Tests.PlayMode
         [UnityTest]
         public IEnumerator TurboUsedFiresTheBoostAgainAtOnceAndWearsOff()
         {
+            UseBoost(true);
             tuning = UseMode(GameTuning.GameMode.Match, 40f);
             yield return Load(true, 1);
             var player = round.Player;
@@ -697,7 +698,8 @@ namespace ToyCarArena.Tests.PlayMode
             yield return Frames(5);
             shielded.StartAbility(ItemKind.Shield);
             UseNow(player, ItemKind.Glove);
-            yield return Frames(Mathf.CeilToInt(glove.Length * FramesPerSecond) + 5);
+            // On the game's clock: a hit's freeze can slow the frames meanwhile.
+            yield return Until(() => shielded.Ability == ItemKind.None, glove.Length + 1f, "the punch never came");
             Assert.That(shielded.LastHitBy, Is.Null, "a shield takes the punch");
             Assert.That(shielded.Ability, Is.EqualTo(ItemKind.None), "the punch spends the shield");
             Assert.That(pows, Is.EqualTo(1), "a punch the shield took is no hit");

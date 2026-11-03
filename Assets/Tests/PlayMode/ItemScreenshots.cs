@@ -155,6 +155,7 @@ namespace ToyCarArena.Tests.PlayMode
         public IEnumerator CaptureTheDesktopBoostHint()
         {
             var tuning = LoadTuning();
+            UseBoost(true);
             CreateParent(new SimulationInput(), new SimulationProgress { Round = 1 }, "sandbox");
             yield return LoadGame();
             var container = GameScope().Container;

@@ -488,6 +488,12 @@ namespace ToyCarArena.Gameplay
         [Serializable]
         public sealed class BoostSettings
         {
+            [Tooltip("Whether cars boost at all: off, no car, the player's or a bot's, nor the auto boost ever boosts, " +
+                "and the HUD shows no BOOST button or boost hints (the experiment after v0.12.0: hits at full speed " +
+                "instead of boosts)")]
+            [SerializeField]
+            private bool enabled = true;
+
             [Tooltip("Speed added at once, in metres per second, towards where the car is steering (along its nose " +
                 "when it is not); the top speed is raised by as much while the boost lasts")]
             [Min(0f)]
@@ -511,6 +517,7 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float cooldown = 3f;
 
+            public bool IsEnabled => enabled;
             public float Impulse => impulse;
             public float Duration => duration;
             public float BumpMultiplier => bumpMultiplier;
