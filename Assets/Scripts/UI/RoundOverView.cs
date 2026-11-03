@@ -33,8 +33,8 @@ namespace ToyCarArena.UI
         // in Poki's frame the browser often reports no safe area at all.
         private const float ColumnsSide = 240f;
         // The right column starts under the coins and the gear, and stops this far above the bottom.
-        private const float ColumnsTop = 250f;
-        private const float ColumnsBottom = 50f;
+        private const float ColumnsTop = 180f;
+        private const float ColumnsBottom = 36f;
         private const float ColumnsGap = 40f;
         // How much the right column may grow, and the share of the width it may take.
         private const float ColumnsMaxScale = 1.6f;
@@ -111,6 +111,7 @@ namespace ToyCarArena.UI
             RefreshGarage();
             ShowNewCar(ViewModel.HasNewCar, ViewModel.CanShop);
             ViewModel.CarBought += RefreshGarage;
+            ViewModel.CarEquipped += RefreshGarage;
 
             // The key hint is for a keyboard; a phone or a tablet has none to press. A wide desktop screen shows the key on
             // NEXT MATCH itself (ui_screens), so the style sheet decides there.
@@ -164,6 +165,7 @@ namespace ToyCarArena.UI
             Strings.Changed -= ShowTitle;
             if (ViewModel != null) {
                 ViewModel.CarBought -= RefreshGarage;
+                ViewModel.CarEquipped -= RefreshGarage;
             }
 
             lifetime?.Cancel();

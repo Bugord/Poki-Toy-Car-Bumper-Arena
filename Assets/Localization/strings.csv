@@ -67,7 +67,6 @@ result.pushed_by,Before the name of the bot that knocked the player off,PUSHED O
 result.or_press,Before the SPACE key cap under NEXT MATCH,OR PRESS,OU APPUIE SUR,O PREMI,ODER DRÜCKE,O PULSA,YA DA BAS,OU APERTE,ИЛИ НАЖМИ
 result.car,Round garage button caption; max ~6 chars,CAR,AUTO,AUTO,AUTO,COCHE,ARABA,CARRO,АВТО
 result.new_car,Unlock sticker with the car name,NEW CAR! {0},NOUVELLE VOITURE ! {0},NUOVA AUTO! {0},NEUES AUTO! {0},¡NUEVO COCHE! {0},YENİ ARABA! {0},CARRO NOVO! {0},НОВАЯ МАШИНА! {0}
-result.drives_next,Under the unlock sticker,DRIVES NEXT MATCH,AU PROCHAIN MATCH,NELLA PROSSIMA SFIDA,IM NÄCHSTEN MATCH,EN LA PRÓXIMA PARTIDA,SONRAKİ MAÇTA,NA PRÓXIMA PARTIDA,В СЛЕДУЮЩЕМ МАТЧЕ
 result.xp_total,XP in the level and its price,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} ОПЫТА
 result.rank_level,"Rank name and level, e.g. BRONZE · LEVEL 12",{0} · LEVEL {1},{0} · NIVEAU {1},{0} · LIVELLO {1},{0} · LEVEL {1},{0} · NIVEL {1},{0} · SEVİYE {1},{0} · NÍVEL {1},{0} · УРОВЕНЬ {1}
 result.rank_stop,"Track caption of the next rank, e.g. SILVER RANK",{0} RANK,RANG {0},GRADO {0},RANG {0},RANGO {0},{0} RÜTBESİ,RANKING {0},РАНГ {0}
@@ -82,6 +81,7 @@ result.new_rank_tag,Tag on the level reward popup for a rank,NEW RANK!,NOUVEAU R
 result.arena_next,Under the arena on the level reward popup,COMING UP IN THE ARENAS,BIENTÔT DANS LES ARÈNES,PRESTO TRA LE ARENE,BALD IN DEN ARENEN,PRONTO EN LAS ARENAS,YAKINDA ARENALARDA,EM BREVE NAS ARENAS,СКОРО НА АРЕНАХ
 result.tap_continue,Under the level reward popup on a touch screen,TAP TO CONTINUE,TOUCHE POUR CONTINUER,TOCCA PER CONTINUARE,TIPPEN ZUM WEITERMACHEN,TOCA PARA SEGUIR,DEVAM İÇİN DOKUN,TOQUE PARA CONTINUAR,"НАЖМИ, ЧТОБЫ ПРОДОЛЖИТЬ"
 result.click_continue,Under the level reward popup on a desktop,CLICK TO CONTINUE,CLIQUE POUR CONTINUER,CLICCA PER CONTINUARE,KLICKEN ZUM WEITERMACHEN,HAZ CLIC PARA SEGUIR,DEVAM İÇİN TIKLA,CLIQUE PARA CONTINUAR,"КЛИКНИ, ЧТОБЫ ПРОДОЛЖИТЬ"
+result.continue,"Secondary button under EQUIP or BUY on a reward popup: closes it, takes nothing; short",CONTINUE,CONTINUER,CONTINUA,WEITER,CONTINUAR,DEVAM,CONTINUAR,ПРОДОЛЖИТЬ
 rank.rookie,Rank name,ROOKIE,DÉBUTANT,RECLUTA,ANFÄNGER,NOVATO,ÇAYLAK,NOVATO,НОВИЧОК
 rank.bronze,Rank name,BRONZE,BRONZE,BRONZO,BRONZE,BRONCE,BRONZ,BRONZE,БРОНЗА
 rank.silver,Rank name,SILVER,ARGENT,ARGENTO,SILBER,PLATA,GÜMÜŞ,PRATA,СЕРЕБРО

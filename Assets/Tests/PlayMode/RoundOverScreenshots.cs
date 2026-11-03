@@ -102,7 +102,8 @@ namespace ToyCarArena.Tests.PlayMode
                         screen.style.bottom = 0;
                         document.rootVisualElement.Add(screen);
                         view.Bind(model);
-                        view.Attach(screen);
+                        // UIKit hands a view the UXML's own root, not the template container around it.
+                        view.Attach(screen.hierarchy[0]);
                         view.ShowAsync(CancellationToken.None).Forget();
                         foreach (var moment in moments) {
                             while (Time.realtimeSinceStartup - start < moment) {

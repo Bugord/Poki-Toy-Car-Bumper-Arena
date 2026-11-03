@@ -122,6 +122,7 @@ def summarise(data):
     s["topper_buy"] = other(o, r"shop-(?!car-)([a-z]+(?:-[a-z]+)*)-buy")
     s["car_buy"] = other(o, r"shop-car-([a-z]+(?:-[a-z]+)*)-buy")
     s["car_offer"] = {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"shop-offer-([a-z]+(?:-[a-z]+)*)", e))}
+    s["car_equip"] = {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"shop-equip-([a-z]+(?:-[a-z]+)*)", e))}
     s["topper_equip"] = other(o, r"garage-topper-([a-z]+(?:-[a-z]+)*)-equip")
     s["missions_shown"] = i.get("mission-shown")
     s["toppers_tab"] = i.get("garage-toppers")
@@ -283,6 +284,8 @@ def report(version, previous):
         ("NEXT MATCH по исходу и серии побед (v0.10; нажали / показано)", "again_streak",
          lambda s, k: pressed(s, "again_streak", k)),
         ("Попап новой машинки с ценой (v0.10; купили / показано)", "car_offer", lambda s, k: pressed(s, "car_offer", k)),
+        ("Попап новой бесплатной машинки (после v0.13.1; EQUIP / показано)", "car_equip",
+         lambda s, k: pressed(s, "car_equip", k)),
         ("Медленное лобби, загрузка дольше 4 с (после v0.5.1; дождались / медленных)", "slow", lambda s, k: pressed(s, "slow", k)),
         # В долгом матче вариант сменяется с каждым циклом пола: старт и complete на цикл, поражений нет, «ушли посреди»
         # это ушли посреди цикла этого варианта, а «раундов» это циклов.

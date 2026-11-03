@@ -180,6 +180,25 @@ namespace ToyCarArena.UI
             CarBought?.Invoke();
             return true;
         }
+        /// <summary>A free car's popup opened: its EQUIP and CONTINUE wait for the player.</summary>
+        public void CarIntroduced(CarCatalog.Entry car) => platform.MeasureCarEquipShown(car.Id);
+
+        /// <summary>EQUIP on a free car's popup: the car drives next.</summary>
+        public bool EquipCar(CarCatalog.Entry car)
+        {
+            if (!progress.Select(car.Id)) {
+                return false;
+            }
+
+            platform.MeasureCarEquipPressed(car.Id);
+            platform.MeasureGarageEquip(car.Id);
+            CarEquipped?.Invoke();
+            return true;
+        }
+
+        /// <summary>A car was equipped from its popup: the CAR button follows.</summary>
+        public event Action CarEquipped;
+
         /// <summary>The topper this round gave free (<see cref="PlayerWallet.TryGift"/>), or null.</summary>
         public string Gift { get; private set; }
 

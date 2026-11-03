@@ -433,9 +433,13 @@ namespace ToyCarArena.UI
                 var isForSale = viewModel.IsForSale(car);
                 var stats = CarStatsView.Create("level-reward__stats");
                 CarStatsView.Set(stats, viewModel.StatsOf(car), viewModel.HasBoost);
-                await ShowReward(LevelTitle(level), Strings.Get("result.new_car_tag"), GameText.Car(car),
-                    isForSale ? null : Strings.Get("result.drives_next"), portrait, token, isForSale ? car : null,
-                    null, stats);
+                if (!isForSale) {
+                    viewModel.CarIntroduced(car);
+                }
+
+                // A free car is the player's to take: EQUIP drives it next, CONTINUE keeps the car they have.
+                await ShowReward(LevelTitle(level), Strings.Get("result.new_car_tag"), GameText.Car(car), null,
+                    portrait, token, isForSale ? car : null, isForSale ? null : () => viewModel.EquipCar(car), stats);
             }
 
             // A new arena has no popup: the lobby names it with NEW before its round, and the track shows it ahead.
@@ -540,8 +544,12 @@ namespace ToyCarArena.UI
         /// closes by itself as any other.
         /// </para>
         /// <para>
-        /// A gift (<paramref name="wear"/>) is offered with EQUIP, which puts it on, and waits for the player too.
-        /// Either taken, the popup celebrates (<see cref="RewardCelebration"/>) before it closes.
+        /// A gift or a free car (<paramref name="wear"/>) is offered with EQUIP, which puts it on, and waits for the
+        /// player too. Either taken, the popup celebrates (<see cref="RewardCelebration"/>) before it closes.
+        /// </para>
+        /// <para>
+        /// A popup with such a button also has CONTINUE under it, which closes it with nothing taken, in place of the
+        /// hint to tap: a tap beside the card still does the same.
         /// </para>
         private async UniTask ShowReward(string title, string tag, string name, string caption, VisualElement art,
             CancellationToken token, CarCatalog.Entry forSale = null, System.Func<bool> wear = null,
@@ -681,8 +689,27 @@ namespace ToyCarArena.UI
                 card.Add(button);
             }
 
+            var hasChoice = forSale != null || wear != null || hatForSale != null;
+            if (hasChoice) {
+                var skip = new Button();
+                skip.RemoveFromClassList(Button.ussClassName);
+                skip.AddToClassList("pill");
+                skip.AddToClassList("level-reward__skip");
+                skip.Add(Text(Strings.Get("result.continue"), "level-reward__skip-label"));
+                skip.RegisterCallback<PointerDownEvent>(evt => evt.StopPropagation());
+                skip.clicked += () => {
+                    if (!isTaken) {
+                        isClosed = true;
+                    }
+                };
+                card.Add(skip);
+            }
+
             overlay.Add(card);
-            overlay.Add(Text(Strings.Get(isTouch ? "result.tap_continue" : "result.click_continue"), "level-reward__hint"));
+            if (!hasChoice) {
+                overlay.Add(Text(Strings.Get(isTouch ? "result.tap_continue" : "result.click_continue"),
+                    "level-reward__hint"));
+            }
             overlay.RegisterCallback<PointerDownEvent>(evt => {
                 evt.StopPropagation();
                 // A tap mid-celebration waits for it: the popup closes on its own once it is over.

@@ -178,7 +178,7 @@ namespace ToyCarArena.Gameplay.Round
 
         /// <summary>
         /// Saves the extra XP a watched ad gave the result (CLAIM ×2): a reward of its own, from the XP after the round
-        /// to after the bonus, with the cars its levels open, the newest free one driving next as after a round.
+        /// to after the bonus, with the cars its levels open.
         /// </summary>
         public XpGain AddBonus(int xp)
         {
@@ -190,7 +190,7 @@ namespace ToyCarArena.Gameplay.Round
             return new XpGain(totalBefore, totalAfter, totalAfter - totalBefore, 0, 0, 0, before, after, unlocked);
         }
 
-        // Saves the new total and picks the car to drive next from those the levels crossed open.
+        // Saves the new total and lists the cars the levels crossed open.
         private IReadOnlyList<string> Save(XpLevel before, XpLevel after, int totalAfter)
         {
             var unlocked = new List<string>();
@@ -200,14 +200,8 @@ namespace ToyCarArena.Gameplay.Round
                 }
             }
 
+            // The car stays the player's choice: a new one waits in the garage, or for EQUIP on its popup.
             storage.SetInt(TotalKey, totalAfter);
-            // The newest car that is free drives next; one with a price waits for the player to buy it.
-            for (var index = unlocked.Count - 1; index >= 0; index--) {
-                if (Select(unlocked[index])) {
-                    break;
-                }
-            }
-
             return unlocked.AsReadOnly();
         }
 

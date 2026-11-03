@@ -68,6 +68,13 @@ namespace ToyCarArena.Gameplay.Cars
         }
 
         /// <summary>
+        /// Where the turntable's middle, the ground under the car, falls in the car's texture: x from the left, y from
+        /// the top, both 0..1. The camera frames each car by its own size, so the garage stands the picture on its
+        /// plinth by this point.
+        /// </summary>
+        public Vector2 HeroGround { get; private set; } = new(0.5f, 0.5f);
+
+        /// <summary>
         /// Puts <paramref name="entry"/> on the turntable in the colour and the topper given (none for an empty id) and
         /// starts drawing it; the same car again keeps turning as it was. The texture is the stage's to release.
         /// </summary>
@@ -237,6 +244,8 @@ namespace ToyCarArena.Gameplay.Cars
             var rotation = Quaternion.Euler(CameraPitch, 0f, 0f);
             heroCamera.transform.localRotation = rotation;
             heroCamera.transform.localPosition = new Vector3(0f, height * 0.5f, 0f) - rotation * Vector3.forward * distance;
+            var ground = heroCamera.WorldToViewportPoint(turntable.position);
+            HeroGround = new Vector2(ground.x, 1f - ground.y);
         }
 
         private void DestroyCar()

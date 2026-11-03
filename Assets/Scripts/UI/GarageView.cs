@@ -53,6 +53,8 @@ namespace ToyCarArena.UI
         // The 3D car on the plinth and its stage; with no stage (no arena loaded) the catalog's portrait instead.
         private GarageStage garageStage;
         private VisualElement hero;
+        private VisualElement plinth;
+        private float heroAspect = 1.6f;
         private CarPortrait preview;
         private bool isClosing;
         private VisualElement body;
@@ -133,6 +135,8 @@ namespace ToyCarArena.UI
                 hero = new VisualElement { pickingMode = PickingMode.Ignore };
                 hero.AddToClassList("garage__hero-car");
                 previewCar.Add(hero);
+                plinth = stage.Q<VisualElement>(className: "garage__plinth");
+                stage.RegisterCallback<GeometryChangedEvent>(OnStageGeometry);
             }
             else {
                 preview = new CarPortrait(previewCar);
@@ -435,13 +439,45 @@ namespace ToyCarArena.UI
         private void OnGeometryChanged(GeometryChangedEvent evt) =>
             Root.EnableInClassList("garage--landscape", evt.newRect.width > evt.newRect.height);
 
+        private void OnStageGeometry(GeometryChangedEvent evt) => PlaceHero();
+
+        /// <summary>
+        /// Stands the 3D car on the plinth: the ground under it in the texture (GarageStage.HeroGround) goes on the
+        /// middle of the plinth's top, the picture as wide as the stage. Placed by that point, not centred in the
+        /// stage, since each car's own size moves it in its texture.
+        /// </summary>
+        private void PlaceHero()
+        {
+            if (hero == null || plinth == null) {
+                return;
+            }
+
+            var box = hero.parent.layout;
+            var top = plinth.layout;
+            if (float.IsNaN(box.width) || box.width <= 0f || float.IsNaN(top.width)) {
+                return;
+            }
+
+            var width = stage.layout.width;
+            var height = width / heroAspect;
+            var ground = garageStage.HeroGround;
+            hero.style.left = top.center.x - box.x - ground.x * width;
+            hero.style.top = top.center.y - box.y - ground.y * height;
+            hero.style.width = width;
+            hero.style.height = height;
+            hero.style.right = StyleKeyword.Auto;
+            hero.style.bottom = StyleKeyword.Auto;
+        }
+
         private void RefreshSelection()
         {
             var selectedCar = previewedCar ?? ViewModel.SelectedEntry;
             if (garageStage != null) {
                 var topper = previewedTopper ?? ViewModel.SelectedTopper;
-                hero.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(
-                    garageStage.ShowCar(selectedCar, ViewModel.SelectedColor, topper)));
+                var texture = garageStage.ShowCar(selectedCar, ViewModel.SelectedColor, topper);
+                heroAspect = (float)texture.width / texture.height;
+                hero.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(texture));
+                PlaceHero();
             }
             else {
                 preview.Set(selectedCar, ViewModel.SelectedColor);
@@ -706,6 +742,7 @@ namespace ToyCarArena.UI
             Root?.UnregisterCallback<KeyDownEvent>(OnKeyDown, TrickleDown.TrickleDown);
             Root?.UnregisterCallback<NavigationCancelEvent>(OnCancel);
             Root?.UnregisterCallback<GeometryChangedEvent>(OnGeometryChanged);
+            stage?.UnregisterCallback<GeometryChangedEvent>(OnStageGeometry);
             if (closeButton != null) {
                 closeButton.clicked -= Back;
             }
