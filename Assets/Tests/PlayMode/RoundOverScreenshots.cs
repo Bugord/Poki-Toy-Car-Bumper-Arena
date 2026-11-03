@@ -41,10 +41,12 @@ namespace ToyCarArena.Tests.PlayMode
             var directory = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "round-over");
             Directory.CreateDirectory(directory);
             var shots = new[] { (1080, 1920, false), (1920, 1080, false), (1080, 1920, true), (2340, 1080, true) };
-            var cases = new[] { "lost", "won", "offer", "gift" };
+            var cases = new[] { "lost", "won", "offer", "gift", "double" };
             foreach (var name in cases) {
                 // The gift waits behind the popup of the level the round opens, each closing by itself after 4 s.
-                var moments = name == "gift" ? new[] { 0.6f, 3.0f, 20.0f } : new[] { 0.6f, 3.0f };
+                // CLAIM ×2 is pressed after the first picture, its ad paying at once.
+                var moments = name == "gift" ? new[] { 0.6f, 3.0f, 20.0f }
+                    : name == "double" ? new[] { 0.6f, 1.2f, 4.0f } : new[] { 0.6f, 3.0f };
                 foreach (var (width, height, isTouch) in shots) {
                     var record = Record(name, tuning, catalog);
                     var panelSettings = Object.Instantiate(
@@ -65,7 +67,7 @@ namespace ToyCarArena.Tests.PlayMode
                     }
 
                     var model = new RoundOverViewModel(catalog, arenas, tuning, progress, null,
-                        new MatchTests.RecordingPlatform(), wallet, null);
+                        new MatchTests.RecordingPlatform { Rewards = true }, wallet, null);
                     model.SetPayload(record.record);
                     // The gift's 3D hat as the arena scene's garage stage draws it, under a light like its sun.
                     Light light = null;
@@ -100,6 +102,10 @@ namespace ToyCarArena.Tests.PlayMode
 
                             Save(target, Path.Combine(directory,
                                 $"{name}_{moment:0.0}_{width}x{height}_{(isTouch ? "touch" : "desktop")}.png"));
+                            if (name == "double" && moment < 1f) {
+                                typeof(RoundOverView).GetMethod("ClaimDouble",
+                                    BindingFlags.Instance | BindingFlags.NonPublic)?.Invoke(view, null);
+                            }
                         }
                     }
                     finally {
@@ -134,6 +140,10 @@ namespace ToyCarArena.Tests.PlayMode
             }
 
             var isWon = name != "lost";
+            if (name == "double") {
+                // Level 12 with every car open: the bonus crosses a plain level, so no popup covers the card.
+                storage.SetInt("xp_total", 1250);
+            }
             var result = new RoundResult(isWon ? RoundOutcome.Won : RoundOutcome.Out, isWon ? 1 : 3, 4, 40f,
                 isWon ? 2 : 1, RoundResult.Nobody, FallCause.Drive, false, false);
             var missions = new MissionTracker(storage, tuning);

@@ -5374,26 +5374,243 @@
     color: var(--navy);
 }
 
-/* The round's coins beside its XP on the level card. */
-.coin-gain {
+/* The round's reward on top of the level card (RoundOverRewards): two equal stickers, XP and coins, and CLAIM x2 to
+   double them for a rewarded ad. Missions keep their own rewards on their rows. */
+.rewards {
+    flex-direction: row;
+    align-items: stretch;
+    height: 176px;
+    margin: 0 0 24px 0;
+}
+
+.reward {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+    margin: 0 20px 0 0;
+    align-items: center;
+    justify-content: center;
+    border-width: 6px;
+    border-bottom-width: 14px;
+    border-color: var(--navy);
+    border-radius: 36px;
+    background-color: var(--soft);
+}
+
+.reward__what {
     flex-direction: row;
     align-items: center;
-    margin-left: 26px;
-    transition-property: scale, opacity;
-    transition-duration: 0.3s;
-    transition-timing-function: ease-out-back;
 }
 
-.coin-gain--enter {
-    scale: 0.3 0.3;
-    opacity: 0;
+.reward__icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 10px 0 0;
 }
 
-.coin-gain__value {
-    margin: 0 0 0 10px;
+.reward--xp .ko-star__back {
+    left: 6px;
+    top: 6px;
+    width: 36px;
+    height: 36px;
+}
+
+.reward--xp .ko-star__front {
+    left: 12px;
+    top: 12px;
+    width: 24px;
+    height: 24px;
+    background-color: var(--green);
+}
+
+.reward--coins .reward__icon {
+    border-width: 5px;
+    border-bottom-width: 7px;
+}
+
+.reward__name {
+    margin: 0;
+    padding: 0;
+    font-size: 34px;
+    color: var(--navy);
+    -unity-text-align: middle-left;
+    white-space: nowrap;
+}
+
+.reward__value-text {
+    margin: 0;
+    padding: 0;
+    font-size: 84px;
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+    -unity-text-outline-width: 10px;
+    -unity-text-outline-color: var(--navy);
+    text-shadow: 0 6px 0 rgb(29, 43, 79);
+}
+
+.reward--xp .reward__value-text {
+    color: var(--green);
+}
+
+.reward--coins .reward__value-text {
+    color: var(--gold);
+}
+
+/* x2 slapped on the corner of each sticker once the ad has paid. */
+.reward__stamp {
+    position: absolute;
+    top: -40px;
+    right: -26px;
+    rotate: 12deg;
+}
+
+.reward__stamp-text {
+    margin: 0;
     padding: 0;
     font-size: 56px;
-    color: #c98a00;
+    color: var(--gold);
+    -unity-text-outline-width: 9px;
+    -unity-text-outline-color: var(--navy);
+    text-shadow: 0 5px 0 rgb(29, 43, 79);
+}
+
+/* CLAIM x2: the purple sticker button with a video sign and an AD tag, as rewarded ads are marked. */
+.button--purple {
+    background-color: #7f45d4;
+}
+
+.button--purple > .button__face {
+    background-color: var(--purple);
+}
+
+.button--purple:hover > .button__face,
+.button--purple:focus > .button__face {
+    background-color: #bf86ff;
+}
+
+.button--purple .button__label {
+    color: var(--white);
+    -unity-text-outline-width: 11px;
+    -unity-text-outline-color: var(--navy);
+}
+
+.double {
+    flex-grow: 1.25;
+    flex-basis: 0;
+    min-width: 0;
+    margin: 0;
+    padding: 0 20px 14px 20px;
+    border-width: 6px;
+    border-bottom-width: 16px;
+    border-radius: 36px;
+}
+
+.double > .button__face {
+    bottom: 12px;
+    border-radius: 30px;
+}
+
+.double:active {
+    translate: 0 10px;
+}
+
+.double:disabled {
+    opacity: 0.6;
+}
+
+.double__play {
+    flex-shrink: 0;
+    width: 64px;
+    height: 64px;
+    margin: 0 12px 0 0;
+}
+
+.double__label {
+    flex-shrink: 1;
+}
+
+/* A fixed size: best-fit would size the outline and the face over it apart. A thinner outline than the big buttons':
+   the label is half their size. */
+.double .double__label-text {
+    font-size: 50px;
+    -unity-text-outline-width: 6px;
+    text-shadow: 0 4px 0 rgb(29, 43, 79);
+}
+
+.double .stroke > .stroke__face {
+    -unity-text-outline-width: 0;
+    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+}
+
+.double__key {
+    flex-shrink: 0;
+    margin-left: 14px;
+    padding: 0 16px 2px 16px;
+    border-width: 5px;
+    border-bottom-width: 9px;
+    border-radius: 12px;
+}
+
+.double__key .key__text {
+    font-size: 30px;
+}
+
+.double__tag {
+    position: absolute;
+    top: -24px;
+    right: 26px;
+    margin: 0;
+    padding: 2px 14px 4px 14px;
+    border-radius: 14px;
+    background-color: var(--navy);
+    color: var(--white);
+    font-size: 26px;
+    letter-spacing: 1px;
+}
+
+/* Where CLAIM x2 was, once paid. USS has no dashed border, so a pale sunken pill. */
+.doubled {
+    flex-grow: 1.25;
+    flex-basis: 0;
+    min-width: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    border-width: 5px;
+    border-color: rgba(29, 43, 79, 0.3);
+    border-radius: 36px;
+    background-color: rgba(29, 43, 79, 0.06);
+}
+
+.doubled__tick {
+    flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    margin: 0 14px 0 0;
+    align-items: center;
+    justify-content: center;
+    border-width: 6px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--green);
+}
+
+.doubled__tick > .track__tick-mark {
+    width: 26px;
+    height: 13px;
+    margin-top: -6px;
+    border-left-width: 7px;
+    border-bottom-width: 7px;
+}
+
+.doubled__label {
+    flex-shrink: 1;
+    margin: 0;
+    padding: 0;
+    font-size: 46px;
+    -unity-text-auto-size: best-fit 26px 46px;
+    color: var(--navy);
+    white-space: nowrap;
 }
 
 /* STREAK xN under the title (gold, as NEW BEST!), or STREAK LOST (grey): shares the stickers' entrance. */
@@ -5641,6 +5858,13 @@
 
 .level-reward__stats {
     margin: 18px 0 0 0;
+}
+
+/* On the card the names start at the block's left edge: right-aligned in a wide column, they left a gap that pushed
+   the whole block right of the card's middle. */
+.level-reward__stats .car-stats__label {
+    width: 150px;
+    -unity-text-align: middle-left;
 }
 
 /* Landscape scales the panel down: the hero's column has the room for bars that still read. */

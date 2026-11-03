@@ -134,6 +134,16 @@ namespace ToyCarArena.Gameplay.Round
             return new CoinGain(before, after, round, knockouts, win, streak, missionCoins);
         }
 
+        /// <summary>The extra coins a watched ad gave the result (CLAIM ×2), as a reward of its own.</summary>
+        public CoinGain AddBonus(int amount)
+        {
+            var before = Coins;
+            var after = (int)Math.Min(int.MaxValue, (long)before + Math.Max(0, amount));
+            storage.SetInt(CoinsKey, after);
+            Changed?.Invoke();
+            return new CoinGain(before, after, after - before, 0, 0, 0, 0);
+        }
+
         /// <summary>Takes <paramref name="amount"/> coins for something bought; false, with nothing spent, when short.</summary>
         public bool Spend(int amount)
         {

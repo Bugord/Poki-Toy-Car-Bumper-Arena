@@ -68,7 +68,6 @@ result.or_press,Before the SPACE key cap under NEXT MATCH,OR PRESS,OU APPUIE SUR
 result.car,Round garage button caption; max ~6 chars,CAR,AUTO,AUTO,AUTO,COCHE,ARABA,CARRO,АВТО
 result.new_car,Unlock sticker with the car name,NEW CAR! {0},NOUVELLE VOITURE ! {0},NUOVA AUTO! {0},NEUES AUTO! {0},¡NUEVO COCHE! {0},YENİ ARABA! {0},CARRO NOVO! {0},НОВАЯ МАШИНА! {0}
 result.drives_next,Under the unlock sticker,DRIVES NEXT MATCH,AU PROCHAIN MATCH,NELLA PROSSIMA SFIDA,IM NÄCHSTEN MATCH,EN LA PRÓXIMA PARTIDA,SONRAKİ MAÇTA,NA PRÓXIMA PARTIDA,В СЛЕДУЮЩЕМ МАТЧЕ
-result.xp_gain,XP earned this round,+{0} XP,+{0} XP,+{0} XP,+{0} XP,+{0} XP,+{0} XP,+{0} XP,+{0} ОПЫТА
 result.xp_total,XP in the level and its price,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} ОПЫТА
 result.rank_level,"Rank name and level, e.g. BRONZE · LEVEL 12",{0} · LEVEL {1},{0} · NIVEAU {1},{0} · LIVELLO {1},{0} · LEVEL {1},{0} · NIVEL {1},{0} · SEVİYE {1},{0} · NÍVEL {1},{0} · УРОВЕНЬ {1}
 result.rank_stop,"Track caption of the next rank, e.g. SILVER RANK",{0} RANK,RANG {0},GRADO {0},RANG {0},RANGO {0},{0} RÜTBESİ,RANKING {0},РАНГ {0}
@@ -162,3 +161,8 @@ lobby.mission,"Lobby line under the seats instead of a tip: the mission closest 
 result.buy,Button on the level popup that buys the new car for coins; short,BUY,ACHETER,COMPRA,KAUFEN,COMPRAR,AL,COMPRAR,КУПИТЬ
 result.gift_title,"Title of the popup giving a free hat after a win; short",GIFT!,CADEAU !,REGALO!,GESCHENK!,¡REGALO!,HEDİYE!,PRESENTE!,ПОДАРОК!
 result.free_hat_tag,"Tag on the free hat popup",FREE HAT!,CHAPEAU OFFERT !,CAPPELLO GRATIS!,GRATIS-HUT!,¡GORRO GRATIS!,BEDAVA ŞAPKA!,CHAPÉU GRÁTIS!,ШАПКА В ПОДАРОК!
+result.reward_xp,Name on the XP sticker of the result,XP,XP,XP,XP,XP,XP,XP,ОПЫТ
+result.reward_coins,Name on the coins sticker of the result,COINS,PIÈCES,MONETE,MÜNZEN,MONEDAS,ALTIN,MOEDAS,МОНЕТЫ
+result.claim_x2,Button that watches a rewarded ad to double the round's XP and coins; short,CLAIM ×2,RÉCUPÉRER ×2,RISCATTA ×2,×2 HOLEN,RECLAMAR ×2,×2 AL,RESGATAR ×2,ЗАБРАТЬ ×2
+result.ad,Small tag on the button that plays an ad,AD,PUB,AD,WERBUNG,ANUNCIO,REKLAM,ANÚNCIO,РЕКЛАМА
+result.doubled,Shown where the double button was once the ad paid,DOUBLED!,DOUBLÉ !,RADDOPPIATO!,VERDOPPELT!,¡DUPLICADO!,İKİ KATI!,DOBRADO!,УДВОЕНО!

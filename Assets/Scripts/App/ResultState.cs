@@ -16,8 +16,8 @@ namespace ToyCarArena.App
     /// <summary>
     /// The result of the round just played, with the player's bests, over the arena as it ended, until the player picks
     /// PLAY AGAIN. The next round's arena then loads under the curtain, so the old one never shows reset. The commercial
-    /// break between rounds would go under the same curtain; it is left out for now, so the first tests measure the
-    /// game without ads.
+    /// break between rounds goes under the same curtain, before the lobby, once the visit has played long enough
+    /// (<see cref="AdBreaks"/>).
     /// </summary>
     public sealed class ResultState : StateBase<RoundRecord>
     {
@@ -31,11 +31,13 @@ namespace ToyCarArena.App
         private readonly IArenaRotation arenaRotation;
         private readonly ArenaCatalog arenaCatalog;
         private readonly MissionTracker missions;
+        private readonly AdBreaks adBreaks;
 
         public ResultState(LevelScene levelScene, IScreenNavigator navigator, ScreenCurtain curtain, IGamePlatform platform,
             ISessionRoster roster, ISessionProgress progress, GameTuning tuning, IArenaRotation arenaRotation,
-            ArenaCatalog arenaCatalog, MissionTracker missions)
+            ArenaCatalog arenaCatalog, MissionTracker missions, AdBreaks adBreaks)
         {
+            this.adBreaks = adBreaks;
             this.missions = missions;
             this.arenaRotation = arenaRotation;
             this.arenaCatalog = arenaCatalog;
@@ -86,6 +88,13 @@ namespace ToyCarArena.App
                 }
 
                 await curtain.Show(token);
+                // Before the lobby and its clocks: it neither runs out under the ad nor reports a slow arena, and no
+                // event goes out while the ad plays.
+                if (adBreaks.IsDue(tuning.Ads.FreePlaySeconds)) {
+                    platform.MeasureCommercialBreak();
+                    await AdPause.Run(() => platform.CommercialBreak(token));
+                }
+
                 // RoundState already moved the rotation on, so Current is the arena of the round this lobby leads to.
                 var arena = arenaCatalog.Find(mapId);
                 curtain.ShowLobby(roster, RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis,
