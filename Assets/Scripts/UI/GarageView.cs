@@ -32,6 +32,8 @@ namespace ToyCarArena.UI
         private const string LockedClass = "garage__card--locked";
         private const string PriceClass = "garage__card--price";
         private const string DearClass = "garage__card--dear";
+        private const string PreviewedClass = "garage__card--previewed";
+        private const string BuyClass = "garage__card--buy";
 
         private readonly IAudioService audioService;
         private readonly HudControls controls;
@@ -71,6 +73,9 @@ namespace ToyCarArena.UI
         private Label previewName;
         private Label previewNameFace;
         private bool isToppersTab;
+        // A car the player does not have yet, on the plinth in place of theirs after the first tap on its card, so its
+        // model and stats are seen before it is bought; the second tap buys it. Null shows the selected car.
+        private CarCatalog.Entry previewedCar;
 
         public GarageView(IAudioService audioService, HudControls controls)
         {
@@ -97,6 +102,7 @@ namespace ToyCarArena.UI
             settingsButton.RemoveFromClassList(Button.ussClassName);
             settingsButton.clicked += OpenSettings;
             body = Root.Q<VisualElement>("garage-body");
+            DriftingChecker.AddTo(Root.Q<VisualElement>("garage"));
             // The gear and the close button side by side in one corner, so their sizes alone (bigger for a thumb on a
             // wide phone) set where they stand.
             var corner = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -128,8 +134,8 @@ namespace ToyCarArena.UI
                 preview = new CarPortrait(previewCar);
             }
 
-            // The selected car's stats under its name, the key to the pips on the cards.
-            heroStats = CarStatsView.Create(false, "garage__stats");
+            // The stats of the car on the plinth under its name; the cards stay calm, a tap brings a car's here.
+            heroStats = CarStatsView.Create("garage__stats");
             var plate = Root.Q<VisualElement>(className: "garage__plate");
             plate.parent.Insert(plate.parent.IndexOf(plate) + 1, heroStats);
             previewName = Root.Q<Label>("garage-preview-name");
@@ -147,9 +153,6 @@ namespace ToyCarArena.UI
                 var image = new CarPortrait(portrait);
                 image.Set(car, ViewModel.SelectedColor, !ViewModel.IsUnlocked(car.Id));
                 var card = new Card($"garage-car-{car.Id}", portrait, text, () => GameText.Car(car));
-                var stats = CarStatsView.Create(true, "garage__card-stats");
-                CarStatsView.Set(stats, ViewModel.StatsOf(car));
-                card.Button.Insert(1, stats);
                 card.Button.clicked += () => Select(car, card.Button);
                 cards.Add((car, card, image));
                 carGrid.Add(card.Button);
@@ -309,6 +312,11 @@ namespace ToyCarArena.UI
             }
 
             isToppersTab = toppers;
+            previewedCar = null;
+            if (cards.Count > 0) {
+                RefreshSelection();
+            }
+
             carsTab.EnableInClassList("garage__tab--active", !toppers);
             toppersTab.EnableInClassList("garage__tab--active", toppers);
             carGrid.style.display = toppers ? DisplayStyle.None : DisplayStyle.Flex;
@@ -379,7 +387,7 @@ namespace ToyCarArena.UI
 
         private void RefreshSelection()
         {
-            var selectedCar = ViewModel.SelectedEntry;
+            var selectedCar = previewedCar ?? ViewModel.SelectedEntry;
             if (garageStage != null) {
                 hero.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(
                     garageStage.ShowCar(selectedCar, ViewModel.SelectedColor, ViewModel.SelectedTopper)));
@@ -399,9 +407,12 @@ namespace ToyCarArena.UI
                 var selected = car.Id == ViewModel.SelectedCar;
                 var unlocked = ViewModel.IsUnlocked(car.Id);
                 var forSale = ViewModel.IsForSale(car.Id);
-                card.SetState(selected, !unlocked, forSale, forSale && !ViewModel.CanAffordCar(car.Id),
+                var dear = forSale && !ViewModel.CanAffordCar(car.Id);
+                var previewed = car == previewedCar;
+                card.SetState(selected, !unlocked, forSale, dear,
                     selected ? Strings.Get("garage.in_use") : forSale ? ViewModel.PriceOf(car.Id).ToString()
-                    : unlocked ? Strings.Get("garage.use") : GameText.Level(car.UnlockLevel));
+                    : unlocked ? Strings.Get("garage.use") : GameText.Level(car.UnlockLevel), previewed,
+                    previewed && forSale && !dear);
                 card.Button.tooltip = unlocked ? GameText.Car(car) : Strings.Format("garage.unlock_at", car.UnlockLevel);
                 portrait.SetColor(ViewModel.SelectedColor);
             }
@@ -427,8 +438,22 @@ namespace ToyCarArena.UI
                 return;
             }
 
+            // The first tap on a car the player does not have shows it on the plinth with its stats; the next one buys it,
+            // or says why it cannot.
+            var isOwned = ViewModel.IsUnlocked(car.Id) && !ViewModel.IsForSale(car.Id);
+            if (!isOwned && previewedCar != car) {
+                previewedCar = car;
+                audioService.PlayUiClick();
+                RefreshSelection();
+                StartBounce(button);
+                PopHero();
+                return;
+            }
+
+            previewedCar = null;
             // A tap on a car the player cannot have yet still answers: it shakes and says what opens it.
             if (!ViewModel.IsUnlocked(car.Id)) {
+                previewedCar = car;
                 Refuse(button);
                 ShowToast(button, Strings.Format("garage.unlock_at", car.UnlockLevel), false, false);
                 return;
@@ -438,11 +463,13 @@ namespace ToyCarArena.UI
             if (ViewModel.IsForSale(car.Id)) {
                 var price = ViewModel.PriceOf(car.Id);
                 if (!ViewModel.CanAffordCar(car.Id)) {
+                    previewedCar = car;
                     TooDear(button, price);
                     return;
                 }
 
                 if (!ViewModel.BuyCar(car.Id)) {
+                    previewedCar = car;
                     return;
                 }
 
@@ -656,6 +683,7 @@ namespace ToyCarArena.UI
             private readonly Label status;
             private readonly VisualElement coin;
             private readonly VisualElement padlock;
+            private readonly Label buy;
 
             public Card(string name, VisualElement art, LiveText text, Func<string> title)
             {
@@ -678,6 +706,10 @@ namespace ToyCarArena.UI
                 tag.Add(check);
                 padlock = Padlock();
                 tag.Add(padlock);
+                buy = new Label { pickingMode = PickingMode.Ignore };
+                buy.AddToClassList("garage__buy-text");
+                text.Set(buy, () => Strings.Get("result.buy"));
+                tag.Add(buy);
                 coin = RoundOverMeta.Coin();
                 coin.AddToClassList("garage__price-coin");
                 tag.Add(coin);
@@ -687,8 +719,11 @@ namespace ToyCarArena.UI
                 Button.Add(tag);
             }
 
-            public void SetState(bool selected, bool locked, bool forSale, bool dear, string label)
+            public void SetState(bool selected, bool locked, bool forSale, bool dear, string label,
+                bool previewed = false, bool buyable = false)
             {
+                Button.EnableInClassList(PreviewedClass, previewed);
+                Button.EnableInClassList(BuyClass, buyable);
                 Button.EnableInClassList(SelectedClass, selected);
                 Button.EnableInClassList(LockedClass, locked);
                 Button.EnableInClassList(PriceClass, forSale && !selected);

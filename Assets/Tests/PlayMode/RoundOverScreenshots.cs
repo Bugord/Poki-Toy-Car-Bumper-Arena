@@ -67,6 +67,18 @@ namespace ToyCarArena.Tests.PlayMode
                     var model = new RoundOverViewModel(catalog, arenas, tuning, progress, null,
                         new MatchTests.RecordingPlatform(), wallet, null);
                     model.SetPayload(record.record);
+                    // The gift's 3D hat as the arena scene's garage stage draws it, under a light like its sun.
+                    Light light = null;
+                    GarageStage stage = null;
+                    if (name == "gift") {
+                        light = new GameObject("Gift screenshot light").AddComponent<Light>();
+                        light.type = LightType.Directional;
+                        light.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+                        stage = new GarageStage(AssetDatabase.LoadAssetAtPath<Car>("Assets/Prefabs/Cars/Car.prefab"),
+                            host.transform);
+                        model.Stage = stage;
+                    }
+
                     var view = new RoundOverView(new SilentAudioService(library), controls);
                     var start = Time.realtimeSinceStartup;
                     try {
@@ -92,6 +104,11 @@ namespace ToyCarArena.Tests.PlayMode
                     }
                     finally {
                         view.Dispose();
+                        stage?.Dispose();
+                        if (light != null) {
+                            Object.Destroy(light.gameObject);
+                        }
+
                         Object.Destroy(host);
                         Object.DestroyImmediate(target);
                         Object.Destroy(panelSettings);

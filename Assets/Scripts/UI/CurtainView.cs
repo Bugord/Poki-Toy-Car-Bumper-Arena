@@ -69,6 +69,7 @@ namespace ToyCarArena.UI
         protected override void OnAttached()
         {
             lobby = Root.Q<VisualElement>("lobby");
+            DriftingChecker.AddTo(Root.Q<VisualElement>("curtain"));
             title = Root.Q<Label>("lobby-title");
             titleFace = Root.Q<Label>("lobby-title-face");
             arenaLine = Root.Q<VisualElement>("lobby-arena");

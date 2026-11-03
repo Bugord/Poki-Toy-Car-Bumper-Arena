@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Bugord.App.Localization;
+using Bugord.App.UI;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.Gameplay.Cars;
 using UnityEngine;
@@ -321,7 +322,7 @@ namespace ToyCarArena.UI
                 portrait.AddToClassList("car-portrait");
                 new CarPortrait(portrait).Set(car, viewModel.SelectedColor);
                 var isForSale = viewModel.IsForSale(car);
-                var stats = CarStatsView.Create(false, "level-reward__stats");
+                var stats = CarStatsView.Create("level-reward__stats");
                 CarStatsView.Set(stats, viewModel.StatsOf(car));
                 await ShowReward(LevelTitle(level), Strings.Get("result.new_car_tag"), GameText.Car(car),
                     isForSale ? null : Strings.Get("result.drives_next"), portrait, token, isForSale ? car : null,
@@ -345,8 +346,8 @@ namespace ToyCarArena.UI
         private static string LevelTitle(int level) => Strings.Format("result.level_title", level);
 
         /// <summary>
-        /// The topper an early win gave free (<see cref="RoundOverViewModel.Gift"/>): the same popup, the player's own
-        /// car turning in it with the topper on, and EQUIP to put it on at once. Owned either way.
+        /// The topper an early win gave free (<see cref="RoundOverViewModel.Gift"/>): the same popup, the topper's own 3D
+        /// model as its garage card shows it, and EQUIP to put it on at once. Owned either way.
         /// </summary>
         private async UniTask ShowGift(CancellationToken token)
         {
@@ -357,9 +358,15 @@ namespace ToyCarArena.UI
 
             var art = new VisualElement { pickingMode = PickingMode.Ignore };
             art.AddToClassList("level-reward__gift");
-            var picture = viewModel.ShowGiftCar();
-            if (picture != null) {
-                art.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(picture));
+            var models = viewModel.ShowGiftHat(out var cell);
+            if (models != null && cell.width > 0f) {
+                art.Add(new Image {
+                    image = models,
+                    uv = cell,
+                    scaleMode = ScaleMode.ScaleToFit,
+                    pickingMode = PickingMode.Ignore,
+                });
+                art[0].AddToClassList("level-reward__gift-model");
             }
             else {
                 art.Add(TopperIcon.Create(gift, "level-reward__gift-icon"));
@@ -370,7 +377,7 @@ namespace ToyCarArena.UI
                     GameText.Topper(gift), null, art, token, null, viewModel.WearGift);
             }
             finally {
-                viewModel.HideGiftCar();
+                viewModel.HideGiftHat();
             }
         }
 
@@ -478,6 +485,8 @@ namespace ToyCarArena.UI
                 isClosed = true;
             });
 
+            // Built after the screen's pills were kept round, so its own pills (the tag, BUY, EQUIP) ask again.
+            PillShape.Keep(overlay);
             overlay.style.opacity = 0f;
             SetScale(card, 0f);
             // Inside the screen's own element, which carries the style sheet.

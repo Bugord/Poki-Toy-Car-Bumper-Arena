@@ -2730,13 +2730,17 @@
     font-size: 120px;
 }
 
-/* The free topper: the player's car turning with it on, drawn by the garage's stage. */
+/* The free topper: its 3D model as the garage's card shows it, drawn by the garage's stage. */
 .level-reward__gift {
     width: 520px;
-    height: 325px;
+    height: 320px;
     align-items: center;
     justify-content: center;
-    -unity-background-scale-mode: scale-to-fit;
+}
+
+.level-reward__gift-model {
+    width: 320px;
+    height: 320px;
 }
 
 .level-reward__gift-icon {
@@ -3344,14 +3348,14 @@
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    height: 100px;
+    height: 88px;
     margin-top: 4px;
 }
 
 .garage__preview-name {
     margin: 0;
     padding: 0;
-    font-size: 84px;
+    font-size: 76px;
     color: var(--white);
     white-space: nowrap;
 }
@@ -3542,7 +3546,7 @@
     align-items: center;
     justify-content: space-between;
     width: 31%;
-    height: 236px;
+    height: 200px;
     margin: 6px 1%;
     padding: 4px 8px 8px 8px;
     border-width: 7px;
@@ -3640,6 +3644,29 @@
 .garage__card--dear .coin.garage__price-coin { opacity: 0.55; }
 .garage__card--locked .garage__tag { background-color: var(--navy); padding-left: 12px; }
 .garage__card--locked .garage__tag-text { color: var(--white); }
+
+/* The car the hero shows before it is the player's: a gold frame, and a car the coins pay for says BUY on its tag,
+   so the next tap buys it. */
+.garage__card--previewed,
+.garage__card--previewed:hover,
+.garage__card--previewed:focus {
+    border-color: var(--gold);
+}
+
+.garage__card--buy .garage__tag { background-color: var(--green); }
+
+.garage__buy-text {
+    display: none;
+    margin: 0 10px 0 0;
+    padding: 0;
+    font-size: 30px;
+    color: var(--white);
+    -unity-text-outline-width: 6px;
+    -unity-text-outline-color: var(--navy);
+    white-space: nowrap;
+}
+
+.garage__card--buy .garage__buy-text { display: flex; }
 
 .garage__check {
     display: none;
@@ -5527,79 +5554,118 @@
     top: 0;
 }
 
-/* A car's speed, power and boost (CarStatsView): three columns, each its name over five pips, a colour a stat. The
-   full one names them (the garage's hero, the new car's popup), the compact one on a car card is the pips alone. */
+/* A car's speed, power and boost (CarStatsView), as racing games show them: a row per stat, its name and a rounded bar
+   filled to its value out of 5 in the stat's colour, the steps marked across it. Radii are half the heights, not
+   999px: UI Toolkit draws an oversized radius as an ellipse. */
 .car-stats {
     flex-shrink: 0;
-    flex-direction: row;
-    justify-content: center;
+    width: 560px;
 }
 
 .car-stats__row {
+    flex-direction: row;
     align-items: center;
-    margin: 0 14px;
+    height: 42px;
+    margin: 2px 0;
 }
 
 .car-stats__label {
-    margin: 0 0 4px 0;
+    width: 200px;
+    margin: 0 14px 0 0;
     padding: 0;
     font-size: 34px;
-    -unity-font-style: normal;
+    -unity-text-auto-size: best-fit 20px 34px;
+    -unity-text-align: middle-right;
+    white-space: nowrap;
     color: var(--navy);
 }
 
-.car-stats__pips {
-    flex-direction: row;
-}
-
-.car-stats__pip {
-    width: 30px;
-    height: 20px;
-    margin: 0 3px;
-    border-width: 4px;
+.car-stats__bar {
+    flex-grow: 1;
+    height: 32px;
+    border-width: 5px;
     border-color: var(--navy);
-    border-radius: 6px;
-    background-color: rgba(29, 43, 79, 0.12);
+    border-radius: 16px;
+    background-color: rgba(29, 43, 79, 0.14);
+    overflow: hidden;
 }
 
-.car-stats__row--speed .car-stats__pip--on { background-color: var(--blue); }
-.car-stats__row--power .car-stats__pip--on { background-color: var(--red); }
-.car-stats__row--boost .car-stats__pip--on { background-color: var(--orange); }
-
-.car-stats--compact .car-stats__row {
-    margin: 0 5px;
+.car-stats__fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 11px;
 }
 
-.car-stats--compact .car-stats__pip {
-    width: 12px;
-    height: 10px;
-    margin: 0 1px;
-    border-width: 2px;
+.car-stats__shine {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    top: 3px;
+    height: 5px;
     border-radius: 3px;
+    background-color: rgba(255, 255, 255, 0.4);
 }
 
-/* Under the hero, on the garage's navy: white names, the empty pips a faint white. */
+.car-stats__tick {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    margin-left: -2px;
+    background-color: rgba(29, 43, 79, 0.3);
+}
+
+.car-stats__row--speed .car-stats__fill { background-color: var(--blue); }
+.car-stats__row--power .car-stats__fill { background-color: var(--red); }
+.car-stats__row--boost .car-stats__fill { background-color: var(--orange); }
+
+/* Under the hero, on the garage's navy: white names and a white outline round a dark track. */
 .garage__stats {
-    margin: 2px 0 14px 0;
+    margin: 0 0 4px 0;
 }
 
 .garage__stats .car-stats__label {
     color: var(--white);
 }
 
-.garage__stats .car-stats__pip {
-    border-color: rgba(255, 255, 255, 0.85);
-    background-color: rgba(255, 255, 255, 0.15);
+.garage__stats .car-stats__bar {
+    border-color: var(--white);
+    background-color: rgba(0, 0, 0, 0.28);
 }
 
-.garage__stats .car-stats__row--speed .car-stats__pip--on { background-color: var(--blue); }
-.garage__stats .car-stats__row--power .car-stats__pip--on { background-color: var(--red); }
-.garage__stats .car-stats__row--boost .car-stats__pip--on { background-color: var(--orange); }
-
-.garage__card-stats {
-    margin: 2px 0 2px 0;
+.garage__stats .car-stats__tick {
+    background-color: rgba(29, 43, 79, 0.45);
 }
 
 .level-reward__stats {
-    margin: 14px 0 0 0;
+    margin: 18px 0 0 0;
+}
+
+/* Landscape scales the panel down: the hero's column has the room for bars that still read. */
+.garage--landscape .garage__stats {
+    width: 760px;
+    margin-top: 6px;
+}
+
+.garage--landscape .garage__stats .car-stats__row {
+    height: 60px;
+    margin: 4px 0;
+}
+
+.garage--landscape .garage__stats .car-stats__label {
+    width: 250px;
+    font-size: 46px;
+    -unity-text-auto-size: best-fit 26px 46px;
+}
+
+.garage--landscape .garage__stats .car-stats__bar {
+    height: 46px;
+    border-width: 6px;
+    border-radius: 23px;
+}
+
+.garage--landscape .garage__stats .car-stats__fill {
+    border-radius: 17px;
 }

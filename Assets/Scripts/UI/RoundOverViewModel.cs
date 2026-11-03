@@ -32,6 +32,7 @@ namespace ToyCarArena.UI
         private readonly IGamePlatform platform;
         private readonly PlayerWallet wallet;
         private readonly LevelScene levelScene;
+        private GarageStage stage;
         private IReadOnlyList<int> colors;
         private IReadOnlyList<string> names;
         private IReadOnlyList<int> levels;
@@ -108,21 +109,30 @@ namespace ToyCarArena.UI
         public string Gift { get; private set; }
 
         /// <summary>
-        /// The player's car wearing the gift, drawn by the garage's stage (<see cref="GarageStage"/>) in the arena's
-        /// scene; null where there is none (tests).
+        /// The gift's 3D model as the garage's cards show it, drawn by the garage's stage (<see cref="GarageStage"/>) in
+        /// the arena's scene: the toppers' texture and the gift's part of it (<paramref name="cell"/>, in UV); null
+        /// where there is no stage (tests).
         /// </summary>
-        public RenderTexture ShowGiftCar()
+        public RenderTexture ShowGiftHat(out Rect cell)
         {
-            var stage = levelScene is { IsLoaded: true } ? levelScene.Resolve<GarageStage>() : null;
+            cell = default;
             platform.MeasureGiftShown(Gift);
-            return stage?.ShowCar(SelectedCar, SelectedColor, Gift);
+            if (Stage == null) {
+                return null;
+            }
+
+            var texture = Stage.ShowToppers(CarTopper.Ids);
+            cell = Stage.CellOf(Gift);
+            return texture;
         }
 
-        public void HideGiftCar()
+        public void HideGiftHat() => Stage?.Hide();
+
+        /// <summary>The garage's stage in the arena scene under the result (or the one a test gives); null without one.</summary>
+        public GarageStage Stage
         {
-            if (levelScene is { IsLoaded: true }) {
-                levelScene.Resolve<GarageStage>().Hide();
-            }
+            get => stage ?? (levelScene is { IsLoaded: true } ? levelScene.Resolve<GarageStage>() : null);
+            set => stage = value;
         }
 
         /// <summary>Puts the gift on: the next round's car wears it.</summary>
