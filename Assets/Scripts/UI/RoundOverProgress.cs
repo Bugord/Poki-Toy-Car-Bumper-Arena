@@ -597,7 +597,7 @@ namespace ToyCarArena.UI
                 buy.AddToClassList("pill");
                 buy.AddToClassList("level-reward__buy");
                 buy.EnableInClassList("level-reward__buy--dear", !isOffer);
-                buy.Add(Outlined(Strings.Get("result.buy_equip"), "level-reward__buy-label", out _));
+                buy.Add(FitOutlined(Strings.Get("result.buy_equip"), "level-reward__buy-label"));
                 var price = new VisualElement { pickingMode = PickingMode.Ignore };
                 price.AddToClassList("pill");
                 price.AddToClassList("level-reward__price");
@@ -639,7 +639,7 @@ namespace ToyCarArena.UI
                 buyHat.RemoveFromClassList(Button.ussClassName);
                 buyHat.AddToClassList("pill");
                 buyHat.AddToClassList("level-reward__buy");
-                buyHat.Add(Outlined(Strings.Get("result.buy_equip"), "level-reward__buy-label", out _));
+                buyHat.Add(FitOutlined(Strings.Get("result.buy_equip"), "level-reward__buy-label"));
                 var hatPrice = new VisualElement { pickingMode = PickingMode.Ignore };
                 hatPrice.AddToClassList("pill");
                 hatPrice.AddToClassList("level-reward__price");
@@ -671,7 +671,7 @@ namespace ToyCarArena.UI
                 button.AddToClassList("pill");
                 button.AddToClassList("level-reward__buy");
                 button.AddToClassList("level-reward__wear");
-                button.Add(Outlined(Strings.Get("garage.use"), "level-reward__buy-label", out _));
+                button.Add(FitOutlined(Strings.Get("garage.use"), "level-reward__buy-label"));
                 button.RegisterCallback<PointerDownEvent>(evt => evt.StopPropagation());
                 button.clicked += () => {
                     if (isClosed || isTaken || !wear()) {
@@ -788,6 +788,14 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>Text with the outline of the titles: the same text twice, the face over the outline.</summary>
+        // A button's outlined label, shrunk to the width the button leaves it (FitText).
+        private static VisualElement FitOutlined(string value, string className)
+        {
+            var element = Outlined(value, className, out var labels);
+            FitText.Fit(element, labels);
+            return element;
+        }
+
         internal static VisualElement Outlined(string value, string className, out Label[] labels)
         {
             var element = new VisualElement { pickingMode = PickingMode.Ignore };

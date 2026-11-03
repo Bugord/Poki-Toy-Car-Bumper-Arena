@@ -49,98 +49,110 @@ namespace ToyCarArena.Tests.PlayMode
                 cases = only.Split(',');
             }
 
-            foreach (var name in cases) {
-                // The gift waits behind the popup of the level the round opens, each closing by itself after 4 s.
-                // CLAIM ×2 is pressed after the first picture, its ad paying at once.
-                var moments = name == "gift" ? new[] { 0.6f, 3.0f, 20.0f }
-                    : name == "double" ? new[] { 0.6f, 1.2f, 4.0f }
-                    // The popup's BUY & EQUIP is pressed after the first picture: the celebration plays on.
-                    : name is "bought" or "hat" ? new[] { 3.0f, 3.3f, 3.7f, 4.4f, 6.0f } : new[] { 0.6f, 3.0f };
-                foreach (var (width, height, isTouch) in shots) {
-                    var record = Record(name, tuning, catalog);
-                    var panelSettings = Object.Instantiate(
-                        AssetDatabase.LoadAssetAtPath<PanelSettings>("Assets/UI/ui_panel_settings.asset"));
-                    var target = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
-                    panelSettings.targetTexture = target;
-                    var host = new GameObject("Result screenshot");
-                    var document = host.AddComponent<UIDocument>();
-                    document.panelSettings = panelSettings;
-                    var controls = new HudControls();
-                    typeof(HudControls).GetField("isTouchSeen", BindingFlags.Instance | BindingFlags.NonPublic)
-                        ?.SetValue(controls, isTouch);
-                    var progress = new PlayerProgress(record.storage, tuning, catalog);
-                    var wallet = new PlayerWallet(record.storage, tuning);
-                    if (name == "gift") {
-                        // The free topper of an early win, before the result takes it.
-                        wallet.TryGift(true, tuning.Toppers.GiftFromRound);
-                    }
+            // SHOTS_LANG=fr,ru shoots every case again in each language, its code in the file name.
+            var languages = new List<string> { "en" };
+            if (System.Environment.GetEnvironmentVariable("SHOTS_LANG") is { Length: > 0 } extra) {
+                languages = new List<string>(extra.Split(','));
+            }
 
-                    var model = new RoundOverViewModel(catalog, arenas, tuning, progress, null,
-                        new MatchTests.RecordingPlatform { Rewards = true }, wallet, null);
-                    model.SetPayload(record.record);
-                    // The gift's 3D hat as the arena scene's garage stage draws it, under a light like its sun.
-                    Light light = null;
-                    GarageStage stage = null;
-                    if (name is "gift" or "hat") {
-                        light = new GameObject("Gift screenshot light").AddComponent<Light>();
-                        light.type = LightType.Directional;
-                        light.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
-                        stage = new GarageStage(AssetDatabase.LoadAssetAtPath<Car>("Assets/Prefabs/Cars/Car.prefab"),
-                            host.transform);
-                        model.Stage = stage;
-                    }
+            foreach (var language in languages) {
+                Strings.SetLanguage(language);
+                var prefix = language == "en" ? "" : language + "_";
 
-                    var view = new RoundOverView(new SilentAudioService(library), controls);
-                    var start = Time.realtimeSinceStartup;
-                    try {
-                        var screen = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/Screens/RoundOver.uxml")
-                            .Instantiate();
-                        screen.style.position = Position.Absolute;
-                        screen.style.left = 0;
-                        screen.style.top = 0;
-                        screen.style.right = 0;
-                        screen.style.bottom = 0;
-                        document.rootVisualElement.Add(screen);
-                        view.Bind(model);
-                        // UIKit hands a view the UXML's own root, not the template container around it.
-                        view.Attach(screen.hierarchy[0]);
-                        view.ShowAsync(CancellationToken.None).Forget();
-                        foreach (var moment in moments) {
-                            while (Time.realtimeSinceStartup - start < moment) {
-                                yield return null;
-                            }
+                foreach (var name in cases) {
+                    // The gift waits behind the popup of the level the round opens, each closing by itself after 4 s.
+                    // CLAIM ×2 is pressed after the first picture, its ad paying at once.
+                    var moments = name == "gift" ? new[] { 0.6f, 3.0f, 20.0f }
+                        : name == "double" ? new[] { 0.6f, 1.2f, 4.0f }
+                        // The popup's BUY & EQUIP is pressed after the first picture: the celebration plays on.
+                        : name is "bought" or "hat" ? new[] { 3.0f, 3.3f, 3.7f, 4.4f, 6.0f } : new[] { 0.6f, 3.0f };
+                    foreach (var (width, height, isTouch) in shots) {
+                        var record = Record(name, tuning, catalog);
+                        var panelSettings = Object.Instantiate(
+                            AssetDatabase.LoadAssetAtPath<PanelSettings>("Assets/UI/ui_panel_settings.asset"));
+                        var target = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
+                        panelSettings.targetTexture = target;
+                        var host = new GameObject("Result screenshot");
+                        var document = host.AddComponent<UIDocument>();
+                        document.panelSettings = panelSettings;
+                        var controls = new HudControls();
+                        typeof(HudControls).GetField("isTouchSeen", BindingFlags.Instance | BindingFlags.NonPublic)
+                            ?.SetValue(controls, isTouch);
+                        var progress = new PlayerProgress(record.storage, tuning, catalog);
+                        var wallet = new PlayerWallet(record.storage, tuning);
+                        if (name == "gift") {
+                            // The free topper of an early win, before the result takes it.
+                            wallet.TryGift(true, tuning.Toppers.GiftFromRound);
+                        }
 
-                            Save(target, Path.Combine(directory,
-                                $"{name}_{moment:0.0}_{width}x{height}_{(isTouch ? "touch" : "desktop")}.png"));
-                            if (name is "bought" or "hat" && moment < 3.1f) {
-                                var buy = screen.Q<Button>(className: "level-reward__buy");
-                                if (buy != null) {
-                                    using var submit = NavigationSubmitEvent.GetPooled();
-                                    submit.target = buy;
-                                    buy.SendEvent(submit);
+                        var model = new RoundOverViewModel(catalog, arenas, tuning, progress, null,
+                            new MatchTests.RecordingPlatform { Rewards = true }, wallet, null);
+                        model.SetPayload(record.record);
+                        // The gift's 3D hat as the arena scene's garage stage draws it, under a light like its sun.
+                        Light light = null;
+                        GarageStage stage = null;
+                        if (name is "gift" or "hat") {
+                            light = new GameObject("Gift screenshot light").AddComponent<Light>();
+                            light.type = LightType.Directional;
+                            light.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+                            stage = new GarageStage(AssetDatabase.LoadAssetAtPath<Car>("Assets/Prefabs/Cars/Car.prefab"),
+                                host.transform);
+                            model.Stage = stage;
+                        }
+
+                        var view = new RoundOverView(new SilentAudioService(library), controls);
+                        var start = Time.realtimeSinceStartup;
+                        try {
+                            var screen = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/Screens/RoundOver.uxml")
+                                .Instantiate();
+                            screen.style.position = Position.Absolute;
+                            screen.style.left = 0;
+                            screen.style.top = 0;
+                            screen.style.right = 0;
+                            screen.style.bottom = 0;
+                            document.rootVisualElement.Add(screen);
+                            view.Bind(model);
+                            // UIKit hands a view the UXML's own root, not the template container around it.
+                            view.Attach(screen.hierarchy[0]);
+                            view.ShowAsync(CancellationToken.None).Forget();
+                            foreach (var moment in moments) {
+                                while (Time.realtimeSinceStartup - start < moment) {
+                                    yield return null;
+                                }
+
+                                Save(target, Path.Combine(directory,
+                                    $"{prefix}{name}_{moment:0.0}_{width}x{height}_{(isTouch ? "touch" : "desktop")}.png"));
+                                if (name is "bought" or "hat" && moment < 3.1f) {
+                                    var buy = screen.Q<Button>(className: "level-reward__buy");
+                                    if (buy != null) {
+                                        using var submit = NavigationSubmitEvent.GetPooled();
+                                        submit.target = buy;
+                                        buy.SendEvent(submit);
+                                    }
+                                }
+
+                                if (name == "double" && moment < 1f) {
+                                    typeof(RoundOverView).GetMethod("ClaimDouble",
+                                        BindingFlags.Instance | BindingFlags.NonPublic)?.Invoke(view, null);
                                 }
                             }
-
-                            if (name == "double" && moment < 1f) {
-                                typeof(RoundOverView).GetMethod("ClaimDouble",
-                                    BindingFlags.Instance | BindingFlags.NonPublic)?.Invoke(view, null);
+                        }
+                        finally {
+                            view.Dispose();
+                            stage?.Dispose();
+                            if (light != null) {
+                                Object.Destroy(light.gameObject);
                             }
-                        }
-                    }
-                    finally {
-                        view.Dispose();
-                        stage?.Dispose();
-                        if (light != null) {
-                            Object.Destroy(light.gameObject);
-                        }
 
-                        Object.Destroy(host);
-                        Object.DestroyImmediate(target);
-                        Object.Destroy(panelSettings);
+                            Object.Destroy(host);
+                            Object.DestroyImmediate(target);
+                            Object.Destroy(panelSettings);
+                        }
                     }
                 }
             }
 
+            Strings.SetLanguage("en");
             typeof(Strings).GetField("table", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
         }
 
