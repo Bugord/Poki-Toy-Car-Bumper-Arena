@@ -31,14 +31,17 @@ namespace ToyCarArena.UI
         private readonly IScreenNavigator navigator;
         private readonly IGamePlatform platform;
         private readonly PlayerWallet wallet;
+        private readonly LevelScene levelScene;
         private IReadOnlyList<int> colors;
         private IReadOnlyList<string> names;
         private IReadOnlyList<int> levels;
 
         public RoundOverViewModel(CarCatalog catalog, ArenaCatalog arenaCatalog, GameTuning tuning,
-            PlayerProgress progress, IScreenNavigator navigator, IGamePlatform platform, PlayerWallet wallet)
+            PlayerProgress progress, IScreenNavigator navigator, IGamePlatform platform, PlayerWallet wallet,
+            LevelScene levelScene)
         {
             this.wallet = wallet;
+            this.levelScene = levelScene;
             this.catalog = catalog;
             this.arenaCatalog = arenaCatalog;
             this.tuning = tuning;
@@ -79,6 +82,9 @@ namespace ToyCarArena.UI
         public event Action CarBought;
 
         public bool IsForSale(CarCatalog.Entry car) => progress.IsForSale(car.Id);
+
+        /// <summary>The car's speed, power and boost for the player, shown on the popup that opens it.</summary>
+        public GameTuning.CarStatLine StatsOf(CarCatalog.Entry car) => tuning.CarStats.Of(car.Id);
         public int PriceOf(CarCatalog.Entry car) => progress.PriceOf(car.Id);
         public bool CanAfford(CarCatalog.Entry car) => wallet.Coins >= progress.PriceOf(car.Id);
 
@@ -98,6 +104,39 @@ namespace ToyCarArena.UI
             CarBought?.Invoke();
             return true;
         }
+        /// <summary>The topper this round gave free (<see cref="PlayerWallet.TryGift"/>), or null.</summary>
+        public string Gift { get; private set; }
+
+        /// <summary>
+        /// The player's car wearing the gift, drawn by the garage's stage (<see cref="GarageStage"/>) in the arena's
+        /// scene; null where there is none (tests).
+        /// </summary>
+        public RenderTexture ShowGiftCar()
+        {
+            var stage = levelScene is { IsLoaded: true } ? levelScene.Resolve<GarageStage>() : null;
+            platform.MeasureGiftShown(Gift);
+            return stage?.ShowCar(SelectedCar, SelectedColor, Gift);
+        }
+
+        public void HideGiftCar()
+        {
+            if (levelScene is { IsLoaded: true }) {
+                levelScene.Resolve<GarageStage>().Hide();
+            }
+        }
+
+        /// <summary>Puts the gift on: the next round's car wears it.</summary>
+        public bool WearGift()
+        {
+            if (Gift == null || !wallet.Wear(Gift)) {
+                return false;
+            }
+
+            platform.MeasureGiftWorn(Gift);
+            platform.MeasureTopperEquip(Gift);
+            return true;
+        }
+
         public CarCatalog.Entry SelectedCar => catalog.Find(progress.SelectedCar);
         public int SelectedColor => progress.SelectedColor;
         public int ColorOf(int index) => colors[index];
@@ -267,6 +306,7 @@ namespace ToyCarArena.UI
             XpGain = payload.XpGain;
             Coins = payload.Coins;
             Missions = payload.Missions;
+            Gift = wallet.TakeGift();
             Streak = payload.Streak;
             Outcome = result.Outcome;
             IsMatch = result.IsMatch;

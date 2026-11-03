@@ -87,6 +87,7 @@ namespace ToyCarArena.Gameplay.Round
         private float[] safeUntil;
 
         private float elapsed;
+        private float lastPlayerKnockoutTime = float.NegativeInfinity;
         private FallCause playerFallCause;
         private IReadOnlyList<SessionPlayer> players;
         private RoundStandings standings;
@@ -192,6 +193,12 @@ namespace ToyCarArena.Gameplay.Round
         /// Cars the player has knocked out this round.
         /// </summary>
         public int PlayerKnockouts { get; private set; }
+
+        /// <summary>
+        /// The player's knock-outs in a row, each within <see cref="GameTuning.RoundSettings.ComboWindow"/> of the one
+        /// before: 1 for a lone one, 2 for a DOUBLE!, and on. Set before <see cref="KnockedOut"/> tells of the newest.
+        /// </summary>
+        public int PlayerCombo { get; private set; }
 
         /// <summary>
         /// The car that knocked the player out, null while the player is on the arena or after a fall with no one to
@@ -324,6 +331,9 @@ namespace ToyCarArena.Gameplay.Round
                     if (knockedOutBy != null) {
                         if (knockedOutBy == Player) {
                             PlayerKnockouts++;
+                            PlayerCombo = Time.time - lastPlayerKnockoutTime <= tuning.Round.ComboWindow
+                                ? PlayerCombo + 1 : 1;
+                            lastPlayerKnockoutTime = Time.time;
                             if (car == Nemesis) {
                                 RevengeTaken = true;
                             }
@@ -597,6 +607,14 @@ namespace ToyCarArena.Gameplay.Round
                 car.IsPlayer = i == 0;
                 var entry = i == 0 ? catalog.Find(playerCar.SelectedCar) : players[i - 1].Car;
                 car.GetComponent<CarLook>().Apply(i, entry, ColorOf(i), i == 0 ? playerTopper.SelectedTopper : players[i - 1].Topper);
+                if (i == 0) {
+                    // The player's car drives by its stats; a bot's car is only its look.
+                    var statSettings = tuning.CarStats;
+                    var stats = statSettings.Of(entry.Id);
+                    car.Movement.SetStats(statSettings.SpeedScale(stats), statSettings.CooldownScale(stats));
+                    car.PowerScale = statSettings.PowerScale(stats);
+                }
+
                 cars.Add(car);
             }
         }

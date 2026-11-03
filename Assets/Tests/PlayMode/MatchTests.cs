@@ -333,10 +333,12 @@ namespace ToyCarArena.Tests.PlayMode
             yield return Until(() => car.IsOut, 5f, "The pushed car never fell.");
         }
 
+        // Game seconds, not frames: the slow motion of the player's knock-out stretches a second over more frames.
         private static IEnumerator Until(System.Func<bool> condition, float seconds, string message)
         {
-            var frames = Mathf.CeilToInt(seconds * FramesPerSecond);
-            for (var frame = 0; frame < frames && !condition(); frame++) {
+            var end = Time.time + seconds;
+            var frames = Mathf.CeilToInt(seconds * FramesPerSecond) * 20;
+            for (var frame = 0; frame < frames && Time.time < end && !condition(); frame++) {
                 yield return null;
             }
 

@@ -36,6 +36,7 @@ namespace ToyCarArena.UI
         private readonly IAudioService audioService;
         private readonly HudControls controls;
         private readonly List<(CarCatalog.Entry Car, Card Card, CarPortrait Portrait)> cards = new();
+        private VisualElement heroStats;
         private readonly List<(string Id, Card Card)> topperCards = new();
         private readonly Button[] colors = new Button[CarPaint.Count];
         private readonly LiveText text = new();
@@ -127,6 +128,10 @@ namespace ToyCarArena.UI
                 preview = new CarPortrait(previewCar);
             }
 
+            // The selected car's stats under its name, the key to the pips on the cards.
+            heroStats = CarStatsView.Create(false, "garage__stats");
+            var plate = Root.Q<VisualElement>(className: "garage__plate");
+            plate.parent.Insert(plate.parent.IndexOf(plate) + 1, heroStats);
             previewName = Root.Q<Label>("garage-preview-name");
             previewNameFace = Root.Q<Label>("garage-preview-name-face");
             BuildToast();
@@ -142,6 +147,9 @@ namespace ToyCarArena.UI
                 var image = new CarPortrait(portrait);
                 image.Set(car, ViewModel.SelectedColor, !ViewModel.IsUnlocked(car.Id));
                 var card = new Card($"garage-car-{car.Id}", portrait, text, () => GameText.Car(car));
+                var stats = CarStatsView.Create(true, "garage__card-stats");
+                CarStatsView.Set(stats, ViewModel.StatsOf(car));
+                card.Button.Insert(1, stats);
                 card.Button.clicked += () => Select(car, card.Button);
                 cards.Add((car, card, image));
                 carGrid.Add(card.Button);
@@ -380,6 +388,7 @@ namespace ToyCarArena.UI
                 preview.Set(selectedCar, ViewModel.SelectedColor);
             }
 
+            CarStatsView.Set(heroStats, ViewModel.StatsOf(selectedCar));
             previewName.text = GameText.Car(selectedCar);
             previewNameFace.text = GameText.Car(selectedCar);
             for (var id = 0; id < colors.Length; id++) {

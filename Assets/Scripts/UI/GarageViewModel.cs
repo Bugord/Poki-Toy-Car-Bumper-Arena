@@ -71,6 +71,9 @@ namespace ToyCarArena.UI
         public CarCatalog.Entry SelectedEntry => catalog.Find(progress.SelectedCar);
         public int SelectedColor => progress.SelectedColor;
         public bool IsUnlocked(string id) => progress.IsUnlocked(id);
+
+        /// <summary>The car's speed, power and boost for the player.</summary>
+        public GameTuning.CarStatLine StatsOf(CarCatalog.Entry car) => tuning.CarStats.Of(car.Id);
         public bool IsForSale(string id) => progress.IsForSale(id);
         public int PriceOf(string id) => progress.PriceOf(id);
         public bool CanAffordCar(string id) => wallet.Coins >= progress.PriceOf(id);

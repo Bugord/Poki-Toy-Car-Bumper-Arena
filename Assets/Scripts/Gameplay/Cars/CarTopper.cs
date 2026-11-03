@@ -41,6 +41,16 @@ namespace ToyCarArena.Gameplay.Cars
         };
 
         /// <summary>
+        /// How far forward of the model's highest part the roof of this catalog car is, in metres: the drag racer's
+        /// highest part is the air intake behind its driver, the vintage car's the windscreen ahead of its seat.
+        /// </summary>
+        public static float RoofShiftOf(string carId) => carId switch {
+            "drag-racer" => 0.55f,
+            "vintage" => -0.25f,
+            _ => 0f,
+        };
+
+        /// <summary>
         /// Builds the topper under <paramref name="parent"/>; the meshes it makes go to <paramref name="meshes"/> for
         /// the owner to destroy. <paramref name="spinner"/> is the part that turns (the propeller's blades), or null.
         /// Null for an unknown id.

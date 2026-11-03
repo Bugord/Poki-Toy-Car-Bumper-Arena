@@ -222,6 +222,24 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float staggerGrip = 0.2f;
 
+            [Tooltip("Upward speed, in metres per second, a car gets from a hit of the player's at full speed, so it hops " +
+                "away like a toy and the player sees who won the bump; a weaker hit lifts it less")]
+            [Min(0f)]
+            [SerializeField]
+            private float playerHitLift = 3.5f;
+
+            [Tooltip("Spin, in degrees a second, a car gets from a hit of the player's at full speed, turned the way the " +
+                "player's car was going past it")]
+            [Min(0f)]
+            [SerializeField]
+            private float playerHitSpin = 420f;
+
+            [Tooltip("Share of a full-speed hit (the hit's speed against the top speed) a hit of the player's needs to " +
+                "lift and spin the car at all, so touches stay on the floor")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float playerHitLiftFrom = 0.35f;
+
             public float MaxSpeed => maxSpeed;
             public float Acceleration => acceleration;
             public float Braking => braking;
@@ -234,6 +252,9 @@ namespace ToyCarArena.Gameplay
             public float MaxBumpSpeed => maxBumpSpeed;
             public float HitStagger => hitStagger;
             public float StaggerGrip => staggerGrip;
+            public float PlayerHitLift => playerHitLift;
+            public float PlayerHitSpin => playerHitSpin;
+            public float PlayerHitLiftFrom => playerHitLiftFrom;
         }
 
         /// <summary>
@@ -1005,6 +1026,12 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float knockoutCreditWindow = 2.5f;
 
+            [Tooltip("The player's knock-outs no more than this many seconds apart make a combo: DOUBLE!, TRIPLE! and on, " +
+                "and a higher knock-out sound each")]
+            [Min(0f)]
+            [SerializeField]
+            private float comboWindow = 4f;
+
             [Tooltip("Seconds after the floor ring under the player falls away that a fall without knockout credit " +
                 "is attributed to that ring; measured at the last grounded step, not elimination")]
             [Min(0f)]
@@ -1053,6 +1080,7 @@ namespace ToyCarArena.Gameplay
             public float ResultDelay => resultDelay;
             public float OutResultDelay => outResultDelay;
             public float KnockoutCreditWindow => knockoutCreditWindow;
+            public float ComboWindow => comboWindow;
             public float RingFallWindow => ringFallWindow;
             public float BoostFallWindow => boostFallWindow;
             public float SlideWindow => slideWindow;

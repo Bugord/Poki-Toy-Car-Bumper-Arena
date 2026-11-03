@@ -17,6 +17,9 @@ hud.go,"Kick-off: the word after 3, 2, 1 as the round starts; short and punchy, 
 hud.drag_to_drive,Ghost joystick caption,DRAG TO DRIVE,GLISSE POUR ROULER,TRASCINA PER GUIDARE,ZIEHEN ZUM FAHREN,ARRASTRA PARA CONDUCIR,SÜRMEK İÇİN KAYDIR,ARRASTE PARA DIRIGIR,ВЕДИ ПАЛЬЦЕМ
 hud.knockout,Sticker when the player knocks a car off,KNOCKOUT!,K.-O. !,K.O.!,K.O.!,¡K.O.!,NAKAVT!,NOCAUTE!,НОКАУТ!
 hud.revenge_taken,Sticker when the player knocks off the bot that beat them,REVENGE!,VENGEANCE !,VENDETTA!,RACHE!,¡VENGANZA!,İNTİKAM!,VINGANÇA!,МЕСТЬ!
+hud.combo_2,"Sticker when the player knocks off a second car within seconds of the first; short",DOUBLE!,DOUBLÉ !,DOPPIO!,DOPPEL!,¡DOBLE!,ÇİFTE!,DUPLO!,ДУПЛЕТ!
+hud.combo_3,"Sticker for the third knock-out in a row within seconds; short",TRIPLE!,TRIPLÉ !,TRIPLO!,DREIFACH!,¡TRIPLE!,ÜÇLÜ!,TRIPLO!,ТРОЙНОЙ!
+hud.combo_4,"Sticker for the fourth or later knock-out in a row within seconds; short gamer hype word",RAMPAGE!,CARNAGE !,STRAGE!,WAHNSINN!,¡IMPARABLE!,CANAVAR!,MASSACRE!,РАЗГРОМ!
 hud.revenge,Small heading over the rival bot name,REVENGE,VENGEANCE,VENDETTA,RACHE,VENGANZA,İNTİKAM,VINGANÇA,МЕСТЬ
 hud.fell_off,Feed line: the car fell by itself,FELL OFF,EST TOMBÉ,È CADUTO,GEFALLEN,SE CAYÓ,DÜŞTÜ,CAIU,УПАЛ
 hud.back_in,Match: before the seconds until the player's car comes back,BACK IN,RETOUR DANS,RIENTRI TRA,ZURÜCK IN,VUELVES EN,GERİ DÖNÜŞ,VOLTA EM,ВОЗВРАТ ЧЕРЕЗ
@@ -88,6 +91,9 @@ rank.legend,Rank name,LEGEND,LÉGENDE,LEGGENDA,LEGENDE,LEYENDA,EFSANE,LENDA,ЛЕ
 garage.title,Garage screen title,GARAGE,GARAGE,GARAGE,GARAGE,GARAJE,GARAJ,GARAGEM,ГАРАЖ
 garage.in_use,Selected car or hat card status,EQUIPPED,ÉQUIPÉ,IN USO,AKTIV,EQUIPADO,SEÇİLİ,EQUIPADO,ВЫБРАНО
 garage.use,Owned car or hat card status: tap to put it on,EQUIP,ÉQUIPER,SCEGLI,WÄHLEN,EQUIPAR,SEÇ,EQUIPAR,ВЫБРАТЬ
+car.stat_speed,"Car stat label in the garage and the new car popup: top speed",SPEED,VITESSE,VELOCITÀ,TEMPO,VELOCIDAD,HIZ,VELOCIDADE,СКОРОСТЬ
+car.stat_power,"Car stat label: how hard its hits push",POWER,PUISSANCE,POTENZA,KRAFT,POTENCIA,GÜÇ,FORÇA,СИЛА
+car.stat_boost,"Car stat label: how often it can boost (the BOOST button)",BOOST,TURBO,TURBO,BOOST,TURBO,TURBO,TURBO,РЫВОК
 garage.unlock_at,Locked car tooltip,UNLOCK AT LVL {0},DÉBLOQUÉE AU NIV. {0},SBLOCCO AL LIV. {0},AB LVL {0},SE DESBLOQUEA EN NIV. {0},{0}. SEVİYEDE AÇILIR,LIBERA NO NÍV. {0},ОТКРОЕТСЯ НА УР. {0}
 garage.need_more,Over a too dear card: how many coins are missing; max ~16 chars,NEED {0} MORE,ENCORE {0},NE MANCANO {0},NOCH {0},FALTAN {0},{0} DAHA LAZIM,FALTAM {0},НУЖНО ЕЩЁ {0}
 settings.title,Settings popup title,SETTINGS,RÉGLAGES,IMPOSTAZIONI,EINSTELLUNGEN,AJUSTES,AYARLAR,CONFIGURAÇÕES,НАСТРОЙКИ
@@ -154,3 +160,5 @@ topper.fin.name,Topper name: a shark fin,FIN,AILERON,PINNA,FLOSSE,ALETA,YÜZGEÇ
 topper.crown.name,Topper name,CROWN,COURONNE,CORONA,KRONE,CORONA,TAÇ,COROA,КОРОНА
 lobby.mission,"Lobby line under the seats instead of a tip: the mission closest to done; {0} is the task, {1} its progress like 5/6",MISSION: {0} {1},MISSION : {0} {1},MISSIONE: {0} {1},MISSION: {0} {1},MISIÓN: {0} {1},GÖREV: {0} {1},MISSÃO: {0} {1},МИССИЯ: {0} {1}
 result.buy,Button on the level popup that buys the new car for coins; short,BUY,ACHETER,COMPRA,KAUFEN,COMPRAR,AL,COMPRAR,КУПИТЬ
+result.gift_title,"Title of the popup giving a free hat after a win; short",GIFT!,CADEAU !,REGALO!,GESCHENK!,¡REGALO!,HEDİYE!,PRESENTE!,ПОДАРОК!
+result.free_hat_tag,"Tag on the free hat popup",FREE HAT!,CHAPEAU OFFERT !,CAPPELLO GRATIS!,GRATIS-HUT!,¡GORRO GRATIS!,BEDAVA ŞAPKA!,CHAPÉU GRÁTIS!,ШАПКА В ПОДАРОК!

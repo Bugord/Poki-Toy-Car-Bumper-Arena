@@ -41,9 +41,10 @@ namespace ToyCarArena.Tests.PlayMode
             var directory = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "round-over");
             Directory.CreateDirectory(directory);
             var shots = new[] { (1080, 1920, false), (1920, 1080, false), (1080, 1920, true), (2340, 1080, true) };
-            var cases = new[] { "lost", "won", "offer" };
-            var moments = new[] { 0.6f, 3.0f };
+            var cases = new[] { "lost", "won", "offer", "gift" };
             foreach (var name in cases) {
+                // The gift waits behind the popup of the level the round opens, each closing by itself after 4 s.
+                var moments = name == "gift" ? new[] { 0.6f, 3.0f, 20.0f } : new[] { 0.6f, 3.0f };
                 foreach (var (width, height, isTouch) in shots) {
                     var record = Record(name, tuning, catalog);
                     var panelSettings = Object.Instantiate(
@@ -57,8 +58,14 @@ namespace ToyCarArena.Tests.PlayMode
                     typeof(HudControls).GetField("isTouchSeen", BindingFlags.Instance | BindingFlags.NonPublic)
                         ?.SetValue(controls, isTouch);
                     var progress = new PlayerProgress(record.storage, tuning, catalog);
+                    var wallet = new PlayerWallet(record.storage, tuning);
+                    if (name == "gift") {
+                        // The free topper of an early win, before the result takes it.
+                        wallet.TryGift(true, tuning.Toppers.GiftFromRound);
+                    }
+
                     var model = new RoundOverViewModel(catalog, arenas, tuning, progress, null,
-                        new MatchTests.RecordingPlatform(), new PlayerWallet(record.storage, tuning));
+                        new MatchTests.RecordingPlatform(), wallet, null);
                     model.SetPayload(record.record);
                     var view = new RoundOverView(new SilentAudioService(library), controls);
                     var start = Time.realtimeSinceStartup;
@@ -104,6 +111,11 @@ namespace ToyCarArena.Tests.PlayMode
             storage.SetInt("coins", 85);
             // The offer: the round lifts a new player to level 2, which opens the speedster for coins.
             storage.SetInt("xp_total", name == "offer" ? 5 : 70);
+            if (name == "gift") {
+                // Owned paid cars: their level popups close by themselves, and the gift comes after them.
+                storage.SetString("cars_owned", "speedster,suv,truck,monster-truck");
+            }
+
             var isWon = name != "lost";
             var result = new RoundResult(isWon ? RoundOutcome.Won : RoundOutcome.Out, isWon ? 1 : 3, 4, 40f,
                 isWon ? 2 : 1, RoundResult.Nobody, FallCause.Drive, false, false);

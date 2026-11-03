@@ -25,6 +25,9 @@ MonoBehaviour:
     maxBumpSpeed: 18
     hitStagger: 0.5
     staggerGrip: 0.2
+    playerHitLift: 3.5
+    playerHitSpin: 420
+    playerHitLiftFrom: 0.35
   controls:
     touchSteering: 0
     joystickRadius: 0.1
@@ -165,6 +168,7 @@ MonoBehaviour:
     resultDelay: 1.5
     outResultDelay: 1
     knockoutCreditWindow: 2.5
+    comboWindow: 4
     ringFallWindow: 2
     boostFallWindow: 1
     slideWindow: 6

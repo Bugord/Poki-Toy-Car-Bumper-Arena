@@ -251,6 +251,7 @@ namespace ToyCarArena.UI
             Pop(levelBadge, token).Forget();
             Pop(gain, token).Forget();
             await FillBar(token);
+            await ShowGift(token);
             await Shrink(bar, token);
             bar.style.display = DisplayStyle.None;
             await Pop(stops[0].Node, token);
@@ -320,20 +321,56 @@ namespace ToyCarArena.UI
                 portrait.AddToClassList("car-portrait");
                 new CarPortrait(portrait).Set(car, viewModel.SelectedColor);
                 var isForSale = viewModel.IsForSale(car);
-                await ShowReward(level, Strings.Get("result.new_car_tag"), GameText.Car(car),
-                    isForSale ? null : Strings.Get("result.drives_next"), portrait, token, isForSale ? car : null);
+                var stats = CarStatsView.Create(false, "level-reward__stats");
+                CarStatsView.Set(stats, viewModel.StatsOf(car));
+                await ShowReward(LevelTitle(level), Strings.Get("result.new_car_tag"), GameText.Car(car),
+                    isForSale ? null : Strings.Get("result.drives_next"), portrait, token, isForSale ? car : null,
+                    null, stats);
             }
 
             foreach (var arena in viewModel.NewArenasAt(level)) {
                 var disc = new VisualElement { pickingMode = PickingMode.Ignore };
                 disc.style.backgroundColor = arena.Background;
-                await ShowReward(level, Strings.Get("result.new_arena_tag"), GameText.Arena(arena),
+                await ShowReward(LevelTitle(level), Strings.Get("result.new_arena_tag"), GameText.Arena(arena),
                     Strings.Get("result.arena_next"), disc, token);
             }
 
             if (PlayerRank.TierOf(level) > PlayerRank.TierOf(level - 1)) {
                 var badge = HudView.CreateLevelBadge(level, "level-badge--big");
-                await ShowReward(level, Strings.Get("result.new_rank_tag"), PlayerRank.NameOf(level), null, badge, token);
+                await ShowReward(LevelTitle(level), Strings.Get("result.new_rank_tag"), PlayerRank.NameOf(level), null,
+                    badge, token);
+            }
+        }
+
+        private static string LevelTitle(int level) => Strings.Format("result.level_title", level);
+
+        /// <summary>
+        /// The topper an early win gave free (<see cref="RoundOverViewModel.Gift"/>): the same popup, the player's own
+        /// car turning in it with the topper on, and EQUIP to put it on at once. Owned either way.
+        /// </summary>
+        private async UniTask ShowGift(CancellationToken token)
+        {
+            var gift = viewModel.Gift;
+            if (gift == null) {
+                return;
+            }
+
+            var art = new VisualElement { pickingMode = PickingMode.Ignore };
+            art.AddToClassList("level-reward__gift");
+            var picture = viewModel.ShowGiftCar();
+            if (picture != null) {
+                art.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(picture));
+            }
+            else {
+                art.Add(TopperIcon.Create(gift, "level-reward__gift-icon"));
+            }
+
+            try {
+                await ShowReward(Strings.Get("result.gift_title"), Strings.Get("result.free_hat_tag"),
+                    GameText.Topper(gift), null, art, token, null, viewModel.WearGift);
+            }
+            finally {
+                viewModel.HideGiftCar();
             }
         }
 
@@ -346,8 +383,12 @@ namespace ToyCarArena.UI
         /// A car with a price (<paramref name="forSale"/>) is offered with its BUY button and price while the coins pay
         /// for it; the offer waits for the player instead of closing by itself, and a tap beside it leaves it for later.
         /// </para>
-        private async UniTask ShowReward(int level, string tag, string name, string caption, VisualElement art,
-            CancellationToken token, CarCatalog.Entry forSale = null)
+        /// <para>
+        /// A gift (<paramref name="wear"/>) is offered with EQUIP, which puts it on, and waits for the player too.
+        /// </para>
+        private async UniTask ShowReward(string title, string tag, string name, string caption, VisualElement art,
+            CancellationToken token, CarCatalog.Entry forSale = null, System.Func<bool> wear = null,
+            VisualElement details = null)
         {
             var overlay = new VisualElement();
             overlay.AddToClassList("level-reward");
@@ -359,15 +400,21 @@ namespace ToyCarArena.UI
             var card = new VisualElement { pickingMode = PickingMode.Ignore };
             card.AddToClassList("card");
             card.AddToClassList("level-reward__card");
-            card.Add(Outlined(Strings.Format("result.level_title", level), "level-reward__title", out _));
+            card.Add(Outlined(title, "level-reward__title", out _));
             card.Add(Text(tag, "level-reward__tag"));
             var frame = new VisualElement { pickingMode = PickingMode.Ignore };
             frame.AddToClassList("level-reward__art");
-            art.AddToClassList("level-reward__" + (art.ClassListContains("car-portrait") ? "car"
-                : art.ClassListContains("level-badge") ? "rank" : "arena"));
+            if (!art.ClassListContains("level-reward__gift")) {
+                art.AddToClassList("level-reward__" + (art.ClassListContains("car-portrait") ? "car"
+                    : art.ClassListContains("level-badge") ? "rank" : "arena"));
+            }
+
             frame.Add(art);
             card.Add(frame);
             card.Add(Text(name, "level-reward__name"));
+            if (details != null) {
+                card.Add(details);
+            }
             if (caption != null) {
                 var captionLabel = Text(caption, "caption");
                 captionLabel.AddToClassList("level-reward__caption");
@@ -375,7 +422,7 @@ namespace ToyCarArena.UI
             }
 
             var isOffer = forSale != null && viewModel.CanAfford(forSale);
-            var closeAt = isOffer ? float.MaxValue : RewardAutoClose;
+            var closeAt = isOffer || wear != null ? float.MaxValue : RewardAutoClose;
             var isClosed = false;
             if (isOffer) {
                 var buy = new Button();
@@ -402,6 +449,26 @@ namespace ToyCarArena.UI
                 };
                 card.Add(buy);
                 viewModel.CarOffered(forSale);
+            }
+
+            if (wear != null) {
+                var button = new Button();
+                button.RemoveFromClassList(Button.ussClassName);
+                button.AddToClassList("pill");
+                button.AddToClassList("level-reward__buy");
+                button.AddToClassList("level-reward__wear");
+                button.Add(Outlined(Strings.Get("garage.use"), "level-reward__buy-label", out _));
+                button.RegisterCallback<PointerDownEvent>(evt => evt.StopPropagation());
+                button.clicked += () => {
+                    if (isClosed || !wear()) {
+                        return;
+                    }
+
+                    button.SetEnabled(false);
+                    button.style.display = DisplayStyle.None;
+                    card.schedule.Execute(() => isClosed = true).StartingIn(900);
+                };
+                card.Add(button);
             }
 
             overlay.Add(card);

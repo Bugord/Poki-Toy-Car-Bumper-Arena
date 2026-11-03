@@ -14,6 +14,7 @@ namespace ToyCarArena.Gameplay.Round
         private const string CoinsKey = "coins";
         private const string OwnedKey = "toppers_owned";
         private const string SelectedKey = "topper_selected";
+        private const string GiftKey = "topper_gift";
 
         public event Action Changed;
 
@@ -68,6 +69,38 @@ namespace ToyCarArena.Gameplay.Round
             storage.SetString(SelectedKey, id);
             Changed?.Invoke();
             return true;
+        }
+
+        /// <summary>
+        /// Gives the free topper (<see cref="GameTuning.TopperSettings.GiftTopper"/>) for a win from round
+        /// <see cref="GameTuning.TopperSettings.GiftFromRound"/> of a visit, once ever and only to a player who owns no
+        /// topper; it is owned, not worn, until the result's popup or the garage puts it on. Its id, or null.
+        /// </summary>
+        public string TryGift(bool isWin, int visitRound)
+        {
+            var settings = tuning.Toppers;
+            var id = settings.GiftTopper;
+            if (!isWin || visitRound < settings.GiftFromRound || storage.GetBool(GiftKey) || settings.Find(id) == null
+                || !string.IsNullOrEmpty(storage.GetString(OwnedKey))) {
+                return null;
+            }
+
+            storage.SetBool(GiftKey, true);
+            storage.SetString(OwnedKey, id);
+            UnseenGift = id;
+            Changed?.Invoke();
+            return id;
+        }
+
+        /// <summary>The topper just given, until the result's popup takes it; null when there is none.</summary>
+        public string UnseenGift { get; private set; }
+
+        /// <summary>The gift for the result's popup, once.</summary>
+        public string TakeGift()
+        {
+            var id = UnseenGift;
+            UnseenGift = null;
+            return id;
         }
 
         /// <summary>Wears an owned topper, or none for an empty id. False when nothing changes.</summary>
