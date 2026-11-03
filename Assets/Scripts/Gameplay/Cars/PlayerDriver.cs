@@ -18,7 +18,11 @@ namespace ToyCarArena.Gameplay.Cars
     /// steers (<see cref="IOnScreenControls.ShowJoystick"/>), so the player sees where its middle is and how hard they
     /// push.</item>
     /// </list>
-    /// A drag wins over the keys while it lasts. Boost (Space, a short click of the left mouse button, a gamepad's south
+    /// A drag wins over the keys while it lasts. A finger flicked the way the car should go and lifted (a swipe) keeps
+    /// the car driving that way for <see cref="GameTuning.ControlSettings.SwipeCarry"/> seconds, then eases it to a stop,
+    /// unless the player steers again first: some players stroke the screen again and again instead of holding it, and
+    /// the car stopped the moment each stroke lifted. A swipe during the kick-off drives from GO.
+    /// Boost (Space, a short click of the left mouse button, a gamepad's south
     /// button or the boost button, a second finger or a short tap on a touch screen) fires the car's boost towards
     /// where it is steered. A released tap or click remembers nonzero steering briefly, so letting go to tap keeps the
     /// intended boost line. In a long match the item key (E, Left Shift, the right mouse button, a gamepad's west button
@@ -62,6 +66,11 @@ namespace ToyCarArena.Gameplay.Cars
 
         private bool isDriving;
         private bool isJoystickShown;
+
+        // The way the last swipe drives the car, and the time it began; NaN while it waits for the round to begin.
+        private Vector3 carryHeading;
+        private float carryStart;
+        private bool isCarrying;
 
         // Seconds the cars have stood waiting for the player before the round began.
         private float waitTime;
@@ -114,6 +123,11 @@ namespace ToyCarArena.Gameplay.Cars
         public int ItemsUsed { get; private set; }
 
         /// <summary>
+        /// Swipes of the steering finger this round (<see cref="IInputService.Swiped"/>), the kick-off's too.
+        /// </summary>
+        public int Swipes { get; private set; }
+
+        /// <summary>
         /// Unscaled time of the last nonzero steer, before edge assist, so the HUD never mistakes braking at the edge
         /// for a player who has not found the joystick. Negative infinity until the first steer.
         /// </summary>
@@ -143,10 +157,12 @@ namespace ToyCarArena.Gameplay.Cars
             input.BoostPressed += OnBoostPressed;
             input.ItemPressed += OnItemPressed;
             input.MoveUsed += OnMoveUsed;
+            input.Swiped += OnSwiped;
         }
 
         public void Dispose()
         {
+            input.Swiped -= OnSwiped;
             input.MoveUsed -= OnMoveUsed;
             input.BoostPressed -= OnBoostPressed;
             input.ItemPressed -= OnItemPressed;
@@ -190,6 +206,7 @@ namespace ToyCarArena.Gameplay.Cars
 
             var car = round.Player;
             if (!round.IsRunning || car.IsOut) {
+                isCarrying = false;
                 if (isDriving) {
                     isDriving = false;
                     car.Movement.Drive(Vector3.zero, 0f);
@@ -200,6 +217,7 @@ namespace ToyCarArena.Gameplay.Cars
 
             isDriving = true;
             if (input.TryGetDrag(out var drag)) {
+                isCarrying = false;
                 if (drag.IsMouse || tuning.Controls.TouchSteering == GameTuning.TouchSteering.FollowFinger) {
                     FollowPointer(car, drag.Position);
                     return false;
@@ -210,8 +228,51 @@ namespace ToyCarArena.Gameplay.Cars
             }
 
             var move = Vector2.ClampMagnitude(input.CurrentMoveInput, 1f);
+            if (move != Vector2.zero) {
+                isCarrying = false;
+            }
+            else if (isCarrying) {
+                Drive(car, carryHeading, CarryThrottle());
+                return false;
+            }
+
             Drive(car, arenaCamera.ScreenToGroundDirection(move), move.magnitude);
             return false;
+        }
+
+        // A swipe that came while the cars waited starts driving at GO, the first frame the round runs.
+        private float CarryThrottle()
+        {
+            if (float.IsNaN(carryStart)) {
+                carryStart = Time.time;
+            }
+
+            var controls = tuning.Controls;
+            var fade = Time.time - carryStart - controls.SwipeCarry;
+            if (fade <= 0f) {
+                return 1f;
+            }
+
+            var throttle = controls.SwipeFade > 0f ? 1f - fade / controls.SwipeFade : 0f;
+            if (throttle <= 0f) {
+                isCarrying = false;
+                return 0f;
+            }
+
+            return throttle;
+        }
+
+        // The stroke's way on the screen, up being away from the camera, as the joystick reads a finger.
+        private void OnSwiped(Vector2 stroke)
+        {
+            if (!round.IsPlaced || round.IsFinished || round.Player.IsOut || stroke == Vector2.zero) {
+                return;
+            }
+
+            Swipes++;
+            carryHeading = arenaCamera.ScreenToGroundDirection(stroke.normalized);
+            carryStart = IsWaiting ? float.NaN : Time.time;
+            isCarrying = true;
         }
 
         // A press while the boost cools down is dropped, not kept for later: a boost that fires on its own a moment

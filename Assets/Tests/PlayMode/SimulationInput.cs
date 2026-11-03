@@ -12,6 +12,7 @@ namespace ToyCarArena.Tests.PlayMode
         public event Action<InputMethod> MoveUsed;
         public event Action<BoostInputMethod> BoostPressed;
         public event Action ItemPressed;
+        public event Action<Vector2> Swiped;
 
         public Vector2 CurrentMoveInput { get; private set; }
         private PointerDrag? pointer;
@@ -53,6 +54,15 @@ namespace ToyCarArena.Tests.PlayMode
         public void PressItem()
         {
             ItemPressed?.Invoke();
+        }
+
+        /// <summary>
+        /// A finger flicked the screen and lifted: the stroke in screen pixels, as <see cref="InputService"/> reports it.
+        /// </summary>
+        public void Swipe(Vector2 stroke)
+        {
+            MoveUsed?.Invoke(InputMethod.Touch);
+            Swiped?.Invoke(stroke);
         }
 
         public void CancelTapBoost()
