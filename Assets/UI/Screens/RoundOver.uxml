@@ -113,21 +113,6 @@
                         </ui:VisualElement>
                     </ui:Button>
                 </ui:VisualElement>
-                <ui:Button name="garage-wide-button" class="pill round-over__garage-wide">
-                    <ui:Label text="GARAGE" picking-mode="Ignore" class="round-over__garage-wide-label">
-                        <Bindings>
-                            <Bugord.App.Localization.LocalizedText property="text" key="garage.title" />
-                        </Bindings>
-                    </ui:Label>
-                    <ui:VisualElement picking-mode="Ignore" class="key round-over__garage-key">
-                        <ui:Label text="G" picking-mode="Ignore" class="key__text" />
-                    </ui:VisualElement>
-                    <ui:Label name="garage-new" text="NEW" picking-mode="Ignore" class="round-over__garage-new">
-                        <Bindings>
-                            <Bugord.App.Localization.LocalizedText property="text" key="common.new" />
-                        </Bindings>
-                    </ui:Label>
-                </ui:Button>
                 <ui:VisualElement name="hint" picking-mode="Ignore" class="round-over__hint">
                     <ui:Label text="OR PRESS" picking-mode="Ignore" class="round-over__hint-text">
                         <Bindings>

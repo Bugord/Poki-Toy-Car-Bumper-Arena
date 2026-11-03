@@ -26,8 +26,8 @@ namespace ToyCarArena.UI
         private const int ConfettiDelay = 200;
         private const string KnockedByShownClass = "round-over__by--shown";
         private const string BestShownClass = "best--shown";
-        // A touch screen held sideways (a phone): the title and the podium at the left, the missions, the level card
-        // and the buttons in a column at the right, a size up so they read on a phone's short side.
+        // Any wide screen, a phone held sideways or a desktop: the title and the podium at the left, the missions, the
+        // level card and the buttons in a column at the right, a size up so they read on a phone's short side.
         private const string ColumnsClass = "round-over--columns";
         // Each side keeps at least this far from the edge: a phone's camera can sit in the middle of either side, and
         // in Poki's frame the browser often reports no safe area at all.
@@ -45,7 +45,6 @@ namespace ToyCarArena.UI
 
         private Button playAgainButton;
         private Button garageButton;
-        private Button garageWideButton;
         private RoundOverMatch match;
         private Button settingsButton;
         private CarPortrait garagePortrait;
@@ -83,11 +82,7 @@ namespace ToyCarArena.UI
             garageButton = Root.Q<Button>("garage-button");
             garageButton.RemoveFromClassList(Button.ussClassName);
             garageButton.clicked += OpenGarage;
-            garageWideButton = Root.Q<Button>("garage-wide-button");
-            garageWideButton.RemoveFromClassList(Button.ussClassName);
-            garageWideButton.clicked += OpenGarage;
-            // Steering with a mouse, the garage is a plain button under NEXT MATCH with its key; a thumb keeps the round
-            // CAR button beside it.
+            // With a mouse NEXT MATCH carries its SPACE key in the columns (ui_screens).
             isTouch = controls.CheckTouchScreen();
             Root.EnableInClassList("round-over--desktop", !isTouch);
             settingsButton = Root.Q<Button>("settings-button");
@@ -190,9 +185,6 @@ namespace ToyCarArena.UI
                 garageButton.clicked -= OpenGarage;
             }
 
-            if (garageWideButton != null) {
-                garageWideButton.clicked -= OpenGarage;
-            }
             if (settingsButton != null) {
                 settingsButton.clicked -= OpenSettings;
             }
@@ -203,7 +195,7 @@ namespace ToyCarArena.UI
         {
             var isLandscape = evt.newRect.width > evt.newRect.height;
             Root.EnableInClassList("round-over--landscape", isLandscape);
-            isColumns = isLandscape && isTouch;
+            isColumns = isLandscape;
             Root.EnableInClassList(ColumnsClass, isColumns);
             match?.SetWide(isLandscape);
             PlaceColumns();
@@ -278,13 +270,12 @@ namespace ToyCarArena.UI
             await confetti.Play(Root.Q<VisualElement>("title"), token).SuppressCancellationThrow();
         }
 
-        // The red dot on CAR, the NEW badge on GARAGE: a car this round opened waits in the garage until it is visited.
-        // Something the coins buy lights the dot alone; a visit puts both out.
+        // The red dot on CAR: a car this round opened, or something the coins buy, waits in the garage until it is
+        // visited.
         private void ShowNewCar(bool isNewCar, bool canShop)
         {
             Root.Q<VisualElement>("garage-dot").style.display =
                 isNewCar || canShop ? DisplayStyle.Flex : DisplayStyle.None;
-            Root.Q<VisualElement>("garage-new").style.display = isNewCar ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
         private void RefreshGarage() => garagePortrait.Set(ViewModel.SelectedCar, ViewModel.SelectedColor);
