@@ -139,13 +139,20 @@ namespace ToyCarArena.Gameplay
             [Tooltip("XP from level 1 to 2, 2 to 3 and so on; the last price repeats for all later levels")]
             [Min(1)]
             [SerializeField]
-            private int[] levelXp = { 40, 60, 80, 100, 120, 140 };
+            private int[] levelXp = { 40, 50, 60, 70, 100, 120, 140 };
+
+            [Tooltip("A result raises one level at most: what it earns past the next level is kept up to this share of " +
+                "that level's price, the rest is lost, so each early level and its reward comes on a round of its own")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float levelCarry = 0.5f;
 
             public int RoundXp => roundXp;
             public int PlaceXp => placeXp;
             public int WinXp => winXp;
             public int KnockoutXp => knockoutXp;
             public int[] LevelXp => levelXp;
+            public float LevelCarry => levelCarry;
         }
 
         /// <summary>

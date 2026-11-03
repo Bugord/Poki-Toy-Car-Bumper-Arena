@@ -29,24 +29,23 @@ namespace ToyCarArena.Tests.PlayMode
         public void TearDown() => Object.DestroyImmediate(tuning);
 
         [Test]
-        public void AnEarlyWinGivesTheFreeTopperOnceAndOnlyToAPlayerWithNone()
+        public void ItsLevelGivesTheFreeTopperOnceAndOnlyToAPlayerWithNone()
         {
             var wallet = new PlayerWallet(storage, tuning);
-            var from = tuning.Toppers.GiftFromRound;
-            Assert.That(wallet.TryGift(true, from - 1), Is.Null, "too early in the visit");
-            Assert.That(wallet.TryGift(false, from), Is.Null, "not a win");
-            var gift = wallet.TryGift(true, from);
+            var level = tuning.Toppers.GiftLevel;
+            Assert.That(wallet.TryGift(level - 1), Is.Null, "below its level");
+            var gift = wallet.TryGift(level);
             Assert.That(gift, Is.EqualTo(tuning.Toppers.GiftTopper));
             Assert.That(wallet.IsOwned(gift), Is.True);
             Assert.That(wallet.SelectedTopper, Is.Empty, "owned, not worn, until the popup equips it");
             Assert.That(wallet.TakeGift(), Is.EqualTo(gift));
             Assert.That(wallet.TakeGift(), Is.Null);
-            Assert.That(new PlayerWallet(storage, tuning).TryGift(true, from + 1), Is.Null, "once ever");
+            Assert.That(new PlayerWallet(storage, tuning).TryGift(level + 1), Is.Null, "once ever");
 
             var other = new PlayerWallet(new MemoryStorage(), tuning);
             other.SetCoins(1000);
             Assert.That(other.Buy("cone"), Is.True);
-            Assert.That(other.TryGift(true, from), Is.Null, "a player with a topper gets none");
+            Assert.That(other.TryGift(level), Is.Null, "a player with a topper gets none");
         }
 
         [Test]
@@ -96,7 +95,8 @@ namespace ToyCarArena.Tests.PlayMode
                 Assert.That(xp.StreakXp, Is.EqualTo(8));
                 Assert.That(xp.MissionXp, Is.EqualTo(45));
                 Assert.That(xp.Total, Is.EqualTo(15 + 8 + 45));
-                Assert.That(progress.TotalXp, Is.EqualTo(xp.Total));
+                // One level at most: what is past half of the second level is not kept.
+                Assert.That(progress.TotalXp, Is.EqualTo(xp.TotalAfter));
             }
             finally {
                 Object.DestroyImmediate(catalog);

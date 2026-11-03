@@ -107,15 +107,14 @@ namespace ToyCarArena.Gameplay.Round
         }
 
         /// <summary>
-        /// Gives the free topper (<see cref="GameTuning.TopperSettings.GiftTopper"/>) for a win from round
-        /// <see cref="GameTuning.TopperSettings.GiftFromRound"/> of a visit, once ever and only to a player who owns no
-        /// topper; it is owned, not worn, until the result's popup or the garage puts it on. Its id, or null.
+        /// Gives the free topper (<see cref="GameTuning.TopperSettings.GiftTopper"/>) once the player has reached
+        /// <see cref="GameTuning.TopperSettings.GiftLevel"/>, once ever and only to a player who owns no topper; it is owned, not worn, until the result's popup or the garage puts it on. Its id, or null.
         /// </summary>
-        public string TryGift(bool isWin, int visitRound)
+        public string TryGift(int level)
         {
             var settings = tuning.Toppers;
             var id = settings.GiftTopper;
-            if (!isWin || visitRound < settings.GiftFromRound || storage.GetBool(GiftKey) || settings.Find(id) == null
+            if (level < settings.GiftLevel || storage.GetBool(GiftKey) || settings.Find(id) == null
                 || !string.IsNullOrEmpty(storage.GetString(OwnedKey))) {
                 return null;
             }

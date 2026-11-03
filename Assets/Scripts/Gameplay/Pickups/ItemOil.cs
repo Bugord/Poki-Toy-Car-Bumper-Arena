@@ -125,16 +125,22 @@ namespace ToyCarArena.Gameplay.Pickups
             edge.Changed += OnEdgeChanged;
         }
 
-        /// <summary>Spills a slick on the floor behind <paramref name="spiller"/>; false when there is no floor there.</summary>
+        /// <summary>
+        /// Spills a slick on the floor just ahead of the nearest other car in play within
+        /// <see cref="GameTuning.OilSettings.TargetRange"/>, where it is driving, or behind <paramref name="spiller"/>
+        /// when there is none; false when there is no floor there.
+        /// </summary>
         public bool Spill(Car spiller)
         {
-            var back = Flat(-spiller.transform.forward);
-            back = back.sqrMagnitude > 0.0001f ? back.normalized : Vector3.back;
-            var spot = Flat(spiller.Position) + back * (settings.DropBehind * spiller.Growth);
-            if (!edge.IsSolid(spot)) {
-                spot = Flat(spiller.Position);
+            if (!TryAhead(spiller, out var spot)) {
+                var back = Flat(-spiller.transform.forward);
+                back = back.sqrMagnitude > 0.0001f ? back.normalized : Vector3.back;
+                spot = Flat(spiller.Position) + back * (settings.DropBehind * spiller.Growth);
                 if (!edge.IsSolid(spot)) {
-                    return false;
+                    spot = Flat(spiller.Position);
+                    if (!edge.IsSolid(spot)) {
+                        return false;
+                    }
                 }
             }
 
@@ -399,6 +405,46 @@ namespace ToyCarArena.Gameplay.Pickups
                 isLaying.Add(false);
                 isOnSlick.Add(false);
             }
+        }
+
+        // The nearest other car in play within reach, and the floor just ahead of it, where it drives (its nose when it
+        // stands): the slick is spilled where it is about to be, not where it was.
+        private bool TryAhead(Car spiller, out Vector3 spot)
+        {
+            spot = default;
+            var origin = Flat(spiller.Position);
+            var best = settings.TargetRange * settings.TargetRange;
+            Car target = null;
+            foreach (var car in round.Cars) {
+                if (car == spiller || !car.IsTargetable) {
+                    continue;
+                }
+
+                var distance = (Flat(car.Position) - origin).sqrMagnitude;
+                if (distance <= best) {
+                    best = distance;
+                    target = car;
+                }
+            }
+
+            if (target == null) {
+                return false;
+            }
+
+            var heading = Flat(target.Movement.Velocity);
+            if (heading.sqrMagnitude < 1f) {
+                heading = Flat(target.transform.forward);
+            }
+
+            heading = heading.sqrMagnitude > 0.0001f ? heading.normalized : Vector3.forward;
+            var position = Flat(target.Position);
+            spot = position + heading * (settings.DropAhead * target.Growth);
+            if (edge.IsSolid(spot)) {
+                return true;
+            }
+
+            spot = position;
+            return edge.IsSolid(spot);
         }
 
         private static Vector3 Flat(Vector3 vector)

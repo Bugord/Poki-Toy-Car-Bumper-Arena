@@ -46,19 +46,19 @@ namespace ToyCarArena.Tests.PlayMode
         [Test]
         public void TheBonusXpIsSavedWithTheCarsItsLevelsOpen()
         {
-            var vintage = catalog.Cars.First(car => car.Id == "vintage");
+            var speedster = catalog.Cars.First(car => car.Id == "speedster");
             storage.SetInt("xp_total", progress.At(0).Cost + 1);
             var before = progress.TotalXp;
-            var toVintage = TotalAt(vintage.UnlockLevel) - before;
+            var toSpeedster = TotalAt(speedster.UnlockLevel) - before;
 
-            var bonus = progress.AddBonus(toVintage);
+            var bonus = progress.AddBonus(toSpeedster);
 
             Assert.That(bonus.TotalBefore, Is.EqualTo(before));
-            Assert.That(bonus.TotalAfter, Is.EqualTo(before + toVintage));
-            Assert.That(bonus.Total, Is.EqualTo(toVintage));
-            Assert.That(bonus.After.Level, Is.EqualTo(vintage.UnlockLevel));
-            Assert.That(bonus.UnlockedCarIds, Does.Contain("vintage"));
-            Assert.That(new PlayerProgress(storage, tuning, catalog).TotalXp, Is.EqualTo(before + toVintage));
+            Assert.That(bonus.TotalAfter, Is.EqualTo(before + toSpeedster));
+            Assert.That(bonus.Total, Is.EqualTo(toSpeedster));
+            Assert.That(bonus.After.Level, Is.EqualTo(speedster.UnlockLevel));
+            Assert.That(bonus.UnlockedCarIds, Does.Contain("speedster"));
+            Assert.That(new PlayerProgress(storage, tuning, catalog).TotalXp, Is.EqualTo(before + toSpeedster));
             // The car the bonus opens waits for the player, as after a round.
             Assert.That(progress.SelectedCar, Is.EqualTo("racer"));
         }
@@ -85,9 +85,10 @@ namespace ToyCarArena.Tests.PlayMode
 
             Assert.That(await model.Double(default), Is.True);
             Assert.That(model.IsDoubled, Is.True);
-            Assert.That(model.BonusXp.Total, Is.EqualTo(roundXp));
+            // The bonus counts towards the result's one level: what passes it is lost, as the round's own XP.
+            Assert.That(model.BonusXp.Total, Is.InRange(0, roundXp));
             Assert.That(model.BonusCoins.Total, Is.EqualTo(roundCoins));
-            Assert.That(progress.TotalXp, Is.EqualTo(xpAfterRound + roundXp));
+            Assert.That(progress.TotalXp, Is.EqualTo(xpAfterRound + model.BonusXp.Total));
             Assert.That(wallet.Coins, Is.EqualTo(coinsAfterRound + roundCoins));
             Assert.That(Time.timeScale, Is.EqualTo(1f), "The game is held only while the ad plays.");
             Assert.That(platform.Events, Does.Contain(("ad", "double", "interact")));
@@ -97,7 +98,7 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(model.CanDouble, Is.False);
             Assert.That(await model.Double(default), Is.False);
             Assert.That(platform.RewardedBreaks, Is.EqualTo(1));
-            Assert.That(progress.TotalXp, Is.EqualTo(xpAfterRound + roundXp));
+            Assert.That(progress.TotalXp, Is.EqualTo(xpAfterRound + model.BonusXp.Total));
         });
 
         [UnityTest]
@@ -124,7 +125,7 @@ namespace ToyCarArena.Tests.PlayMode
         [Test]
         public void AGiftLeftUnseenWaitsForTheNextResult()
         {
-            var gift = wallet.TryGift(true, tuning.Toppers.GiftFromRound);
+            var gift = wallet.TryGift(tuning.Toppers.GiftLevel);
             Assert.That(Result(out _, out _).Gift, Is.EqualTo(gift));
             // NEXT MATCH before its popup: the next result offers it again, and once shown it is gone.
             var next = Result(out _, out _);
@@ -137,7 +138,7 @@ namespace ToyCarArena.Tests.PlayMode
         [Test]
         public void AGiftIsNotOfferedOverAWornHat()
         {
-            var gift = wallet.TryGift(true, tuning.Toppers.GiftFromRound);
+            var gift = wallet.TryGift(tuning.Toppers.GiftLevel);
             Assert.That(wallet.Wear(gift), Is.True);
             Assert.That(Result(out _, out _).Gift, Is.Null);
         }

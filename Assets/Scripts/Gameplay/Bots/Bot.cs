@@ -448,7 +448,8 @@ namespace ToyCarArena.Gameplay.Bots
 
                     return false;
                 case ItemKind.Oil:
-                    return IsChased(position, forward, cars, use);
+                    // The slick goes under the nose of the nearest car, so a car ahead is as good a moment as one behind.
+                    return IsChased(position, forward, cars, use) || HasAhead(position, forward, cars, use);
                 case ItemKind.Shockwave:
                     return CountNear(position, cars, tuning.Pickups.Shockwave.Radius) >= use.ShockwaveCars;
                 case ItemKind.Bomb:
@@ -494,6 +495,17 @@ namespace ToyCarArena.Gameplay.Bots
         /// Whether a car in play is behind the bot, within the oil's reach, and gaining on it: spilled now, the slick lies
         /// in its way.
         /// </summary>
+        private bool HasAhead(Vector3 position, Vector3 forward, IReadOnlyList<Car> cars, GameTuning.PickupBotSettings use)
+        {
+            for (var i = 0; i < cars.Count; i++) {
+                if (cars[i] != Car && IsAhead(cars[i], position, forward, 1f, use.OilChaser, use.AheadAngle)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private bool IsChased(Vector3 position, Vector3 forward, IReadOnlyList<Car> cars, GameTuning.PickupBotSettings use)
         {
             var velocity = Flat(Car.Movement.Velocity);

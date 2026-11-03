@@ -943,6 +943,23 @@
     text-shadow: none;
 }
 
+/* A bot that joined on a win streak: the player's crown and ×N, after the name. */
+.car-name__crown {
+    flex-shrink: 0;
+    width: 46px;
+    height: 32px;
+    margin-left: -6px;
+}
+
+.car-name__streak {
+    margin: 0 10px 0 2px;
+    padding: 0 0 3px 0;
+    font-size: 38px;
+    color: var(--gold);
+    -unity-text-outline-width: 6px;
+    text-shadow: none;
+}
+
 .car-name__revenge {
     flex-direction: row;
     align-items: center;
@@ -6053,6 +6070,39 @@
 
 .hud--no-boost .hud__boost-slot--items .hud__item-hint .hud__item-hint-arrow {
     left: 164px;
+}
+
+/* A phone held wide: the landscape panel is drawn smaller, so the item button grows back to a thumb's size there
+   (HudView also stands its slot further in from the side and the bottom). */
+.hud--no-boost.hud--wide .hud__boost-slot--items .hud__item {
+    left: -70px;
+    top: -70px;
+    width: 440px;
+    height: 440px;
+    border-width: 12px;
+    border-bottom-width: 28px;
+}
+
+.hud--no-boost.hud--wide .hud__boost-slot--items .hud__item-icon {
+    width: 304px;
+    height: 304px;
+    border-width: 10px;
+}
+
+.hud--no-boost.hud--wide .hud__boost-slot--items .hud__item-glyph {
+    scale: 1.85 1.85;
+}
+
+.hud--no-boost.hud--wide .hud__boost-slot--items .hud__item-mark {
+    font-size: 188px;
+}
+
+.hud--no-boost.hud--wide .hud__boost-slot--items .hud__power {
+    top: -215px;
+}
+
+.hud--no-boost.hud--wide .hud__boost-slot--items .hud__item-hint {
+    top: -250px;
 }
 
 .hud--no-boost .hud__item--desktop {

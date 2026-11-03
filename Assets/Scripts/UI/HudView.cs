@@ -72,6 +72,7 @@ namespace ToyCarArena.UI
         private const string ItemHintShownClass = "hud__item-hint--shown";
         private const string ItemHintDesktopClass = "hud__item-hint--desktop";
         private const string SlotItemsClass = "hud__boost-slot--items";
+        private const string WideClass = "hud--wide";
 
         // The slot's roulette shows a new item this many times a second while the box's roll lasts, on unscaled time.
         private const float ItemSpinRate = 14f;
@@ -108,6 +109,10 @@ namespace ToyCarArena.UI
         private const float PillGap = 18f;
         private const float BoostSide = 64f;
         private const float BoostBottom = 220f;
+        // A phone held wide with no BOOST: the larger item button stands further in from the side and the bottom,
+        // where the thumb rests, not on the bezel.
+        private const float WideItemSide = 190f;
+        private const float WideItemBottom = 250f;
 
         // The safe sticker floats this high over the player's car, in metres: above its marker's arrow.
         private const float ShieldHeight = 4.2f;
@@ -909,6 +914,7 @@ namespace ToyCarArena.UI
                 }
             }
 
+            Root.EnableInClassList(WideClass, isWide);
             Root.style.paddingTop = BarTop + hudTopInset;
             Root.style.paddingLeft = safeInsets.Left;
             Root.style.paddingRight = safeInsets.Right;
@@ -932,9 +938,12 @@ namespace ToyCarArena.UI
 
         private void PlaceBoost()
         {
-            boostSlot.style.left = isBoostOnLeft ? new StyleLength(BoostSide + safeInsets.Left) : StyleKeyword.Auto;
-            boostSlot.style.right = isBoostOnLeft ? StyleKeyword.Auto : new StyleLength(BoostSide + safeInsets.Right);
-            boostSlot.style.bottom = BoostBottom + safeInsets.Bottom;
+            var isWideItem = Root.ClassListContains(WideClass) && Root.ClassListContains(NoBoostClass)
+                && boostSlot.ClassListContains(SlotItemsClass);
+            var side = isWideItem ? WideItemSide : BoostSide;
+            boostSlot.style.left = isBoostOnLeft ? new StyleLength(side + safeInsets.Left) : StyleKeyword.Auto;
+            boostSlot.style.right = isBoostOnLeft ? StyleKeyword.Auto : new StyleLength(side + safeInsets.Right);
+            boostSlot.style.bottom = (isWideItem ? WideItemBottom : BoostBottom) + safeInsets.Bottom;
         }
 
         private void PlaceStart()
@@ -1148,7 +1157,10 @@ namespace ToyCarArena.UI
             var isTouch = controls.CheckTouchScreen();
             itemButton.EnableInClassList(ItemDesktopClass, !isTouch);
             itemHint.EnableInClassList(ItemHintDesktopClass, !isTouch);
-            boostSlot.EnableInClassList(SlotItemsClass, isTouch);
+            if (boostSlot.ClassListContains(SlotItemsClass) != isTouch) {
+                boostSlot.EnableInClassList(SlotItemsClass, isTouch);
+                PlaceBoost();
+            }
 
             var held = ViewModel.HeldItem;
             if (ViewModel.IsItemRolling) {
@@ -1409,7 +1421,8 @@ namespace ToyCarArena.UI
             SeparateNames(nameCount, Mathf.Max(0f, now - nameUpdateTime));
             nameUpdateTime = now;
 
-            if (!isRevengeIntroduced && IsShown && ViewModel.HasBegun) {
+            // The rival springs in with the HUD, over the kickoff: the countdown is when there is time to read it.
+            if (!isRevengeIntroduced && IsShown && (ViewModel.HasBegun || ViewModel.IsBeforeStart)) {
                 IntroduceRevenge();
             }
         }
@@ -1553,6 +1566,16 @@ namespace ToyCarArena.UI
             line.AddToClassList("car-name__line");
             line.Add(CreateLevelBadge(ViewModel.LevelOf(index), "car-name__level", isRival));
             line.Add(CreateOutlinedText(ViewModel.NameOf(index), "car-name__text"));
+            // A bot that joined on a win streak wears the player's crown and ×N after its name.
+            var streakOf = ViewModel.StreakOf(index);
+            if (streakOf > 0) {
+                var crown = new VisualElement { pickingMode = PickingMode.Ignore };
+                crown.AddToClassList("car-name__crown");
+                crown.generateVisualContent += RoundOverMatch.DrawCrown;
+                line.Add(crown);
+                line.Add(CreateOutlinedText($"×{streakOf}", "car-name__streak"));
+            }
+
             sticker.Add(line);
             // The visit's first round shows no handles: a new player has the cars, the floor and the edge to read.
             // The tag stays, empty, so what follows it (the bots' quips) still knows where the car is.
@@ -1680,6 +1703,7 @@ namespace ToyCarArena.UI
                 // slot still follows the steering hand, for the item button in it.
                 if (!Root.ClassListContains(NoBoostClass)) {
                     Root.AddToClassList(NoBoostClass);
+                    PlaceBoost();
                     controls.ReleaseBoostButton(boostButton);
                 }
 

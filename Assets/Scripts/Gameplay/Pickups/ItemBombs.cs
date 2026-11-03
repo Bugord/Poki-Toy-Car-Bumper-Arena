@@ -165,6 +165,11 @@ namespace ToyCarArena.Gameplay.Pickups
 
             bomb.State = ThrownBomb.Stage.Fused;
             bomb.Time = 0f;
+            if (IsNearTarget(bomb)) {
+                Explode(bomb);
+                return;
+            }
+
             bomb.Root.rotation = Quaternion.LookRotation(Flat(bomb.To - bomb.From));
             bomb.Mark.gameObject.SetActive(true);
             bomb.Mark.position = bomb.To;
@@ -173,6 +178,21 @@ namespace ToyCarArena.Gameplay.Pickups
             }
 
             audioService?.Play(audioService.Library.HitLight, IsNearPlayer(bomb.To, settings.Radius * 2f) ? 0.6f : 0.3f);
+        }
+
+        // A bomb landing on or next to another car in play goes off at once.
+        private bool IsNearTarget(ThrownBomb bomb)
+        {
+            var cars = round.Cars;
+            for (var i = 0; i < cars.Count; i++) {
+                var car = cars[i];
+                if (car != bomb.Thrower && car.IsTargetable && car.Position.y > BlastDepth && car.Position.y < BlastHeight
+                    && Flat(car.Position - bomb.To).magnitude <= settings.ImpactRadius) {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         // On the floor, blinking faster as the fuse burns, the ring growing to the blast's reach; gone with its floor.

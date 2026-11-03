@@ -387,6 +387,9 @@ namespace ToyCarArena.Gameplay.Round
         /// <summary>The played occupant, even after the visit's roster has moved on.</summary>
         public string NameOf(int index) => Names[index];
         public int LevelOf(int index) => Levels[index];
+
+        /// <summary>The win streak a bot of this round joined on (a look, crowned by its name), 0 for none.</summary>
+        public int StreakOf(int index) => index == 0 || players == null ? 0 : players[index - 1].Streak;
         public int ColorOf(int index) => Colors[index];
 
         /// <summary>

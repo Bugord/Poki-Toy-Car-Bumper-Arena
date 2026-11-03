@@ -312,7 +312,7 @@ MonoBehaviour:
     placeXp: 5
     winXp: 15
     knockoutXp: 10
-    levelXp: 280000003c0000005000000064000000780000008c000000i
+    levelXp: 28000000320000003c0000004600000064000000780000008c000000i
   players:
     leaveChance: 0.25
     maxLeaves: 2

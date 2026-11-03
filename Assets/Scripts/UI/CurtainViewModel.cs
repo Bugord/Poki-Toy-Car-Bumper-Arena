@@ -50,7 +50,8 @@ namespace ToyCarArena.UI
                 if (index <= botCount || left != null) {
                     var isSeated = index <= botCount;
                     rows.Add(new LobbyRow(index, roster.ColorOf(index), isSeated ? roster.NameOf(index) : null,
-                        isSeated ? roster.LevelOf(index) : 0, left, index == nemesis));
+                        isSeated ? roster.LevelOf(index) : 0, left, index == nemesis,
+                        isSeated ? roster.StreakOf(index) : 0));
                 }
             }
             Rows = rows.AsReadOnly();
@@ -79,8 +80,11 @@ namespace ToyCarArena.UI
         public readonly int Level;
         public readonly string LeftName;
         public readonly bool IsNemesis;
+        /// <summary>The win streak a bot joined on, 0 for none.</summary>
+        public readonly int Streak;
 
-        public LobbyRow(int index, int colorId, string name, int level, string leftName, bool isNemesis)
+        public LobbyRow(int index, int colorId, string name, int level, string leftName, bool isNemesis,
+            int streak = 0)
         {
             this.Index = index;
             this.ColorId = colorId;
@@ -88,6 +92,7 @@ namespace ToyCarArena.UI
             this.Level = level;
             this.LeftName = leftName;
             this.IsNemesis = isNemesis;
+            this.Streak = streak;
         }
     }
 }

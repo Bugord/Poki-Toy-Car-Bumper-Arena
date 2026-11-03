@@ -269,9 +269,10 @@ namespace ToyCarArena.UI
             var name = OutlinedText(isLeft ? row.LeftName : row.Name, "lobby__name");
             name.EnableInClassList("lobby__name--revenge", row.IsNemesis && !isLeft);
             sticker.Add(name);
-            // The player's own win streak: the round it leads to pays more.
-            if (row.Index == 0 && streak > 0) {
-                var badge = OutlinedText(Strings.Format("result.streak", streak), "lobby__badge");
+            // The player's own win streak, the round it leads to paying more, or the one a bot joined on.
+            var rowStreak = row.Index == 0 ? streak : isLeft ? 0 : row.Streak;
+            if (rowStreak > 0) {
+                var badge = OutlinedText(Strings.Format("result.streak", rowStreak), "lobby__badge");
                 badge.AddToClassList("lobby__badge--streak");
                 sticker.Add(badge);
             }
