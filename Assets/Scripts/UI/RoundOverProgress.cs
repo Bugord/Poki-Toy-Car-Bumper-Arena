@@ -272,8 +272,9 @@ namespace ToyCarArena.UI
             await UniTask.Delay(BuildDelay, ignoreTimeScale: true, cancellationToken: token);
             Pop(levelBadge, token).Forget();
             var reward = viewModel.XpGain;
-            await FillBar(reward.Before, reward.After, token);
+            // The gift first: behind the bar and a new level's popup most players had pressed NEXT MATCH before it came.
             await ShowGift(token);
+            await FillBar(reward.Before, reward.After, token);
             await ShowHatOffer(token);
             await Shrink(bar, token);
             bar.style.display = DisplayStyle.None;
