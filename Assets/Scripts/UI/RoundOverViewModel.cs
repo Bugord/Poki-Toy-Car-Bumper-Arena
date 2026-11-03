@@ -190,6 +190,7 @@ namespace ToyCarArena.UI
         /// </summary>
         public RenderTexture ShowGiftHat(out Rect cell)
         {
+            wallet.TakeGift();
             platform.MeasureGiftShown(Gift);
             return ShowHat(Gift, out cell);
         }
@@ -442,7 +443,13 @@ namespace ToyCarArena.UI
             XpGain = payload.XpGain;
             Coins = payload.Coins;
             Missions = payload.Missions;
-            Gift = wallet.TakeGift();
+            // The gift stays with the wallet until its popup shows (ShowGiftHat): a result left before it carries it to the
+            // next one. Once a hat is on, the popup's EQUIP has nothing to give.
+            if (wallet.UnseenGift != null && !string.IsNullOrEmpty(wallet.SelectedTopper)) {
+                wallet.TakeGift();
+            }
+
+            Gift = wallet.UnseenGift;
             Streak = payload.Streak;
             Outcome = result.Outcome;
             IsMatch = result.IsMatch;

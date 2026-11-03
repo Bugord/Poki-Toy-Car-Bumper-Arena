@@ -21,7 +21,8 @@ namespace ToyCarArena.Tests.PlayMode
     /// <summary>
     /// Pictures of the garage on its CARS and TOPPERS tabs, upright and wide, with a finger (phones) and with a mouse
     /// (desktops), for a player well on (every car open, coins for the speedster but not the monster truck, a topper worn)
-    /// and a new one (cars still locked, toppers too dear), plus a pass in Russian and the line over a too dear car:
+    /// and a new one (cars still locked, toppers too dear), plus a pass in Russian, the line over a too dear car and a
+    /// hat tried on before it is bought:
     /// <c>Logs/garage/&lt;save&gt;_&lt;tab&gt;_&lt;w&gt;x&lt;h&gt;.png</c>. Explicit: it is for looking at, and needs graphics.
     /// </summary>
     [Explicit]
@@ -60,6 +61,7 @@ namespace ToyCarArena.Tests.PlayMode
             var library = AssetDatabase.LoadAssetAtPath<AudioLibrary>("Assets/Data/Audio/data_audio_library.asset");
             var showTab = typeof(GarageView).GetMethod("ShowTab", BindingFlags.Instance | BindingFlags.NonPublic);
             var select = typeof(GarageView).GetMethod("Select", BindingFlags.Instance | BindingFlags.NonPublic);
+            var pickTopper = typeof(GarageView).GetMethod("PickTopper", BindingFlags.Instance | BindingFlags.NonPublic);
             var (width, height, isTouch) = size;
             var storage = new RoundOverScreenshots.MemoryStorage();
             storage.SetInt("xp_total", xp);
@@ -113,6 +115,12 @@ namespace ToyCarArena.Tests.PlayMode
                     select.Invoke(view, new object[] { monster, screen.Q<Button>($"garage-car-{monster.Id}") });
                     yield return Wait(0.25f);
                     Save(target, Path.Combine(directory, $"{save}_toodear_{width}x{height}.png"));
+                    // A hat the coins pay for, tried on the hero by the first tap: gold frame and BUY on its tag.
+                    showTab.Invoke(view, new object[] { true });
+                    yield return Wait(0.3f);
+                    pickTopper.Invoke(view, new object[] { "horns", screen.Q<Button>("garage-topper-horns") });
+                    yield return Wait(0.6f);
+                    Save(target, Path.Combine(directory, $"{save}_hat_{width}x{height}.png"));
                 }
             }
             finally {

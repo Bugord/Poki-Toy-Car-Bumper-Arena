@@ -1980,7 +1980,7 @@
 }
 
 /* First-round touch teaching. HudView places the ghost in the lower third, animates its opacity/scale and draws the
-   disc and knob with the real joystick's classes. Only the capsule finger and captions are extra, all non-picking.
+   disc and knob with the real joystick's classes. Only the pointing hand and captions are extra, all non-picking.
    The joystick wrapper is translucent; the finger and caption stay opaque once the whole demonstration is shown. */
 .hud__ghost {
     position: absolute;
@@ -1998,14 +1998,13 @@
     height: 0;
 }
 
+/* Kenney's pointing hand (Input Prompts, CC0) as mobile games teach a drag: the fingertip (23% across, 7% down the
+   picture) stays on the knob and the hand turns about it. */
 .hud__ghost-finger {
     position: absolute;
-    border-radius: 999px;
-    border-width: 7px;
-    border-bottom-width: 14px;
-    border-color: var(--navy);
-    background-color: var(--white);
-    transform-origin: 50% 0%;
+    background-image: url("/Assets/Art/Sprites/UI/sprite_ui_hand_point.svg");
+    -unity-background-scale-mode: scale-to-fit;
+    transform-origin: 23% 7%;
 }
 
 .hud__ghost-caption {
@@ -3671,8 +3670,9 @@
 .garage__card--locked .garage__tag { background-color: var(--navy); padding-left: 12px; }
 .garage__card--locked .garage__tag-text { color: var(--white); }
 
-/* The car the hero shows before it is the player's: a gold frame, and a car the coins pay for says BUY on its tag,
-   so the next tap buys it. */
+/* The car or hat the hero shows before it is the player's: a gold frame, and one the coins pay for says BUY on its
+   tag, so the next tap buys it. BUY is navy on the green like EQUIPPED: an outline thick enough to read at this size
+   swallowed the letters. */
 .garage__card--previewed,
 .garage__card--previewed:hover,
 .garage__card--previewed:focus {
@@ -3686,13 +3686,12 @@
     margin: 0 10px 0 0;
     padding: 0;
     font-size: 30px;
-    color: var(--white);
-    -unity-text-outline-width: 6px;
-    -unity-text-outline-color: var(--navy);
+    color: var(--navy);
     white-space: nowrap;
 }
 
 .garage__card--buy .garage__buy-text { display: flex; }
+.garage__card--topper .garage__buy-text { margin-right: 6px; font-size: 24px; }
 
 .garage__check {
     display: none;
@@ -6191,4 +6190,85 @@
 
 .hud--no-boost .hud__boost-slot--left .hud__item-hint--desktop .hud__item-hint-arrow {
     left: 70px;
+}
+
+/* A touch screen held sideways (round-over--columns, a phone): the title, the streak and the podium in the left part,
+   the missions, the level card and the buttons in a column at the right, which RoundOverView scales to the height it
+   has and keeps, with the left part, off both side edges (a camera may sit in the middle of either). The podium takes
+   all the height under the title, so no card covers the car. */
+.round-over--columns .round-over .round-over__spacer-top {
+    height: 60px;
+    min-height: 20px;
+}
+
+.round-over--columns .round-over .round-over__title-text {
+    -unity-text-auto-size: best-fit 80px 230px;
+    font-size: 230px;
+}
+
+.round-over--columns .round-over .round-over__subtitle {
+    -unity-text-auto-size: best-fit 32px 70px;
+    font-size: 70px;
+}
+
+.round-over--columns .round-over .round-over__match {
+    margin: 0;
+}
+
+.round-over--columns .round-over .round-over__spacer {
+    display: none;
+}
+
+.round-over--columns .round-over .podium {
+    position: relative;
+    left: auto;
+    right: auto;
+    top: 0;
+    width: auto;
+    height: auto;
+    margin: 20px 0 0 0;
+    flex-grow: 1;
+    align-self: stretch;
+}
+
+.round-over--columns.round-over--match .podium {
+    margin-left: 900px;
+}
+
+.round-over--columns .round-over .round-over__spacer-bottom {
+    height: 40px;
+}
+
+.round-over--columns .round-over .round-over__bottom {
+    position: absolute;
+    width: 1040px;
+    align-items: stretch;
+    transform-origin: 100% 100%;
+}
+
+.round-over--columns .round-over .missions {
+    position: absolute;
+    left: auto;
+    width: 1040px;
+    margin: 0;
+    transform-origin: 100% 0;
+}
+
+.round-over--columns .round-over .level-card {
+    width: auto;
+    margin: 0 0 30px 0;
+}
+
+.round-over--columns .round-over .round-over__actions {
+    align-items: stretch;
+}
+
+.round-over--columns .round-over .round-over__buttons {
+    width: auto;
+}
+
+.round-over--columns .round-over .round-over__buttons .round-over__button {
+    flex-grow: 1;
+    width: auto;
+    margin-left: 30px;
 }

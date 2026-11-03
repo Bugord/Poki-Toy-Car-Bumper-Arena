@@ -41,7 +41,9 @@ namespace ToyCarArena.Tests.PlayMode
 
             var directory = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "round-over");
             Directory.CreateDirectory(directory);
-            var shots = new[] { (1080, 1920, false), (1920, 1080, false), (1080, 1920, true), (2340, 1080, true) };
+            var shots = new[] {
+                (1080, 1920, false), (1920, 1080, false), (1080, 1920, true), (2340, 1080, true), (2048, 1536, true),
+            };
             var cases = new[] { "lost", "won", "offer", "gift", "double", "bought", "hat" };
             if (System.Environment.GetEnvironmentVariable("SHOTS_CASES") is { Length: > 0 } only) {
                 cases = only.Split(',');

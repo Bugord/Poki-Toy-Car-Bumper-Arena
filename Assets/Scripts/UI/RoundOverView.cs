@@ -26,6 +26,19 @@ namespace ToyCarArena.UI
         private const int ConfettiDelay = 200;
         private const string KnockedByShownClass = "round-over__by--shown";
         private const string BestShownClass = "best--shown";
+        // A touch screen held sideways (a phone): the title and the podium at the left, the missions, the level card
+        // and the buttons in a column at the right, a size up so they read on a phone's short side.
+        private const string ColumnsClass = "round-over--columns";
+        // Each side keeps at least this far from the edge: a phone's camera can sit in the middle of either side, and
+        // in Poki's frame the browser often reports no safe area at all.
+        private const float ColumnsSide = 240f;
+        // The right column starts under the coins and the gear, and stops this far above the bottom.
+        private const float ColumnsTop = 250f;
+        private const float ColumnsBottom = 50f;
+        private const float ColumnsGap = 40f;
+        // How much the right column may grow, and the share of the width it may take.
+        private const float ColumnsMaxScale = 1.6f;
+        private const float ColumnsShare = 0.42f;
 
         private readonly IAudioService audioService;
         private readonly HudControls controls;
@@ -41,6 +54,12 @@ namespace ToyCarArena.UI
         private RoundOverProgress xpProgress;
         private RoundOverMeta meta;
         private RoundOverRewards rewards;
+        private bool isTouch;
+        private bool isColumns;
+        private SafeInsets safeInsets;
+        private VisualElement screen;
+        private VisualElement bottom;
+        private VisualElement missions;
 
         public RoundOverView(IAudioService audioService, HudControls controls)
         {
@@ -69,17 +88,24 @@ namespace ToyCarArena.UI
             garageWideButton.clicked += OpenGarage;
             // Steering with a mouse, the garage is a plain button under NEXT MATCH with its key; a thumb keeps the round
             // CAR button beside it.
-            var isTouch = controls.CheckTouchScreen();
+            isTouch = controls.CheckTouchScreen();
             Root.EnableInClassList("round-over--desktop", !isTouch);
             settingsButton = Root.Q<Button>("settings-button");
             settingsButton.RemoveFromClassList(Button.ussClassName);
             settingsButton.clicked += OpenSettings;
             meta = new RoundOverMeta(Root, ViewModel);
+            screen = Root.Q<VisualElement>("round-over");
+            bottom = Root.Q<VisualElement>(className: "round-over__bottom");
+            missions = Root.Q<VisualElement>("missions");
+            bottom.RegisterCallback<GeometryChangedEvent>(OnColumnGeometry);
+            missions?.RegisterCallback<GeometryChangedEvent>(OnColumnGeometry);
             SafeArea.Watch(Root, insets => {
+                safeInsets = insets;
                 settingsButton.style.top = 40f + insets.Top;
                 settingsButton.style.right = 40f + insets.Right;
                 meta.CoinPill.style.top = 52f + insets.Top;
                 meta.CoinPill.style.right = 184f + insets.Right;
+                PlaceColumns();
             });
             garagePortrait = new CarPortrait(Root.Q<VisualElement>("garage-portrait"));
             RefreshGarage();
@@ -133,6 +159,8 @@ namespace ToyCarArena.UI
         {
             Root?.UnregisterCallback<KeyDownEvent>(OnKeyDown);
             Root?.UnregisterCallback<GeometryChangedEvent>(OnGeometryChanged);
+            bottom?.UnregisterCallback<GeometryChangedEvent>(OnColumnGeometry);
+            missions?.UnregisterCallback<GeometryChangedEvent>(OnColumnGeometry);
             Strings.Changed -= ShowTitle;
             if (ViewModel != null) {
                 ViewModel.CarBought -= RefreshGarage;
@@ -173,7 +201,68 @@ namespace ToyCarArena.UI
         {
             var isLandscape = evt.newRect.width > evt.newRect.height;
             Root.EnableInClassList("round-over--landscape", isLandscape);
+            isColumns = isLandscape && isTouch;
+            Root.EnableInClassList(ColumnsClass, isColumns);
             match?.SetWide(isLandscape);
+            PlaceColumns();
+        }
+
+        private void OnColumnGeometry(GeometryChangedEvent evt) => PlaceColumns();
+
+        /// <summary>
+        /// Sizes the right column to the height it has, keeps both sides off the edges, and gives the title and the
+        /// podium the rest of the width. The column grows by its scale, not its layout, so the cards keep the
+        /// proportions they have upright.
+        /// </summary>
+        private void PlaceColumns()
+        {
+            if (bottom == null) {
+                return;
+            }
+
+            if (!isColumns) {
+                screen.style.paddingLeft = StyleKeyword.Null;
+                screen.style.paddingRight = StyleKeyword.Null;
+                foreach (var part in new[] { bottom, missions }) {
+                    if (part == null) {
+                        continue;
+                    }
+
+                    part.style.top = StyleKeyword.Null;
+                    part.style.right = StyleKeyword.Null;
+                    part.style.bottom = StyleKeyword.Null;
+                    part.style.scale = StyleKeyword.Null;
+                }
+
+                return;
+            }
+
+            var size = screen.layout.size;
+            var width = bottom.layout.width;
+            if (float.IsNaN(size.x) || size.x <= 0f || width <= 0f) {
+                return;
+            }
+
+            var side = Mathf.Max(ColumnsSide, Mathf.Max(safeInsets.Left, safeInsets.Right));
+            var top = ColumnsTop + safeInsets.Top;
+            var low = ColumnsBottom + safeInsets.Bottom;
+            var missionsHeight = missions != null && missions.resolvedStyle.display != DisplayStyle.None
+                ? missions.layout.height + ColumnsGap
+                : 0f;
+            var scale = Mathf.Min(ColumnsMaxScale, size.x * ColumnsShare / width,
+                (size.y - top - low) / Mathf.Max(1f, missionsHeight + bottom.layout.height));
+            var grown = new Scale(new Vector3(scale, scale, 1f));
+            bottom.style.right = side;
+            bottom.style.bottom = low;
+            bottom.style.scale = grown;
+            if (missions != null) {
+                missions.style.right = side;
+                missions.style.top = top;
+                missions.style.scale = grown;
+            }
+
+            screen.style.paddingLeft = side;
+            screen.style.paddingRight = side + width * scale + ColumnsGap;
         }
 
         private async UniTaskVoid Celebrate(CancellationToken token)
