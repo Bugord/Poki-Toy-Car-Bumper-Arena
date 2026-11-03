@@ -28,6 +28,8 @@ namespace ToyCarArena.App
     /// standing on the arena to it (the round waits for the player's first steer or boost, so mostly the wait)</item>
     /// <item>since v0.2.0, first round only: <c>controls / boost-button, tap, finger, key, mouse, gamepad, none /
     /// boost-input</c>, how the first successful boost was fired</item>
+    /// <item>first round only: <c>controls / swipes-none, few, many / swipes</c>, flicks of the steering finger (none, 1
+    /// to 3, 4 and more): how many players stroke the screen instead of holding the joystick</item>
     /// <item><c>result / 0-15 … 60-75 / time</c>: seconds on the arena, in buckets of 15</item>
     /// <item>by round, R as above, since the time and the cause of a fall differ most between the first round and the
     /// later ones: <c>result / cars-N-rR / cars</c>, the cars in the round (the difficulty brings fewer early on, so a
@@ -324,6 +326,9 @@ namespace ToyCarArena.App
             var seconds = driver.FirstMoveTime;
             var move = seconds < 0f ? "never" : seconds < 3f ? "move-0-3" : seconds < 10f ? "move-3-10" : "move-10plus";
             platform.Measure(ControlsCategory, move, "first-move");
+
+            var swipes = driver.Swipes == 0 ? "none" : driver.Swipes < 4 ? "few" : "many";
+            platform.Measure(ControlsCategory, $"swipes-{swipes}", "swipes");
         }
 
         // In words, so the round still fits beside it: a time bucket's two numbers would make three.
@@ -439,6 +444,13 @@ namespace ToyCarArena.App
 
         public static void MeasureCarOfferPressed(this IGamePlatform platform, string carId) =>
             platform.MeasureInteract("shop", $"offer-{carId}");
+
+        /// <summary>The result's one popup that offers a topper for coins, and its BUY &amp; EQUIP pressed.</summary>
+        public static void MeasureHatOfferShown(this IGamePlatform platform, string topperId) =>
+            platform.MeasureVisible("shop", $"hat-offer-{topperId}");
+
+        public static void MeasureHatOfferPressed(this IGamePlatform platform, string topperId) =>
+            platform.MeasureInteract("shop", $"hat-offer-{topperId}");
 
         /// <summary>The result's popup shows the free topper (<c>gift / &lt;id&gt; / visible</c>), and EQUIP on it.</summary>
         public static void MeasureGiftShown(this IGamePlatform platform, string topperId) =>

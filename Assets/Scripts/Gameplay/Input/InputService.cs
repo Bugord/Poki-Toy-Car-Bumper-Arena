@@ -13,13 +13,15 @@ namespace ToyCarArena.Gameplay.Input
     /// boost on press and never take over. A short steering touch also boosts on release unless the driver consumes
     /// it to start the round, and so does a short click of the left mouse button, by the same rule
     /// (<see cref="TapGesture"/>): the mouse has one button to drive and boost with, as a finger does, and its right
-    /// button uses the item. The driver polls the drag; boost events carry their input method for analytics.
+    /// button uses the item. A quick stroke of the steering finger reports a swipe as it lifts. The driver polls the
+    /// drag; boost events carry their input method for analytics.
     /// </summary>
     public sealed class InputService : IInputService, IInitializable, IDisposable
     {
         public event Action<InputMethod> MoveUsed;
         public event Action<BoostInputMethod> BoostPressed;
         public event Action ItemPressed;
+        public event Action<Vector2> Swiped;
 
         private readonly InputSystemActions inputSystemActions = new();
         private readonly IOnScreenControls onScreenControls;
@@ -33,6 +35,7 @@ namespace ToyCarArena.Gameplay.Input
         private Finger steeringFinger;
         private Vector2 touchStart;
         private Vector2 touchPosition;
+        private double touchStartTime;
         private int touchDragId;
         private TapGesture touchTap;
         private TapGesture mouseTap;
@@ -113,6 +116,7 @@ namespace ToyCarArena.Gameplay.Input
             steeringFinger = finger;
             touchDragId = ++dragCount;
             touchStart = touchPosition = touch.screenPosition;
+            touchStartTime = touch.time;
             touchTap.Begin(touchStart, touch.time, TapSlop);
             isMouseDragging = false;
             onScreenControls.BeginTouchSteering(touchStart);
@@ -141,6 +145,14 @@ namespace ToyCarArena.Gameplay.Input
             steeringFinger = null;
             if (isTap) {
                 BoostPressed?.Invoke(BoostInputMethod.Tap);
+                return;
+            }
+
+            var stroke = touch.screenPosition - touchStart;
+            if (touch.phase == UnityEngine.InputSystem.TouchPhase.Ended &&
+                touch.time - touchStartTime <= controls.SwipeTime &&
+                stroke.magnitude >= controls.SwipeDistance * Mathf.Min(Screen.width, Screen.height)) {
+                Swiped?.Invoke(stroke);
             }
         }
 

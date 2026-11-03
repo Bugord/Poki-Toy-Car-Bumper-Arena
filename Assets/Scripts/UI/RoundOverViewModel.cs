@@ -158,6 +158,9 @@ namespace ToyCarArena.UI
 
         /// <summary>The car's speed, power and boost for the player, shown on the popup that opens it.</summary>
         public GameTuning.CarStatLine StatsOf(CarCatalog.Entry car) => tuning.CarStats.Of(car.Id);
+
+        /// <summary>Whether cars boost in this build, so the boost stat means something.</summary>
+        public bool HasBoost => tuning.Boost.IsEnabled;
         public int PriceOf(CarCatalog.Entry car) => progress.PriceOf(car.Id);
         public bool CanAfford(CarCatalog.Entry car) => wallet.Coins >= progress.PriceOf(car.Id);
 
@@ -187,15 +190,65 @@ namespace ToyCarArena.UI
         /// </summary>
         public RenderTexture ShowGiftHat(out Rect cell)
         {
-            cell = default;
             platform.MeasureGiftShown(Gift);
+            return ShowHat(Gift, out cell);
+        }
+
+        /// <summary>A topper's 3D model as the garage's cards show it (see <see cref="ShowGiftHat"/>).</summary>
+        public RenderTexture ShowHat(string id, out Rect cell)
+        {
+            cell = default;
             if (Stage == null) {
                 return null;
             }
 
             var texture = Stage.ShowToppers(CarTopper.Ids);
-            cell = Stage.CellOf(Gift);
+            cell = Stage.CellOf(id);
             return texture;
+        }
+
+        /// <summary>
+        /// Whether a car this result opened gets its popup: only the first free car and the first car for coins ever
+        /// do (<see cref="PlayerWallet.IsIntroduced"/>), so the popups show the garage what it holds and later
+        /// unlocks wait there, behind the GARAGE dot. Asking marks it shown.
+        /// </summary>
+        public bool IntroduceCar(CarCatalog.Entry car)
+        {
+            var kind = IsForSale(car) ? "paid-car" : "free-car";
+            if (wallet.IsIntroduced(kind)) {
+                return false;
+            }
+
+            wallet.MarkIntroduced(kind);
+            return true;
+        }
+
+        /// <summary>
+        /// The topper the result offers for coins once ever: the cheapest the coins pay for, to a player who already
+        /// wears a hat (the free top hat of an early win, or one from the garage). Null when there is none to offer.
+        /// </summary>
+        public string HatOffer() =>
+            !wallet.IsIntroduced("paid-hat") && wallet.HasAnyTopper ? wallet.AffordableTopper() : null;
+
+        public void HatOffered(string id)
+        {
+            wallet.MarkIntroduced("paid-hat");
+            platform.MeasureHatOfferShown(id);
+        }
+
+        public int TopperPrice(string id) => tuning.Toppers.Find(id)?.Price ?? 0;
+
+        /// <summary>Buys the offered topper and puts it on; false when the coins are short.</summary>
+        public bool BuyHat(string id)
+        {
+            if (!wallet.Buy(id)) {
+                return false;
+            }
+
+            platform.MeasureHatOfferPressed(id);
+            platform.MeasureTopperBought(id);
+            platform.MeasureTopperEquip(id);
+            return true;
         }
 
         public void HideGiftHat() => Stage?.Hide();

@@ -3458,6 +3458,22 @@
     background-color: var(--soft);
 }
 
+/* The shop shrinks to the height it is given and its cards scroll inside; flex-grow on the grid fills a tall one. */
+.garage__shop {
+    flex-shrink: 1;
+    min-height: 0;
+}
+
+.garage__scroll {
+    flex-grow: 0;
+    flex-shrink: 1;
+    min-height: 0;
+}
+
+.garage__scroll > .unity-scroll-view__content-viewport > .unity-scroll-view__content-container {
+    flex-grow: 1;
+}
+
 .garage__head {
     flex-shrink: 0;
     flex-direction: row;
@@ -3617,6 +3633,16 @@
 .garage__card--locked .garage__name {
     color: var(--muted);
 }
+
+/* Portrait: NONE and nine hats are four to a row, three rows, so the shop keeps the height of the cars' tab. */
+.garage__card--topper {
+    width: 23%;
+    margin: 6px 0.75%;
+    padding: 4px 4px 8px 4px;
+}
+
+.garage__card--topper .garage__tag { padding: 0 12px; }
+.garage__card--topper .garage__tag-text { font-size: 24px; }
 
 /* The tag says what a tap does: USE (soft), IN USE with a check (green), a coin and the price (gold, or grey when the
    coins fall short), or a padlock and the level (navy). */
@@ -5867,9 +5893,122 @@
     -unity-text-align: middle-left;
 }
 
-/* Landscape scales the panel down: the hero's column has the room for bars that still read. */
+/* The showcase: the car on its plinth at the left, the name over the stats at the right. */
+.garage__showcase {
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 30px;
+}
+
+.garage__showcase .garage__stage {
+    width: 500px;
+    height: 300px;
+    margin-top: 0;
+}
+
+.garage__showcase .garage__plinth,
+.garage__showcase .garage__plinth-drop {
+    left: 50px;
+    right: 50px;
+    height: 110px;
+}
+
+.garage__info {
+    flex-grow: 1;
+    flex-shrink: 1;
+    align-items: stretch;
+    justify-content: center;
+    margin-left: 16px;
+}
+
+.garage__info .garage__plate {
+    align-items: flex-start;
+    height: 92px;
+    margin: 0 0 10px 0;
+}
+
+.garage__info .garage__preview-name {
+    font-size: 80px;
+    -unity-text-auto-size: best-fit 44px 80px;
+}
+
+.garage__info .garage__stats {
+    width: auto;
+}
+
+.garage__info .garage__stats .car-stats__row {
+    height: 56px;
+    margin: 4px 0;
+}
+
+.garage__info .garage__stats .car-stats__label {
+    width: 150px;
+    font-size: 40px;
+    -unity-text-auto-size: best-fit 24px 40px;
+    -unity-text-align: middle-left;
+}
+
+.garage__info .garage__stats .car-stats__bar {
+    height: 44px;
+    border-width: 6px;
+    border-radius: 22px;
+}
+
+.garage__info .garage__stats .car-stats__fill {
+    border-radius: 16px;
+}
+
+/* Landscape: the hero's column is wider, the showcase grows with it. */
+.garage--landscape .garage__showcase {
+    margin-top: 110px;
+}
+
+.garage--landscape .garage__showcase .garage__stage {
+    width: 900px;
+    height: 680px;
+    margin-top: 0;
+}
+
+.garage--landscape .garage__showcase .garage__plinth,
+.garage--landscape .garage__showcase .garage__plinth-drop {
+    left: 90px;
+    right: 90px;
+    height: 170px;
+}
+
+.garage--landscape .garage__info { margin-left: 24px; }
+.garage--landscape .garage__info .garage__plate { height: 170px; }
+.garage--landscape .garage__info .garage__preview-name {
+    font-size: 140px;
+    -unity-text-auto-size: best-fit 70px 140px;
+}
+
+.garage--landscape .garage__info .garage__stats .car-stats__row {
+    height: 84px;
+    margin: 8px 0;
+}
+
+.garage--landscape .garage__info .garage__stats .car-stats__label {
+    width: 220px;
+    font-size: 62px;
+    -unity-text-auto-size: best-fit 32px 62px;
+}
+
+.garage--landscape .garage__info .garage__stats .car-stats__bar {
+    height: 64px;
+    border-width: 8px;
+    border-radius: 32px;
+}
+
+.garage--landscape .garage__info .garage__stats .car-stats__fill {
+    border-radius: 24px;
+}
+
 .garage--landscape .garage__stats {
-    width: 760px;
+    width: auto;
     margin-top: 6px;
 }
 
@@ -5892,4 +6031,164 @@
 
 .garage--landscape .garage__stats .car-stats__fill {
     border-radius: 17px;
+}
+
+/* No boosts in this build (GameTuning.Boost off): no BOOST button, and the start prompt teaches only driving. The
+   button keeps its place, hidden, so the item button in the same slot stays where it was. */
+.hud--no-boost .hud__boost {
+    visibility: hidden;
+}
+
+.hud--no-boost .hud__boost-hint,
+.hud--no-boost .hud__start-hint--touch,
+.hud--no-boost .hud__start-sep,
+.hud--no-boost .hud__start-click-text,
+.hud--no-boost .hud__start-hint--desktop .hud__start-key {
+    display: none;
+}
+
+/* BUY & EQUIP without the coins: grey, the price faded. */
+.level-reward__buy--dear {
+    background-color: rgb(168, 176, 196);
+}
+
+.level-reward__buy--dear .level-reward__price {
+    opacity: 0.7;
+}
+
+/* The celebration of a taken reward (RewardCelebration): a white flash over the popup, coins arcing into the
+   counter, the EQUIPPED! stamp over the reward and NEED N MORE floating up when the coins are short. */
+.reward-flash {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--white);
+}
+
+.reward-coin {
+    position: absolute;
+    left: -32px;
+    top: -32px;
+    width: 64px;
+    height: 64px;
+}
+
+.reward-stamp {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100px;
+    align-items: center;
+}
+
+.reward-stamp__pill {
+    padding: 4px 34px 6px 34px;
+    border-width: 9px;
+    border-bottom-width: 18px;
+    border-color: var(--navy);
+    border-radius: 28px;
+    background-color: var(--green);
+}
+
+.reward-stamp__label-text {
+    margin: 0;
+    padding: 0;
+    font-size: 84px;
+    color: var(--white);
+    -unity-text-outline-width: 12px;
+    -unity-text-outline-color: var(--navy);
+    text-shadow: 0 6px 0 var(--navy);
+    white-space: nowrap;
+}
+
+.reward-toast {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.reward-toast-text {
+    margin: 0;
+    padding: 0;
+    font-size: 56px;
+    color: rgb(255, 77, 77);
+    -unity-text-outline-width: 10px;
+    -unity-text-outline-color: var(--navy);
+    text-shadow: 0 5px 0 var(--navy);
+    white-space: nowrap;
+}
+
+/* Without BOOST its place is free: the item button takes it, larger, at the height BOOST stood, with its timer badge
+   and first hint over it. */
+.hud--no-boost .hud__boost-slot--items .hud__item {
+    left: -10px;
+    top: -10px;
+    width: 320px;
+    height: 320px;
+    border-width: 10px;
+    border-bottom-width: 22px;
+}
+
+.hud--no-boost .hud__boost-slot--items .hud__item-icon {
+    width: 220px;
+    height: 220px;
+    border-width: 8px;
+}
+
+.hud--no-boost .hud__boost-slot--items .hud__item-glyph {
+    scale: 1.35 1.35;
+}
+
+.hud--no-boost .hud__boost-slot--items .hud__item-mark {
+    font-size: 136px;
+}
+
+.hud--no-boost .hud__boost-slot--items .hud__power {
+    top: -150px;
+}
+
+.hud--no-boost .hud__boost-slot--items .hud__item-hint {
+    left: -50px;
+    top: -185px;
+}
+
+.hud--no-boost .hud__boost-slot--items .hud__item-hint .hud__item-hint-arrow {
+    left: 164px;
+}
+
+.hud--no-boost .hud__item--desktop {
+    left: 35px;
+    top: 40px;
+    width: 230px;
+    height: 230px;
+    border-width: 8px;
+    border-bottom-width: 18px;
+}
+
+.hud--no-boost .hud__item--desktop .hud__item-icon {
+    width: 158px;
+    height: 158px;
+}
+
+.hud--no-boost .hud__item--desktop .hud__item-glyph {
+    scale: 1 1;
+}
+
+.hud--no-boost .hud__item--desktop .hud__item-mark {
+    font-size: 100px;
+}
+
+.hud--no-boost .hud__item-hint--desktop {
+    left: -180px;
+    top: 285px;
+}
+
+.hud--no-boost .hud__boost-slot--left .hud__item-hint--desktop {
+    left: 80px;
+}
+
+.hud--no-boost .hud__boost-slot--left .hud__item-hint--desktop .hud__item-hint-arrow {
+    left: 70px;
 }

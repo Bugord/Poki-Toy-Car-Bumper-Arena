@@ -350,8 +350,7 @@ MonoBehaviour:
   fullStrength: 18
   quietestHit: 0.35
   botHitVolume: 0.6
-  hitStopDuration: {x: 0.06, y: 0.08}
-  hitStopTimeScale: 0.05
+  hitStopTimeScale: 0.02
   hitStopGap: 0.25
   hitShake: 0.45
   botHitShake: 0.35

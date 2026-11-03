@@ -74,6 +74,9 @@ namespace ToyCarArena.UI
 
         /// <summary>The car's speed, power and boost for the player.</summary>
         public GameTuning.CarStatLine StatsOf(CarCatalog.Entry car) => tuning.CarStats.Of(car.Id);
+
+        /// <summary>Whether cars boost in this build, so the boost stat means something.</summary>
+        public bool HasBoost => tuning.Boost.IsEnabled;
         public bool IsForSale(string id) => progress.IsForSale(id);
         public int PriceOf(string id) => progress.PriceOf(id);
         public bool CanAffordCar(string id) => wallet.Coins >= progress.PriceOf(id);

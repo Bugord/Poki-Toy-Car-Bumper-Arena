@@ -27,9 +27,10 @@ namespace ToyCarArena.App
     /// there. A later round comes from PLAY AGAIN, which is that input, and goes on as soon as the curtain is up.
     /// </para>
     /// <para>
-    /// Then every round counts down 3, 2, 1 on the HUD (<see cref="GameTuning.RoundSettings.KickoffFrom"/>) and begins
-    /// at GO: the cars stand still and the clock, the bots and the floor wait until then, so a round never starts in the
-    /// middle of the curtain lifting or of the player reaching for the controls. The platform hears gameplayStart and the
+    /// Then every later round counts down 3, 2, 1 on the HUD (<see cref="GameTuning.RoundSettings.KickoffFrom"/>) and
+    /// begins at GO; the first begins on that first input. Until then the cars stand still and the clock, the bots and
+    /// the floor wait, so a round never starts in the middle of the curtain lifting or of the player reaching for the
+    /// controls. The platform hears gameplayStart and the
     /// round's start at GO; the match's time runs from there.
     /// </para>
     /// <para>
@@ -189,11 +190,15 @@ namespace ToyCarArena.App
                 hud = await navigator.OpenAsync<HudViewModel, HudRound>(hudRound, token);
                 await curtain.Hide();
 
+                // The visit's first round begins on the player's first input, with no count: the new player came to
+                // drive, not to wait. Later rounds count down after the curtain.
                 if (waitsForPlayer) {
                     await UniTask.WaitUntil(() => driver.HasActed, cancellationToken: token);
                 }
+                else {
+                    await Kickoff(hud.ViewModel, tuning.Round, token);
+                }
 
-                await Kickoff(hud.ViewModel, tuning.Round, token);
                 BeginRound();
                 WatchMissions(hud.ViewModel).Forget();
 

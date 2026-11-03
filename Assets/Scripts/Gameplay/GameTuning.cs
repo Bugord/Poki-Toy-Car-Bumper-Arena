@@ -328,6 +328,27 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float pointerSlowRadius = 4f;
 
+            [Tooltip("A steering touch lifted within this many seconds after travelling Swipe Distance is a swipe: the " +
+                "car keeps driving its way after the finger lets go")]
+            [Min(0f)]
+            [SerializeField]
+            private float swipeTime = 0.35f;
+
+            [Tooltip("How far a swipe travels from where it touched, as a share of the screen's shorter side")]
+            [Range(0f, 0.5f)]
+            [SerializeField]
+            private float swipeDistance = 0.08f;
+
+            [Tooltip("Seconds the car drives at full throttle the swipe's way after it, unless the player steers again")]
+            [Min(0f)]
+            [SerializeField]
+            private float swipeCarry = 0.7f;
+
+            [Tooltip("Seconds over which the throttle then eases out to a stop")]
+            [Min(0f)]
+            [SerializeField]
+            private float swipeFade = 0.3f;
+
             [Tooltip("From this far inside the edge, in metres, the round's edge assist takes the steer off the arena " +
                 "away, more the closer the car gets; far enough for a car at top speed to brake to a stop")]
             [Min(0f)]
@@ -438,6 +459,10 @@ namespace ToyCarArena.Gameplay
             public float BoostHintDistance => boostHintDistance;
             public float PointerStopRadius => pointerStopRadius;
             public float PointerSlowRadius => pointerSlowRadius;
+            public float SwipeTime => swipeTime;
+            public float SwipeDistance => swipeDistance;
+            public float SwipeCarry => swipeCarry;
+            public float SwipeFade => swipeFade;
             public float EdgeAssistMargin => edgeAssistMargin;
             public float EdgeAssistStop => edgeAssistStop;
             public float EdgeHoldMargin => edgeHoldMargin;
@@ -463,6 +488,12 @@ namespace ToyCarArena.Gameplay
         [Serializable]
         public sealed class BoostSettings
         {
+            [Tooltip("Whether cars boost at all: off, no car, the player's or a bot's, nor the auto boost ever boosts, " +
+                "and the HUD shows no BOOST button or boost hints (the experiment after v0.12.0: hits at full speed " +
+                "instead of boosts)")]
+            [SerializeField]
+            private bool enabled = true;
+
             [Tooltip("Speed added at once, in metres per second, towards where the car is steering (along its nose " +
                 "when it is not); the top speed is raised by as much while the boost lasts")]
             [Min(0f)]
@@ -486,6 +517,7 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float cooldown = 3f;
 
+            public bool IsEnabled => enabled;
             public float Impulse => impulse;
             public float Duration => duration;
             public float BumpMultiplier => bumpMultiplier;

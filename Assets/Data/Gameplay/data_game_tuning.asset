@@ -41,6 +41,10 @@ MonoBehaviour:
     boostHintDistance: 6
     pointerStopRadius: 1
     pointerSlowRadius: 4
+    swipeTime: 0.35
+    swipeDistance: 0.08
+    swipeCarry: 0.7
+    swipeFade: 0.3
     edgeAssistMargin: 5
     edgeAssistStop: 2
     edgeHoldMargin: 1.5
@@ -59,6 +63,7 @@ MonoBehaviour:
     autoRescueLookAhead: 0.5
     autoRescueCooldown: 4
   boost:
+    enabled: 0
     impulse: 10
     duration: 0.3
     bumpMultiplier: 1.5
@@ -587,6 +592,8 @@ MonoBehaviour:
       map: 
   toppers:
     toppers:
+    - id: top-hat
+      price: 60
     - id: party-hat
       price: 40
     - id: cone

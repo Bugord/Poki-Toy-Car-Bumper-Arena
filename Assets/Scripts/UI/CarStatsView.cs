@@ -51,12 +51,16 @@ namespace ToyCarArena.UI
             return root;
         }
 
-        /// <summary>Fills the bars with <paramref name="stats"/> and names the stats in the language shown.</summary>
-        public static void Set(VisualElement root, GameTuning.CarStatLine stats)
+        /// <summary>
+        /// Fills the bars with <paramref name="stats"/> and names the stats in the language shown. Without boosts in
+        /// the build (<paramref name="hasBoost"/> false) the boost row is left out: it would promise nothing.
+        /// </summary>
+        public static void Set(VisualElement root, GameTuning.CarStatLine stats, bool hasBoost)
         {
             var values = new[] { stats.Speed, stats.Power, stats.Boost };
             for (var i = 0; i < Names.Length; i++) {
                 var row = root[i];
+                row.style.display = i < 2 || hasBoost ? DisplayStyle.Flex : DisplayStyle.None;
                 row.Q<Label>(className: "car-stats__label").text = Strings.Get($"car.stat_{Names[i]}");
                 row.Q(className: "car-stats__fill").style.width =
                     Length.Percent(100f * values[i] / GameTuning.CarStatSettings.Max);
