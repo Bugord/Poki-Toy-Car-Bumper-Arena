@@ -41,6 +41,10 @@ MonoBehaviour:
     boostHintDistance: 6
     pointerStopRadius: 1
     pointerSlowRadius: 4
+    swipeTime: 0.35
+    swipeDistance: 0.08
+    swipeCarry: 0.7
+    swipeFade: 0.3
     edgeAssistMargin: 5
     edgeAssistStop: 2
     edgeHoldMargin: 1.5

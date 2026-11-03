@@ -23,6 +23,14 @@ namespace ToyCarArena.Gameplay.Input
         event Action ItemPressed;
 
         /// <summary>
+        /// Raised when the steering finger lifts after a quick stroke (<see cref="GameTuning.ControlSettings.SwipeTime"/>,
+        /// <see cref="GameTuning.ControlSettings.SwipeDistance"/>): some players flick the screen the way they want the
+        /// car to go instead of holding it. Carries the stroke, from where it touched to where it lifted, in screen
+        /// pixels. A mouse drag never swipes.
+        /// </summary>
+        event Action<Vector2> Swiped;
+
+        /// <summary>
         /// Prevents the current steering touch from boosting on release: a touch that starts the round only starts it.
         /// </summary>
         void CancelTapBoost();
