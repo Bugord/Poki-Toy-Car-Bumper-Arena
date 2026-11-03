@@ -142,7 +142,9 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(gain.After.Cost, Is.EqualTo(80));
             Assert.That(gain.UnlockedCarIds, Is.EqualTo(new[] { "speedster", "vintage" }));
             Assert.That(progress.NextCar, Is.Null);
-            Assert.That(progress.SelectedCar, Is.EqualTo("vintage"));
+            Assert.That(progress.SelectedCar, Is.EqualTo("racer"), "A new car waits for the player to equip it.");
+            Assert.That(progress.Record(Result(RoundOutcome.Out, 4, 4, 0)).UnlockedCarIds, Is.Empty);
+            Assert.That(progress.Select("vintage"), Is.True);
             Assert.That(progress.Record(Result(RoundOutcome.Out, 4, 4, 0)).UnlockedCarIds, Is.Empty);
             Assert.That(progress.SelectedCar, Is.EqualTo("vintage"));
         }
@@ -287,7 +289,7 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(changes, Is.EqualTo(new[] { 4 }));
             Assert.That(storage.GetInt("car_color"), Is.EqualTo(4));
             progress.Record(Result(RoundOutcome.Won, 1, 4, 3));
-            Assert.That(progress.SelectedColor, Is.EqualTo(4), "Auto-equipping a model keeps the colour.");
+            Assert.That(progress.SelectedColor, Is.EqualTo(4), "A round that opens cars keeps the colour.");
         }
 
         private sealed class MemoryStorage : IKeyValueStorage

@@ -59,8 +59,8 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(bonus.After.Level, Is.EqualTo(vintage.UnlockLevel));
             Assert.That(bonus.UnlockedCarIds, Does.Contain("vintage"));
             Assert.That(new PlayerProgress(storage, tuning, catalog).TotalXp, Is.EqualTo(before + toVintage));
-            // Free, the car the bonus opens drives next, as after a round.
-            Assert.That(progress.SelectedCar, Is.EqualTo("vintage"));
+            // The car the bonus opens waits for the player, as after a round.
+            Assert.That(progress.SelectedCar, Is.EqualTo("racer"));
         }
 
         [Test]

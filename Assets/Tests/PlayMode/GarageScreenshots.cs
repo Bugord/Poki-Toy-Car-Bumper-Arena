@@ -94,9 +94,10 @@ namespace ToyCarArena.Tests.PlayMode
                 screen.style.bottom = 0;
                 document.rootVisualElement.Add(screen);
                 view.Bind(model);
-                view.Attach(screen);
+                // UIKit hands a view the UXML's own root, not the template container around it.
+                view.Attach(screen.hierarchy[0]);
                 // The editor has no touch screen: the phone sizes take the touch look by hand.
-                screen.EnableInClassList("garage--touch", isTouch);
+                screen.hierarchy[0].EnableInClassList("garage--touch", isTouch);
                 view.ShowAsync(CancellationToken.None).Forget();
                 foreach (var isToppers in new[] { false, true }) {
                     showTab.Invoke(view, new object[] { isToppers });
