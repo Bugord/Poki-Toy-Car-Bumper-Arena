@@ -217,7 +217,7 @@ namespace ToyCarArena.Gameplay.Cars
             car.SetParent(turntable, false);
             var model = CarLook.BuildModel(entry, car, look.ModelRotation, look.ModelMaterial, look.Reference);
             body = CarModel.PaintBody(CarModel.FindBody(model, out _), entry.BodySwatch, look.SwatchOf(colorId));
-            CarLook.WearTopper(topper, car, model, look.ModelMaterial, heroMeshes, out spinner);
+            CarLook.WearTopper(topper, entry.Id, car, model, look.ModelMaterial, heroMeshes, out spinner);
 
             var bounds = CarModel.BoundsIn(car.gameObject, car.worldToLocalMatrix);
             model.transform.localPosition -= new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);

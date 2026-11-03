@@ -30,9 +30,10 @@ namespace ToyCarArena.Audio
         bool IsSoundMuted { get; set; }
 
         /// <summary>
-        /// Plays a sound once, at <paramref name="volume"/> times its own level.
+        /// Plays a sound once, at <paramref name="volume"/> times its own level and <paramref name="pitch"/> times its
+        /// own pitch (a combo's knock-outs climb).
         /// </summary>
-        void Play(Sound sound, float volume = 1f);
+        void Play(Sound sound, float volume = 1f, float pitch = 1f);
 
         /// <summary>
         /// Plays a jingle once, the music ducking under it while it lasts.

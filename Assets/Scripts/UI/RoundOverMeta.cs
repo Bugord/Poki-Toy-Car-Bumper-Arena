@@ -11,8 +11,8 @@ namespace ToyCarArena.UI
 {
     /// <summary>
     /// The result's goals beside the level card, all saved before the screen opens: the three missions (a done one
-    /// ticks gold, shows its reward and turns into the mission that replaces it), the round's coins next to its XP with
-    /// the player's coins counting up in the corner, and the win streak under the title (STREAK ×N, or STREAK LOST).
+    /// ticks gold, shows its reward and turns into the mission that replaces it), the player's coins counting up in the
+    /// corner (again after CLAIM ×2), and the win streak under the title (STREAK ×N, or STREAK LOST).
     /// Built in code into the screen's tree; the animation runs on unscaled time and stops with the screen.
     /// </summary>
     internal sealed class RoundOverMeta : IDisposable
@@ -32,7 +32,8 @@ namespace ToyCarArena.UI
         private readonly VisualElement missions;
         private readonly List<Row> rows = new();
         private readonly Label coinCount;
-        private readonly VisualElement coinGain;
+        private int shownCoins;
+        private CancellationTokenSource recount;
         private readonly Label streak;
         private readonly LiveText text = new();
         private CancellationTokenSource animation;
@@ -52,13 +53,7 @@ namespace ToyCarArena.UI
             // Inside the screen's own element, which carries the style sheet.
             (root.Q<VisualElement>("round-over") ?? root).Add(CoinPill);
 
-            // The round's coins beside its XP on the level card.
-            coinGain = new VisualElement { pickingMode = PickingMode.Ignore };
-            coinGain.AddToClassList("coin-gain");
-            coinGain.Add(Coin());
-            coinGain.Add(Text($"+{viewModel.Coins.Total}", "coin-gain__value"));
-            var head = root.Q<VisualElement>(className: "level-card__head");
-            head.Insert(Mathf.Min(2, head.childCount), coinGain);
+            shownCoins = viewModel.Coins.Before;
 
             streak = Text("", "best");
             streak.AddToClassList("round-over__streak");
@@ -121,9 +116,20 @@ namespace ToyCarArena.UI
             animation = null;
         }
 
+        /// <summary>CLAIM ×2 paid: the corner counts up from what it shows to the coins now.</summary>
+        public void Recount(CancellationToken token)
+        {
+            recount?.Cancel();
+            recount?.Dispose();
+            recount = CancellationTokenSource.CreateLinkedTokenSource(token);
+            CountCoins(0, recount.Token).Forget();
+        }
+
         public void Dispose()
         {
             Stop();
+            recount?.Cancel();
+            recount?.Dispose();
             viewModel.CarBought -= OnCarBought;
             text.Dispose();
         }
@@ -131,7 +137,7 @@ namespace ToyCarArena.UI
         private async UniTaskVoid Animate(CancellationToken token)
         {
             try {
-                CountCoins(token).Forget();
+                CountCoins(CoinsDelay, token).Forget();
                 await UniTask.Delay(RowsDelay, ignoreTimeScale: true, cancellationToken: token);
                 foreach (var row in rows) {
                     row.Root.RemoveFromClassList(RowEnterClass);
@@ -154,26 +160,26 @@ namespace ToyCarArena.UI
 
         private void OnCarBought()
         {
-            coinCount.text = viewModel.CoinsNow.ToString();
+            shownCoins = viewModel.CoinsNow;
+            coinCount.text = shownCoins.ToString();
             CoinPill.AddToClassList("coin-pill--bump");
             CoinPill.schedule.Execute(() => CoinPill.RemoveFromClassList("coin-pill--bump")).StartingIn(150);
         }
 
-        private async UniTaskVoid CountCoins(CancellationToken token)
+        private async UniTaskVoid CountCoins(int delay, CancellationToken token)
         {
-            var coins = viewModel.Coins;
-            coinGain.AddToClassList("coin-gain--enter");
-            if (await UniTask.Delay(CoinsDelay, ignoreTimeScale: true, cancellationToken: token)
+            if (await UniTask.Delay(delay, ignoreTimeScale: true, cancellationToken: token)
                     .SuppressCancellationThrow()) {
                 return;
             }
 
-            coinGain.RemoveFromClassList("coin-gain--enter");
+            var from = shownCoins;
             var start = Time.unscaledTime;
             while (!token.IsCancellationRequested) {
                 var share = Mathf.Clamp01((Time.unscaledTime - start) / CountDuration);
                 // Towards the coins now: a car bought from a level's popup meanwhile is already taken off.
-                coinCount.text = Mathf.RoundToInt(Mathf.Lerp(coins.Before, viewModel.CoinsNow, share)).ToString();
+                shownCoins = Mathf.RoundToInt(Mathf.Lerp(from, viewModel.CoinsNow, share));
+                coinCount.text = shownCoins.ToString();
                 if (share >= 1f) {
                     CoinPill.AddToClassList("coin-pill--bump");
                     CoinPill.schedule.Execute(() => CoinPill.RemoveFromClassList("coin-pill--bump")).StartingIn(150);

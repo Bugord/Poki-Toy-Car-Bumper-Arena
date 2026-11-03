@@ -53,11 +53,13 @@ namespace ToyCarArena.App
         private readonly IArenaRotation arenaRotation;
         private readonly PlayerWallet wallet;
         private readonly MissionTracker missions;
+        private readonly AdBreaks adBreaks;
 
         public RoundState(LevelScene levelScene, IScreenNavigator navigator, ScreenCurtain curtain, IGamePlatform platform,
             SessionProgress progress, PersonalBests bests, PlayerProgress playerProgress, IArenaRotation arenaRotation,
-            PlayerWallet wallet, MissionTracker missions)
+            PlayerWallet wallet, MissionTracker missions, AdBreaks adBreaks)
         {
+            this.adBreaks = adBreaks;
             this.wallet = wallet;
             this.missions = missions;
             this.levelScene = levelScene;
@@ -85,6 +87,7 @@ namespace ToyCarArena.App
             round.Finished += OnFinished;
             ScreenHandle<HudViewModel> hud = null;
             var isPlaying = false;
+            var playStarted = 0f;
             var roundNumber = progress.Round;
             // Record() may auto-equip a new unlock; analytics must name the car that actually played this round.
             var playedCar = playerProgress.SelectedCar;
@@ -168,6 +171,7 @@ namespace ToyCarArena.App
                 arenaRotation.MarkSeen(playedMap);
                 arenaRotation.MarkPlayed(playedMap, playedVariant);
                 isPlaying = true;
+                playStarted = Time.realtimeSinceStartup;
             }
 
             variants.VariantChanged += OnVariantChanged;
@@ -196,6 +200,8 @@ namespace ToyCarArena.App
                 var result = await finished.Task.AttachExternalCancellation(token);
                 platform.GameplayStop();
                 isPlaying = false;
+                // Only the rounds count towards the commercial break between them: not the start screen or the kickoff.
+                adBreaks.AddPlay(Time.realtimeSinceStartup - playStarted);
 
                 // A streak round's reward is multiplied by the streak it was played on, before this round moves it.
                 var streaks = tuning.Streaks;
@@ -208,6 +214,8 @@ namespace ToyCarArena.App
                         itemKnockouts, playedMap), playerProgress.Level, progress.Round);
                 var xpGain = playerProgress.Record(result, isStreakRound ? streaks : null, missionRound.Xp);
                 var coinGain = wallet.Record(result, isStreakRound, missionRound.Coins);
+                // The free topper of an early win: the result offers to wear it.
+                wallet.TryGift(result.Outcome == RoundOutcome.Won, roundNumber);
                 var record = bests.Record(result).WithXp(xpGain).WithKnocker(
                     result.KnockedOutBy == RoundResult.Nobody ? "" : round.NameOf(result.KnockedOutBy)).WithRoster(
                     round.Names, round.Levels, IndexOf(round, round.Nemesis)).WithMeta(coinGain, missionRound,

@@ -62,6 +62,8 @@ namespace ToyCarArena.Gameplay.Cars
         // instead of the tuned cooldown when it is not negative.
         private float massScale = 1f;
         private float boostCooldownOverride = -1f;
+        private float speedScale = 1f;
+        private float cooldownScale = 1f;
 
         // The last shove an arena object gave and the balance it took, with the frame they came in, so a shield can take
         // the whole hit back (see UndoHazardKick).
@@ -130,7 +132,18 @@ namespace ToyCarArena.Gameplay.Cars
         /// <summary>
         /// Seconds the boost takes to cool down now: the boost's own, or a pickup's shorter one.
         /// </summary>
-        private float BoostCooldown => boostCooldownOverride >= 0f ? boostCooldownOverride : boostSettings.Cooldown;
+        private float BoostCooldown =>
+            boostCooldownOverride >= 0f ? boostCooldownOverride : boostSettings.Cooldown * cooldownScale;
+
+        /// <summary>
+        /// The player's car's stats (<see cref="GameTuning.CarStatSettings"/>): times the tuned top speed and
+        /// acceleration, and times the tuned boost cooldown.
+        /// </summary>
+        public void SetStats(float speed, float cooldown)
+        {
+            speedScale = speed;
+            cooldownScale = cooldown;
+        }
 
         /// <summary>
         /// How far the cooldown has come, from 0 just after a boost to 1 once the next one is ready, for the HUD.
@@ -235,6 +248,20 @@ namespace ToyCarArena.Gameplay.Cars
                 lastKick = velocityChange;
                 lastKickFrame = Time.frameCount;
             }
+        }
+
+        /// <summary>
+        /// Throws the car up at <paramref name="upSpeed"/> metres per second and spins it round
+        /// <paramref name="spin"/> degrees a second more, as a toy flies from a good hit; off the floor it keeps the spin.
+        /// </summary>
+        public void Launch(float upSpeed, float spin)
+        {
+            var velocity = body.linearVelocity;
+            velocity.y = Mathf.Max(velocity.y, upSpeed);
+            body.linearVelocity = velocity;
+            var angularVelocity = body.angularVelocity;
+            angularVelocity.y += spin * Mathf.Deg2Rad;
+            body.angularVelocity = angularVelocity;
         }
 
         /// <summary>
@@ -514,19 +541,19 @@ namespace ToyCarArena.Gameplay.Cars
             var axis = forward;
             if (IsBoosting) {
                 axis = boostDirection;
-                targetSpeed = settings.MaxSpeed + boostSettings.Impulse;
+                targetSpeed = settings.MaxSpeed * speedScale + boostSettings.Impulse;
             }
             else {
                 // Facing away from the heading, the car turns first and speeds up as it comes round.
                 var alignment = drive > 0f ? Mathf.Clamp01(Vector3.Dot(forward, direction)) : 0f;
                 // The floor changes the top speed of driving only: a boost carries the car through it.
-                targetSpeed = settings.MaxSpeed * Surface.Speed * drive * alignment;
+                targetSpeed = settings.MaxSpeed * speedScale * Surface.Speed * drive * alignment;
             }
 
             var right = Vector3.Cross(Vector3.up, axis);
             var velocity = body.linearVelocity;
             var axisSpeed = Vector3.Dot(velocity, axis);
-            var rate = targetSpeed > axisSpeed ? settings.Acceleration * Surface.Acceleration : settings.Braking;
+            var rate = targetSpeed > axisSpeed ? settings.Acceleration * speedScale * Surface.Acceleration : settings.Braking;
             var newAxisSpeed = Mathf.MoveTowards(axisSpeed, targetSpeed, rate * deltaTime);
 
             var sideSpeed = Vector3.Dot(velocity, right);

@@ -112,6 +112,9 @@ namespace ToyCarArena.App
         /// </summary>
         public const float SlowLobbySeconds = 4f;
 
+        private const string AdCategory = "ad";
+        private const string DoubleReward = "double";
+
         public static void MeasureLobbyShown(this IGamePlatform platform) => platform.Measure(LobbyCategory, "shown", "visible");
 
         public static void MeasureLobbySlow(this IGamePlatform platform, string mapId) =>
@@ -119,6 +122,24 @@ namespace ToyCarArena.App
 
         public static void MeasureLobbySlowDone(this IGamePlatform platform, string mapId) =>
             platform.MeasureInteract(LobbyCategory, $"slow-{mapId}");
+
+        /// <summary>A commercial break is asked for under the curtain after NEXT MATCH (Poki may still show none).</summary>
+        public static void MeasureCommercialBreak(this IGamePlatform platform) =>
+            platform.MeasureVisible(AdCategory, "commercial");
+
+        /// <summary>The result offers CLAIM ×2, once per result.</summary>
+        public static void MeasureDoubleShown(this IGamePlatform platform) =>
+            platform.MeasureVisible(AdCategory, DoubleReward);
+
+        public static void MeasureDoublePressed(this IGamePlatform platform) =>
+            platform.MeasureInteract(AdCategory, DoubleReward);
+
+        /// <summary>
+        /// How the rewarded ad of CLAIM ×2 ended: granted, unavailable (back without a reward too soon to have played)
+        /// or dismissed.
+        /// </summary>
+        public static void MeasureDoubleEnded(this IGamePlatform platform, string how) =>
+            platform.Measure(AdCategory, DoubleReward, how);
 
         public static void MeasureScoreboardShown(this IGamePlatform platform) =>
             platform.Measure("scoreboard", "shown", "visible");
@@ -418,6 +439,13 @@ namespace ToyCarArena.App
 
         public static void MeasureCarOfferPressed(this IGamePlatform platform, string carId) =>
             platform.MeasureInteract("shop", $"offer-{carId}");
+
+        /// <summary>The result's popup shows the free topper (<c>gift / &lt;id&gt; / visible</c>), and EQUIP on it.</summary>
+        public static void MeasureGiftShown(this IGamePlatform platform, string topperId) =>
+            platform.MeasureVisible("gift", topperId);
+
+        public static void MeasureGiftWorn(this IGamePlatform platform, string topperId) =>
+            platform.MeasureInteract("gift", topperId);
 
         public static void MeasureTopperEquip(this IGamePlatform platform, string topperId) =>
             platform.Measure("garage", $"topper-{(string.IsNullOrEmpty(topperId) ? "none" : topperId)}", "equip");

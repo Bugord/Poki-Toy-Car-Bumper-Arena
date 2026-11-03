@@ -9,8 +9,9 @@ using UnityEngine.UIElements;
 namespace ToyCarArena.UI
 {
     /// <summary>
-    /// The result screen: the title, how the player went out and by whom, the level track with the saved XP and car
-    /// unlocks, CAR and NEXT MATCH. The arena stays undimmed behind it, as it ended.
+    /// The result screen: the title, how the player went out and by whom, the round's XP and coins with CLAIM ×2 to
+    /// double them for a rewarded ad, the level track with the saved XP and car unlocks, CAR and NEXT MATCH. The arena
+    /// stays undimmed behind it, as it ended.
     /// </summary>
     public sealed class RoundOverView : FadingView<RoundOverViewModel>
     {
@@ -39,6 +40,7 @@ namespace ToyCarArena.UI
         private bool isPlayAgainPressed;
         private RoundOverProgress xpProgress;
         private RoundOverMeta meta;
+        private RoundOverRewards rewards;
 
         public RoundOverView(IAudioService audioService, HudControls controls)
         {
@@ -95,6 +97,8 @@ namespace ToyCarArena.UI
             Strings.Changed += ShowTitle;
             Root.Q<Label>("revenge").EnableInClassList(BestShownClass, ViewModel.RevengeTaken);
             xpProgress = new RoundOverProgress(Root, ViewModel, isTouch);
+            rewards = new RoundOverRewards(Root, ViewModel, isTouch);
+            rewards.Claim.clicked += ClaimDouble;
             match = RoundOverMatch.Create(Root, ViewModel);
         }
 
@@ -111,12 +115,14 @@ namespace ToyCarArena.UI
             // The reward runs beside input; no part of it delays NEXT MATCH, Space or Enter.
             xpProgress.Play(token);
             meta.Play(token);
+            rewards.Play(token);
         }
 
         public override async UniTask HideAsync(CancellationToken token)
         {
             xpProgress.Stop();
             meta.Stop();
+            rewards.Stop();
             match?.ReleasePodium();
             await base.HideAsync(token);
         }
@@ -134,6 +140,11 @@ namespace ToyCarArena.UI
             lifetime?.Dispose();
             xpProgress?.Dispose();
             meta?.Dispose();
+            if (rewards != null) {
+                rewards.Claim.clicked -= ClaimDouble;
+                rewards.Dispose();
+            }
+
             match?.Dispose();
             if (playAgainButton != null) {
                 playAgainButton.clicked -= PlayAgain;
@@ -182,7 +193,7 @@ namespace ToyCarArena.UI
 
         private void OpenSettings()
         {
-            if (!IsShown || isPlayAgainPressed || ViewModel.IsGarageOpen || ViewModel.IsSettingsOpen) {
+            if (IsBusy) {
                 return;
             }
 
@@ -192,7 +203,7 @@ namespace ToyCarArena.UI
 
         private void OpenGarage()
         {
-            if (!IsShown || isPlayAgainPressed || ViewModel.IsGarageOpen || ViewModel.IsSettingsOpen) {
+            if (IsBusy) {
                 return;
             }
 
@@ -267,13 +278,65 @@ namespace ToyCarArena.UI
                 evt.StopPropagation();
                 OpenGarage();
             }
+            else if (evt.keyCode == KeyCode.X) {
+                evt.StopPropagation();
+                // A reward popup takes the presses: X waits under it as a tap would.
+                if (!xpProgress.IsPopupOpen) {
+                    ClaimDouble();
+                }
+            }
+        }
+
+        // Before it is up, after NEXT MATCH, over a popup screen, or while an ad plays, the screen takes no presses.
+        private bool IsBusy => !IsShown || isPlayAgainPressed || ViewModel.IsGarageOpen || ViewModel.IsSettingsOpen ||
+            ViewModel.IsAdPlaying;
+
+        private void ClaimDouble()
+        {
+            if (IsBusy || !ViewModel.CanDouble) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            Double(lifetime.Token).Forget();
+        }
+
+        /// <summary>
+        /// The replay of the reward settles where it ends, so nothing runs out under the ad; once it is back, the
+        /// skipped popups show and, with the reward paid, the bonus plays on from there.
+        /// </summary>
+        private async UniTaskVoid Double(CancellationToken token)
+        {
+            xpProgress.Settle();
+            rewards.SetWaiting(true);
+            bool isDoubled;
+            try {
+                isDoubled = await ViewModel.Double(token);
+            }
+            catch (System.OperationCanceledException) {
+                return;
+            }
+            finally {
+                rewards.SetWaiting(false);
+            }
+
+            if (!isDoubled) {
+                rewards.HideClaim();
+                xpProgress.Resume(null, token);
+                return;
+            }
+
+            rewards.ShowDoubled(token);
+            meta.Recount(token);
+            xpProgress.Resume(ViewModel.BonusXp, token);
+            ShowNewCar(ViewModel.HasNewCar, ViewModel.CanShop);
         }
 
         private void PlayAgain()
         {
             // A key held down in the round, or a tap that ended it, must not skip the screen before it is up; a second
             // press while the curtain comes down changes nothing, so it does not click either.
-            if (!IsShown || isPlayAgainPressed || ViewModel.IsGarageOpen || ViewModel.IsSettingsOpen) {
+            if (IsBusy) {
                 return;
             }
 

@@ -80,6 +80,9 @@ def summarise(data):
         "slow": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"lobby-slow-([a-z]+)", e))},
         "arenas": {m.group(1): row for e, row in p.items() if (m := re.fullmatch(r"arena-([a-z]+-[a-z]+)", e))},
         "scoreboard": i.get("scoreboard-shown"),
+        "ad_commercial": i.get("ad-commercial"),
+        "ad_double": i.get("ad-double"),
+        "ad_double_end": other(o, r"ad-double-(granted|unavailable|dismissed)"),
         "levels": other(o, r"progress-level-(2|3|4|5|6|7|8|9|10|10plus)-level-up"),
         "unlocks": other(o, r"progress-(?!map-)([a-z]+(?:-[a-z]+)*)-unlock"),
         "map_unlocks": other(o, r"progress-map-([a-z]+)-unlock"),
@@ -325,6 +328,11 @@ def report(version, previous):
     out.append(line("lobby-shown", lambda s: str(num(s["lobby"], "seen"))))
     out += ["", "## Таблица раунда (показы)", "", head, sep]
     out.append(line("scoreboard-shown", lambda s: str(num(s["scoreboard"], "seen"))))
+    out += ["", "## Реклама (v0.12)", "", head, sep]
+    out.append(line("commercial (перерыв после NEXT MATCH; визиты)", lambda s: str(num(s["ad_commercial"], "seen"))))
+    out.append(line("CLAIM x2 (нажали / показано)", lambda s: f"{num(s['ad_double'], 'interacted')} / {num(s['ad_double'], 'seen')} ({pct(num(s['ad_double'], 'interacted'), num(s['ad_double'], 'seen'))})"))
+    for how in ("granted", "unavailable", "dismissed"):
+        out.append(line(f"CLAIM x2: {how} (визиты)", lambda s, how=how: str(s["ad_double_end"].get(how, 0))))
     print("\n".join(out))
 
 

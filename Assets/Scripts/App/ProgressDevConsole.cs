@@ -12,10 +12,12 @@ namespace ToyCarArena.App
     public sealed class ProgressDevConsole : IStartable, IDisposable
     {
         private readonly PlayerProgress progress;
+        private readonly AdBreaks adBreaks;
 
-        public ProgressDevConsole(PlayerProgress progress)
+        public ProgressDevConsole(PlayerProgress progress, AdBreaks adBreaks)
         {
             this.progress = progress;
+            this.adBreaks = adBreaks;
         }
 
         public void Start()
@@ -30,12 +32,18 @@ namespace ToyCarArena.App
                     progress.AddXp(amount);
                     return Describe();
                 }));
+            CommandRegistry.Register("ad_play", "Set the seconds of rounds played; past Ads.FreePlaySeconds NEXT MATCH "
+                + "shows a commercial break", (Func<float, string>)(seconds => {
+                    adBreaks.SetPlayed(seconds);
+                    return $"{adBreaks.Played:0} s of rounds";
+                }));
         }
 
         public void Dispose()
         {
             CommandRegistry.Unregister("xp");
             CommandRegistry.Unregister("xp_add");
+            CommandRegistry.Unregister("ad_play");
         }
 
         private string Describe() => $"{progress.TotalXp} XP, LVL {progress.Level}";

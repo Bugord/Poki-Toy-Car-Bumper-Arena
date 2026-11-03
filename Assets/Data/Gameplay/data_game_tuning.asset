@@ -25,6 +25,9 @@ MonoBehaviour:
     maxBumpSpeed: 18
     hitStagger: 0.5
     staggerGrip: 0.2
+    playerHitLift: 3.5
+    playerHitSpin: 420
+    playerHitLiftFrom: 0.35
   controls:
     touchSteering: 0
     joystickRadius: 0.1
@@ -78,7 +81,7 @@ MonoBehaviour:
     distanceWeight: 1
     edgeWeight: 0.6
     maxPlayerWeight: 0.25
-    streakWeight: 0.08
+    streakWeight: 0
     crowdPenalty: 0.4
     pickNoise: 0.5
     stickWeight: 0.3
@@ -106,22 +109,22 @@ MonoBehaviour:
       duelEscapeBoostChance: 0
     normal:
       bots: 6
-      playerPace: 1
-      playerWeight: 0.05
-      playerGrace: 2
-      maxPlayerHunters: 2
+      playerPace: 0.9
+      playerWeight: -0.2
+      playerGrace: 5
+      maxPlayerHunters: 1
       reactionTime: {x: 0.12, y: 0.2}
       aimError: 3
       boostDelay: {x: 0.3, y: 1.2}
       escapeBoostChance: 0.5
       edgeAssist: 0.3
       autoBoost: 0
-      playerBump: 1.3
+      playerBump: 1.75
       playerStaggerScale: 0.4
-      staggerFromPlayer: 1
+      staggerFromPlayer: 1.75
       playerKnockoutWindow: 2.5
-      duelPace: 1
-      duelEscapeBoostChance: 0.5
+      duelPace: 0.8
+      duelEscapeBoostChance: 0.25
     rampRounds: 6
     edgeAssistRounds: 12
     streakStart: 2
@@ -165,6 +168,7 @@ MonoBehaviour:
     resultDelay: 1.5
     outResultDelay: 1
     knockoutCreditWindow: 2.5
+    comboWindow: 4
     ringFallWindow: 2
     boostFallWindow: 1
     slideWindow: 6

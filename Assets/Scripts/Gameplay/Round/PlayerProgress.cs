@@ -171,6 +171,28 @@ namespace ToyCarArena.Gameplay.Round
             var streakXp = streakBonus?.Bonus(roundXp + placeXp + winXp + knockoutXp) ?? 0;
             var totalAfter = checked(totalBefore + roundXp + placeXp + winXp + knockoutXp + streakXp + missionXp);
             var after = At(totalAfter);
+            var unlocked = Save(before, after, totalAfter);
+            return new XpGain(totalBefore, totalAfter, roundXp, placeXp, winXp, knockoutXp, before, after,
+                unlocked, streakXp, missionXp);
+        }
+
+        /// <summary>
+        /// Saves the extra XP a watched ad gave the result (CLAIM ×2): a reward of its own, from the XP after the round
+        /// to after the bonus, with the cars its levels open, the newest free one driving next as after a round.
+        /// </summary>
+        public XpGain AddBonus(int xp)
+        {
+            var totalBefore = TotalXp;
+            var before = At(totalBefore);
+            var totalAfter = (int)Math.Min(int.MaxValue, (long)totalBefore + Math.Max(0, xp));
+            var after = At(totalAfter);
+            var unlocked = Save(before, after, totalAfter);
+            return new XpGain(totalBefore, totalAfter, totalAfter - totalBefore, 0, 0, 0, before, after, unlocked);
+        }
+
+        // Saves the new total and picks the car to drive next from those the levels crossed open.
+        private IReadOnlyList<string> Save(XpLevel before, XpLevel after, int totalAfter)
+        {
             var unlocked = new List<string>();
             foreach (var car in catalog.Cars) {
                 if (car.UnlockLevel > before.Level && car.UnlockLevel <= after.Level) {
@@ -186,8 +208,7 @@ namespace ToyCarArena.Gameplay.Round
                 }
             }
 
-            return new XpGain(totalBefore, totalAfter, roundXp, placeXp, winXp, knockoutXp, before, after,
-                unlocked.AsReadOnly(), streakXp, missionXp);
+            return unlocked.AsReadOnly();
         }
 
         /// <summary>
