@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Bugord.App.Localization;
 using Bugord.App.Platform;
@@ -24,6 +25,9 @@ namespace ToyCarArena.UI
         /// <summary>How many rewards the track shows ahead of the level the round started at, the next rank aside.</summary>
         private const int TrackRewards = 3;
 
+        // A rewarded ad back without its reward sooner than this never played (none to show, or blocked), as in SMUP.
+        private const float AdPlayedSeconds = 2f;
+
         private readonly CarCatalog catalog;
         private readonly ArenaCatalog arenaCatalog;
         private readonly GameTuning tuning;
@@ -31,14 +35,19 @@ namespace ToyCarArena.UI
         private readonly IScreenNavigator navigator;
         private readonly IGamePlatform platform;
         private readonly PlayerWallet wallet;
+        private readonly LevelScene levelScene;
+        private GarageStage stage;
         private IReadOnlyList<int> colors;
         private IReadOnlyList<string> names;
         private IReadOnlyList<int> levels;
+        private bool isDoubleTried;
 
         public RoundOverViewModel(CarCatalog catalog, ArenaCatalog arenaCatalog, GameTuning tuning,
-            PlayerProgress progress, IScreenNavigator navigator, IGamePlatform platform, PlayerWallet wallet)
+            PlayerProgress progress, IScreenNavigator navigator, IGamePlatform platform, PlayerWallet wallet,
+            LevelScene levelScene)
         {
             this.wallet = wallet;
+            this.levelScene = levelScene;
             this.catalog = catalog;
             this.arenaCatalog = arenaCatalog;
             this.tuning = tuning;
@@ -63,7 +72,74 @@ namespace ToyCarArena.UI
         public string MissionText(GameTuning.MissionDefinition mission) =>
             GameText.Mission(mission, mission.Map.Length > 0 ? GameText.Arena(arenaCatalog.Find(mission.Map)) : null);
         public bool IsGarageOpen { get; private set; }
-        public bool HasNewCar => XpGain.UnlockedCarIds.Count > 0;
+        public bool HasNewCar => XpGain.UnlockedCarIds.Count > 0 || BonusXp.UnlockedCarIds?.Count > 0;
+
+        /// <summary>
+        /// The round's own XP on its sticker: what CLAIM ×2 pays once more. The missions' XP stays on their rows and is
+        /// not doubled.
+        /// </summary>
+        public int RoundXp => XpGain.Total - XpGain.MissionXp;
+
+        /// <summary>The round's own coins on their sticker, the missions' left out, as <see cref="RoundXp"/>.</summary>
+        public int RoundCoins => Coins.Total - Coins.MissionCoins;
+
+        /// <summary>
+        /// CLAIM ×2 is offered: once per result, while ads can play and the round gave something to double. An ad that
+        /// comes back without its reward takes the offer away for this result.
+        /// </summary>
+        public bool CanDouble => tuning.Ads.DoubleReward && !platform.IsAdBlocked && !isDoubleTried &&
+            (RoundXp > 0 || RoundCoins > 0);
+
+        /// <summary>The rewarded ad of CLAIM ×2 is playing: the screen takes no presses meanwhile.</summary>
+        public bool IsAdPlaying { get; private set; }
+
+        public bool IsDoubled { get; private set; }
+
+        /// <summary>The XP CLAIM ×2 added, from the total after the round on; default before.</summary>
+        public XpGain BonusXp { get; private set; }
+
+        public CoinGain BonusCoins { get; private set; }
+
+        public void DoubleShown() => platform.MeasureDoubleShown();
+
+        /// <summary>
+        /// CLAIM ×2: a rewarded ad, the game held still under it; with its reward, the round's own XP and coins once
+        /// more, saved at once (<see cref="BonusXp"/>, <see cref="BonusCoins"/>). False when the ad gave nothing.
+        /// </summary>
+        public async UniTask<bool> Double(CancellationToken token)
+        {
+            if (!CanDouble || IsAdPlaying) {
+                return false;
+            }
+
+            isDoubleTried = true;
+            platform.MeasureDoublePressed();
+            var started = Time.realtimeSinceStartup;
+            bool isRewarded;
+            IsAdPlaying = true;
+            try {
+                isRewarded = await AdPause.Run(() => platform.RewardedBreak(token));
+            }
+            finally {
+                IsAdPlaying = false;
+            }
+
+            if (!isRewarded) {
+                platform.MeasureDoubleEnded(Time.realtimeSinceStartup - started < AdPlayedSeconds
+                    ? "unavailable" : "dismissed");
+                return false;
+            }
+
+            platform.MeasureDoubleEnded("granted");
+            BonusXp = progress.AddBonus(RoundXp);
+            BonusCoins = wallet.AddBonus(RoundCoins);
+            IsDoubled = true;
+            // The levels and the cars the bonus opens count as any others; the arena rotation already moved on with
+            // the round's level, so an arena the bonus opens joins it from the round after next.
+            platform.MeasureProgress(BonusXp);
+            platform.MeasureMapUnlocks(BonusXp, tuning);
+            return true;
+        }
 
         /// <summary>
         /// The coins buy a topper not owned yet or a car its level opened: the garage button carries its red dot for
@@ -79,6 +155,9 @@ namespace ToyCarArena.UI
         public event Action CarBought;
 
         public bool IsForSale(CarCatalog.Entry car) => progress.IsForSale(car.Id);
+
+        /// <summary>The car's speed, power and boost for the player, shown on the popup that opens it.</summary>
+        public GameTuning.CarStatLine StatsOf(CarCatalog.Entry car) => tuning.CarStats.Of(car.Id);
         public int PriceOf(CarCatalog.Entry car) => progress.PriceOf(car.Id);
         public bool CanAfford(CarCatalog.Entry car) => wallet.Coins >= progress.PriceOf(car.Id);
 
@@ -98,6 +177,48 @@ namespace ToyCarArena.UI
             CarBought?.Invoke();
             return true;
         }
+        /// <summary>The topper this round gave free (<see cref="PlayerWallet.TryGift"/>), or null.</summary>
+        public string Gift { get; private set; }
+
+        /// <summary>
+        /// The gift's 3D model as the garage's cards show it, drawn by the garage's stage (<see cref="GarageStage"/>) in
+        /// the arena's scene: the toppers' texture and the gift's part of it (<paramref name="cell"/>, in UV); null
+        /// where there is no stage (tests).
+        /// </summary>
+        public RenderTexture ShowGiftHat(out Rect cell)
+        {
+            cell = default;
+            platform.MeasureGiftShown(Gift);
+            if (Stage == null) {
+                return null;
+            }
+
+            var texture = Stage.ShowToppers(CarTopper.Ids);
+            cell = Stage.CellOf(Gift);
+            return texture;
+        }
+
+        public void HideGiftHat() => Stage?.Hide();
+
+        /// <summary>The garage's stage in the arena scene under the result (or the one a test gives); null without one.</summary>
+        public GarageStage Stage
+        {
+            get => stage ?? (levelScene is { IsLoaded: true } ? levelScene.Resolve<GarageStage>() : null);
+            set => stage = value;
+        }
+
+        /// <summary>Puts the gift on: the next round's car wears it.</summary>
+        public bool WearGift()
+        {
+            if (Gift == null || !wallet.Wear(Gift)) {
+                return false;
+            }
+
+            platform.MeasureGiftWorn(Gift);
+            platform.MeasureTopperEquip(Gift);
+            return true;
+        }
+
         public CarCatalog.Entry SelectedCar => catalog.Find(progress.SelectedCar);
         public int SelectedColor => progress.SelectedColor;
         public int ColorOf(int index) => colors[index];
@@ -143,7 +264,8 @@ namespace ToyCarArena.UI
         /// <summary>Only cars earned by this reward appear, even if storage is edited while the screen is open.</summary>
         public IEnumerable<CarCatalog.Entry> NewCarsAt(int level)
         {
-            foreach (var id in XpGain.UnlockedCarIds) {
+            var bonus = BonusXp.UnlockedCarIds ?? System.Array.Empty<string>();
+            foreach (var id in XpGain.UnlockedCarIds.Concat(bonus)) {
                 var car = catalog.Find(id);
                 if (car != null && car.UnlockLevel == level) {
                     yield return car;
@@ -154,7 +276,7 @@ namespace ToyCarArena.UI
         /// <summary>Arenas the levels this reward crossed opened at <paramref name="level"/>.</summary>
         public IEnumerable<ArenaCatalog.Entry> NewArenasAt(int level)
         {
-            if (level <= XpGain.Before.Level || level > XpGain.After.Level) {
+            if (level <= XpGain.Before.Level || level > (IsDoubled ? BonusXp.After.Level : XpGain.After.Level)) {
                 yield break;
             }
 
@@ -267,6 +389,7 @@ namespace ToyCarArena.UI
             XpGain = payload.XpGain;
             Coins = payload.Coins;
             Missions = payload.Missions;
+            Gift = wallet.TakeGift();
             Streak = payload.Streak;
             Outcome = result.Outcome;
             IsMatch = result.IsMatch;

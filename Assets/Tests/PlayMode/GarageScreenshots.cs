@@ -106,6 +106,10 @@ namespace ToyCarArena.Tests.PlayMode
                     showTab.Invoke(view, new object[] { false });
                     yield return Wait(0.3f);
                     var monster = catalog.Find("monster-truck");
+                    // The first tap shows it on the plinth, the second tries to buy it.
+                    select.Invoke(view, new object[] { monster, screen.Q<Button>($"garage-car-{monster.Id}") });
+                    yield return Wait(0.6f);
+                    Save(target, Path.Combine(directory, $"{save}_preview_{width}x{height}.png"));
                     select.Invoke(view, new object[] { monster, screen.Q<Button>($"garage-car-{monster.Id}") });
                     yield return Wait(0.25f);
                     Save(target, Path.Combine(directory, $"{save}_toodear_{width}x{height}.png"));

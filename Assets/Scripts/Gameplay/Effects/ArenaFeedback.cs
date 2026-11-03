@@ -71,6 +71,32 @@ namespace ToyCarArena.Gameplay.Effects
         [SerializeField]
         private float hitStopGap = 0.25f;
 
+        [Header("Player's knock-out")]
+        [Tooltip("Real seconds the game runs slow when a car the player pushed goes over, so the player sees it fall")]
+        [Min(0f)]
+        [SerializeField]
+        private float knockoutSlowDuration = 0.35f;
+
+        [Tooltip("How slow the game runs as a car the player pushed goes over, as a share of normal speed")]
+        [Range(0f, 1f)]
+        [SerializeField]
+        private float knockoutSlowTimeScale = 0.3f;
+
+        [Tooltip("Shake when a car the player pushed goes over, on top of the shake of any car going over")]
+        [Range(0f, 1f)]
+        [SerializeField]
+        private float knockoutCreditShake = 0.5f;
+
+        [Tooltip("How much higher each knock-out of a combo sounds than the one before, as a share of the normal pitch")]
+        [Min(0f)]
+        [SerializeField]
+        private float comboPitchStep = 0.12f;
+
+        [Tooltip("Highest pitch a combo's knock-out climbs to")]
+        [Min(1f)]
+        [SerializeField]
+        private float comboMaxPitch = 1.5f;
+
         [Header("Camera shake")]
         [Tooltip("Shake of a heavy hit with the player in it, from 0 (none) to 1 (the camera's most)")]
         [Range(0f, 1f)]
@@ -337,7 +363,9 @@ namespace ToyCarArena.Gameplay.Effects
 
         /// <summary>
         /// A car fell soon after another drove into it (the round's knock-out credit): when the player did it, gold
-        /// sparkles over the splash and the knock-out sound.
+        /// sparkles over the splash, the knock-out sound (higher for each of a combo), a harder shake and a moment of slow motion, so the player's
+        /// own win is the best felt thing on the arena. The slow motion takes over any hit-stop still on: this is the
+        /// moment that counts.
         /// </summary>
         private void OnKnockedOut(Car car, Car knockedOutBy)
         {
@@ -346,7 +374,12 @@ namespace ToyCarArena.Gameplay.Effects
             }
 
             effects.PlayKnockoutCredit(SplashPoint(car));
-            audioService.Play(audioService.Library.KnockoutCredit);
+            var pitch = Mathf.Min(comboMaxPitch, 1f + comboPitchStep * Mathf.Max(0, round.PlayerCombo - 1));
+            audioService.Play(audioService.Library.KnockoutCredit, 1f, pitch);
+            arenaCamera.Shake(knockoutCreditShake);
+            if (round.IsRunning) {
+                hitStop.Hold(knockoutSlowDuration, knockoutSlowTimeScale);
+            }
         }
 
         /// <summary>

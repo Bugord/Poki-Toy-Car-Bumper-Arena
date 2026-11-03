@@ -1,0 +1,165 @@
+using System.Collections;
+using System.Linq;
+using Bugord.Core.Storage;
+using Cysharp.Threading.Tasks;
+using NUnit.Framework;
+using ToyCarArena.App;
+using ToyCarArena.Gameplay;
+using ToyCarArena.Gameplay.Arena;
+using ToyCarArena.Gameplay.Cars;
+using ToyCarArena.Gameplay.Round;
+using ToyCarArena.UI;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.TestTools;
+using MemoryStorage = ToyCarArena.Tests.PlayMode.RoundOverScreenshots.MemoryStorage;
+
+namespace ToyCarArena.Tests.PlayMode
+{
+    /// <summary>
+    /// CLAIM ×2 on the result and the commercial break between rounds: the bonus is the round's own XP and coins once
+    /// more, saved with its unlocks, paid only by an ad that gave its reward, once per result, and never offered with ads
+    /// blocked; the break waits for the visit's free play.
+    /// </summary>
+    public sealed class DoubleRewardTests
+    {
+        private GameTuning tuning;
+        private CarCatalog catalog;
+        private ArenaCatalog arenas;
+        private MemoryStorage storage;
+        private PlayerProgress progress;
+        private PlayerWallet wallet;
+        private MatchTests.RecordingPlatform platform;
+
+        [SetUp]
+        public void SetUp()
+        {
+            tuning = AssetDatabase.LoadAssetAtPath<GameTuning>("Assets/Data/Gameplay/data_game_tuning.asset");
+            catalog = AssetDatabase.LoadAssetAtPath<CarCatalog>("Assets/Data/Cars/data_car_catalog.asset");
+            arenas = AssetDatabase.LoadAssetAtPath<ArenaCatalog>("Assets/Data/Arenas/data_arena_catalog.asset");
+            storage = new MemoryStorage();
+            progress = new PlayerProgress(storage, tuning, catalog);
+            wallet = new PlayerWallet(storage, tuning);
+            platform = new MatchTests.RecordingPlatform();
+        }
+
+        [Test]
+        public void TheBonusXpIsSavedWithTheCarsItsLevelsOpen()
+        {
+            var vintage = catalog.Cars.First(car => car.Id == "vintage");
+            storage.SetInt("xp_total", progress.At(0).Cost + 1);
+            var before = progress.TotalXp;
+            var toVintage = TotalAt(vintage.UnlockLevel) - before;
+
+            var bonus = progress.AddBonus(toVintage);
+
+            Assert.That(bonus.TotalBefore, Is.EqualTo(before));
+            Assert.That(bonus.TotalAfter, Is.EqualTo(before + toVintage));
+            Assert.That(bonus.Total, Is.EqualTo(toVintage));
+            Assert.That(bonus.After.Level, Is.EqualTo(vintage.UnlockLevel));
+            Assert.That(bonus.UnlockedCarIds, Does.Contain("vintage"));
+            Assert.That(new PlayerProgress(storage, tuning, catalog).TotalXp, Is.EqualTo(before + toVintage));
+            // Free, the car the bonus opens drives next, as after a round.
+            Assert.That(progress.SelectedCar, Is.EqualTo("vintage"));
+        }
+
+        [Test]
+        public void TheBonusCoinsAreSaved()
+        {
+            wallet.SetCoins(40);
+            var bonus = wallet.AddBonus(55);
+            Assert.That(bonus.Before, Is.EqualTo(40));
+            Assert.That(bonus.After, Is.EqualTo(95));
+            Assert.That(bonus.Total, Is.EqualTo(55));
+            Assert.That(new PlayerWallet(storage, tuning).Coins, Is.EqualTo(95));
+        }
+
+        [UnityTest]
+        public IEnumerator AGrantedAdPaysTheRoundsOwnRewardOnceMore() => UniTask.ToCoroutine(async () => {
+            platform.Rewards = true;
+            var model = Result(out var xpAfterRound, out var coinsAfterRound);
+            Assert.That(model.CanDouble, Is.True);
+            var roundXp = model.RoundXp;
+            var roundCoins = model.RoundCoins;
+            Assert.That(roundXp, Is.EqualTo(model.XpGain.Total - model.XpGain.MissionXp));
+
+            Assert.That(await model.Double(default), Is.True);
+            Assert.That(model.IsDoubled, Is.True);
+            Assert.That(model.BonusXp.Total, Is.EqualTo(roundXp));
+            Assert.That(model.BonusCoins.Total, Is.EqualTo(roundCoins));
+            Assert.That(progress.TotalXp, Is.EqualTo(xpAfterRound + roundXp));
+            Assert.That(wallet.Coins, Is.EqualTo(coinsAfterRound + roundCoins));
+            Assert.That(Time.timeScale, Is.EqualTo(1f), "The game is held only while the ad plays.");
+            Assert.That(platform.Events, Does.Contain(("ad", "double", "interact")));
+            Assert.That(platform.Events, Does.Contain(("ad", "double", "granted")));
+
+            // Once per result: a second press neither plays an ad nor pays.
+            Assert.That(model.CanDouble, Is.False);
+            Assert.That(await model.Double(default), Is.False);
+            Assert.That(platform.RewardedBreaks, Is.EqualTo(1));
+            Assert.That(progress.TotalXp, Is.EqualTo(xpAfterRound + roundXp));
+        });
+
+        [UnityTest]
+        public IEnumerator AnAdWithoutItsRewardPaysNothingAndTakesTheOfferAway() => UniTask.ToCoroutine(async () => {
+            platform.Rewards = false;
+            var model = Result(out var xpAfterRound, out var coinsAfterRound);
+
+            Assert.That(await model.Double(default), Is.False);
+            Assert.That(model.IsDoubled, Is.False);
+            Assert.That(model.CanDouble, Is.False);
+            Assert.That(progress.TotalXp, Is.EqualTo(xpAfterRound));
+            Assert.That(wallet.Coins, Is.EqualTo(coinsAfterRound));
+            // Back at once: no ad played.
+            Assert.That(platform.Events, Does.Contain(("ad", "double", "unavailable")));
+        });
+
+        [Test]
+        public void BlockedAdsOfferNoDouble()
+        {
+            platform.IsAdBlocked = true;
+            Assert.That(Result(out _, out _).CanDouble, Is.False);
+        }
+
+        [Test]
+        public void TheCommercialBreakWaitsForTheFreePlay()
+        {
+            var breaks = new AdBreaks();
+            var free = tuning.Ads.FreePlaySeconds;
+            Assert.That(free, Is.GreaterThan(0f));
+            Assert.That(breaks.IsDue(free), Is.False);
+            breaks.AddPlay(free - 1f);
+            Assert.That(breaks.IsDue(free), Is.False);
+            breaks.AddPlay(-5f);
+            breaks.AddPlay(1f);
+            Assert.That(breaks.IsDue(free), Is.True);
+        }
+
+        // A won round of four with a knock-out and a mission, saved as RoundState saves it.
+        private RoundOverViewModel Result(out int xpAfterRound, out int coinsAfterRound)
+        {
+            var result = new RoundResult(RoundOutcome.Won, 1, 4, 40f, 1, RoundResult.Nobody, FallCause.Drive, false,
+                false);
+            var xp = progress.Record(result, null, 30);
+            var coins = wallet.Record(result, false, 40);
+            xpAfterRound = progress.TotalXp;
+            coinsAfterRound = wallet.Coins;
+            var record = new RoundRecord(result, 1, 2, false, false).WithXp(xp)
+                .WithRoster(new[] { "YOU", "ZOOMER", "BONKY", "SKID" }, new[] { 1, 1, 1, 1 }, RoundResult.Nobody)
+                .WithMeta(coins, null, new StreakChange(0, 1, 2));
+            var model = new RoundOverViewModel(catalog, arenas, tuning, progress, null, platform, wallet, null);
+            model.SetPayload(record);
+            return model;
+        }
+
+        private int TotalAt(int level)
+        {
+            var total = 0;
+            while (progress.At(total).Level < level) {
+                total += progress.At(total).Cost - progress.At(total).Xp;
+            }
+
+            return total;
+        }
+    }
+}

@@ -106,6 +106,7 @@ namespace ToyCarArena.App
             // The arena of the next round is chosen before its scene is built, so it lives here too.
             builder.Register<ArenaRotation>(Lifetime.Singleton).As<IArenaRotation>();
             builder.Register<PersonalBests>(Lifetime.Singleton);
+            builder.Register<AdBreaks>(Lifetime.Singleton);
             // The 3D scene's render scale follows the screen; the UI is drawn on top at full resolution.
             builder.RegisterEntryPoint<RenderScaler>().AsSelf()
                 .WithParameter("touchMaxShortSide", touchMaxShortSide)

@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Bugord.App.Localization;
+using Bugord.App.UI;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.Gameplay.Cars;
+using ToyCarArena.Gameplay.Round;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -17,6 +19,11 @@ namespace ToyCarArena.UI
     /// rank, which builds left to right empty, then fills, each stop it reaches turning gold. Its lifetime belongs to
     /// the result view, so NEXT MATCH can leave at any point, including halfway through a popup, without holding up
     /// the next round or touching a detached screen.
+    /// <para>
+    /// CLAIM ×2 cuts the replay short (<see cref="Settle"/>: the card as it ends, a popup still due waits) and, once the
+    /// ad has paid, plays on from there with the bonus (<see cref="Resume"/>): the bar again from the level reached,
+    /// LEVEL UP! and popups for any level the bonus crosses, then the track on to the new total.
+    /// </para>
     /// </summary>
     internal sealed class RoundOverProgress : IDisposable
     {
@@ -51,13 +58,17 @@ namespace ToyCarArena.UI
         private readonly VisualElement levelBadge;
         private readonly Label levelLabel;
         private readonly Label rankLabel;
-        private readonly Label gain;
         private readonly Label total;
         private readonly List<Waypoint> stops = new();
         private readonly List<Segment> segments = new();
         private readonly List<CarPortrait> trackCars = new();
+        private readonly List<VisualElement> trackRows = new();
         private readonly LiveText text = new();
         private int shownLevel;
+        // The levels whose popups have shown, and whether the gift's has, so a replay cut short shows what it skipped.
+        private int rewardsShownTo;
+        private bool isGiftShown;
+        private XpLevel reached;
         private CancellationTokenSource animation;
         private string rankClass;
 
@@ -69,12 +80,12 @@ namespace ToyCarArena.UI
             this.levelBadge = root.Q<VisualElement>("xp-level");
             this.levelLabel = root.Q<Label>("xp-level-value");
             this.rankLabel = root.Q<Label>("xp-rank");
-            this.gain = root.Q<Label>("xp-gain");
             this.total = root.Q<Label>("xp-total");
 
             var reward = viewModel.XpGain;
+            rewardsShownTo = reward.Before.Level;
+            reached = reward.After;
             SetLevel(reward.Before.Level);
-            text.Set(gain, () => Strings.Format("result.xp_gain", reward.Total));
             text.Set(total, () => Strings.Format("result.xp_total", reward.Before.Xp, reward.Before.Cost));
             text.Set(rankLabel, () => Strings.Format("result.rank_level", PlayerRank.NameOf(shownLevel), shownLevel));
             var track = root.Q<VisualElement>("xp-track");
@@ -99,7 +110,6 @@ namespace ToyCarArena.UI
             track.Add(bar);
 
             SetScale(levelBadge, 0f);
-            SetScale(gain, 0f);
             SetScale(bar, 0f);
             SetScale(levelUp, 0f);
             foreach (var stop in stops) {
@@ -117,6 +127,9 @@ namespace ToyCarArena.UI
             animation = CancellationTokenSource.CreateLinkedTokenSource(token);
             Animate(animation.Token).Forget();
         }
+
+        /// <summary>A reward popup is up: it takes the presses, so the keys under it wait too.</summary>
+        public bool IsPopupOpen { get; private set; }
 
         public void Stop()
         {
@@ -147,6 +160,8 @@ namespace ToyCarArena.UI
         {
             var bars = Row(track, "track__row");
             var nodes = Row(track, "track__row--nodes");
+            trackRows.Add(bars);
+            trackRows.Add(nodes);
             Slot(bars, false);
             stops.Add(CreateStop(nodes, from, null, null, true));
             var previous = from;
@@ -249,8 +264,9 @@ namespace ToyCarArena.UI
         {
             await UniTask.Delay(BuildDelay, ignoreTimeScale: true, cancellationToken: token);
             Pop(levelBadge, token).Forget();
-            Pop(gain, token).Forget();
-            await FillBar(token);
+            var reward = viewModel.XpGain;
+            await FillBar(reward.Before, reward.After, token);
+            await ShowGift(token);
             await Shrink(bar, token);
             bar.style.display = DisplayStyle.None;
             await Pop(stops[0].Node, token);
@@ -259,22 +275,88 @@ namespace ToyCarArena.UI
                 Pop(stops[i + 1].Node, token).Forget();
             }
             await UniTask.Delay((int)(PopDuration * 1000), ignoreTimeScale: true, cancellationToken: token);
-            await FillLevels(token);
+            await FillLevels(reward.Before, reward.After, token);
         }
 
         /// <summary>
-        /// The first two steps: the bar from a level to the next fills with the round's XP, level by level; each level
-        /// crossed bumps the badge, says LEVEL UP! and shows what it gives in a popup before the bar starts the next.
+        /// Stops the replay and shows the card as the reward so far ends: the badge at the level reached, the track
+        /// built and filled to it, the bar put away. Popups not shown yet wait for <see cref="Resume"/>.
         /// </summary>
-        private async UniTask FillBar(CancellationToken token)
+        public void Settle()
         {
-            var reward = viewModel.XpGain;
-            var level = reward.Before.Level;
-            var share = (float)reward.Before.Xp / reward.Before.Cost;
+            Stop();
+            SetScale(levelBadge, 1f);
+            SetLevel(reached.Level);
+            ShowTotal(reached);
+            SetScale(levelUp, 0f);
+            SetScale(bar, 0f);
+            bar.style.display = DisplayStyle.None;
+            foreach (var stop in stops) {
+                SetScale(stop.Node, 1f);
+                if (!stop.IsReached && stop.Level <= reached.Level) {
+                    stop.IsReached = true;
+                    stop.Node.AddToClassList(ReachedClass);
+                    stop.Node.AddToClassList(DoneClass);
+                }
+            }
+
+            foreach (var segment in segments) {
+                segment.Root.style.scale = new Scale(Vector3.one);
+            }
+
+            SetPosition(PositionOf(reached));
+        }
+
+        /// <summary>
+        /// After CLAIM ×2: the popups the cut replay skipped, then, with a <paramref name="bonus"/>, the bar from the
+        /// level reached fills with it (LEVEL UP! and popups for the levels it crosses) and the track follows.
+        /// </summary>
+        public void Resume(XpGain? bonus, CancellationToken token)
+        {
+            Stop();
+            animation = CancellationTokenSource.CreateLinkedTokenSource(token);
+            Continue(bonus, animation.Token).Forget();
+        }
+
+        private async UniTask Continue(XpGain? bonus, CancellationToken token)
+        {
+            for (var level = rewardsShownTo + 1; level <= reached.Level; level++) {
+                await ShowRewards(level, token);
+            }
+
+            await ShowGift(token);
+            if (bonus is not { } gain || gain.After.Level == 0) {
+                return;
+            }
+
+            reached = gain.After;
+            // The bar lies over the track, as at first: the track steps aside meanwhile.
+            SetTrackShown(false);
+            bar.style.display = DisplayStyle.Flex;
+            try {
+                await FillBar(gain.Before, gain.After, token);
+                await Shrink(bar, token);
+            }
+            finally {
+                bar.style.display = DisplayStyle.None;
+                SetTrackShown(true);
+            }
+
+            await FillLevels(gain.Before, gain.After, token);
+        }
+
+        /// <summary>
+        /// The first two steps: the bar from a level to the next fills with the XP, level by level; each level crossed
+        /// bumps the badge, says LEVEL UP! and shows what it gives in a popup before the bar starts the next.
+        /// </summary>
+        private async UniTask FillBar(XpLevel from, XpLevel to, CancellationToken token)
+        {
+            var level = from.Level;
+            var share = (float)from.Xp / from.Cost;
             SetBarLevels(level);
             SetBarFill(share);
             await Pop(bar, token);
-            while (level < reward.After.Level) {
+            while (level < to.Level) {
                 await BarTo(share, 1f, token);
                 level++;
                 SetLevel(level);
@@ -288,52 +370,112 @@ namespace ToyCarArena.UI
                 SetBarFill(0f);
             }
 
-            text.Set(total, () => Strings.Format("result.xp_total", reward.After.Xp, reward.After.Cost));
-            await BarTo(share, (float)reward.After.Xp / reward.After.Cost, token);
+            ShowTotal(to);
+            await BarTo(share, (float)to.Xp / to.Cost, token);
             await UniTask.Delay(BarHold, ignoreTimeScale: true, cancellationToken: token);
         }
 
-        /// <summary>
-        /// The last step: moves the track's position, a level and the share of it earned, level by level from before
-        /// the round to after, turning the stops of each level crossed gold. The badge already shows the level reached.
-        /// </summary>
-        private async UniTask FillLevels(CancellationToken token)
+        private void SetTrackShown(bool isShown)
         {
-            var reward = viewModel.XpGain;
-            var level = reward.Before.Level;
-            var from = level + (float)reward.Before.Xp / reward.Before.Cost;
-            while (level < reward.After.Level) {
+            foreach (var row in trackRows) {
+                row.style.visibility = isShown ? Visibility.Visible : Visibility.Hidden;
+            }
+        }
+
+        private void ShowTotal(XpLevel level) =>
+            text.Set(total, () => Strings.Format("result.xp_total", level.Xp, level.Cost));
+
+        private static float PositionOf(XpLevel level) => level.Level + (float)level.Xp / level.Cost;
+
+        /// <summary>
+        /// The last step: moves the track's position, a level and the share of it earned, level by level, turning the
+        /// stops of each level crossed gold. The badge already shows the level reached.
+        /// </summary>
+        private async UniTask FillLevels(XpLevel fromLevel, XpLevel to, CancellationToken token)
+        {
+            var level = fromLevel.Level;
+            var from = PositionOf(fromLevel);
+            while (level < to.Level) {
                 await Fill(from, level + 1, token);
                 level++;
                 from = level;
                 await Reach(level, token);
             }
 
-            await Fill(from, level + (float)reward.After.Xp / reward.After.Cost, token);
+            await Fill(from, PositionOf(to), token);
         }
 
         /// <summary>The second step: a popup for each thing the level gives, one after another.</summary>
         private async UniTask ShowRewards(int level, CancellationToken token)
         {
+            if (level <= rewardsShownTo) {
+                return;
+            }
+
             foreach (var car in viewModel.NewCarsAt(level)) {
                 var portrait = new VisualElement { pickingMode = PickingMode.Ignore };
                 portrait.AddToClassList("car-portrait");
                 new CarPortrait(portrait).Set(car, viewModel.SelectedColor);
                 var isForSale = viewModel.IsForSale(car);
-                await ShowReward(level, Strings.Get("result.new_car_tag"), GameText.Car(car),
-                    isForSale ? null : Strings.Get("result.drives_next"), portrait, token, isForSale ? car : null);
+                var stats = CarStatsView.Create("level-reward__stats");
+                CarStatsView.Set(stats, viewModel.StatsOf(car));
+                await ShowReward(LevelTitle(level), Strings.Get("result.new_car_tag"), GameText.Car(car),
+                    isForSale ? null : Strings.Get("result.drives_next"), portrait, token, isForSale ? car : null,
+                    null, stats);
             }
 
             foreach (var arena in viewModel.NewArenasAt(level)) {
                 var disc = new VisualElement { pickingMode = PickingMode.Ignore };
                 disc.style.backgroundColor = arena.Background;
-                await ShowReward(level, Strings.Get("result.new_arena_tag"), GameText.Arena(arena),
+                await ShowReward(LevelTitle(level), Strings.Get("result.new_arena_tag"), GameText.Arena(arena),
                     Strings.Get("result.arena_next"), disc, token);
             }
 
             if (PlayerRank.TierOf(level) > PlayerRank.TierOf(level - 1)) {
                 var badge = HudView.CreateLevelBadge(level, "level-badge--big");
-                await ShowReward(level, Strings.Get("result.new_rank_tag"), PlayerRank.NameOf(level), null, badge, token);
+                await ShowReward(LevelTitle(level), Strings.Get("result.new_rank_tag"), PlayerRank.NameOf(level), null,
+                    badge, token);
+            }
+
+            rewardsShownTo = level;
+        }
+
+        private static string LevelTitle(int level) => Strings.Format("result.level_title", level);
+
+        /// <summary>
+        /// The topper an early win gave free (<see cref="RoundOverViewModel.Gift"/>): the same popup, the topper's own 3D
+        /// model as its garage card shows it, and EQUIP to put it on at once. Owned either way.
+        /// </summary>
+        private async UniTask ShowGift(CancellationToken token)
+        {
+            var gift = viewModel.Gift;
+            if (gift == null || isGiftShown) {
+                return;
+            }
+
+            var art = new VisualElement { pickingMode = PickingMode.Ignore };
+            art.AddToClassList("level-reward__gift");
+            var models = viewModel.ShowGiftHat(out var cell);
+            if (models != null && cell.width > 0f) {
+                art.Add(new Image {
+                    image = models,
+                    uv = cell,
+                    scaleMode = ScaleMode.ScaleToFit,
+                    pickingMode = PickingMode.Ignore,
+                });
+                art[0].AddToClassList("level-reward__gift-model");
+            }
+            else {
+                art.Add(TopperIcon.Create(gift, "level-reward__gift-icon"));
+            }
+
+            try {
+                await ShowReward(Strings.Get("result.gift_title"), Strings.Get("result.free_hat_tag"),
+                    GameText.Topper(gift), null, art, token, null, viewModel.WearGift);
+                isGiftShown = true;
+            }
+            finally {
+                viewModel.HideGiftHat();
             }
         }
 
@@ -346,8 +488,12 @@ namespace ToyCarArena.UI
         /// A car with a price (<paramref name="forSale"/>) is offered with its BUY button and price while the coins pay
         /// for it; the offer waits for the player instead of closing by itself, and a tap beside it leaves it for later.
         /// </para>
-        private async UniTask ShowReward(int level, string tag, string name, string caption, VisualElement art,
-            CancellationToken token, CarCatalog.Entry forSale = null)
+        /// <para>
+        /// A gift (<paramref name="wear"/>) is offered with EQUIP, which puts it on, and waits for the player too.
+        /// </para>
+        private async UniTask ShowReward(string title, string tag, string name, string caption, VisualElement art,
+            CancellationToken token, CarCatalog.Entry forSale = null, System.Func<bool> wear = null,
+            VisualElement details = null)
         {
             var overlay = new VisualElement();
             overlay.AddToClassList("level-reward");
@@ -359,15 +505,21 @@ namespace ToyCarArena.UI
             var card = new VisualElement { pickingMode = PickingMode.Ignore };
             card.AddToClassList("card");
             card.AddToClassList("level-reward__card");
-            card.Add(Outlined(Strings.Format("result.level_title", level), "level-reward__title", out _));
+            card.Add(Outlined(title, "level-reward__title", out _));
             card.Add(Text(tag, "level-reward__tag"));
             var frame = new VisualElement { pickingMode = PickingMode.Ignore };
             frame.AddToClassList("level-reward__art");
-            art.AddToClassList("level-reward__" + (art.ClassListContains("car-portrait") ? "car"
-                : art.ClassListContains("level-badge") ? "rank" : "arena"));
+            if (!art.ClassListContains("level-reward__gift")) {
+                art.AddToClassList("level-reward__" + (art.ClassListContains("car-portrait") ? "car"
+                    : art.ClassListContains("level-badge") ? "rank" : "arena"));
+            }
+
             frame.Add(art);
             card.Add(frame);
             card.Add(Text(name, "level-reward__name"));
+            if (details != null) {
+                card.Add(details);
+            }
             if (caption != null) {
                 var captionLabel = Text(caption, "caption");
                 captionLabel.AddToClassList("level-reward__caption");
@@ -375,7 +527,7 @@ namespace ToyCarArena.UI
             }
 
             var isOffer = forSale != null && viewModel.CanAfford(forSale);
-            var closeAt = isOffer ? float.MaxValue : RewardAutoClose;
+            var closeAt = isOffer || wear != null ? float.MaxValue : RewardAutoClose;
             var isClosed = false;
             if (isOffer) {
                 var buy = new Button();
@@ -404,6 +556,26 @@ namespace ToyCarArena.UI
                 viewModel.CarOffered(forSale);
             }
 
+            if (wear != null) {
+                var button = new Button();
+                button.RemoveFromClassList(Button.ussClassName);
+                button.AddToClassList("pill");
+                button.AddToClassList("level-reward__buy");
+                button.AddToClassList("level-reward__wear");
+                button.Add(Outlined(Strings.Get("garage.use"), "level-reward__buy-label", out _));
+                button.RegisterCallback<PointerDownEvent>(evt => evt.StopPropagation());
+                button.clicked += () => {
+                    if (isClosed || !wear()) {
+                        return;
+                    }
+
+                    button.SetEnabled(false);
+                    button.style.display = DisplayStyle.None;
+                    card.schedule.Execute(() => isClosed = true).StartingIn(900);
+                };
+                card.Add(button);
+            }
+
             overlay.Add(card);
             overlay.Add(Text(Strings.Get(isTouch ? "result.tap_continue" : "result.click_continue"), "level-reward__hint"));
             overlay.RegisterCallback<PointerDownEvent>(evt => {
@@ -411,10 +583,13 @@ namespace ToyCarArena.UI
                 isClosed = true;
             });
 
+            // Built after the screen's pills were kept round, so its own pills (the tag, BUY, EQUIP) ask again.
+            PillShape.Keep(overlay);
             overlay.style.opacity = 0f;
             SetScale(card, 0f);
             // Inside the screen's own element, which carries the style sheet.
             (root.Q<VisualElement>("round-over") ?? root).Add(overlay);
+            IsPopupOpen = true;
             try {
                 var popping = Pop(card, token);
                 var shownAt = Time.realtimeSinceStartup;
@@ -430,6 +605,7 @@ namespace ToyCarArena.UI
             }
             finally {
                 overlay.RemoveFromHierarchy();
+                IsPopupOpen = false;
             }
         }
 
@@ -477,7 +653,7 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>Text with the outline of the titles: the same text twice, the face over the outline.</summary>
-        private static VisualElement Outlined(string value, string className, out Label[] labels)
+        internal static VisualElement Outlined(string value, string className, out Label[] labels)
         {
             var element = new VisualElement { pickingMode = PickingMode.Ignore };
             element.AddToClassList("stroke");

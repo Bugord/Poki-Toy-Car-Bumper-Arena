@@ -29,7 +29,7 @@ namespace ToyCarArena.Tests.PlayMode
             this.Library = library;
         }
 
-        public void Play(Sound sound, float volume = 1f)
+        public void Play(Sound sound, float volume = 1f, float pitch = 1f)
         {
         }
 

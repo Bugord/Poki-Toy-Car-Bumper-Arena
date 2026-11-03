@@ -30,7 +30,7 @@ namespace ToyCarArena.UI
         /// Raised when the player knocks a car out, with the point on the arena's edge where it went over: where the
         /// KNOCKOUT! sticker goes; true for REVENGE! on the marked rival instead.
         /// </summary>
-        public event Action<Vector3, bool> PlayerKnockout;
+        public event Action<Vector3, bool, int> PlayerKnockout;
 
         /// <summary>
         /// Raised when a car falls off, the player's included, with its index in the round (0 the player, 1..N the
@@ -412,7 +412,7 @@ namespace ToyCarArena.UI
             // edge, under it, is still on the screen and tells which car it was.
             var position = car.Position;
             var flat = new Vector3(position.x, 0f, position.z);
-            PlayerKnockout?.Invoke(round.Edge.ClampToFloor(flat), car == round.Nemesis);
+            PlayerKnockout?.Invoke(round.Edge.ClampToFloor(flat), car == round.Nemesis, round.PlayerCombo);
         }
     }
 

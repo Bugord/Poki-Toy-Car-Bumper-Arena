@@ -80,9 +80,9 @@ namespace ToyCarArena.Audio
             }
         }
 
-        public void Play(Sound sound, float volume = 1f)
+        public void Play(Sound sound, float volume = 1f, float pitch = 1f)
         {
-            PlayTake(sound, volume);
+            PlayTake(sound, volume, pitch);
         }
 
         public void PlayJingle(Sound sound)
@@ -140,7 +140,7 @@ namespace ToyCarArena.Audio
         /// Starts a take of the sound on a free voice, or on the one that has played longest; how long it lasts, in
         /// seconds, or 0 when nothing started.
         /// </summary>
-        private float PlayTake(Sound sound, float volume)
+        private float PlayTake(Sound sound, float volume, float pitch = 1f)
         {
             var clip = sound?.PickClip();
             if (clip == null || volume <= 0f) {
@@ -159,7 +159,7 @@ namespace ToyCarArena.Audio
             source.Stop();
             source.clip = clip;
             source.volume = Mathf.Clamp01(sound.Volume * volume * library.EffectsVolume);
-            source.pitch = 1f + Random.Range(-sound.PitchJitter, sound.PitchJitter);
+            source.pitch = pitch * (1f + Random.Range(-sound.PitchJitter, sound.PitchJitter));
             source.Play();
             voiceStartTimes[voice] = now;
             return clip.length / source.pitch;

@@ -940,8 +940,8 @@ namespace ToyCarArena.UI
         /// Pops a KNOCKOUT! sticker up over the point where the car the player knocked out went over the edge, kept
         /// clear of the screen's sides and the HUD: it springs in, holds, and flies up and away.
         /// </summary>
-        private void ShowKnockout(Vector3 worldPosition, bool isRevenge) =>
-            ShowPopup(worldPosition, isRevenge, ItemKind.None, null);
+        private void ShowKnockout(Vector3 worldPosition, bool isRevenge, int combo) =>
+            ShowPopup(worldPosition, isRevenge, ItemKind.None, null, false, combo);
 
         /// <summary>
         /// The same sticker for an item the player used (HEAVY!, SHOCKWAVE!, SHIELD!, TURBO!, BOMB!, GLOVE!), over the
@@ -988,7 +988,10 @@ namespace ToyCarArena.UI
         }
 
         /// <param name="word">The comic word to show alone (pow, strike, saved: its string and class), or null.</param>
-        private void ShowPopup(Vector3 worldPosition, bool isRevenge, ItemKind pickup, string word, bool isBoost = false)
+        /// <param name="combo">The player's knock-outs in a row (<see cref="Gameplay.Round.ArenaRound.PlayerCombo"/>): from 2 the
+        /// sticker says DOUBLE!, TRIPLE! or RAMPAGE! instead of KNOCKOUT!, bigger each time.</param>
+        private void ShowPopup(Vector3 worldPosition, bool isRevenge, ItemKind pickup, string word, bool isBoost = false,
+            int combo = 1)
         {
             var panel = popupLayer.panel;
             if (panel == null) {
@@ -1013,7 +1016,7 @@ namespace ToyCarArena.UI
             ClearScoreboard(popupLayer, ref point, PopupHalfWidth, PopupHalfHeight * 2f);
             point.y -= PopupHalfHeight;
 
-            var popup = CreatePopup(popupCount++ % 2 == 0 ? -PopupTilt : PopupTilt, isRevenge, pickup, word, isBoost);
+            var popup = CreatePopup(popupCount++ % 2 == 0 ? -PopupTilt : PopupTilt, isRevenge, pickup, word, isBoost, combo);
             popup.style.left = point.x;
             popup.style.top = point.y;
             popupLayer.Add(popup);
@@ -1034,7 +1037,8 @@ namespace ToyCarArena.UI
 
         // The sticker: the knock-out star and KNOCKOUT! in gold, outlined (.stroke in ui_screens). The outer element
         // holds the place, centred on it; the inner one springs, tilts and flies.
-        private static VisualElement CreatePopup(float tilt, bool isRevenge, ItemKind pickup, string word, bool isBoost)
+        private static VisualElement CreatePopup(float tilt, bool isRevenge, ItemKind pickup, string word, bool isBoost,
+            int combo)
         {
             var popup = new VisualElement { pickingMode = PickingMode.Ignore };
             popup.AddToClassList("ko-pop");
@@ -1069,7 +1073,15 @@ namespace ToyCarArena.UI
 
             sticker.Add(CreateStar("ko-star--big"));
 
-            sticker.Add(CreateOutlinedText(Strings.Get(isRevenge ? "hud.revenge_taken" : "hud.knockout"), "ko-pop__text"));
+            // REVENGE! means more than a combo, so it wins; a combo grows its sticker, up to RAMPAGE! from the fourth.
+            var isCombo = !isRevenge && combo >= 2;
+            var key = isRevenge ? "hud.revenge_taken" : isCombo ? $"hud.combo_{Mathf.Min(combo, 4)}" : "hud.knockout";
+            if (isCombo) {
+                popup.AddToClassList("ko-pop--combo");
+                popup.EnableInClassList("ko-pop--combo-big", combo >= 3);
+            }
+
+            sticker.Add(CreateOutlinedText(Strings.Get(key), "ko-pop__text"));
             return popup;
         }
 

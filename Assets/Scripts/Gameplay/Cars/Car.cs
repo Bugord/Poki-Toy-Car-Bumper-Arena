@@ -91,6 +91,12 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public bool IsPlayer { get; set; }
 
+        /// <summary>
+        /// Times the push this car's hits give, from the player's car's power (<see cref="GameTuning.CarStatSettings"/>);
+        /// 1 for a bot.
+        /// </summary>
+        public float PowerScale { get; set; } = 1f;
+
         public Vector3 Position => transform.position;
 
         /// <summary>
@@ -622,7 +628,7 @@ namespace ToyCarArena.Gameplay.Cars
             // while one car pushes another does not kick it again at full speed.
             var isOtherBoosting = other.Movement.IsBoosting;
             var multiplier = (isOtherBoosting ? boostSettings.BumpMultiplier : 1f)
-                * (other.IsPlayer ? difficulty.PlayerBump : 1f);
+                * (other.IsPlayer ? difficulty.PlayerBump * other.PowerScale : 1f);
             var drive = Mathf.Min(otherApproach, strength);
             var push = carSettings.BumpForce * drive * multiplier * other.Movement.Mass / Movement.Mass
                 * Movement.Surface.Push;
@@ -648,6 +654,15 @@ namespace ToyCarArena.Gameplay.Cars
 
             if (stagger > 0f) {
                 Movement.Stagger(stagger);
+            }
+
+            // The player's good hits make the car hop and spin away like a toy: whoever won the bump reads at a glance.
+            // Only from the floor, so a car already flying is not lifted again by the same pile-up.
+            var share = Mathf.Clamp01(drive * multiplier / Mathf.Max(0.01f, carSettings.MaxSpeed));
+            if (other.IsPlayer && Movement.IsGrounded && share >= carSettings.PlayerHitLiftFrom) {
+                var side = Vector3.Cross(normal, otherVelocity).y;
+                Movement.Launch(carSettings.PlayerHitLift * share,
+                    carSettings.PlayerHitSpin * share * (side >= 0f ? 1f : -1f));
             }
 
             if (otherApproach > 0f) {

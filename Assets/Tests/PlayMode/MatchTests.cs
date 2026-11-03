@@ -333,10 +333,12 @@ namespace ToyCarArena.Tests.PlayMode
             yield return Until(() => car.IsOut, 5f, "The pushed car never fell.");
         }
 
+        // Game seconds, not frames: the slow motion of the player's knock-out stretches a second over more frames.
         private static IEnumerator Until(System.Func<bool> condition, float seconds, string message)
         {
-            var frames = Mathf.CeilToInt(seconds * FramesPerSecond);
-            for (var frame = 0; frame < frames && !condition(); frame++) {
+            var end = Time.time + seconds;
+            var frames = Mathf.CeilToInt(seconds * FramesPerSecond) * 20;
+            for (var frame = 0; frame < frames && Time.time < end && !condition(); frame++) {
                 yield return null;
             }
 
@@ -348,7 +350,13 @@ namespace ToyCarArena.Tests.PlayMode
             public readonly List<(string, string, string)> Events = new();
 
             public bool IsInitialized => true;
-            public bool IsAdBlocked => false;
+            public bool IsAdBlocked { get; set; }
+
+            /// <summary>Whether a rewarded ad comes back with its reward.</summary>
+            public bool Rewards { get; set; }
+
+            public int RewardedBreaks { get; private set; }
+            public int CommercialBreaks { get; private set; }
             public string Language => "en";
 
             public UniTask Initialize(CancellationToken token) => UniTask.CompletedTask;
@@ -361,9 +369,17 @@ namespace ToyCarArena.Tests.PlayMode
             {
             }
 
-            public UniTask CommercialBreak(CancellationToken token) => UniTask.CompletedTask;
+            public UniTask CommercialBreak(CancellationToken token)
+            {
+                CommercialBreaks++;
+                return UniTask.CompletedTask;
+            }
 
-            public UniTask<bool> RewardedBreak(CancellationToken token) => UniTask.FromResult(false);
+            public UniTask<bool> RewardedBreak(CancellationToken token)
+            {
+                RewardedBreaks++;
+                return UniTask.FromResult(Rewards);
+            }
 
             public void Measure(string category, string what, string action)
             {

@@ -29,6 +29,42 @@ namespace ToyCarArena.Tests.PlayMode
         public void TearDown() => Object.DestroyImmediate(tuning);
 
         [Test]
+        public void AnEarlyWinGivesTheFreeTopperOnceAndOnlyToAPlayerWithNone()
+        {
+            var wallet = new PlayerWallet(storage, tuning);
+            var from = tuning.Toppers.GiftFromRound;
+            Assert.That(wallet.TryGift(true, from - 1), Is.Null, "too early in the visit");
+            Assert.That(wallet.TryGift(false, from), Is.Null, "not a win");
+            var gift = wallet.TryGift(true, from);
+            Assert.That(gift, Is.EqualTo(tuning.Toppers.GiftTopper));
+            Assert.That(wallet.IsOwned(gift), Is.True);
+            Assert.That(wallet.SelectedTopper, Is.Empty, "owned, not worn, until the popup equips it");
+            Assert.That(wallet.TakeGift(), Is.EqualTo(gift));
+            Assert.That(wallet.TakeGift(), Is.Null);
+            Assert.That(new PlayerWallet(storage, tuning).TryGift(true, from + 1), Is.Null, "once ever");
+
+            var other = new PlayerWallet(new MemoryStorage(), tuning);
+            other.SetCoins(1000);
+            Assert.That(other.Buy("cone"), Is.True);
+            Assert.That(other.TryGift(true, from), Is.Null, "a player with a topper gets none");
+        }
+
+        [Test]
+        public void CarStatsMoveTheCarFromTheTunedMiddle()
+        {
+            var stats = tuning.CarStats;
+            var middle = new GameTuning.CarStatLine("x", 3, 3, 3);
+            Assert.That(stats.SpeedScale(middle), Is.EqualTo(1f));
+            Assert.That(stats.PowerScale(middle), Is.EqualTo(1f));
+            Assert.That(stats.CooldownScale(middle), Is.EqualTo(1f));
+            var strong = new GameTuning.CarStatLine("y", 5, 5, 5);
+            Assert.That(stats.SpeedScale(strong), Is.GreaterThan(1f));
+            Assert.That(stats.PowerScale(strong), Is.GreaterThan(1f));
+            Assert.That(stats.CooldownScale(strong), Is.LessThan(1f));
+            Assert.That(stats.Of("no-such-car").Speed, Is.EqualTo(GameTuning.CarStatSettings.Middle));
+        }
+
+        [Test]
         public void ARoundPaysCoinsForTheRoundKnockoutsAndWinAndSavesThem()
         {
             var wallet = new PlayerWallet(storage, tuning);

@@ -20,6 +20,8 @@ namespace ToyCarArena.Gameplay.Cars
         private const int RingSegments = 48;
         // How fast a propeller topper turns, in degrees a second.
         private const float PropellerSpeed = 540f;
+        // How much bigger a topper is on a car than as the garage builds it.
+        private const float TopperScale = 1.3f;
 
         [Header("Body")]
         [Tooltip("The mesh of the car's body, the one that is painted in a single swatch of the atlas")]
@@ -39,6 +41,22 @@ namespace ToyCarArena.Gameplay.Cars
             new(0, 2), // pink
             new(0, 0), // dark
         };
+
+        [Header("Wheels")]
+        [Tooltip("Most the front wheels turn, in degrees, when the car turns at its full turn speed")]
+        [Range(0f, 60f)]
+        [SerializeField]
+        private float maxSteer = 32f;
+
+        [Tooltip("The car's turn speed, in degrees a second, at which the front wheels are turned all the way")]
+        [Min(1f)]
+        [SerializeField]
+        private float fullSteerRate = 240f;
+
+        [Tooltip("How fast the front wheels turn to their angle, in degrees a second")]
+        [Min(0f)]
+        [SerializeField]
+        private float steerSpeed = 300f;
 
         [Header("Comeback")]
         [Tooltip("The see-through look of a car that came back in a match and is still safe: the model's atlas on a " +
@@ -94,6 +112,15 @@ namespace ToyCarArena.Gameplay.Cars
         private readonly System.Collections.Generic.List<Mesh> markerMeshes = new();
         private readonly System.Collections.Generic.List<Mesh> topperMeshes = new();
         private Transform topperSpinner;
+        private bool isPlayer;
+        private Rigidbody carBody;
+        private readonly System.Collections.Generic.List<Transform> wheels = new();
+        private readonly System.Collections.Generic.List<bool> frontWheels = new();
+        private float wheelRadius = 0.3f;
+        private float steer;
+        private float roll;
+        private Vector3 steerAxis = Vector3.up;
+        private Vector3 rollAxis = Vector3.right;
 
         /// <summary>
         /// Paints the chosen colour and puts on the topper (<see cref="CarTopper"/>, none for an empty id); only the
@@ -103,7 +130,10 @@ namespace ToyCarArena.Gameplay.Cars
         {
             ReplaceModel(entry);
             ownBody = CarModel.PaintBody(CarModel.FindBody(model, out _), entry.BodySwatch, SwatchOf(colorId));
-            WearTopper(topper, transform, model, ModelMaterial, topperMeshes, out topperSpinner);
+            WearTopper(topper, entry.Id, transform, model, ModelMaterial, topperMeshes, out topperSpinner);
+            FindWheels();
+            car = GetComponent<Car>();
+            carBody = GetComponent<Rigidbody>();
             SetMarker(index == 0);
         }
 
@@ -122,7 +152,7 @@ namespace ToyCarArena.Gameplay.Cars
         /// the model, so it grows with a mega item, turns see-through with the car and comes along when the podium
         /// copies the model. Null for no topper.
         /// </summary>
-        public static Transform WearTopper(string id, Transform car, GameObject model, Material material,
+        public static Transform WearTopper(string id, string carId, Transform car, GameObject model, Material material,
             System.Collections.Generic.List<Mesh> meshes, out Transform spinner)
         {
             var topper = CarTopper.Build(id, car, material, meshes, out spinner);
@@ -130,11 +160,14 @@ namespace ToyCarArena.Gameplay.Cars
                 return null;
             }
 
+            // On the roof it reads from the arena's camera only a size up from the garage's close look.
+            topper.localScale = Vector3.one * TopperScale;
+
             var toCar = car.worldToLocalMatrix;
             var roof = RoofPeak(model, toCar);
             var foot = CarTopper.FootOf(id);
             var x = roof.x + foot.x;
-            var z = roof.z + foot.y;
+            var z = roof.z + CarTopper.RoofShiftOf(carId) + foot.y;
             topper.localPosition = new Vector3(x, TopAt(model, toCar, x, z, roof.y) - 0.03f, z);
             topper.SetParent(model.transform, true);
             Outline.Apply(topper.gameObject);
@@ -291,6 +324,11 @@ namespace ToyCarArena.Gameplay.Cars
                 topperSpinner.Rotate(0f, PropellerSpeed * Time.deltaTime, 0f, Space.Self);
             }
 
+            TurnWheels();
+            if (!isPlayer) {
+                return;
+            }
+
             if (car != null && car.IsOut) {
                 ring.gameObject.SetActive(false);
                 arrow.gameObject.SetActive(false);
@@ -334,14 +372,69 @@ namespace ToyCarArena.Gameplay.Cars
             }
         }
 
-        private void SetMarker(bool isPlayer)
+        /// <summary>
+        /// Stands each wheel of the model on a pivot at the middle of its mesh, so it turns and rolls round its own
+        /// axle whatever the model's own origin for it (a catalog model's wheels are its <c>wheel-fl</c>, <c>-fr</c>,
+        /// <c>-bl</c> and <c>-br</c>).
+        /// </summary>
+        private void FindWheels()
         {
-            if (!isPlayer) {
-                enabled = false;
+            wheels.Clear();
+            frontWheels.Clear();
+            steer = 0f;
+            roll = 0f;
+            foreach (var part in model.GetComponentsInChildren<Transform>(true)) {
+                if (!part.name.StartsWith("wheel-") || !part.TryGetComponent<Renderer>(out var wheelRenderer)) {
+                    continue;
+                }
+
+                var bounds = wheelRenderer.bounds;
+                var pivot = new GameObject("Wheel Pivot").transform;
+                pivot.SetParent(part.parent, false);
+                pivot.position = bounds.center;
+                part.SetParent(pivot, true);
+                wheels.Add(pivot);
+                frontWheels.Add(part.name.Contains("-f"));
+                wheelRadius = Mathf.Max(0.05f, bounds.extents.y);
+            }
+
+            if (wheels.Count > 0) {
+                var parent = wheels[0].parent;
+                steerAxis = parent.InverseTransformDirection(transform.up);
+                rollAxis = parent.InverseTransformDirection(transform.right);
+            }
+        }
+
+        /// <summary>
+        /// The front wheels turn the way the car turns and every wheel rolls with its speed: looks only, read from the
+        /// body after the physics.
+        /// </summary>
+        private void TurnWheels()
+        {
+            if (wheels.Count == 0 || carBody == null) {
                 return;
             }
 
-            car = GetComponent<Car>();
+            var deltaTime = Time.deltaTime;
+            var rate = carBody.angularVelocity.y * Mathf.Rad2Deg;
+            var target = Mathf.Clamp(rate / fullSteerRate, -1f, 1f) * maxSteer;
+            steer = Mathf.MoveTowards(steer, target, steerSpeed * deltaTime);
+            var speed = Vector3.Dot(carBody.linearVelocity, transform.forward);
+            roll = Mathf.Repeat(roll + speed / wheelRadius * Mathf.Rad2Deg * deltaTime, 360f);
+            var rolling = Quaternion.AngleAxis(roll, rollAxis);
+            var turned = Quaternion.AngleAxis(steer, steerAxis) * rolling;
+            for (var i = 0; i < wheels.Count; i++) {
+                wheels[i].localRotation = frontWheels[i] ? turned : rolling;
+            }
+        }
+
+        private void SetMarker(bool isPlayer)
+        {
+            this.isPlayer = isPlayer;
+            if (!isPlayer) {
+                return;
+            }
+
             var main = Camera.main;
             viewpoint = main != null ? main.transform : null;
             // The outline sits a little behind its shape: below the ring, and further from the camera for the arrow.
