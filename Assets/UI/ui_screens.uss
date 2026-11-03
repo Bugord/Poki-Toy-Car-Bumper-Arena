@@ -2766,8 +2766,10 @@
     font-size: 36px;
 }
 
-/* A car with a price: one green BUY button with its price on a white pill, under the caption. */
+/* A car with a price: one green BUY button with its price on a white pill, under the caption. No wider than the card:
+   a longer language's label shrinks instead (FitText). */
 .level-reward__buy {
+    max-width: 100%;
     flex-direction: row;
     align-items: center;
     height: 136px;
@@ -2784,6 +2786,11 @@
     translate: 0 8px;
 }
 
+.level-reward__buy-label {
+    flex-shrink: 1;
+    min-width: 0;
+}
+
 .level-reward__buy-label-text {
     margin: 0;
     padding: 0;
@@ -2794,6 +2801,7 @@
 }
 
 .level-reward__price {
+    flex-shrink: 0;
     flex-direction: row;
     align-items: center;
     height: 84px;
@@ -5450,14 +5458,18 @@
     margin: 0 12px 0 0;
 }
 
+/* Fills the room beside the play sign, its text in the middle: FitText sizes the text to that room. */
 .double__label {
+    flex-grow: 1;
     flex-shrink: 1;
+    min-width: 0;
 }
 
 /* A fixed size: best-fit would size the outline and the face over it apart. A thinner outline than the big buttons':
    the label is half their size. */
 .double .double__label-text {
     font-size: 50px;
+    -unity-text-align: middle-center;
     -unity-text-outline-width: 6px;
     text-shadow: 0 4px 0 rgb(29, 43, 79);
 }

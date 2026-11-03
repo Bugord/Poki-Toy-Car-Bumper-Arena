@@ -57,6 +57,7 @@ namespace ToyCarArena.UI
                 part.AddToClassList("button__label");
                 text.Set(part, () => Strings.Get("result.claim_x2"));
             }
+            FitText.Fit(label, labels);
             Claim.Add(label);
             if (!isTouch) {
                 var key = new VisualElement { pickingMode = PickingMode.Ignore };
