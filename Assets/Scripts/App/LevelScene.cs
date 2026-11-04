@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.Gameplay;
+using ToyCarArena.Gameplay.Round;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using VContainer;
@@ -12,11 +13,15 @@ namespace ToyCarArena.App
     /// <summary>
     /// Loads the Game scene additively under the game scope and hands out the services of its GameplayScope.
     /// Loading again replaces the loaded scene with a fresh one. While no arena is loaded, a stand-in camera renders the
-    /// screen, so the curtain lowered over the reload stays on it.
+    /// screen, so the curtain lowered over the reload stays on it. The next arena's floor, when it is still downloading
+    /// (<see cref="ContentBundles"/>), is waited for a few seconds first, so the round does not start on a plain floor.
     /// </summary>
     public sealed class LevelScene
     {
         private const string SceneName = "Game";
+
+        // Seconds a load waits for the next arena's floor texture before it plays on without it.
+        private const float FloorWait = 6f;
 
         /// <summary>
         /// The curtain's colour (<c>--navy</c> in <c>ui_theme.tss</c>), so the stand-in's screen matches it.
@@ -24,14 +29,18 @@ namespace ToyCarArena.App
         private static readonly Color StandInColor = new Color32(0x1d, 0x2b, 0x4f, 0xff);
 
         private readonly LifetimeScope parentScope;
+        private readonly ContentBundles content;
+        private readonly IArenaRotation rotation;
 
         private Scene scene;
         private Camera standInCamera;
         private GameplayScope gameplayScope;
 
-        public LevelScene(LifetimeScope parentScope)
+        public LevelScene(LifetimeScope parentScope, ContentBundles content, IArenaRotation rotation)
         {
             this.parentScope = parentScope;
+            this.content = content;
+            this.rotation = rotation;
         }
 
         /// <summary>
@@ -41,6 +50,8 @@ namespace ToyCarArena.App
 
         public async UniTask Load(CancellationToken token)
         {
+            await content.PrepareArena(rotation.Current, rotation.CurrentVariant, FloorWait, token);
+
             // Without a camera nothing renders, the overlay UI included: the screen would freeze on the old arena's
             // last frame, and the curtain over it would vanish until the new arena's camera starts.
             SetStandInCamera(true);
