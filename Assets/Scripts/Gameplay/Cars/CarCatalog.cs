@@ -77,6 +77,16 @@ namespace ToyCarArena.Gameplay.Cars
             public Vector2Int BodySwatch => bodySwatch;
             public Texture2D Portrait => portrait;
             public Texture2D BodyPortrait => bodyPortrait;
+
+            /// <summary>
+            /// Fills the portraits the release build leaves out of the player and downloads after the start (see
+            /// <c>ContentBundles</c>).
+            /// </summary>
+            public void SetPortraits(Texture2D portrait, Texture2D bodyPortrait)
+            {
+                this.portrait = portrait;
+                this.bodyPortrait = bodyPortrait;
+            }
         }
     }
 }

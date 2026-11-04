@@ -21,6 +21,10 @@ namespace ToyCarArena.App
     /// </summary>
     public sealed class ResultState : StateBase<RoundRecord>
     {
+        // Seconds the result waits for the car portraits still downloading (ContentBundles); they come well within a
+        // first round, so this only shows on a very slow line.
+        private const float PortraitWait = 2f;
+
         private readonly LevelScene levelScene;
         private readonly IScreenNavigator navigator;
         private readonly ScreenCurtain curtain;
@@ -32,11 +36,13 @@ namespace ToyCarArena.App
         private readonly ArenaCatalog arenaCatalog;
         private readonly MissionTracker missions;
         private readonly AdBreaks adBreaks;
+        private readonly ContentBundles content;
 
         public ResultState(LevelScene levelScene, IScreenNavigator navigator, ScreenCurtain curtain, IGamePlatform platform,
             ISessionRoster roster, ISessionProgress progress, GameTuning tuning, IArenaRotation arenaRotation,
-            ArenaCatalog arenaCatalog, MissionTracker missions, AdBreaks adBreaks)
+            ArenaCatalog arenaCatalog, MissionTracker missions, AdBreaks adBreaks, ContentBundles content)
         {
+            this.content = content;
             this.adBreaks = adBreaks;
             this.missions = missions;
             this.arenaRotation = arenaRotation;
@@ -59,6 +65,7 @@ namespace ToyCarArena.App
                 record = record.WithPodium(levelScene.Resolve<WinnerPodium>().Show(record.Result.PodiumCar));
             }
 
+            await content.PrepareCars(PortraitWait, token);
             var screen = await navigator.OpenAsync<RoundOverViewModel, RoundRecord>(record, token);
             // RoundState already moved the session on, so the round on this screen is the one before Round.
             var outcome = Payload.Result.Outcome;

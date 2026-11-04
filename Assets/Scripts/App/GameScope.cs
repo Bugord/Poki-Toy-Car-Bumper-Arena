@@ -92,6 +92,7 @@ namespace ToyCarArena.App
             builder.RegisterInstance(arenaCatalog, typeof(ArenaCatalog));
 
             builder.Register<LevelScene>(Lifetime.Singleton);
+            builder.RegisterEntryPoint<ContentBundles>().AsSelf();
             // Here, so the music goes on across the Game scene reloaded every round and the screens can click. The
             // non-generic overload for a ScriptableObject, as GameplayScope explains.
             builder.RegisterInstance(audioLibrary, typeof(AudioLibrary));

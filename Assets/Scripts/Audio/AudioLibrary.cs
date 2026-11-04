@@ -113,6 +113,12 @@ namespace ToyCarArena.Audio
         public int Voices => voices;
         public float RepeatInterval => repeatInterval;
         public AudioClip ArenaMusic => arenaMusic;
+
+        /// <summary>
+        /// Fills the music the release build leaves out of the player and downloads after the start (see
+        /// <c>ContentBundles</c>).
+        /// </summary>
+        public void SetArenaMusic(AudioClip clip) => arenaMusic = clip;
         public Sound HitLight => hitLight;
         public Sound HitHeavy => hitHeavy;
         public Sound Boost => boost;
