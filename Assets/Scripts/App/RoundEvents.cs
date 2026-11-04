@@ -121,6 +121,14 @@ namespace ToyCarArena.App
         private const string AdCategory = "ad";
         private const string DoubleReward = "double";
 
+        /// <summary>
+        /// A content bundle (<see cref="ContentBundles"/>) that never came (<c>failed</c>), or that a round or result
+        /// screen stopped waiting for (<c>late</c>): <c>content / late-floors-tabletop / load</c>. The bundle names
+        /// carry no numbers.
+        /// </summary>
+        public static void MeasureContent(this IGamePlatform platform, string how, string bundle) =>
+            platform.Measure("content", $"{how}-{bundle}", "load");
+
         public static void MeasureLobbyShown(this IGamePlatform platform) => platform.Measure(LobbyCategory, "shown", "visible");
 
         public static void MeasureLobbySlow(this IGamePlatform platform, string mapId) =>

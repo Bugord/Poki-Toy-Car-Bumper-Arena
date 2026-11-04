@@ -32,6 +32,8 @@ namespace ToyCarArena.Audio
         private readonly Dictionary<Sound, float> startTimes = new();
 
         private bool isMusicOn;
+        // Asked for while the clip was still downloading or loading: it starts once its data is in.
+        private bool isMusicWanted;
         private bool isSoundMuted;
         private float duckEndTime;
 
@@ -95,8 +97,18 @@ namespace ToyCarArena.Audio
 
         public void PlayMusic()
         {
+            isMusicWanted = true;
             var clip = library.ArenaMusic;
             if (clip == null || (isMusicOn && music.clip == clip)) {
+                return;
+            }
+
+            // A clip from a bundle starts silent on WebGL until its data is loaded; Tick starts it then.
+            if (clip.loadState == AudioDataLoadState.Unloaded) {
+                clip.LoadAudioData();
+            }
+
+            if (clip.loadState != AudioDataLoadState.Loaded) {
                 return;
             }
 
@@ -108,6 +120,7 @@ namespace ToyCarArena.Audio
 
         public void StopMusic()
         {
+            isMusicWanted = false;
             isMusicOn = false;
             music.Stop();
         }
@@ -119,6 +132,10 @@ namespace ToyCarArena.Audio
 
         public void Tick()
         {
+            if (isMusicWanted && !isMusicOn && library.ArenaMusic != null) {
+                PlayMusic();
+            }
+
             if (isMusicOn) {
                 music.volume = Mathf.MoveTowards(music.volume, MusicLevel(),
                     DuckSpeed * library.MusicVolume * Time.unscaledDeltaTime);

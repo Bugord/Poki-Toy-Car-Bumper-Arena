@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -16,6 +17,8 @@ namespace ToyCarArena.Editor
     /// Development (Poki) or <c>-development</c> makes a development build. Super Console leaves itself out of a release
     /// build (its Include In Builds setting is development builds only), and the report counts its assets that shipped.
     /// The wasm is built for disk size; compression stays off, since Poki compresses the files itself.
+    /// The floors past the first round's, the car portraits and the music go into bundles under StreamingAssets
+    /// (<see cref="DeferredContent"/>), downloaded after the start; the report counts any of them still in the player.
     /// The build carries its <see cref="BuildNumber"/>: in <c>Resources/data_build_info.txt</c> while it builds, which
     /// the game logs at startup (<see cref="ToyCarArena.App.BuildInfo"/>), in <c>build.json</c> beside <c>index.json</c>, which
     /// the upload names the version after, and in the report.
@@ -76,20 +79,31 @@ namespace ToyCarArena.Editor
             };
 
             BuildReport report;
+            using var deferred = DeferredContent.Build();
             // Super Console keeps its settings there, but a project without it may have no Resources folder yet.
             Directory.CreateDirectory(Path.GetDirectoryName(BuildInfoAsset));
             File.WriteAllText(BuildInfoAsset, $"{build.Number}\n{build.Commit}\n");
             AssetDatabase.ImportAsset(BuildInfoAsset, ImportAssetOptions.ForceSynchronousImport);
             try {
+                deferred.Strip();
                 report = BuildPipeline.BuildPlayer(options);
             }
             finally {
+                deferred.Dispose();
                 AssetDatabase.DeleteAsset(BuildInfoAsset);
             }
 
-            WriteReport(report, build);
+            if (report.summary.result == BuildResult.Succeeded) {
+                deferred.CopyTo(OutputPath);
+            }
+
+            var shipped = WriteReport(report, build, deferred);
             if (report.summary.result != BuildResult.Succeeded) {
                 throw new BuildFailedException($"WebGL build {report.summary.result}, see {ReportPath}");
+            }
+
+            if (shipped > 0) {
+                throw new BuildFailedException($"{shipped} assets meant for the content bundles are still in the player, see {ReportPath}");
             }
 
             File.WriteAllText(buildFile,
@@ -114,8 +128,16 @@ namespace ToyCarArena.Editor
             property.SetValue(null, Enum.Parse(property.PropertyType, value));
         }
 
-        private static void WriteReport(BuildReport report, BuildNumber build)
+        /// <summary>Writes the report; how many of the deferred assets still shipped in the player.</summary>
+        private static int WriteReport(BuildReport report, BuildNumber build, DeferredContent deferred)
         {
+            var deferredPaths = new HashSet<string>(deferred.Paths);
+            var shipped = report.packedAssets
+                .SelectMany(packed => packed.contents)
+                .Where(content => deferredPaths.Contains(content.sourceAssetPath))
+                .Select(content => content.sourceAssetPath)
+                .Distinct()
+                .ToList();
             var consoleAssets = report.packedAssets
                 .SelectMany(packed => packed.contents)
                 // Scripts are listed for every type the player's assemblies hold; stripping removes the console's code.
@@ -129,6 +151,9 @@ namespace ToyCarArena.Editor
                 $"compression: {PlayerSettings.WebGL.compressionFormat}, " +
                 $"stripping: {PlayerSettings.GetManagedStrippingLevel(NamedBuildTarget.WebGL)}, " +
                 $"Super Console assets: {consoleAssets}");
+            text.AppendLine($"Content bundles: {string.Join(", ", deferred.BundleNames)}; " +
+                $"{deferredPaths.Count} assets moved, {shipped.Count} still in the player" +
+                (shipped.Count > 0 ? $" ({string.Join(", ", shipped)})" : ""));
             text.AppendLine();
 
             text.AppendLine("Output files:");
@@ -167,6 +192,7 @@ namespace ToyCarArena.Editor
 
             Directory.CreateDirectory(Path.GetDirectoryName(ReportPath));
             File.WriteAllText(ReportPath, text.ToString());
+            return shipped.Count;
         }
 
         private static string FormatSize(long bytes)
