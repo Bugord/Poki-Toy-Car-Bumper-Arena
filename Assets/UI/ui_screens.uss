@@ -4269,14 +4269,14 @@
 }
 
 /* A flag in a circle (sprite_ui_flag_<code>: circle-flags, MIT, from SMUP), by the language's code. */
-.language-flag--en { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_en.svg?fileID=7388822144124034973&guid=d02e6230ae8244eea8a23cb64d493dc6&type=3#sprite_ui_flag_en"); }
-.language-flag--fr { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_fr.svg?fileID=7388822144124034973&guid=b1c59f484d30427bb4bcae7ca2ff01e0&type=3#sprite_ui_flag_fr"); }
-.language-flag--it { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_it.svg?fileID=7388822144124034973&guid=3276dd36bedc4d4ab6b028188e544cc8&type=3#sprite_ui_flag_it"); }
-.language-flag--de { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_de.svg?fileID=7388822144124034973&guid=e7a0daddd17f4792bdac86700b4c61ca&type=3#sprite_ui_flag_de"); }
-.language-flag--es { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_es.svg?fileID=7388822144124034973&guid=c2c72ffea2ce45ba95a811766171fd0b&type=3#sprite_ui_flag_es"); }
-.language-flag--tr { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_tr.svg?fileID=7388822144124034973&guid=6f695fcd2cfb4a3cb2d74461753becee&type=3#sprite_ui_flag_tr"); }
-.language-flag--pt { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_pt.svg?fileID=7388822144124034973&guid=3b77c616fe6046bc9d899c2d0110bb31&type=3#sprite_ui_flag_pt"); }
-.language-flag--ru { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_ru.svg?fileID=7388822144124034973&guid=4af19f1ae49248e58994146d9c0c5d97&type=3#sprite_ui_flag_ru"); }
+.language-flag--en { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_en.png?fileID=2800000&guid=d02e6230ae8244eea8a23cb64d493dc6&type=3#sprite_ui_flag_en"); }
+.language-flag--fr { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_fr.png?fileID=2800000&guid=b1c59f484d30427bb4bcae7ca2ff01e0&type=3#sprite_ui_flag_fr"); }
+.language-flag--it { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_it.png?fileID=2800000&guid=3276dd36bedc4d4ab6b028188e544cc8&type=3#sprite_ui_flag_it"); }
+.language-flag--de { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_de.png?fileID=2800000&guid=e7a0daddd17f4792bdac86700b4c61ca&type=3#sprite_ui_flag_de"); }
+.language-flag--es { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_es.png?fileID=2800000&guid=c2c72ffea2ce45ba95a811766171fd0b&type=3#sprite_ui_flag_es"); }
+.language-flag--tr { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_tr.png?fileID=2800000&guid=6f695fcd2cfb4a3cb2d74461753becee&type=3#sprite_ui_flag_tr"); }
+.language-flag--pt { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_pt.png?fileID=2800000&guid=3b77c616fe6046bc9d899c2d0110bb31&type=3#sprite_ui_flag_pt"); }
+.language-flag--ru { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_ui_flag_ru.png?fileID=2800000&guid=4af19f1ae49248e58994146d9c0c5d97&type=3#sprite_ui_flag_ru"); }
 
 /* The language list: a white sticker card under the coin, its notch pointing up at it. The last child of the card, so
    it draws over BACK; SettingsView places it when it opens. Each row is the flag, the language's own name and, on the

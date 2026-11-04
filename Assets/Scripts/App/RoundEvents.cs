@@ -51,6 +51,10 @@ namespace ToyCarArena.App
     /// round's, so Poki counts the visits that leave in the middle of a round per arena variant; a long match sends it per
     /// cycle of the floor, each cycle's variant completing as the next one starts</item>
     /// <item>since v0.2.0, only with a marked rival present: <c>result / revenge-got, missed-rR / revenge</c></item>
+    /// <item>after v0.13.5, the visit's first round only: <c>controls / start / visible</c> when the arena and TAP TO
+    /// START are up, then <c>interact</c> on the first input, and <c>controls / ready-0-3, 3-6, 6-10, 10plus /
+    /// start-time</c>, seconds from the engine starting to that screen; Poki counts the game loaded once the engine is,
+    /// so this tells the visits that left while the arena still loaded from those that saw it and did not touch</item>
     /// <item><c>garage / button / visible, interact</c> and <c>garage / car-id / equip</c></item>
     /// <item><c>garage / color-name / color</c> on colour selection and
     /// <c>result / color-name-rR / color</c> for the colour captured by the played round</item>
@@ -124,6 +128,20 @@ namespace ToyCarArena.App
 
         public static void MeasureLobbySlowDone(this IGamePlatform platform, string mapId) =>
             platform.MeasureInteract(LobbyCategory, $"slow-{mapId}");
+
+        /// <summary>
+        /// The visit's first start screen is up, <paramref name="seconds"/> after the engine started: what the player
+        /// waited for between Poki's loading bar and the arena.
+        /// </summary>
+        public static void MeasureStartShown(this IGamePlatform platform, float seconds)
+        {
+            platform.MeasureVisible(ControlsCategory, "start");
+            var ready = seconds < 3f ? "ready-0-3" : seconds < 6f ? "ready-3-6" : seconds < 10f ? "ready-6-10" : "ready-10plus";
+            platform.Measure(ControlsCategory, ready, "start-time");
+        }
+
+        public static void MeasureStartPressed(this IGamePlatform platform) =>
+            platform.MeasureInteract(ControlsCategory, "start");
 
         /// <summary>A commercial break is asked for under the curtain after NEXT MATCH (Poki may still show none).</summary>
         public static void MeasureCommercialBreak(this IGamePlatform platform) =>

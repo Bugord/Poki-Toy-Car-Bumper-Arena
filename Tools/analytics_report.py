@@ -69,6 +69,9 @@ def summarise(data):
         "boost_input": other(o, r"controls-boost-(button|tap|finger|key|mouse|gamepad|none)-boost-input"),
         "first_move": other(o, r"controls-(move-[a-z0-9-]+|never)-first-move"),
         "swipes": other(o, r"controls-swipes-(none|few|many)-swipes"),
+        # после v0.13.5: первый стартовый экран визита показан, тронули, и через сколько секунд после старта движка
+        "start": i.get("controls-start"),
+        "start_time": other(o, r"controls-ready-([0-9a-z-]+)-start-time"),
         "place1": other(o, r"result-place-(\d+)-r1-place"),
         "ko1": other(o, r"result-knockouts-(\d+)-r1-knockouts"),
         "again": i.get("result-play-again"),
@@ -162,6 +165,11 @@ def report(version, previous):
     out.append(line("Ушли посреди 1-го раунда", lambda s: f"{r1(s)[3]} ({pct(r1(s)[3], r1(s)[0])})"))
     r2 = lambda s: s["rounds"].get("2", (0, 0, 0, 0))
     out.append(line("Дошли до 2-го раунда, от 1-го", lambda s: pct(r2(s)[0], r1(s)[0])))
+    if any(s and s["start"] for s in (cur, old)):
+        out.append(line("Стартовый экран показан, от загрузки (после v0.13.5)",
+                        lambda s: f"{num(s['start'], 'seen')} ({pct(num(s['start'], 'seen'), s['loads'][1])})" if s["start"] else "-"))
+        out.append(line("Тронули стартовый экран, от показа",
+                        lambda s: f"{num(s['start'], 'interacted')} ({pct(num(s['start'], 'interacted'), num(s['start'], 'seen'))})" if s["start"] else "-"))
 
     names = sorted({k for s in (cur, old) if s for k in s["rounds"]}, key=lambda k: (k.endswith("plus"), int(re.sub(r"\D", "", k))))
     out += ["", "## Воронка по раундам (старты / победы / поражения / ушли; далее = доля, перешедшая в следующий)", "", head, sep]
@@ -238,6 +246,8 @@ def report(version, previous):
         ("Чем впервые ускорились (с v0.2.0)", "boost_input", None),
         ("Первое движение, с после старта", "first_move", None),
         ("Свайпы в 1-м раунде (none, few 1–3, many 4+)", "swipes", ["none", "few", "many"]),
+        ("Стартовый экран через N с после старта движка (после v0.13.5)", "start_time",
+         [k for k in ("0-3", "3-6", "6-10", "10plus") if any(s and k in s["start_time"] for s in (cur, old))]),
         ("Место в 1-м раунде", "place1", sorted(keys_of("place1"), key=int)),
         ("Нокауты игрока в 1-м раунде", "ko1", sorted(keys_of("ko1"), key=int)),
         ("Машинок в раунде (с v0.2)", "cars", None),

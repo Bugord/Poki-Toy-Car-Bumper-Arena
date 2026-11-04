@@ -193,7 +193,9 @@ namespace ToyCarArena.App
                 // The visit's first round begins on the player's first input, with no count: the new player came to
                 // drive, not to wait. Later rounds count down after the curtain.
                 if (waitsForPlayer) {
+                    platform.MeasureStartShown(Time.realtimeSinceStartup);
                     await UniTask.WaitUntil(() => driver.HasActed, cancellationToken: token);
+                    platform.MeasureStartPressed();
                 }
                 else {
                     await Kickoff(hud.ViewModel, tuning.Round, token);
