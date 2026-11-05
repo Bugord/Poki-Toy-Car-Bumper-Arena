@@ -18,16 +18,15 @@ namespace ToyCarArena.App
     /// <item><c>result / won, out, survived / outcome</c></item>
     /// <item><c>result / place-N-rR / place</c>, unless the player was alone, and <c>result / knockouts-N-rR /
     /// knockouts</c>, R the round 1, 2, 3 or 4plus, so the first round can be told from the later ones</item>
-    /// <item><c>result / pushed, fell / out-cause</c> when the player is out: pushed off by a car, or drove off alone</item>
-    /// <item><c>result / boosts-0, boosts-1-2, boosts-3plus / boosts</c></item>
-    /// <item>after v0.7.1, for a round and a match alike: <c>result / boosts-none, few, many-rR / round-boosts</c>, the
-    /// player's own boosts by round (none, 1 or 2, 3 and more; the old event has no round), and <c>result / auto-none,
-    /// few, many-rR / auto-boosts</c>, the boosts the game fired for the player (<see cref="AutoBoost"/>)</item>
+    /// <item>after v0.7.1, for a round and a match alike, only while the build has boosts
+    /// (<see cref="GameTuning.BoostSettings.IsEnabled"/>): <c>result / boosts-none, few, many-rR / round-boosts</c>, the
+    /// player's own boosts by round (none, 1 or 2, 3 and more), and <c>result / auto-none, few, many-rR /
+    /// auto-boosts</c>, the boosts the game fired for the player (<see cref="AutoBoost"/>)</item>
     /// <item>first round only: <c>controls / keyboard, mouse, touch, gamepad, none / input</c>, what the player first
     /// steered with, and <c>controls / move-0-3, move-3-10, move-10plus, never / first-move</c>, seconds from the cars
     /// standing on the arena to it (the round waits for the player's first steer or boost, so mostly the wait)</item>
-    /// <item>since v0.2.0, first round only: <c>controls / boost-button, tap, finger, key, mouse, gamepad, none /
-    /// boost-input</c>, how the first successful boost was fired</item>
+    /// <item>since v0.2.0, first round only and only while the build has boosts: <c>controls / boost-button, tap, finger,
+    /// key, mouse, gamepad, none / boost-input</c>, how the first successful boost was fired</item>
     /// <item>first round only: <c>controls / swipes-none, few, many / swipes</c>, flicks of the steering finger (none, 1
     /// to 3, 4 and more): how many players stroke the screen instead of holding the joystick</item>
     /// <item><c>result / 0-15 … 60-75 / time</c>: seconds on the arena, in buckets of 15</item>
@@ -44,6 +43,9 @@ namespace ToyCarArena.App
     /// <item>after v0.6.0, after the first round or match of a visit only: <c>controls / again-input-boost, noboost /
     /// visible, interact</c>, the same press by what the player first steered with and whether they boosted at all, so
     /// the visits lost after the first round read against a boost never found</item>
+    /// <item>after v0.14.1: <c>session / time-Nm / reached</c> and <c>session / play-Nm / reached</c>, minutes on the
+    /// page and in rounds (<see cref="SessionTime"/>): Poki's dashboard shows the session length and the share past
+    /// three minutes only for a Player Fit Test</item>
     /// <item>after v0.5.1: <c>lobby / slow-arena-id / visible</c> when the next arena is still loading
     /// <see cref="SlowLobbySeconds"/> after the lobby came up, then <c>interact</c> when that round comes up after all,
     /// so a slow load can be told from a wait the player gave up on</item>
@@ -63,8 +65,8 @@ namespace ToyCarArena.App
     /// <c>match / knockouts-N-rR / knockouts</c>, <c>match / falls-N-rR / falls</c> (every fall is followed by a
     /// comeback, but for one at the very end) and <c>match / pushed-N-rR / pushed</c> (the falls a car got the credit
     /// for), N from 0 to 9 or 10plus, and <c>match / revenge-got, missed-rR / revenge</c> with a rival marked during the
-    /// match; and <c>match / pickup-heavy, shockwave, shield, turbo-rR / pickup</c> for each pickup the player takes and
-    /// <c>match / pickups-N-rR / pickups</c> for how many at the end. It sends no <c>round / … / start, complete, fail</c>, and of the round's result only what still means
+    /// match; and <c>match / item-kind-rR / item-get, item-use</c> for the player's items and
+    /// <c>match / pickups-N-rR / pickups</c> for how many boxes the player broke. It sends no <c>round / … / start, complete, fail</c>, and of the round's result only what still means
     /// the same in a match (<see cref="MeasureMatchEnd"/>).</item>
     /// <item><c>progress / level-2..10, level-10plus / level-up</c> for each crossed level, and
     /// <c>progress / car-id / unlock</c> from the saved reward</item>
@@ -76,7 +78,6 @@ namespace ToyCarArena.App
     /// missions</c> at the end of every round (missions done this visit, N 0..9 or 10plus) and <c>mission / shown /
     /// visible</c> the first time a player sees missions; <c>result / streak-N-rR / streak</c> (the win streak going
     /// into the next round, N 0..4 or 5plus) and <c>result / streak-lost-rR / streak</c> when a streak ended;
-    /// <c>result / coins-few, mid, many-rR / coins</c>, the coins held after the round against the toppers' prices;
     /// <c>shop / topper-id / buy</c>, <c>garage / topper-topper-id / equip</c> and <c>garage / toppers / visible,
     /// interact</c> for the toppers tab</item>
     /// <item>since v0.10, beside <c>again-outcome-rR</c>, the same NEXT MATCH press by whether the round completed a
@@ -84,6 +85,11 @@ namespace ToyCarArena.App
     /// again-outcome-streak, nostreak, lost-rR</c>): Poki does not link a visit's events, so this is the one way to tell
     /// the missions' and the streaks' part apart</item>
     /// </list>
+    /// Removed after v0.14.1, as they only repeated others or no longer told anything: <c>result / pushed, fell /
+    /// out-cause</c> (the same as <c>round-out-cause</c> without the round), <c>result / boosts-0, 1-2, 3plus /
+    /// boosts</c> (<c>round-boosts</c> has the round), <c>lobby / shown / visible</c> (one per NEXT MATCH pressed),
+    /// <c>result / coins-few, mid, many-rR / coins</c> and, in a build without boosts, the boost events, which only
+    /// said none.
     /// </summary>
     public static class RoundEvents
     {
@@ -95,6 +101,7 @@ namespace ToyCarArena.App
         private const string LobbyCategory = "lobby";
         private const string ArenaCategory = "arena";
         private const string MissionCategory = "mission";
+        private const string SessionCategory = "session";
 
         // A streak this long or longer goes in one bucket, so its number and the round's still fit.
         private const int LastStreakBucket = 5;
@@ -129,7 +136,19 @@ namespace ToyCarArena.App
         public static void MeasureContent(this IGamePlatform platform, string how, string bundle) =>
             platform.Measure("content", $"{how}-{bundle}", "load");
 
-        public static void MeasureLobbyShown(this IGamePlatform platform) => platform.Measure(LobbyCategory, "shown", "visible");
+        /// <summary>
+        /// The visit has been on the page <paramref name="minutes"/> minutes (<see cref="SessionTime"/>):
+        /// <c>session / time-3m / reached</c>, one number.
+        /// </summary>
+        public static void MeasureSessionTime(this IGamePlatform platform, int minutes) =>
+            platform.Measure(SessionCategory, $"time-{minutes}m", "reached");
+
+        /// <summary>
+        /// The visit has played <paramref name="minutes"/> minutes of rounds (<see cref="SessionTime"/>):
+        /// <c>session / play-3m / reached</c>.
+        /// </summary>
+        public static void MeasureSessionPlay(this IGamePlatform platform, int minutes) =>
+            platform.Measure(SessionCategory, $"play-{minutes}m", "reached");
 
         public static void MeasureLobbySlow(this IGamePlatform platform, string mapId) =>
             platform.MeasureVisible(LobbyCategory, $"slow-{mapId}");
@@ -229,10 +248,10 @@ namespace ToyCarArena.App
         /// The end of the round started as <paramref name="round"/>, and the milestones of its result.
         /// </summary>
         public static void MeasureRoundEnd(this IGamePlatform platform, int round, RoundResult result, float duration,
-            PlayerDriver driver)
+            PlayerDriver driver, bool hasBoost)
         {
             if (result.IsMatch) {
-                MeasureMatchEnd(platform, round, result, driver);
+                MeasureMatchEnd(platform, round, result, driver, hasBoost);
                 return;
             }
 
@@ -261,7 +280,6 @@ namespace ToyCarArena.App
             }
             if (result.Outcome == RoundOutcome.Out) {
                 var cause = result.KnockedOutBy == RoundResult.Nobody ? "fell" : "pushed";
-                platform.Measure(ResultCategory, cause, "out-cause");
                 platform.Measure(ResultCategory, $"{cause}-{tag}", "round-out-cause");
                 if (result.KnockedOutBy == RoundResult.Nobody) {
                     var fallCause = GameEvent.Clean(result.FallCause.ToString());
@@ -269,10 +287,9 @@ namespace ToyCarArena.App
                 }
             }
 
-            platform.Measure(ResultCategory, BoostBucketOf(driver.Boosts), "boosts");
-            MeasureBoosts(platform, tag, driver);
+            MeasureBoosts(platform, tag, driver, hasBoost);
             if (round <= 1) {
-                MeasureControls(platform, driver);
+                MeasureControls(platform, driver, hasBoost);
             }
         }
 
@@ -282,7 +299,8 @@ namespace ToyCarArena.App
         /// out causes and boosts mean something else over a whole match or never change (it always runs its time), so
         /// the match sends its own in their place, and a version's reports never mix the two.
         /// </summary>
-        public static void MeasureMatchEnd(this IGamePlatform platform, int match, RoundResult result, PlayerDriver driver)
+        public static void MeasureMatchEnd(this IGamePlatform platform, int match, RoundResult result, PlayerDriver driver,
+            bool hasBoost)
         {
             platform.MeasureComplete(MatchCategory, RoundBucket(match));
             var tag = RoundTag(match);
@@ -297,9 +315,9 @@ namespace ToyCarArena.App
 
             platform.Measure(ResultCategory, $"color-{CarPaint.NameOf(result.ColorOf(0))}-{tag}", "color");
             platform.Measure(ResultCategory, $"cars-{result.CarCount}-{tag}", "cars");
-            MeasureBoosts(platform, tag, driver);
+            MeasureBoosts(platform, tag, driver, hasBoost);
             if (match <= 1) {
-                MeasureControls(platform, driver);
+                MeasureControls(platform, driver, hasBoost);
             }
         }
 
@@ -340,14 +358,20 @@ namespace ToyCarArena.App
         /// <summary>
         /// Whether a new player found the controls, and with what: the first round tells it, later ones only repeat it.
         /// </summary>
-        private static void MeasureControls(IGamePlatform platform, PlayerDriver driver)
+        private static void MeasureControls(IGamePlatform platform, PlayerDriver driver, bool hasBoost)
         {
+            if (driver == null) {
+                return;
+            }
+
             var input = driver.FirstInput;
             platform.Measure(ControlsCategory, input == null ? "none" : GameEvent.Clean(input.Value.ToString()), "input");
 
-            var boost = driver.FirstBoostInput;
-            var boostInput = boost == null ? "none" : GameEvent.Clean(boost.Value.ToString());
-            platform.Measure(ControlsCategory, $"boost-{boostInput}", "boost-input");
+            if (hasBoost) {
+                var boost = driver.FirstBoostInput;
+                var boostInput = boost == null ? "none" : GameEvent.Clean(boost.Value.ToString());
+                platform.Measure(ControlsCategory, $"boost-{boostInput}", "boost-input");
+            }
 
             var seconds = driver.FirstMoveTime;
             var move = seconds < 0f ? "never" : seconds < 3f ? "move-0-3" : seconds < 10f ? "move-3-10" : "move-10plus";
@@ -365,11 +389,12 @@ namespace ToyCarArena.App
 
         /// <summary>
         /// The player's own boosts and the game's for them in a round or match tagged <paramref name="tag"/>, without
-        /// numbers but the round's, so neither event goes over <see cref="GameEvent.MaxNumbers"/>.
+        /// numbers but the round's, so neither event goes over <see cref="GameEvent.MaxNumbers"/>. A build without boosts
+        /// sends neither: they could only say none.
         /// </summary>
-        private static void MeasureBoosts(IGamePlatform platform, string tag, PlayerDriver driver)
+        private static void MeasureBoosts(IGamePlatform platform, string tag, PlayerDriver driver, bool hasBoost)
         {
-            if (driver == null) {
+            if (driver == null || !hasBoost) {
                 return;
             }
 
@@ -378,11 +403,6 @@ namespace ToyCarArena.App
         }
 
         private static string AmountOf(int count) => count == 0 ? "none" : count <= 2 ? "few" : "many";
-
-        private static string BoostBucketOf(int boosts)
-        {
-            return boosts == 0 ? "boosts-0" : boosts <= 2 ? "boosts-1-2" : "boosts-3plus";
-        }
 
         public static void MeasurePlayAgainShown(this IGamePlatform platform, RoundOutcome outcome, int round,
             RoundRecord record = default)
@@ -413,11 +433,10 @@ namespace ToyCarArena.App
             $"again-{GameEvent.Clean(outcome.ToString())}-{(streak.IsLost ? "lost" : streak.IsStreak ? "streak" : "nostreak")}-{RoundTag(round)}";
 
         /// <summary>
-        /// What a decided round did for the missions, the streak and the coins (<see cref="RoundRecord.Missions"/>,
-        /// <see cref="RoundRecord.Streak"/>, <see cref="RoundRecord.Coins"/>), from the saved record.
+        /// What a decided round did for the missions and the streak (<see cref="RoundRecord.Missions"/>,
+        /// <see cref="RoundRecord.Streak"/>), from the saved record.
         /// </summary>
-        public static void MeasureMeta(this IGamePlatform platform, int round, RoundRecord record, int missionsDone,
-            GameTuning tuning)
+        public static void MeasureMeta(this IGamePlatform platform, int round, RoundRecord record, int missionsDone)
         {
             var tag = RoundTag(round);
             if (record.Missions != null) {
@@ -435,23 +454,6 @@ namespace ToyCarArena.App
                 platform.Measure(ResultCategory, $"streak-lost-{tag}", "streak");
             }
 
-            platform.Measure(ResultCategory, $"coins-{CoinsBucketOf(record.Coins.After, tuning)}-{tag}", "coins");
-        }
-
-        // Against the toppers' prices: short of the cheapest, short of the middle one, or more.
-        private static string CoinsBucketOf(int coins, GameTuning tuning)
-        {
-            var prices = new System.Collections.Generic.List<int>();
-            foreach (var topper in tuning.Toppers.All) {
-                prices.Add(topper.Price);
-            }
-
-            if (prices.Count == 0) {
-                return "few";
-            }
-
-            prices.Sort();
-            return coins < prices[0] ? "few" : coins < prices[prices.Count / 2] ? "mid" : "many";
         }
 
         public static void MeasureMissionsShown(this IGamePlatform platform) =>

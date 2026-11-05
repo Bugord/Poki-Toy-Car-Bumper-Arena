@@ -108,6 +108,7 @@ namespace ToyCarArena.App
             builder.Register<ArenaRotation>(Lifetime.Singleton).As<IArenaRotation>();
             builder.Register<PersonalBests>(Lifetime.Singleton);
             builder.Register<AdBreaks>(Lifetime.Singleton);
+            builder.RegisterEntryPoint<SessionTime>().AsSelf();
             // The 3D scene's render scale follows the screen; the UI is drawn on top at full resolution.
             builder.RegisterEntryPoint<RenderScaler>().AsSelf()
                 .WithParameter("touchMaxShortSide", touchMaxShortSide)
