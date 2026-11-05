@@ -5,8 +5,7 @@
 		"<!-- will be copied to the resulting head //-->"
 	  ],
 	  "body": [
-		"<!-- will be copied to the resulting body //-->",
-		"<!-- will also be copied to the resulting body //-->"
+		"<script src=\"loading/loading.js\"></script>"
 	  ]
 	},
 	"background_color": "{{{ BACKGROUND_COLOR }}}",

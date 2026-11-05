@@ -74,7 +74,7 @@ namespace ToyCarArena.Tests.PlayMode
                 false, null, colors, true, 12, 11, true);
             platform.MeasureMatchStart(12);
             // A later match skips the first match's controls, which read the player's driver.
-            platform.MeasureRoundEnd(12, result, 150f, null);
+            platform.MeasureRoundEnd(12, result, 150f, null, true);
 
             Assert.That(platform.Events, Is.Not.Empty);
             foreach (var (category, what, action) in platform.Events) {

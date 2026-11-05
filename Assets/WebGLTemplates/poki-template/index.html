@@ -30,8 +30,7 @@
 					"<!-- will be copied to the resulting head //-->"
 				],
 				"body": [
-					"<!-- will be copied to the resulting body //-->",
-					"<!-- will also be copied to the resulting body //-->"
+					"<script src=\"loading/loading.js\"><\/script>"
 				]
 			},
 			"background_color": "{{{ BACKGROUND_COLOR }}}",
@@ -61,6 +60,9 @@
 	</script>
 </head>
 <body>
+	<!-- poki include body -->
+	<script src="loading/loading.js"></script>
+	<!-- poki include end -->
 	<script src="https://game-cdn.poki.com/loaders/v3/master-loader.js"></script>
 	<div style="position:absolute;top:0px;left:0px;z-index:9999;margin:10px">
 		This HTML will not be used on Poki.com. A new HTML will be auto generated from the JSON.

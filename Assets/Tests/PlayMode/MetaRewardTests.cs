@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Bugord.Core.Storage;
 using NUnit.Framework;
 using System.Text.RegularExpressions;
@@ -229,7 +230,7 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [Test]
-        public void MetaEventsNameTheMissionsTheStreakAndTheCoinsWithinTwoNumbers()
+        public void MetaEventsNameTheMissionsAndTheStreakWithinTwoNumbers()
         {
             var missions = new MissionTracker(storage, tuning);
             var round = missions.Record(Stats(RoundOutcome.Out, 3), 1, 7);
@@ -237,14 +238,14 @@ namespace ToyCarArena.Tests.PlayMode
             var record = new RoundRecord(result, 1, 0, false, false).WithMeta(new CoinGain(0, 50, 12, 0, 0, 0, 20),
                 round, new StreakChange(6, 0, 2));
             var platform = new MatchTests.RecordingPlatform();
-            platform.MeasureMeta(7, record, 12, tuning);
+            platform.MeasureMeta(7, record, 12);
             platform.MeasurePlayAgainShown(RoundOutcome.Out, 7, record);
 
             Assert.That(platform.Events, Does.Contain(("mission", "first-round", "complete")));
             Assert.That(platform.Events, Does.Contain(("mission", "done-10plus-r4plus", "missions")));
             Assert.That(platform.Events, Does.Contain(("result", "streak-0-r4plus", "streak")));
             Assert.That(platform.Events, Does.Contain(("result", "streak-lost-r4plus", "streak")));
-            Assert.That(platform.Events, Does.Contain(("result", "coins-mid-r4plus", "coins")));
+            Assert.That(platform.Events.Any(e => e.Item3 == "coins"), Is.False, "the coins event was removed after v0.14.1");
             Assert.That(platform.Events, Does.Contain(("result", "again-out-mission-r4plus", "visible")));
             Assert.That(platform.Events, Does.Contain(("result", "again-out-lost-r4plus", "visible")));
             foreach (var (category, what, action) in platform.Events) {

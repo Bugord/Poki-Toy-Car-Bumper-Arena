@@ -189,6 +189,8 @@ namespace ToyCarArena.App
                     progress.WinStreak >= tuning.Streaks.Start ? progress.WinStreak : 0);
                 hud = await navigator.OpenAsync<HudViewModel, HudRound>(hudRound, token);
                 await curtain.Hide();
+                // The page's loading screen stays up until the first round can be seen, past Poki's own loader.
+                LoadingScreen.Hide();
 
                 // The visit's first round begins on the player's first input, with no count: the new player came to
                 // drive, not to wait. Later rounds count down after the curtain.
@@ -230,7 +232,7 @@ namespace ToyCarArena.App
                 arenaRotation.Next(record.XpGain.After.Level);
                 levelScene.Resolve<ISessionRoster>().NextRound(result.CarCount - 1,
                     RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis, tuning.Players);
-                platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, driver);
+                platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, driver, tuning.Boost.IsEnabled);
                 if (pickups.IsEnabled) {
                     platform.MeasureMatchPickups(roundNumber, pickupCount, result.IsMatch);
                 }
@@ -242,7 +244,7 @@ namespace ToyCarArena.App
                 platform.MeasureRoundMap(roundNumber, playedMap);
                 platform.MeasureRoundVariant(roundNumber, playedMap, playedVariant);
                 platform.MeasureMapUnlocks(record.XpGain, tuning);
-                platform.MeasureMeta(roundNumber, record, missions.DoneThisVisit, tuning);
+                platform.MeasureMeta(roundNumber, record, missions.DoneThisVisit);
 
                 var delay = result.IsMatch ? tuning.Match.ResultDelay :
                     result.Outcome == RoundOutcome.Out ? tuning.Round.OutResultDelay : tuning.Round.ResultDelay;
