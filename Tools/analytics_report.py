@@ -2,7 +2,7 @@
 
 Запуск: python -I Tools/analytics_report.py <версия> [<прошлая версия>]   (версия без "v", например 0.2.0)
 Печатает Markdown: воронку по раундам (переход, победы, поражения, уходы посреди раунда), исходы, места и нокауты
-в 1-м раунде, время на арене, причины выбывания, ускорения, управление, прогресс, гараж и выбор машинок; для сборок
+в 1-м раунде, время сессии (после v0.14.1), время на арене, причины выбывания, ускорения, управление, прогресс, гараж и выбор машинок; для сборок
 с долгим матчем ещё воронку матчей, места, нокауты, падения и REVENGE по матчу.
 """
 import csv
@@ -60,11 +60,16 @@ def summarise(data):
         "loads": (num(loading, "starts"), num(loading, "completes")),
         "rounds": rounds(p),
         "outcome": other(o, r"result-(won|out|survived)-outcome"),
+        # до v0.14.1; с v0.2 то же по раундам в round-out-cause
         "cause": other(o, r"result-(pushed|fell)-out-cause"),
+        "round_cause": other(o, r"result-((?:pushed|fell)-r(?:1|2|3|4plus))-round-out-cause"),
         "fall_cause": other(o, r"result-(fell-[a-z]+-r[0-9a-z]+)-fall-cause"),
         "revenge": other(o, r"result-(revenge-[a-z]+-r[0-9a-z]+)-revenge"),
         "time": other(o, r"result-(\d+-\d+)-time"),
-        "boosts": other(o, r"result-(boosts-[a-z0-9-]+?)-boosts"),
+        "boosts": other(o, r"result-(boosts-[a-z0-9-]+?)-boosts"),  # до v0.14.1
+        # после v0.14.1: минуты на странице и в раундах (SessionTime), визиты, дошедшие до каждой
+        "session_time": {int(k): v for k, v in other(o, r"session-time-(\d+)m-reached").items()},
+        "session_play": {int(k): v for k, v in other(o, r"session-play-(\d+)m-reached").items()},
         "input": other(o, r"controls-([a-z]+)-input"),
         "boost_input": other(o, r"controls-boost-(button|tap|finger|key|mouse|gamepad|none)-boost-input"),
         "first_move": other(o, r"controls-(move-[a-z0-9-]+|never)-first-move"),
@@ -76,7 +81,7 @@ def summarise(data):
         "ko1": other(o, r"result-knockouts-(\d+)-r1-knockouts"),
         "again": i.get("result-play-again"),
         "garage": i.get("garage-button"),
-        "lobby": i.get("lobby-shown"),
+        "lobby": i.get("lobby-shown"),  # до v0.14.1
         # после v0.5.1: NEXT MATCH по исходу и раунду, медленное лобби по арене, раунды по варианту арены
         "again_by": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"result-again-([a-z]+-r(?:1|2|3|4plus))", e))},
         # после v0.6.0: NEXT MATCH после первого матча визита по устройству и по тому, ускорялся ли игрок
@@ -171,6 +176,32 @@ def report(version, previous):
         out.append(line("Тронули стартовый экран, от показа",
                         lambda s: f"{num(s['start'], 'interacted')} ({pct(num(s['start'], 'interacted'), num(s['start'], 'seen'))})" if s["start"] else "-"))
 
+    # Poki shows the session length and engaged (past 3 min) only for a Player Fit Test; SessionTime sends its own.
+    # The mean is a lower bound: the sum over milestones of the share that reached it times the minutes since the last.
+    if any(s and s["session_time"] for s in (cur, old)):
+        out += ["", "## Время сессии (после v0.14.1; визиты, от начавших загрузку)", "", head, sep]
+        minutes = sorted({m for s in (cur, old) if s for key in ("session_time", "session_play") for m in s[key]})
+
+        def reached(s, key, m):
+            return f"{s[key].get(m, 0)} ({pct(s[key].get(m, 0), s['loads'][0])})" if s[key] else "-"
+
+        def mean(s, key):
+            if not s[key] or not s["loads"][0]:
+                return "-"
+            total, last = 0.0, 0
+            for m in sorted(s[key]):
+                total += s[key][m] / s["loads"][0] * (m - last)
+                last = m
+            return f"не меньше {total:.1f} мин"
+
+        out.append(line("Engaged: 3 мин на странице", lambda s: reached(s, "session_time", 3)))
+        out.append(line("Средняя сессия на странице (оценка снизу)", lambda s: mean(s, "session_time")))
+        out.append(line("Средняя игра в раундах (оценка снизу)", lambda s: mean(s, "session_play")))
+        for m in minutes:
+            out.append(line(f"{m} мин на странице", lambda s, m=m: reached(s, "session_time", m)))
+        for m in minutes:
+            out.append(line(f"{m} мин в раундах", lambda s, m=m: reached(s, "session_play", m)))
+
     names = sorted({k for s in (cur, old) if s for k in s["rounds"]}, key=lambda k: (k.endswith("plus"), int(re.sub(r"\D", "", k))))
     out += ["", "## Воронка по раундам (старты / победы / поражения / ушли; далее = доля, перешедшая в следующий)", "", head, sep]
 
@@ -239,11 +270,12 @@ def report(version, previous):
 
     for title, key, order in (
         ("Исход (outcome)", "outcome", None),
-        ("Причина выбывания", "cause", None),
+        ("Причина выбывания (до v0.14.1)", "cause", None),
+        ("Причина выбывания по раундам (с v0.2)", "round_cause", None),
         ("Время на арене", "time", sorted(keys_of("time"), key=lambda k: int(k.split("-")[0]))),
-        ("Ускорения", "boosts", None),
+        ("Ускорения (до v0.14.1)", "boosts", None),
         ("Чем рулили впервые", "input", None),
-        ("Чем впервые ускорились (с v0.2.0)", "boost_input", None),
+        ("Чем впервые ускорились (с v0.2.0; после v0.14.1 только в сборке с бустами)", "boost_input", None),
         ("Первое движение, с после старта", "first_move", None),
         ("Свайпы в 1-м раунде (none, few 1–3, many 4+)", "swipes", ["none", "few", "many"]),
         ("Стартовый экран через N с после старта движка (после v0.13.5)", "start_time",
@@ -317,12 +349,12 @@ def report(version, previous):
         ("Открытия арен (визиты с map unlock)", "map_unlocks"),
         ("Арены по раундам (визиты с map)", "maps"),
         ("Варианты арен по раундам (визиты с map-variant)", "variants"),
-        ("Свои рывки по раундам (после v0.7.1, визиты с round-boosts)", "round_boosts"),
-        ("Рывки автобуста по раундам (после v0.7.1, визиты с auto-boosts)", "auto_boosts"),
+        ("Свои рывки по раундам (после v0.7.1, после v0.14.1 только в сборке с бустами; визиты с round-boosts)", "round_boosts"),
+        ("Рывки автобуста по раундам (после v0.7.1, после v0.14.1 только в сборке с бустами; визиты с auto-boosts)", "auto_boosts"),
         ("Миссии: сколько выполнено за раунд (v0.10, визиты с missions)", "missions_done"),
         ("Миссии: какие выполнены (v0.10, визиты с complete)", "mission_complete"),
         ("Серия побед после раунда (v0.10, визиты с streak; lost: серия прервана)", "streak"),
-        ("Монеты после раунда против цен шапок (v0.10, визиты с coins)", "coins"),
+        ("Монеты после раунда против цен шапок (v0.10 до v0.14.1, визиты с coins)", "coins"),
         ("Покупка шапок (v0.10, визиты с buy)", "topper_buy"),
         ("Покупка машинок за монеты (v0.10, визиты с buy)", "car_buy"),
         ("Шапка надета в гараже (v0.10, визиты с equip; none: снята)", "topper_equip"),
@@ -339,7 +371,7 @@ def report(version, previous):
     out.append(line("garage-button", lambda s: f"{num(s['garage'], 'interacted')} / {num(s['garage'], 'seen')} ({pct(num(s['garage'], 'interacted'), num(s['garage'], 'seen'))})"))
     out.append(line("garage-toppers (вкладка TOPPERS, v0.10)", lambda s: f"{num(s['toppers_tab'], 'interacted')} / {num(s['toppers_tab'], 'seen')} ({pct(num(s['toppers_tab'], 'interacted'), num(s['toppers_tab'], 'seen'))})"))
     out.append(line("mission-shown (миссии на результате, v0.10; визиты)", lambda s: str(num(s["missions_shown"], "seen"))))
-    out += ["", "## Лобби (показы)", "", head, sep]
+    out += ["", "## Лобби (показы, до v0.14.1)", "", head, sep]
     out.append(line("lobby-shown", lambda s: str(num(s["lobby"], "seen"))))
     out += ["", "## Таблица раунда (показы)", "", head, sep]
     out.append(line("scoreboard-shown", lambda s: str(num(s["scoreboard"], "seen"))))

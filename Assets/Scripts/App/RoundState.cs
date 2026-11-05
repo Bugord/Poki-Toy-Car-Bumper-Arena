@@ -230,7 +230,7 @@ namespace ToyCarArena.App
                 arenaRotation.Next(record.XpGain.After.Level);
                 levelScene.Resolve<ISessionRoster>().NextRound(result.CarCount - 1,
                     RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis, tuning.Players);
-                platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, driver);
+                platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, driver, tuning.Boost.IsEnabled);
                 if (pickups.IsEnabled) {
                     platform.MeasureMatchPickups(roundNumber, pickupCount, result.IsMatch);
                 }
@@ -242,7 +242,7 @@ namespace ToyCarArena.App
                 platform.MeasureRoundMap(roundNumber, playedMap);
                 platform.MeasureRoundVariant(roundNumber, playedMap, playedVariant);
                 platform.MeasureMapUnlocks(record.XpGain, tuning);
-                platform.MeasureMeta(roundNumber, record, missions.DoneThisVisit, tuning);
+                platform.MeasureMeta(roundNumber, record, missions.DoneThisVisit);
 
                 var delay = result.IsMatch ? tuning.Match.ResultDelay :
                     result.Outcome == RoundOutcome.Out ? tuning.Round.OutResultDelay : tuning.Round.ResultDelay;
