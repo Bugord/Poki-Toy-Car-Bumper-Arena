@@ -67,7 +67,15 @@ namespace ToyCarArena.Tests.PlayMode
             // The asset ships the long match, but the suites were written for the last car standing: play that unless a
             // test asks for the match with UseMode.
             UseMode(GameTuning.GameMode.LastStanding);
+            // The suites measure plain rounds whatever round of the visit they play; a test asks for one with UseSpecial.
+            UseSpecial(SpecialRound.None);
         }
+
+        /// <summary>
+        /// Plays <paramref name="kind"/> in the Game scenes loaded after this call, whatever round of the visit they are:
+        /// in memory only, the tear-down puts the schedule back.
+        /// </summary>
+        protected void UseSpecial(SpecialRound kind) => LoadTuning().SpecialRounds.Force(kind);
 
         /// <summary>The mode the tuning asset ships, whatever the test plays.</summary>
         protected GameTuning.GameMode ShippedMode => savedMode;
@@ -95,6 +103,7 @@ namespace ToyCarArena.Tests.PlayMode
                 UnityEngine.Random.state = originalRandomState;
                 RestoreMode();
                 RestoreBoost();
+                LoadTuning().SpecialRounds.Force(null);
             }
         }
 

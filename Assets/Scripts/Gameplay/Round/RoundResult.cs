@@ -106,6 +106,15 @@ namespace ToyCarArena.Gameplay.Round
         /// </summary>
         public readonly bool IsLoss;
 
+        /// <summary>
+        /// Knock-outs the reward counts on top of <see cref="Knockouts"/>: a boss knocked off by the player pays
+        /// <see cref="GameTuning.SpecialRoundSettings.BossReward"/> in all. The stats, missions and bests do not count them.
+        /// </summary>
+        public readonly int BonusKnockouts;
+
+        /// <summary>The knock-outs the round's XP and coins pay for.</summary>
+        public int RewardKnockouts => Knockouts + BonusKnockouts;
+
         public IReadOnlyList<RoundStanding> Standings { get; }
 
         /// <summary>
@@ -119,8 +128,10 @@ namespace ToyCarArena.Gameplay.Round
 
         public RoundResult(RoundOutcome outcome, int place, int carCount, float seconds, int knockouts, int knockedOutBy,
             FallCause fallCause, bool hadNemesis, bool revengeTaken, IReadOnlyList<RoundStanding> standings = null,
-            IReadOnlyList<int> colors = null, bool isMatch = false, int falls = 0, int knockedOff = 0, bool? isLoss = null)
+            IReadOnlyList<int> colors = null, bool isMatch = false, int falls = 0, int knockedOff = 0, bool? isLoss = null,
+            int bonusKnockouts = 0)
         {
+            BonusKnockouts = bonusKnockouts;
             Outcome = outcome;
             Place = place;
             CarCount = carCount;

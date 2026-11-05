@@ -55,6 +55,27 @@ namespace ToyCarArena.Tests.PlayMode
             return Capture(false, Sizes, (model, tuning, width, height) => KickoffShots(model, tuning, width, height));
         }
 
+        /// <summary>A special round's name and rule over the countdown, in the longest languages too:
+        /// <c>Logs/countdown/special_&lt;language&gt;_&lt;w&gt;x&lt;h&gt;.png</c>.</summary>
+        [UnityTest]
+        public IEnumerator CaptureASpecialKickoff()
+        {
+            return Capture(false, Sizes, (model, tuning, width, height) => SpecialShots(model, tuning, width, height),
+                SpecialRound.HotPotato);
+        }
+
+        // A step each, since the view fills the sticker's text as the step changes.
+        private static IEnumerable<(string Name, IEnumerator Settle)> SpecialShots(HudViewModel model, GameTuning tuning,
+            int width, int height)
+        {
+            foreach (var (step, language) in new[] { (3, "en"), (2, "fr"), (1, "ru") }) {
+                Strings.SetLanguage(language);
+                yield return ($"special_{language}_{width}x{height}", HoldStep(model, tuning, step, NumberAge));
+            }
+
+            Strings.SetLanguage("en");
+        }
+
         [UnityTest]
         public IEnumerator CaptureTheDesktopStart()
         {
@@ -98,7 +119,8 @@ namespace ToyCarArena.Tests.PlayMode
         /// HUD over it and takes each shot at each size.
         /// </summary>
         private IEnumerator Capture(bool isFirstRound, (int Width, int Height)[] sizes,
-            Func<HudViewModel, GameTuning, int, int, IEnumerable<(string Name, IEnumerator Settle)>> shots)
+            Func<HudViewModel, GameTuning, int, int, IEnumerable<(string Name, IEnumerator Settle)>> shots,
+            SpecialRound special = SpecialRound.None)
         {
             var tuning = UseMode(GameTuning.GameMode.Match, 120f);
             var roundNumber = isFirstRound ? 1 : 7;
@@ -119,7 +141,7 @@ namespace ToyCarArena.Tests.PlayMode
 
             var controls = new HudControls();
             var model = new HudViewModel(null, controls);
-            model.SetPayload(new HudRound(round, null, tuning.Controls, isFirstRound, roundNumber, false));
+            model.SetPayload(new HudRound(round, null, tuning.Controls, isFirstRound, roundNumber, false, 0, special));
             var view = new HudView(controls, container.Resolve<IAudioService>());
             view.Bind(model);
             var hud = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/Screens/Hud.uxml").Instantiate();

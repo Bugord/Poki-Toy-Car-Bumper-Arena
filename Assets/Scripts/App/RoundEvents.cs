@@ -84,6 +84,12 @@ namespace ToyCarArena.App
     /// mission (<c>result / again-outcome-mission, nomission-rR</c>) and by the streak (<c>result /
     /// again-outcome-streak, nostreak, lost-rR</c>): Poki does not link a visit's events, so this is the one way to tell
     /// the missions' and the streaks' part apart</item>
+    /// <item>after v0.15.0: <c>session / visit-1, 2, 3, 4plus / visit</c> once per visit and,
+    /// from the second, <c>session / back-d0, d1, d2-7, d8plus, unknown / visit</c>, calendar days since the last one
+    /// (<see cref="Visits"/>)</item>
+    /// <item>after v0.15.0: <c>special / mega, hot-potato, boss, ice, low-gravity / start</c> at GO! of a special round,
+    /// then <c>complete</c> or <c>fail</c>, <c>special / id-won, out, survived / outcome</c> and in a boss round
+    /// <c>special / boss-taken, boss-missed / boss</c></item>
     /// </list>
     /// Removed after v0.14.1, as they only repeated others or no longer told anything: <c>result / pushed, fell /
     /// out-cause</c> (the same as <c>round-out-cause</c> without the round), <c>result / boosts-0, 1-2, 3plus /
@@ -102,6 +108,7 @@ namespace ToyCarArena.App
         private const string ArenaCategory = "arena";
         private const string MissionCategory = "mission";
         private const string SessionCategory = "session";
+        private const string SpecialCategory = "special";
 
         // A streak this long or longer goes in one bucket, so its number and the round's still fit.
         private const int LastStreakBucket = 5;
@@ -241,6 +248,39 @@ namespace ToyCarArena.App
             }
             else {
                 platform.MeasureComplete(ArenaCategory, $"{mapId}-{variantId}");
+            }
+        }
+
+        /// <summary>A special round starting at GO!; a plain round sends nothing.</summary>
+        public static void MeasureSpecialStart(this IGamePlatform platform, SpecialRound kind)
+        {
+            if (kind != SpecialRound.None) {
+                platform.MeasureStart(SpecialCategory, RoundRules.IdOf(kind));
+            }
+        }
+
+        /// <summary>
+        /// A special round's end: <c>complete</c> or <c>fail</c> beside the round's, how it went, and in a boss round
+        /// whether the player knocked the boss off.
+        /// </summary>
+        public static void MeasureSpecialEnd(this IGamePlatform platform, SpecialRound kind, RoundResult result,
+            bool bossTaken)
+        {
+            if (kind == SpecialRound.None) {
+                return;
+            }
+
+            var id = RoundRules.IdOf(kind);
+            if (result.Outcome == RoundOutcome.Out) {
+                platform.MeasureFail(SpecialCategory, id);
+            }
+            else {
+                platform.MeasureComplete(SpecialCategory, id);
+            }
+
+            platform.Measure(SpecialCategory, $"{id}-{GameEvent.Clean(result.Outcome.ToString())}", "outcome");
+            if (kind == SpecialRound.Boss) {
+                platform.Measure(SpecialCategory, bossTaken ? "boss-taken" : "boss-missed", "boss");
             }
         }
 

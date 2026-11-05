@@ -221,6 +221,9 @@ namespace ToyCarArena.Gameplay.Cars
         // How many times its own size the car is now, and is growing or shrinking to.
         private float growth = 1f;
         private float growthTarget = 1f;
+        // The size and mass the car has with no mega item running: its own, or a special round's.
+        private float baseSize = 1f;
+        private float baseMass = 1f;
 
         /// <summary>How many times its own size the car is now: above 1 while a mega item runs, or as it shrinks back.</summary>
         public float Growth => growth;
@@ -334,8 +337,9 @@ namespace ToyCarArena.Gameplay.Cars
             lastAbility = kind;
             switch (kind) {
                 case ItemKind.Mega:
-                    Movement.SetMassScale(pickupSettings.Mega.MassScale);
-                    growthTarget = pickupSettings.Mega.SizeScale;
+                    // A car already giant in a special round grows no further.
+                    Movement.SetMassScale(Mathf.Max(baseMass, pickupSettings.Mega.MassScale));
+                    growthTarget = Mathf.Max(baseSize, pickupSettings.Mega.SizeScale);
                     break;
                 case ItemKind.Turbo:
                     Movement.SetBoostCooldown(pickupSettings.Turbo.BoostCooldown);
@@ -373,14 +377,28 @@ namespace ToyCarArena.Gameplay.Cars
             abilityOn[index] = false;
             switch (kind) {
                 case ItemKind.Mega:
-                    Movement.SetMassScale(1f);
+                    Movement.SetMassScale(baseMass);
                     // Shrinks back over the grow time: at once, a car grown over the edge of another would leave a gap.
-                    growthTarget = 1f;
+                    growthTarget = baseSize;
                     break;
                 case ItemKind.Turbo:
                     Movement.SetBoostCooldown(-1f);
                     break;
             }
+        }
+
+        /// <summary>
+        /// Makes the car <paramref name="size"/> times its own size and <paramref name="mass"/> times its own mass for
+        /// the rest of the round, at once (a special round's giants and boss): a mega item on top makes it no bigger.
+        /// </summary>
+        public void SetBaseSize(float size, float mass)
+        {
+            this.baseSize = Mathf.Max(0.1f, size);
+            this.baseMass = Mathf.Max(0.01f, mass);
+            var isMega = IsRunning(ItemKind.Mega) && pickupSettings != null;
+            Movement.SetMassScale(isMega ? Mathf.Max(baseMass, pickupSettings.Mega.MassScale) : baseMass);
+            growthTarget = isMega ? Mathf.Max(baseSize, pickupSettings.Mega.SizeScale) : baseSize;
+            SetGrowth(growthTarget);
         }
 
         /// <summary>Ends every timed item that runs: the car fell, or is back from a fall.</summary>
@@ -440,12 +458,14 @@ namespace ToyCarArena.Gameplay.Cars
 
         /// <summary>
         /// An item of <paramref name="user"/> (a shockwave, a bomb, a glove) knocked this car: it counts as hit by that
-        /// car, so a fall that follows is the user's knock-out, the way a push of a car is.
+        /// car, so a fall that follows is the user's knock-out, the way a push of a car is. With
+        /// <paramref name="isItem"/> false the blow was the round's (the hot potato's bomb): the user's knock-out, but not
+        /// one by an item.
         /// </summary>
-        public void HitByItem(Car user)
+        public void HitByItem(Car user, bool isItem = true)
         {
             LastHitBy = user;
-            LastHitByItem = true;
+            LastHitByItem = isItem;
             LastHitTime = Time.time;
         }
 
@@ -470,9 +490,10 @@ namespace ToyCarArena.Gameplay.Cars
             LastRingFallTime = float.NegativeInfinity;
             ClearAbilities();
             ClearItem();
-            growthTarget = 1f;
-            SetGrowth(1f);
+            growthTarget = baseSize;
+            SetGrowth(baseSize);
             Movement.Respawn(position, rotation);
+            Movement.SetMassScale(baseMass);
             IsInvulnerable = false;
             SetInvulnerable(true, cars);
         }

@@ -207,6 +207,7 @@ namespace ToyCarArena.UI
         // tilted (a little overshoot), swells a touch while it holds and shrinks away at the end of its step; GO! springs
         // harder, its ring and rays fly out, and it swells away. Its timing is the round's (GameTuning.Round.Kickoff*).
         private const string KickoffShownClass = "kickoff--shown";
+        private const string KickoffSpecialShownClass = "kickoff__special--shown";
         private const float KickoffEnter = 0.24f;
         private const float KickoffLeave = 0.16f;
         private const float KickoffFadeIn = 0.06f;
@@ -331,6 +332,10 @@ namespace ToyCarArena.UI
         private Label kickoffDigitFace;
         private VisualElement kickoffGo;
         private VisualElement kickoffRing;
+        private VisualElement kickoffSpecial;
+        private Label kickoffSpecialName;
+        private Label kickoffSpecialNameFace;
+        private Label kickoffSpecialHint;
         private VisualElement[] kickoffRays;
         private int shownKickoffStep = HudViewModel.NoKickoff;
         private bool isKickoffShown;
@@ -745,6 +750,10 @@ namespace ToyCarArena.UI
             kickoffDigitFace = Root.Q<Label>("kickoff-digit-face");
             kickoffGo = Root.Q<VisualElement>("kickoff-go");
             kickoffRing = Root.Q<VisualElement>("kickoff-ring");
+            kickoffSpecial = Root.Q<VisualElement>("kickoff-special");
+            kickoffSpecialName = Root.Q<Label>("kickoff-special-name");
+            kickoffSpecialNameFace = Root.Q<Label>("kickoff-special-name-face");
+            kickoffSpecialHint = Root.Q<Label>("kickoff-special-hint");
             var burst = Root.Q<VisualElement>("kickoff-burst");
             kickoffRays = new VisualElement[KickoffRays];
             for (var i = 0; i < KickoffRays; i++) {
@@ -776,6 +785,14 @@ namespace ToyCarArena.UI
                 kickoffNumber.style.display = isGo ? DisplayStyle.None : DisplayStyle.Flex;
                 kickoffGo.style.display = isGo ? DisplayStyle.Flex : DisplayStyle.None;
                 kickoffRing.style.display = isGo ? DisplayStyle.Flex : DisplayStyle.None;
+                // A special round's rule stays over the numbers, read while they count, and leaves for GO!.
+                var special = isGo ? null : GameText.Special(ViewModel.Special);
+                kickoffSpecial.EnableInClassList(KickoffSpecialShownClass, special != null);
+                if (special != null) {
+                    kickoffSpecialName.text = special;
+                    kickoffSpecialNameFace.text = special;
+                    kickoffSpecialHint.text = GameText.SpecialHint(ViewModel.Special);
+                }
                 if (!isGo) {
                     var digit = KickoffDigits[Mathf.Clamp(step, 0, KickoffDigits.Length - 1)];
                     kickoffDigit.text = digit;

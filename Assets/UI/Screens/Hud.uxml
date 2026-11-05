@@ -192,6 +192,13 @@
         </ui:VisualElement>
         <ui:VisualElement name="kickoff" picking-mode="Ignore" class="kickoff">
             <ui:VisualElement picking-mode="Ignore" class="kickoff__center">
+                <ui:VisualElement name="kickoff-special" picking-mode="Ignore" class="kickoff__special">
+                    <ui:VisualElement picking-mode="Ignore" class="stroke kickoff__special-name">
+                        <ui:Label name="kickoff-special-name" picking-mode="Ignore" class="kickoff__special-text" />
+                        <ui:Label name="kickoff-special-name-face" picking-mode="Ignore" class="kickoff__special-text stroke__face" />
+                    </ui:VisualElement>
+                    <ui:Label name="kickoff-special-hint" picking-mode="Ignore" class="kickoff__special-hint" />
+                </ui:VisualElement>
                 <ui:VisualElement name="kickoff-ring" picking-mode="Ignore" class="kickoff__ring" />
                 <ui:VisualElement name="kickoff-burst" picking-mode="Ignore" class="kickoff__burst" />
                 <ui:VisualElement name="kickoff-number" picking-mode="Ignore" class="stroke kickoff__sticker">

@@ -106,7 +106,8 @@ namespace ToyCarArena.App
                 var arena = arenaCatalog.Find(mapId);
                 curtain.ShowLobby(roster, RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis,
                     GameText.Arena(arena), arena != null && arenaRotation.IsNew(arena.Id),
-                    progress.WinStreak >= tuning.Streaks.Start ? progress.WinStreak : 0, NearestMission());
+                    progress.WinStreak >= tuning.Streaks.Start ? progress.WinStreak : 0, NearestMission(),
+                    RoundRules.For(tuning, progress.Round));
             }
             catch {
                 await screen.CloseAsync();

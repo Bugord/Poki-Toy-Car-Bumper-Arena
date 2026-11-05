@@ -99,6 +99,7 @@ namespace ToyCarArena.App
             // A match turns through the arena's variants with the floor's cycles; each one is measured on its own.
             var variants = levelScene.Resolve<ArenaVariants>();
             var currentVariant = playedVariant;
+            var special = levelScene.Resolve<RoundRules>().Kind;
             var waitsForPlayer = roundNumber == 1;
             // The boxes the player breaks in a match, counted for the end, and its items, each reported as its roll lands
             // and as it is used.
@@ -169,6 +170,7 @@ namespace ToyCarArena.App
                 }
 
                 platform.MeasureVariantStart(playedMap, playedVariant);
+                platform.MeasureSpecialStart(special);
                 arenaRotation.MarkSeen(playedMap);
                 arenaRotation.MarkPlayed(playedMap, playedVariant);
                 isPlaying = true;
@@ -186,7 +188,7 @@ namespace ToyCarArena.App
 
                 var hudRound = new HudRound(round, driver, tuning.Controls, waitsForPlayer, roundNumber,
                     playerProgress.TotalXp == 0,
-                    progress.WinStreak >= tuning.Streaks.Start ? progress.WinStreak : 0);
+                    progress.WinStreak >= tuning.Streaks.Start ? progress.WinStreak : 0, special);
                 hud = await navigator.OpenAsync<HudViewModel, HudRound>(hudRound, token);
                 await curtain.Hide();
                 // The page's loading screen stays up until the first round can be seen, past Poki's own loader.
@@ -239,6 +241,7 @@ namespace ToyCarArena.App
 
                 // The variant playing as it ended: the rotation's own in a round, the last cycle's in a match.
                 platform.MeasureVariantEnd(playedMap, currentVariant, result.Outcome);
+                platform.MeasureSpecialEnd(special, result, round.BossTaken);
                 platform.MeasureRoundCar(roundNumber, playedCar);
                 platform.MeasureProgress(record.XpGain);
                 platform.MeasureRoundMap(roundNumber, playedMap);

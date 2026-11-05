@@ -139,6 +139,9 @@ namespace ToyCarArena.Gameplay
             // Read from the session's progress once, as the scene is built: the round's cars, the bots and the player's
             // driver share it, and the session moves on before the next scene is.
             builder.Register<RoundDifficulty>(Lifetime.Singleton);
+            // The round's special rule, read the same way; the lobby before it named the same one.
+            builder.Register<RoundRules>(Lifetime.Singleton);
+            builder.RegisterEntryPoint<SpecialRoundPlay>().AsSelf();
 
             // The cars go under this scope's object: with no parent given they would land in DontDestroyOnLoad, where
             // the injector builds them, and outlive the scene.
@@ -156,6 +159,8 @@ namespace ToyCarArena.Gameplay
             builder.Register<ArenaVariants>(Lifetime.Singleton);
             // The abilities on the floor of a long match; in a round of last-car-standing it builds nothing.
             builder.RegisterEntryPoint<ArenaPickups>().AsSelf().WithParameter(transform);
+            // The bomb of a hot potato round; in any other round it builds nothing.
+            builder.RegisterEntryPoint<HotPotato>().AsSelf().WithParameter(transform);
             // The objects of the sandbox and tabletop variants: each does nothing unless its variant names it.
             builder.RegisterEntryPoint<ArenaCrab>().AsSelf().WithParameter(transform);
             builder.RegisterEntryPoint<ArenaMounds>().AsSelf().WithParameter(transform);

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Round;
 using UIKit.Runtime.Abstractions;
 using UnityEngine;
@@ -37,11 +38,15 @@ namespace ToyCarArena.UI
         /// <summary>The line about a mission under the seats, or null for a tip.</summary>
         public string Mission { get; private set; }
 
+        /// <summary>The coming round's special rule, named beside the arena with its rule under the seats.</summary>
+        public SpecialRound Special { get; private set; }
+
         public void ShowLobby(ISessionRoster roster, int botCount, int nemesis, string arenaName = null, bool arenaIsNew = false,
-            int streak = 0, string mission = null)
+            int streak = 0, string mission = null, SpecialRound special = SpecialRound.None)
         {
             Streak = streak;
             Mission = mission;
+            Special = special;
             ArenaName = arenaName;
             ArenaIsNew = arenaIsNew;
             var rows = new List<LobbyRow> { new(0, roster.ColorOf(0), GameText.You, roster.LevelOf(0), null, false) };

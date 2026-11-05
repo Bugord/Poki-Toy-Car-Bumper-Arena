@@ -98,6 +98,9 @@ namespace ToyCarArena.UI
         /// <summary>The win streak this round is played on (it multiplies the reward), or 0 when it is no streak.</summary>
         public int Streak { get; private set; }
 
+        /// <summary>This round's special rule, named over the countdown; none for a plain round.</summary>
+        public SpecialRound Special { get; private set; }
+
         public bool IsRunning => round != null && round.IsRunning && !round.Player.IsOut;
 
         public float LastSteerTime => driver?.LastSteerTime ?? float.NegativeInfinity;
@@ -348,6 +351,7 @@ namespace ToyCarArena.UI
             RoundNumber = payload.RoundNumber;
             IsNewPlayer = payload.IsNewPlayer;
             Streak = payload.Streak;
+            Special = payload.Special;
             // The view model outlives a round: a GO! of the round before must not show again on this one.
             KickoffStep = NoKickoff;
             if (round != null) {
@@ -436,12 +440,14 @@ namespace ToyCarArena.UI
         public int RoundNumber { get; }
         public bool IsNewPlayer { get; }
         public int Streak { get; }
+        public SpecialRound Special { get; }
 
         public HudRound(ArenaRound round, PlayerDriver driver, GameTuning.ControlSettings controls, bool isFirstRound,
-            int roundNumber, bool isNewPlayer, int streak = 0)
+            int roundNumber, bool isNewPlayer, int streak = 0, SpecialRound special = SpecialRound.None)
         {
             IsNewPlayer = isNewPlayer;
             Streak = streak;
+            Special = special;
             Round = round;
             Driver = driver;
             Controls = controls;

@@ -97,8 +97,10 @@ namespace ToyCarArena.UI
             BuildArenaLine();
             fill = 0f;
             fillTime = 0f;
-            // The mission closest to done, while there is one; a tip otherwise.
-            Root.Q<Label>("lobby-tip").text = ViewModel.Mission ?? Strings.Get(Tips[Random.Range(0, Tips.Length)]);
+            // A special round's rule, the one thing to know before it starts; else the mission closest to done, while there
+            // is one; a tip otherwise.
+            Root.Q<Label>("lobby-tip").text = GameText.SpecialHint(ViewModel.Special) ?? ViewModel.Mission
+                ?? Strings.Get(Tips[Random.Range(0, Tips.Length)]);
             foreach (var row in ViewModel.Rows) {
                 var seat = new Seat { Slot = Element("lobby__slot") };
                 if (row.Name != null && row.Index != 0) {
@@ -156,11 +158,23 @@ namespace ToyCarArena.UI
             if (!named) {
                 return;
             }
-            arenaLine.Add(OutlinedText(Strings.Get("lobby.arena"), "lobby__arena-label"));
+            // A special round takes the ARENA label's room for its own tag, so the pill keeps its width in portrait.
+            var special = GameText.Special(ViewModel.Special);
+            if (special == null) {
+                arenaLine.Add(OutlinedText(Strings.Get("lobby.arena"), "lobby__arena-label"));
+            }
+
             arenaLine.Add(OutlinedText(ViewModel.ArenaName, "lobby__arena-name"));
             if (ViewModel.ArenaIsNew) {
                 arenaBadge = OutlinedText(Strings.Get("common.new"), "lobby__badge");
                 arenaLine.Add(arenaBadge);
+            }
+
+            if (special != null) {
+                var tag = OutlinedText(special, "lobby__badge");
+                tag.AddToClassList("lobby__badge--special");
+                arenaLine.Add(tag);
+                arenaBadge ??= tag;
             }
         }
 

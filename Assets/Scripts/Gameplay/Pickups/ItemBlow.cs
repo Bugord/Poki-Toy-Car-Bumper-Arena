@@ -38,7 +38,10 @@ namespace ToyCarArena.Gameplay.Pickups
         /// </summary>
         /// <param name="push">Metres per second added along the direction.</param>
         /// <param name="cap">The most the push may leave the car going along the direction, in metres per second.</param>
-        public bool Apply(Car car, Car user, Vector3 direction, float push, float cap, float lift, float stagger)
+        /// <param name="isItem">False for a blow that is not the user's item (the hot potato's bomb): the fall is still
+        /// the user's knock-out, but not one by an item.</param>
+        public bool Apply(Car car, Car user, Vector3 direction, float push, float cap, float lift, float stagger,
+            bool isItem = true)
         {
             if (!car.IsTargetable) {
                 return false;
@@ -55,7 +58,7 @@ namespace ToyCarArena.Gameplay.Pickups
             var added = Mathf.Min(push * share, Mathf.Max(0f, cap - speedAway));
             car.Movement.Push(direction * added + Vector3.up * (lift * share));
             car.Movement.Stagger(stagger * share);
-            car.HitByItem(user);
+            car.HitByItem(user, isItem);
             return true;
         }
     }

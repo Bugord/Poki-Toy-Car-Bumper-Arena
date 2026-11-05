@@ -398,11 +398,19 @@
     -unity-text-outline-width: 0;
 }
 .lobby__arena .lobby__badge {
-    width: 100px;
+    width: auto;
+    min-width: 100px;
     height: 62px;
     margin-left: 18px;
+    padding: 0 12px;
 }
 .lobby__arena .lobby__badge .sticker-text__text { font-size: 30px; }
+/* A special round's tag (MEGA ROUND!), tilted orange, as wide as its name. */
+.lobby__arena .lobby__badge--special {
+    padding: 0 18px;
+    background-color: var(--orange);
+    rotate: -3deg;
+}
 
 .lobby__rows {
     width: 920px;
@@ -3019,6 +3027,53 @@
     text-shadow: 0 34px 0 rgb(29, 43, 79);
     -unity-text-align: middle-center;
     white-space: nowrap;
+}
+
+/* A special round's name, tilted gold over the countdown numbers, and its one-line rule on a dark pill below it
+   (HudView shows them for 3, 2 and 1 and hides them at GO!). */
+.kickoff__special {
+    display: none;
+    position: absolute;
+    left: -480px;
+    top: -560px;
+    width: 960px;
+    align-items: center;
+}
+
+.kickoff__special--shown {
+    display: flex;
+}
+
+.kickoff__special-name {
+    align-self: stretch;
+    align-items: center;
+    rotate: -4deg;
+}
+
+.kickoff__special-text {
+    margin: 0;
+    padding: 0;
+    align-self: stretch;
+    -unity-text-auto-size: best-fit 60px 120px;
+    font-size: 120px;
+    color: var(--gold);
+    -unity-text-outline-width: 20px;
+    -unity-text-outline-color: var(--navy);
+    text-shadow: 0 14px 0 rgb(29, 43, 79);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.kickoff__special-hint {
+    margin: 16px 0 0 0;
+    padding: 10px 36px 14px 36px;
+    max-width: 960px;
+    border-radius: 40px;
+    background-color: rgba(29, 43, 79, 0.8);
+    font-size: 46px;
+    color: var(--white);
+    -unity-text-align: middle-center;
+    white-space: normal;
 }
 
 .kickoff__ring {
