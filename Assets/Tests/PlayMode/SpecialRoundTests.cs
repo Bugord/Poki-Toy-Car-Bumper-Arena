@@ -168,9 +168,11 @@ namespace ToyCarArena.Tests.PlayMode
 
             Car blown = null;
             Car blownBy = null;
+            var byItem = true;
             potato.Blown += car => {
                 blown = car;
                 blownBy = car.LastHitBy;
+                byItem = car.LastHitByItem;
             };
             timeout = Time.time + settings.Fuse + 1f;
             while (blown == null && Time.time < timeout) {
@@ -179,6 +181,7 @@ namespace ToyCarArena.Tests.PlayMode
 
             Assert.That(blown, Is.SameAs(other), "The bomb did not go off on its holder.");
             Assert.That(blownBy, Is.SameAs(holder), "The blast is not to the credit of the car that passed the bomb.");
+            Assert.That(byItem, Is.False, "The bomb counts towards the item missions.");
         }
     }
 }

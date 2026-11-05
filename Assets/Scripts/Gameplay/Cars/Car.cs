@@ -458,12 +458,14 @@ namespace ToyCarArena.Gameplay.Cars
 
         /// <summary>
         /// An item of <paramref name="user"/> (a shockwave, a bomb, a glove) knocked this car: it counts as hit by that
-        /// car, so a fall that follows is the user's knock-out, the way a push of a car is.
+        /// car, so a fall that follows is the user's knock-out, the way a push of a car is. With
+        /// <paramref name="isItem"/> false the blow was the round's (the hot potato's bomb): the user's knock-out, but not
+        /// one by an item.
         /// </summary>
-        public void HitByItem(Car user)
+        public void HitByItem(Car user, bool isItem = true)
         {
             LastHitBy = user;
-            LastHitByItem = true;
+            LastHitByItem = isItem;
             LastHitTime = Time.time;
         }
 

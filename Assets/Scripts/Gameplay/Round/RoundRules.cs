@@ -13,7 +13,14 @@ namespace ToyCarArena.Gameplay.Round
             this.Kind = For(tuning, progress.Round);
             // The boss starts across the floor from the player, who is first, nearest the camera.
             this.BossIndex = Kind == SpecialRound.Boss ? 1 + RoundDifficulty.BotCountFor(tuning, progress) / 2 : -1;
+            // A fall takes 1 / sqrt(g) as long, so a push off the rim under low gravity still counts as a knock-out.
+            this.FallTimeScale = Kind == SpecialRound.LowGravity
+                ? 1f / UnityEngine.Mathf.Sqrt(tuning.SpecialRounds.GravityScale)
+                : 1f;
         }
+
+        /// <summary>How many times longer a fall takes this round: the knock-out credit windows stretch with it.</summary>
+        public float FallTimeScale { get; }
 
         public SpecialRound Kind { get; }
 

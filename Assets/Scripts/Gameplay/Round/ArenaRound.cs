@@ -587,7 +587,8 @@ namespace ToyCarArena.Gameplay.Round
                 return null;
             }
 
-            var window = hitBy.IsPlayer ? difficulty.PlayerKnockoutWindow : tuning.Round.KnockoutCreditWindow;
+            var window = (hitBy.IsPlayer ? difficulty.PlayerKnockoutWindow : tuning.Round.KnockoutCreditWindow)
+                * rules.FallTimeScale;
             return Time.time - car.LastHitTime <= window ? hitBy : null;
         }
 

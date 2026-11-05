@@ -295,7 +295,7 @@ namespace ToyCarArena.Gameplay.Pickups
 
             var isPlayerHit = false;
             if (blow.Apply(holder, Passer, outward, settings.HolderPush, settings.HolderPush, settings.HolderLift,
-                    settings.HolderStagger)) {
+                    settings.HolderStagger, isItem: false)) {
                 isPlayerHit = holder.IsPlayer;
                 // Nobody passed it: the fall that follows is the bomb's, like a hazard's.
                 if (Passer == null) {
@@ -319,7 +319,7 @@ namespace ToyCarArena.Gameplay.Pickups
                 var direction = distance > 0.05f ? offset / distance : outward;
                 var share = ItemBlow.Share(distance, settings.Radius, 0.35f, 1.5f);
                 if (blow.Apply(car, holder, direction, settings.Push * share, tuning.Car.MaxBumpSpeed,
-                        settings.Lift * share, settings.Stagger)) {
+                        settings.Lift * share, settings.Stagger, isItem: false)) {
                     isPlayerHit |= car.IsPlayer;
                 }
             }

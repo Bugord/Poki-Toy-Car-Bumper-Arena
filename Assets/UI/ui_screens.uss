@@ -398,14 +398,15 @@
     -unity-text-outline-width: 0;
 }
 .lobby__arena .lobby__badge {
-    width: 100px;
+    width: auto;
+    min-width: 100px;
     height: 62px;
     margin-left: 18px;
+    padding: 0 12px;
 }
 .lobby__arena .lobby__badge .sticker-text__text { font-size: 30px; }
 /* A special round's tag (MEGA ROUND!), tilted orange, as wide as its name. */
 .lobby__arena .lobby__badge--special {
-    width: auto;
     padding: 0 18px;
     background-color: var(--orange);
     rotate: -3deg;
