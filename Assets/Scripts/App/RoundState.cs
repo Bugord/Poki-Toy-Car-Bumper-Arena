@@ -189,6 +189,8 @@ namespace ToyCarArena.App
                     progress.WinStreak >= tuning.Streaks.Start ? progress.WinStreak : 0);
                 hud = await navigator.OpenAsync<HudViewModel, HudRound>(hudRound, token);
                 await curtain.Hide();
+                // The page's loading screen stays up until the first round can be seen, past Poki's own loader.
+                LoadingScreen.Hide();
 
                 // The visit's first round begins on the player's first input, with no count: the new player came to
                 // drive, not to wait. Later rounds count down after the curtain.
