@@ -42,6 +42,7 @@ namespace ToyCarArena.Gameplay.Bots
         private readonly BallLane ballLane;
         private readonly ArenaHazards hazards;
         private readonly ArenaPickups pickups;
+        private readonly HotPotato potato;
         private readonly List<Bot> bots = new();
 
         private int seed;
@@ -55,9 +56,10 @@ namespace ToyCarArena.Gameplay.Bots
         private Bot playerGrudge;
 
         public BotDriver(GameTuning tuning, ArenaRound round, RoundDifficulty difficulty, BallLane ballLane,
-            ArenaHazards hazards, ArenaPickups pickups)
+            ArenaHazards hazards, ArenaPickups pickups, HotPotato potato)
         {
             this.pickups = pickups;
+            this.potato = potato;
             this.tuning = tuning;
             this.round = round;
             this.difficulty = difficulty;
@@ -115,7 +117,15 @@ namespace ToyCarArena.Gameplay.Bots
                     bot.Reconsider();
                 }
 
-                if (bot.WantsTarget) {
+                // With the hot potato's bomb a bot goes for the nearest car to pass it on, and for nothing else.
+                if (potato.Holder == bot.Car) {
+                    var nearest = Nearest(bot.Car);
+                    if (nearest != bot.Target || bot.WantsTarget) {
+                        bot.SetTarget(nearest);
+                        bot.SetPickup(null);
+                    }
+                }
+                else if (bot.WantsTarget) {
                     bot.SetTarget(PickTarget(bot, edge));
                     ChoosePickup(bot, edge);
                 }
@@ -169,6 +179,28 @@ namespace ToyCarArena.Gameplay.Bots
                     bot.Reconsider();
                 }
             }
+        }
+
+        /// <summary>The nearest car in play other than <paramref name="self"/>; null when there is none.</summary>
+        private Car Nearest(Car self)
+        {
+            Car best = null;
+            var bestDistance = float.PositiveInfinity;
+            var cars = round.Cars;
+            for (var i = 0; i < cars.Count; i++) {
+                var car = cars[i];
+                if (car == self || !car.IsTargetable) {
+                    continue;
+                }
+
+                var distance = (car.Position - self.Position).sqrMagnitude;
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    best = car;
+                }
+            }
+
+            return best;
         }
 
         /// <summary>

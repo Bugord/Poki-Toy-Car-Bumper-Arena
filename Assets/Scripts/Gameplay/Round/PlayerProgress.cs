@@ -169,7 +169,7 @@ namespace ToyCarArena.Gameplay.Round
             var roundXp = settings.RoundXp;
             var placeXp = Math.Max(0, result.CarCount - result.Place) * settings.PlaceXp;
             var winXp = result.Outcome == RoundOutcome.Won ? settings.WinXp : 0;
-            var knockoutXp = result.Knockouts * settings.KnockoutXp;
+            var knockoutXp = result.RewardKnockouts * settings.KnockoutXp;
             var streakXp = streakBonus?.Bonus(roundXp + placeXp + winXp + knockoutXp) ?? 0;
             // The ad's bonus on this result counts towards the same one level.
             resultCap = CapAbove(before);

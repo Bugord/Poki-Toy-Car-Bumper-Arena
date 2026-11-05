@@ -159,7 +159,7 @@ namespace ToyCarArena.Gameplay.Round
             var settings = tuning.Coins;
             var before = Coins;
             var round = settings.RoundCoins;
-            var knockouts = result.Knockouts * settings.KnockoutCoins;
+            var knockouts = result.RewardKnockouts * settings.KnockoutCoins;
             var win = result.Outcome == RoundOutcome.Won ? settings.WinCoins : 0;
             var streak = isStreakRound ? tuning.Streaks.Bonus(round + knockouts + win) : 0;
             var after = (int)Math.Min(int.MaxValue, (long)before + round + knockouts + win + streak + missionCoins);
