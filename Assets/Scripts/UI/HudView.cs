@@ -1281,8 +1281,9 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>
-        /// A level badge in its rank's colour. The REVENGE rival's (<paramref name="isRival"/>) is framed red with two
-        /// red horns: the frame reads before the name does, in the HUD, the lobby and on the result alike.
+        /// A level badge in its rank's colour, with its rank's ornament (<see cref="LevelBadge"/>). The REVENGE rival's
+        /// (<paramref name="isRival"/>) is framed red with two red horns: the frame reads before the name does, in the
+        /// HUD, the lobby and on the result alike. Under a crown the horns stand further out, so both read.
         /// </summary>
         internal static VisualElement CreateLevelBadge(int level, string className, bool isRival = false)
         {
@@ -1295,15 +1296,19 @@ namespace ToyCarArena.UI
             badge.Add(value);
             if (isRival) {
                 badge.AddToClassList("level-badge--rival");
+                var isCrowned = LevelBadge.IsCrowned(level);
                 foreach (var isLeft in new[] { true, false }) {
                     var horn = new VisualElement { pickingMode = PickingMode.Ignore };
                     horn.AddToClassList("level-badge__horn");
                     horn.AddToClassList(isLeft ? "level-badge__horn--left" : "level-badge__horn--right");
+                    horn.EnableInClassList("level-badge__horn--crowned", isCrowned);
                     horn.generateVisualContent += isLeft ? DrawLeftHorn : DrawRightHorn;
                     badge.Add(horn);
                 }
             }
 
+            // After the horns, so the crown stands in front of them.
+            LevelBadge.Decorate(badge);
             return badge;
         }
 

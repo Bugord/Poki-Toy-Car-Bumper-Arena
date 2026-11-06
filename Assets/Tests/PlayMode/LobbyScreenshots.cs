@@ -40,13 +40,24 @@ namespace ToyCarArena.Tests.PlayMode
             }
         }
 
-        private static IEnumerator Capture(SpecialRound special, string language, string prefix, float[] moments)
+        /// <summary>The lobby of a player at level 48 and at 99, so the seats around them straddle two ranks and show
+        /// the ornaments of silver, gold and legend: <c>Logs/lobby/ranks&lt;level&gt;_ready_&lt;w&gt;x&lt;h&gt;.png</c>.</summary>
+        [UnityTest]
+        public IEnumerator CaptureHighRanks()
+        {
+            foreach (var level in new[] { 48, 99 }) {
+                yield return Capture(SpecialRound.None, "en", $"ranks{level}", new float[0], level);
+            }
+        }
+
+        private static IEnumerator Capture(SpecialRound special, string language, string prefix, float[] moments,
+            int playerLevel = 1)
         {
             Strings.Load(new StringTable(AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Localization/strings.csv").text));
             Strings.SetLanguage(language);
             var catalog = AssetDatabase.LoadAssetAtPath<CarCatalog>("Assets/Data/Cars/data_car_catalog.asset");
             var tuning = AssetDatabase.LoadAssetAtPath<GameTuning>("Assets/Data/Gameplay/data_game_tuning.asset");
-            var roster = new SessionRoster(catalog, new FirstPlayerCar(catalog));
+            var roster = new SessionRoster(catalog, new LeveledPlayerCar(catalog, playerLevel));
             roster.ForRound(6);
             // A round played, so a couple of seats change hands, as after NEXT MATCH.
             roster.NextRound(6, 6, RoundResult.Nobody, tuning.Players);
@@ -100,6 +111,22 @@ namespace ToyCarArena.Tests.PlayMode
 
             roster.Dispose();
             typeof(Strings).GetField("table", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
+        }
+
+        // The first car at a chosen level: bots sit down with levels around the player's.
+        private sealed class LeveledPlayerCar : IPlayerCar
+        {
+            public LeveledPlayerCar(CarCatalog catalog, int level)
+            {
+                SelectedCar = catalog.Cars[0].Id;
+                Level = level;
+            }
+
+            public string SelectedCar { get; }
+            public int SelectedColor => 0;
+            public int Level { get; }
+            public bool SelectColor(int id) => false;
+            public event System.Action<int> ColorChanged { add { } remove { } }
         }
 
         private static void Save(RenderTexture source, string path)
