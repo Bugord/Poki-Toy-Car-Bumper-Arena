@@ -44,7 +44,11 @@ namespace ToyCarArena.UI
         private const float CheckerShare = 1f / 6f;
 
         // The widest the car's picture grows, in reference pixels: on a tall screen it would otherwise fill the width.
+        // Sideways the height bounds it anyway, and the car is the screen's subject, so it may grow much wider.
         private const float HeroMaxWidth = 1400f;
+        private const float WideHeroMaxWidth = 2600f;
+        // Space kept on each side of the car's name when it drops between the mission and the mode sideways.
+        private const float NameGap = 40f;
 
         // The showroom's light behind the car: a soft white glow and rays that fade out towards their tips, turning
         // slowly, so the light gathers round the car instead of lying over the checker as a second pattern.
@@ -99,6 +103,7 @@ namespace ToyCarArena.UI
         private Label carNameFace;
         private VisualElement bottom;
         private VisualElement missionCard;
+        private VisualElement actions;
         private Label missionTask;
         private Label missionCount;
         private VisualElement missionFill;
@@ -253,6 +258,8 @@ namespace ToyCarArena.UI
             var name = carNameBox = Element("menu__car-name");
             var stroke = Element("stroke");
             carName = Text("display");
+            // A longer or shorter name may or may not fit between the bottom cards sideways (PlaceStage).
+            carName.RegisterCallback<GeometryChangedEvent>(_ => PlaceStage());
             carName.AddToClassList("menu__car-name-text");
             carNameFace = Text("display");
             carNameFace.AddToClassList("menu__car-name-text");
@@ -290,7 +297,7 @@ namespace ToyCarArena.UI
             face.Add(reward);
             bottom.Add(missionCard);
 
-            var actions = Element("menu__actions");
+            actions = Element("menu__actions");
             var mode = Sticker("menu__mode", OpenModes);
             var modeFace = mode.Q<VisualElement>(className: "menu__face");
             var modeText = Element("menu__mode-texts");
@@ -702,6 +709,21 @@ namespace ToyCarArena.UI
             var railRight = Root.WorldToLocal(railBox).xMax;
             stage.style.top = topBox.yMax + 20f;
             stage.style.bottom = size.y - bottomBox.yMin + 20f;
+            if (isWide && missionCard != null && actions != null) {
+                // Sideways the bottom row leaves its middle free: the car's name drops into it, level with the
+                // cards, when it fits between the mission and the mode, and the car above grows into the room.
+                var missionBox = Root.WorldToLocal(missionCard.worldBound);
+                var actionsBox = Root.WorldToLocal(actions.worldBound);
+                var nameWidth = Root.WorldToLocal(carName.worldBound).width;
+                // The name stays centred under the car, and the gap need not be centred on the screen.
+                var reach = nameWidth / 2f + NameGap;
+                var middle = size.x / 2f;
+                if (!float.IsNaN(nameWidth) && nameWidth > 0f && middle - reach >= missionBox.xMax &&
+                    middle + reach <= actionsBox.xMin) {
+                    stage.style.bottom = size.y - missionBox.yMax;
+                }
+            }
+
             // Centred on the screen, as wide as the rail leaves on both sides.
             var side = isWide ? railRight + 20f : 0f;
             stage.style.left = side;
@@ -738,7 +760,7 @@ namespace ToyCarArena.UI
                 room = box.height;
             }
 
-            var width = Mathf.Min(box.width, room * heroAspect, HeroMaxWidth);
+            var width = Mathf.Min(box.width, room * heroAspect, isWide ? WideHeroMaxWidth : HeroMaxWidth);
             var height = width / heroAspect;
             hero.style.left = (box.width - width) / 2f;
             hero.style.top = room - height;
