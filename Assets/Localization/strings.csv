@@ -91,6 +91,7 @@ garage.in_use,Selected car or hat card status,EQUIPPED,ÉQUIPÉ,IN USO,AKTIV,EQU
 garage.use,Owned car or hat card status: tap to put it on,EQUIP,ÉQUIPER,SCEGLI,WÄHLEN,EQUIPAR,SEÇ,EQUIPAR,ВЫБРАТЬ
 car.stat_speed,"Car stat label in the garage and the new car popup: top speed",SPEED,VITESSE,VELOCITÀ,TEMPO,VELOCIDAD,HIZ,VELOCIDADE,СКОРОСТЬ
 car.stat_power,"Car stat label: how hard its hits push",POWER,PUISSANCE,POTENZA,KRAFT,POTENCIA,GÜÇ,FORÇA,СИЛА
+car.stat_weight,"Car stat label: how heavy it is, so how hard it is to push off",WEIGHT,POIDS,PESO,GEWICHT,PESO,AĞIRLIK,PESO,ВЕС
 car.stat_boost,"Car stat label: how often it can boost (the BOOST button)",BOOST,TURBO,TURBO,BOOST,TURBO,TURBO,TURBO,РЫВОК
 garage.unlock_at,Locked car tooltip,UNLOCK AT LVL {0},DÉBLOQUÉE AU NIV. {0},SBLOCCO AL LIV. {0},AB LVL {0},SE DESBLOQUEA EN NIV. {0},{0}. SEVİYEDE AÇILIR,LIBERA NO NÍV. {0},ОТКРОЕТСЯ НА УР. {0}
 garage.need_more,Over a too dear card: how many coins are missing; max ~16 chars,NEED {0} MORE,ENCORE {0},NE MANCANO {0},NOCH {0},FALTAN {0},{0} DAHA LAZIM,FALTAM {0},НУЖНО ЕЩЁ {0}

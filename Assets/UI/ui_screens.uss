@@ -5912,6 +5912,7 @@
 
 .car-stats__row--speed .car-stats__fill { background-color: var(--blue); }
 .car-stats__row--power .car-stats__fill { background-color: var(--red); }
+.car-stats__row--weight .car-stats__fill { background-color: var(--purple); }
 .car-stats__row--boost .car-stats__fill { background-color: var(--orange); }
 
 /* Under the hero, on the garage's navy: white names and a white outline round a dark track. */

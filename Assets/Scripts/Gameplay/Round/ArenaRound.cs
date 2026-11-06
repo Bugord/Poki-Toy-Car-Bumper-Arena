@@ -637,7 +637,8 @@ namespace ToyCarArena.Gameplay.Round
                     // The player's car drives by its stats; a bot's car is only its look.
                     var statSettings = tuning.CarStats;
                     var stats = statSettings.Of(entry.Id);
-                    car.Movement.SetStats(statSettings.SpeedScale(stats), statSettings.CooldownScale(stats));
+                    car.Movement.SetStats(statSettings.SpeedScale(stats), statSettings.CooldownScale(stats),
+                        statSettings.WeightScale(stats));
                     car.PowerScale = statSettings.PowerScale(stats);
                 }
 

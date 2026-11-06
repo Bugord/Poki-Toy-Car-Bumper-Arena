@@ -53,14 +53,16 @@ namespace ToyCarArena.Tests.PlayMode
         public void CarStatsMoveTheCarFromTheTunedMiddle()
         {
             var stats = tuning.CarStats;
-            var middle = new GameTuning.CarStatLine("x", 3, 3, 3);
+            var middle = new GameTuning.CarStatLine("x", 3, 3, 3, 3);
             Assert.That(stats.SpeedScale(middle), Is.EqualTo(1f));
             Assert.That(stats.PowerScale(middle), Is.EqualTo(1f));
             Assert.That(stats.CooldownScale(middle), Is.EqualTo(1f));
-            var strong = new GameTuning.CarStatLine("y", 5, 5, 5);
+            Assert.That(stats.WeightScale(middle), Is.EqualTo(1f));
+            var strong = new GameTuning.CarStatLine("y", 5, 5, 5, 5);
             Assert.That(stats.SpeedScale(strong), Is.GreaterThan(1f));
             Assert.That(stats.PowerScale(strong), Is.GreaterThan(1f));
             Assert.That(stats.CooldownScale(strong), Is.LessThan(1f));
+            Assert.That(stats.WeightScale(strong), Is.GreaterThan(1f));
             Assert.That(stats.Of("no-such-car").Speed, Is.EqualTo(GameTuning.CarStatSettings.Middle));
         }
 
