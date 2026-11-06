@@ -96,6 +96,7 @@ namespace ToyCarArena.Tests.PlayMode
                             light.type = LightType.Directional;
                             light.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
                             stage = new GarageStage(AssetDatabase.LoadAssetAtPath<Car>("Assets/Prefabs/Cars/Car.prefab"),
+                                AssetDatabase.LoadAssetAtPath<MechanicArt>("Assets/Data/Arenas/data_mechanic_art.asset"),
                                 host.transform);
                             model.Stage = stage;
                         }
