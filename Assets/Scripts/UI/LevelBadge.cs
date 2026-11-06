@@ -187,7 +187,8 @@ namespace ToyCarArena.UI
             }
         }
 
-        // Broad stepped shapes survive phone scaling; there are no individual thin feathers or laurel veins.
+        // Swept wings use broad, rounded feather lobes so their silhouette stays clear at phone size.
+        // Their open roots sit on the badge edge, keeping the closing stroke in its outline and the light rim outside.
         private static void DrawSide(Painter2D painter, Vector2 root, float size, float direction, int tier,
             Color colour, float outline, float rim)
         {
@@ -199,34 +200,37 @@ namespace ToyCarArena.UI
                 painter.LineTo(At(0.09f, 0.18f));
                 painter.LineTo(At(-0.025f, 0.29f));
             } else if (tier == 2) {
-                painter.MoveTo(At(-0.04f, -0.28f));
-                painter.LineTo(At(0.15f, -0.39f));
-                painter.LineTo(At(0.12f, -0.08f));
-                painter.LineTo(At(0.18f, -0.13f));
-                painter.LineTo(At(0.10f, 0.20f));
-                painter.LineTo(At(-0.04f, 0.31f));
+                painter.MoveTo(At(0f, -0.12f));
+                painter.BezierCurveTo(At(0.04f, -0.17f), At(0.08f, -0.27f), At(0.13f, -0.34f));
+                painter.BezierCurveTo(At(0.19f, -0.424f), At(0.21f, -0.22f), At(0.15f, -0.17f));
+                painter.BezierCurveTo(At(0.12f, -0.145f), At(0.12f, -0.12f), At(0.15f, -0.10f));
+                painter.BezierCurveTo(At(0.23f, -0.047f), At(0.17f, 0.10f), At(0.09f, 0.18f));
+                painter.BezierCurveTo(At(0.05f, 0.22f), At(0.01f, 0.25f), At(0f, 0.28f));
+            } else if (tier == 3) {
+                painter.MoveTo(At(0f, -0.15f));
+                painter.BezierCurveTo(At(0.04f, -0.22f), At(0.09f, -0.32f), At(0.14f, -0.39f));
+                painter.BezierCurveTo(At(0.20f, -0.474f), At(0.22f, -0.29f), At(0.16f, -0.23f));
+                painter.BezierCurveTo(At(0.13f, -0.20f), At(0.13f, -0.18f), At(0.16f, -0.16f));
+                painter.BezierCurveTo(At(0.24f, -0.107f), At(0.20f, -0.025f), At(0.15f, 0.005f));
+                painter.BezierCurveTo(At(0.12f, 0.023f), At(0.12f, 0.045f), At(0.15f, 0.065f));
+                painter.BezierCurveTo(At(0.23f, 0.118f), At(0.16f, 0.22f), At(0.08f, 0.28f));
+                painter.BezierCurveTo(At(0.04f, 0.31f), At(0.01f, 0.33f), At(0f, 0.36f));
             } else {
-                painter.MoveTo(At(-0.04f, -0.28f));
-                painter.LineTo(At(0.11f, -0.38f));
-                painter.LineTo(At(0.09f, -0.15f));
-                painter.LineTo(At(0.16f, -0.22f));
-                painter.LineTo(At(0.13f, 0.02f));
-                painter.LineTo(At(0.18f, -0.02f));
-                painter.LineTo(At(0.11f, 0.26f));
-                painter.LineTo(At(-0.04f, 0.40f));
+                painter.MoveTo(At(0f, -0.18f));
+                painter.BezierCurveTo(At(0.05f, -0.25f), At(0.10f, -0.35f), At(0.15f, -0.42f));
+                painter.BezierCurveTo(At(0.21f, -0.504f), At(0.24f, -0.31f), At(0.17f, -0.24f));
+                painter.BezierCurveTo(At(0.14f, -0.21f), At(0.14f, -0.18f), At(0.17f, -0.16f));
+                painter.BezierCurveTo(At(0.25f, -0.107f), At(0.22f, -0.015f), At(0.16f, 0.025f));
+                painter.BezierCurveTo(At(0.13f, 0.045f), At(0.13f, 0.065f), At(0.16f, 0.085f));
+                painter.BezierCurveTo(At(0.24f, 0.138f), At(0.17f, 0.25f), At(0.09f, 0.31f));
+                painter.BezierCurveTo(At(0.05f, 0.34f), At(0.01f, 0.37f), At(0f, 0.40f));
             }
 
             FinishShape(painter, colour, outline, rim);
 
             if (tier == 4) {
-                // Legend adds a second shoulder above the laurel, with one large gem rather than tiny details.
-                painter.BeginPath();
-                painter.MoveTo(At(-0.03f, -0.12f));
-                painter.LineTo(At(0.14f, -0.33f));
-                painter.LineTo(At(0.18f, -0.02f));
-                painter.LineTo(At(-0.03f, 0.12f));
-                FinishShape(painter, colour, outline, rim);
-                DrawGem(painter, At(0.08f, -0.10f), size * 0.065f, White);
+                // A single gem distinguishes legend without another outline cutting across its wing.
+                DrawGem(painter, At(0.09f, -0.10f), size * 0.055f, White);
             }
         }
 
