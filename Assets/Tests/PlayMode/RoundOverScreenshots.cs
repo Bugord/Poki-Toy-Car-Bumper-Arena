@@ -44,7 +44,7 @@ namespace ToyCarArena.Tests.PlayMode
             var shots = new[] {
                 (1080, 1920, false), (1920, 1080, false), (1080, 1920, true), (2340, 1080, true), (2048, 1536, true),
             };
-            var cases = new[] { "lost", "won", "offer", "gift", "double", "bought", "hat" };
+            var cases = new[] { "lost", "won", "offer", "gift", "double", "bought", "hat", "legend" };
             if (System.Environment.GetEnvironmentVariable("SHOTS_CASES") is { Length: > 0 } only) {
                 cases = only.Split(',');
             }
@@ -65,7 +65,8 @@ namespace ToyCarArena.Tests.PlayMode
                     var moments = name == "gift" ? new[] { 0.6f, 3.0f, 20.0f }
                         : name == "double" ? new[] { 0.6f, 1.2f, 4.0f }
                         // The popup's BUY & EQUIP is pressed after the first picture: the celebration plays on.
-                        : name is "bought" or "hat" ? new[] { 3.0f, 3.3f, 3.7f, 4.4f, 6.0f } : new[] { 0.6f, 3.0f };
+                        : name is "bought" or "hat" ? new[] { 3.0f, 3.3f, 3.7f, 4.4f, 6.0f }
+                        : name == "legend" ? new[] { 0.6f, 1.6f, 2.4f, 3.2f, 4.5f, 9.0f } : new[] { 0.6f, 3.0f };
                     foreach (var (width, height, isTouch) in shots) {
                         var record = Record(name, tuning, catalog);
                         var panelSettings = Object.Instantiate(
@@ -180,6 +181,11 @@ namespace ToyCarArena.Tests.PlayMode
                 // Level 12 with every car open: the bonus crosses a plain level, so no popup covers the card.
                 storage.SetInt("xp_total", 1250);
             }
+            if (name == "legend") {
+                // A gold player a little short of level 100: the round crosses into legend, the card's badge and the bar
+                // change rank, and the rank's popup shows the rainbow plate with its crown.
+                storage.SetInt("xp_total", LevelStart(tuning, 100) - 10);
+            }
             var result = new RoundResult(isWon ? RoundOutcome.Won : RoundOutcome.Out, isWon ? 1 : 3, 4, 40f,
                 isWon ? 2 : 1, RoundResult.Nobody, FallCause.Drive, false, false);
             var missions = new MissionTracker(storage, tuning);
@@ -190,9 +196,22 @@ namespace ToyCarArena.Tests.PlayMode
             var coins = new PlayerWallet(storage, tuning).Record(result, isWon, round.Coins);
             var streak = isWon ? new StreakChange(2, 3, 2) : new StreakChange(3, 0, 2);
             var record = new RoundRecord(result, 1, 2, false, false).WithXp(xp)
-                .WithRoster(new[] { "YOU", "ZOOMER", "BONKY", "SKID" }, new[] { 3, 2, 4, 1 }, RoundResult.Nobody)
+                .WithRoster(new[] { "YOU", "ZOOMER", "BONKY", "SKID" },
+                    name == "legend" ? new[] { 99, 57, 31, 120 } : new[] { 3, 2, 4, 1 }, RoundResult.Nobody)
                 .WithMeta(coins, round, streak).WithPodium(Podium());
             return (record, storage);
+        }
+
+        // The total XP a player has at the start of a level, from the tuning's level prices (the last one repeats).
+        private static int LevelStart(GameTuning tuning, int level)
+        {
+            var prices = tuning.Progress.LevelXp;
+            var total = 0;
+            for (var at = 1; at < level; at++) {
+                total += prices[Mathf.Min(at - 1, prices.Length - 1)];
+            }
+
+            return total;
         }
 
         // A grey square where the podium's car would turn: the screen takes a render texture there.
