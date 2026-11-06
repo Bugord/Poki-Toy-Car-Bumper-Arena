@@ -5,11 +5,11 @@ using UnityEngine.UIElements;
 namespace ToyCarArena.UI
 {
     /// <summary>
-    /// The rank's ornaments on a level badge, as the 2.0 plates have them: silver wears a small white diamond on its top
-    /// edge, gold and legend a navy crown sitting on it, and legend's fill is a rainbow instead of one colour. Rookie and
-    /// bronze have none. Everything is sized from the badge's own height, so one badge reads the same over a car and in a
-    /// popup. The rank itself is the <see cref="PlayerRank.ClassOf"/> class: set it with <see cref="SetRank"/>, which
-    /// also repaints the ornament, when a badge already on screen moves up a rank.
+    /// Gives each league a sticker silhouette: plain rookie, bevelled bronze shield, winged silver, crowned gold
+    /// laurels and a star crest with gemmed wings for rainbow legend. Ornaments grow outside the unchanged layout box,
+    /// with a light rim on dark name pills and smaller growth on large badges. Round track stops keep their circular
+    /// face. The frame follows the <see cref="PlayerRank.ClassOf"/> class; <see cref="SetRank"/> also repaints it and
+    /// moves a rival's horns when a badge already on screen changes league.
     /// </summary>
     internal static class LevelBadge
     {
@@ -18,24 +18,9 @@ namespace ToyCarArena.UI
         private const string FillClass = "level-badge__rainbow";
         private const string OrnamentClass = "level-badge__ornament";
 
-        // The crown, against the badge's height: as wide as the plate is tall less a little, and a bit over half its
-        // height, its base just over the top of the fill (the 2.0 plates' 16 × 10 crown on a 19 px plate, 41 × 26 on 40).
-        private const float CrownWidth = 0.9f;
-        private const float CrownHeight = 0.58f;
-        private const float CrownSink = 0.04f;
-
-        // On a round badge (the track's rank stop) a narrower, lower crown, its base corners on the circle.
-        private const float RoundCrownWidth = 0.62f;
-        private const float RoundCrownHeight = 0.42f;
-
-        // The diamond: a square turned on its point, its middle a little over the plate's top edge, so its lower point
-        // only just reaches the number. Its outline is the badge's own.
-        private const float DiamondSide = 0.44f;
-        private const float DiamondLift = 0.08f;
-
-        // A thin light rim round the navy crown where the badge sits on navy (the lobby rows, the HUD's dark name pill),
-        // so it still reads there; a share of the badge's outline. Elsewhere none: over a sticker it chips its edge.
-        private const float CrownRim = 0.6f;
+        // Side ornaments stay within the existing gaps before names; height carries most of the league silhouette.
+        // The rim traces exposed edges only, so it cannot draw a white seam through the sticker face.
+        private const float OrnamentRim = 0.45f;
         private static readonly string[] DarkBackdrops = { "lobby__level", "car-name__level" };
 
         // Ornaments grow with the badge up to this height and then slower, so a big badge (the result card's, the
@@ -51,6 +36,9 @@ namespace ToyCarArena.UI
 
         private static readonly Color32 Navy = new(0x1d, 0x2b, 0x4f, 0xff);
         private static readonly Color32 White = new(0xff, 0xff, 0xff, 0xff);
+        private static readonly Color32 Bronze = new(0xe8, 0xa4, 0x6a, 0xff);
+        private static readonly Color32 Silver = new(0xd7, 0xe0, 0xee, 0xff);
+        private static readonly Color32 Rival = new(0xff, 0x4d, 0x4d, 0xff);
         private static readonly Color32 Rim = new(0xff, 0xff, 0xff, 0xd9);
 
         private static Texture2D rainbowTexture;
@@ -72,7 +60,7 @@ namespace ToyCarArena.UI
             fill.RegisterCallback<GeometryChangedEvent>(OnFillGeometryChanged);
             badge.Insert(0, fill);
 
-            // Over everything, though it draws above the badge: the crown or the diamond.
+            // Above the horns, but clear of the number: only the frame and its outside silhouette are painted here.
             var ornament = new VisualElement { pickingMode = PickingMode.Ignore };
             ornament.AddToClassList(OrnamentClass);
             ornament.generateVisualContent += DrawOrnament;
@@ -91,6 +79,12 @@ namespace ToyCarArena.UI
             }
 
             badge.AddToClassList(rank);
+            foreach (var child in badge.Children()) {
+                if (child.ClassListContains("level-badge__horn")) {
+                    child.EnableInClassList("level-badge__horn--crowned", IsCrowned(level));
+                }
+            }
+
             badge.Q(className: OrnamentClass)?.MarkDirtyRepaint();
         }
 
@@ -115,8 +109,7 @@ namespace ToyCarArena.UI
             fill.style.borderBottomRightRadius = Mathf.Max(0f, Mathf.Min(style.borderBottomRightRadius, most) - style.borderRightWidth);
         }
 
-        // The ornament element covers the badge's inside; the crown and the diamond are drawn above it, from the badge's
-        // outer top edge, at sizes taken from the badge's whole height.
+        // All coordinates are relative to the ornament's inside origin. Neither painting nor rank changes move text.
         private static void DrawOrnament(MeshGenerationContext context)
         {
             var ornament = context.visualElement;
@@ -125,9 +118,11 @@ namespace ToyCarArena.UI
                 return;
             }
 
-            var isDiamond = badge.ClassListContains(RankPrefix + "silver");
-            var isCrown = badge.ClassListContains(RankPrefix + "gold") || badge.ClassListContains(RankPrefix + "legend");
-            if (!isDiamond && !isCrown) {
+            var tier = badge.ClassListContains(RankPrefix + "legend") ? 4
+                : badge.ClassListContains(RankPrefix + "gold") ? 3
+                : badge.ClassListContains(RankPrefix + "silver") ? 2
+                : badge.ClassListContains(RankPrefix + "bronze") ? 1 : 0;
+            if (tier == 0) {
                 return;
             }
 
@@ -138,89 +133,184 @@ namespace ToyCarArena.UI
 
             var height = Mathf.Min(badgeHeight, FullGrowthHeight + (badgeHeight - FullGrowthHeight) * BigGrowth);
 
-            // The ornament's own origin is the inside's top left corner, under the top border.
             var style = badge.resolvedStyle;
             var border = style.borderTopWidth;
-            var outline = Mathf.Max(1.5f, border);
+            var outline = Mathf.Max(1.5f, Mathf.Min(border, height * 0.095f));
             var middle = ornament.contentRect.width / 2f;
             var painter = context.painter2D;
             painter.lineJoin = LineJoin.Round;
-            if (isDiamond) {
-                var half = DiamondSide * height * 0.7071f;
-                var centre = new Vector2(middle, -border - DiamondLift * height);
-                painter.BeginPath();
-                painter.MoveTo(centre + new Vector2(0f, -half));
-                painter.LineTo(centre + new Vector2(half, 0f));
-                painter.LineTo(centre + new Vector2(0f, half));
-                painter.LineTo(centre + new Vector2(-half, 0f));
-                painter.ClosePath();
-                painter.fillColor = White;
-                painter.Fill();
-                painter.strokeColor = Navy;
-                painter.lineWidth = Mathf.Min(outline, Mathf.Max(1.5f, 0.12f * height));
-                painter.Stroke();
-                return;
-            }
+            painter.lineCap = LineCap.Round;
 
             var rim = 0f;
             foreach (var backdrop in DarkBackdrops) {
                 if (badge.ClassListContains(backdrop)) {
-                    rim = CrownRim * outline;
+                    rim = OrnamentRim * outline;
                 }
             }
 
-            var isRound = style.borderTopLeftRadius >= Mathf.Min(badge.layout.width, badgeHeight) / 2f;
-            if (isRound) {
-                // Sunk until the base's corners meet the circle, so they do not hang in the air.
-                var radius = badgeHeight / 2f;
-                var halfBase = RoundCrownWidth * height / 2f;
-                var sink = radius - Mathf.Sqrt(radius * radius - halfBase * halfBase) - border;
-                DrawCrown(painter, middle, sink + CrownSink * height, RoundCrownWidth * height,
-                    RoundCrownHeight * height + sink, -border + sink, rim);
-                return;
-            }
+            // PillShape can resolve a round stop to a radius smaller than half its box because of its bottom shadow.
+            var isRound = badge.ClassListContains("track__node")
+                || style.borderTopLeftRadius >= Mathf.Min(badge.layout.width, badgeHeight) / 2f;
+            var faceHeight = badgeHeight - Mathf.Max(0f, style.borderBottomWidth - border);
+            var centreY = -border + faceHeight / 2f;
+            var inset = isRound ? height * 0.1f : 0f;
+            var isRival = badge.ClassListContains(RankPrefix + "rival");
+            Color colour = isRival ? Rival : tier == 1 ? Bronze : tier == 2 ? Silver
+                : tier == 3 ? style.backgroundColor : Rainbow[1];
 
-            DrawCrown(painter, middle, CrownSink * height, CrownWidth * height, CrownHeight * height, -border, rim);
+            DrawSide(painter, new Vector2(-style.borderLeftWidth + inset, centreY), height, -1f,
+                tier, colour, outline, rim);
+            DrawSide(painter, new Vector2(ornament.contentRect.width + style.borderRightWidth - inset, centreY),
+                height, 1f, tier, colour, outline, rim);
+
+            if (tier == 1) {
+                if (!isRound) {
+                    // A short shield toe changes the bronze silhouette without taking space from the level number.
+                    var bottom = -border + faceHeight - outline * 0.45f;
+                    painter.BeginPath();
+                    painter.MoveTo(new Vector2(middle - height * 0.22f, bottom));
+                    painter.LineTo(new Vector2(middle, bottom + height * 0.15f));
+                    painter.LineTo(new Vector2(middle + height * 0.22f, bottom));
+                    FinishShape(painter, colour, outline, rim);
+                }
+            } else {
+                var crestWidth = height * (tier == 2 ? 0.38f : tier == 3 ? 0.72f : 0.78f);
+                var sink = outline * 0.35f;
+                if (isRound) {
+                    var radius = faceHeight / 2f;
+                    var halfBase = crestWidth / 2f;
+                    sink += radius - Mathf.Sqrt(Mathf.Max(0f, radius * radius - halfBase * halfBase));
+                }
+
+                DrawCrest(painter, new Vector2(middle, -border + sink), height, crestWidth, tier,
+                    tier == 2 ? (Color)Silver : tier == 3 ? style.backgroundColor : (Color)Rainbow[1], outline, rim);
+            }
         }
 
-        // The 2.0 crown: a navy silhouette with three points, its base at baseY. The light rim runs round its sides and
-        // points only, from the badge's outer top edge (topEdgeY) up, so it never lines the badge's own outline.
-        private static void DrawCrown(Painter2D painter, float middle, float baseY, float width, float height,
-            float topEdgeY, float rim)
+        // Swept wings use broad, rounded feather lobes so their silhouette stays clear at phone size.
+        // Their open roots sit on the badge edge, keeping the closing stroke in its outline and the light rim outside.
+        private static void DrawSide(Painter2D painter, Vector2 root, float size, float direction, int tier,
+            Color colour, float outline, float rim)
         {
-            var left = middle - width / 2f;
-            Vector2 At(float x, float y) => new(left + x * width, baseY - (1f - y) * height);
+            Vector2 At(float x, float y) => root + new Vector2(direction * x * size, y * size);
+            painter.BeginPath();
+            if (tier == 1) {
+                painter.MoveTo(At(-0.025f, -0.29f));
+                painter.LineTo(At(0.09f, -0.18f));
+                painter.LineTo(At(0.09f, 0.18f));
+                painter.LineTo(At(-0.025f, 0.29f));
+            } else if (tier == 2) {
+                painter.MoveTo(At(0f, -0.12f));
+                painter.BezierCurveTo(At(0.04f, -0.17f), At(0.08f, -0.27f), At(0.13f, -0.34f));
+                painter.BezierCurveTo(At(0.19f, -0.424f), At(0.21f, -0.22f), At(0.15f, -0.17f));
+                painter.BezierCurveTo(At(0.12f, -0.145f), At(0.12f, -0.12f), At(0.15f, -0.10f));
+                painter.BezierCurveTo(At(0.23f, -0.047f), At(0.17f, 0.10f), At(0.09f, 0.18f));
+                painter.BezierCurveTo(At(0.05f, 0.22f), At(0.01f, 0.25f), At(0f, 0.28f));
+            } else if (tier == 3) {
+                painter.MoveTo(At(0f, -0.15f));
+                painter.BezierCurveTo(At(0.04f, -0.22f), At(0.09f, -0.32f), At(0.14f, -0.39f));
+                painter.BezierCurveTo(At(0.20f, -0.474f), At(0.22f, -0.29f), At(0.16f, -0.23f));
+                painter.BezierCurveTo(At(0.13f, -0.20f), At(0.13f, -0.18f), At(0.16f, -0.16f));
+                painter.BezierCurveTo(At(0.24f, -0.107f), At(0.20f, -0.025f), At(0.15f, 0.005f));
+                painter.BezierCurveTo(At(0.12f, 0.023f), At(0.12f, 0.045f), At(0.15f, 0.065f));
+                painter.BezierCurveTo(At(0.23f, 0.118f), At(0.16f, 0.22f), At(0.08f, 0.28f));
+                painter.BezierCurveTo(At(0.04f, 0.31f), At(0.01f, 0.33f), At(0f, 0.36f));
+            } else {
+                painter.MoveTo(At(0f, -0.18f));
+                painter.BezierCurveTo(At(0.05f, -0.25f), At(0.10f, -0.35f), At(0.15f, -0.42f));
+                painter.BezierCurveTo(At(0.21f, -0.504f), At(0.24f, -0.31f), At(0.17f, -0.24f));
+                painter.BezierCurveTo(At(0.14f, -0.21f), At(0.14f, -0.18f), At(0.17f, -0.16f));
+                painter.BezierCurveTo(At(0.25f, -0.107f), At(0.22f, -0.015f), At(0.16f, 0.025f));
+                painter.BezierCurveTo(At(0.13f, 0.045f), At(0.13f, 0.065f), At(0.16f, 0.085f));
+                painter.BezierCurveTo(At(0.24f, 0.138f), At(0.17f, 0.25f), At(0.09f, 0.31f));
+                painter.BezierCurveTo(At(0.05f, 0.34f), At(0.01f, 0.37f), At(0f, 0.40f));
+            }
 
-            // The tips are a little round, as a sticker's corners are: a thin navy stroke over the fill.
-            var soft = Mathf.Max(1f, height * 0.06f);
+            FinishShape(painter, colour, outline, rim);
+
+            if (tier == 4) {
+                // A single gem distinguishes legend without another outline cutting across its wing.
+                DrawGem(painter, At(0.09f, -0.10f), size * 0.055f, White);
+            }
+        }
+
+        private static void DrawCrest(Painter2D painter, Vector2 root, float size, float width, int tier,
+            Color colour, float outline, float rim)
+        {
+            Vector2 At(float x, float y) => root + new Vector2((x - 0.5f) * width, -y * size);
+            painter.BeginPath();
+            painter.MoveTo(At(0f, 0f));
+            if (tier == 2) {
+                painter.LineTo(At(0f, 0.12f));
+                painter.LineTo(At(0.5f, 0.33f));
+                painter.LineTo(At(1f, 0.12f));
+            } else if (tier == 3) {
+                painter.LineTo(At(0f, 0.31f));
+                painter.LineTo(At(0.28f, 0.18f));
+                painter.LineTo(At(0.5f, 0.43f));
+                painter.LineTo(At(0.72f, 0.18f));
+                painter.LineTo(At(1f, 0.31f));
+            } else {
+                painter.LineTo(At(0.07f, 0.20f));
+                painter.LineTo(At(0.31f, 0.10f));
+                painter.LineTo(At(0.69f, 0.10f));
+                painter.LineTo(At(0.93f, 0.20f));
+            }
+
+            painter.LineTo(At(1f, 0f));
+            FinishShape(painter, colour, outline, rim);
+
+            if (tier == 2) {
+                DrawGem(painter, root + new Vector2(0f, -size * 0.14f), size * 0.07f, White);
+            } else if (tier == 3) {
+                DrawGem(painter, root + new Vector2(0f, -size * 0.16f), size * 0.075f, White);
+            } else {
+                // The star replaces the flat crown silhouette; its lower points overlap the crown band.
+                var centre = root + new Vector2(0f, -size * 0.27f);
+                for (var i = 0; i < 10; i++) {
+                    var angle = (-90f + i * 36f) * Mathf.Deg2Rad;
+                    var radius = size * (i % 2 == 0 ? 0.29f : 0.14f);
+                    var point = centre + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+                    if (i == 0) {
+                        painter.BeginPath();
+                        painter.MoveTo(point);
+                    } else {
+                        painter.LineTo(point);
+                    }
+                }
+
+                painter.ClosePath();
+                FinishShape(painter, colour, outline, rim);
+                DrawGem(painter, centre, size * 0.085f, White);
+            }
+        }
+
+        private static void DrawGem(Painter2D painter, Vector2 centre, float radius, Color colour)
+        {
+            painter.BeginPath();
+            painter.MoveTo(centre + new Vector2(0f, -radius));
+            painter.LineTo(centre + new Vector2(radius, 0f));
+            painter.LineTo(centre + new Vector2(0f, radius));
+            painter.LineTo(centre + new Vector2(-radius, 0f));
+            painter.ClosePath();
+            painter.fillColor = colour;
+            painter.Fill();
+        }
+
+        // Call with an open root edge, except for a floating star, so the light rim stays outside the face.
+        private static void FinishShape(Painter2D painter, Color colour, float outline, float rim)
+        {
             if (rim > 0f) {
-                painter.BeginPath();
-                painter.MoveTo(new Vector2(left, topEdgeY));
-                painter.LineTo(At(0f, 0.15f));
-                painter.LineTo(At(0.28f, 0.55f));
-                painter.LineTo(At(0.5f, 0f));
-                painter.LineTo(At(0.72f, 0.55f));
-                painter.LineTo(At(1f, 0.15f));
-                painter.LineTo(new Vector2(left + width, topEdgeY));
                 painter.strokeColor = Rim;
-                painter.lineWidth = rim * 2f + soft;
-                painter.lineCap = LineCap.Butt;
+                painter.lineWidth = outline + rim * 2f;
                 painter.Stroke();
             }
 
-            painter.BeginPath();
-            painter.MoveTo(At(0f, 1f));
-            painter.LineTo(At(0f, 0.15f));
-            painter.LineTo(At(0.28f, 0.55f));
-            painter.LineTo(At(0.5f, 0f));
-            painter.LineTo(At(0.72f, 0.55f));
-            painter.LineTo(At(1f, 0.15f));
-            painter.LineTo(At(1f, 1f));
             painter.ClosePath();
-            painter.fillColor = Navy;
+            painter.fillColor = colour;
             painter.Fill();
             painter.strokeColor = Navy;
-            painter.lineWidth = soft;
+            painter.lineWidth = outline;
             painter.Stroke();
         }
 
