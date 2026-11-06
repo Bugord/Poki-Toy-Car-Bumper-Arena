@@ -52,6 +52,7 @@ namespace ToyCarArena.Gameplay
                 new("drag-racer", 5, 2, 4),
                 new("truck", 2, 5, 3),
                 new("monster-truck", 3, 5, 4),
+                new("buggy", 4, 2, 5),
             };
 
             /// <summary>The car's stats; the middle of the scale for a car with no row.</summary>
