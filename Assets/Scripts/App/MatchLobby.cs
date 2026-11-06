@@ -83,7 +83,8 @@ namespace ToyCarArena.App
             // Under the curtain the screen's fade-out shows nowhere, so the next arena loads meanwhile: the brief wants
             // a lost round back in play within about 3 seconds.
             // A load still running past the lobby is told apart, so a visit lost here reads as a slow arena or a wait.
-            var loading = UniTask.WhenAll(closeScreen(), levelScene.Load(token)).Preserve();
+            // Awaited twice, by the race and after it, while still running: a lazy task, not a preserved one.
+            var loading = UniTask.WhenAll(closeScreen(), levelScene.Load(token)).ToAsyncLazy().Task;
             var slowAfter = TimeSpan.FromSeconds(RoundEvents.SlowLobbySeconds);
             var isSlow = await UniTask.WhenAny(loading,
                 UniTask.Delay(slowAfter, DelayType.Realtime, cancellationToken: token)) == 1;
