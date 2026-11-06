@@ -44,7 +44,7 @@ namespace ToyCarArena.Tests.PlayMode
             var shots = new[] {
                 (1080, 1920, false), (1920, 1080, false), (1080, 1920, true), (2340, 1080, true), (2048, 1536, true),
             };
-            var cases = new[] { "lost", "won", "offer", "gift", "double", "bought", "hat", "legend" };
+            var cases = new[] { "lost", "won", "offer", "gift", "double", "boosted", "bought", "hat", "legend" };
             if (System.Environment.GetEnvironmentVariable("SHOTS_CASES") is { Length: > 0 } only) {
                 cases = only.Split(',');
             }
@@ -63,7 +63,7 @@ namespace ToyCarArena.Tests.PlayMode
                     // The gift waits behind the popup of the level the round opens, each closing by itself after 4 s.
                     // CLAIM ×2 is pressed after the first picture, its ad paying at once.
                     var moments = name == "gift" ? new[] { 0.6f, 3.0f, 20.0f }
-                        : name == "double" ? new[] { 0.6f, 1.2f, 4.0f }
+                        : name is "double" or "boosted" ? new[] { 0.6f, 1.2f, 4.0f }
                         // The popup's BUY & EQUIP is pressed after the first picture: the celebration plays on.
                         : name is "bought" or "hat" ? new[] { 3.0f, 3.3f, 3.7f, 4.4f, 6.0f }
                         : name == "legend" ? new[] { 0.6f, 1.6f, 2.4f, 3.2f, 4.5f, 9.0f } : new[] { 0.6f, 3.0f };
@@ -133,7 +133,7 @@ namespace ToyCarArena.Tests.PlayMode
                                     }
                                 }
 
-                                if (name == "double" && moment < 1f) {
+                                if (name is "double" or "boosted" && moment < 1f) {
                                     typeof(RoundOverView).GetMethod("ClaimDouble",
                                         BindingFlags.Instance | BindingFlags.NonPublic)?.Invoke(view, null);
                                 }
@@ -178,9 +178,13 @@ namespace ToyCarArena.Tests.PlayMode
             }
 
             var isWon = name != "lost";
-            if (name == "double") {
+            if (name is "double" or "boosted") {
                 // Level 12 with every car open: the bonus crosses a plain level, so no popup covers the card.
                 storage.SetInt("xp_total", 1250);
+            }
+            if (name == "boosted") {
+                // The menu's XP boost running: the sticker's ×2 BOOST stamp, then CLAIM ×2's own ×2 beside it.
+                storage.SetInt("xp_boost", 3);
             }
             if (name == "legend") {
                 // A gold player a little short of level 100: the round crosses into legend, the card's badge and the bar
