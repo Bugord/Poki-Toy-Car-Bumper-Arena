@@ -3,12 +3,23 @@ namespace ToyCarArena.UI
 {
     /// <summary>
     /// The colour of a level badge. Levels never end, so the rank is what tells a long-time player at a glance: rookie
-    /// white, then bronze, silver, gold and legend. Only the look; nothing in the game reads it.
+    /// white, then bronze, silver, gold and legend. The main menu shows the ranks as leagues (<see cref="LeagueLook"/>,
+    /// <see cref="MenuLeagues"/>). Only the look; nothing in the game reads it.
     /// </summary>
     internal static class PlayerRank
     {
         private static readonly int[] Starts = { 1, 10, 25, 50, 100 };
         private static readonly string[] Names = { "ROOKIE", "BRONZE", "SILVER", "GOLD", "LEGEND" };
+
+        /// <summary>How many ranks there are: rookie to legend.</summary>
+        public static int Count => Starts.Length;
+
+        /// <summary>The level a rank starts at; below rookie, rookie's.</summary>
+        public static int StartOf(int tier) => Starts[System.Math.Clamp(tier, 0, Starts.Length - 1)];
+
+        /// <summary>A rank's name in the player's language, by its tier.</summary>
+        public static string NameOfTier(int tier) =>
+            Strings.Get("rank." + Names[System.Math.Clamp(tier, 0, Names.Length - 1)].ToLowerInvariant());
 
         /// <summary>0 rookie .. 4 legend.</summary>
         public static int TierOf(int level)

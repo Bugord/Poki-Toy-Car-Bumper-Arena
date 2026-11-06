@@ -18,6 +18,7 @@ namespace ToyCarArena.Gameplay.Round
         private const string ColorKey = "car_color";
         private const string OwnedKey = "cars_owned";
         private const string GarageSeenKey = "garage_seen_level";
+        private const string LeagueSeenKey = "league_seen";
 
         public event Action<int> ColorChanged;
 
@@ -84,6 +85,14 @@ namespace ToyCarArena.Gameplay.Round
 
         /// <summary>The player opened the garage: the cars their level has opened so far are no longer new.</summary>
         public void MarkGarageSeen() => storage.SetInt(GarageSeenKey, Level);
+
+        /// <summary>
+        /// The highest league (a rank tier, 0 rookie) the menu has greeted with its NEW LEAGUE! popup. A player from
+        /// before the leagues has none: the first menu in bronze or higher greets the league they are in, once.
+        /// </summary>
+        public int SeenLeague => Math.Max(0, storage.GetInt(LeagueSeenKey));
+
+        public void MarkLeagueSeen(int league) => storage.SetInt(LeagueSeenKey, Math.Max(league, SeenLeague));
 
         public int TotalXp => Math.Max(0, storage.GetInt(TotalKey));
         public int Level => At(TotalXp).Level;

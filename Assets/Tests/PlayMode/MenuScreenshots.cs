@@ -22,7 +22,8 @@ namespace ToyCarArena.Tests.PlayMode
     /// <summary>
     /// Pictures of the main menu upright and wide, with a finger (phones) and with a mouse (desktops), for a returning
     /// player (level 7, a topper worn, coins for the shop, a new car not yet seen in the garage), with its missions and
-    /// modes popups, and once in Russian: <c>Logs/menu/&lt;case&gt;_&lt;w&gt;x&lt;h&gt;.png</c>. Explicit: it is for
+    /// modes popups, and once in Russian; then in every league (its sky, pedestal and badge) with the leagues list
+    /// over it, and the NEW LEAGUE! popup: <c>Logs/menu/&lt;case&gt;_&lt;w&gt;x&lt;h&gt;.png</c>. Explicit: it is for
     /// looking at, and needs graphics.
     /// </summary>
     [Explicit]
@@ -32,6 +33,38 @@ namespace ToyCarArena.Tests.PlayMode
             (1080, 1920, true), (1080, 2340, true), (2340, 1080, true),
             (1920, 1080, false), (2048, 1536, false),
         };
+
+        // A level in each league (rookie, bronze, silver, gold, legend), partway into it, as the league boards show.
+        private static readonly (string Id, int Level)[] Leagues = {
+            ("rookie", 7), ("bronze", 15), ("silver", 31), ("gold", 62), ("legend", 120),
+        };
+
+        private static readonly (int Width, int Height, bool IsTouch)[] LeagueSizes = {
+            (1080, 1920, true), (1080, 2340, true), (2340, 1080, true), (1920, 1080, false),
+        };
+
+        [UnityTest]
+        public IEnumerator CaptureTheLeagues()
+        {
+            Strings.Load(new StringTable(AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Localization/strings.csv").text));
+            var directory = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "menu");
+            Directory.CreateDirectory(directory);
+            var tuning = AssetDatabase.LoadAssetAtPath<GameTuning>("Assets/Data/Gameplay/data_game_tuning.asset");
+            foreach (var size in LeagueSizes) {
+                for (var tier = 0; tier < Leagues.Length; tier++) {
+                    var (id, level) = Leagues[tier];
+                    var xp = LevelStart(tuning, level) + LevelPrice(tuning, level) / 2;
+                    // Seen already: the menu as it stays in the league, then its leagues list.
+                    yield return Capture(directory, $"league-{id}", size, false, xp, tier, true);
+                    if (tier is 2 or 4) {
+                        // One league short: the first menu in it greets it with NEW LEAGUE!.
+                        yield return Capture(directory, $"newleague-{id}", size, false, xp, tier - 1, false);
+                    }
+                }
+            }
+
+            typeof(Strings).GetField("table", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
+        }
 
         [UnityTest]
         public IEnumerator CaptureTheMenu()
@@ -51,7 +84,7 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         private static IEnumerator Capture(string directory, string name, (int Width, int Height, bool IsTouch) size,
-            bool withPopups)
+            bool withPopups, int xp = 540, int leagueSeen = 0, bool withLeagues = false)
         {
             var catalog = AssetDatabase.LoadAssetAtPath<CarCatalog>("Assets/Data/Cars/data_car_catalog.asset");
             var arenas = AssetDatabase.LoadAssetAtPath<ArenaCatalog>("Assets/Data/Arenas/data_arena_catalog.asset");
@@ -61,7 +94,8 @@ namespace ToyCarArena.Tests.PlayMode
             var (width, height, isTouch) = size;
             var storage = new RoundOverScreenshots.MemoryStorage();
             // Level 7 with the garage last seen at level 5: the SUV is new to the garage.
-            storage.SetInt("xp_total", 540);
+            storage.SetInt("xp_total", xp);
+            storage.SetInt("league_seen", leagueSeen);
             storage.SetInt("garage_seen_level", 5);
             storage.SetString("cars_owned", "speedster");
             storage.SetString("car_selected", "speedster");
@@ -115,6 +149,13 @@ namespace ToyCarArena.Tests.PlayMode
                         typeof(MenuView).GetMethod("ClosePopups", Private)?.Invoke(view, null);
                     }
                 }
+
+                if (withLeagues) {
+                    typeof(MenuView).GetMethod("OpenLeagues", Private)?.Invoke(view, null);
+                    yield return Wait(0.4f);
+                    Save(target, Path.Combine(directory, $"{name.Replace("league-", "ladder-")}_{width}x{height}.png"));
+                    typeof(MenuView).GetMethod("ClosePopups", Private)?.Invoke(view, null);
+                }
             }
             finally {
                 view.Dispose();
@@ -124,6 +165,22 @@ namespace ToyCarArena.Tests.PlayMode
                 Object.DestroyImmediate(target);
                 Object.Destroy(panelSettings);
             }
+        }
+
+        private static int LevelStart(GameTuning tuning, int level)
+        {
+            var total = 0;
+            for (var at = 1; at < level; at++) {
+                total += LevelPrice(tuning, at);
+            }
+
+            return total;
+        }
+
+        private static int LevelPrice(GameTuning tuning, int level)
+        {
+            var prices = tuning.Progress.LevelXp;
+            return prices[Mathf.Min(level - 1, prices.Length - 1)];
         }
 
         private static IEnumerator Wait(float seconds)

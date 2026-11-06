@@ -195,11 +195,18 @@ namespace ToyCarArena.App
         }
 
         /// <summary>
-        /// A press in the main menu: <c>menu / play, garage, missions, mode / interact</c> (garage both from its tile and
-        /// from the car).
+        /// A press in the main menu: <c>menu / play, garage, missions, mode, leagues / interact</c> (garage both from its
+        /// tile and from the car, leagues from the level).
         /// </summary>
         public static void MeasureMenuPressed(this IGamePlatform platform, string what) =>
             platform.MeasureInteract(MenuCategory, what);
+
+        /// <summary>
+        /// The menu greeted a new league with its popup: <c>menu / league-bronze, silver, gold, legend / visible</c>.
+        /// The leagues list opening is <c>menu / leagues / interact</c> (<see cref="MeasureMenuPressed"/>).
+        /// </summary>
+        public static void MeasureLeagueShown(this IGamePlatform platform, string league) =>
+            platform.MeasureVisible(MenuCategory, "league-" + league);
 
         /// <summary><c>result / home / visible</c> on every result, <c>interact</c> when HOME is pressed.</summary>
         public static void MeasureHomeShown(this IGamePlatform platform) => platform.MeasureVisible(ResultCategory, "home");

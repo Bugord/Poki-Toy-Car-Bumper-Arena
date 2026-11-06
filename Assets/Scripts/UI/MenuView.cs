@@ -20,6 +20,10 @@ namespace ToyCarArena.UI
     /// button stays a thumb wide. The top bar clears Poki's pill as the HUD does: under it upright, beside it sideways.
     /// Keys: Space or Enter PLAY, G the garage, M the missions, Esc closes a popup.
     /// </para>
+    /// <para>
+    /// The player's league (their rank, <see cref="LeagueLook"/>) tints the sky and the pedestal's top; a press on the
+    /// level opens the leagues list, and the first menu in a new league greets it with NEW LEAGUE! (<see cref="MenuLeagues"/>).
+    /// </para>
     /// </summary>
     public sealed class MenuView : FadingView<MenuViewModel>
     {
@@ -36,6 +40,11 @@ namespace ToyCarArena.UI
         // The groups' distance from the screen's edges, and from Poki's pill (as the HUD keeps).
         private const float Edge = 40f;
         private const float PillGap = 18f;
+        // How far a silver diamond or a gold or legend crown stands above the level badge: the bar keeps it on screen
+        // when the touch layout grows the bar from its top, and clear of Poki's button over it.
+        private const float BadgeOrnament = 32f;
+        // The wide leagues list keeps its five cards in from the sides, as the board does.
+        private const float WideLeaguesSide = 200f;
 
         // The least distance of the groups from a side on a phone held sideways (about 48 CSS px).
         private const float TouchWideSide = 240f;
@@ -68,6 +77,14 @@ namespace ToyCarArena.UI
         // The bottom row's own width sideways (ui_menu: menu--wide .menu__bottom).
         private const float WideBottomWidth = 2000f;
 
+        // The XP bar sideways: this share of the top row, never shorter than upright and never into the coins and the
+        // gear (their width and gaps, reference pixels).
+        private const float WideLevelShare = 0.42f;
+        private const float LevelMinWidth = 640f;
+        private const float WalletWidth = 420f;
+        // The bar's text starts this far past the badge that covers the bar's left end.
+        private const float XpTextGap = 22f;
+
         private static readonly Color Navy = new Color32(0x1d, 0x2b, 0x4f, 0xff);
         private static readonly Color Red = new Color32(0xff, 0x4d, 0x4d, 0xff);
         private static readonly Color Gold = new Color32(0xff, 0xc9, 0x3c, 0xff);
@@ -82,7 +99,10 @@ namespace ToyCarArena.UI
         private SafeInsets insets;
 
         private VisualElement top;
+        private VisualElement level;
         private VisualElement levelBadgeSlot;
+        private VisualElement xp;
+        private VisualElement xpText;
         private VisualElement xpFill;
         private Label rank;
         private Label xpCount;
@@ -113,6 +133,7 @@ namespace ToyCarArena.UI
         private VisualElement modesPopup;
         private CarPortrait modePortrait;
         private GarageStage garageStage;
+        private MenuLeagues leagues;
 
         public MenuView(IAudioService audioService, HudControls controls)
         {
@@ -139,6 +160,7 @@ namespace ToyCarArena.UI
             BuildBottom(menu);
             BuildMissionsPopup(menu);
             BuildModesPopup(menu);
+            leagues = new MenuLeagues(menu, audioService.PlayUiClick, () => Root?.Focus());
 
             Root.RegisterCallback<GeometryChangedEvent>(OnGeometry);
             SafeArea.Watch(Root, safe => {
@@ -154,6 +176,11 @@ namespace ToyCarArena.UI
         {
             await base.ShowAsync(token);
             Root.Focus();
+            // The first menu in a new league greets it, over the league's sky and plinth already behind the dim.
+            if (!ViewModel.IsDecided && ViewModel.TakeNewLeague()) {
+                ClosePopups();
+                leagues.ShowNewLeague(ViewModel.Level.Level, !isTouch);
+            }
         }
 
         public override async UniTask HideAsync(CancellationToken token)
@@ -179,24 +206,39 @@ namespace ToyCarArena.UI
         // Before it is up, after PLAY, or under the garage or the settings, the menu takes no presses.
         private bool IsBusy => !IsShown || ViewModel.IsDecided || ViewModel.IsGarageOpen || ViewModel.IsSettingsOpen;
 
-        private bool IsPopupOpen => missionsPopup.ClassListContains(OpenClass) || modesPopup.ClassListContains(OpenClass);
+        private bool IsPopupOpen => missionsPopup.ClassListContains(OpenClass) || modesPopup.ClassListContains(OpenClass) ||
+            leagues.IsNewLeagueOpen || leagues.IsListOpen;
 
         // -- Building ------------------------------------------------------------------------------------------------
 
         private void BuildTop(VisualElement menu)
         {
             top = Element("menu__top");
-            var level = Element("menu__level");
+            level = Element("menu__level");
+            // The level and its bar open the leagues: the bar alone is too thin to aim at.
+            level.pickingMode = PickingMode.Position;
+            level.RegisterCallback<ClickEvent>(_ => OpenLeagues());
             levelBadgeSlot = Element("menu__level-badge");
-            var xp = Element("menu__xp");
+            levelBadgeSlot.RegisterCallback<GeometryChangedEvent>(_ => PlaceXp());
+            // The bar: its navy drop behind it, its left end square and under the badge, its right end round.
+            xp = Element("menu__xp");
+            xp.Add(Element("menu__xp-drop"));
+            var track = Element("menu__xp-track");
             xpFill = Element("menu__xp-fill");
-            xp.Add(xpFill);
-            var xpText = Element("menu__xp-text");
+            xpFill.Add(Element("menu__xp-shade"));
+            track.Add(xpFill);
+            xpText = Element("menu__xp-text");
             rank = Text("menu__rank");
+            var count = Element("menu__xp-numbers");
             xpCount = Text("menu__xp-count");
+            var unit = Text("menu__xp-unit");
+            unit.text = "XP";
+            count.Add(xpCount);
+            count.Add(unit);
             xpText.Add(rank);
-            xpText.Add(xpCount);
-            xp.Add(xpText);
+            xpText.Add(count);
+            track.Add(xpText);
+            xp.Add(track);
             level.Add(xp);
             // The level badge goes over the bar's left end, which tucks under it.
             level.Add(levelBadgeSlot);
@@ -204,9 +246,12 @@ namespace ToyCarArena.UI
             top.Add(Element("menu__spacer"));
 
             var coinPill = Element("menu__coins");
-            coinPill.Add(RoundOverMeta.Coin());
+            coinPill.Add(Element("menu__coins-drop"));
+            var coinFace = Element("menu__coins-face");
+            coinFace.Add(RoundOverMeta.Coin());
             coins = Text("menu__coins-count");
-            coinPill.Add(coins);
+            coinFace.Add(coins);
+            coinPill.Add(coinFace);
             top.Add(coinPill);
 
             var gear = Sticker("menu__gear", OpenSettings);
@@ -403,16 +448,10 @@ namespace ToyCarArena.UI
             }
 
             head.Add(stroke);
-            var close = Sticker("menu__close", () => {
+            head.Add(CloseSticker(() => {
                 audioService.PlayUiClick();
                 ClosePopups();
-            });
-            var face = close.Q<VisualElement>(className: "menu__face");
-            face.Add(Element("menu__close-bar"));
-            var turned = Element("menu__close-bar");
-            turned.AddToClassList("menu__close-bar--turned");
-            face.Add(turned);
-            head.Add(close);
+            }));
             sheet.Add(head);
             popup.Add(sheet);
             menu.Add(popup);
@@ -486,7 +525,7 @@ namespace ToyCarArena.UI
 
         /// <summary>A button drawn as a sticker: the navy drop is its own layer behind the face, so the face's content
         /// stays centred, and the face sinks onto the drop while pressed.</summary>
-        private Button Sticker(string className, System.Action pressed)
+        private static Button Sticker(string className, System.Action pressed)
         {
             var button = new Button(pressed);
             button.RemoveFromClassList(Button.ussClassName);
@@ -496,6 +535,18 @@ namespace ToyCarArena.UI
             button.Add(Element("menu__drop"));
             button.Add(Element("menu__face"));
             return button;
+        }
+
+        /// <summary>The round white close button of the menu's popups, its cross drawn by two bars.</summary>
+        internal static Button CloseSticker(System.Action pressed)
+        {
+            var close = Sticker("menu__close", pressed);
+            var face = close.Q<VisualElement>(className: "menu__face");
+            face.Add(Element("menu__close-bar"));
+            var turned = Element("menu__close-bar");
+            turned.AddToClassList("menu__close-bar--turned");
+            face.Add(turned);
+            return close;
         }
 
         private static VisualElement Gear()
@@ -543,13 +594,17 @@ namespace ToyCarArena.UI
         /// <summary>Shows the player's level, coins, car, garage marks and nearest mission as they are now.</summary>
         private void Refresh()
         {
-            var level = ViewModel.Level;
+            var at = ViewModel.Level;
             levelBadgeSlot.Clear();
-            levelBadgeSlot.Add(HudView.CreateLevelBadge(level.Level, "level-badge--big"));
-            xpFill.style.width = Length.Percent(100f * level.Xp / Mathf.Max(1, level.Cost));
-            rank.text = PlayerRank.NameOf(level.Level);
-            xpCount.text = $"{level.Xp}/{level.Cost} XP";
+            levelBadgeSlot.Add(HudView.CreateLevelBadge(at.Level, "level-badge--big"));
+            xpFill.style.width = Length.Percent(100f * at.Xp / Mathf.Max(1, at.Cost));
+            rank.text = PlayerRank.NameOf(at.Level);
+            xpCount.text = $"{at.Xp}/{at.Cost}";
             coins.text = ViewModel.Coins.ToString();
+            // The league's sky under the checker, and its colour on the pedestal's top (ShowCar).
+            var league = ViewModel.League;
+            Menu.style.backgroundImage = new StyleBackground(LeagueLook.SkyOf(league));
+            plinthTop.style.backgroundColor = LeagueLook.PedestalOf(league);
 
             garageTile.EnableInClassList("menu__tile--new", ViewModel.HasNewCar);
             garageTile.EnableInClassList("menu__tile--dot", ViewModel.CanShop);
@@ -579,7 +634,8 @@ namespace ToyCarArena.UI
             garageStage = ViewModel.Stage;
             if (garageStage != null && car != null) {
                 // The 3D car stands on a 3D pedestal drawn with it; the flat plinth is only under a portrait.
-                var texture = garageStage.ShowCar(car, ViewModel.CarColor, ViewModel.Topper, true);
+                var texture = garageStage.ShowCar(car, ViewModel.CarColor, ViewModel.Topper, true,
+                    LeagueLook.PedestalOf(ViewModel.League));
                 heroAspect = (float)texture.width / texture.height;
                 hero.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(texture));
                 heroPortraitRoot.style.display = DisplayStyle.None;
@@ -647,7 +703,8 @@ namespace ToyCarArena.UI
             var side = isWide && isTouch ? TouchWideSide : Edge;
             var left = Mathf.Max(side, Edge + insets.Left);
             var right = Mathf.Max(side, Edge + insets.Right);
-            var topEdge = Edge + insets.Top;
+            var ornament = ViewModel.League >= 2 ? BadgeOrnament : 0f;
+            var topEdge = Edge + insets.Top + (scale - 1f) * ornament;
             var topLeft = left;
             if (PokiPill.TryGetRect(Root.panel, out var pill)) {
                 pill = Root.WorldToLocal(pill);
@@ -656,17 +713,22 @@ namespace ToyCarArena.UI
                         topLeft = Mathf.Max(topLeft, Mathf.Ceil(pill.xMax + PillGap));
                     }
                     else {
-                        topEdge = Mathf.Max(topEdge, Mathf.Ceil(pill.yMax + PillGap));
+                        topEdge = Mathf.Max(topEdge, Mathf.Ceil(pill.yMax + PillGap + ornament));
                     }
                 }
             }
 
             var grown = new Scale(new Vector3(scale, scale, 1f));
+            var topWidth = (size.x - topLeft - right) / scale;
             top.style.left = topLeft;
             top.style.top = topEdge;
             top.style.right = StyleKeyword.Auto;
-            top.style.width = (size.x - topLeft - right) / scale;
+            top.style.width = topWidth;
             top.style.scale = grown;
+            // Upright the bar takes what the row leaves; sideways a long one, as the screen is long.
+            level.style.width = isWide
+                ? Mathf.Max(LevelMinWidth, Mathf.Min(topWidth * WideLevelShare, topWidth - WalletWidth))
+                : StyleKeyword.Null;
 
             var topHeight = 130f * scale;
             rail.style.left = left;
@@ -686,13 +748,34 @@ namespace ToyCarArena.UI
             bottom.style.transformOrigin = new TransformOrigin(0f, Length.Percent(100f));
             plinth.style.scale = grown;
 
+            var sheetFit = Mathf.Max(0.6f,
+                Mathf.Min(isWide && isTouch ? 1.3f : 1f, (size.y - topEdge - low) / 1500f * 1.3f));
             foreach (var popup in new[] { missionsPopup, modesPopup }) {
                 var sheet = popup.Q<VisualElement>(className: "menu__sheet");
-                var fit = Mathf.Min(isWide && isTouch ? 1.3f : 1f, (size.y - topEdge - low) / 1500f * 1.3f);
-                sheet.style.scale = new Scale(new Vector3(Mathf.Max(0.6f, fit), Mathf.Max(0.6f, fit), 1f));
+                sheet.style.scale = new Scale(new Vector3(sheetFit, sheetFit, 1f));
             }
 
+            leagues.Top = topEdge;
+            // The new league's card is taller than the menu's sheets.
+            leagues.Place(isWide, scale, Mathf.Max(0.55f, Mathf.Min(sheetFit, (size.y - 2f * Edge) / 1750f)), size,
+                isWide ? Mathf.Max(left, WideLeaguesSide) : left, isWide ? Mathf.Max(right, WideLeaguesSide) : right,
+                Edge + insets.Bottom);
+
             Root.schedule.Execute(PlaceStage);
+        }
+
+        /// <summary>
+        /// The bar's left end under the badge and its text clear of it: the badge grows with the level's digits.
+        /// </summary>
+        private void PlaceXp()
+        {
+            var badge = levelBadgeSlot.layout.width;
+            if (float.IsNaN(badge) || badge <= 0f) {
+                return;
+            }
+
+            xp.style.left = badge / 2f;
+            xpText.style.left = badge / 2f + XpTextGap;
         }
 
         /// <summary>The car between the top groups and the bottom ones, with room for the rail at its left.</summary>
@@ -786,7 +869,7 @@ namespace ToyCarArena.UI
         /// The glow and the rays as one mesh, white at the middle and clear at the rim, by the vertices' tint: USS has
         /// no gradients, and the podium's sunburst is one flat colour to its tips.
         /// </summary>
-        private static void DrawLight(MeshGenerationContext context)
+        internal static void DrawLight(MeshGenerationContext context)
         {
             var rect = context.visualElement.contentRect;
             var radius = Mathf.Min(rect.width, rect.height) * 0.5f;
@@ -832,6 +915,23 @@ namespace ToyCarArena.UI
 
         private void OnKeyDown(KeyDownEvent evt)
         {
+            // NEW LEAGUE! takes every key that would close it, and nothing under it acts.
+            if (leagues.IsNewLeagueOpen) {
+                evt.StopPropagation();
+                if (evt.keyCode is KeyCode.Space or KeyCode.Return or KeyCode.KeypadEnter or KeyCode.Escape) {
+                    audioService.PlayUiClick();
+                    leagues.Continue();
+                }
+
+                return;
+            }
+
+            // The leagues list closes with Esc; PLAY's and the tiles' keys do not reach through it.
+            if (leagues.IsListOpen && evt.keyCode is not KeyCode.Escape) {
+                evt.StopPropagation();
+                return;
+            }
+
             switch (evt.keyCode) {
                 case KeyCode.Space or KeyCode.Return or KeyCode.KeypadEnter:
                     evt.StopPropagation();
@@ -924,6 +1024,17 @@ namespace ToyCarArena.UI
             missionsPopup.AddToClassList(OpenClass);
         }
 
+        private void OpenLeagues()
+        {
+            if (IsBusy || IsPopupOpen) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            ViewModel.LeaguesOpened();
+            leagues.ShowList(ViewModel.Level.Level, !isTouch);
+        }
+
         private void OpenModes()
         {
             if (IsBusy || IsPopupOpen) {
@@ -939,6 +1050,7 @@ namespace ToyCarArena.UI
         {
             missionsPopup.RemoveFromClassList(OpenClass);
             modesPopup.RemoveFromClassList(OpenClass);
+            leagues?.Close();
         }
 
         // A locked tile or mode: a click and nothing else for now.
@@ -1029,7 +1141,7 @@ namespace ToyCarArena.UI
             }
         }
 
-        private static void DrawLock(MeshGenerationContext context)
+        internal static void DrawLock(MeshGenerationContext context)
         {
             var r = context.visualElement.contentRect;
             var p = context.painter2D;

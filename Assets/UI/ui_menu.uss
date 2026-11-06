@@ -7,8 +7,10 @@
    content stays centred on the face. Sizes are reference pixels of the 1080x1920 panel; MenuView scales the anchored
    groups up on a phone held sideways, where the Expand panel is small. */
 
+/* The sky is the league's (LeagueLook.SkyOf, a radial texture set in code), under the drifting checker. */
 .menu {
     background-color: var(--blue);
+    background-size: cover;
     color: var(--navy);
     overflow: hidden;
 }
@@ -94,14 +96,39 @@
 
 .menu__level .level-badge__value { font-size: 64px; }
 
+/* The XP bar, thinner than the badge (72 of 120): its left end square and under the badge (MenuView.PlaceXp sets
+   where it starts), its right end round, the navy drop a layer of its own behind it. */
 .menu__xp {
-    flex-grow: 1;
-    height: 84px;
-    margin-left: 94px;
-    border-width: 8px;
+    position: absolute;
+    left: 60px;
+    right: 0;
+    top: 20px;
+    height: 72px;
+}
+
+.menu__xp-drop,
+.menu__xp-track {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-top-right-radius: 36px;
+    border-bottom-right-radius: 36px;
+}
+
+.menu__xp-drop {
+    top: 8px;
+    bottom: -8px;
+    background-color: var(--navy);
+}
+
+.menu__xp-track {
+    border-width: 7px;
     border-color: var(--navy);
-    border-radius: 999px;
-    background-color: var(--white);
+    background-color: var(--soft);
     overflow: hidden;
 }
 
@@ -113,10 +140,20 @@
     background-color: var(--gold);
 }
 
+/* The darker gold strip along the fill's bottom, as on the design's bars. */
+.menu__xp-shade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 12px;
+    background-color: #e9a91c;
+}
+
 .menu__xp-text {
     position: absolute;
-    left: 46px;
-    right: 24px;
+    left: 82px;
+    right: 26px;
     top: 0;
     bottom: 0;
     flex-direction: row;
@@ -134,24 +171,62 @@
     -unity-text-align: middle-left;
 }
 
-.menu__xp-count { -unity-text-align: middle-right; }
+.menu__rank {
+    flex-shrink: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
+.menu__xp-numbers {
+    flex-direction: row;
+    align-items: flex-end;
+    flex-shrink: 0;
+    margin-left: 16px;
+}
+
+/* XP smaller and muted after the numbers; a nudge down sets it on their baseline. */
+.menu__xp-unit {
+    margin: 0 0 0 8px;
+    padding: 0;
+    font-size: 26px;
+    color: var(--muted);
+    translate: 0 -3px;
+}
+
+/* The coins as tall as the XP bar, with the same drop. */
 .menu__coins {
+    height: 72px;
+    margin-left: 24px;
+}
+
+.menu__coins-drop,
+.menu__coins-face {
+    border-radius: 36px;
+}
+
+.menu__coins-drop {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 8px;
+    bottom: -8px;
+    background-color: var(--navy);
+}
+
+.menu__coins-face {
     flex-direction: row;
     align-items: center;
-    height: 96px;
-    margin-left: 24px;
-    padding: 0 30px 0 18px;
-    border-width: 8px;
+    height: 72px;
+    padding: 0 30px 0 14px;
+    border-width: 7px;
     border-color: var(--navy);
-    border-radius: 999px;
     background-color: var(--white);
 }
 
 .menu__coins-count {
     margin: 0 0 0 12px;
     padding: 0;
-    font-size: 48px;
+    font-size: 44px;
     color: var(--navy);
 }
 
@@ -683,3 +758,609 @@
     background-color: var(--green);
     color: var(--navy);
 }
+
+/* -- Leagues: the NEW LEAGUE! popup and the leagues list (MenuLeagues) -------------------------------------------- */
+
+.menu__league-popup { background-color: rgba(29, 43, 79, 0.72); }
+
+.menu__league-card {
+    width: 940px;
+    padding: 110px 44px 50px 44px;
+    align-items: center;
+    transform-origin: center;
+}
+
+.menu__league-title {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -100px;
+    align-items: center;
+}
+
+.menu__league-title-text {
+    margin: 0;
+    padding: 0;
+    font-size: 116px;
+    color: var(--gold);
+    -unity-text-outline-width: 18px;
+    text-shadow: 0 14px 0 rgb(29, 43, 79);
+    rotate: -4deg;
+}
+
+.menu__league-title-text.stroke__face { text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+
+.menu__league-hero {
+    width: 100%;
+    height: 330px;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu__league-burst {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 560px;
+    height: 560px;
+    translate: -50% -50%;
+}
+
+.menu__league-big {
+    min-width: 230px;
+    height: 230px;
+    padding: 0 40px;
+    border-width: 14px;
+    border-bottom-width: 14px;
+    border-radius: 66px;
+}
+
+.menu__league-big .level-badge__value { font-size: 120px; }
+
+.menu__league-change {
+    flex-direction: row;
+    align-items: center;
+    margin: 30px 0 14px 0;
+}
+
+.menu__league-small {
+    min-width: 96px;
+    height: 80px;
+    padding: 0 14px;
+    border-width: 6px;
+    border-bottom-width: 6px;
+    border-radius: 24px;
+}
+
+.menu__league-small .level-badge__value { font-size: 40px; }
+
+.menu__league-arrow {
+    width: 70px;
+    height: 46px;
+    margin: 0 22px;
+}
+
+.menu__league-name {
+    margin: 0;
+    padding: 0;
+    font-size: 94px;
+    -unity-text-outline-width: 16px;
+    text-shadow: 0 12px 0 rgb(29, 43, 79);
+    white-space: nowrap;
+}
+
+.menu__league-name.stroke__face { text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+
+.menu__league-caption {
+    margin: 26px 0 20px 0;
+    padding: 0;
+    font-size: 36px;
+    letter-spacing: 2px;
+    color: var(--muted);
+}
+
+.menu__league-gets {
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.menu__league-get {
+    width: 31%;
+    height: 260px;
+    padding: 0 10px 22px 10px;
+    border-width: 8px;
+    border-bottom-width: 16px;
+    border-color: var(--navy);
+    border-radius: 44px;
+    background-color: var(--soft);
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.menu__league-get-picture {
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu__league-get-label {
+    margin: 0;
+    padding: 0;
+    font-size: 34px;
+    color: var(--navy);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+    -unity-text-auto-size: best-fit 20px 34px;
+    width: 100%;
+}
+
+.menu__league-swatch {
+    width: 128px;
+    height: 128px;
+    border-width: 8px;
+    border-color: var(--navy);
+    border-radius: 64px;
+    background-size: cover;
+}
+
+.menu__league-plinth {
+    width: 200px;
+    height: 104px;
+}
+
+.menu__league-get-badge {
+    min-width: 128px;
+    height: 112px;
+    padding: 0 18px;
+    border-width: 8px;
+    border-bottom-width: 8px;
+    border-radius: 34px;
+}
+
+.menu__league-get-badge .level-badge__value { font-size: 50px; }
+
+.menu__league-next {
+    margin: 36px 0 40px 0;
+    padding: 0;
+    font-size: 36px;
+    letter-spacing: 1px;
+    color: var(--muted);
+}
+
+.menu__league-continue {
+    width: 100%;
+    height: 196px;
+    padding-bottom: 36px;
+}
+
+.menu__league-continue .button__label { font-size: 80px; }
+
+.menu__league-key {
+    position: absolute;
+    top: -40px;
+    right: 40px;
+    margin: 0;
+}
+
+/* The leagues list: full screen in the player's league's sky (set in code), its rays over it. */
+.menu__leagues {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--blue);
+    background-size: cover;
+    display: none;
+}
+
+.menu__leagues.menu__popup--open { display: flex; }
+
+.menu__leagues-rays {
+    position: absolute;
+    left: 50%;
+    top: -10%;
+    width: 2600px;
+    height: 2600px;
+    translate: -50% -30%;
+}
+
+.menu__leagues-body {
+    position: absolute;
+    left: 40px;
+    right: 40px;
+    top: 40px;
+    bottom: 50px;
+    transform-origin: center top;
+}
+
+.menu__leagues-head {
+    flex-direction: row;
+    align-items: center;
+    height: 130px;
+    margin-bottom: 40px;
+}
+
+.menu__leagues-title-box { flex-grow: 1; }
+
+.menu__leagues-title {
+    margin: 0;
+    padding: 0;
+    font-size: 96px;
+    -unity-text-outline-width: 16px;
+    text-shadow: 0 12px 0 rgb(29, 43, 79);
+}
+
+.menu__leagues-title.stroke__face { text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+
+.menu__leagues-key {
+    margin: 0 30px 0 0;
+}
+
+.menu__leagues-key .key__text { font-size: 30px; }
+
+/* Upright the leagues stand in the middle of what the title and the hint leave, on tall phones too. */
+.menu__leagues-list {
+    flex-direction: column;
+    flex-grow: 1;
+    justify-content: center;
+    padding-bottom: 150px;
+}
+
+/* A league: the drop behind, the face in its sky; the player's league wears a gold ring and stands taller. */
+.menu__league-item {
+    margin-bottom: 40px;
+}
+
+.menu__league-ring {
+    position: absolute;
+    left: -18px;
+    right: -18px;
+    top: -18px;
+    bottom: -18px;
+    border-width: 14px;
+    border-color: var(--gold);
+    border-radius: 66px;
+}
+
+.menu__league-drop {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 12px;
+    bottom: -12px;
+    border-radius: 50px;
+    background-color: var(--navy);
+}
+
+.menu__league-face {
+    flex-grow: 1;
+    flex-direction: row;
+    align-items: center;
+    padding: 0 36px;
+    border-width: 8px;
+    border-color: var(--navy);
+    border-radius: 50px;
+    background-size: cover;
+    overflow: hidden;
+}
+
+.menu__league-rays {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+/* A badge on its own drop: the plate wrapper takes the badge's size, the drop sits under it, shifted down. */
+.menu__league-plate { flex-shrink: 0; }
+
+.menu__league-plate-drop {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 11px;
+    bottom: -11px;
+    background-color: var(--navy);
+}
+
+.menu__league-row-badge-plate .menu__league-plate-drop { border-radius: 40px; }
+.menu__league-card-badge-plate .menu__league-plate-drop { border-radius: 60px; top: 13px; bottom: -13px; }
+
+.menu__league-row { height: 220px; }
+.menu__league-row.menu__league-item--current { height: 290px; }
+
+.menu__league-row-badge {
+    min-width: 150px;
+    height: 136px;
+    padding: 0 24px;
+    border-width: 8px;
+    border-bottom-width: 8px;
+    border-radius: 40px;
+}
+
+.menu__league-row-badge .level-badge__value { font-size: 64px; }
+
+.menu__league-row-body {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin: 0 30px;
+    align-items: flex-start;
+}
+
+.menu__league-row-name,
+.menu__league-card-name {
+    margin: 0;
+    padding: 0;
+    font-size: 64px;
+    -unity-text-outline-width: 14px;
+    text-shadow: 0 8px 0 rgb(29, 43, 79);
+    white-space: nowrap;
+}
+
+.menu__league-row-name.stroke__face,
+.menu__league-card-name.stroke__face { text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+
+.menu__league-from {
+    margin: 10px 0 0 0;
+    padding: 2px 22px 6px 22px;
+    border-radius: 30px;
+    background-color: rgba(29, 43, 79, 0.82);
+    color: var(--white);
+    font-size: 32px;
+    letter-spacing: 1px;
+    white-space: nowrap;
+}
+
+.menu__league-row-plinth {
+    flex-shrink: 0;
+    width: 180px;
+    height: 90px;
+    margin-right: 26px;
+}
+
+.menu__league-done {
+    flex-shrink: 0;
+    width: 94px;
+    height: 94px;
+    border-width: 8px;
+    border-color: var(--navy);
+    border-radius: 47px;
+    background-color: var(--green);
+    align-items: center;
+    justify-content: center;
+}
+
+.menu__league-tick {
+    width: 50px;
+    height: 50px;
+}
+
+.menu__league-lock {
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: center;
+    height: 94px;
+    padding: 0 28px 0 18px;
+    border-width: 8px;
+    border-color: var(--navy);
+    border-radius: 47px;
+    background-color: var(--white);
+}
+
+.menu__league-lock-icon {
+    width: 52px;
+    height: 52px;
+    margin-right: 10px;
+}
+
+.menu__league-lock-text {
+    margin: 0;
+    padding: 0;
+    font-size: 38px;
+    color: var(--navy);
+    white-space: nowrap;
+}
+
+.menu__league-you {
+    margin: 0;
+    padding: 2px 24px 6px 24px;
+    border-width: 7px;
+    border-color: var(--navy);
+    border-radius: 30px;
+    background-color: var(--gold);
+    font-size: 32px;
+    letter-spacing: 1px;
+    color: var(--navy);
+}
+
+.menu__league-row .menu__league-you {
+    position: absolute;
+    top: 20px;
+    right: 26px;
+}
+
+/* The bar to the next league: white, a gold fill with its dark strip, the level at the left and the goal at the right. */
+.menu__league-track {
+    align-self: stretch;
+    height: 84px;
+    margin-top: 16px;
+    border-width: 7px;
+    border-color: var(--navy);
+    border-radius: 42px;
+    background-color: var(--white);
+    overflow: hidden;
+}
+
+.menu__league-track-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background-color: var(--gold);
+}
+
+.menu__league-track-shade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 14px;
+    background-color: #e9a91c;
+}
+
+.menu__league-track-text {
+    position: absolute;
+    left: 30px;
+    right: 30px;
+    top: 0;
+    bottom: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.menu__league-track-label {
+    margin: 0;
+    padding: 0;
+    font-size: 36px;
+    color: var(--navy);
+    white-space: nowrap;
+}
+
+.menu__leagues-progress { display: none; }
+
+.menu__leagues-hint {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+}
+
+.menu__leagues-hint-text {
+    margin: 0;
+    padding: 18px 44px 22px 44px;
+    border-width: 8px;
+    border-bottom-width: 16px;
+    border-color: var(--navy);
+    border-radius: 60px;
+    background-color: var(--white);
+    font-size: 40px;
+    color: var(--navy);
+    -unity-text-align: middle-center;
+}
+
+/* Wide: five cards from rookie at the left to legend, and the bar to the next league under them. */
+.menu__leagues--wide .menu__leagues-body {
+    left: 200px;
+    right: 200px;
+}
+
+.menu__leagues--wide .menu__leagues-list {
+    flex-direction: row-reverse;
+    flex-grow: 0;
+    padding-bottom: 0;
+    height: 1040px;
+    margin-top: 30px;
+}
+
+.menu__league-card-item {
+    flex-grow: 1;
+    flex-basis: 0;
+    margin: 0 20px;
+}
+
+.menu__league-card-item.menu__league-item--current { translate: 0 -24px; }
+
+.menu__league-card-item > .menu__league-face {
+    flex-direction: column;
+    padding: 100px 20px 50px 20px;
+}
+
+.menu__league-card-badge {
+    min-width: 240px;
+    height: 206px;
+    padding: 0 34px;
+    border-width: 10px;
+    border-bottom-width: 10px;
+    border-radius: 60px;
+}
+
+.menu__league-card-badge .level-badge__value { font-size: 104px; }
+
+.menu__league-card-plinth {
+    width: 330px;
+    height: 160px;
+    margin: 50px 0 34px 0;
+}
+
+.menu__league-card-name {
+    font-size: 86px;
+    -unity-text-outline-width: 16px;
+    text-shadow: 0 10px 0 rgb(29, 43, 79);
+}
+
+.menu__league-card-item .menu__league-from {
+    margin-top: 16px;
+    font-size: 40px;
+    padding: 4px 26px 8px 26px;
+}
+
+.menu__league-card-item .menu__league-done {
+    width: 130px;
+    height: 130px;
+    border-radius: 65px;
+    border-width: 10px;
+}
+
+.menu__league-card-item .menu__league-tick {
+    width: 70px;
+    height: 70px;
+}
+
+.menu__league-card-item .menu__league-lock {
+    height: 122px;
+    padding: 0 38px 0 24px;
+    border-width: 10px;
+    border-radius: 61px;
+}
+
+.menu__league-card-item .menu__league-lock-icon {
+    width: 70px;
+    height: 70px;
+}
+
+.menu__league-card-item .menu__league-lock-text { font-size: 54px; }
+
+.menu__league-card-item .menu__league-you {
+    font-size: 54px;
+    padding: 10px 40px 14px 40px;
+    border-width: 10px;
+    border-radius: 61px;
+}
+
+.menu__leagues--wide .menu__leagues-progress {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin: 60px 20px 0 20px;
+}
+
+.menu__leagues-progress .menu__league-track {
+    flex-grow: 1;
+    margin: 0 30px;
+}
+
+.menu__leagues-progress-badge {
+    min-width: 128px;
+    height: 108px;
+    padding: 0 18px;
+    border-width: 7px;
+    border-bottom-width: 7px;
+    border-radius: 32px;
+}
+
+.menu__leagues-progress-badge .level-badge__value { font-size: 50px; }

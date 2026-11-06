@@ -45,7 +45,8 @@ namespace ToyCarArena.Gameplay.Cars
         private const float HatBoost = 6f;
 
         // The main menu stands the car on a plain 3D pedestal in the stickers' colours, turning with it: a navy drum,
-        // a gold band round its top and a white top set in from the band, so a gold rim shows round it.
+        // a gold band round its top and a top set in from the band, so a gold rim shows round it. The top takes the
+        // colour of the player's league; the drum and the band are the same in every league.
         private const float PedestalRadius = 2f;
         private const float PedestalHeight = 0.45f;
         private const float BandHeight = 0.1f;
@@ -67,6 +68,9 @@ namespace ToyCarArena.Gameplay.Cars
         private Transform spinner;
         private Transform pedestal;
         private Mesh[] pedestalMeshes;
+        // The top's own copy of the white material, tinted by league: the white one is shared with the train and the
+        // podium, and tinting it in the editor would write into the asset.
+        private Material pedestalTop;
         private Transform shadow;
         private Mesh body;
         private Camera heroCamera;
@@ -95,15 +99,21 @@ namespace ToyCarArena.Gameplay.Cars
         /// Puts <paramref name="entry"/> on the turntable in the colour and the topper given (none for an empty id) and
         /// starts drawing it; the same car again keeps turning as it was. With <paramref name="onPedestal"/> it stands
         /// on a 3D pedestal framed with it (the main menu); without, on nothing (the garage has a plinth of its own). The
-        /// texture is the stage's to release.
+        /// texture is the stage's to release. <paramref name="pedestalTopColor"/> tints the pedestal's top (the menu's
+        /// league); without it the top is the white of the stickers.
         /// </summary>
-        public RenderTexture ShowCar(CarCatalog.Entry entry, int colorId, string topper, bool onPedestal = false)
+        public RenderTexture ShowCar(CarCatalog.Entry entry, int colorId, string topper, bool onPedestal = false,
+            Color? pedestalTopColor = null)
         {
             Build();
             var key = $"{entry.Id}|{colorId}|{topper}|{onPedestal}";
             if (key != shownKey) {
                 shownKey = key;
                 BuildCar(entry, colorId, topper, onPedestal);
+            }
+
+            if (pedestalTop != null) {
+                pedestalTop.color = pedestalTopColor ?? art.Get("train_white").color;
             }
 
             if (!heroCamera.enabled) {
@@ -181,6 +191,10 @@ namespace ToyCarArena.Gameplay.Cars
             }
 
             DestroyCar();
+            if (pedestalTop != null) {
+                Object.Destroy(pedestalTop);
+            }
+
             if (pedestalMeshes != null) {
                 foreach (var mesh in pedestalMeshes) {
                     Object.Destroy(mesh);
@@ -292,7 +306,8 @@ namespace ToyCarArena.Gameplay.Cars
                 new Vector3(0f, -BandHeight - (PedestalHeight - BandHeight) * 0.5f, 0f));
             ToyMeshes.Part(pedestal, "Band", pedestalMeshes[1], art.Get("train_yellow"),
                 new Vector3(0f, -BandHeight + (BandHeight - TopHeight) * 0.5f, 0f));
-            ToyMeshes.Part(pedestal, "Top", pedestalMeshes[2], art.Get("train_white"),
+            pedestalTop = new Material(art.Get("train_white")) { name = "Pedestal Top" };
+            ToyMeshes.Part(pedestal, "Top", pedestalMeshes[2], pedestalTop,
                 new Vector3(0f, -TopHeight * 0.5f, 0f));
             ToyMeshes.Outlined(pedestal.gameObject);
             // After the outline: a flat sticker takes none.

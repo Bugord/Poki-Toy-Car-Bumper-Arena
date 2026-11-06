@@ -184,7 +184,7 @@ namespace ToyCarArena.Tests.PlayMode
             }
             if (name == "legend") {
                 // A gold player a little short of level 100: the round crosses into legend, the card's badge and the bar
-                // change rank, and the rank's popup shows the rainbow plate with its crown.
+                // change rank to the rainbow plate with its crown (the new league itself is the main menu's to greet).
                 storage.SetInt("xp_total", LevelStart(tuning, 100) - 10);
             }
             var result = new RoundResult(isWon ? RoundOutcome.Won : RoundOutcome.Out, isWon ? 1 : 3, 4, 40f,

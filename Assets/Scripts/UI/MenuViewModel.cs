@@ -47,6 +47,25 @@ namespace ToyCarArena.UI
         /// <summary>The player's level, the XP into it and its price.</summary>
         public XpLevel Level => progress.At(progress.TotalXp);
 
+        /// <summary>The player's league, the rank of their level: 0 rookie .. 4 legend.</summary>
+        public int League => PlayerRank.TierOf(Level.Level);
+
+        /// <summary>
+        /// Whether the menu should greet the player's league with NEW LEAGUE!: the first menu in a league above rookie
+        /// they have not been greeted in. Taking it marks the league seen and counts the popup, so call it as it opens.
+        /// </summary>
+        public bool TakeNewLeague()
+        {
+            var league = League;
+            if (league <= 0 || league <= progress.SeenLeague) {
+                return false;
+            }
+
+            progress.MarkLeagueSeen(league);
+            platform.MeasureLeagueShown(LeagueLook.IdOf(league));
+            return true;
+        }
+
         public int Coins => wallet.Coins;
 
         /// <summary>The car the player drives next, as the garage shows it: its colour and its topper.</summary>
@@ -126,9 +145,10 @@ namespace ToyCarArena.UI
             }
         }
 
-        /// <summary>The menu's own popups opened: <c>menu / missions, mode / interact</c>.</summary>
+        /// <summary>The menu's own popups opened: <c>menu / missions, mode, leagues / interact</c>.</summary>
         public void MissionsOpened() => platform.MeasureMenuPressed("missions");
         public void ModesOpened() => platform.MeasureMenuPressed("mode");
+        public void LeaguesOpened() => platform.MeasureMenuPressed("leagues");
 
         /// <summary>Whether PLAY was pressed: the menu takes no more input while the lobby comes down over it.</summary>
         public bool IsDecided { get; private set; }
