@@ -46,11 +46,20 @@ namespace ToyCarArena.UI
         // The widest the car's picture grows, in reference pixels: on a tall screen it would otherwise fill the width.
         private const float HeroMaxWidth = 1400f;
 
-        // White rays turning slowly behind the car, as behind a winner's podium: the showroom's light.
-        private static readonly Color RayColor = new(1f, 1f, 1f, 0.35f);
-        private const float RaysTurnSeconds = 20f;
-        // The rays' span against the car's picture: past its sides, so their tips reach well out over the checker.
-        private const float RaysScale = 1.5f;
+        // The showroom's light behind the car: a soft white glow and rays that fade out towards their tips, turning
+        // slowly, so the light gathers round the car instead of lying over the checker as a second pattern.
+        private static readonly Color32 RayCore = new(255, 255, 255, 120);
+        private static readonly Color32 GlowCore = new(255, 255, 255, 150);
+        private static readonly Color32 Clear = new(255, 255, 255, 0);
+        private const int RayCount = 10;
+        // The share of each ray's slot it fills; the rest is the gap to the next.
+        private const float RayFill = 0.36f;
+        // The glow's radius against the rays'.
+        private const float GlowShare = 0.42f;
+        private const int GlowSides = 48;
+        private const float RaysTurnSeconds = 24f;
+        // The rays' span against the car's picture: past its sides, where their faded tips are lost in the checker.
+        private const float RaysScale = 1.7f;
 
         // The bottom row's own width sideways (ui_menu: menu--wide .menu__bottom).
         private const float WideBottomWidth = 2000f;
@@ -219,7 +228,7 @@ namespace ToyCarArena.UI
             stage = Element("menu__stage");
             rays = Element("menu__rays");
             rays.pickingMode = PickingMode.Ignore;
-            rays.generateVisualContent += context => RoundOverMatch.DrawSunburst(context, RayColor);
+            rays.generateVisualContent += DrawLight;
             // Unscaled clock, so the ad pause (timeScale 0) does not stop the light.
             rays.schedule.Execute(() =>
                 rays.style.rotate = new Rotate(Time.unscaledTime / RaysTurnSeconds * 360f % 360f)).Every(16);
@@ -720,7 +729,7 @@ namespace ToyCarArena.UI
                 hero.style.height = portrait.y;
                 heroPortraitRoot.style.left = 0f;
                 heroPortraitRoot.style.top = 0f;
-                PlaceRays(centre - new Vector2(0f, portrait.y * 0.35f), portrait.x);
+                PlaceRays(centre, portrait.x);
                 return;
             }
 
@@ -735,10 +744,13 @@ namespace ToyCarArena.UI
             hero.style.top = room - height;
             hero.style.width = width;
             hero.style.height = height;
-            PlaceRays(new Vector2(box.width / 2f, room - height / 2f), width);
+            // The light comes from behind the car: its middle is the pedestal's top, where the car stands.
+            var ground = garageStage.HeroGround;
+            PlaceRays(new Vector2(box.width / 2f + (ground.x - 0.5f) * width, room - height + ground.y * height),
+                width);
         }
 
-        // A square on the car's middle, a little wider than its picture; the stage clips nothing, so the tips run out.
+        // A square on the car's ground, wider than its picture; the stage clips nothing, so the faded tips run out.
         private void PlaceRays(Vector2 middle, float width)
         {
             var span = width * RaysScale;
@@ -747,6 +759,52 @@ namespace ToyCarArena.UI
             rays.style.width = span;
             rays.style.height = span;
         }
+
+        /// <summary>
+        /// The glow and the rays as one mesh, white at the middle and clear at the rim, by the vertices' tint: USS has
+        /// no gradients, and the podium's sunburst is one flat colour to its tips.
+        /// </summary>
+        private static void DrawLight(MeshGenerationContext context)
+        {
+            var rect = context.visualElement.contentRect;
+            var radius = Mathf.Min(rect.width, rect.height) * 0.5f;
+            if (float.IsNaN(radius) || radius <= 0f) {
+                return;
+            }
+
+            var centre = rect.center;
+            var mesh = context.Allocate(RayCount * 3 + GlowSides + 1, (RayCount + GlowSides) * 3);
+            var half = Mathf.PI / RayCount * RayFill;
+            ushort next = 0;
+            for (var i = 0; i < RayCount; i++) {
+                var angle = i * Mathf.PI * 2f / RayCount;
+                mesh.SetNextVertex(LightVertex(centre, RayCore));
+                mesh.SetNextVertex(LightVertex(centre + Direction(angle - half) * radius, Clear));
+                mesh.SetNextVertex(LightVertex(centre + Direction(angle + half) * radius, Clear));
+                mesh.SetNextIndex(next);
+                mesh.SetNextIndex((ushort)(next + 1));
+                mesh.SetNextIndex((ushort)(next + 2));
+                next += 3;
+            }
+
+            var middle = next;
+            mesh.SetNextVertex(LightVertex(centre, GlowCore));
+            for (var i = 0; i < GlowSides; i++) {
+                var rim = centre + Direction(i * Mathf.PI * 2f / GlowSides) * radius * GlowShare;
+                mesh.SetNextVertex(LightVertex(rim, Clear));
+            }
+
+            for (var i = 0; i < GlowSides; i++) {
+                mesh.SetNextIndex(middle);
+                mesh.SetNextIndex((ushort)(middle + 1 + i));
+                mesh.SetNextIndex((ushort)(middle + 1 + (i + 1) % GlowSides));
+            }
+        }
+
+        private static Vector2 Direction(float angle) => new(Mathf.Cos(angle), Mathf.Sin(angle));
+
+        private static Vertex LightVertex(Vector2 position, Color32 tint) =>
+            new() { position = new Vector3(position.x, position.y, Vertex.nearZ), tint = tint };
 
         // -- Input ---------------------------------------------------------------------------------------------------
 

@@ -44,10 +44,16 @@ namespace ToyCarArena.Gameplay.Cars
         private const float HatFill = 0.92f;
         private const float HatBoost = 6f;
 
-        // The main menu stands the car on a plain 3D pedestal: a white-topped drum with the comic outline, turning with it.
+        // The main menu stands the car on a plain 3D pedestal in the stickers' colours, turning with it: a navy drum,
+        // a gold band round its top and a white top set in from the band, so a gold rim shows round it.
         private const float PedestalRadius = 2f;
         private const float PedestalHeight = 0.45f;
-        private const float CapHeight = 0.1f;
+        private const float BandHeight = 0.1f;
+        private const float TopHeight = 0.04f;
+        private const float TopRadius = 1.8f;
+        // The car's shadow on the top: a flat navy oval a little wider than the car, as the arena's spots read.
+        private const float ShadowLift = 0.004f;
+        private const float ShadowSpread = 1.1f;
 
         private readonly CarLook look;
         private readonly MechanicArt art;
@@ -61,6 +67,7 @@ namespace ToyCarArena.Gameplay.Cars
         private Transform spinner;
         private Transform pedestal;
         private Mesh[] pedestalMeshes;
+        private Transform shadow;
         private Mesh body;
         private Camera heroCamera;
         private Camera hatCamera;
@@ -256,28 +263,41 @@ namespace ToyCarArena.Gameplay.Cars
                 pedestal.gameObject.SetActive(onPedestal);
             }
 
+            if (onPedestal) {
+                // The car's footprint, recentred on the turntable above; the oval turns with the car.
+                shadow.localScale = new Vector3(bounds.size.x * 0.5f * ShadowSpread, 1f,
+                    bounds.size.z * 0.5f * ShadowSpread);
+            }
+
             var low = onPedestal ? PedestalHeight : 0f;
             Frame(onPedestal ? Mathf.Max(reach, PedestalRadius) : reach, bounds.size.y + low, -low);
         }
 
-        // A white disc under the car: its top is the ground the car stands on.
+        // The pedestal under the car: its top is the ground the car stands on.
         private void BuildPedestal()
         {
             if (pedestal != null) {
                 return;
             }
 
-            // A grey side under a white top, so the disc reads as a drum and not a flat white spot.
             pedestalMeshes = new[] {
-                ToyMeshes.Cylinder(PedestalRadius, PedestalRadius, PedestalHeight - CapHeight, 48),
-                ToyMeshes.Cylinder(PedestalRadius, PedestalRadius, CapHeight, 48),
+                ToyMeshes.Cylinder(PedestalRadius, PedestalRadius, PedestalHeight - BandHeight, 48),
+                ToyMeshes.Cylinder(PedestalRadius, PedestalRadius, BandHeight - TopHeight, 48),
+                ToyMeshes.Cylinder(TopRadius, TopRadius, TopHeight, 48),
+                ToyMeshes.Disc(1f, 32),
             };
             pedestal = new GameObject("Pedestal").transform;
             pedestal.SetParent(turntable, false);
-            ToyMeshes.Part(pedestal, "Side", pedestalMeshes[0], art.Get("pencil_metal"),
-                new Vector3(0f, -CapHeight - (PedestalHeight - CapHeight) * 0.5f, 0f));
-            ToyMeshes.Part(pedestal, "Top", pedestalMeshes[1], art.Get("train_white"), new Vector3(0f, -CapHeight * 0.5f, 0f));
+            ToyMeshes.Part(pedestal, "Side", pedestalMeshes[0], art.Get("train_dark"),
+                new Vector3(0f, -BandHeight - (PedestalHeight - BandHeight) * 0.5f, 0f));
+            ToyMeshes.Part(pedestal, "Band", pedestalMeshes[1], art.Get("train_yellow"),
+                new Vector3(0f, -BandHeight + (BandHeight - TopHeight) * 0.5f, 0f));
+            ToyMeshes.Part(pedestal, "Top", pedestalMeshes[2], art.Get("train_white"),
+                new Vector3(0f, -TopHeight * 0.5f, 0f));
             ToyMeshes.Outlined(pedestal.gameObject);
+            // After the outline: a flat sticker takes none.
+            shadow = ToyMeshes.Part(pedestal, "Shadow", pedestalMeshes[3], art.Get("top_shadow"),
+                new Vector3(0f, ShadowLift, 0f));
         }
 
         // Far enough that a circle of the car's reach fits across and its height (seen a little from above) fits up;
