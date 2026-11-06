@@ -24,6 +24,11 @@ namespace ToyCarArena.UI
     /// The player's league (their rank, <see cref="LeagueLook"/>) tints the sky and the pedestal's top; a press on the
     /// level opens the leagues list, and the first menu in a new league greets it with NEW LEAGUE! (<see cref="MenuLeagues"/>).
     /// </para>
+    /// <para>
+    /// A right rail holds XP BOOST: a tap opens a popup that offers double XP for the next matches for a rewarded ad
+    /// (WATCH, or X; NO THANKS or Esc closes it). While the boost runs the tile turns blue with ×2 and the matches left,
+    /// and the XP bar carries ×2 XP. B opens it from the keyboard.
+    /// </para>
     /// </summary>
     public sealed class MenuView : FadingView<MenuViewModel>
     {
@@ -88,6 +93,8 @@ namespace ToyCarArena.UI
         private static readonly Color Navy = new Color32(0x1d, 0x2b, 0x4f, 0xff);
         private static readonly Color Red = new Color32(0xff, 0x4d, 0x4d, 0xff);
         private static readonly Color Gold = new Color32(0xff, 0xc9, 0x3c, 0xff);
+        // The colour of XP across the game (--xp in ui_theme).
+        private static readonly Color XpBlue = new Color32(0x3d, 0x8b, 0xff, 0xff);
         private static readonly Color White = Color.white;
 
         private readonly IAudioService audioService;
@@ -134,6 +141,13 @@ namespace ToyCarArena.UI
         private CarPortrait modePortrait;
         private GarageStage garageStage;
         private MenuLeagues leagues;
+        private VisualElement boostRail;
+        private VisualElement boostTile;
+        private Label boostLeft;
+        private VisualElement xpBoost;
+        private Label[] xpBoostLabels;
+        private VisualElement boostPopup;
+        private VisualElement boostPips;
 
         public MenuView(IAudioService audioService, HudControls controls)
         {
@@ -157,9 +171,11 @@ namespace ToyCarArena.UI
             BuildStage(menu);
             BuildTop(menu);
             BuildRail(menu);
+            BuildBoost(menu);
             BuildBottom(menu);
             BuildMissionsPopup(menu);
             BuildModesPopup(menu);
+            BuildBoostPopup(menu);
             leagues = new MenuLeagues(menu, audioService.PlayUiClick, () => Root?.Focus());
 
             Root.RegisterCallback<GeometryChangedEvent>(OnGeometry);
@@ -176,6 +192,10 @@ namespace ToyCarArena.UI
         {
             await base.ShowAsync(token);
             Root.Focus();
+            if (ViewModel.CanOfferBoost) {
+                ViewModel.BoostShown();
+            }
+
             // The first menu in a new league greets it, over the league's sky and plinth already behind the dim.
             if (!ViewModel.IsDecided && ViewModel.TakeNewLeague()) {
                 ClosePopups();
@@ -204,10 +224,13 @@ namespace ToyCarArena.UI
         private VisualElement Menu => Root.name == "menu" ? Root : Root.Q<VisualElement>("menu") ?? Root;
 
         // Before it is up, after PLAY, or under the garage or the settings, the menu takes no presses.
-        private bool IsBusy => !IsShown || ViewModel.IsDecided || ViewModel.IsGarageOpen || ViewModel.IsSettingsOpen;
+        private bool IsBusy => !IsShown || ViewModel.IsDecided || ViewModel.IsGarageOpen || ViewModel.IsSettingsOpen ||
+            ViewModel.IsAdPlaying;
 
         private bool IsPopupOpen => missionsPopup.ClassListContains(OpenClass) || modesPopup.ClassListContains(OpenClass) ||
-            leagues.IsNewLeagueOpen || leagues.IsListOpen;
+            IsBoostOpen || leagues.IsNewLeagueOpen || leagues.IsListOpen;
+
+        private bool IsBoostOpen => boostPopup.ClassListContains(OpenClass);
 
         // -- Building ------------------------------------------------------------------------------------------------
 
@@ -239,6 +262,10 @@ namespace ToyCarArena.UI
             xpText.Add(count);
             track.Add(xpText);
             xp.Add(track);
+            // ×2 XP on the bar's top edge while the XP boost runs.
+            xpBoost = Element("menu__xp-boost");
+            xpBoost.Add(RoundOverProgress.Outlined("", "menu__xp-boost-label", out xpBoostLabels));
+            xp.Add(xpBoost);
             level.Add(xp);
             // The level badge goes over the bar's left end, which tucks under it.
             level.Add(levelBadgeSlot);
@@ -271,6 +298,32 @@ namespace ToyCarArena.UI
             rail.Add(missionsTile);
             rail.Add(awards);
             menu.Add(rail);
+        }
+
+        /// <summary>
+        /// XP BOOST on a rail of its own at the right: a blue star with an AD tag while it is offered, blue with ×2 and
+        /// the matches left while it runs.
+        /// </summary>
+        private void BuildBoost(VisualElement menu)
+        {
+            boostRail = Element("menu__rail");
+            boostRail.AddToClassList("menu__rail--right");
+            boostTile = Tile(DrawXpStar, () => Strings.Get("menu.xp_boost"), "B", OpenBoost);
+            boostTile.AddToClassList("menu__tile--boost");
+            var button = boostTile.Q<VisualElement>(className: "menu__tile-button");
+            var times = RoundOverProgress.Outlined("", "menu__boost-times", out var timesLabels);
+            foreach (var label in timesLabels) {
+                text.Set(label, () => $"×{ViewModel.BoostMultiplier}");
+            }
+
+            button.Q<VisualElement>(className: "menu__face").Add(times);
+            var ad = Text("menu__ad");
+            text.Set(ad, () => Strings.Get("result.ad"));
+            button.Add(ad);
+            boostLeft = Text("menu__boost-left");
+            button.Add(boostLeft);
+            boostRail.Add(boostTile);
+            menu.Add(boostRail);
         }
 
         private void BuildStage(VisualElement menu)
@@ -401,6 +454,89 @@ namespace ToyCarArena.UI
 
             var play = PlayButton("menu__modes-play", false);
             sheet.Add(play);
+        }
+
+        /// <summary>
+        /// The XP boost's offer: ×N XP for the next matches, a pip a match, and WATCH (the rewarded ad) or NO THANKS.
+        /// The ad plays only after WATCH.
+        /// </summary>
+        private void BuildBoostPopup(VisualElement menu)
+        {
+            boostPopup = Popup(menu, () => Strings.Get("menu.boost_title"), out var sheet);
+            boostPopup.AddToClassList("menu__boost-popup");
+
+            var offer = Element("menu__boost-offer");
+            var orb = Element("menu__boost-orb");
+            orb.Add(Icon("menu__boost-star", DrawXpStar));
+            offer.Add(orb);
+            var body = Element("menu__boost-body");
+            var times = Text("menu__boost-xp");
+            text.Set(times, () => Strings.Format("menu.boost_xp", ViewModel.BoostMultiplier));
+            body.Add(times);
+            var matches = Text("menu__boost-matches");
+            text.Set(matches, () => Strings.Format("menu.boost_matches", ViewModel.BoostMatches));
+            body.Add(matches);
+            boostPips = Element("menu__boost-pips");
+            body.Add(boostPips);
+            offer.Add(body);
+            sheet.Add(offer);
+
+            var hint = Text("menu__boost-hint");
+            text.Set(hint, () => Strings.Get("menu.boost_hint"));
+            sheet.Add(hint);
+
+            var watch = new Button(PressWatch);
+            watch.RemoveFromClassList(Button.ussClassName);
+            watch.AddToClassList("button");
+            watch.AddToClassList("button--purple");
+            watch.AddToClassList("menu__watch");
+            watch.focusable = false;
+            watch.Add(Element("button__face"));
+            watch.Add(RoundOverRewards.PlaySign());
+            var watchLabel = RoundOverProgress.Outlined("", "menu__watch-label", out var watchLabels);
+            foreach (var label in watchLabels) {
+                label.AddToClassList("button__label");
+                text.Set(label, () => Strings.Get("menu.watch"));
+            }
+
+            watch.Add(watchLabel);
+            // Shown only with a mouse, by `menu--desktop`, as the tiles' keys.
+            watch.Add(KeyCap("X", "menu__watch-key"));
+
+            var tag = Text("menu__watch-tag");
+            text.Set(tag, () => Strings.Get("result.ad"));
+            watch.Add(tag);
+            sheet.Add(watch);
+
+            var no = new Button(() => {
+                if (!ViewModel.IsAdPlaying) {
+                    audioService.PlayUiClick();
+                    ClosePopups();
+                }
+            });
+            no.RemoveFromClassList(Button.ussClassName);
+            no.AddToClassList("button");
+            no.AddToClassList("button--white");
+            no.AddToClassList("menu__no-thanks");
+            no.focusable = false;
+            no.Add(Element("button__face"));
+            var noLabel = Text("button__label");
+            noLabel.AddToClassList("menu__no-thanks-label");
+            text.Set(noLabel, () => Strings.Get("menu.no_thanks"));
+            no.Add(noLabel);
+            no.Add(KeyCap("ESC", "menu__no-thanks-key"));
+
+            sheet.Add(no);
+        }
+
+        private static VisualElement KeyCap(string key, string className)
+        {
+            var cap = Element("key");
+            cap.AddToClassList(className);
+            var keyText = Text("key__text");
+            keyText.text = key;
+            cap.Add(keyText);
+            return cap;
         }
 
         private VisualElement LockedMode(string nameKey, string hintKey)
@@ -608,6 +744,7 @@ namespace ToyCarArena.UI
 
             garageTile.EnableInClassList("menu__tile--new", ViewModel.HasNewCar);
             garageTile.EnableInClassList("menu__tile--dot", ViewModel.CanShop);
+            RefreshBoost();
 
             var car = ViewModel.Car;
             carName.text = carNameFace.text = GameText.Car(car);
@@ -626,6 +763,26 @@ namespace ToyCarArena.UI
 
             if (missionsPopup.ClassListContains(OpenClass)) {
                 FillMissions();
+            }
+        }
+
+        /// <summary>The boost's tile (offered, running or gone), the bar's ×2 XP and the popup's pips.</summary>
+        private void RefreshBoost()
+        {
+            var isBoosted = ViewModel.IsBoosted;
+            boostRail.style.display = isBoosted || ViewModel.CanOfferBoost ? DisplayStyle.Flex : DisplayStyle.None;
+            boostTile.EnableInClassList("menu__tile--boost-on", isBoosted);
+            boostLeft.text = Strings.Format("menu.boost_left", ViewModel.BoostMatchesLeft);
+            xpBoost.style.display = isBoosted ? DisplayStyle.Flex : DisplayStyle.None;
+            foreach (var label in xpBoostLabels) {
+                label.text = Strings.Format("menu.boost_xp", ViewModel.BoostMultiplier);
+            }
+
+            if (boostPips.childCount != ViewModel.BoostMatches) {
+                boostPips.Clear();
+                for (var i = 0; i < ViewModel.BoostMatches; i++) {
+                    boostPips.Add(Element("menu__boost-pip"));
+                }
             }
         }
 
@@ -734,6 +891,10 @@ namespace ToyCarArena.UI
             rail.style.left = left;
             rail.style.top = topEdge + topHeight + 50f * scale;
             rail.style.scale = grown;
+            boostRail.style.left = StyleKeyword.Auto;
+            boostRail.style.right = right;
+            boostRail.style.top = rail.style.top;
+            boostRail.style.scale = grown;
 
             var low = 50f + insets.Bottom;
             bottom.style.bottom = low;
@@ -750,7 +911,7 @@ namespace ToyCarArena.UI
 
             var sheetFit = Mathf.Max(0.6f,
                 Mathf.Min(isWide && isTouch ? 1.3f : 1f, (size.y - topEdge - low) / 1500f * 1.3f));
-            foreach (var popup in new[] { missionsPopup, modesPopup }) {
+            foreach (var popup in new[] { missionsPopup, modesPopup, boostPopup }) {
                 var sheet = popup.Q<VisualElement>(className: "menu__sheet");
                 sheet.style.scale = new Scale(new Vector3(sheetFit, sheetFit, 1f));
             }
@@ -790,6 +951,11 @@ namespace ToyCarArena.UI
             var topBox = Root.WorldToLocal(top.worldBound);
             var bottomBox = Root.WorldToLocal(bottom.worldBound);
             var railRight = Root.WorldToLocal(railBox).xMax;
+            // The car keeps clear of the boost's rail at the right as of the rail at the left.
+            if (boostRail.resolvedStyle.display == DisplayStyle.Flex) {
+                railRight = Mathf.Max(railRight, size.x - Root.WorldToLocal(boostRail.worldBound).xMin);
+            }
+
             stage.style.top = topBox.yMax + 20f;
             stage.style.bottom = size.y - bottomBox.yMin + 20f;
             if (isWide && missionCard != null && actions != null) {
@@ -926,6 +1092,19 @@ namespace ToyCarArena.UI
                 return;
             }
 
+            // Nothing acts while the boost's ad plays.
+            if (ViewModel.IsAdPlaying) {
+                evt.StopPropagation();
+                return;
+            }
+
+            // The boost's offer: X watches the ad.
+            if (IsBoostOpen && evt.keyCode == KeyCode.X) {
+                evt.StopPropagation();
+                PressWatch();
+                return;
+            }
+
             // The leagues list closes with Esc; PLAY's and the tiles' keys do not reach through it.
             if (leagues.IsListOpen && evt.keyCode is not KeyCode.Escape) {
                 evt.StopPropagation();
@@ -944,6 +1123,10 @@ namespace ToyCarArena.UI
                 case KeyCode.M:
                     evt.StopPropagation();
                     OpenMissions();
+                    break;
+                case KeyCode.B:
+                    evt.StopPropagation();
+                    OpenBoost();
                     break;
                 case KeyCode.Escape:
                     evt.StopPropagation();
@@ -1046,8 +1229,80 @@ namespace ToyCarArena.UI
             modesPopup.AddToClassList(OpenClass);
         }
 
+        private void OpenBoost()
+        {
+            if (IsBusy || IsPopupOpen || boostRail.resolvedStyle.display == DisplayStyle.None) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            if (!ViewModel.CanOfferBoost) {
+                // A running boost has nothing to offer: its tile only answers the tap.
+                Pop(boostTile);
+                return;
+            }
+
+            ViewModel.BoostOpened();
+            boostPopup.AddToClassList(OpenClass);
+        }
+
+        private void PressWatch()
+        {
+            if (IsBusy || !IsBoostOpen) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            RunBoost(lifetime.Token).Forget();
+        }
+
+        private async UniTaskVoid RunBoost(CancellationToken token)
+        {
+            bool isGranted;
+            try {
+                isGranted = await ViewModel.WatchBoost(token);
+            }
+            catch (System.OperationCanceledException) {
+                return;
+            }
+
+            if (Root?.panel == null) {
+                return;
+            }
+
+            // Granted or not, the offer is answered: the popup goes without counting as NO THANKS.
+            boostPopup.RemoveFromClassList(OpenClass);
+            Refresh();
+            if (isGranted) {
+                audioService.Play(audioService.Library.KnockoutCredit);
+                Pop(boostTile);
+                Pop(xpBoost);
+            }
+
+            Root.Focus();
+        }
+
+        // A quick jump, as a sticker answers a press: up and back over a fifth of a second, on the unscaled clock.
+        private static void Pop(VisualElement element)
+        {
+            var started = Time.unscaledTime;
+            element.schedule.Execute(() => {
+                var t = Mathf.Clamp01((Time.unscaledTime - started) / PopSeconds);
+                var size = 1f + 0.25f * Mathf.Sin(t * Mathf.PI);
+                element.style.scale = new Scale(new Vector3(size, size, 1f));
+            }).Every(16).Until(() => Time.unscaledTime - started > PopSeconds);
+            element.schedule.Execute(() => element.style.scale = StyleKeyword.Null).StartingIn(260);
+        }
+
+        private const float PopSeconds = 0.22f;
+
         private void ClosePopups()
         {
+            if (IsBoostOpen && !ViewModel.IsAdPlaying) {
+                ViewModel.BoostDeclined();
+            }
+
+            boostPopup.RemoveFromClassList(OpenClass);
             missionsPopup.RemoveFromClassList(OpenClass);
             modesPopup.RemoveFromClassList(OpenClass);
             leagues?.Close();
@@ -1168,6 +1423,34 @@ namespace ToyCarArena.UI
             p.BeginPath();
             p.Arc(new Vector2(X(0.5f), Y(0.66f)), r.width * 0.09f, 0f, 360f);
             p.Fill();
+        }
+
+        /// <summary>The XP star: five points in the XP blue with a navy outline.</summary>
+        internal static void DrawXpStar(MeshGenerationContext context)
+        {
+            var r = context.visualElement.contentRect;
+            var p = context.painter2D;
+            var centre = r.center + new Vector2(0f, r.height * 0.04f);
+            var outer = Mathf.Min(r.width, r.height) * 0.46f;
+            var inner = outer * 0.48f;
+            p.fillColor = XpBlue;
+            p.strokeColor = Navy;
+            p.lineWidth = outer * 0.16f;
+            p.lineJoin = LineJoin.Round;
+            p.BeginPath();
+            for (var i = 0; i < 10; i++) {
+                var point = centre + Direction(-Mathf.PI / 2f + i * Mathf.PI / 5f) * (i % 2 == 0 ? outer : inner);
+                if (i == 0) {
+                    p.MoveTo(point);
+                }
+                else {
+                    p.LineTo(point);
+                }
+            }
+
+            p.ClosePath();
+            p.Fill();
+            p.Stroke();
         }
 
         private static void DrawChevron(MeshGenerationContext context)

@@ -22,7 +22,7 @@ namespace ToyCarArena.Tests.PlayMode
     /// <summary>
     /// Pictures of the main menu upright and wide, with a finger (phones) and with a mouse (desktops), for a returning
     /// player (level 7, a topper worn, coins for the shop, a new car not yet seen in the garage), with its missions and
-    /// modes popups, and once in Russian; then in every league (its sky, pedestal and badge) with the leagues list
+    /// modes popups, the XP boost's offer and the boost running, and once in Russian; then in every league (its sky, pedestal and badge) with the leagues list
     /// over it, and the NEW LEAGUE! popup: <c>Logs/menu/&lt;case&gt;_&lt;w&gt;x&lt;h&gt;.png</c>. Explicit: it is for
     /// looking at, and needs graphics.
     /// </summary>
@@ -74,17 +74,20 @@ namespace ToyCarArena.Tests.PlayMode
             Directory.CreateDirectory(directory);
             foreach (var size in Sizes) {
                 yield return Capture(directory, "menu", size, true);
+                // The XP boost running: its tile blue with the matches left, ×2 XP on the bar.
+                yield return Capture(directory, "boosted", size, false, boost: 3);
             }
 
             Strings.SetLanguage("ru");
-            yield return Capture(directory, "ru", (1080, 1920, true), false);
+            yield return Capture(directory, "ru", (1080, 1920, true), true);
             yield return Capture(directory, "ru", (1920, 1080, false), false);
+            yield return Capture(directory, "ru-boosted", (1080, 1920, true), false, boost: 3);
             Strings.SetLanguage("en");
             typeof(Strings).GetField("table", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
         }
 
         private static IEnumerator Capture(string directory, string name, (int Width, int Height, bool IsTouch) size,
-            bool withPopups, int xp = 540, int leagueSeen = 0, bool withLeagues = false)
+            bool withPopups, int xp = 540, int leagueSeen = 0, bool withLeagues = false, int boost = 0)
         {
             var catalog = AssetDatabase.LoadAssetAtPath<CarCatalog>("Assets/Data/Cars/data_car_catalog.asset");
             var arenas = AssetDatabase.LoadAssetAtPath<ArenaCatalog>("Assets/Data/Arenas/data_arena_catalog.asset");
@@ -103,6 +106,7 @@ namespace ToyCarArena.Tests.PlayMode
             storage.SetInt("coins", 260);
             storage.SetString("toppers_owned", "party-hat");
             storage.SetString("topper_selected", "party-hat");
+            storage.SetInt("xp_boost", boost);
             var missions = new MissionTracker(storage, tuning);
             var panelSettings = Object.Instantiate(
                 AssetDatabase.LoadAssetAtPath<PanelSettings>("Assets/UI/ui_panel_settings.asset"));
@@ -141,11 +145,12 @@ namespace ToyCarArena.Tests.PlayMode
                 yield return Wait(0.6f);
                 Save(target, Path.Combine(directory, $"{name}_{width}x{height}.png"));
                 if (withPopups) {
-                    foreach (var popup in new[] { "OpenMissions", "OpenModes" }) {
+                    foreach (var popup in new[] { "OpenMissions", "OpenModes", "OpenBoost" }) {
                         typeof(MenuView).GetMethod(popup, Private)?.Invoke(view, null);
                         yield return Wait(0.3f);
-                        var shot = popup == "OpenMissions" ? "missions" : "modes";
-                        Save(target, Path.Combine(directory, $"{shot}_{width}x{height}.png"));
+                        var shot = popup switch { "OpenMissions" => "missions", "OpenModes" => "modes", _ => "boost" };
+                        Save(target, Path.Combine(directory,
+                            $"{(name == "menu" ? "" : name + "-")}{shot}_{width}x{height}.png"));
                         typeof(MenuView).GetMethod("ClosePopups", Private)?.Invoke(view, null);
                     }
                 }

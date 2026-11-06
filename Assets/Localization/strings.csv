@@ -170,6 +170,7 @@ result.reward_coins,Name on the coins sticker of the result,COINS,PIÈCES,MONETE
 result.claim_x2,Button that watches a rewarded ad to double the round's XP and coins; short,CLAIM ×2,RÉCUPÉRER ×2,RISCATTA ×2,×2 HOLEN,RECLAMAR ×2,×2 AL,RESGATAR ×2,ЗАБРАТЬ ×2
 result.ad,Small tag on the button that plays an ad,AD,PUB,AD,WERBUNG,ANUNCIO,REKLAM,ANÚNCIO,РЕКЛАМА
 result.doubled,Shown where the double button was once the ad paid,DOUBLED!,DOUBLÉ !,RADDOPPIATO!,VERDOPPELT!,¡DUPLICADO!,İKİ KATI!,DOBRADO!,УДВОЕНО!
+result.boost_stamp,"Tag on the XP sticker of a round the XP boost paid for, {0} its multiplier (e.g. ×2 BOOST); short",×{0} BOOST,×{0} BOOST,×{0} BOOST,×{0} BOOST,×{0} BOOST,×{0} BOOST,×{0} BOOST,×{0} БУСТ
 special.mega.name,Special round name: every car is giant (lobby tag and over the countdown),MEGA ROUND!,MANCHE MÉGA !,ROUND MEGA!,MEGA-RUNDE!,¡RONDA MEGA!,MEGA TUR!,RODADA MEGA!,МЕГА-РАУНД!
 special.mega.hint,Special round rule in one line,EVERYONE IS HUGE!,TOUT LE MONDE EST ÉNORME !,SIETE TUTTI GIGANTI!,ALLE SIND RIESIG!,¡TODOS SON GIGANTES!,HERKES DEV GİBİ!,TODO MUNDO ESTÁ GIGANTE!,ВСЕ ОГРОМНЫЕ!
 special.hot-potato.name,Special round name: a bomb passes between cars on a bump,HOT POTATO!,PATATE CHAUDE !,PATATA BOLLENTE!,HEISSE KARTOFFEL!,¡PAPA CALIENTE!,SICAK PATATES!,BATATA QUENTE!,ГОРЯЧАЯ БОМБА!
@@ -205,3 +206,11 @@ menu.top_league,In place of the next league when the player is in the last one,T
 menu.from_level,"Under a league's name in the list: the level it starts at, e.g. FROM LVL 25; short",FROM LVL {0},DÈS NIV. {0},DAL LIV. {0},AB LVL {0},DESDE NIV. {0},SV. {0} İLE,DESDE NÍV. {0},С УР. {0}
 menu.league_at,"Right end of the progress bar to the next league, {0} the rank name, {1} its level (e.g. GOLD AT 50); short",{0} AT {1},{0} AU {1},{0} AL {1},{0} AB {1},{0} EN {1},{0}: SV. {1},{0} NO {1},{0} НА {1}
 menu.climb,Hint at the bottom of the leagues list,LEVEL UP TO CLIMB THE LEAGUES,MONTE DE NIVEAU POUR GRIMPER DE LIGUE,SALI DI LIVELLO PER SCALARE LE LEGHE,STEIG IM LEVEL FÜR DIE NÄCHSTE LIGA,SUBE DE NIVEL PARA ASCENDER DE LIGA,LİGLERDE YÜKSELMEK İÇİN SEVİYE ATLA,SUBA DE NÍVEL PARA SUBIR DE LIGA,"ПОВЫШАЙ УРОВЕНЬ, ЧТОБЫ РАСТИ В ЛИГАХ"
+menu.xp_boost,"Main menu tile that offers double XP for the next matches for a rewarded ad; max ~10 chars",XP BOOST,BOOST XP,BOOST XP,XP-BOOST,BOOST XP,XP BOOST,BOOST XP,БУСТ ОПЫТА
+menu.boost_title,Title of the popup that offers the XP boost,XP BOOST!,BOOST XP !,BOOST XP!,XP-BOOST!,¡BOOST XP!,XP BOOST!,BOOST XP!,БУСТ ОПЫТА!
+menu.boost_xp,"The XP boost, {0} its multiplier (e.g. ×2 XP); also the tag on the XP bar while it runs; short",×{0} XP,×{0} XP,×{0} XP,×{0} XP,×{0} XP,×{0} XP,×{0} XP,×{0} ОПЫТА
+menu.boost_matches,"How long the XP boost lasts, {0} the number of matches (5 or more); keep it right for any number",FOR YOUR NEXT {0} MATCHES,POUR TES {0} PROCHAINS MATCHS,PER LE PROSSIME {0} PARTITE,FÜR DEINE NÄCHSTEN {0} MATCHES,PARA TUS PRÓXIMAS {0} PARTIDAS,SONRAKİ {0} MAÇ İÇİN,NAS PRÓXIMAS {0} PARTIDAS,СЛЕДУЮЩИЕ МАТЧИ: {0}
+menu.boost_hint,Under the XP boost offer: the ad plays only on WATCH,WATCH A SHORT AD TO TURN IT ON,REGARDE UNE COURTE PUB POUR L'ACTIVER,GUARDA UN BREVE ANNUNCIO PER ATTIVARLO,"SIEH DIR KURZ WERBUNG AN, UM IHN ZU STARTEN",MIRA UN ANUNCIO CORTO PARA ACTIVARLO,AÇMAK İÇİN KISA BİR REKLAM İZLE,ASSISTA A UM ANÚNCIO CURTO PARA ATIVAR,"ПОСМОТРИ КОРОТКУЮ РЕКЛАМУ, ЧТОБЫ ВКЛЮЧИТЬ"
+menu.watch,Button that plays the rewarded ad of the XP boost; short,WATCH,REGARDER,GUARDA,ANSEHEN,VER,İZLE,ASSISTIR,СМОТРЕТЬ
+menu.no_thanks,Button that turns the XP boost offer down; short,NO THANKS,NON MERCI,NO GRAZIE,NEIN DANKE,"NO, GRACIAS",HAYIR,"NÃO, VALEU","НЕТ, СПАСИБО"
+menu.boost_left,"On the XP boost tile while it runs: the matches it still lasts, {0} a number from 1; max ~8 chars; keep it right for any number",{0} LEFT,ENCORE {0},ANCORA {0},NOCH {0},{0} MÁS,{0} KALDI,MAIS {0},ЕЩЁ {0}

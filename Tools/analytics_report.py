@@ -83,7 +83,7 @@ def summarise(data):
         # с v0.16.0: главное меню визитов 2+ (показ, через сколько секунд после старта движка, что нажали), HOME на результате
         "menu": i.get("menu-shown"),
         "menu_time": other(o, r"menu-ready-([0-9a-z-]+)-start-time"),
-        "menu_press": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"menu-(play|garage|missions|mode|leagues)", e))},
+        "menu_press": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"menu-(play|garage|missions|mode|leagues|boost|boost-no)", e))},
         # после v0.16.0: попап NEW LEAGUE! в меню, по лиге (раз на игрока и лигу)
         "menu_league": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"menu-league-(bronze|silver|gold|legend)", e))},
         "home": i.get("result-home"),
@@ -107,6 +107,10 @@ def summarise(data):
         "ad_commercial": i.get("ad-commercial"),
         "ad_double": i.get("ad-double"),
         "ad_double_end": other(o, r"ad-double-(granted|unavailable|dismissed)"),
+        # после v0.16.0: XP BOOST в меню (плитка с предложением показана, WATCH, чем кончилась реклама) и раунды под бустом
+        "ad_boost": i.get("ad-boost"),
+        "ad_boost_end": other(o, r"ad-boost-(granted|unavailable|dismissed)"),
+        "boosted": other(o, r"result-boosted-(r(?:1|2|3|4plus))-xp-boost"),
         "levels": other(o, r"progress-level-(2|3|4|5|6|7|8|9|10|10plus)-level-up"),
         "unlocks": other(o, r"progress-(?!map-)([a-z]+(?:-[a-z]+)*)-unlock"),
         "map_unlocks": other(o, r"progress-map-([a-z]+)-unlock"),
@@ -429,6 +433,21 @@ def report(version, previous):
     out.append(line("CLAIM x2 (нажали / показано)", lambda s: f"{num(s['ad_double'], 'interacted')} / {num(s['ad_double'], 'seen')} ({pct(num(s['ad_double'], 'interacted'), num(s['ad_double'], 'seen'))})"))
     for how in ("granted", "unavailable", "dismissed"):
         out.append(line(f"CLAIM x2: {how} (визиты)", lambda s, how=how: str(s["ad_double_end"].get(how, 0))))
+
+    # XP BOOST: the tile's offer counts per menu shown with it; the popup and NO THANKS are menu presses.
+    if any(s and s["ad_boost"] for s in (cur, old)):
+        out += ["", "## XP-буст за рекламу (после v0.16.0; x2 опыта на 5 матчей)", "", head, sep]
+        offered = lambda s: num(s["ad_boost"], "seen")
+        opened = lambda s: num(s["menu_press"].get("boost"), "interacted")
+        out.append(line("Предложение показано в меню", lambda s: str(offered(s))))
+        out.append(line("Открыли попап, от показов", lambda s: f"{opened(s)} ({pct(opened(s), offered(s))})"))
+        out.append(line("WATCH, от открытых попапов", lambda s: (lambda n: f"{n} ({pct(n, opened(s))})")(num(s["ad_boost"], "interacted"))))
+        out.append(line("NO THANKS или закрыли, от открытых попапов",
+                        lambda s: (lambda n: f"{n} ({pct(n, opened(s))})")(num(s["menu_press"].get("boost-no"), "interacted"))))
+        for how in ("granted", "unavailable", "dismissed"):
+            out.append(line(f"Реклама буста: {how} (визиты)", lambda s, how=how: str(s["ad_boost_end"].get(how, 0))))
+        for r in ("r1", "r2", "r3", "r4plus"):
+            out.append(line(f"Раунды под бустом, {r.upper()} (визиты)", lambda s, r=r: str(s["boosted"].get(r, 0))))
     print("\n".join(out))
 
 

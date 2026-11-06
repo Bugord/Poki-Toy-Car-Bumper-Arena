@@ -19,14 +19,21 @@ namespace ToyCarArena.Gameplay.Round
 
         /// <summary>The XP of the missions the round completed.</summary>
         public readonly int MissionXp;
+
+        /// <summary>
+        /// The XP boost's extra on the round's own XP (its streak's share included, its missions not), while a boost
+        /// bought with an ad runs; 0 otherwise.
+        /// </summary>
+        public readonly int BoostXp;
         public readonly XpLevel Before;
         public readonly XpLevel After;
         public readonly IReadOnlyList<string> UnlockedCarIds;
 
-        public int Total => RoundXp + PlaceXp + WinXp + KnockoutXp + StreakXp + MissionXp;
+        public int Total => RoundXp + PlaceXp + WinXp + KnockoutXp + StreakXp + BoostXp + MissionXp;
 
         public XpGain(int totalBefore, int totalAfter, int roundXp, int placeXp, int winXp, int knockoutXp,
-            XpLevel before, XpLevel after, IReadOnlyList<string> unlockedCarIds, int streakXp = 0, int missionXp = 0)
+            XpLevel before, XpLevel after, IReadOnlyList<string> unlockedCarIds, int streakXp = 0, int missionXp = 0,
+            int boostXp = 0)
         {
             this.TotalBefore = totalBefore;
             this.TotalAfter = totalAfter;
@@ -36,6 +43,7 @@ namespace ToyCarArena.Gameplay.Round
             this.KnockoutXp = knockoutXp;
             this.StreakXp = streakXp;
             this.MissionXp = missionXp;
+            this.BoostXp = boostXp;
             this.Before = before;
             this.After = after;
             this.UnlockedCarIds = unlockedCarIds;

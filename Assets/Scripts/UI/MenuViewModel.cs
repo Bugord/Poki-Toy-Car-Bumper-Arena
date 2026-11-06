@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Bugord.App.Platform;
 using Cysharp.Threading.Tasks;
+using UnityEngine;
 using ToyCarArena.App;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Arena;
@@ -14,7 +15,8 @@ namespace ToyCarArena.UI
     /// <summary>
     /// The main menu a returning visit opens on (<see cref="MenuState"/>): the player's level, XP and coins, their car on
     /// its plinth, the missions, the mode and PLAY. The result is set once, by PLAY (in the menu or the garage's NEXT
-    /// MATCH); the garage, the settings, the missions and the modes open over the menu and come back to it.
+    /// MATCH); the garage, the settings, the missions and the modes open over the menu and come back to it. XP BOOST
+    /// plays a rewarded ad for double XP over the next matches.
     /// </summary>
     public sealed class MenuViewModel : ResultViewModel<bool>
     {
@@ -28,6 +30,10 @@ namespace ToyCarArena.UI
         private readonly IGamePlatform platform;
         private readonly LevelScene levelScene;
         private GarageStage stage;
+
+        // An ad back without its reward sooner than this had no ad to show (as CLAIM ×2 on the result reads it).
+        private const float AdPlayedSeconds = 2f;
+        private bool isBoostTried;
 
         public MenuViewModel(PlayerProgress progress, PlayerWallet wallet, MissionTracker missions, CarCatalog catalog,
             ArenaCatalog arenaCatalog, GameTuning tuning, IScreenNavigator navigator, IGamePlatform platform,
@@ -100,6 +106,64 @@ namespace ToyCarArena.UI
         public bool CanShop => GarageViewModel.CanBuyAnyTopper(wallet, tuning) ||
             GarageViewModel.CanBuyAnyCar(progress, wallet, catalog);
 
+        /// <summary>The XP boost is on: the matches it still runs for and what it multiplies their XP by.</summary>
+        public bool IsBoosted => progress.IsBoosted;
+        public int BoostMatchesLeft => progress.BoostMatchesLeft;
+        public int BoostMatches => tuning.Ads.BoostMatches;
+        public int BoostMultiplier => tuning.Ads.BoostMultiplier;
+
+        /// <summary>
+        /// The menu offers XP BOOST: while ads can play and no boost runs. A running boost still shows its tile, ads or
+        /// none; an ad back without its reward takes the offer away until the menu opens again.
+        /// </summary>
+        public bool CanOfferBoost => tuning.Ads.XpBoost && !platform.IsAdBlocked && !IsBoosted && !isBoostTried;
+
+        /// <summary>The boost's ad is playing: the menu takes no presses meanwhile.</summary>
+        public bool IsAdPlaying { get; private set; }
+
+        /// <summary><c>ad / boost / visible</c>: the menu shows the boost's offer.</summary>
+        public void BoostShown() => platform.MeasureBoostShown();
+
+        /// <summary>The tile opened the offer's popup: <c>menu / boost / interact</c>.</summary>
+        public void BoostOpened() => platform.MeasureMenuPressed("boost");
+
+        /// <summary>NO THANKS (or the close button) on the offer: <c>menu / boost-no / interact</c>.</summary>
+        public void BoostDeclined() => platform.MeasureMenuPressed("boost-no");
+
+        /// <summary>
+        /// WATCH on the offer: a rewarded ad, the game held still under it; with its reward, the next
+        /// <see cref="BoostMatches"/> matches earn <see cref="BoostMultiplier"/> times their XP. False when the ad gave
+        /// nothing.
+        /// </summary>
+        public async UniTask<bool> WatchBoost(CancellationToken token)
+        {
+            if (!CanOfferBoost || IsAdPlaying || IsDecided) {
+                return false;
+            }
+
+            platform.MeasureBoostPressed();
+            var started = Time.realtimeSinceStartup;
+            bool isRewarded;
+            IsAdPlaying = true;
+            try {
+                isRewarded = await AdPause.Run(() => platform.RewardedBreak(token));
+            }
+            finally {
+                IsAdPlaying = false;
+            }
+
+            if (!isRewarded) {
+                isBoostTried = true;
+                platform.MeasureBoostEnded(Time.realtimeSinceStartup - started < AdPlayedSeconds
+                    ? "unavailable" : "dismissed");
+                return false;
+            }
+
+            platform.MeasureBoostEnded("granted");
+            progress.StartBoost();
+            return true;
+        }
+
         public bool IsGarageOpen { get; private set; }
         public bool IsSettingsOpen { get; private set; }
 
@@ -145,7 +209,7 @@ namespace ToyCarArena.UI
             }
         }
 
-        /// <summary>The menu's own popups opened: <c>menu / missions, mode, leagues / interact</c>.</summary>
+        /// <summary>The menu's own popups opened: <c>menu / missions, mode, leagues, boost / interact</c>.</summary>
         public void MissionsOpened() => platform.MeasureMenuPressed("missions");
         public void ModesOpened() => platform.MeasureMenuPressed("mode");
         public void LeaguesOpened() => platform.MeasureMenuPressed("leagues");
