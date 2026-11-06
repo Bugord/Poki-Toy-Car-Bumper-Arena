@@ -12,76 +12,162 @@ using UnityEngine.UIElements;
 namespace ToyCarArena.UI
 {
     /// <summary>
-    /// A full-screen popup: UIKit keeps RoundOver attached underneath and gives only the garage focus. NEXT MATCH (and
-    /// Space or Enter) starts the next round straight from here; the close button and Esc go back to the result.
-    /// The car the player drives next stands big on its plinth with the paint under it; the shop beside it (under it
-    /// upright) holds the cars and the toppers as cards whose tag says at a glance what a tap does: drive it, buy it,
-    /// save up for it, or reach its level. A tap that cannot do anything still answers, with a shake and the reason.
+    /// The garage, a full-screen popup over the menu or the result, built in code like the menu (GarageB2 in Claude
+    /// Design): the league's sky with the drifting checker, a top bar (back, GARAGE, the coins, the gear), the car on
+    /// the menu's 3D pedestal under the turning light with its name and stats, and below it (beside it sideways) the
+    /// CARS / HATS / PAINT switcher over one panel of cards and a single bottom button.
+    /// <para>
+    /// A tap on a card puts it on the pedestal, whatever it is; the bottom button then says what can be done with what
+    /// stands there: SELECTED, SELECT, BUY with the price (grey when the coins are short), the level that opens it, or
+    /// UNLOCK for an ad car (BUGGY). BUY and UNLOCK ask once more in a window of their own before the coins or the ad
+    /// go. The garage has no PLAY: back goes to the menu or the result, whose PLAY starts the round.
+    /// </para>
+    /// <para>
+    /// Keys: 1 2 3 switch the tabs, Space or Enter presses the bottom button (in a window, its main button), X watches
+    /// the ad in the ad window, Esc closes the window and then the garage.
+    /// </para>
     /// </summary>
     public sealed class GarageView : FadingView<GarageViewModel>
     {
+        private const string WideClass = "garage--wide";
+        private const string DesktopClass = "garage--desktop";
+
+        // A screen at least this much wider than tall lays out sideways, as the menu does.
+        private const float WideAspect = 1.2f;
+        // On a phone held sideways the panel is small: the groups grow so every button stays a thumb wide.
+        private const float TouchWideScale = 1.4f;
+        private const float Edge = 40f;
+        private const float PillGap = 18f;
+        private const float TouchWideSide = 240f;
+        // The top bar's height and the gap under it, reference pixels.
+        private const float TopHeight = 112f;
+        private const float TopGap = 30f;
+        // Upright: the tabs, the gaps and the bottom button under the panel, and the least the car keeps above them.
+        private const float SideChrome = 124f + 24f + 30f + 190f;
+        private const float ShowMin = 620f;
+        private const float PanelMin = 440f;
+        private const float PanelMax = 980f;
+        // Sideways the switcher, the panel and the button take this share of the width at the right.
+        private const float WideSideShare = 0.4f;
+        private const float WideGap = 60f;
+        private const float HeroMaxWidth = 1300f;
+        private const float WideHeroMaxWidth = 1900f;
+        private const float RaysScale = 1.7f;
+        private const float RaysTurnSeconds = 24f;
+
+        private const int Columns = 3;
+        private const int WideColumns = 4;
+        private const float CardGap = 30f;
+        private const float CardAspect = 1.18f;
+
         private const float BounceDuration = 0.3f;
         private const float ShakeDuration = 0.35f;
         private const float PopDuration = 0.32f;
         private const float ToastDuration = 0.9f;
-        private const float ToastWidth = 900f;
-        private const float ToastHeight = 120f;
 
-        // The classes that give a card its state; RefreshSelection sets them, ui_screens draws them.
-        private const string SelectedClass = "garage__card--selected";
-        private const string LockedClass = "garage__card--locked";
-        private const string PriceClass = "garage__card--price";
-        private const string DearClass = "garage__card--dear";
-        private const string PreviewedClass = "garage__card--previewed";
-        private const string BuyClass = "garage__card--buy";
+        private static readonly Color CheckerColor = new(1f, 1f, 1f, 0.07f);
+        private const float CheckerShare = 1f / 6f;
+
+        private enum Tab
+        {
+            Cars,
+            Hats,
+            Paint,
+        }
+
+        // What the bottom button does with what stands on the pedestal.
+        private enum Act
+        {
+            Selected,
+            Select,
+            Buy,
+            Dear,
+            Locked,
+            Ad,
+        }
+
+        private static readonly string[] StatNames = { "speed", "power", "weight", "boost" };
 
         private readonly IAudioService audioService;
         private readonly HudControls controls;
-        private readonly List<(CarCatalog.Entry Car, Card Card, CarPortrait Portrait)> cards = new();
-        private VisualElement heroStats;
-        private readonly List<(string Id, Card Card)> topperCards = new();
-        private readonly Button[] colors = new Button[CarPaint.Count];
         private readonly LiveText text = new();
+        private readonly List<(CarCatalog.Entry Car, Card Card, CarPortrait Portrait)> carCards = new();
+        private readonly List<(string Id, Card Card)> hatCards = new();
+        private readonly Button[] paints = new Button[CarPaint.Count];
+        private readonly Button[] tabs = new Button[3];
         private readonly Tween cardTween = new();
         private readonly Tween heroTween = new();
         private readonly Tween toastTween = new();
         private readonly Tween coinTween = new();
-        private Button closeButton;
-        private Button settingsButton;
-        private Button playButton;
+        private readonly Tween actionTween = new();
         private CancellationTokenSource lifetime;
-        // The 3D car on the plinth and its stage; with no stage (no arena loaded) the catalog's portrait instead.
-        private GarageStage garageStage;
-        private VisualElement hero;
-        private VisualElement plinth;
-        private float heroAspect = 1.6f;
-        private CarPortrait preview;
+        private bool isTouch;
+        private bool isWide;
+        private SafeInsets insets;
         private bool isClosing;
-        private VisualElement body;
-        private VisualElement stage;
-        private VisualElement carGrid;
-        private VisualElement topperGrid;
-        private ScrollView shopScroll;
-        private VisualElement colorRow;
-        private Button carsTab;
-        private Button toppersTab;
-        private VisualElement toppersDot;
-        private VisualElement previewTopper;
-        private VisualElement coinPill;
-        private Label coinCount;
-        private VisualElement toast;
-        private VisualElement toastCoin;
-        private Label toastText;
-        private Label toastFace;
-        private Label previewName;
-        private Label previewNameFace;
-        private bool isToppersTab;
-        // A car the player does not have yet, on the plinth in place of theirs after the first tap on its card, so its
-        // model and stats are seen before it is bought; the second tap buys it. Null shows the selected car.
+        private Tab tab = Tab.Cars;
+        // What stands on the pedestal in place of the player's own choice after a tap on its card; null shows the choice.
         private CarCatalog.Entry previewedCar;
-        // The same for a hat the player does not have: tried on the hero after the first tap, bought by the second.
-        // Null shows the worn one.
-        private string previewedTopper;
+        private string previewedHat;
+
+        private VisualElement top;
+        private VisualElement coinsPill;
+        private Label coins;
+        private VisualElement body;
+        private VisualElement show;
+        private VisualElement rays;
+        private VisualElement hero;
+        private VisualElement heroPortraitRoot;
+        private CarPortrait heroPortrait;
+        private VisualElement caption;
+        private Label[] nameLabels;
+        private VisualElement stats;
+        private VisualElement side;
+        private VisualElement hatsDot;
+        private VisualElement panel;
+        private ScrollView scroll;
+        private VisualElement carGrid;
+        private VisualElement hatGrid;
+        private VisualElement paintGrid;
+        private Button action;
+        private VisualElement actionTick;
+        private VisualElement actionLock;
+        private VisualElement actionPlay;
+        private Label[] actionLabels;
+        private Label actionPlain;
+        private VisualElement actionPrice;
+        private Label actionPriceCount;
+        private VisualElement actionTag;
+        private VisualElement actionKey;
+        private VisualElement toast;
+        private Label[] toastLabels;
+        private VisualElement toastCoin;
+        private GarageStage garageStage;
+        private float heroAspect = 1.6f;
+        private Texture heroTexture;
+
+        // The window that asks before BUY or UNLOCK.
+        private VisualElement confirm;
+        private VisualElement sheet;
+        private Label[] sheetTitle;
+        private VisualElement sheetArt;
+        private VisualElement sheetPortraitRoot;
+        private CarPortrait sheetPortrait;
+        private VisualElement sheetHat;
+        private VisualElement sheetStats;
+        private VisualElement sheetCoins;
+        private Label sheetBefore;
+        private Label sheetAfter;
+        private VisualElement sheetFree;
+        private Button sheetBuy;
+        private Label[] sheetBuyLabels;
+        private VisualElement sheetBuyCoin;
+        private Label sheetBuyPrice;
+        private Button sheetWatch;
+        private bool isConfirmOpen;
+        private bool isCelebrating;
+        private CarCatalog.Entry confirmCar;
+        private GameTuning.TopperDefinition confirmHat;
 
         public GarageView(IAudioService audioService, HudControls controls)
         {
@@ -89,642 +175,50 @@ namespace ToyCarArena.UI
             this.controls = controls;
         }
 
+        // The screen's own element, which carries the style sheets: the root UIKit gives the view, or under it.
+        private VisualElement Screen => Root.name == "garage" ? Root : Root.Q<VisualElement>("garage") ?? Root;
+
+        // Before it is up, while it closes, under the settings or while an ad plays, the garage takes no presses.
+        private bool IsBusy => !IsShown || isClosing || ViewModel.IsSettingsOpen || ViewModel.IsAdPlaying;
+
         protected override void OnAttached()
         {
+            lifetime = new CancellationTokenSource();
             Root.focusable = true;
             Root.delegatesFocus = true;
             Root.RegisterCallback<KeyDownEvent>(OnKeyDown, TrickleDown.TrickleDown);
             Root.RegisterCallback<NavigationCancelEvent>(OnCancel);
-            Root.RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
-            // A finger needs bigger targets than a mouse and has no keys to show: the style sheet sizes both looks.
-            Root.EnableInClassList("garage--touch", controls != null && controls.CheckTouchScreen());
-            closeButton = Root.Q<Button>("garage-close");
-            closeButton.RemoveFromClassList(Button.ussClassName);
-            closeButton.clicked += Back;
-            playButton = Root.Q<Button>("garage-play");
-            playButton.RemoveFromClassList(Button.ussClassName);
-            playButton.clicked += NextMatch;
-            settingsButton = Root.Q<Button>("settings-button");
-            settingsButton.RemoveFromClassList(Button.ussClassName);
-            settingsButton.clicked += OpenSettings;
-            body = Root.Q<VisualElement>("garage-body");
-            DriftingChecker.AddTo(Root.Q<VisualElement>("garage"));
-            // The gear and the close button side by side in one corner, so their sizes alone (bigger for a thumb on a
-            // wide phone) set where they stand.
-            var corner = new VisualElement { pickingMode = PickingMode.Ignore };
-            corner.AddToClassList("garage__corner");
-            settingsButton.parent.Add(corner);
-            corner.Add(settingsButton);
-            corner.Add(closeButton);
-            SafeArea.Watch(Root, insets => {
-                corner.style.top = 40f + insets.Top;
-                corner.style.right = 40f + insets.Right;
-                // A notch or a home bar takes its side of the screen from the hero, the shop and NEXT MATCH alike.
-                body.style.paddingTop = 40f + insets.Top;
-                body.style.paddingLeft = 40f + insets.Left;
-                body.style.paddingRight = 40f + insets.Right;
-                body.style.paddingBottom = 32f + insets.Bottom;
-            });
-            lifetime = new CancellationTokenSource();
-            stage = Root.Q<VisualElement>("garage-stage");
+            isTouch = controls != null && controls.CheckTouchScreen();
+            var screen = Screen;
+            screen.EnableInClassList(DesktopClass, !isTouch);
+            screen.style.backgroundImage = new StyleBackground(LeagueLook.SkyOf(ViewModel.League));
+            DriftingChecker.AddTo(screen, CheckerColor, CheckerShare);
             garageStage = ViewModel.Stage;
-            var previewCar = Root.Q<VisualElement>("garage-preview");
-            if (garageStage != null) {
-                previewCar.RemoveFromClassList("car-portrait");
-                // A background, not an Image: an Image measures itself by its texture and widened the hero's column.
-                hero = new VisualElement { pickingMode = PickingMode.Ignore };
-                hero.AddToClassList("garage__hero-car");
-                previewCar.Add(hero);
-                plinth = stage.Q<VisualElement>(className: "garage__plinth");
-                stage.RegisterCallback<GeometryChangedEvent>(OnStageGeometry);
-            }
-            else {
-                preview = new CarPortrait(previewCar);
-            }
 
-            // The car on its plinth at the left, its name and stats at the right: side by side both read large, where
-            // stacked they left the bars small. The cards stay calm, a tap brings a car's stats here.
-            heroStats = CarStatsView.Create("garage__stats");
-            var plate = Root.Q<VisualElement>(className: "garage__plate");
-            var showcase = new VisualElement { pickingMode = PickingMode.Ignore };
-            showcase.AddToClassList("garage__showcase");
-            stage.parent.Insert(stage.parent.IndexOf(stage), showcase);
-            showcase.Add(stage);
-            var info = new VisualElement { pickingMode = PickingMode.Ignore };
-            info.AddToClassList("garage__info");
-            showcase.Add(info);
-            info.Add(plate);
-            info.Add(heroStats);
-            previewName = Root.Q<Label>("garage-preview-name");
-            previewNameFace = Root.Q<Label>("garage-preview-name-face");
-            BuildToast();
-            BuildColors();
-            var shop = Root.Q<VisualElement>("garage-shop");
-            BuildHead(shop);
-            // The cards scroll under the shop's head: on a short screen the grid keeps its card size instead of
-            // squeezing the cards or running under NEXT MATCH.
-            shopScroll = new ScrollView(ScrollViewMode.Vertical) {
-                horizontalScrollerVisibility = ScrollerVisibility.Hidden,
-                verticalScrollerVisibility = ScrollerVisibility.Hidden,
-                touchScrollBehavior = ScrollView.TouchScrollBehavior.Elastic,
-            };
-            shopScroll.AddToClassList("garage__scroll");
-            shop.Add(shopScroll);
-            carGrid = Root.Q<VisualElement>("garage-grid");
-            shopScroll.Add(carGrid);
-            carGrid.AddToClassList("garage__grid--cars");
-            foreach (var car in ViewModel.Cars) {
-                var portrait = new VisualElement { pickingMode = PickingMode.Ignore };
-                portrait.AddToClassList("car-portrait");
-                portrait.AddToClassList("garage__portrait");
-                var image = new CarPortrait(portrait);
-                image.Set(car, ViewModel.SelectedColor, !ViewModel.IsUnlocked(car.Id));
-                var card = new Card($"garage-car-{car.Id}", portrait, text, () => GameText.Car(car));
-                card.Button.clicked += () => Select(car, card.Button);
-                cards.Add((car, card, image));
-                carGrid.Add(card.Button);
-            }
+            body = Element("garage__body");
+            screen.Add(body);
+            BuildShow();
+            BuildSide();
+            BuildTop(screen);
+            BuildToast(screen);
+            BuildConfirm(screen);
 
-            BuildToppers(shopScroll);
-            RefreshSelection();
-            // The settings popup can change the language over the garage.
-            text.OnChanged(RefreshSelection);
-        }
-
-        /// <summary>
-        /// A floating line over the card just tapped: what a purchase cost, or why nothing happened. One for the screen,
-        /// built here so PillShape sees its coin.
-        /// </summary>
-        private void BuildToast()
-        {
-            toast = Root.Q<VisualElement>("garage-toast-row");
-            toastText = Root.Q<Label>("garage-toast");
-            toastFace = Root.Q<Label>("garage-toast-face");
-            toastCoin = RoundOverMeta.Coin();
-            toastCoin.AddToClassList("garage__toast-coin");
-            toast.Insert(0, toastCoin);
-            toast.style.display = DisplayStyle.None;
-        }
-
-        /// <summary>The paint: eight round stickers in a white bar, so their navy outlines read on the navy page.</summary>
-        private void BuildColors()
-        {
-            colorRow = Root.Q<VisualElement>("garage-colors");
-            for (var id = 0; id < colors.Length; id++) {
-                var colorId = id;
-                var button = new Button {
-                    name = $"garage-color-{CarPaint.NameOf(id)}",
-                    tooltip = CarPaint.NameOf(id).ToUpperInvariant(),
-                };
-                button.RemoveFromClassList(Button.ussClassName);
-                button.AddToClassList("garage__color");
-                var dot = new VisualElement { pickingMode = PickingMode.Ignore };
-                dot.AddToClassList("garage__color-dot");
-                dot.AddToClassList(CarColor.ClassOf(id));
-                var ring = new VisualElement { pickingMode = PickingMode.Ignore };
-                ring.AddToClassList("garage__color-ring");
-                var check = new VisualElement { pickingMode = PickingMode.Ignore };
-                check.AddToClassList("garage__color-check");
-                ring.Add(check);
-                dot.Add(ring);
-                button.Add(dot);
-                button.clicked += () => SelectColor(colorId, button);
-                colors[id] = button;
-                colorRow.Add(button);
-            }
-        }
-
-        /// <summary>
-        /// The shop's head: the CARS and TOPPERS tabs (a red dot on TOPPERS while coins buy one) and the player's coins,
-        /// which bump as a purchase spends them.
-        /// </summary>
-        private void BuildHead(VisualElement shop)
-        {
-            var head = new VisualElement { pickingMode = PickingMode.Ignore };
-            head.AddToClassList("garage__head");
-            var tabs = new VisualElement { pickingMode = PickingMode.Ignore };
-            tabs.AddToClassList("garage__tabs");
-            carsTab = Tab("garage.cars", () => ShowTab(false));
-            toppersTab = Tab("garage.toppers", () => ShowTab(true));
-            toppersDot = new VisualElement { pickingMode = PickingMode.Ignore };
-            toppersDot.AddToClassList("garage__tab-dot");
-            toppersTab.Add(toppersDot);
-            tabs.Add(carsTab);
-            tabs.Add(toppersTab);
-            head.Add(tabs);
-
-            coinPill = new VisualElement { pickingMode = PickingMode.Ignore };
-            coinPill.AddToClassList("coin-pill");
-            coinPill.AddToClassList("garage__coins");
-            coinPill.Add(RoundOverMeta.Coin());
-            coinCount = new Label { pickingMode = PickingMode.Ignore };
-            coinCount.AddToClassList("coin-pill__count");
-            coinPill.Add(coinCount);
-            head.Add(coinPill);
-            shop.Insert(0, head);
-        }
-
-        /// <summary>The toppers' grid (none first, then each with its price until it is owned) and the worn one on the hero.</summary>
-        private void BuildToppers(VisualElement shop)
-        {
-            topperGrid = new VisualElement { name = "garage-toppers", pickingMode = PickingMode.Ignore };
-            topperGrid.AddToClassList("garage__grid");
-            topperGrid.AddToClassList("garage__grid--toppers");
-            shop.Add(topperGrid);
-            var ids = new List<string> { "" };
-            foreach (var topper in ViewModel.Toppers) {
-                ids.Add(topper.Id);
-            }
-
-            // The toppers' 3D models, all drawn into one texture that each card crops to its own; NONE keeps its icon.
-            var models = garageStage?.ShowToppers(ids.GetRange(1, ids.Count - 1));
-            foreach (var id in ids) {
-                var topperId = id;
-                VisualElement icon;
-                if (models != null && id.Length > 0) {
-                    icon = new Image {
-                        image = models,
-                        uv = garageStage.CellOf(id),
-                        scaleMode = ScaleMode.ScaleToFit,
-                        pickingMode = PickingMode.Ignore,
-                    };
-                    icon.AddToClassList("garage__topper-icon");
-                    icon.AddToClassList("garage__topper-model");
-                }
-                else {
-                    icon = TopperIcon.Create(id, "garage__topper-icon");
-                }
-
-                var card = new Card($"garage-topper-{(id.Length == 0 ? "none" : id)}", icon, text,
-                    () => topperId.Length == 0 ? Strings.Get("garage.none") : GameText.Topper(topperId));
-                card.Button.AddToClassList("garage__card--topper");
-                card.Button.clicked += () => PickTopper(topperId, card.Button);
-                topperCards.Add((id, card));
-                topperGrid.Add(card.Button);
-            }
-
-            // The 3D car wears its topper itself; the portrait gets a flat one over its roof.
-            if (garageStage == null) {
-                previewTopper = TopperIcon.Create(ViewModel.SelectedTopper, "garage__preview-topper");
-                Root.Q<VisualElement>("garage-preview").Add(previewTopper);
-            }
-
+            Root.RegisterCallback<GeometryChangedEvent>(OnGeometry);
+            SafeArea.Watch(Root, safe => {
+                insets = safe;
+                Place();
+            });
+            PokiPill.Watch(Root, Place);
             ViewModel.ToppersShown();
-            ShowTab(false);
+            ShowTab(Tab.Cars);
+            // The settings popup can change the language over the garage.
+            text.OnChanged(Refresh);
         }
 
-        private Button Tab(string key, Action pressed)
+        public override async UniTask ShowAsync(CancellationToken token)
         {
-            var tab = new Button();
-            tab.RemoveFromClassList(Button.ussClassName);
-            tab.AddToClassList("pill");
-            tab.AddToClassList("garage__tab");
-            var label = new Label { pickingMode = PickingMode.Ignore };
-            label.AddToClassList("garage__tab-text");
-            text.Set(label, () => Strings.Get(key));
-            tab.Add(label);
-            tab.clicked += () => {
-                if (IsShown && !isClosing) {
-                    audioService.PlayUiClick();
-                    pressed();
-                }
-            };
-            return tab;
-        }
-
-        private void ShowTab(bool toppers)
-        {
-            if (toppers && !isToppersTab) {
-                ViewModel.ToppersPressed();
-            }
-
-            isToppersTab = toppers;
-            previewedCar = null;
-            previewedTopper = null;
-            if (cards.Count > 0) {
-                RefreshSelection();
-            }
-
-            carsTab.EnableInClassList("garage__tab--active", !toppers);
-            toppersTab.EnableInClassList("garage__tab--active", toppers);
-            carGrid.style.display = toppers ? DisplayStyle.None : DisplayStyle.Flex;
-            topperGrid.style.display = toppers ? DisplayStyle.Flex : DisplayStyle.None;
-            shopScroll.scrollOffset = Vector2.zero;
-        }
-
-        private void PickTopper(string id, Button button)
-        {
-            if (!IsShown || isClosing) {
-                return;
-            }
-
-            var topper = id.Length == 0 ? null : FindTopper(id);
-            var wasOwned = topper == null || ViewModel.IsOwned(id);
-            // The first tap on a hat the player does not have tries it on the hero; the next one buys it, or says why
-            // it cannot.
-            if (!wasOwned && previewedTopper != id) {
-                previewedTopper = id;
-                audioService.PlayUiClick();
-                RefreshSelection();
-                StartBounce(button);
-                PopHero();
-                return;
-            }
-
-            if (!wasOwned && !ViewModel.CanAfford(topper)) {
-                TooDear(button, topper.Price);
-                return;
-            }
-
-            // A tap on the worn hat changes nothing but takes the tried-on one off.
-            var wasPreviewing = previewedTopper != null;
-            previewedTopper = null;
-            if (!ViewModel.PickTopper(id)) {
-                if (wasPreviewing) {
-                    audioService.PlayUiClick();
-                    RefreshSelection();
-                    StartBounce(button);
-                    PopHero();
-                }
-
-                return;
-            }
-
-            if (wasOwned) {
-                audioService.PlayUiClick();
-            }
-            else {
-                Bought(button, topper.Price);
-            }
-
-            RefreshSelection();
-            StartBounce(button);
-            PopHero();
-        }
-
-        private void RefreshToppers()
-        {
-            var worn = ViewModel.SelectedTopper;
-            var onHero = previewedTopper ?? worn;
-            coinCount.text = ViewModel.Coins.ToString();
-            toppersDot.style.display = ViewModel.CanBuyTopper ? DisplayStyle.Flex : DisplayStyle.None;
-            if (previewTopper != null) {
-                TopperIcon.Set(previewTopper, onHero);
-                // No topper is no topper on the hero: the NONE card's crossed circle belongs to the shop.
-                previewTopper.style.display = string.IsNullOrEmpty(onHero) ? DisplayStyle.None : DisplayStyle.Flex;
-            }
-            foreach (var (id, card) in topperCards) {
-                var topper = id.Length == 0 ? null : FindTopper(id);
-                var isOwned = topper == null || ViewModel.IsOwned(id);
-                var isWorn = id == worn;
-                var dear = !isOwned && !ViewModel.CanAfford(topper);
-                var previewed = id == previewedTopper;
-                card.SetState(isWorn, false, !isOwned, dear,
-                    isWorn ? Strings.Get("garage.in_use") : isOwned ? Strings.Get("garage.use") : topper.Price.ToString(),
-                    previewed, previewed && !dear);
-            }
-        }
-
-        private GameTuning.TopperDefinition FindTopper(string id)
-        {
-            foreach (var topper in ViewModel.Toppers) {
-                if (topper.Id == id) {
-                    return topper;
-                }
-            }
-
-            return null;
-        }
-
-        private void OnGeometryChanged(GeometryChangedEvent evt) =>
-            Root.EnableInClassList("garage--landscape", evt.newRect.width > evt.newRect.height);
-
-        private void OnStageGeometry(GeometryChangedEvent evt) => PlaceHero();
-
-        /// <summary>
-        /// Stands the 3D car on the plinth: the ground under it in the texture (GarageStage.HeroGround) goes on the
-        /// middle of the plinth's top, the picture as wide as the stage. Placed by that point, not centred in the
-        /// stage, since each car's own size moves it in its texture.
-        /// </summary>
-        private void PlaceHero()
-        {
-            if (hero == null || plinth == null) {
-                return;
-            }
-
-            var box = hero.parent.layout;
-            var top = plinth.layout;
-            if (float.IsNaN(box.width) || box.width <= 0f || float.IsNaN(top.width)) {
-                return;
-            }
-
-            var width = stage.layout.width;
-            var height = width / heroAspect;
-            var ground = garageStage.HeroGround;
-            hero.style.left = top.center.x - box.x - ground.x * width;
-            hero.style.top = top.center.y - box.y - ground.y * height;
-            hero.style.width = width;
-            hero.style.height = height;
-            hero.style.right = StyleKeyword.Auto;
-            hero.style.bottom = StyleKeyword.Auto;
-        }
-
-        private void RefreshSelection()
-        {
-            var selectedCar = previewedCar ?? ViewModel.SelectedEntry;
-            if (garageStage != null) {
-                var topper = previewedTopper ?? ViewModel.SelectedTopper;
-                var texture = garageStage.ShowCar(selectedCar, ViewModel.SelectedColor, topper);
-                heroAspect = (float)texture.width / texture.height;
-                hero.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(texture));
-                PlaceHero();
-            }
-            else {
-                preview.Set(selectedCar, ViewModel.SelectedColor);
-            }
-
-            CarStatsView.Set(heroStats, ViewModel.StatsOf(selectedCar), ViewModel.HasBoost);
-            previewName.text = GameText.Car(selectedCar);
-            previewNameFace.text = GameText.Car(selectedCar);
-            for (var id = 0; id < colors.Length; id++) {
-                colors[id].EnableInClassList("garage__color--selected", id == ViewModel.SelectedColor);
-            }
-
-            foreach (var (car, card, portrait) in cards) {
-                var selected = car.Id == ViewModel.SelectedCar;
-                var unlocked = ViewModel.IsUnlocked(car.Id);
-                var forSale = ViewModel.IsForSale(car.Id);
-                var dear = forSale && !ViewModel.CanAffordCar(car.Id);
-                var previewed = car == previewedCar;
-                card.SetState(selected, !unlocked, forSale, dear,
-                    selected ? Strings.Get("garage.in_use") : forSale ? ViewModel.PriceOf(car.Id).ToString()
-                    : unlocked ? Strings.Get("garage.use") : GameText.Level(car.UnlockLevel), previewed,
-                    previewed && forSale && !dear);
-                card.Button.tooltip = unlocked ? GameText.Car(car) : Strings.Format("garage.unlock_at", car.UnlockLevel);
-                portrait.SetColor(ViewModel.SelectedColor);
-            }
-
-            RefreshToppers();
-        }
-
-        private void SelectColor(int id, Button button)
-        {
-            if (!IsShown || isClosing || !ViewModel.SelectColor(id)) {
-                return;
-            }
-
-            audioService.PlayUiClick();
-            RefreshSelection();
-            StartBounce(button);
-            PopHero();
-        }
-
-        private void Select(CarCatalog.Entry car, Button button)
-        {
-            if (!IsShown || isClosing) {
-                return;
-            }
-
-            // The first tap on a car the player does not have shows it on the plinth with its stats; the next one buys it,
-            // or says why it cannot.
-            var isOwned = ViewModel.IsUnlocked(car.Id) && !ViewModel.IsForSale(car.Id);
-            if (!isOwned && previewedCar != car) {
-                previewedCar = car;
-                audioService.PlayUiClick();
-                RefreshSelection();
-                StartBounce(button);
-                PopHero();
-                return;
-            }
-
-            previewedCar = null;
-            // A tap on a car the player cannot have yet still answers: it shakes and says what opens it.
-            if (!ViewModel.IsUnlocked(car.Id)) {
-                previewedCar = car;
-                Refuse(button);
-                ShowToast(button, Strings.Format("garage.unlock_at", car.UnlockLevel), false, false);
-                return;
-            }
-
-            // An open car with a price is bought by the click, when the coins pay for it.
-            if (ViewModel.IsForSale(car.Id)) {
-                var price = ViewModel.PriceOf(car.Id);
-                if (!ViewModel.CanAffordCar(car.Id)) {
-                    previewedCar = car;
-                    TooDear(button, price);
-                    return;
-                }
-
-                if (!ViewModel.BuyCar(car.Id)) {
-                    previewedCar = car;
-                    return;
-                }
-
-                Bought(button, price);
-                PopHero();
-            }
-            else {
-                if (ViewModel.Select(car.Id)) {
-                    PopHero();
-                }
-
-                audioService.PlayUiClick();
-            }
-
-            RefreshSelection();
-            StartBounce(button);
-        }
-
-        /// <summary>The coins went: a ring of the till, the price rising off the card and the coins bumping.</summary>
-        private void Bought(VisualElement card, int price)
-        {
-            audioService.PlayUiClick();
-            if (audioService.Library != null) {
-                audioService.Play(audioService.Library.KnockoutCredit);
-            }
-
-            ShowToast(card, $"-{price}", true, true);
-            BumpCoins(false);
-        }
-
-        /// <summary>Not enough coins: the card shakes, says how many are missing, and the coins flash red.</summary>
-        private void TooDear(VisualElement card, int price)
-        {
-            Refuse(card);
-            ShowToast(card, Strings.Format("garage.need_more", Mathf.Max(1, price - ViewModel.Coins)), true, false);
-            BumpCoins(true);
-        }
-
-        private void Refuse(VisualElement card)
-        {
-            cardTween.Play(ShakeDuration, t => {
-                card.style.translate = new Translate(28f * Mathf.Sin(t * Mathf.PI * 6f) * (1f - t), 0f);
-            });
-        }
-
-        private void StartBounce(VisualElement button)
-        {
-            cardTween.Play(BounceDuration, t => {
-                button.style.translate = new Translate(0f, -22f * Mathf.Sin(Mathf.PI * t));
-            });
-        }
-
-        /// <summary>The hero answers every change of car, paint or topper with a little hop on its plinth.</summary>
-        private void PopHero()
-        {
-            heroTween.Play(PopDuration, t => {
-                var hop = Mathf.Sin(Mathf.PI * t);
-                stage.style.scale = new Scale(new Vector3(1f + 0.08f * hop, 1f + 0.08f * hop, 1f));
-                stage.style.translate = new Translate(0f, -18f * hop);
-            });
-        }
-
-        private void BumpCoins(bool isShort)
-        {
-            coinTween.Stop();
-            coinPill.EnableInClassList("garage__coins--short", isShort);
-            coinTween.Play(isShort ? ShakeDuration : PopDuration, t => {
-                if (isShort) {
-                    coinPill.style.translate = new Translate(16f * Mathf.Sin(t * Mathf.PI * 6f) * (1f - t), 0f);
-                    coinPill.style.scale = StyleKeyword.Null;
-                }
-                else {
-                    var bump = 1f + 0.18f * Mathf.Sin(Mathf.PI * t);
-                    coinPill.style.scale = new Scale(new Vector3(bump, bump, 1f));
-                    coinPill.style.translate = StyleKeyword.Null;
-                }
-
-                if (t >= 1f) {
-                    coinPill.RemoveFromClassList("garage__coins--short");
-                }
-            });
-        }
-
-        /// <summary>
-        /// The floating line over a card: pops up, rises and fades. Gold for coins, white for a reason; placed over the
-        /// card and kept on the screen.
-        /// </summary>
-        private void ShowToast(VisualElement card, string message, bool withCoin, bool isGold)
-        {
-            toastTween.Stop();
-            toastText.text = message;
-            toastFace.text = message;
-            toastCoin.style.display = withCoin ? DisplayStyle.Flex : DisplayStyle.None;
-            toast.EnableInClassList("garage__toast--gold", isGold);
-            var center = toast.parent.WorldToLocal(card.worldBound.center);
-            var width = toast.parent.layout.width;
-            toast.style.left = Mathf.Clamp(center.x - ToastWidth / 2f, 0f, Mathf.Max(0f, width - ToastWidth));
-            toast.style.top = toast.parent.WorldToLocal(new Vector2(0f, card.worldBound.yMin)).y - ToastHeight + 20f;
-            toast.style.display = DisplayStyle.Flex;
-            toastTween.Play(ToastDuration, t => {
-                var pop = t < 0.15f ? Mathf.Lerp(0.4f, 1.1f, t / 0.15f) : Mathf.Lerp(1.1f, 1f, Mathf.Clamp01((t - 0.15f) / 0.1f));
-                toast.style.scale = new Scale(new Vector3(pop, pop, 1f));
-                toast.style.translate = new Translate(0f, -90f * (1f - (1f - t) * (1f - t)));
-                toast.style.opacity = t < 0.7f ? 1f : 1f - (t - 0.7f) / 0.3f;
-                if (t >= 1f) {
-                    toast.style.display = DisplayStyle.None;
-                }
-            });
-        }
-
-        private void OnKeyDown(KeyDownEvent evt)
-        {
-            if (evt.keyCode == KeyCode.Escape) {
-                evt.StopImmediatePropagation();
-                Back();
-            }
-            else if (evt.keyCode is KeyCode.Space or KeyCode.Return or KeyCode.KeypadEnter) {
-                // The keys mean NEXT MATCH here as on the result, never a press of whichever card has the focus.
-                // A repeat of the result's restart key reaches us before the fade-in ends and is dropped by IsShown.
-                evt.StopImmediatePropagation();
-                NextMatch();
-            }
-        }
-
-        private void OnCancel(NavigationCancelEvent evt)
-        {
-            evt.StopPropagation();
-            Back();
-        }
-
-        private void OpenSettings()
-        {
-            if (!IsShown || isClosing || ViewModel.IsSettingsOpen) {
-                return;
-            }
-
-            audioService.PlayUiClick();
-            ViewModel.OpenSettings(lifetime.Token).Forget();
-        }
-
-        private void Back()
-        {
-            if (!IsShown || isClosing || ViewModel.IsSettingsOpen) {
-                return;
-            }
-
-            isClosing = true;
-            audioService.PlayUiClick();
-            ViewModel.Back();
-        }
-
-        private void NextMatch()
-        {
-            if (!IsShown || isClosing || ViewModel.IsSettingsOpen) {
-                return;
-            }
-
-            isClosing = true;
-            audioService.PlayUiClick();
-            ViewModel.NextMatch();
-        }
-
-        private void StopAnimations()
-        {
-            cardTween.Stop();
-            heroTween.Stop();
-            toastTween.Stop();
-            coinTween.Stop();
+            await base.ShowAsync(token);
+            Root.Focus();
         }
 
         public override async UniTask HideAsync(CancellationToken token)
@@ -741,98 +235,1406 @@ namespace ToyCarArena.UI
             garageStage?.Hide();
             Root?.UnregisterCallback<KeyDownEvent>(OnKeyDown, TrickleDown.TrickleDown);
             Root?.UnregisterCallback<NavigationCancelEvent>(OnCancel);
-            Root?.UnregisterCallback<GeometryChangedEvent>(OnGeometryChanged);
-            stage?.UnregisterCallback<GeometryChangedEvent>(OnStageGeometry);
-            if (closeButton != null) {
-                closeButton.clicked -= Back;
-            }
-            if (playButton != null) {
-                playButton.clicked -= NextMatch;
-            }
-            if (settingsButton != null) {
-                settingsButton.clicked -= OpenSettings;
-            }
+            Root?.UnregisterCallback<GeometryChangedEvent>(OnGeometry);
             lifetime?.Cancel();
             lifetime?.Dispose();
+            lifetime = null;
             text.Dispose();
-            cards.Clear();
-            topperCards.Clear();
+            carCards.Clear();
+            hatCards.Clear();
             base.Dispose();
         }
 
+        // -- Building ------------------------------------------------------------------------------------------------
+
+        private void BuildTop(VisualElement screen)
+        {
+            top = Element("garage__top");
+            var back = Sticker("garage__back", Back);
+            back.Q<VisualElement>(className: "menu__face").Add(Icon("garage__back-arrow", DrawBack));
+            top.Add(back);
+            var title = RoundOverProgress.Outlined("", "garage__title", out var titleLabels);
+            foreach (var label in titleLabels) {
+                text.Set(label, () => Strings.Get("garage.title"));
+            }
+
+            top.Add(title);
+            top.Add(Element("menu__spacer"));
+            coinsPill = Element("menu__coins");
+            coinsPill.AddToClassList("garage__coins");
+            coinsPill.Add(Element("menu__coins-drop"));
+            var coinFace = Element("menu__coins-face");
+            coinFace.Add(RoundOverMeta.Coin());
+            coins = Text("menu__coins-count");
+            coinFace.Add(coins);
+            coinsPill.Add(coinFace);
+            top.Add(coinsPill);
+            var gear = Sticker("menu__gear", OpenSettings);
+            gear.Q<VisualElement>(className: "menu__face").Add(Gear());
+            top.Add(gear);
+            screen.Add(top);
+        }
+
+        /// <summary>The car on its pedestal under the turning light, and its name and stats under it.</summary>
+        private void BuildShow()
+        {
+            show = Element("garage__show");
+            rays = Element("garage__rays");
+            rays.generateVisualContent += MenuView.DrawLight;
+            // Unscaled clock, so the ad pause (timeScale 0) does not stop the light.
+            rays.schedule.Execute(() =>
+                rays.style.rotate = new Rotate(Time.unscaledTime / RaysTurnSeconds * 360f % 360f)).Every(16);
+            show.Add(rays);
+            hero = Element("garage__hero");
+            heroPortraitRoot = Element("garage__hero-portrait");
+            heroPortraitRoot.AddToClassList("car-portrait");
+            hero.Add(heroPortraitRoot);
+            heroPortrait = new CarPortrait(heroPortraitRoot);
+            show.Add(hero);
+
+            caption = Element("garage__caption");
+            caption.Add(RoundOverProgress.Outlined("", "garage__name", out nameLabels));
+            stats = BuildStats("garage__stats");
+            caption.Add(stats);
+            show.Add(caption);
+            caption.RegisterCallback<GeometryChangedEvent>(_ => PlaceHero());
+            show.RegisterCallback<GeometryChangedEvent>(_ => PlaceHero());
+            body.Add(show);
+        }
+
         /// <summary>
-        /// One card of the shop, a car or a topper: its picture, its name and the tag under them, which carries the
-        /// state: a check and IN USE, USE, a coin and the price (gold when the coins pay, grey when not), or a lock and
-        /// the level that opens it.
+        /// The stats as one white pill: each stat's name beside five pips, filled to its value in the stat's colour.
+        /// </summary>
+        private static VisualElement BuildStats(string className)
+        {
+            var pill = Element("garage-stats");
+            pill.AddToClassList(className);
+            foreach (var name in StatNames) {
+                var stat = Element("garage-stats__stat");
+                stat.AddToClassList($"garage-stats__stat--{name}");
+                stat.Add(Text("garage-stats__label"));
+                var pips = Element("garage-stats__pips");
+                for (var i = 0; i < GameTuning.CarStatSettings.Max; i++) {
+                    pips.Add(Element("garage-stats__pip"));
+                }
+
+                stat.Add(pips);
+                pill.Add(stat);
+            }
+
+            return pill;
+        }
+
+        private void SetStats(VisualElement pill, GameTuning.CarStatLine line)
+        {
+            var values = new[] { line.Speed, line.Power, line.Weight, line.Boost };
+            for (var i = 0; i < StatNames.Length; i++) {
+                var stat = pill[i];
+                // Without boosts in the build the boost stat would promise nothing.
+                stat.style.display = StatNames[i] != "boost" || ViewModel.HasBoost ? DisplayStyle.Flex : DisplayStyle.None;
+                stat.Q<Label>(className: "garage-stats__label").text = Strings.Get($"car.stat_{StatNames[i]}");
+                var pips = stat.Q<VisualElement>(className: "garage-stats__pips");
+                for (var pip = 0; pip < pips.childCount; pip++) {
+                    pips[pip].EnableInClassList("garage-stats__pip--on", pip < values[i]);
+                }
+            }
+        }
+
+        private void BuildSide()
+        {
+            side = Element("garage__side");
+            var switcher = Element("garage__tabs");
+            switcher.Add(Element("menu__drop"));
+            var face = Element("garage__tabs-face");
+            var keys = new[] { "garage.cars", "garage.toppers", "garage.paint" };
+            for (var i = 0; i < tabs.Length; i++) {
+                var shown = (Tab)i;
+                var key = keys[i];
+                var button = new Button(() => PressTab(shown));
+                button.RemoveFromClassList(Button.ussClassName);
+                button.AddToClassList("garage__tab");
+                // A navy line between the segments (USS has no :first-child).
+                button.EnableInClassList("garage__tab--split", i > 0);
+                button.focusable = false;
+                var label = Text("garage__tab-text");
+                text.Set(label, () => Strings.Get(key));
+                button.Add(label);
+                button.Add(KeyCap((i + 1).ToString(), "garage__tab-key"));
+                if (shown == Tab.Hats) {
+                    hatsDot = Element("garage__tab-dot");
+                    button.Add(hatsDot);
+                }
+
+                tabs[i] = button;
+                face.Add(button);
+            }
+
+            switcher.Add(face);
+            side.Add(switcher);
+
+            panel = Element("garage__panel");
+            scroll = new ScrollView(ScrollViewMode.Vertical) {
+                horizontalScrollerVisibility = ScrollerVisibility.Hidden,
+                verticalScrollerVisibility = ScrollerVisibility.Hidden,
+                touchScrollBehavior = ScrollView.TouchScrollBehavior.Elastic,
+            };
+            scroll.AddToClassList("garage__scroll");
+            panel.Add(scroll);
+            BuildCars();
+            BuildHats();
+            BuildPaints();
+            panel.RegisterCallback<GeometryChangedEvent>(_ => LayoutCards());
+            side.Add(panel);
+
+            BuildAction();
+            side.Add(action);
+            body.Add(side);
+        }
+
+        private void BuildCars()
+        {
+            carGrid = Element("garage__grid");
+            foreach (var car in ViewModel.Cars) {
+                var art = Element("car-portrait");
+                art.AddToClassList("garage__card-portrait");
+                var portrait = new CarPortrait(art);
+                var card = new Card($"garage-car-{car.Id}", art, text, () => GameText.Car(car));
+                card.Button.clicked += () => PickCar(car, card.Button);
+                carCards.Add((car, card, portrait));
+                carGrid.Add(card.Button);
+            }
+
+            scroll.Add(carGrid);
+        }
+
+        private void BuildHats()
+        {
+            hatGrid = Element("garage__grid");
+            var ids = new List<string> { "" };
+            foreach (var topper in ViewModel.Toppers) {
+                ids.Add(topper.Id);
+            }
+
+            // The hats' 3D models, all drawn into one texture that each card crops to its own; NONE keeps its icon.
+            var models = garageStage?.ShowToppers(ids.GetRange(1, ids.Count - 1));
+            foreach (var id in ids) {
+                var hatId = id;
+                VisualElement art;
+                if (models != null && id.Length > 0) {
+                    art = new Image {
+                        image = models,
+                        uv = garageStage.CellOf(id),
+                        scaleMode = ScaleMode.ScaleToFit,
+                        pickingMode = PickingMode.Ignore,
+                    };
+                    art.AddToClassList("garage__card-hat");
+                }
+                else {
+                    art = TopperIcon.Create(id, "garage__card-hat");
+                }
+
+                var card = new Card($"garage-topper-{(id.Length == 0 ? "none" : id)}", art, text,
+                    () => hatId.Length == 0 ? Strings.Get("garage.none") : GameText.Topper(hatId));
+                card.Button.clicked += () => PickHat(hatId, card.Button);
+                hatCards.Add((id, card));
+                hatGrid.Add(card.Button);
+            }
+
+            scroll.Add(hatGrid);
+        }
+
+        /// <summary>The eight paints as big round stickers, two rows of four; a tap paints the car at once.</summary>
+        private void BuildPaints()
+        {
+            paintGrid = Element("garage__paints");
+            for (var id = 0; id < paints.Length; id++) {
+                var colorId = id;
+                var button = new Button { name = $"garage-color-{CarPaint.NameOf(id)}" };
+                button.RemoveFromClassList(Button.ussClassName);
+                button.AddToClassList("garage__paint");
+                button.focusable = false;
+                button.tooltip = CarPaint.NameOf(id).ToUpperInvariant();
+                button.Add(Element("garage__paint-drop"));
+                var dot = Element("garage__paint-dot");
+                dot.AddToClassList(CarColor.ClassOf(id));
+                dot.Add(Element("garage__paint-shade"));
+                dot.Add(Element("garage__paint-check"));
+                button.Add(dot);
+                button.clicked += () => PickPaint(colorId, button);
+                paints[id] = button;
+                paintGrid.Add(button);
+            }
+
+            panel.Add(paintGrid);
+        }
+
+        /// <summary>
+        /// The one button at the bottom, drawn as the game's big buttons (a coloured face over its darker shade), its
+        /// colour and content set by what stands on the pedestal (RefreshAction).
+        /// </summary>
+        private void BuildAction()
+        {
+            action = new Button(PressAction) { name = "garage-action" };
+            action.RemoveFromClassList(Button.ussClassName);
+            action.AddToClassList("button");
+            action.AddToClassList("garage__action");
+            action.focusable = false;
+            action.Add(Element("button__face"));
+            var face = action;
+            actionTick = Element("garage__action-tick");
+            face.Add(actionTick);
+            actionLock = Icon("garage__action-lock", DrawWhiteLock);
+            face.Add(actionLock);
+            actionPlay = RoundOverRewards.PlaySign();
+            actionPlay.AddToClassList("garage__action-play");
+            face.Add(actionPlay);
+            face.Add(RoundOverProgress.Outlined("", "garage__action-label", out actionLabels));
+            foreach (var label in actionLabels) {
+                label.AddToClassList("button__label");
+            }
+
+            actionPlain = Text("garage__action-plain");
+            actionPlain.AddToClassList("button__label");
+            face.Add(actionPlain);
+            actionPrice = Element("garage__action-price");
+            actionPrice.Add(RoundOverMeta.Coin());
+            actionPriceCount = Text("garage__action-count");
+            actionPrice.Add(actionPriceCount);
+            face.Add(actionPrice);
+            actionTag = Text("garage__action-tag");
+            text.Set((Label)actionTag, () => Strings.Get("result.ad"));
+            action.Add(actionTag);
+            actionKey = Element("key");
+            actionKey.AddToClassList("garage__action-key");
+            var keyText = Text("key__text");
+            text.Set(keyText, () => Strings.Get("common.space"));
+            actionKey.Add(keyText);
+            action.Add(actionKey);
+        }
+
+        private void BuildToast(VisualElement screen)
+        {
+            toast = Element("garage__toast");
+            toastCoin = RoundOverMeta.Coin();
+            toastCoin.AddToClassList("garage__toast-coin");
+            toast.Add(toastCoin);
+            toast.Add(RoundOverProgress.Outlined("", "garage__toast-label", out toastLabels));
+            toast.style.display = DisplayStyle.None;
+            screen.Add(toast);
+        }
+
+        /// <summary>
+        /// The window that asks before the coins or the ad go: the title, the car (or the car in the hat) as on the
+        /// pedestal, its stats, the coins before and after (or FREE), the main button and CANCEL.
+        /// </summary>
+        private void BuildConfirm(VisualElement screen)
+        {
+            confirm = Element("menu__popup");
+            confirm.AddToClassList("garage__confirm");
+            confirm.pickingMode = PickingMode.Position;
+            // A tap on the dim around the card closes it.
+            confirm.RegisterCallback<ClickEvent>(evt => {
+                if (evt.target == confirm) {
+                    CloseConfirm(true);
+                }
+            });
+            sheet = Element("card");
+            sheet.AddToClassList("menu__sheet");
+            sheet.AddToClassList("garage__sheet");
+            sheet.pickingMode = PickingMode.Position;
+            var head = Element("menu__sheet-head");
+            head.Add(RoundOverProgress.Outlined("", "garage__sheet-title", out sheetTitle));
+            head.Add(MenuView.CloseSticker(() => CloseConfirm(true)));
+            sheet.Add(head);
+
+            sheetArt = Element("garage__sheet-art");
+            sheetPortraitRoot = Element("car-portrait");
+            sheetPortraitRoot.AddToClassList("garage__sheet-portrait");
+            sheetArt.Add(sheetPortraitRoot);
+            sheetPortrait = new CarPortrait(sheetPortraitRoot);
+            sheet.Add(sheetArt);
+            sheetStats = BuildStats("garage__sheet-stats");
+            sheet.Add(sheetStats);
+
+            sheetCoins = Element("garage__sheet-coins");
+            sheetBefore = CoinPill(sheetCoins, "garage__sheet-pill");
+            sheetCoins.Add(Icon("garage__sheet-arrow", DrawArrow));
+            sheetAfter = CoinPill(sheetCoins, "garage__sheet-pill garage__sheet-pill--after");
+            sheet.Add(sheetCoins);
+            sheetFree = Element("garage__sheet-free");
+            sheetFree.Add(RoundOverRewards.PlaySign());
+            var free = Text("garage__sheet-free-text");
+            text.Set(free, () => Strings.Get("garage.free"));
+            sheetFree.Add(free);
+            sheet.Add(sheetFree);
+
+            sheetBuy = new Button(Confirm);
+            sheetBuy.RemoveFromClassList(Button.ussClassName);
+            sheetBuy.AddToClassList("button");
+            sheetBuy.AddToClassList("button--green");
+            sheetBuy.AddToClassList("garage__sheet-buy");
+            sheetBuy.focusable = false;
+            sheetBuy.Add(Element("button__face"));
+            var buyLabel = RoundOverProgress.Outlined("", "garage__sheet-buy-label", out sheetBuyLabels);
+            foreach (var label in sheetBuyLabels) {
+                label.AddToClassList("button__label");
+                text.Set(label, () => Strings.Get("result.buy"));
+            }
+
+            sheetBuy.Add(buyLabel);
+            sheetBuyCoin = RoundOverMeta.Coin();
+            sheetBuyCoin.AddToClassList("garage__sheet-buy-coin");
+            sheetBuy.Add(sheetBuyCoin);
+            sheetBuyPrice = Text("garage__sheet-buy-price");
+            sheetBuy.Add(sheetBuyPrice);
+            sheetBuy.Add(KeyCap(null, "garage__sheet-key", () => Strings.Get("common.space")));
+            sheet.Add(sheetBuy);
+
+            sheetWatch = new Button(Confirm);
+            sheetWatch.RemoveFromClassList(Button.ussClassName);
+            sheetWatch.AddToClassList("button");
+            sheetWatch.AddToClassList("button--purple");
+            sheetWatch.AddToClassList("menu__watch");
+            sheetWatch.AddToClassList("garage__sheet-watch");
+            sheetWatch.focusable = false;
+            sheetWatch.Add(Element("button__face"));
+            sheetWatch.Add(RoundOverRewards.PlaySign());
+            var watchLabel = RoundOverProgress.Outlined("", "menu__watch-label", out var watchLabels);
+            foreach (var label in watchLabels) {
+                label.AddToClassList("button__label");
+                text.Set(label, () => Strings.Get("garage.watch_ad"));
+            }
+
+            FitText.Fit(watchLabel, watchLabels);
+            sheetWatch.Add(watchLabel);
+            sheetWatch.Add(KeyCap("X", "garage__sheet-watch-key"));
+            var tag = Text("menu__watch-tag");
+            text.Set(tag, () => Strings.Get("result.ad"));
+            sheetWatch.Add(tag);
+            sheet.Add(sheetWatch);
+
+            var cancel = new Button(() => CloseConfirm(true));
+            cancel.RemoveFromClassList(Button.ussClassName);
+            cancel.AddToClassList("button");
+            cancel.AddToClassList("button--white");
+            cancel.AddToClassList("menu__no-thanks");
+            cancel.focusable = false;
+            cancel.Add(Element("button__face"));
+            var cancelLabel = Text("button__label");
+            cancelLabel.AddToClassList("menu__no-thanks-label");
+            text.Set(cancelLabel, () => Strings.Get("garage.cancel"));
+            cancel.Add(cancelLabel);
+            cancel.Add(KeyCap("ESC", "garage__sheet-cancel-key"));
+            sheet.Add(cancel);
+
+            confirm.Add(sheet);
+            screen.Add(confirm);
+        }
+
+        private Label CoinPill(VisualElement parent, string classNames)
+        {
+            var pill = Element(null);
+            foreach (var name in classNames.Split(' ')) {
+                pill.AddToClassList(name);
+            }
+
+            pill.Add(RoundOverMeta.Coin());
+            var count = Text("garage__sheet-pill-count");
+            pill.Add(count);
+            parent.Add(pill);
+            return count;
+        }
+
+        // -- State ---------------------------------------------------------------------------------------------------
+
+        private CarCatalog.Entry ShownCar => tab == Tab.Cars && previewedCar != null ? previewedCar : ViewModel.SelectedEntry;
+
+        private string ShownHat => tab == Tab.Hats && previewedHat != null ? previewedHat : ViewModel.SelectedTopper;
+
+        private void ShowTab(Tab shown)
+        {
+            tab = shown;
+            previewedCar = null;
+            previewedHat = null;
+            for (var i = 0; i < tabs.Length; i++) {
+                tabs[i].EnableInClassList("garage__tab--on", i == (int)shown);
+            }
+
+            carGrid.style.display = shown == Tab.Cars ? DisplayStyle.Flex : DisplayStyle.None;
+            hatGrid.style.display = shown == Tab.Hats ? DisplayStyle.Flex : DisplayStyle.None;
+            scroll.style.display = shown == Tab.Paint ? DisplayStyle.None : DisplayStyle.Flex;
+            paintGrid.style.display = shown == Tab.Paint ? DisplayStyle.Flex : DisplayStyle.None;
+            scroll.scrollOffset = Vector2.zero;
+            Refresh();
+            LayoutCards();
+        }
+
+        /// <summary>The pedestal, the cards, the paints, the coins and the bottom button as they are now.</summary>
+        private void Refresh()
+        {
+            var car = ShownCar;
+            var hat = ShownHat;
+            ShowHero(car, hat);
+            foreach (var label in nameLabels) {
+                label.text = GameText.Car(car);
+            }
+
+            SetStats(stats, ViewModel.StatsOf(car));
+            coins.text = ViewModel.Coins.ToString();
+            hatsDot.style.display = ViewModel.CanBuyTopper ? DisplayStyle.Flex : DisplayStyle.None;
+            var color = ViewModel.SelectedColor;
+
+            var selectedCar = ViewModel.SelectedCar;
+            foreach (var (entry, card, portrait) in carCards) {
+                var id = entry.Id;
+                var isOwned = ViewModel.IsOwnedCar(id);
+                var isAd = ViewModel.IsAdCar(id);
+                // Without ads an ad car the player does not own has no way in: it is left out.
+                card.Button.style.display = isAd && !isOwned && !ViewModel.CanWatchAds ? DisplayStyle.None : DisplayStyle.Flex;
+                var isLocked = !isAd && !ViewModel.IsUnlocked(id);
+                portrait.Set(entry, color, isLocked);
+                var badge = id == selectedCar ? Card.Badge.Selected
+                    : isOwned ? Card.Badge.None
+                    : isAd ? Card.Badge.Ad
+                    : isLocked ? Card.Badge.Locked
+                    : ViewModel.CanAffordCar(id) ? Card.Badge.Price : Card.Badge.Dear;
+                card.Set(badge, badge == Card.Badge.Locked ? GameText.Level(entry.UnlockLevel)
+                    : ViewModel.PriceOf(id).ToString(), id == selectedCar, isLocked, entry == previewedCar);
+                card.Button.tooltip = isLocked ? Strings.Format("garage.unlock_at", entry.UnlockLevel) : GameText.Car(entry);
+            }
+
+            var worn = ViewModel.SelectedTopper;
+            foreach (var (id, card) in hatCards) {
+                var topper = FindHat(id);
+                var isOwned = topper == null || ViewModel.IsOwned(id);
+                var badge = id == worn ? Card.Badge.Selected
+                    : isOwned ? Card.Badge.None
+                    : ViewModel.CanAfford(topper) ? Card.Badge.Price : Card.Badge.Dear;
+                card.Set(badge, topper?.Price.ToString(), id == worn, false, id == previewedHat);
+            }
+
+            for (var id = 0; id < paints.Length; id++) {
+                paints[id].EnableInClassList("garage__paint--on", id == color);
+            }
+
+            RefreshAction();
+        }
+
+        private void ShowHero(CarCatalog.Entry car, string hat)
+        {
+            if (garageStage != null && car != null) {
+                var texture = garageStage.ShowCar(car, ViewModel.SelectedColor, hat, true,
+                    LeagueLook.PedestalOf(ViewModel.League));
+                heroTexture = texture;
+                heroAspect = (float)texture.width / texture.height;
+                hero.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(texture));
+                heroPortraitRoot.style.display = DisplayStyle.None;
+            }
+            else {
+                heroTexture = null;
+                hero.style.backgroundImage = StyleKeyword.None;
+                heroPortraitRoot.style.display = DisplayStyle.Flex;
+                heroPortrait.Set(car, ViewModel.SelectedColor);
+            }
+
+            PlaceHero();
+        }
+
+        /// <summary>What the bottom button does with what stands on the pedestal.</summary>
+        private (Act Act, int Value) ActionNow()
+        {
+            if (tab == Tab.Paint) {
+                return (Act.Selected, 0);
+            }
+
+            if (tab == Tab.Hats) {
+                var hat = ShownHat ?? "";
+                if (hat == (ViewModel.SelectedTopper ?? "")) {
+                    return (Act.Selected, 0);
+                }
+
+                var topper = FindHat(hat);
+                if (topper == null || ViewModel.IsOwned(hat)) {
+                    return (Act.Select, 0);
+                }
+
+                return (ViewModel.CanAfford(topper) ? Act.Buy : Act.Dear, topper.Price);
+            }
+
+            var car = ShownCar;
+            if (car.Id == ViewModel.SelectedCar) {
+                return (Act.Selected, 0);
+            }
+
+            if (ViewModel.IsOwnedCar(car.Id)) {
+                return (Act.Select, 0);
+            }
+
+            if (ViewModel.IsAdCar(car.Id)) {
+                return (Act.Ad, 0);
+            }
+
+            if (!ViewModel.IsUnlocked(car.Id)) {
+                return (Act.Locked, car.UnlockLevel);
+            }
+
+            var price = ViewModel.PriceOf(car.Id);
+            return (ViewModel.CanAffordCar(car.Id) ? Act.Buy : Act.Dear, price);
+        }
+
+        private void RefreshAction()
+        {
+            var (act, value) = ActionNow();
+            foreach (var kind in new[] { "selected", "select", "buy", "dear", "locked", "ad" }) {
+                action.RemoveFromClassList($"garage__action--{kind}");
+            }
+
+            action.AddToClassList($"garage__action--{act.ToString().ToLowerInvariant()}");
+            var label = act switch {
+                Act.Selected => Strings.Get("garage.selected"),
+                Act.Select => Strings.Get("garage.select"),
+                Act.Locked => GameText.Level(value),
+                Act.Ad => Strings.Get("garage.unlock"),
+                _ => Strings.Get("result.buy"),
+            };
+            foreach (var labelText in actionLabels) {
+                labelText.text = label;
+            }
+
+            actionPlain.text = label;
+            var hasPrice = act is Act.Buy or Act.Dear;
+            actionPriceCount.text = value.ToString();
+            Show(actionPrice, hasPrice);
+            Show(actionTick, act == Act.Selected);
+            Show(actionLock, act == Act.Locked);
+            Show(actionPlay, act == Act.Ad);
+            Show(actionTag, act == Act.Ad);
+            Show(actionPlain, act == Act.Selected);
+            Show(actionLabels[0].parent, act != Act.Selected);
+            // The key shows only with a mouse (garage--desktop), and not on a button that does nothing.
+            actionKey.EnableInClassList("garage__action-key--off", act == Act.Selected);
+        }
+
+        private static void Show(VisualElement element, bool isShown) =>
+            element.style.display = isShown ? DisplayStyle.Flex : DisplayStyle.None;
+
+        private GameTuning.TopperDefinition FindHat(string id)
+        {
+            if (string.IsNullOrEmpty(id)) {
+                return null;
+            }
+
+            foreach (var topper in ViewModel.Toppers) {
+                if (topper.Id == id) {
+                    return topper;
+                }
+            }
+
+            return null;
+        }
+
+        // -- Presses -------------------------------------------------------------------------------------------------
+
+        private void PressTab(Tab shown)
+        {
+            if (IsBusy || isConfirmOpen || shown == tab) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            if (shown == Tab.Hats) {
+                ViewModel.ToppersPressed();
+            }
+
+            ShowTab(shown);
+        }
+
+        /// <summary>A tap on a car puts it on the pedestal; a tap on the one shown again presses the bottom button.</summary>
+        private void PickCar(CarCatalog.Entry car, Button button)
+        {
+            if (IsBusy || isConfirmOpen) {
+                return;
+            }
+
+            if (ShownCar == car && previewedCar != null) {
+                PressAction();
+                return;
+            }
+
+            audioService.PlayUiClick();
+            previewedCar = car.Id == ViewModel.SelectedCar ? null : car;
+            Refresh();
+            Bounce(button);
+            PopHero();
+        }
+
+        private void PickHat(string id, Button button)
+        {
+            if (IsBusy || isConfirmOpen) {
+                return;
+            }
+
+            if (previewedHat == id) {
+                PressAction();
+                return;
+            }
+
+            audioService.PlayUiClick();
+            previewedHat = id == (ViewModel.SelectedTopper ?? "") ? null : id;
+            Refresh();
+            Bounce(button);
+            PopHero();
+        }
+
+        private void PickPaint(int id, Button button)
+        {
+            if (IsBusy || isConfirmOpen || !ViewModel.SelectColor(id)) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            Refresh();
+            Bounce(button);
+            PopHero();
+        }
+
+        private void PressAction()
+        {
+            if (IsBusy || isConfirmOpen) {
+                return;
+            }
+
+            var (act, value) = ActionNow();
+            switch (act) {
+                case Act.Selected:
+                    Bounce(action);
+                    break;
+                case Act.Select:
+                    audioService.PlayUiClick();
+                    var isDone = tab == Tab.Hats ? ViewModel.PickTopper(ShownHat ?? "") : ViewModel.Select(ShownCar.Id);
+                    previewedCar = null;
+                    previewedHat = null;
+                    Refresh();
+                    if (isDone) {
+                        Bounce(action);
+                        PopHero();
+                    }
+
+                    break;
+                case Act.Buy:
+                case Act.Ad:
+                    audioService.PlayUiClick();
+                    OpenConfirm(act == Act.Ad);
+                    break;
+                case Act.Dear:
+                    Refuse(action);
+                    ShowToast(action, Strings.Format("garage.need_more", Mathf.Max(1, value - ViewModel.Coins)), true,
+                        false);
+                    BumpCoins(true);
+                    break;
+                case Act.Locked:
+                    Refuse(action);
+                    ShowToast(action, Strings.Format("garage.unlock_at", value), false, false);
+                    break;
+            }
+        }
+
+        // -- The window ----------------------------------------------------------------------------------------------
+
+        private void OpenConfirm(bool isAd)
+        {
+            confirmCar = tab == Tab.Cars ? ShownCar : null;
+            confirmHat = tab == Tab.Hats ? FindHat(ShownHat) : null;
+            if (confirmCar == null && confirmHat == null) {
+                return;
+            }
+
+            var name = confirmCar != null ? GameText.Car(confirmCar) : GameText.Topper(confirmHat.Id);
+            foreach (var label in sheetTitle) {
+                label.text = Strings.Format(isAd ? "garage.unlock_title" : "garage.buy_title", name);
+            }
+
+            // The picture is the pedestal's, the car (in the hat) turning as it does behind the dim.
+            if (heroTexture != null) {
+                sheetArt.style.backgroundImage = new StyleBackground(Background.FromRenderTexture((RenderTexture)heroTexture));
+                sheetPortraitRoot.style.display = DisplayStyle.None;
+            }
+            else {
+                sheetArt.style.backgroundImage = StyleKeyword.None;
+                sheetPortraitRoot.style.display = DisplayStyle.Flex;
+                sheetPortrait.Set(ShownCar, ViewModel.SelectedColor);
+            }
+
+            Show(sheetStats, confirmCar != null);
+            if (confirmCar != null) {
+                SetStats(sheetStats, ViewModel.StatsOf(confirmCar));
+            }
+
+            var price = confirmCar != null ? ViewModel.PriceOf(confirmCar.Id) : confirmHat.Price;
+            sheetBefore.text = ViewModel.Coins.ToString();
+            sheetAfter.text = Mathf.Max(0, ViewModel.Coins - price).ToString();
+            sheetBuyPrice.text = price.ToString();
+            Show(sheetCoins, !isAd);
+            Show(sheetBuy, !isAd);
+            Show(sheetFree, isAd);
+            Show(sheetWatch, isAd);
+            if (isAd) {
+                ViewModel.AdCarShown(confirmCar.Id);
+            }
+
+            isConfirmOpen = true;
+            confirm.AddToClassList("menu__popup--open");
+        }
+
+        private void CloseConfirm(bool withClick)
+        {
+            if (!isConfirmOpen || isCelebrating || ViewModel.IsAdPlaying) {
+                return;
+            }
+
+            if (withClick) {
+                audioService.PlayUiClick();
+            }
+
+            isConfirmOpen = false;
+            confirm.RemoveFromClassList("menu__popup--open");
+            Root.Focus();
+        }
+
+        /// <summary>The window's main button: BUY pays and wears it, WATCH AD plays the ad and, if it pays, gives the car.</summary>
+        private void Confirm()
+        {
+            if (!isConfirmOpen || isCelebrating || IsBusy) {
+                return;
+            }
+
+            if (confirmCar != null && ViewModel.IsAdCar(confirmCar.Id)) {
+                WatchAd(confirmCar, lifetime.Token).Forget();
+                return;
+            }
+
+            var isBought = confirmCar != null ? ViewModel.BuyCar(confirmCar.Id) : ViewModel.PickTopper(confirmHat.Id);
+            if (!isBought) {
+                RewardCelebration.Refuse(confirm, sheet, sheetBuy, Strings.Format("garage.need_more",
+                    Mathf.Max(1, (confirmCar != null ? ViewModel.PriceOf(confirmCar.Id) : confirmHat.Price) -
+                        ViewModel.Coins)), lifetime.Token);
+                return;
+            }
+
+            Celebrate(sheetBuyPrice, lifetime.Token).Forget();
+        }
+
+        private async UniTaskVoid WatchAd(CarCatalog.Entry car, CancellationToken token)
+        {
+            audioService.PlayUiClick();
+            bool isGranted;
+            try {
+                isGranted = await ViewModel.WatchAdCar(car.Id, token);
+            }
+            catch (OperationCanceledException) {
+                return;
+            }
+
+            if (Root?.panel == null || token.IsCancellationRequested) {
+                return;
+            }
+
+            if (!isGranted) {
+                // No ad came, or it was closed early: the window stays, and says so.
+                RewardCelebration.Refuse(confirm, sheet, sheetWatch, Strings.Get("garage.no_ad"), token);
+                return;
+            }
+
+            Celebrate(null, token).Forget();
+        }
+
+        /// <summary>
+        /// The reward taken, as on the result's popups: a flash, EQUIPPED! slammed over the picture, confetti and, for
+        /// coins, a stream of them into the counter; then the window closes on the new choice.
+        /// </summary>
+        private async UniTaskVoid Celebrate(VisualElement coinsFrom, CancellationToken token)
+        {
+            isCelebrating = true;
+            if (audioService.Library != null) {
+                audioService.Play(audioService.Library.KnockoutCredit);
+            }
+
+            previewedCar = null;
+            previewedHat = null;
+            RewardCelebration.Play(confirm, sheet, sheetArt, Strings.Get("result.equipped"), coinsFrom, coinsPill, token);
+            Refresh();
+            try {
+                await UniTask.Delay(TimeSpan.FromSeconds(RewardCelebration.Duration), DelayType.UnscaledDeltaTime,
+                    cancellationToken: token);
+            }
+            catch (OperationCanceledException) {
+                return;
+            }
+            finally {
+                isCelebrating = false;
+            }
+
+            CloseConfirm(false);
+            PopHero();
+            BumpCoins(false);
+        }
+
+        // -- Layout --------------------------------------------------------------------------------------------------
+
+        private void OnGeometry(GeometryChangedEvent evt) => Place();
+
+        /// <summary>
+        /// Lays the groups out for the screen, as the menu does: the top bar under Poki's pill upright and beside it
+        /// sideways; the car above the switcher upright, at the left of it sideways.
+        /// </summary>
+        private void Place()
+        {
+            if (Root?.panel == null) {
+                return;
+            }
+
+            var size = Root.layout.size;
+            if (float.IsNaN(size.x) || size.x <= 0f || size.y <= 0f) {
+                return;
+            }
+
+            isWide = size.x >= size.y * WideAspect;
+            Screen.EnableInClassList(WideClass, isWide);
+            var scale = isWide && isTouch ? TouchWideScale : 1f;
+            var sideEdge = isWide && isTouch ? TouchWideSide : Edge;
+            var left = Mathf.Max(sideEdge, Edge + insets.Left);
+            var right = Mathf.Max(sideEdge, Edge + insets.Right);
+            var topEdge = Edge + insets.Top;
+            var topLeft = left;
+            if (PokiPill.TryGetRect(Root.panel, out var pill)) {
+                pill = Root.WorldToLocal(pill);
+                if (pill.xMax > 0f && pill.yMax > 0f) {
+                    if (isWide) {
+                        topLeft = Mathf.Max(topLeft, Mathf.Ceil(pill.xMax + PillGap));
+                    }
+                    else {
+                        topEdge = Mathf.Max(topEdge, Mathf.Ceil(pill.yMax + PillGap));
+                    }
+                }
+            }
+
+            var grown = new Scale(new Vector3(scale, scale, 1f));
+            top.style.left = topLeft;
+            top.style.top = topEdge;
+            top.style.width = (size.x - topLeft - right) / scale;
+            top.style.scale = grown;
+
+            var bodyTop = topEdge + (TopHeight + TopGap) * scale;
+            var bottom = Edge + insets.Bottom;
+            body.style.left = left;
+            body.style.right = right;
+            body.style.top = bodyTop;
+            body.style.bottom = bottom;
+            var width = size.x - left - right;
+            var height = size.y - bodyTop - bottom;
+            if (isWide) {
+                var sideWidth = width * WideSideShare;
+                side.style.width = sideWidth / scale;
+                side.style.height = height / scale;
+                side.style.scale = grown;
+                // Anchored at the bottom right, where it grows from (transform-origin), so the scale keeps it in the body.
+                side.style.left = StyleKeyword.Auto;
+                side.style.right = 0f;
+                side.style.top = StyleKeyword.Auto;
+                side.style.bottom = 0f;
+                panel.style.height = StyleKeyword.Null;
+                show.style.left = 0f;
+                show.style.right = sideWidth + WideGap;
+                show.style.top = 0f;
+                show.style.bottom = 0f;
+            }
+            else {
+                var panelHeight = Mathf.Clamp(height - SideChrome - ShowMin, PanelMin, PanelMax);
+                side.style.width = width;
+                side.style.height = StyleKeyword.Auto;
+                side.style.scale = new Scale(Vector3.one);
+                side.style.left = 0f;
+                side.style.right = StyleKeyword.Auto;
+                side.style.top = StyleKeyword.Auto;
+                side.style.bottom = 0f;
+                panel.style.height = panelHeight;
+                show.style.left = 0f;
+                show.style.right = 0f;
+                show.style.top = 0f;
+                show.style.bottom = panelHeight + SideChrome + 10f;
+            }
+
+            var sheetFit = Mathf.Max(0.55f, Mathf.Min(isWide && isTouch ? 1.3f : 1f, (size.y - 2f * Edge) / 1750f));
+            sheet.style.scale = new Scale(new Vector3(sheetFit, sheetFit, 1f));
+            Root.schedule.Execute(LayoutCards);
+        }
+
+        /// <summary>The cards three to a row upright (four sideways), as wide as the panel leaves them.</summary>
+        private void LayoutCards()
+        {
+            if (panel == null) {
+                return;
+            }
+
+            var inner = scroll.contentViewport.layout.width;
+            if (float.IsNaN(inner) || inner <= 0f) {
+                inner = panel.contentRect.width;
+            }
+
+            if (float.IsNaN(inner) || inner <= 0f) {
+                return;
+            }
+
+            var columns = isWide ? WideColumns : Columns;
+            var padding = 2f * 36f;
+            var cardWidth = Mathf.Floor((inner - padding - CardGap * (columns - 1)) / columns);
+            var cardHeight = Mathf.Floor(cardWidth * CardAspect);
+            foreach (var grid in new[] { carGrid, hatGrid }) {
+                var shown = 0;
+                foreach (var child in grid.Children()) {
+                    if (child.resolvedStyle.display == DisplayStyle.None && child.style.display == DisplayStyle.None) {
+                        continue;
+                    }
+
+                    child.style.width = cardWidth;
+                    child.style.height = cardHeight;
+                    child.style.marginRight = shown % columns == columns - 1 ? 0f : CardGap;
+                    child.style.marginBottom = CardGap;
+                    shown++;
+                }
+            }
+
+            // The paints: two rows of four, as big as the panel holds.
+            var paintBox = panel.contentRect;
+            var across = (paintBox.width - 2f * 60f - 3f * 50f) / 4f;
+            var down = (paintBox.height - 2f * 50f - 70f) / 2f;
+            var diameter = Mathf.Max(80f, Mathf.Min(across, down, 240f));
+            foreach (var paint in paints) {
+                paint.style.width = diameter;
+                paint.style.height = diameter;
+            }
+        }
+
+        /// <summary>
+        /// The 3D car on its pedestal (one picture, as in the menu) as large as fits over the name and stats, its
+        /// middle on the area's; the light's middle on the pedestal's top.
+        /// </summary>
+        private void PlaceHero()
+        {
+            var box = show.layout;
+            if (float.IsNaN(box.width) || box.width <= 0f) {
+                return;
+            }
+
+            var room = caption.layout.y;
+            if (float.IsNaN(room) || room <= 0f) {
+                room = box.height;
+            }
+
+            if (garageStage == null) {
+                var portrait = 600f;
+                hero.style.left = (box.width - portrait) / 2f;
+                hero.style.top = room - portrait;
+                hero.style.width = portrait;
+                hero.style.height = portrait;
+                PlaceRays(new Vector2(box.width / 2f, room - portrait * 0.3f), portrait);
+                return;
+            }
+
+            var width = Mathf.Min(box.width, room * heroAspect, isWide ? WideHeroMaxWidth : HeroMaxWidth);
+            var height = width / heroAspect;
+            hero.style.left = (box.width - width) / 2f;
+            hero.style.top = room - height;
+            hero.style.width = width;
+            hero.style.height = height;
+            var ground = garageStage.HeroGround;
+            PlaceRays(new Vector2(box.width / 2f + (ground.x - 0.5f) * width, room - height + ground.y * height), width);
+        }
+
+        private void PlaceRays(Vector2 middle, float width)
+        {
+            var span = width * RaysScale;
+            rays.style.left = middle.x - span / 2f;
+            rays.style.top = middle.y - span / 2f;
+            rays.style.width = span;
+            rays.style.height = span;
+        }
+
+        // -- Input ---------------------------------------------------------------------------------------------------
+
+        private void OnKeyDown(KeyDownEvent evt)
+        {
+            if (ViewModel.IsAdPlaying || isCelebrating) {
+                evt.StopImmediatePropagation();
+                return;
+            }
+
+            switch (evt.keyCode) {
+                case KeyCode.Escape:
+                    evt.StopImmediatePropagation();
+                    if (isConfirmOpen) {
+                        CloseConfirm(true);
+                    }
+                    else {
+                        Back();
+                    }
+
+                    break;
+                case KeyCode.Space or KeyCode.Return or KeyCode.KeypadEnter:
+                    // The keys mean the bottom button (or the window's), never a press of whichever card has the focus.
+                    // A repeat of the result's key reaches us before the fade-in ends and is dropped by IsShown.
+                    evt.StopImmediatePropagation();
+                    if (isConfirmOpen) {
+                        Confirm();
+                    }
+                    else {
+                        PressAction();
+                    }
+
+                    break;
+                case KeyCode.X when isConfirmOpen && confirmCar != null && ViewModel.IsAdCar(confirmCar.Id):
+                    evt.StopImmediatePropagation();
+                    Confirm();
+                    break;
+                case KeyCode.Alpha1 or KeyCode.Keypad1:
+                    evt.StopImmediatePropagation();
+                    PressTab(Tab.Cars);
+                    break;
+                case KeyCode.Alpha2 or KeyCode.Keypad2:
+                    evt.StopImmediatePropagation();
+                    PressTab(Tab.Hats);
+                    break;
+                case KeyCode.Alpha3 or KeyCode.Keypad3:
+                    evt.StopImmediatePropagation();
+                    PressTab(Tab.Paint);
+                    break;
+            }
+        }
+
+        private void OnCancel(NavigationCancelEvent evt)
+        {
+            evt.StopPropagation();
+            if (isConfirmOpen) {
+                CloseConfirm(true);
+            }
+            else {
+                Back();
+            }
+        }
+
+        private void OpenSettings()
+        {
+            if (IsBusy || isConfirmOpen) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            ViewModel.OpenSettings(lifetime.Token).Forget();
+        }
+
+        private void Back()
+        {
+            if (IsBusy || isConfirmOpen) {
+                return;
+            }
+
+            isClosing = true;
+            audioService.PlayUiClick();
+            ViewModel.Back();
+        }
+
+        // -- Animation -----------------------------------------------------------------------------------------------
+
+        private void Refuse(VisualElement element)
+        {
+            actionTween.Play(ShakeDuration, t => {
+                element.style.translate = new Translate(28f * Mathf.Sin(t * Mathf.PI * 6f) * (1f - t), 0f);
+            });
+        }
+
+        private void Bounce(VisualElement element)
+        {
+            var tween = element == action ? actionTween : cardTween;
+            tween.Play(BounceDuration, t => {
+                element.style.translate = new Translate(0f, -22f * Mathf.Sin(Mathf.PI * t));
+            });
+        }
+
+        /// <summary>The car answers every change of car, paint or hat with a little hop on its pedestal.</summary>
+        private void PopHero()
+        {
+            heroTween.Play(PopDuration, t => {
+                var hop = Mathf.Sin(Mathf.PI * t);
+                hero.style.scale = new Scale(new Vector3(1f + 0.06f * hop, 1f + 0.06f * hop, 1f));
+                hero.style.translate = new Translate(0f, -18f * hop);
+            });
+        }
+
+        private void BumpCoins(bool isShort)
+        {
+            coinTween.Stop();
+            coinsPill.EnableInClassList("garage__coins--short", isShort);
+            coinTween.Play(isShort ? ShakeDuration : PopDuration, t => {
+                if (isShort) {
+                    coinsPill.style.translate = new Translate(16f * Mathf.Sin(t * Mathf.PI * 6f) * (1f - t), 0f);
+                    coinsPill.style.scale = StyleKeyword.Null;
+                }
+                else {
+                    var bump = 1f + 0.18f * Mathf.Sin(Mathf.PI * t);
+                    coinsPill.style.scale = new Scale(new Vector3(bump, bump, 1f));
+                    coinsPill.style.translate = StyleKeyword.Null;
+                }
+
+                if (t >= 1f) {
+                    coinsPill.RemoveFromClassList("garage__coins--short");
+                }
+            });
+        }
+
+        /// <summary>A floating line over the bottom button: why nothing happened. Pops up, rises and fades.</summary>
+        private void ShowToast(VisualElement over, string message, bool withCoin, bool isGold)
+        {
+            toastTween.Stop();
+            foreach (var label in toastLabels) {
+                label.text = message;
+            }
+
+            toastCoin.style.display = withCoin ? DisplayStyle.Flex : DisplayStyle.None;
+            toast.EnableInClassList("garage__toast--gold", isGold);
+            var bound = toast.parent.WorldToLocal(over.worldBound);
+            toast.style.left = bound.xMin;
+            toast.style.width = bound.width;
+            toast.style.top = bound.yMin - 150f;
+            toast.style.display = DisplayStyle.Flex;
+            toastTween.Play(ToastDuration, t => {
+                var pop = t < 0.15f ? Mathf.Lerp(0.4f, 1.1f, t / 0.15f) : Mathf.Lerp(1.1f, 1f, Mathf.Clamp01((t - 0.15f) / 0.1f));
+                toast.style.scale = new Scale(new Vector3(pop, pop, 1f));
+                toast.style.translate = new Translate(0f, -90f * (1f - (1f - t) * (1f - t)));
+                toast.style.opacity = t < 0.7f ? 1f : 1f - (t - 0.7f) / 0.3f;
+                if (t >= 1f) {
+                    toast.style.display = DisplayStyle.None;
+                }
+            });
+        }
+
+        private void StopAnimations()
+        {
+            cardTween.Stop();
+            heroTween.Stop();
+            toastTween.Stop();
+            coinTween.Stop();
+            actionTween.Stop();
+        }
+
+        // -- Pieces --------------------------------------------------------------------------------------------------
+
+        /// <summary>A button drawn as the menu's stickers: the navy drop its own layer behind the face.</summary>
+        private static Button Sticker(string className, Action pressed)
+        {
+            var button = new Button(pressed);
+            button.RemoveFromClassList(Button.ussClassName);
+            button.AddToClassList("menu__sticker");
+            button.AddToClassList(className);
+            button.focusable = false;
+            button.Add(Element("menu__drop"));
+            button.Add(Element("menu__face"));
+            return button;
+        }
+
+        private VisualElement KeyCap(string key, string className, Func<string> live = null)
+        {
+            var cap = Element("key");
+            cap.AddToClassList(className);
+            var keyText = Text("key__text");
+            if (live != null) {
+                text.Set(keyText, live);
+            }
+            else {
+                keyText.text = key;
+            }
+
+            cap.Add(keyText);
+            return cap;
+        }
+
+        private static VisualElement Gear()
+        {
+            var gear = Element("gear");
+            gear.Add(Element("gear__tooth"));
+            foreach (var turn in new[] { "gear__tooth--45", "gear__tooth--90", "gear__tooth--135" }) {
+                var tooth = Element("gear__tooth");
+                tooth.AddToClassList(turn);
+                gear.Add(tooth);
+            }
+
+            var hub = Element("gear__hub");
+            hub.Add(Element("gear__hole"));
+            gear.Add(hub);
+            return gear;
+        }
+
+        private static VisualElement Icon(string className, Action<MeshGenerationContext> draw)
+        {
+            var icon = Element(className);
+            icon.generateVisualContent += draw;
+            return icon;
+        }
+
+        private static VisualElement Element(string className)
+        {
+            var element = new VisualElement { pickingMode = PickingMode.Ignore };
+            if (className != null) {
+                element.AddToClassList(className);
+            }
+
+            return element;
+        }
+
+        private static Label Text(string className)
+        {
+            var label = new Label { pickingMode = PickingMode.Ignore };
+            label.AddToClassList(className);
+            return label;
+        }
+
+        // The back arrow: a navy arrow pointing left, round at its ends.
+        private static void DrawBack(MeshGenerationContext context)
+        {
+            var r = context.visualElement.contentRect;
+            var p = context.painter2D;
+            p.strokeColor = new Color32(0x1d, 0x2b, 0x4f, 0xff);
+            p.lineWidth = r.width * 0.16f;
+            p.lineCap = LineCap.Round;
+            p.lineJoin = LineJoin.Round;
+            p.BeginPath();
+            p.MoveTo(new Vector2(r.x + r.width * 0.86f, r.center.y));
+            p.LineTo(new Vector2(r.x + r.width * 0.16f, r.center.y));
+            p.MoveTo(new Vector2(r.x + r.width * 0.46f, r.y + r.height * 0.18f));
+            p.LineTo(new Vector2(r.x + r.width * 0.16f, r.center.y));
+            p.LineTo(new Vector2(r.x + r.width * 0.46f, r.y + r.height * 0.82f));
+            p.Stroke();
+        }
+
+        // The padlock of a car its level has not opened, white on the navy of the badge and the button.
+        private static void DrawWhiteLock(MeshGenerationContext context)
+        {
+            var r = context.visualElement.contentRect;
+            var p = context.painter2D;
+            float X(float x) => r.x + x * r.width;
+            float Y(float y) => r.y + y * r.height;
+            p.strokeColor = Color.white;
+            p.lineWidth = r.width * 0.13f;
+            p.lineCap = LineCap.Round;
+            p.BeginPath();
+            p.MoveTo(new Vector2(X(0.3f), Y(0.48f)));
+            p.LineTo(new Vector2(X(0.3f), Y(0.32f)));
+            p.Arc(new Vector2(X(0.5f), Y(0.32f)), r.width * 0.2f, 180f, 360f);
+            p.LineTo(new Vector2(X(0.7f), Y(0.48f)));
+            p.Stroke();
+            p.fillColor = Color.white;
+            p.BeginPath();
+            p.MoveTo(new Vector2(X(0.14f), Y(0.44f)));
+            p.LineTo(new Vector2(X(0.86f), Y(0.44f)));
+            p.LineTo(new Vector2(X(0.86f), Y(0.96f)));
+            p.LineTo(new Vector2(X(0.14f), Y(0.96f)));
+            p.ClosePath();
+            p.Fill();
+            p.fillColor = new Color32(0xff, 0xc9, 0x3c, 0xff);
+            p.BeginPath();
+            p.Arc(new Vector2(X(0.5f), Y(0.68f)), r.width * 0.1f, 0f, 360f);
+            p.Fill();
+        }
+
+        // The arrow between the coins before and after a purchase.
+        private static void DrawArrow(MeshGenerationContext context)
+        {
+            var r = context.visualElement.contentRect;
+            var p = context.painter2D;
+            p.strokeColor = new Color32(0x1d, 0x2b, 0x4f, 0xff);
+            p.lineWidth = r.height * 0.15f;
+            p.lineCap = LineCap.Round;
+            p.lineJoin = LineJoin.Round;
+            p.BeginPath();
+            p.MoveTo(new Vector2(r.x + r.width * 0.1f, r.center.y));
+            p.LineTo(new Vector2(r.x + r.width * 0.85f, r.center.y));
+            p.MoveTo(new Vector2(r.x + r.width * 0.55f, r.y + r.height * 0.2f));
+            p.LineTo(new Vector2(r.x + r.width * 0.85f, r.center.y));
+            p.LineTo(new Vector2(r.x + r.width * 0.55f, r.y + r.height * 0.8f));
+            p.Stroke();
+        }
+
+        /// <summary>
+        /// One card of the panel, a car or a hat, drawn as a sticker: its picture, its name, and a badge on its corner
+        /// that says what it is to the player: a green tick on the chosen one, nothing on one they own, the price in
+        /// gold (grey when the coins are short), a lock and the level that opens it, or the video sign of an ad car.
         /// </summary>
         private sealed class Card
         {
+            public enum Badge
+            {
+                None,
+                Selected,
+                Price,
+                Dear,
+                Locked,
+                Ad,
+            }
+
             public readonly Button Button;
-            private readonly Label status;
+            private readonly VisualElement badge;
+            private readonly VisualElement tick;
             private readonly VisualElement coin;
             private readonly VisualElement padlock;
-            private readonly Label buy;
+            private readonly VisualElement play;
+            private readonly Label value;
 
             public Card(string name, VisualElement art, LiveText text, Func<string> title)
             {
-                Button = new Button { name = name };
-                Button.RemoveFromClassList(Button.ussClassName);
-                Button.AddToClassList("garage__card");
-                var frame = new VisualElement { pickingMode = PickingMode.Ignore };
-                frame.AddToClassList("garage__art");
+                Button = Sticker("garage__card", null);
+                Button.name = name;
+                var face = Button.Q<VisualElement>(className: "menu__face");
+                var frame = Element("garage__card-art");
                 frame.Add(art);
-                Button.Add(frame);
-                var label = new Label { pickingMode = PickingMode.Ignore };
+                face.Add(frame);
+                var label = Text("garage__card-name");
                 text.Set(label, title);
-                label.AddToClassList("garage__name");
-                Button.Add(label);
-                var tag = new VisualElement { pickingMode = PickingMode.Ignore };
-                tag.AddToClassList("pill");
-                tag.AddToClassList("garage__tag");
-                var check = new VisualElement { pickingMode = PickingMode.Ignore };
-                check.AddToClassList("garage__check");
-                tag.Add(check);
-                padlock = Padlock();
-                tag.Add(padlock);
-                buy = new Label { pickingMode = PickingMode.Ignore };
-                buy.AddToClassList("garage__buy-text");
-                text.Set(buy, () => Strings.Get("result.buy"));
-                tag.Add(buy);
+                face.Add(label);
+                badge = Element("garage__badge");
+                tick = Element("garage__badge-tick");
+                badge.Add(tick);
                 coin = RoundOverMeta.Coin();
-                coin.AddToClassList("garage__price-coin");
-                tag.Add(coin);
-                status = new Label { pickingMode = PickingMode.Ignore };
-                status.AddToClassList("garage__tag-text");
-                tag.Add(status);
-                Button.Add(tag);
+                coin.AddToClassList("garage__badge-coin");
+                badge.Add(coin);
+                padlock = Icon("garage__badge-lock", DrawWhiteLock);
+                badge.Add(padlock);
+                play = RoundOverRewards.PlaySign();
+                play.AddToClassList("garage__badge-play");
+                badge.Add(play);
+                value = Text("garage__badge-text");
+                badge.Add(value);
+                Button.Add(badge);
             }
 
-            public void SetState(bool selected, bool locked, bool forSale, bool dear, string label,
-                bool previewed = false, bool buyable = false)
+            public void Set(Badge kind, string label, bool isSelected, bool isLocked, bool isPreviewed)
             {
-                Button.EnableInClassList(PreviewedClass, previewed);
-                Button.EnableInClassList(BuyClass, buyable);
-                Button.EnableInClassList(SelectedClass, selected);
-                Button.EnableInClassList(LockedClass, locked);
-                Button.EnableInClassList(PriceClass, forSale && !selected);
-                Button.EnableInClassList(DearClass, dear && !selected);
-                coin.style.display = forSale && !selected ? DisplayStyle.Flex : DisplayStyle.None;
-                padlock.style.display = locked ? DisplayStyle.Flex : DisplayStyle.None;
-                status.text = label;
-            }
+                Button.EnableInClassList("garage__card--selected", isSelected);
+                Button.EnableInClassList("garage__card--locked", isLocked);
+                Button.EnableInClassList("garage__card--previewed", isPreviewed);
+                foreach (var each in new[] { "selected", "price", "dear", "locked", "ad" }) {
+                    badge.RemoveFromClassList($"garage__badge--{each}");
+                }
 
-            /// <summary>A small padlock of elements: a navy shackle over a gold body.</summary>
-            private static VisualElement Padlock()
-            {
-                var root = new VisualElement { pickingMode = PickingMode.Ignore };
-                root.AddToClassList("garage__lock");
-                var shackle = new VisualElement { pickingMode = PickingMode.Ignore };
-                shackle.AddToClassList("garage__lock-shackle");
-                var lockBody = new VisualElement { pickingMode = PickingMode.Ignore };
-                lockBody.AddToClassList("garage__lock-body");
-                root.Add(shackle);
-                root.Add(lockBody);
-                return root;
+                if (kind != Badge.None) {
+                    badge.AddToClassList($"garage__badge--{kind.ToString().ToLowerInvariant()}");
+                }
+
+                Show(badge, kind != Badge.None);
+                Show(tick, kind == Badge.Selected);
+                Show(coin, kind is Badge.Price or Badge.Dear);
+                Show(padlock, kind == Badge.Locked);
+                Show(play, kind == Badge.Ad);
+                Show(value, kind is Badge.Price or Badge.Dear or Badge.Locked);
+                value.text = label ?? "";
             }
         }
 

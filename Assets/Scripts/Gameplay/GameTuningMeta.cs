@@ -69,7 +69,15 @@ namespace ToyCarArena.Gameplay
                 new("monster-truck", 300),
             };
 
+            [Tooltip("Cars opened by watching a rewarded ad in the garage instead of by a level or coins: open to everyone " +
+                "from the start (their catalog level is 1), owned once the ad has played")]
+            [SerializeField]
+            private string[] adCars = { "buggy" };
+
             public int RoundCoins => roundCoins;
+
+            /// <summary>Whether the car is opened by a rewarded ad rather than its level or coins.</summary>
+            public bool IsAdCar(string carId) => System.Array.IndexOf(adCars, carId) >= 0;
             public int KnockoutCoins => knockoutCoins;
             public int WinCoins => winCoins;
 
