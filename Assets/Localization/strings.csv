@@ -77,7 +77,6 @@ result.level_up,Sticker when the XP bar of the result reaches the next level,LEV
 result.level_title,"Title of the level reward popup, e.g. LEVEL 3!",LEVEL {0}!,NIVEAU {0} !,LIVELLO {0}!,LEVEL {0}!,¡NIVEL {0}!,SEVİYE {0}!,NÍVEL {0}!,УРОВЕНЬ {0}!
 result.new_car_tag,Tag on the level reward popup for a car,NEW CAR!,NOUVELLE VOITURE !,NUOVA AUTO!,NEUES AUTO!,¡NUEVO COCHE!,YENİ ARABA!,CARRO NOVO!,НОВАЯ МАШИНКА!
 result.new_arena_tag,Tag on the level reward popup for an arena,NEW ARENA!,NOUVELLE ARÈNE !,NUOVA ARENA!,NEUE ARENA!,¡NUEVA ARENA!,YENİ ARENA!,NOVA ARENA!,НОВАЯ АРЕНА!
-result.new_rank_tag,Tag on the level reward popup for a rank,NEW RANK!,NOUVEAU RANG !,NUOVO GRADO!,NEUER RANG!,¡NUEVO RANGO!,YENİ RÜTBE!,NOVO RANKING!,НОВЫЙ РАНГ!
 result.arena_next,Under the arena on the level reward popup,COMING UP IN THE ARENAS,BIENTÔT DANS LES ARÈNES,PRESTO TRA LE ARENE,BALD IN DEN ARENEN,PRONTO EN LAS ARENAS,YAKINDA ARENALARDA,EM BREVE NAS ARENAS,СКОРО НА АРЕНАХ
 result.tap_continue,Under the level reward popup on a touch screen,TAP TO CONTINUE,TOUCHE POUR CONTINUER,TOCCA PER CONTINUARE,TIPPEN ZUM WEITERMACHEN,TOCA PARA SEGUIR,DEVAM İÇİN DOKUN,TOQUE PARA CONTINUAR,"НАЖМИ, ЧТОБЫ ПРОДОЛЖИТЬ"
 result.click_continue,Under the level reward popup on a desktop,CLICK TO CONTINUE,CLIQUE POUR CONTINUER,CLICCA PER CONTINUARE,KLICKEN ZUM WEITERMACHEN,HAZ CLIC PARA SEGUIR,DEVAM İÇİN TIKLA,CLIQUE PARA CONTINUAR,"КЛИКНИ, ЧТОБЫ ПРОДОЛЖИТЬ"
@@ -172,6 +171,7 @@ result.reward_coins,Name on the coins sticker of the result,COINS,PIÈCES,MONETE
 result.claim_x2,Button that watches a rewarded ad to double the round's XP and coins; short,CLAIM ×2,RÉCUPÉRER ×2,RISCATTA ×2,×2 HOLEN,RECLAMAR ×2,×2 AL,RESGATAR ×2,ЗАБРАТЬ ×2
 result.ad,Small tag on the button that plays an ad,AD,PUB,AD,WERBUNG,ANUNCIO,REKLAM,ANÚNCIO,РЕКЛАМА
 result.doubled,Shown where the double button was once the ad paid,DOUBLED!,DOUBLÉ !,RADDOPPIATO!,VERDOPPELT!,¡DUPLICADO!,İKİ KATI!,DOBRADO!,УДВОЕНО!
+result.boost_stamp,"Tag on the XP sticker of a round the XP boost paid for, {0} its multiplier (e.g. ×2 BOOST); short",×{0} BOOST,×{0} BOOST,×{0} BOOST,×{0} BOOST,×{0} BOOST,×{0} BOOST,×{0} BOOST,×{0} БУСТ
 special.mega.name,Special round name: every car is giant (lobby tag and over the countdown),MEGA ROUND!,MANCHE MÉGA !,ROUND MEGA!,MEGA-RUNDE!,¡RONDA MEGA!,MEGA TUR!,RODADA MEGA!,МЕГА-РАУНД!
 special.mega.hint,Special round rule in one line,EVERYONE IS HUGE!,TOUT LE MONDE EST ÉNORME !,SIETE TUTTI GIGANTI!,ALLE SIND RIESIG!,¡TODOS SON GIGANTES!,HERKES DEV GİBİ!,TODO MUNDO ESTÁ GIGANTE!,ВСЕ ОГРОМНЫЕ!
 special.hot-potato.name,Special round name: a bomb passes between cars on a bump,HOT POTATO!,PATATE CHAUDE !,PATATA BOLLENTE!,HEISSE KARTOFFEL!,¡PAPA CALIENTE!,SICAK PATATES!,BATATA QUENTE!,ГОРЯЧАЯ БОМБА!
@@ -195,3 +195,23 @@ menu.cup_hint,What the cup mode will be,THREE ROUNDS FOR ONE CUP,TROIS MANCHES P
 menu.survival,Game mode coming later: waves of bots,SURVIVAL,SURVIE,SOPRAVVIVENZA,ÜBERLEBEN,SUPERVIVENCIA,HAYATTA KAL,SOBREVIVÊNCIA,ВЫЖИВАНИЕ
 menu.survival_hint,What the survival mode will be,WAVES OF BOTS. HOW LONG CAN YOU LAST?,DES VAGUES DE BOTS. TU TIENS COMBIEN ?,ONDATE DI BOT. QUANTO RESISTI?,BOT-WELLEN. WIE LANGE HÄLTST DU DURCH?,OLEADAS DE BOTS. ¿CUÁNTO AGUANTAS?,BOT DALGALARI. NE KADAR DAYANIRSIN?,ONDAS DE BOTS. QUANTO VOCÊ AGUENTA?,ВОЛНЫ БОТОВ. СКОЛЬКО ПРОДЕРЖИШЬСЯ?
 result.home,"Round button on the result that goes back to the main menu; max ~6 chars",HOME,MENU,MENU,MENÜ,MENÚ,MENÜ,MENU,МЕНЮ
+menu.new_league,"Title of the popup when the player reaches a new league (a rank: bronze, silver, gold, legend); short",NEW LEAGUE!,NOUVELLE LIGUE !,NUOVA LEGA!,NEUE LIGA!,¡NUEVA LIGA!,YENİ LİG!,NOVA LIGA!,НОВАЯ ЛИГА!
+menu.league_name,"A league's full name, {0} is the rank name (e.g. SILVER LEAGUE)",{0} LEAGUE,LIGUE {0},LEGA {0},LIGA {0},LIGA {0},{0} LİGİ,LIGA {0},ЛИГА {0}
+menu.leagues,Title of the screen that lists all leagues; short,LEAGUES,LIGUES,LEGHE,LIGEN,LIGAS,LİGLER,LIGAS,ЛИГИ
+menu.you_unlocked,Small caption over what a new league unlocked,YOU UNLOCKED,DÉBLOQUÉ,SBLOCCATO,FREIGESCHALTET,DESBLOQUEADO,AÇILDI,DESBLOQUEADO,ОТКРЫТО
+menu.unlock_background,"Tile under YOU UNLOCKED: the menu's new background colour; max ~11 chars",BACKGROUND,FOND,SFONDO,HINTERGRUND,FONDO,ARKA PLAN,FUNDO,ФОН
+menu.unlock_plinth,"Tile under YOU UNLOCKED: the new colour of the pedestal the car stands on; max ~11 chars",PLINTH,SOCLE,PODIO,SOCKEL,PEDESTAL,KAİDE,PEDESTAL,ПОДИУМ
+menu.unlock_badge,"Tile under YOU UNLOCKED: the new frame of the level badge; max ~11 chars",BADGE FRAME,CADRE,CORNICE,RAHMEN,MARCO,ÇERÇEVE,MOLDURA,РАМКА
+menu.next_league,"The next league to reach, {0} the rank name, {1} its level (e.g. NEXT: GOLD AT LEVEL 50)",NEXT: {0} AT LEVEL {1},SUIVANTE : {0} AU NIVEAU {1},PROSSIMA: {0} AL LIVELLO {1},NÄCHSTE: {0} AB LEVEL {1},SIGUIENTE: {0} EN NIVEL {1},SONRAKİ: SEVİYE {1} İLE {0},PRÓXIMA: {0} NO NÍVEL {1},ДАЛЬШЕ: {0} НА УРОВНЕ {1}
+menu.top_league,In place of the next league when the player is in the last one,TOP LEAGUE!,LIGUE SUPRÊME !,LEGA MASSIMA!,TOP-LIGA!,¡LIGA MÁXIMA!,EN ÜST LİG!,LIGA MÁXIMA!,ВЫСШАЯ ЛИГА!
+menu.from_level,"Under a league's name in the list: the level it starts at, e.g. FROM LVL 25; short",FROM LVL {0},DÈS NIV. {0},DAL LIV. {0},AB LVL {0},DESDE NIV. {0},SV. {0} İLE,DESDE NÍV. {0},С УР. {0}
+menu.league_at,"Right end of the progress bar to the next league, {0} the rank name, {1} its level (e.g. GOLD AT 50); short",{0} AT {1},{0} AU {1},{0} AL {1},{0} AB {1},{0} EN {1},{0}: SV. {1},{0} NO {1},{0} НА {1}
+menu.climb,Hint at the bottom of the leagues list,LEVEL UP TO CLIMB THE LEAGUES,MONTE DE NIVEAU POUR GRIMPER DE LIGUE,SALI DI LIVELLO PER SCALARE LE LEGHE,STEIG IM LEVEL FÜR DIE NÄCHSTE LIGA,SUBE DE NIVEL PARA ASCENDER DE LIGA,LİGLERDE YÜKSELMEK İÇİN SEVİYE ATLA,SUBA DE NÍVEL PARA SUBIR DE LIGA,"ПОВЫШАЙ УРОВЕНЬ, ЧТОБЫ РАСТИ В ЛИГАХ"
+menu.xp_boost,"Main menu tile that offers double XP for the next matches for a rewarded ad; max ~10 chars",XP BOOST,BOOST XP,BOOST XP,XP-BOOST,BOOST XP,XP BOOST,BOOST XP,БУСТ ОПЫТА
+menu.boost_title,Title of the popup that offers the XP boost,XP BOOST!,BOOST XP !,BOOST XP!,XP-BOOST!,¡BOOST XP!,XP BOOST!,BOOST XP!,БУСТ ОПЫТА!
+menu.boost_xp,"The XP boost, {0} its multiplier (e.g. ×2 XP); also the tag on the XP bar while it runs; short",×{0} XP,×{0} XP,×{0} XP,×{0} XP,×{0} XP,×{0} XP,×{0} XP,×{0} ОПЫТА
+menu.boost_matches,"How long the XP boost lasts, {0} the number of matches (5 or more); keep it right for any number",FOR YOUR NEXT {0} MATCHES,POUR TES {0} PROCHAINS MATCHS,PER LE PROSSIME {0} PARTITE,FÜR DEINE NÄCHSTEN {0} MATCHES,PARA TUS PRÓXIMAS {0} PARTIDAS,SONRAKİ {0} MAÇ İÇİN,NAS PRÓXIMAS {0} PARTIDAS,СЛЕДУЮЩИЕ МАТЧИ: {0}
+menu.boost_hint,Under the XP boost offer: the ad plays only on WATCH,WATCH A SHORT AD TO TURN IT ON,REGARDE UNE COURTE PUB POUR L'ACTIVER,GUARDA UN BREVE ANNUNCIO PER ATTIVARLO,"SIEH DIR KURZ WERBUNG AN, UM IHN ZU STARTEN",MIRA UN ANUNCIO CORTO PARA ACTIVARLO,AÇMAK İÇİN KISA BİR REKLAM İZLE,ASSISTA A UM ANÚNCIO CURTO PARA ATIVAR,"ПОСМОТРИ КОРОТКУЮ РЕКЛАМУ, ЧТОБЫ ВКЛЮЧИТЬ"
+menu.watch,Button that plays the rewarded ad of the XP boost; short,WATCH,REGARDER,GUARDA,ANSEHEN,VER,İZLE,ASSISTIR,СМОТРЕТЬ
+menu.no_thanks,Button that turns the XP boost offer down; short,NO THANKS,NON MERCI,NO GRAZIE,NEIN DANKE,"NO, GRACIAS",HAYIR,"NÃO, VALEU","НЕТ, СПАСИБО"
+menu.boost_left,"On the XP boost tile while it runs: the matches it still lasts, {0} a number from 1; max ~8 chars; keep it right for any number",{0} LEFT,ENCORE {0},ANCORA {0},NOCH {0},{0} MÁS,{0} KALDI,MAIS {0},ЕЩЁ {0}

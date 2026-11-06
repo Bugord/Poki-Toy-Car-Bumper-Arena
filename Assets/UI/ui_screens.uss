@@ -2347,7 +2347,7 @@
     margin: 0;
     padding: 0;
     font-size: 64px;
-    color: var(--green-shade);
+    color: var(--xp-shade);
     -unity-text-align: middle-left;
 }
 
@@ -2660,7 +2660,7 @@
 .track__fill {
     width: 0;
     height: 100%;
-    background-color: var(--gold);
+    background-color: var(--xp);
 }
 
 /* The first step of the XP: a plain bar from the level to the next, laid over the still empty track, the two levels on
@@ -2694,7 +2694,7 @@
 .xp-bar__fill {
     width: 0;
     height: 100%;
-    background-color: var(--gold);
+    background-color: var(--xp);
 }
 
 .xp-bar__level-up {
@@ -5485,7 +5485,7 @@
     top: 12px;
     width: 24px;
     height: 24px;
-    background-color: var(--green);
+    background-color: var(--xp);
 }
 
 .reward--coins .reward__icon {
@@ -5514,7 +5514,7 @@
 }
 
 .reward--xp .reward__value-text {
-    color: var(--green);
+    color: var(--xp);
 }
 
 .reward--coins .reward__value-text {
@@ -5537,6 +5537,27 @@
     -unity-text-outline-width: 9px;
     -unity-text-outline-color: var(--navy);
     text-shadow: 0 5px 0 rgb(29, 43, 79);
+}
+
+/* x2 BOOST hanging on the XP sticker's bottom edge when the XP boost paid for the round: blue, as XP is. The top
+   corners hold the star and name and CLAIM x2's own x2, so it keeps clear of both. */
+.reward__boost {
+    position: absolute;
+    bottom: -36px;
+    left: 50%;
+    translate: -50% 0;
+    padding: 0 14px 3px 14px;
+    border-width: 6px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--xp);
+    rotate: -4deg;
+}
+
+.reward__boost-label-text {
+    font-size: 28px;
+    -unity-text-outline-width: 7px;
+    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
 }
 
 /* CLAIM x2: the purple sticker button with a video sign and an AD tag, as rewarded ads are marked. */
@@ -5801,7 +5822,7 @@
 }
 
 .mission--done .mission__progress {
-    color: var(--green-shade);
+    color: var(--xp-shade);
 }
 
 /* With the missions over it, the level card and the podium give up a little height, so a 16:9 portrait still fits. */

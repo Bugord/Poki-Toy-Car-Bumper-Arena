@@ -14,6 +14,7 @@
      button's face shade; muted: captions and secondary text
    - red: the last seconds, a knock-out; gold: a win, first place, the stopwatch; silver, bronze: second and third place
    - green/green-shade/green-hover: the primary button
+   - xp/xp-shade: XP everywhere (its bars, its star, +XP numbers, the XP boost); ads stay purple, coins gold
    - confetti: red, blue, green, orange, purple and gold
    - car-*: the cars' bodies (car-color--N in ui_screens), in the order of CarLook's swatches on the car prefab: green,
      red, blue, yellow, purple, orange, pink and dark. IDs 0..7 are independent of car indices; CarColor.TintOf mirrors
@@ -41,6 +42,8 @@
     --blue: #38b6ff;
     --orange: #ff9f1c;
     --purple: #b06cff;
+    --xp: #3d8bff;
+    --xp-shade: #2563d9;
     --name-backdrop: rgba(29, 43, 79, 0.65);
 
     --car-green: #3fa87a;

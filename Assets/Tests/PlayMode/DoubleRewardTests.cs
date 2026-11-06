@@ -115,6 +115,65 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(platform.Events, Does.Contain(("ad", "double", "unavailable")));
         });
 
+        [UnityTest]
+        public IEnumerator TheMenusBoostAdTurnsTheBoostOn() => UniTask.ToCoroutine(async () => {
+            platform.Rewards = true;
+            var menu = Menu();
+            Assert.That(menu.CanOfferBoost, Is.True);
+
+            Assert.That(await menu.WatchBoost(default), Is.True);
+            Assert.That(progress.BoostMatchesLeft, Is.EqualTo(tuning.Ads.BoostMatches));
+            Assert.That(menu.IsBoosted, Is.True);
+            Assert.That(menu.CanOfferBoost, Is.False, "a running boost offers no other");
+            Assert.That(Time.timeScale, Is.EqualTo(1f), "The game is held only while the ad plays.");
+            Assert.That(platform.Events, Does.Contain(("ad", "boost", "interact")));
+            Assert.That(platform.Events, Does.Contain(("ad", "boost", "granted")));
+            Assert.That(await menu.WatchBoost(default), Is.False);
+            Assert.That(platform.RewardedBreaks, Is.EqualTo(1));
+        });
+
+        [UnityTest]
+        public IEnumerator AMenuAdWithoutItsRewardGivesNoBoost() => UniTask.ToCoroutine(async () => {
+            platform.Rewards = false;
+            var menu = Menu();
+            Assert.That(await menu.WatchBoost(default), Is.False);
+            Assert.That(progress.IsBoosted, Is.False);
+            Assert.That(platform.Events, Does.Contain(("ad", "boost", "unavailable")));
+            Assert.That(menu.CanOfferBoost, Is.False, "the offer goes until the menu opens again");
+            Assert.That(Menu().CanOfferBoost, Is.True);
+        });
+
+        [Test]
+        public void BlockedAdsOfferNoBoostButShowARunningOne()
+        {
+            platform.IsAdBlocked = true;
+            Assert.That(Menu().CanOfferBoost, Is.False);
+            progress.StartBoost();
+            Assert.That(Menu().IsBoosted, Is.True);
+        }
+
+        [Test]
+        public void ABoostedRoundStampsItsXpAndSendsItsEvent()
+        {
+            progress.StartBoost();
+            var model = Result(out _, out _);
+            Assert.That(model.XpGain.BoostXp, Is.GreaterThan(0));
+            Assert.That(model.RoundXp, Is.EqualTo(model.XpGain.Total - model.XpGain.MissionXp),
+                "CLAIM ×2 doubles what the sticker shows, the boost's share with it");
+
+            var result = new RoundResult(RoundOutcome.Out, 3, 4, 40f, 0, RoundResult.Nobody, FallCause.Drive, false,
+                false);
+            platform.MeasureMeta(2, new RoundRecord(result, 1, 2, false, false).WithXp(progress.Record(result)), 0);
+            Assert.That(platform.Events, Does.Contain(("result", "boosted-r2", "xp-boost")));
+            progress.SetBoost(0);
+            platform.Events.Clear();
+            platform.MeasureMeta(3, new RoundRecord(result, 1, 2, false, false).WithXp(progress.Record(result)), 0);
+            Assert.That(platform.Events, Has.No.Member(("result", "boosted-r3", "xp-boost")));
+        }
+
+        private MenuViewModel Menu() => new(progress, wallet, new MissionTracker(storage, tuning), catalog, arenas, tuning,
+            null, platform, null);
+
         [Test]
         public void BlockedAdsOfferNoDouble()
         {

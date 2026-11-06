@@ -139,6 +139,7 @@ namespace ToyCarArena.App
 
         private const string AdCategory = "ad";
         private const string DoubleReward = "double";
+        private const string XpBoost = "boost";
 
         /// <summary>
         /// A content bundle (<see cref="ContentBundles"/>) that never came (<c>failed</c>), or that a round or result
@@ -195,11 +196,18 @@ namespace ToyCarArena.App
         }
 
         /// <summary>
-        /// A press in the main menu: <c>menu / play, garage, missions, mode / interact</c> (garage both from its tile and
-        /// from the car).
+        /// A press in the main menu: <c>menu / play, garage, missions, mode, leagues / interact</c> (garage both from its
+        /// tile and from the car, leagues from the level).
         /// </summary>
         public static void MeasureMenuPressed(this IGamePlatform platform, string what) =>
             platform.MeasureInteract(MenuCategory, what);
+
+        /// <summary>
+        /// The menu greeted a new league with its popup: <c>menu / league-bronze, silver, gold, legend / visible</c>.
+        /// The leagues list opening is <c>menu / leagues / interact</c> (<see cref="MeasureMenuPressed"/>).
+        /// </summary>
+        public static void MeasureLeagueShown(this IGamePlatform platform, string league) =>
+            platform.MeasureVisible(MenuCategory, "league-" + league);
 
         /// <summary><c>result / home / visible</c> on every result, <c>interact</c> when HOME is pressed.</summary>
         public static void MeasureHomeShown(this IGamePlatform platform) => platform.MeasureVisible(ResultCategory, "home");
@@ -227,6 +235,21 @@ namespace ToyCarArena.App
         /// </summary>
         public static void MeasureDoubleEnded(this IGamePlatform platform, string how) =>
             platform.Measure(AdCategory, DoubleReward, how);
+
+        /// <summary>
+        /// XP BOOST in the main menu: <c>ad / boost / visible</c> each time the menu shows its offer, <c>interact</c> on
+        /// WATCH in its popup, then how the rewarded ad ended, as for CLAIM ×2 (<see cref="MeasureDoubleEnded"/>):
+        /// granted, unavailable or dismissed. Opening the popup and NO THANKS are <c>menu / boost, boost-no /
+        /// interact</c> (<see cref="MeasureMenuPressed"/>).
+        /// </summary>
+        public static void MeasureBoostShown(this IGamePlatform platform) =>
+            platform.MeasureVisible(AdCategory, XpBoost);
+
+        public static void MeasureBoostPressed(this IGamePlatform platform) =>
+            platform.MeasureInteract(AdCategory, XpBoost);
+
+        public static void MeasureBoostEnded(this IGamePlatform platform, string how) =>
+            platform.Measure(AdCategory, XpBoost, how);
 
         public static void MeasureScoreboardShown(this IGamePlatform platform) =>
             platform.Measure("scoreboard", "shown", "visible");
@@ -512,8 +535,9 @@ namespace ToyCarArena.App
             $"again-{GameEvent.Clean(outcome.ToString())}-{(streak.IsLost ? "lost" : streak.IsStreak ? "streak" : "nostreak")}-{RoundTag(round)}";
 
         /// <summary>
-        /// What a decided round did for the missions and the streak (<see cref="RoundRecord.Missions"/>,
-        /// <see cref="RoundRecord.Streak"/>), from the saved record.
+        /// What a decided round did for the missions, the streak and the XP boost (<see cref="RoundRecord.Missions"/>,
+        /// <see cref="RoundRecord.Streak"/>, <see cref="XpGain.BoostXp"/>), from the saved record:
+        /// <c>result / boosted-rR / xp-boost</c> for a boosted round.
         /// </summary>
         public static void MeasureMeta(this IGamePlatform platform, int round, RoundRecord record, int missionsDone)
         {
@@ -533,6 +557,10 @@ namespace ToyCarArena.App
                 platform.Measure(ResultCategory, $"streak-lost-{tag}", "streak");
             }
 
+            // A round the XP boost paid for: how many rounds the bought boosts reach, against the boosts granted.
+            if (record.XpGain.BoostXp > 0) {
+                platform.Measure(ResultCategory, $"boosted-{tag}", "xp-boost");
+            }
         }
 
         public static void MeasureMissionsShown(this IGamePlatform platform) =>

@@ -444,11 +444,7 @@ namespace ToyCarArena.UI
             }
 
             // A new arena has no popup: the lobby names it with NEW before its round, and the track shows it ahead.
-            if (PlayerRank.TierOf(level) > PlayerRank.TierOf(level - 1)) {
-                var badge = HudView.CreateLevelBadge(level, "level-badge--big");
-                await ShowReward(LevelTitle(level), Strings.Get("result.new_rank_tag"), PlayerRank.NameOf(level), null,
-                    badge, token);
-            }
+            // A new rank has none either: it is a league now, and the main menu greets it with NEW LEAGUE!.
 
             rewardsShownTo = level;
         }

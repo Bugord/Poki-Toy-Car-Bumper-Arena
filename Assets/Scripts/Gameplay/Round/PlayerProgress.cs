@@ -18,12 +18,15 @@ namespace ToyCarArena.Gameplay.Round
         private const string ColorKey = "car_color";
         private const string OwnedKey = "cars_owned";
         private const string GarageSeenKey = "garage_seen_level";
+        private const string LeagueSeenKey = "league_seen";
+        private const string BoostKey = "xp_boost";
 
         public event Action<int> ColorChanged;
 
         private readonly IKeyValueStorage storage;
         private readonly GameTuning.ProgressSettings settings;
         private readonly GameTuning.CoinSettings coins;
+        private readonly GameTuning.AdSettings ads;
         private readonly CarCatalog catalog;
         // The cap of the last recorded result, for the ad's bonus on it (CLAIM ×2): one level a result.
         private int resultCap = int.MaxValue;
@@ -33,6 +36,7 @@ namespace ToyCarArena.Gameplay.Round
             this.storage = storage;
             this.settings = tuning.Progress;
             this.coins = tuning.Coins;
+            this.ads = tuning.Ads;
             this.catalog = catalog;
 
             if (settings.LevelXp == null || settings.LevelXp.Length == 0) {
@@ -84,6 +88,26 @@ namespace ToyCarArena.Gameplay.Round
 
         /// <summary>The player opened the garage: the cars their level has opened so far are no longer new.</summary>
         public void MarkGarageSeen() => storage.SetInt(GarageSeenKey, Level);
+
+        /// <summary>
+        /// The highest league (a rank tier, 0 rookie) the menu has greeted with its NEW LEAGUE! popup. A player from
+        /// before the leagues has none: the first menu in bronze or higher greets the league they are in, once.
+        /// </summary>
+        public int SeenLeague => Math.Max(0, storage.GetInt(LeagueSeenKey));
+
+        public void MarkLeagueSeen(int league) => storage.SetInt(LeagueSeenKey, Math.Max(league, SeenLeague));
+
+        /// <summary>
+        /// The matches the XP boost still runs for (<see cref="StartBoost"/>): each one recorded multiplies its own XP
+        /// by <see cref="GameTuning.AdSettings.BoostMultiplier"/> and is not held to one level. Saved, so it outlives
+        /// the visit.
+        /// </summary>
+        public int BoostMatchesLeft => Math.Max(0, storage.GetInt(BoostKey));
+
+        public bool IsBoosted => BoostMatchesLeft > 0;
+
+        /// <summary>The ad paid for an XP boost: the next <see cref="GameTuning.AdSettings.BoostMatches"/> matches.</summary>
+        public void StartBoost() => storage.SetInt(BoostKey, Math.Max(BoostMatchesLeft, ads.BoostMatches));
 
         public int TotalXp => Math.Max(0, storage.GetInt(TotalKey));
         public int Level => At(TotalXp).Level;
@@ -188,7 +212,8 @@ namespace ToyCarArena.Gameplay.Round
 
         /// <summary>
         /// Saves a decided round's XP: its own (a streak round's multiplied, <paramref name="streakBonus"/> being the
-        /// streak's share of it) plus the XP of the missions it completed.
+        /// streak's share of it, and a boosted one's by the boost, which this round uses up one match of) plus the XP
+        /// of the missions it completed.
         /// </summary>
         public XpGain Record(RoundResult result, GameTuning.StreakSettings streakBonus = null, int missionXp = 0)
         {
@@ -199,14 +224,23 @@ namespace ToyCarArena.Gameplay.Round
             var winXp = result.Outcome == RoundOutcome.Won ? settings.WinXp : 0;
             var knockoutXp = result.RewardKnockouts * settings.KnockoutXp;
             var streakXp = streakBonus?.Bonus(roundXp + placeXp + winXp + knockoutXp) ?? 0;
-            // The ad's bonus on this result counts towards the same one level.
-            resultCap = CapAbove(before);
-            var totalAfter = Math.Min(resultCap,
-                checked(totalBefore + roundXp + placeXp + winXp + knockoutXp + streakXp + missionXp));
+            var boostLeft = BoostMatchesLeft;
+            var boostXp = boostLeft > 0
+                ? checked((roundXp + placeXp + winXp + knockoutXp + streakXp) * (Math.Max(1, ads.BoostMultiplier) - 1))
+                : 0;
+            if (boostLeft > 0) {
+                storage.SetInt(BoostKey, boostLeft - 1);
+            }
+
+            // The ad's bonus on this result counts towards the same one level; a boosted result, which the player
+            // watched an ad for, keeps all it earned.
+            resultCap = boostLeft > 0 ? int.MaxValue : CapAbove(before);
+            var totalAfter = (int)Math.Min(resultCap,
+                checked((long)totalBefore + roundXp + placeXp + winXp + knockoutXp + streakXp + boostXp + missionXp));
             var after = At(totalAfter);
             var unlocked = Save(before, after, totalAfter);
             return new XpGain(totalBefore, totalAfter, roundXp, placeXp, winXp, knockoutXp, before, after,
-                unlocked, streakXp, missionXp);
+                unlocked, streakXp, missionXp, boostXp);
         }
 
         /// <summary>
@@ -250,6 +284,9 @@ namespace ToyCarArena.Gameplay.Round
         /// Development commands edit the same key as real rounds, without leaving another source of progress behind.
         /// </summary>
         internal void SetXp(int total) => storage.SetInt(TotalKey, Math.Max(0, total));
+
+        /// <summary>The dev console and tests: sets the matches the XP boost runs for, 0 to end it.</summary>
+        public void SetBoost(int matches) => storage.SetInt(BoostKey, Math.Max(0, matches));
 
         internal void AddXp(int amount) => SetXp((int)Math.Max(0L, Math.Min(int.MaxValue, (long)TotalXp + amount)));
     }

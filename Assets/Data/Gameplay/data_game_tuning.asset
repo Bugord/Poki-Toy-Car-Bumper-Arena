@@ -802,3 +802,9 @@ MonoBehaviour:
       shockwaveCars: 2
       shieldThreat: 4
       shieldThreatSpeed: 4
+  ads:
+    freePlaySeconds: 180
+    doubleReward: 1
+    xpBoost: 1
+    boostMultiplier: 2
+    boostMatches: 5
