@@ -16,14 +16,23 @@ namespace ToyCarArena.UI
         private static readonly Color Square = new(1f, 1f, 1f, 0.025f);
 
         private readonly VisualElement screen;
+        private readonly Color square;
+        private readonly float tileShare;
+        private float tile = Tile;
 
-        private DriftingChecker(VisualElement screen)
+        private DriftingChecker(VisualElement screen, Color square, float tileShare)
         {
             this.screen = screen;
+            this.square = square;
+            this.tileShare = tileShare;
             pickingMode = PickingMode.Ignore;
             style.position = Position.Absolute;
             // One period wider than the screen on the left, so the drift always has squares to bring in.
-            style.left = -2f * Tile;
+            style.left = -2f * tile;
+            if (tileShare > 0f) {
+                screen.RegisterCallback<GeometryChangedEvent>(_ => Resize());
+            }
+
             style.top = 0f;
             style.right = 0f;
             style.bottom = 0f;
@@ -32,7 +41,27 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>Puts the checker under everything else of <paramref name="screen"/>.</summary>
-        public static void AddTo(VisualElement screen) => screen.Insert(0, new DriftingChecker(screen));
+        public static void AddTo(VisualElement screen) => screen.Insert(0, new DriftingChecker(screen, Square, 0f));
+
+        /// <summary>
+        /// The same drift in the colour given, its squares a share of the screen's short side: a wide desktop panel
+        /// (Expand makes it large) then shows as few of them as a phone, rather than a busy field of small ones.
+        /// </summary>
+        public static void AddTo(VisualElement screen, Color square, float tileShare) =>
+            screen.Insert(0, new DriftingChecker(screen, square, tileShare));
+
+        private void Resize()
+        {
+            var size = screen.layout.size;
+            var next = Mathf.Min(size.x, size.y) * tileShare;
+            if (float.IsNaN(next) || next <= 0f || Mathf.Abs(next - tile) < 0.5f) {
+                return;
+            }
+
+            tile = next;
+            style.left = -2f * tile;
+            MarkDirtyRepaint();
+        }
 
         private void Step()
         {
@@ -40,7 +69,7 @@ namespace ToyCarArena.UI
                 return;
             }
 
-            style.translate = new Translate(Time.unscaledTime * Speed % (2f * Tile), 0f);
+            style.translate = new Translate(Time.unscaledTime * Speed % (2f * tile), 0f);
         }
 
         private void Draw(MeshGenerationContext context)
@@ -51,16 +80,16 @@ namespace ToyCarArena.UI
             }
 
             var painter = context.painter2D;
-            painter.fillColor = Square;
+            painter.fillColor = square;
             painter.BeginPath();
-            for (var row = 0; row * Tile < rect.height; row++) {
-                for (var column = row % 2; column * Tile < rect.width; column += 2) {
-                    var x = column * Tile;
-                    var y = row * Tile;
+            for (var row = 0; row * tile < rect.height; row++) {
+                for (var column = row % 2; column * tile < rect.width; column += 2) {
+                    var x = column * tile;
+                    var y = row * tile;
                     painter.MoveTo(new Vector2(x, y));
-                    painter.LineTo(new Vector2(x + Tile, y));
-                    painter.LineTo(new Vector2(x + Tile, y + Tile));
-                    painter.LineTo(new Vector2(x, y + Tile));
+                    painter.LineTo(new Vector2(x + tile, y));
+                    painter.LineTo(new Vector2(x + tile, y + tile));
+                    painter.LineTo(new Vector2(x, y + tile));
                     painter.ClosePath();
                 }
             }

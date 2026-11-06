@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
@@ -43,7 +44,13 @@ namespace ToyCarArena.Gameplay.Cars
         private const float HatFill = 0.92f;
         private const float HatBoost = 6f;
 
+        // The main menu stands the car on a plain 3D pedestal: a white-topped drum with the comic outline, turning with it.
+        private const float PedestalRadius = 2f;
+        private const float PedestalHeight = 0.45f;
+        private const float CapHeight = 0.1f;
+
         private readonly CarLook look;
+        private readonly MechanicArt art;
         private readonly Transform parent;
         private readonly List<Mesh> heroMeshes = new();
         private readonly List<Mesh> hatMeshes = new();
@@ -52,6 +59,8 @@ namespace ToyCarArena.Gameplay.Cars
         private Transform turntable;
         private Transform car;
         private Transform spinner;
+        private Transform pedestal;
+        private Mesh[] pedestalMeshes;
         private Mesh body;
         private Camera heroCamera;
         private Camera hatCamera;
@@ -61,9 +70,10 @@ namespace ToyCarArena.Gameplay.Cars
         private float shownAt;
         private int hatFrame = -1;
 
-        public GarageStage(Car carPrefab, Transform parent)
+        public GarageStage(Car carPrefab, MechanicArt art, Transform parent)
         {
             this.look = carPrefab.GetComponent<CarLook>();
+            this.art = art;
             this.parent = parent;
         }
 
@@ -76,15 +86,17 @@ namespace ToyCarArena.Gameplay.Cars
 
         /// <summary>
         /// Puts <paramref name="entry"/> on the turntable in the colour and the topper given (none for an empty id) and
-        /// starts drawing it; the same car again keeps turning as it was. The texture is the stage's to release.
+        /// starts drawing it; the same car again keeps turning as it was. With <paramref name="onPedestal"/> it stands
+        /// on a 3D pedestal framed with it (the main menu); without, on nothing (the garage has a plinth of its own). The
+        /// texture is the stage's to release.
         /// </summary>
-        public RenderTexture ShowCar(CarCatalog.Entry entry, int colorId, string topper)
+        public RenderTexture ShowCar(CarCatalog.Entry entry, int colorId, string topper, bool onPedestal = false)
         {
             Build();
-            var key = $"{entry.Id}|{colorId}|{topper}";
+            var key = $"{entry.Id}|{colorId}|{topper}|{onPedestal}";
             if (key != shownKey) {
                 shownKey = key;
-                BuildCar(entry, colorId, topper);
+                BuildCar(entry, colorId, topper, onPedestal);
             }
 
             if (!heroCamera.enabled) {
@@ -162,6 +174,12 @@ namespace ToyCarArena.Gameplay.Cars
             }
 
             DestroyCar();
+            if (pedestalMeshes != null) {
+                foreach (var mesh in pedestalMeshes) {
+                    Object.Destroy(mesh);
+                }
+            }
+
             foreach (var mesh in hatMeshes) {
                 Object.Destroy(mesh);
             }
@@ -217,7 +235,7 @@ namespace ToyCarArena.Gameplay.Cars
 
         // The car as the arena builds it, its footprint centred on the turntable, then the camera framing it whole
         // whichever way it has turned.
-        private void BuildCar(CarCatalog.Entry entry, int colorId, string topper)
+        private void BuildCar(CarCatalog.Entry entry, int colorId, string topper, bool onPedestal)
         {
             DestroyCar();
             car = new GameObject("Car").transform;
@@ -230,11 +248,41 @@ namespace ToyCarArena.Gameplay.Cars
             model.transform.localPosition -= new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
             var reach = new Vector2(Mathf.Max(-bounds.min.x, bounds.max.x) - bounds.center.x,
                 Mathf.Max(-bounds.min.z, bounds.max.z) - bounds.center.z).magnitude;
-            Frame(reach, bounds.size.y);
+            if (onPedestal) {
+                BuildPedestal();
+            }
+
+            if (pedestal != null) {
+                pedestal.gameObject.SetActive(onPedestal);
+            }
+
+            var low = onPedestal ? PedestalHeight : 0f;
+            Frame(onPedestal ? Mathf.Max(reach, PedestalRadius) : reach, bounds.size.y + low, -low);
         }
 
-        // Far enough that a circle of the car's reach fits across and its height (seen a little from above) fits up.
-        private void Frame(float reach, float height)
+        // A white disc under the car: its top is the ground the car stands on.
+        private void BuildPedestal()
+        {
+            if (pedestal != null) {
+                return;
+            }
+
+            // A grey side under a white top, so the disc reads as a drum and not a flat white spot.
+            pedestalMeshes = new[] {
+                ToyMeshes.Cylinder(PedestalRadius, PedestalRadius, PedestalHeight - CapHeight, 48),
+                ToyMeshes.Cylinder(PedestalRadius, PedestalRadius, CapHeight, 48),
+            };
+            pedestal = new GameObject("Pedestal").transform;
+            pedestal.SetParent(turntable, false);
+            ToyMeshes.Part(pedestal, "Side", pedestalMeshes[0], art.Get("pencil_metal"),
+                new Vector3(0f, -CapHeight - (PedestalHeight - CapHeight) * 0.5f, 0f));
+            ToyMeshes.Part(pedestal, "Top", pedestalMeshes[1], art.Get("train_white"), new Vector3(0f, -CapHeight * 0.5f, 0f));
+            ToyMeshes.Outlined(pedestal.gameObject);
+        }
+
+        // Far enough that a circle of the car's reach fits across and its height (seen a little from above) fits up;
+        // <paramref name="bottom"/> is where that height starts, below the ground for a pedestal.
+        private void Frame(float reach, float height, float bottom)
         {
             var halfUp = Mathf.Tan(FieldOfView * 0.5f * Mathf.Deg2Rad);
             var halfAcross = halfUp * HeroWidth / HeroHeight;
@@ -243,7 +291,8 @@ namespace ToyCarArena.Gameplay.Cars
             var distance = Mathf.Max(reach / halfAcross, tall / halfUp) * 1.05f + reach;
             var rotation = Quaternion.Euler(CameraPitch, 0f, 0f);
             heroCamera.transform.localRotation = rotation;
-            heroCamera.transform.localPosition = new Vector3(0f, height * 0.5f, 0f) - rotation * Vector3.forward * distance;
+            heroCamera.transform.localPosition = new Vector3(0f, bottom + height * 0.5f, 0f) -
+                rotation * Vector3.forward * distance;
             var ground = heroCamera.WorldToViewportPoint(turntable.position);
             HeroGround = new Vector2(ground.x, 1f - ground.y);
         }

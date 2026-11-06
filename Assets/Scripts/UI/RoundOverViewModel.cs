@@ -16,11 +16,12 @@ using UnityEngine;
 namespace ToyCarArena.UI
 {
     /// <summary>
-    /// The end of a round: how it ended, the saved XP reward on the level track, CAR and NEXT MATCH. The result is
-    /// true once the player asks for another round, regardless of how much of the reward animation has played. Places,
-    /// knock-outs and bests are still recorded and measured, just not shown: the screen keeps to the long-term goal.
+    /// The end of a round: how it ended, the saved XP reward on the level track, HOME, CAR and NEXT MATCH. The result
+    /// is the player's way on, the next match or the main menu, regardless of how much of the reward animation has
+    /// played. Places, knock-outs and bests are still recorded and measured, just not shown: the screen keeps to the
+    /// long-term goal.
     /// </summary>
-    public sealed class RoundOverViewModel : ResultViewModel<bool>, IPayloadReceiver<RoundRecord>
+    public sealed class RoundOverViewModel : ResultViewModel<ResultChoice>, IPayloadReceiver<RoundRecord>
     {
         /// <summary>How many rewards the track shows ahead of the level the round started at, the next rank aside.</summary>
         private const int TrackRewards = 3;
@@ -306,6 +307,7 @@ namespace ToyCarArena.UI
             IsGarageOpen = true;
             try {
                 platform.MeasureGaragePressed();
+                progress.MarkGarageSeen();
                 return await navigator.RunAsync<GarageViewModel, bool>(token);
             }
             finally {
@@ -476,7 +478,17 @@ namespace ToyCarArena.UI
             RevengeTaken = result.RevengeTaken;
         }
 
-        public void PlayAgain() => SetResult(true);
+        public void PlayAgain() => SetResult(ResultChoice.NextMatch);
+
+        /// <summary>HOME: the main menu, behind the curtain.</summary>
+        public void GoHome() => SetResult(ResultChoice.Home);
+    }
+
+    /// <summary>Where the result leads: the next match through the lobby, or the main menu.</summary>
+    public enum ResultChoice
+    {
+        NextMatch,
+        Home,
     }
 
     /// <summary>
