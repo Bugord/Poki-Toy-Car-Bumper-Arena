@@ -121,18 +121,34 @@
     color: var(--navy);
 }
 
+/* As in the design: a soft capsule track with a navy rim, five square cells inside it, the outer ends of the end
+   cells round, the empty ones a faint navy. */
 .garage-stats__pips {
     flex-direction: row;
+    padding: 5px;
+    border-width: 6px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--soft);
 }
 
 .garage-stats__pip {
-    width: 20px;
-    height: 38px;
+    width: 24px;
+    height: 20px;
     margin-left: 5px;
-    border-width: 4px;
-    border-color: var(--navy);
-    border-radius: 7px;
-    background-color: var(--track);
+    border-radius: 8px;
+    background-color: rgba(29, 43, 79, 0.12);
+}
+
+.garage-stats__pip--first {
+    margin-left: 0;
+    border-top-left-radius: 999px;
+    border-bottom-left-radius: 999px;
+}
+
+.garage-stats__pip--last {
+    border-top-right-radius: 999px;
+    border-bottom-right-radius: 999px;
 }
 
 .garage-stats__stat--speed .garage-stats__pip--on { background-color: var(--blue); }
@@ -192,18 +208,26 @@
 .garage__tab--on,
 .garage__tab--on:hover { background-color: var(--green); }
 
-.garage__tab-text {
+.garage__tab-label-text {
     margin: 0;
     padding: 0;
     font-size: 44px;
     color: var(--navy);
+    -unity-text-outline-width: 0;
+    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
 }
 
-.garage__tab--on .garage__tab-text {
+/* The chosen tab: white on green, the outline and its drop on the layer under the face. */
+.garage__tab--on .garage__tab-label-text {
     color: var(--white);
-    -unity-text-outline-width: 3px;
+    -unity-text-outline-width: 9px;
     -unity-text-outline-color: var(--navy);
-    text-shadow: 0 4px 0 rgb(29, 43, 79);
+    text-shadow: 0 5px 0 rgb(29, 43, 79);
+}
+
+.garage__tab--on .garage__tab-label-text.stroke__face {
+    -unity-text-outline-width: 0;
+    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
 }
 
 .garage__tab-key {
@@ -623,7 +647,7 @@
 
 .garage__sheet-stats .garage-stats__stat { margin: 0 8px; }
 .garage__sheet-stats .garage-stats__label { font-size: 28px; margin-right: 10px; }
-.garage__sheet-stats .garage-stats__pip { width: 18px; height: 34px; margin-left: 4px; }
+.garage__sheet-stats .garage-stats__pip { width: 22px; height: 18px; }
 
 .garage__sheet-coins {
     flex-direction: row;

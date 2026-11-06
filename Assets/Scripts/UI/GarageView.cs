@@ -315,7 +315,11 @@ namespace ToyCarArena.UI
                 stat.Add(Text("garage-stats__label"));
                 var pips = Element("garage-stats__pips");
                 for (var i = 0; i < GameTuning.CarStatSettings.Max; i++) {
-                    pips.Add(Element("garage-stats__pip"));
+                    var pip = Element("garage-stats__pip");
+                    // USS has no :first-child, so the round ends of the track are classes.
+                    pip.EnableInClassList("garage-stats__pip--first", i == 0);
+                    pip.EnableInClassList("garage-stats__pip--last", i == GameTuning.CarStatSettings.Max - 1);
+                    pips.Add(pip);
                 }
 
                 stat.Add(pips);
@@ -356,9 +360,12 @@ namespace ToyCarArena.UI
                 // A navy line between the segments (USS has no :first-child).
                 button.EnableInClassList("garage__tab--split", i > 0);
                 button.focusable = false;
-                var label = Text("garage__tab-text");
-                text.Set(label, () => Strings.Get(key));
-                button.Add(label);
+                // Two layers, as the titles: the navy outline under a clean face, so the white of the chosen tab stays
+                // white (one outlined label eats its own fill at this size).
+                button.Add(RoundOverProgress.Outlined("", "garage__tab-label", out var tabLabels));
+                foreach (var label in tabLabels) {
+                    text.Set(label, () => Strings.Get(key));
+                }
                 button.Add(KeyCap((i + 1).ToString(), "garage__tab-key"));
                 if (shown == Tab.Hats) {
                     hatsDot = Element("garage__tab-dot");
