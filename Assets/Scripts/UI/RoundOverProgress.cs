@@ -71,7 +71,6 @@ namespace ToyCarArena.UI
         private int popupsShown;
         private XpLevel reached;
         private CancellationTokenSource animation;
-        private string rankClass;
 
         public RoundOverProgress(VisualElement root, RoundOverViewModel viewModel, bool isTouch)
         {
@@ -79,6 +78,7 @@ namespace ToyCarArena.UI
             this.viewModel = viewModel;
             this.isTouch = isTouch;
             this.levelBadge = root.Q<VisualElement>("xp-level");
+            LevelBadge.Decorate(levelBadge);
             this.levelLabel = root.Q<Label>("xp-level-value");
             this.rankLabel = root.Q<Label>("xp-rank");
             this.total = root.Q<Label>("xp-total");
@@ -219,6 +219,7 @@ namespace ToyCarArena.UI
                 node.AddToClassList("track__node--rank");
                 node.AddToClassList(PlayerRank.ClassOf(level));
                 node.Add(Text(level.ToString(), "track__level"));
+                LevelBadge.Decorate(node);
             }
             else if (reward.Car != null) {
                 // The car itself in the player's colour, so the stop reads as the car it gives, not a placeholder.
@@ -752,15 +753,7 @@ namespace ToyCarArena.UI
             SetRank(barTo.parent, level + 1);
         }
 
-        private static void SetRank(VisualElement badge, int level)
-        {
-            foreach (var className in new List<string>(badge.GetClasses())) {
-                if (className.StartsWith("level-badge--") && className != "level-badge--big") {
-                    badge.RemoveFromClassList(className);
-                }
-            }
-            badge.AddToClassList(PlayerRank.ClassOf(level));
-        }
+        private static void SetRank(VisualElement badge, int level) => LevelBadge.SetRank(badge, level);
 
         private void SetBarFill(float share) => barFill.style.width = Length.Percent(Mathf.Clamp01(share) * 100f);
 
@@ -783,6 +776,7 @@ namespace ToyCarArena.UI
             badge.AddToClassList("xp-bar__level");
             var value = Text("", "level-badge__value");
             badge.Add(value);
+            LevelBadge.Decorate(badge);
             bar.Add(badge);
             return value;
         }
@@ -841,11 +835,7 @@ namespace ToyCarArena.UI
             levelLabel.text = level.ToString();
             shownLevel = level;
             text.Set(rankLabel, () => Strings.Format("result.rank_level", PlayerRank.NameOf(shownLevel), shownLevel));
-            if (rankClass != null) {
-                levelBadge.RemoveFromClassList(rankClass);
-            }
-            rankClass = PlayerRank.ClassOf(level);
-            levelBadge.AddToClassList(rankClass);
+            LevelBadge.SetRank(levelBadge, level);
         }
 
         /// <summary>Each segment fills by how far the position is between the levels of the stops at its ends.</summary>
