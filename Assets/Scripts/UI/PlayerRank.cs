@@ -21,6 +21,9 @@ namespace ToyCarArena.UI
         public static string NameOfTier(int tier) =>
             Strings.Get("rank." + Names[System.Math.Clamp(tier, 0, Names.Length - 1)].ToLowerInvariant());
 
+        /// <summary>A rank's English id in lower case, rookie to legend, for class names that never translate.</summary>
+        public static string IdOfTier(int tier) => Names[System.Math.Clamp(tier, 0, Names.Length - 1)].ToLowerInvariant();
+
         /// <summary>0 rookie .. 4 legend.</summary>
         public static int TierOf(int level)
         {

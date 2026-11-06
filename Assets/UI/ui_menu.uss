@@ -1114,11 +1114,22 @@
     white-space: nowrap;
 }
 
-.menu__league-row-plinth {
+/* The league's emblem (sprite_league_<id>): the art leaves about a tenth of its square empty round it. */
+.menu__league-emblem {
     flex-shrink: 0;
-    width: 180px;
-    height: 90px;
-    margin-right: 26px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.menu__league-emblem--rookie { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_league_rookie.png?fileID=2800000&guid=96f0403b1ad8428db072a16f5541f2e4&type=3#sprite_league_rookie"); }
+.menu__league-emblem--bronze { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_league_bronze.png?fileID=2800000&guid=eb9da146546c4e54b5a8f27df1f301a4&type=3#sprite_league_bronze"); }
+.menu__league-emblem--silver { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_league_silver.png?fileID=2800000&guid=395f45ffdbbc4d3b8220a10905675d46&type=3#sprite_league_silver"); }
+.menu__league-emblem--gold { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_league_gold.png?fileID=2800000&guid=6c4ebb1f509248bc8952c22e18428591&type=3#sprite_league_gold"); }
+.menu__league-emblem--legend { background-image: url("project://database/Assets/Art/Sprites/UI/sprite_league_legend.png?fileID=2800000&guid=29769eea00dd4b4c925eeefef2a8c6a2&type=3#sprite_league_legend"); }
+
+.menu__league-row-emblem {
+    width: 190px;
+    height: 190px;
+    margin-right: 18px;
 }
 
 .menu__league-done {
@@ -1291,10 +1302,10 @@
 
 .menu__league-card-badge .level-badge__value { font-size: 104px; }
 
-.menu__league-card-plinth {
-    width: 330px;
-    height: 160px;
-    margin: 50px 0 34px 0;
+.menu__league-card-emblem {
+    width: 280px;
+    height: 280px;
+    margin: 20px 0 10px 0;
 }
 
 .menu__league-card-name {

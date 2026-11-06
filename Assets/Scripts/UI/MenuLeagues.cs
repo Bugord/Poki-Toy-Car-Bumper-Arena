@@ -286,7 +286,7 @@ namespace ToyCarArena.UI
             }
         }
 
-        // One league upright: its badge, its name and level (or, for the player's, the bar to the next), its plinth
+        // One league upright: its badge, its name and level (or, for the player's, the bar to the next), its emblem
         // and whether it is passed, the player's or still ahead.
         private VisualElement Row(int tier, int current)
         {
@@ -295,30 +295,20 @@ namespace ToyCarArena.UI
             face.Add(Plate(tier == current ? listLevel : PlayerRank.StartOf(tier), "menu__league-row-badge"));
             var body = Element("menu__league-row-body");
             body.Add(Stroked("menu__league-row-name", PlayerRank.NameOfTier(tier)));
-            if (tier == current) {
-                body.Add(Track(current));
-            }
-            else {
-                body.Add(FromLevel(tier));
-                face.Add(body);
-                face.Add(Plinth(tier, "menu__league-row-plinth"));
-            }
-
-            if (tier == current) {
-                face.Add(body);
-            }
-
+            body.Add(tier == current ? Track(current) : FromLevel(tier));
+            face.Add(body);
+            face.Add(Emblem(tier, "menu__league-row-emblem"));
             face.Add(Status(tier, current));
             return row;
         }
 
-        // One league wide: a card, top down, its badge, plinth, name, level and state.
+        // One league wide: a card, top down, its badge, emblem, name, level and state.
         private VisualElement Card(int tier, int current)
         {
             var card = Item("menu__league-card-item", tier, current, LeagueLook.CardSkyOf(tier), new Vector2(0.5f, 0.3f),
                 out var face);
             face.Add(Plate(tier == current ? listLevel : PlayerRank.StartOf(tier), "menu__league-card-badge"));
-            face.Add(Plinth(tier, "menu__league-card-plinth"));
+            face.Add(Emblem(tier, "menu__league-card-emblem"));
             face.Add(Stroked("menu__league-card-name", PlayerRank.NameOfTier(tier)));
             face.Add(FromLevel(tier));
             face.Add(Element("menu__spacer"));
@@ -345,6 +335,15 @@ namespace ToyCarArena.UI
             face.Add(Icon("menu__league-rays", context => DrawRays(context, raysFrom)));
             item.Add(face);
             return item;
+        }
+
+        // The league's emblem, a shield that grows richer from league to league (sprite_league_<id>, set in ui_menu).
+        private static VisualElement Emblem(int tier, string className)
+        {
+            var emblem = Element("menu__league-emblem");
+            emblem.AddToClassList(className);
+            emblem.AddToClassList("menu__league-emblem--" + PlayerRank.IdOfTier(tier));
+            return emblem;
         }
 
         // A level badge standing on its own navy drop, as the boards' plates do: the drop is a layer of its own, not a
