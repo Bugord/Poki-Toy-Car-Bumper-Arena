@@ -33,9 +33,15 @@ namespace ToyCarArena.UI
         private const float DiamondSide = 0.44f;
         private const float DiamondLift = 0.08f;
 
-        // A thin light rim round the navy crown, so it still reads on the navy lobby rows and the HUD's dark name pill;
-        // on a white card it disappears. A share of the badge's outline.
+        // A thin light rim round the navy crown where the badge sits on navy (the lobby rows, the HUD's dark name pill),
+        // so it still reads there; a share of the badge's outline. Elsewhere none: over a sticker it chips its edge.
         private const float CrownRim = 0.6f;
+        private static readonly string[] DarkBackdrops = { "lobby__level", "car-name__level" };
+
+        // Ornaments grow with the badge up to this height and then slower, so a big badge (the result card's, the
+        // level-up popup's) keeps a crown that crowns it without reaching the stickers above.
+        private const float FullGrowthHeight = 50f;
+        private const float BigGrowth = 0.3f;
 
         // The legend rainbow, left to right as the design's gradient: pink, gold, green, blue, purple.
         private static readonly Color32[] Rainbow = {
@@ -125,10 +131,12 @@ namespace ToyCarArena.UI
                 return;
             }
 
-            var height = badge.layout.height;
-            if (height <= 0f) {
+            var badgeHeight = badge.layout.height;
+            if (badgeHeight <= 0f) {
                 return;
             }
+
+            var height = Mathf.Min(badgeHeight, FullGrowthHeight + (badgeHeight - FullGrowthHeight) * BigGrowth);
 
             // The ornament's own origin is the inside's top left corner, under the top border.
             var style = badge.resolvedStyle;
@@ -149,24 +157,30 @@ namespace ToyCarArena.UI
                 painter.fillColor = White;
                 painter.Fill();
                 painter.strokeColor = Navy;
-                painter.lineWidth = outline;
+                painter.lineWidth = Mathf.Min(outline, Mathf.Max(1.5f, 0.12f * height));
                 painter.Stroke();
                 return;
             }
 
-            var isRound = style.borderTopLeftRadius >= Mathf.Min(badge.layout.width, height) / 2f;
+            var rim = 0f;
+            foreach (var backdrop in DarkBackdrops) {
+                if (badge.ClassListContains(backdrop)) {
+                    rim = CrownRim * outline;
+                }
+            }
+
+            var isRound = style.borderTopLeftRadius >= Mathf.Min(badge.layout.width, badgeHeight) / 2f;
             if (isRound) {
                 // Sunk until the base's corners meet the circle, so they do not hang in the air.
-                var radius = height / 2f;
+                var radius = badgeHeight / 2f;
                 var halfBase = RoundCrownWidth * height / 2f;
                 var sink = radius - Mathf.Sqrt(radius * radius - halfBase * halfBase) - border;
                 DrawCrown(painter, middle, sink + CrownSink * height, RoundCrownWidth * height,
-                    RoundCrownHeight * height + sink, -border + sink, CrownRim * outline);
+                    RoundCrownHeight * height + sink, -border + sink, rim);
                 return;
             }
 
-            DrawCrown(painter, middle, CrownSink * height, CrownWidth * height, CrownHeight * height, -border,
-                CrownRim * outline);
+            DrawCrown(painter, middle, CrownSink * height, CrownWidth * height, CrownHeight * height, -border, rim);
         }
 
         // The 2.0 crown: a navy silhouette with three points, its base at baseY. The light rim runs round its sides and
@@ -177,18 +191,22 @@ namespace ToyCarArena.UI
             var left = middle - width / 2f;
             Vector2 At(float x, float y) => new(left + x * width, baseY - (1f - y) * height);
 
-            painter.BeginPath();
-            painter.MoveTo(new Vector2(left, topEdgeY));
-            painter.LineTo(At(0f, 0.15f));
-            painter.LineTo(At(0.28f, 0.55f));
-            painter.LineTo(At(0.5f, 0f));
-            painter.LineTo(At(0.72f, 0.55f));
-            painter.LineTo(At(1f, 0.15f));
-            painter.LineTo(new Vector2(left + width, topEdgeY));
-            painter.strokeColor = Rim;
-            painter.lineWidth = rim * 2f;
-            painter.lineCap = LineCap.Butt;
-            painter.Stroke();
+            // The tips are a little round, as a sticker's corners are: a thin navy stroke over the fill.
+            var soft = Mathf.Max(1f, height * 0.06f);
+            if (rim > 0f) {
+                painter.BeginPath();
+                painter.MoveTo(new Vector2(left, topEdgeY));
+                painter.LineTo(At(0f, 0.15f));
+                painter.LineTo(At(0.28f, 0.55f));
+                painter.LineTo(At(0.5f, 0f));
+                painter.LineTo(At(0.72f, 0.55f));
+                painter.LineTo(At(1f, 0.15f));
+                painter.LineTo(new Vector2(left + width, topEdgeY));
+                painter.strokeColor = Rim;
+                painter.lineWidth = rim * 2f + soft;
+                painter.lineCap = LineCap.Butt;
+                painter.Stroke();
+            }
 
             painter.BeginPath();
             painter.MoveTo(At(0f, 1f));
@@ -201,6 +219,9 @@ namespace ToyCarArena.UI
             painter.ClosePath();
             painter.fillColor = Navy;
             painter.Fill();
+            painter.strokeColor = Navy;
+            painter.lineWidth = soft;
+            painter.Stroke();
         }
 
         // A small gradient made once at run time (a texture asset would add to the first load): 128 texels across,
