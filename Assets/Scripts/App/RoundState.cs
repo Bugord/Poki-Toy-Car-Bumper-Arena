@@ -24,7 +24,8 @@ namespace ToyCarArena.App
     /// <para>
     /// The first round of a visit waits for the player: the cars stand on the arena under the HUD's start prompt until
     /// the player first steers or boosts (<see cref="PlayerDriver.HasActed"/>), so nothing plays before the player is
-    /// there. A later round comes from PLAY AGAIN, which is that input, and goes on as soon as the curtain is up.
+    /// there. A later round comes from NEXT MATCH, which is that input, and goes on as soon as the curtain is up; so
+    /// does a visit's first round from the menu's PLAY (<see cref="MatchLobby.HasLed"/>).
     /// </para>
     /// <para>
     /// Then every later round counts down 3, 2, 1 on the HUD (<see cref="GameTuning.RoundSettings.KickoffFrom"/>) and
@@ -55,11 +56,13 @@ namespace ToyCarArena.App
         private readonly PlayerWallet wallet;
         private readonly MissionTracker missions;
         private readonly AdBreaks adBreaks;
+        private readonly MatchLobby lobby;
 
         public RoundState(LevelScene levelScene, IScreenNavigator navigator, ScreenCurtain curtain, IGamePlatform platform,
             SessionProgress progress, PersonalBests bests, PlayerProgress playerProgress, IArenaRotation arenaRotation,
-            PlayerWallet wallet, MissionTracker missions, AdBreaks adBreaks)
+            PlayerWallet wallet, MissionTracker missions, AdBreaks adBreaks, MatchLobby lobby)
         {
+            this.lobby = lobby;
             this.adBreaks = adBreaks;
             this.wallet = wallet;
             this.missions = missions;
@@ -100,7 +103,9 @@ namespace ToyCarArena.App
             var variants = levelScene.Resolve<ArenaVariants>();
             var currentVariant = playedVariant;
             var special = levelScene.Resolve<RoundRules>().Kind;
-            var waitsForPlayer = roundNumber == 1;
+            // Only a visit's first round straight from the boot waits on the start screen; the menu's PLAY came through
+            // the lobby and counts down like any later round.
+            var waitsForPlayer = roundNumber == 1 && !lobby.HasLed;
             // The boxes the player breaks in a match, counted for the end, and its items, each reported as its roll lands
             // and as it is used.
             var pickups = levelScene.Resolve<ArenaPickups>();
@@ -234,7 +239,8 @@ namespace ToyCarArena.App
                 arenaRotation.Next(record.XpGain.After.Level);
                 levelScene.Resolve<ISessionRoster>().NextRound(result.CarCount - 1,
                     RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis, tuning.Players);
-                platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, driver, tuning.Boost.IsEnabled);
+                platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, driver, tuning.Boost.IsEnabled,
+                    waitsForPlayer);
                 if (pickups.IsEnabled) {
                     platform.MeasureMatchPickups(roundNumber, pickupCount, result.IsMatch);
                 }

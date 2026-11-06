@@ -57,6 +57,10 @@ namespace ToyCarArena.App
     /// START are up, then <c>interact</c> on the first input, and <c>controls / ready-0-3, 3-6, 6-10, 10plus /
     /// start-time</c>, seconds from the engine starting to that screen; Poki counts the game loaded once the engine is,
     /// so this tells the visits that left while the arena still loaded from those that saw it and did not touch</item>
+    /// <item>after v0.16, a returning visit's main menu (<see cref="MenuState"/>): <c>menu / shown / visible</c> each time
+    /// it comes up, on the visit's first <c>menu / ready-0-3, 3-6, 6-10, 10plus / start-time</c> as for the start screen,
+    /// and <c>menu / play, garage, missions, mode / interact</c>; <c>result / home / visible, interact</c> for HOME on
+    /// the result</item>
     /// <item><c>garage / button / visible, interact</c> and <c>garage / car-id / equip</c></item>
     /// <item><c>garage / color-name / color</c> on colour selection and
     /// <c>result / color-name-rR / color</c> for the colour captured by the played round</item>
@@ -109,6 +113,7 @@ namespace ToyCarArena.App
         private const string MissionCategory = "mission";
         private const string SessionCategory = "session";
         private const string SpecialCategory = "special";
+        private const string MenuCategory = "menu";
 
         // A streak this long or longer goes in one bucket, so its number and the round's still fit.
         private const int LastStreakBucket = 5;
@@ -170,12 +175,40 @@ namespace ToyCarArena.App
         public static void MeasureStartShown(this IGamePlatform platform, float seconds)
         {
             platform.MeasureVisible(ControlsCategory, "start");
-            var ready = seconds < 3f ? "ready-0-3" : seconds < 6f ? "ready-3-6" : seconds < 10f ? "ready-6-10" : "ready-10plus";
-            platform.Measure(ControlsCategory, ready, "start-time");
+            platform.Measure(ControlsCategory, ReadyBucket(seconds), "start-time");
         }
 
         public static void MeasureStartPressed(this IGamePlatform platform) =>
             platform.MeasureInteract(ControlsCategory, "start");
+
+        /// <summary>
+        /// The main menu is up: <c>menu / shown / visible</c> each time, and on the visit's first menu (a returning
+        /// visit opens on it) <c>menu / ready-0-3, 3-6, 6-10, 10plus / start-time</c>, <paramref name="seconds"/> after
+        /// the engine started, as <see cref="MeasureStartShown"/> for the start screen of a first visit.
+        /// </summary>
+        public static void MeasureMenuShown(this IGamePlatform platform, float? seconds)
+        {
+            platform.MeasureVisible(MenuCategory, "shown");
+            if (seconds is { } value) {
+                platform.Measure(MenuCategory, ReadyBucket(value), "start-time");
+            }
+        }
+
+        /// <summary>
+        /// A press in the main menu: <c>menu / play, garage, missions, mode / interact</c> (garage both from its tile and
+        /// from the car).
+        /// </summary>
+        public static void MeasureMenuPressed(this IGamePlatform platform, string what) =>
+            platform.MeasureInteract(MenuCategory, what);
+
+        /// <summary><c>result / home / visible</c> on every result, <c>interact</c> when HOME is pressed.</summary>
+        public static void MeasureHomeShown(this IGamePlatform platform) => platform.MeasureVisible(ResultCategory, "home");
+
+        public static void MeasureHomePressed(this IGamePlatform platform) =>
+            platform.MeasureInteract(ResultCategory, "home");
+
+        private static string ReadyBucket(float seconds) =>
+            seconds < 3f ? "ready-0-3" : seconds < 6f ? "ready-3-6" : seconds < 10f ? "ready-6-10" : "ready-10plus";
 
         /// <summary>A commercial break is asked for under the curtain after NEXT MATCH (Poki may still show none).</summary>
         public static void MeasureCommercialBreak(this IGamePlatform platform) =>
@@ -287,11 +320,17 @@ namespace ToyCarArena.App
         /// <summary>
         /// The end of the round started as <paramref name="round"/>, and the milestones of its result.
         /// </summary>
+        /// <remarks>
+        /// The first-round controls events (input, first move, boost input, swipes) go out only for a round that waited
+        /// on the start screen, <paramref name="isStartRound"/>: the menu's first round counts down instead, and its
+        /// first move would read the countdown as the player's hesitation. Null keeps the old rule, the first round.
+        /// </remarks>
         public static void MeasureRoundEnd(this IGamePlatform platform, int round, RoundResult result, float duration,
-            PlayerDriver driver, bool hasBoost)
+            PlayerDriver driver, bool hasBoost, bool? isStartRound = null)
         {
+            var measuresControls = isStartRound ?? round <= 1;
             if (result.IsMatch) {
-                MeasureMatchEnd(platform, round, result, driver, hasBoost);
+                MeasureMatchEnd(platform, round, result, driver, hasBoost, measuresControls);
                 return;
             }
 
@@ -328,7 +367,7 @@ namespace ToyCarArena.App
             }
 
             MeasureBoosts(platform, tag, driver, hasBoost);
-            if (round <= 1) {
+            if (measuresControls) {
                 MeasureControls(platform, driver, hasBoost);
             }
         }
@@ -340,7 +379,7 @@ namespace ToyCarArena.App
         /// the match sends its own in their place, and a version's reports never mix the two.
         /// </summary>
         public static void MeasureMatchEnd(this IGamePlatform platform, int match, RoundResult result, PlayerDriver driver,
-            bool hasBoost)
+            bool hasBoost, bool? isStartMatch = null)
         {
             platform.MeasureComplete(MatchCategory, RoundBucket(match));
             var tag = RoundTag(match);
@@ -356,7 +395,7 @@ namespace ToyCarArena.App
             platform.Measure(ResultCategory, $"color-{CarPaint.NameOf(result.ColorOf(0))}-{tag}", "color");
             platform.Measure(ResultCategory, $"cars-{result.CarCount}-{tag}", "cars");
             MeasureBoosts(platform, tag, driver, hasBoost);
-            if (match <= 1) {
+            if (isStartMatch ?? match <= 1) {
                 MeasureControls(platform, driver, hasBoost);
             }
         }
