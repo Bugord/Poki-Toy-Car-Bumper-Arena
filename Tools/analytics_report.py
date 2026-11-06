@@ -70,6 +70,9 @@ def summarise(data):
         # после v0.14.1: минуты на странице и в раундах (SessionTime), визиты, дошедшие до каждой
         "session_time": {int(k): v for k, v in other(o, r"session-time-(\d+)m-reached").items()},
         "session_play": {int(k): v for k, v in other(o, r"session-play-(\d+)m-reached").items()},
+        # после v0.15.0: номер визита игрока и дни с прошлого (Visits)
+        "visits": other(o, r"session-visit-(1|2|3|4plus)-visit"),
+        "back": other(o, r"session-back-(d0|d1|d2-7|d8plus|unknown)-visit"),
         "input": other(o, r"controls-([a-z]+)-input"),
         "boost_input": other(o, r"controls-boost-(button|tap|finger|key|mouse|gamepad|none)-boost-input"),
         "first_move": other(o, r"controls-(move-[a-z0-9-]+|never)-first-move"),
@@ -77,6 +80,11 @@ def summarise(data):
         # после v0.13.5: первый стартовый экран визита показан, тронули, и через сколько секунд после старта движка
         "start": i.get("controls-start"),
         "start_time": other(o, r"controls-ready-([0-9a-z-]+)-start-time"),
+        # с v0.16.0: главное меню визитов 2+ (показ, через сколько секунд после старта движка, что нажали), HOME на результате
+        "menu": i.get("menu-shown"),
+        "menu_time": other(o, r"menu-ready-([0-9a-z-]+)-start-time"),
+        "menu_press": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"menu-(play|garage|missions|mode)", e))},
+        "home": i.get("result-home"),
         "place1": other(o, r"result-place-(\d+)-r1-place"),
         "ko1": other(o, r"result-knockouts-(\d+)-r1-knockouts"),
         "again": i.get("result-play-again"),
@@ -88,6 +96,11 @@ def summarise(data):
         "again_first": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"controls-again-([a-z]+-(?:boost|noboost))", e))},
         "slow": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"lobby-slow-([a-z]+)", e))},
         "arenas": {m.group(1): row for e, row in p.items() if (m := re.fullmatch(r"arena-([a-z]+-[a-z]+)", e))},
+        # после v0.15.0: особые раунды (start / complete / fail) и их исход, в раунде босса взят ли он
+        "specials": {m.group(1): row for e, row in p.items()
+                     if (m := re.fullmatch(r"special-(mega|hot-potato|boss|ice|low-gravity)", e))},
+        "special_outcome": other(o, r"special-((?:mega|hot-potato|boss|ice|low-gravity)-(?:won|out|survived))-outcome"),
+        "boss": other(o, r"special-boss-(taken|missed)-boss"),
         "scoreboard": i.get("scoreboard-shown"),
         "ad_commercial": i.get("ad-commercial"),
         "ad_double": i.get("ad-double"),
@@ -202,6 +215,32 @@ def report(version, previous):
         for m in minutes:
             out.append(line(f"{m} мин в раундах", lambda s, m=m: reached(s, "session_play", m)))
 
+    if any(s and s["visits"] for s in (cur, old)):
+        out += ["", "## Повторные визиты (после v0.15.0; визиты, от начавших загрузку)", "", head, sep]
+        total = lambda s: sum(s["visits"].values())
+        for v in ("1", "2", "3", "4plus"):
+            out.append(line(f"Визит {v}", lambda s, v=v: f"{s['visits'].get(v, 0)} ({pct(s['visits'].get(v, 0), total(s))})" if s["visits"] else "-"))
+        back = lambda s: sum(s["back"].values())
+        for b, name in (("d0", "в тот же день"), ("d1", "на следующий день"), ("d2-7", "через 2–7 дней"),
+                        ("d8plus", "через 8 дней и позже"), ("unknown", "игрок до v0.16, день неизвестен")):
+            out.append(line(f"Вернулись {name}", lambda s, b=b: f"{s['back'].get(b, 0)} ({pct(s['back'].get(b, 0), back(s))})" if s["back"] else "-"))
+
+    # The menu opens visits 2+ (from v0.16); its presses are counted per menu shown, HOME per result that showed it.
+    if any(s and (s["menu"] or s["home"]) for s in (cur, old)):
+        out += ["", "## Главное меню (с v0.16.0; визиты 2+)", "", head, sep]
+        shown = lambda s: num(s["menu"], "seen")
+        out.append(line("Меню показано", lambda s: str(shown(s)) if s["menu"] else "-"))
+        for key, name in (("play", "PLAY"), ("garage", "GARAGE"), ("missions", "MISSIONS"), ("mode", "MODE")):
+            out.append(line(f"Нажали {name}, от показов меню",
+                            lambda s, k=key: (lambda n: f"{n} ({pct(n, shown(s))})")(num(s["menu_press"].get(k), "interacted"))
+                            if s["menu"] else "-"))
+        times = lambda s: sum(s["menu_time"].values())
+        for bucket in ("0-3", "3-6", "6-10", "10plus"):
+            out.append(line(f"Меню на экране через {bucket} с после старта движка",
+                            lambda s, b=bucket: f"{s['menu_time'].get(b, 0)} ({pct(s['menu_time'].get(b, 0), times(s))})" if s["menu_time"] else "-"))
+        out.append(line("HOME на результате: показан / нажат",
+                        lambda s: f"{num(s['home'], 'seen')} / {num(s['home'], 'interacted')} ({pct(num(s['home'], 'interacted'), num(s['home'], 'seen'))})" if s["home"] else "-"))
+
     names = sorted({k for s in (cur, old) if s for k in s["rounds"]}, key=lambda k: (k.endswith("plus"), int(re.sub(r"\D", "", k))))
     out += ["", "## Воронка по раундам (старты / победы / поражения / ушли; далее = доля, перешедшая в следующий)", "", head, sep]
 
@@ -311,8 +350,8 @@ def report(version, previous):
         return (f"{num(row, 'interacted')} / {seen} визитов ({pct(num(row, 'interacted'), seen)}), "
                 f"{num(row, 'total_interacted')} / {shows} показов ({pct(num(row, 'total_interacted'), shows)})")
 
-    def arena(s, k):
-        row = s["arenas"].get(k)
+    def arena(s, k, key="arenas"):
+        row = s[key].get(k)
         if not row:
             return "-"
         starts = num(row, "starts")
@@ -333,6 +372,8 @@ def report(version, previous):
         # это ушли посреди цикла этого варианта, а «раундов» это циклов.
         ("Раунды по варианту арены (после v0.5.1; визиты: старты / победы / поражения / ушли посреди; "
          "в матче по циклам пола)", "arenas", arena),
+        ("Особые раунды (после v0.15.0; визиты: старты / победы / поражения / ушли посреди)", "specials",
+         lambda s, k: arena(s, k, "specials")),
     ):
         keys = keys_of(key)
         if keys:
@@ -349,6 +390,8 @@ def report(version, previous):
         ("Открытия арен (визиты с map unlock)", "map_unlocks"),
         ("Арены по раундам (визиты с map)", "maps"),
         ("Варианты арен по раундам (визиты с map-variant)", "variants"),
+        ("Особые раунды по исходу (после v0.15.0; визиты с outcome)", "special_outcome"),
+        ("Раунд босса: столкнул ли игрок босса (после v0.15.0; визиты)", "boss"),
         ("Свои рывки по раундам (после v0.7.1, после v0.14.1 только в сборке с бустами; визиты с round-boosts)", "round_boosts"),
         ("Рывки автобуста по раундам (после v0.7.1, после v0.14.1 только в сборке с бустами; визиты с auto-boosts)", "auto_boosts"),
         ("Миссии: сколько выполнено за раунд (v0.10, визиты с missions)", "missions_done"),

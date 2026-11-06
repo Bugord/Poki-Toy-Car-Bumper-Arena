@@ -398,11 +398,19 @@
     -unity-text-outline-width: 0;
 }
 .lobby__arena .lobby__badge {
-    width: 100px;
+    width: auto;
+    min-width: 100px;
     height: 62px;
     margin-left: 18px;
+    padding: 0 12px;
 }
 .lobby__arena .lobby__badge .sticker-text__text { font-size: 30px; }
+/* A special round's tag (MEGA ROUND!), tilted orange, as wide as its name. */
+.lobby__arena .lobby__badge--special {
+    padding: 0 18px;
+    background-color: var(--orange);
+    rotate: -3deg;
+}
 
 .lobby__rows {
     width: 920px;
@@ -2348,8 +2356,8 @@
     font-size: 34px;
 }
 
-/* A level badge: the number on a rounded sticker in its rank's colour (PlayerRank): white, bronze, silver, gold, and
-   pink for legend, since the panel draws no gradient. */
+/* A level badge: the number on a rounded sticker in its rank's colour (PlayerRank): white, bronze, silver, gold and a
+   rainbow for legend, with the 2.0 plates' ornaments over silver (a diamond), gold and legend (a crown) (LevelBadge). */
 .level-badge {
     flex-shrink: 0;
     align-items: center;
@@ -2450,7 +2458,30 @@
 .level-badge--bronze { background-color: #e8a46a; }
 .level-badge--silver { background-color: #d7e0ee; }
 .level-badge--gold { background-color: var(--gold); }
-.level-badge--legend { background-color: #ff7aa8; }
+.level-badge--legend { background-color: var(--navy); }
+
+/* Legend's rainbow, a texture LevelBadge makes at run time (USS draws no gradient), over the fill and under the
+   number. The navy behind it only shows where UI Toolkit's own fill corners are squarer than the rainbow's. */
+.level-badge__rainbow {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    -unity-background-scale-mode: stretch-to-fill;
+}
+
+.level-badge--legend > .level-badge__rainbow { display: flex; }
+
+/* Covers the inside; LevelBadge draws the crown or the diamond above it, from the badge's top edge. */
+.level-badge__ornament {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
 
 /* The REVENGE rival's badge: a red frame and two red horns sprouting from its top corners (HudView draws them). */
 .level-badge.level-badge--rival {
@@ -2469,6 +2500,10 @@
 
 .level-badge__horn--left { left: -20%; }
 .level-badge__horn--right { right: -20%; }
+
+/* Under a crown (gold and legend) the horns stand further out, beside it rather than under it. */
+.level-badge__horn--left.level-badge__horn--crowned { left: -34%; }
+.level-badge__horn--right.level-badge__horn--crowned { right: -34%; }
 
 .track__level {
     margin: 0;
@@ -3021,6 +3056,53 @@
     white-space: nowrap;
 }
 
+/* A special round's name, tilted gold over the countdown numbers, and its one-line rule on a dark pill below it
+   (HudView shows them for 3, 2 and 1 and hides them at GO!). */
+.kickoff__special {
+    display: none;
+    position: absolute;
+    left: -480px;
+    top: -560px;
+    width: 960px;
+    align-items: center;
+}
+
+.kickoff__special--shown {
+    display: flex;
+}
+
+.kickoff__special-name {
+    align-self: stretch;
+    align-items: center;
+    rotate: -4deg;
+}
+
+.kickoff__special-text {
+    margin: 0;
+    padding: 0;
+    align-self: stretch;
+    -unity-text-auto-size: best-fit 60px 120px;
+    font-size: 120px;
+    color: var(--gold);
+    -unity-text-outline-width: 20px;
+    -unity-text-outline-color: var(--navy);
+    text-shadow: 0 14px 0 rgb(29, 43, 79);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.kickoff__special-hint {
+    margin: 16px 0 0 0;
+    padding: 10px 36px 14px 36px;
+    max-width: 960px;
+    border-radius: 40px;
+    background-color: rgba(29, 43, 79, 0.8);
+    font-size: 46px;
+    color: var(--white);
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
 .kickoff__ring {
     position: absolute;
     left: -160px;
@@ -3204,11 +3286,29 @@
     justify-content: space-between;
 }
 
+/* HOME, CAR and NEXT MATCH: the two round buttons keep their size and NEXT MATCH takes the rest, its label fitted. */
 .round-over__buttons .round-over__button {
-    width: 745px;
+    flex-grow: 1;
+    flex-shrink: 1;
+    width: auto;
     min-width: 0;
+    margin-left: 24px;
     padding-left: 20px;
     padding-right: 20px;
+}
+
+.round-over__buttons .round-over__button .button__label {
+    -unity-text-auto-size: best-fit 60px 104px;
+}
+
+.round-over__home {
+    margin-right: 24px;
+}
+
+.round-over__home-icon {
+    width: 104px;
+    height: 104px;
+    margin: 4px 0 4px 0;
 }
 
 .round-over__garage {

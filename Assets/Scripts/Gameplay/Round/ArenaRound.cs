@@ -76,6 +76,7 @@ namespace ToyCarArena.Gameplay.Round
         private readonly CarCatalog catalog;
         private readonly IPlayerCar playerCar;
         private readonly IPlayerTopper playerTopper;
+        private readonly RoundRules rules;
         private readonly int nemesisIndex;
         private readonly bool isMatch;
         private readonly List<Car> cars = new();
@@ -100,8 +101,9 @@ namespace ToyCarArena.Gameplay.Round
 
         public ArenaRound(GameTuning tuning, IObjectResolver resolver, Car carPrefab, Transform carParent, IArenaEdge edge,
             GameTuning.ArenaSettings arena, RoundDifficulty difficulty, ISessionProgress progress, ISessionRoster roster,
-            CarCatalog catalog, IPlayerCar playerCar, IPlayerTopper playerTopper)
+            CarCatalog catalog, IPlayerCar playerCar, IPlayerTopper playerTopper, RoundRules rules)
         {
+            this.rules = rules;
             this.tuning = tuning;
             this.resolver = resolver;
             this.carPrefab = carPrefab;
@@ -131,6 +133,12 @@ namespace ToyCarArena.Gameplay.Round
         public Car Nemesis { get; private set; }
 
         public bool RevengeTaken { get; private set; }
+
+        /// <summary>A boss round's boss, null in any other round or if its slot is absent.</summary>
+        public Car Boss { get; private set; }
+
+        /// <summary>The player knocked the boss off this round.</summary>
+        public bool BossTaken { get; private set; }
 
         /// <summary>
         /// Whether the round had a marked rival at any time: from the start in a round, once a car knocked the player
@@ -251,6 +259,7 @@ namespace ToyCarArena.Gameplay.Round
             Player.Movement.FallTelemetry = FallTelemetry;
 #endif
             Nemesis = nemesisIndex > 0 && nemesisIndex < cars.Count ? cars[nemesisIndex] : null;
+            Boss = rules.BossIndex > 0 && rules.BossIndex < cars.Count ? cars[rules.BossIndex] : null;
             HadNemesis = Nemesis != null;
             CarsLeft = cars.Count;
             if (isMatch) {
@@ -336,6 +345,10 @@ namespace ToyCarArena.Gameplay.Round
                             lastPlayerKnockoutTime = Time.time;
                             if (car == Nemesis) {
                                 RevengeTaken = true;
+                            }
+
+                            if (car == Boss) {
+                                BossTaken = true;
                             }
                         }
 
@@ -531,7 +544,8 @@ namespace ToyCarArena.Gameplay.Round
             IsFinished = true;
             var knockedOutBy = PlayerKnockedOutBy != null ? IndexOf(PlayerKnockedOutBy) : RoundResult.Nobody;
             Finished?.Invoke(new RoundResult(outcome, place, cars.Count, elapsed, PlayerKnockouts, knockedOutBy,
-                playerFallCause, HadNemesis, RevengeTaken, standings.Snapshot(), Colors));
+                playerFallCause, HadNemesis, RevengeTaken, standings.Snapshot(), Colors, bonusKnockouts:
+                BossTaken ? tuning.SpecialRounds.BossReward - 1 : 0));
         }
 
         /// <summary>
@@ -573,7 +587,8 @@ namespace ToyCarArena.Gameplay.Round
                 return null;
             }
 
-            var window = hitBy.IsPlayer ? difficulty.PlayerKnockoutWindow : tuning.Round.KnockoutCreditWindow;
+            var window = (hitBy.IsPlayer ? difficulty.PlayerKnockoutWindow : tuning.Round.KnockoutCreditWindow)
+                * rules.FallTimeScale;
             return Time.time - car.LastHitTime <= window ? hitBy : null;
         }
 
@@ -609,7 +624,15 @@ namespace ToyCarArena.Gameplay.Round
                 car.name = NameOf(i);
                 car.IsPlayer = i == 0;
                 var entry = i == 0 ? catalog.Find(playerCar.SelectedCar) : players[i - 1].Car;
-                car.GetComponent<CarLook>().Apply(i, entry, ColorOf(i), i == 0 ? playerTopper.SelectedTopper : players[i - 1].Topper);
+                var topper = i == 0 ? playerTopper.SelectedTopper : players[i - 1].Topper;
+                if (i == rules.BossIndex) {
+                    // The boss keeps its player's name and colour, in a monster truck with a crown.
+                    var special = tuning.SpecialRounds;
+                    entry = catalog.Find(special.BossCar) ?? entry;
+                    topper = special.BossTopper;
+                }
+
+                car.GetComponent<CarLook>().Apply(i, entry, ColorOf(i), topper);
                 if (i == 0) {
                     // The player's car drives by its stats; a bot's car is only its look.
                     var statSettings = tuning.CarStats;

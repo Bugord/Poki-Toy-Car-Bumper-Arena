@@ -17,6 +17,7 @@ namespace ToyCarArena.Gameplay.Round
         private const string SelectedKey = "car_selected";
         private const string ColorKey = "car_color";
         private const string OwnedKey = "cars_owned";
+        private const string GarageSeenKey = "garage_seen_level";
 
         public event Action<int> ColorChanged;
 
@@ -55,7 +56,34 @@ namespace ToyCarArena.Gameplay.Round
 
                 storage.SetString(OwnedKey, string.Join(",", owned));
             }
+
+            // The garage counts as seen at the level a player had before the menu marked new cars.
+            if (!storage.HasKey(GarageSeenKey)) {
+                storage.SetInt(GarageSeenKey, Level);
+            }
         }
+
+        /// <summary>
+        /// Whether a level reached since the garage was last opened (<see cref="MarkGarageSeen"/>) opened a car: the
+        /// menu's GARAGE carries NEW for it.
+        /// </summary>
+        public bool HasUnseenCar
+        {
+            get {
+                var seen = storage.GetInt(GarageSeenKey);
+                var level = Level;
+                foreach (var car in catalog.Cars) {
+                    if (car.UnlockLevel > seen && car.UnlockLevel <= level) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        /// <summary>The player opened the garage: the cars their level has opened so far are no longer new.</summary>
+        public void MarkGarageSeen() => storage.SetInt(GarageSeenKey, Level);
 
         public int TotalXp => Math.Max(0, storage.GetInt(TotalKey));
         public int Level => At(TotalXp).Level;
@@ -169,7 +197,7 @@ namespace ToyCarArena.Gameplay.Round
             var roundXp = settings.RoundXp;
             var placeXp = Math.Max(0, result.CarCount - result.Place) * settings.PlaceXp;
             var winXp = result.Outcome == RoundOutcome.Won ? settings.WinXp : 0;
-            var knockoutXp = result.Knockouts * settings.KnockoutXp;
+            var knockoutXp = result.RewardKnockouts * settings.KnockoutXp;
             var streakXp = streakBonus?.Bonus(roundXp + placeXp + winXp + knockoutXp) ?? 0;
             // The ad's bonus on this result counts towards the same one level.
             resultCap = CapAbove(before);

@@ -31,6 +31,12 @@ MonoBehaviour:
     popupOptions:
       cancelOnBackdropClick: 0
       cancelOnNavigationCancel: 0
+  - screenId: Menu
+    uxml: {fileID: 9197481963319205126, guid: 6d1f4c2b8a3e47f0b9c5e2a7d4f81c36, type: 3}
+    layer: 0
+    popupOptions:
+      cancelOnBackdropClick: 0
+      cancelOnNavigationCancel: 0
   - screenId: RoundOver
     uxml: {fileID: 9197481963319205126, guid: cc8e14259c76fd44a8a6859f4f0c24ef, type: 3}
     layer: 0

@@ -45,6 +45,7 @@ namespace ToyCarArena.UI
 
         private Button playAgainButton;
         private Button garageButton;
+        private Button homeButton;
         private RoundOverMatch match;
         private Button settingsButton;
         private CarPortrait garagePortrait;
@@ -82,6 +83,10 @@ namespace ToyCarArena.UI
             garageButton = Root.Q<Button>("garage-button");
             garageButton.RemoveFromClassList(Button.ussClassName);
             garageButton.clicked += OpenGarage;
+            homeButton = Root.Q<Button>("home-button");
+            homeButton.RemoveFromClassList(Button.ussClassName);
+            homeButton.clicked += GoHome;
+            Root.Q<VisualElement>("home-icon").generateVisualContent += MenuView.DrawHome;
             // With a mouse NEXT MATCH carries its SPACE key in the columns (ui_screens).
             isTouch = controls.CheckTouchScreen();
             Root.EnableInClassList("round-over--desktop", !isTouch);
@@ -181,6 +186,10 @@ namespace ToyCarArena.UI
             if (playAgainButton != null) {
                 playAgainButton.clicked -= PlayAgain;
             }
+            if (homeButton != null) {
+                homeButton.clicked -= GoHome;
+            }
+
             if (garageButton != null) {
                 garageButton.clicked -= OpenGarage;
             }
@@ -373,6 +382,10 @@ namespace ToyCarArena.UI
                 evt.StopPropagation();
                 PlayAgain();
             }
+            else if (evt.keyCode == KeyCode.H) {
+                evt.StopPropagation();
+                GoHome();
+            }
             else if (evt.keyCode == KeyCode.G) {
                 evt.StopPropagation();
                 OpenGarage();
@@ -442,6 +455,18 @@ namespace ToyCarArena.UI
             isPlayAgainPressed = true;
             audioService.PlayUiClick();
             ViewModel.PlayAgain();
+        }
+
+        /// <summary>HOME: back to the main menu, behind the curtain; taken like NEXT MATCH, once.</summary>
+        private void GoHome()
+        {
+            if (IsBusy) {
+                return;
+            }
+
+            isPlayAgainPressed = true;
+            audioService.PlayUiClick();
+            ViewModel.GoHome();
         }
     }
 }

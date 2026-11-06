@@ -19,7 +19,9 @@ namespace ToyCarArena.App
     /// <summary>
     /// The app scope in the Boot scene. The kit's <see cref="AppLifetimeScope"/> brings storage, logging, the platform
     /// (Poki with <c>POKI_ENABLED</c>, a local stand-in otherwise), UIKit and the state machine; this adds the game's
-    /// screens, states and services. Rounds go round from <see cref="RoundState"/> to <see cref="ResultState"/> and back.
+    /// screens, states and services. A visit opens in <see cref="EntryState"/>, which sends a first visit straight to
+    /// <see cref="RoundState"/> and a returning one to the main menu (<see cref="MenuState"/>); rounds go round from
+    /// <see cref="RoundState"/> to <see cref="ResultState"/> and back, and HOME on the result returns to the menu.
     /// </summary>
     public sealed class GameScope : AppLifetimeScope
     {
@@ -109,6 +111,7 @@ namespace ToyCarArena.App
             builder.Register<PersonalBests>(Lifetime.Singleton);
             builder.Register<AdBreaks>(Lifetime.Singleton);
             builder.RegisterEntryPoint<SessionTime>().AsSelf();
+            builder.RegisterEntryPoint<Visits>().AsSelf();
             // The 3D scene's render scale follows the screen; the UI is drawn on top at full resolution.
             builder.RegisterEntryPoint<RenderScaler>().AsSelf()
                 .WithParameter("touchMaxShortSide", touchMaxShortSide)
@@ -117,6 +120,8 @@ namespace ToyCarArena.App
             // Coins, toppers and missions are saved and outlive the arena scene, as XP does.
             builder.Register<PlayerWallet>(Lifetime.Singleton).AsSelf().As<IPlayerTopper>();
             builder.Register<MissionTracker>(Lifetime.Singleton);
+            // NEXT MATCH on the result and PLAY in the menu share one way into the next round.
+            builder.Register<MatchLobby>(Lifetime.Singleton);
 #if BUGORD_SUPERCONSOLE
             if (Debug.isDebugBuild) {
                 builder.RegisterEntryPoint<ProgressDevConsole>();
@@ -131,10 +136,14 @@ namespace ToyCarArena.App
             builder.RegisterScreen<RoundOverViewModel, RoundOverView>();
             builder.RegisterScreen<GarageViewModel, GarageView>();
             builder.RegisterScreen<SettingsViewModel, SettingsView>();
+            builder.RegisterScreen<MenuViewModel, MenuView>();
 
+            builder.RegisterState<EntryState>();
+            builder.RegisterState<MenuState>();
             builder.RegisterState<RoundState>();
             builder.RegisterState<ResultState>();
-            builder.RegisterAppEntryPoint<RoundState>();
+            // A first visit goes straight into the arena, a returning one opens on the main menu.
+            builder.RegisterAppEntryPoint<EntryState>();
         }
     }
 }

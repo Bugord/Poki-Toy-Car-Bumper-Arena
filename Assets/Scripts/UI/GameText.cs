@@ -25,6 +25,14 @@ namespace ToyCarArena.UI
 
         public static string Topper(string id) => Strings.Get($"topper.{id}.name");
 
+        /// <summary>A special round's name (MEGA ROUND!), or null for a plain round.</summary>
+        public static string Special(SpecialRound kind) =>
+            kind == SpecialRound.None ? null : Strings.Get($"special.{Gameplay.Round.RoundRules.IdOf(kind)}.name");
+
+        /// <summary>A special round's rule in one line, or null for a plain round.</summary>
+        public static string SpecialHint(SpecialRound kind) =>
+            kind == SpecialRound.None ? null : Strings.Get($"special.{Gameplay.Round.RoundRules.IdOf(kind)}.hint");
+
         /// <summary>
         /// A mission's task with its number: the text follows what it counts and whether it asks for it in one round, so
         /// a new mission in the pool needs no new string; <paramref name="arena"/> names the arena of one on an arena.

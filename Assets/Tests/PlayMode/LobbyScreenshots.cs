@@ -27,10 +27,37 @@ namespace ToyCarArena.Tests.PlayMode
         [UnityTest]
         public IEnumerator CaptureTheSearchForPlayers()
         {
+            return Capture(SpecialRound.None, "en", "lobby", new[] { 0.15f, 0.6f, 1.0f, 1.4f });
+        }
+
+        /// <summary>The lobby before a special round, its tag in the arena's pill and its rule under the seats, in the
+        /// longest languages too: <c>Logs/lobby/special_&lt;language&gt;_ready_&lt;w&gt;x&lt;h&gt;.png</c>.</summary>
+        [UnityTest]
+        public IEnumerator CaptureASpecialRound()
+        {
+            foreach (var language in new[] { "en", "fr", "ru" }) {
+                yield return Capture(SpecialRound.HotPotato, language, $"special_{language}", new float[0]);
+            }
+        }
+
+        /// <summary>The lobby of a player at level 48 and at 99, so the seats around them straddle two ranks and show
+        /// the ornaments of silver, gold and legend: <c>Logs/lobby/ranks&lt;level&gt;_ready_&lt;w&gt;x&lt;h&gt;.png</c>.</summary>
+        [UnityTest]
+        public IEnumerator CaptureHighRanks()
+        {
+            foreach (var level in new[] { 48, 99 }) {
+                yield return Capture(SpecialRound.None, "en", $"ranks{level}", new float[0], level);
+            }
+        }
+
+        private static IEnumerator Capture(SpecialRound special, string language, string prefix, float[] moments,
+            int playerLevel = 1)
+        {
             Strings.Load(new StringTable(AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Localization/strings.csv").text));
+            Strings.SetLanguage(language);
             var catalog = AssetDatabase.LoadAssetAtPath<CarCatalog>("Assets/Data/Cars/data_car_catalog.asset");
             var tuning = AssetDatabase.LoadAssetAtPath<GameTuning>("Assets/Data/Gameplay/data_game_tuning.asset");
-            var roster = new SessionRoster(catalog, new FirstPlayerCar(catalog));
+            var roster = new SessionRoster(catalog, new LeveledPlayerCar(catalog, playerLevel));
             roster.ForRound(6);
             // A round played, so a couple of seats change hands, as after NEXT MATCH.
             roster.NextRound(6, 6, RoundResult.Nobody, tuning.Players);
@@ -38,7 +65,6 @@ namespace ToyCarArena.Tests.PlayMode
             var directory = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "lobby");
             Directory.CreateDirectory(directory);
             var shots = new[] { (1080, 1920), (1920, 1080) };
-            var moments = new[] { 0.15f, 0.6f, 1.0f, 1.4f };
             foreach (var (width, height) in shots) {
                 var panelSettings = Object.Instantiate(
                     AssetDatabase.LoadAssetAtPath<PanelSettings>("Assets/UI/ui_panel_settings.asset"));
@@ -60,19 +86,20 @@ namespace ToyCarArena.Tests.PlayMode
                     view.Bind(model);
                     view.Attach(curtain);
                     view.ShowAsync(CancellationToken.None).Forget();
-                    model.ShowLobby(roster, 6, 3, "SANDBOX", true, 3, Strings.Format("lobby.mission", "KNOCK OUT 6 CARS", "5/6"));
+                    model.ShowLobby(roster, 6, 3, Strings.Get("arena.sandbox.name"), true, 3,
+                        Strings.Format("lobby.mission", "KNOCK OUT 6 CARS", "5/6"), special);
                     foreach (var moment in moments) {
                         while (Time.realtimeSinceStartupAsDouble - model.StartedAt < moment) {
                             yield return null;
                         }
 
-                        Save(target, Path.Combine(directory, $"lobby_{moment:0.00}_{width}x{height}.png"));
+                        Save(target, Path.Combine(directory, $"{prefix}_{moment:0.00}_{width}x{height}.png"));
                     }
 
                     yield return model.Ready(CancellationToken.None).ToCoroutine();
                     yield return null;
                     yield return null;
-                    Save(target, Path.Combine(directory, $"lobby_ready_{width}x{height}.png"));
+                    Save(target, Path.Combine(directory, $"{prefix}_ready_{width}x{height}.png"));
                 }
                 finally {
                     view.Dispose();
@@ -84,6 +111,22 @@ namespace ToyCarArena.Tests.PlayMode
 
             roster.Dispose();
             typeof(Strings).GetField("table", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
+        }
+
+        // The first car at a chosen level: bots sit down with levels around the player's.
+        private sealed class LeveledPlayerCar : IPlayerCar
+        {
+            public LeveledPlayerCar(CarCatalog catalog, int level)
+            {
+                SelectedCar = catalog.Cars[0].Id;
+                Level = level;
+            }
+
+            public string SelectedCar { get; }
+            public int SelectedColor => 0;
+            public int Level { get; }
+            public bool SelectColor(int id) => false;
+            public event System.Action<int> ColorChanged { add { } remove { } }
         }
 
         private static void Save(RenderTexture source, string path)
