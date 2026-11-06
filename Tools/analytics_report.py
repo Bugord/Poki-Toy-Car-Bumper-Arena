@@ -80,6 +80,11 @@ def summarise(data):
         # после v0.13.5: первый стартовый экран визита показан, тронули, и через сколько секунд после старта движка
         "start": i.get("controls-start"),
         "start_time": other(o, r"controls-ready-([0-9a-z-]+)-start-time"),
+        # после v0.16: главное меню визитов 2+ (показ, через сколько секунд после старта движка, что нажали), HOME на результате
+        "menu": i.get("menu-shown"),
+        "menu_time": other(o, r"menu-ready-([0-9a-z-]+)-start-time"),
+        "menu_press": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"menu-(play|garage|missions|mode)", e))},
+        "home": i.get("result-home"),
         "place1": other(o, r"result-place-(\d+)-r1-place"),
         "ko1": other(o, r"result-knockouts-(\d+)-r1-knockouts"),
         "again": i.get("result-play-again"),
@@ -219,6 +224,22 @@ def report(version, previous):
         for b, name in (("d0", "в тот же день"), ("d1", "на следующий день"), ("d2-7", "через 2–7 дней"),
                         ("d8plus", "через 8 дней и позже"), ("unknown", "игрок до v0.16, день неизвестен")):
             out.append(line(f"Вернулись {name}", lambda s, b=b: f"{s['back'].get(b, 0)} ({pct(s['back'].get(b, 0), back(s))})" if s["back"] else "-"))
+
+    # The menu opens visits 2+ (from v0.16); its presses are counted per menu shown, HOME per result that showed it.
+    if any(s and (s["menu"] or s["home"]) for s in (cur, old)):
+        out += ["", "## Главное меню (после v0.16; визиты 2+)", "", head, sep]
+        shown = lambda s: num(s["menu"], "seen")
+        out.append(line("Меню показано", lambda s: str(shown(s)) if s["menu"] else "-"))
+        for key, name in (("play", "PLAY"), ("garage", "GARAGE"), ("missions", "MISSIONS"), ("mode", "MODE")):
+            out.append(line(f"Нажали {name}, от показов меню",
+                            lambda s, k=key: (lambda n: f"{n} ({pct(n, shown(s))})")(num(s["menu_press"].get(k), "interacted"))
+                            if s["menu"] else "-"))
+        times = lambda s: sum(s["menu_time"].values())
+        for bucket in ("0-3", "3-6", "6-10", "10plus"):
+            out.append(line(f"Меню на экране через {bucket} с после старта движка",
+                            lambda s, b=bucket: f"{s['menu_time'].get(b, 0)} ({pct(s['menu_time'].get(b, 0), times(s))})" if s["menu_time"] else "-"))
+        out.append(line("HOME на результате: показан / нажат",
+                        lambda s: f"{num(s['home'], 'seen')} / {num(s['home'], 'interacted')} ({pct(num(s['home'], 'interacted'), num(s['home'], 'seen'))})" if s["home"] else "-"))
 
     names = sorted({k for s in (cur, old) if s for k in s["rounds"]}, key=lambda k: (k.endswith("plus"), int(re.sub(r"\D", "", k))))
     out += ["", "## Воронка по раундам (старты / победы / поражения / ушли; далее = доля, перешедшая в следующий)", "", head, sep]

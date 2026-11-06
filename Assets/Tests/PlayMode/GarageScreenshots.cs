@@ -8,6 +8,7 @@ using Cysharp.Threading.Tasks;
 using NUnit.Framework;
 using ToyCarArena.Audio;
 using ToyCarArena.Gameplay;
+using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
 using ToyCarArena.UI;
@@ -82,7 +83,8 @@ namespace ToyCarArena.Tests.PlayMode
             var light = new GameObject("Garage screenshot light").AddComponent<Light>();
             light.type = LightType.Directional;
             light.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
-            var stage = new GarageStage(AssetDatabase.LoadAssetAtPath<Car>("Assets/Prefabs/Cars/Car.prefab"), host.transform);
+            var stage = new GarageStage(AssetDatabase.LoadAssetAtPath<Car>("Assets/Prefabs/Cars/Car.prefab"),
+                AssetDatabase.LoadAssetAtPath<MechanicArt>("Assets/Data/Arenas/data_mechanic_art.asset"), host.transform);
             model.Stage = stage;
             var view = new GarageView(new SilentAudioService(library), new HudControls());
             try {

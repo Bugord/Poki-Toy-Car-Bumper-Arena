@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="menu" class="screen menu">
+        <Style src="../ui_screens.uss" />
+        <Style src="../ui_menu.uss" />
+    </ui:VisualElement>
+</ui:UXML>

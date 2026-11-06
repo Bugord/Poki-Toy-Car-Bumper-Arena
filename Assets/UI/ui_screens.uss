@@ -3286,11 +3286,29 @@
     justify-content: space-between;
 }
 
+/* HOME, CAR and NEXT MATCH: the two round buttons keep their size and NEXT MATCH takes the rest, its label fitted. */
 .round-over__buttons .round-over__button {
-    width: 745px;
+    flex-grow: 1;
+    flex-shrink: 1;
+    width: auto;
     min-width: 0;
+    margin-left: 24px;
     padding-left: 20px;
     padding-right: 20px;
+}
+
+.round-over__buttons .round-over__button .button__label {
+    -unity-text-auto-size: best-fit 60px 104px;
+}
+
+.round-over__home {
+    margin-right: 24px;
+}
+
+.round-over__home-icon {
+    width: 104px;
+    height: 104px;
+    margin: 4px 0 4px 0;
 }
 
 .round-over__garage {

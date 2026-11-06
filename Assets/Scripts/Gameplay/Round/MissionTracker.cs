@@ -42,6 +42,23 @@ namespace ToyCarArena.Gameplay.Round
         /// <summary>The missions in play, by slot.</summary>
         public IReadOnlyList<MissionState> Slots => slots;
 
+        /// <summary>
+        /// The mission closest to done, the most of its target already counted: the lobby's line and the menu's card;
+        /// null before the missions are saved.
+        /// </summary>
+        public MissionState Nearest()
+        {
+            MissionState nearest = null;
+            foreach (var slot in slots) {
+                if (nearest == null || slot.Progress * nearest.Definition.Target
+                    > nearest.Progress * slot.Definition.Target) {
+                    nearest = slot;
+                }
+            }
+
+            return nearest;
+        }
+
         /// <summary>Missions done in this visit, for analytics; not saved.</summary>
         public int DoneThisVisit { get; private set; }
 

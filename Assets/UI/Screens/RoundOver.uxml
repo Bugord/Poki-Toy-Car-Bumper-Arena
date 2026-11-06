@@ -81,6 +81,14 @@
             </ui:VisualElement>
             <ui:VisualElement picking-mode="Ignore" class="round-over__actions">
                 <ui:VisualElement picking-mode="Ignore" class="round-over__buttons">
+                    <ui:Button name="home-button" class="pill round-over__garage round-over__home">
+                        <ui:VisualElement name="home-icon" picking-mode="Ignore" class="round-over__home-icon" />
+                        <ui:Label text="HOME" picking-mode="Ignore" class="round-over__garage-label">
+                            <Bindings>
+                                <Bugord.App.Localization.LocalizedText property="text" key="result.home" />
+                            </Bindings>
+                        </ui:Label>
+                    </ui:Button>
                     <ui:Button name="garage-button" class="pill round-over__garage">
                         <ui:VisualElement name="garage-portrait" picking-mode="Ignore" class="car-portrait round-over__garage-portrait" />
                         <ui:Label text="CAR" picking-mode="Ignore" class="round-over__garage-label">
