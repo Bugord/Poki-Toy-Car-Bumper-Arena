@@ -162,7 +162,8 @@ namespace ToyCarArena.UI
         private Button sheetBuy;
         private Label[] sheetBuyLabels;
         private VisualElement sheetBuyCoin;
-        private Label sheetBuyPrice;
+        private VisualElement sheetBuyPrice;
+        private Label[] sheetBuyPriceLabels;
         private Button sheetWatch;
         private bool isConfirmOpen;
         private bool isCelebrating;
@@ -592,7 +593,8 @@ namespace ToyCarArena.UI
             sheetBuyCoin = RoundOverMeta.Coin();
             sheetBuyCoin.AddToClassList("garage__sheet-buy-coin");
             sheetBuy.Add(sheetBuyCoin);
-            sheetBuyPrice = Text("garage__sheet-buy-price");
+            // Two layers, as BUY beside it: one outlined label eats the fill of its own digits at this size.
+            sheetBuyPrice = RoundOverProgress.Outlined("", "garage__sheet-buy-price", out sheetBuyPriceLabels);
             sheetBuy.Add(sheetBuyPrice);
             sheetBuy.Add(KeyCap(null, "garage__sheet-key", () => Strings.Get("common.space")));
             sheet.Add(sheetBuy);
@@ -980,7 +982,9 @@ namespace ToyCarArena.UI
             var price = confirmCar != null ? ViewModel.PriceOf(confirmCar.Id) : confirmHat.Price;
             sheetBefore.text = ViewModel.Coins.ToString();
             sheetAfter.text = Mathf.Max(0, ViewModel.Coins - price).ToString();
-            sheetBuyPrice.text = price.ToString();
+            foreach (var label in sheetBuyPriceLabels) {
+                label.text = price.ToString();
+            }
             Show(sheetCoins, !isAd);
             Show(sheetBuy, !isAd);
             Show(sheetFree, isAd);
