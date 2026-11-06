@@ -80,7 +80,7 @@ def summarise(data):
         # после v0.13.5: первый стартовый экран визита показан, тронули, и через сколько секунд после старта движка
         "start": i.get("controls-start"),
         "start_time": other(o, r"controls-ready-([0-9a-z-]+)-start-time"),
-        # после v0.16: главное меню визитов 2+ (показ, через сколько секунд после старта движка, что нажали), HOME на результате
+        # с v0.16.0: главное меню визитов 2+ (показ, через сколько секунд после старта движка, что нажали), HOME на результате
         "menu": i.get("menu-shown"),
         "menu_time": other(o, r"menu-ready-([0-9a-z-]+)-start-time"),
         "menu_press": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"menu-(play|garage|missions|mode)", e))},
@@ -227,7 +227,7 @@ def report(version, previous):
 
     # The menu opens visits 2+ (from v0.16); its presses are counted per menu shown, HOME per result that showed it.
     if any(s and (s["menu"] or s["home"]) for s in (cur, old)):
-        out += ["", "## Главное меню (после v0.16; визиты 2+)", "", head, sep]
+        out += ["", "## Главное меню (с v0.16.0; визиты 2+)", "", head, sep]
         shown = lambda s: num(s["menu"], "seen")
         out.append(line("Меню показано", lambda s: str(shown(s)) if s["menu"] else "-"))
         for key, name in (("play", "PLAY"), ("garage", "GARAGE"), ("missions", "MISSIONS"), ("mode", "MODE")):
