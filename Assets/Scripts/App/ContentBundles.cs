@@ -37,7 +37,7 @@ namespace ToyCarArena.App
         private readonly AudioLibrary audio;
         private readonly IGamePlatform platform;
         private readonly CancellationTokenSource lifetime = new();
-        private readonly Dictionary<string, UniTask<bool>> loads = new();
+        private readonly Dictionary<string, AsyncLazy<bool>> loads = new();
         private readonly List<AssetBundle> bundles = new();
 
         public ContentBundles(GameTuning tuning, ArenaCatalog arenas, CarCatalog cars, AudioLibrary audio, IGamePlatform platform)
@@ -102,8 +102,9 @@ namespace ToyCarArena.App
                 return;
             }
 
+            // The timer goes before the source it cancels: a timer left running would cancel it after its disposal.
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
-            timeout.CancelAfterSlim(TimeSpan.FromSeconds(seconds), DelayType.Realtime);
+            using var timer = timeout.CancelAfterSlim(TimeSpan.FromSeconds(seconds), DelayType.Realtime);
             var (isTimeout, _) = await load.AttachExternalCancellation(timeout.Token).SuppressCancellationThrow();
             token.ThrowIfCancellationRequested();
             if (isTimeout) {
@@ -129,15 +130,19 @@ namespace ToyCarArena.App
             }
         }
 
-        /// <summary>The bundle's one download, started on the first ask; true once its assets are in place.</summary>
+        /// <summary>
+        /// The bundle's one download, started on the first ask; true once its assets are in place. The background queue
+        /// and a screen waiting for the same bundle await it at once, which a preserved UniTask does not allow (it takes
+        /// one continuation at a time), so it is a lazy task, which takes any number.
+        /// </summary>
         private UniTask<bool> Load(string name)
         {
             if (!loads.TryGetValue(name, out var load)) {
-                load = Download(name, lifetime.Token).Preserve();
+                load = Download(name, lifetime.Token).ToAsyncLazy();
                 loads[name] = load;
             }
 
-            return load;
+            return load.Task;
         }
 
         private async UniTask<bool> Download(string name, CancellationToken token)
