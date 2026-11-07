@@ -38,6 +38,19 @@ namespace ToyCarArena.UI
             row.AddToClassList("rewards");
             xp = Sticker("reward--xp", HudView.CreateStar("ko-star"), "result.reward_xp", viewModel.RoundXp, 0,
                 out xpValue);
+            // The XP boost bought in the menu paid for this round: its XP already counts it.
+            if (viewModel.XpGain.BoostXp > 0) {
+                var boost = new VisualElement { pickingMode = PickingMode.Ignore };
+                boost.AddToClassList("reward__boost");
+                var boostLabel = RoundOverProgress.Outlined("", "reward__boost-label", out var boostLabels);
+                foreach (var part in boostLabels) {
+                    text.Set(part, () => Strings.Format("result.boost_stamp", viewModel.BoostMultiplier));
+                }
+
+                boost.Add(boostLabel);
+                xp.Add(boost);
+            }
+
             coins = Sticker("reward--coins", RoundOverMeta.Coin(), "result.reward_coins", viewModel.RoundCoins, 1,
                 out coinValue);
             row.Add(xp);
@@ -221,7 +234,7 @@ namespace ToyCarArena.UI
         }
 
         // The video sign: a white disc with a navy ring and a purple triangle, as video ads are marked.
-        private static VisualElement PlaySign()
+        internal static VisualElement PlaySign()
         {
             var sign = new VisualElement { pickingMode = PickingMode.Ignore };
             sign.AddToClassList("double__play");

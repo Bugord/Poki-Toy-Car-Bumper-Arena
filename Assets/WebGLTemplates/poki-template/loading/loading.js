@@ -28,6 +28,8 @@
 	var ReadyTimeout = 30;
 	var PageTimeout = 120;
 	var KnockSeconds = 0.9;
+	// Seconds the truck takes, once it knocks the car, to drive up to the bar's end.
+	var DriveSeconds = 0.3;
 	var FadeDelay = 0.5;
 	var FadeSeconds = 0.35;
 
@@ -181,6 +183,7 @@
 	}
 
 	// The truck pushes the car from the bar's start until the car hangs half over its end; the green is the progress.
+	// On the knock the truck drives on to the end of the bar.
 	function place(progress, knocked) {
 		var length = track.clientWidth;
 		var truckWidth = truck.offsetWidth;
@@ -191,11 +194,12 @@
 		var spin = 0;
 
 		if (knocked >= 0) {
-			// The truck lunges and the car flies off the end, tumbling backwards, and falls past the bottom.
-			var lunge = Math.min(1, knocked / 0.12);
-			truckX += truckWidth * 0.12 * Math.sin(lunge * Math.PI * 0.5);
+			// The truck drives on up to the bar's end and stops there, and the car flies off ahead of it, tumbling
+			// backwards, and falls past the bottom.
+			var drive = Math.min(1, knocked / DriveSeconds);
+			truckX += (length - truckWidth - truckX) * (1 - (1 - drive) * (1 - drive));
 			var t = knocked;
-			carX += carWidth * 2.4 * t;
+			carX = truckX + truckWidth * 0.93 + carWidth * 2.4 * t;
 			carY = carWidth * (3.2 * t - 5 * t * t);
 			spin = 620 * t;
 			spark.style.display = 'none';

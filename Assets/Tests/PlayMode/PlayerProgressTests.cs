@@ -70,6 +70,55 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [Test]
+        public void TheXpBoostDoublesTheRoundsOwnXpForItsMatches()
+        {
+            Assert.That(progress.IsBoosted, Is.False);
+            progress.StartBoost();
+            Assert.That(progress.BoostMatchesLeft, Is.EqualTo(tuning.Ads.BoostMatches));
+
+            // 25 of its own, doubled; the missions' 10 stay as they are.
+            var gain = progress.Record(Result(RoundOutcome.Out, 3, 4, 1), missionXp: 10);
+            Assert.That(gain.BoostXp, Is.EqualTo(25));
+            Assert.That(gain.Total, Is.EqualTo(60));
+            Assert.That(gain.TotalAfter, Is.EqualTo(60));
+            Assert.That(progress.BoostMatchesLeft, Is.EqualTo(tuning.Ads.BoostMatches - 1));
+            Assert.That(new PlayerProgress(storage, tuning, catalog).BoostMatchesLeft,
+                Is.EqualTo(tuning.Ads.BoostMatches - 1), "the boost is saved");
+
+            for (var match = 1; match < tuning.Ads.BoostMatches; match++) {
+                Assert.That(progress.Record(Result(RoundOutcome.Out, 4, 4, 0)).BoostXp, Is.EqualTo(10));
+            }
+
+            Assert.That(progress.IsBoosted, Is.False);
+            Assert.That(progress.Record(Result(RoundOutcome.Out, 4, 4, 0)).BoostXp, Is.Zero, "used up");
+        }
+
+        [Test]
+        public void ABoostedResultIsNotHeldToOneLevel()
+        {
+            progress.StartBoost();
+            // (10 + 30 + 15 + 60) × 2 + 90 = 320: past level 4 (40 + 50 + 60 + 70 = 220).
+            var gain = progress.Record(Result(RoundOutcome.Won, 1, 7, 6), missionXp: 90);
+            Assert.That(gain.TotalAfter, Is.EqualTo(gain.Total));
+            Assert.That(gain.After.Level, Is.GreaterThan(3));
+            Assert.That(gain.UnlockedCarIds, Is.EqualTo(new[] { "speedster", "vintage" }));
+            Assert.That(progress.AddBonus(100).TotalAfter, Is.EqualTo(gain.TotalAfter + 100),
+                "CLAIM ×2 on a boosted result is not held either");
+
+            progress.SetBoost(0);
+            Assert.That(progress.Record(Result(RoundOutcome.Won, 1, 7, 6), missionXp: 90).After.Level - gain.After.Level,
+                Is.EqualTo(1), "the next result without the boost is held to one level again");
+        }
+
+        [Test]
+        public void StartingTheBoostAgainDoesNotShortenIt()
+        {
+            progress.SetBoost(tuning.Ads.BoostMatches + 3);
+            progress.StartBoost();
+            Assert.That(progress.BoostMatchesLeft, Is.EqualTo(tuning.Ads.BoostMatches + 3));
+        }
+
+        [Test]
         public void WinOfFourWithTwoKnockoutsEarnsSixtyAndPersists()
         {
             var gain = progress.Record(Result(RoundOutcome.Won, 1, 4, 2));
@@ -116,6 +165,32 @@ namespace ToyCarArena.Tests.PlayMode
             var reloaded = new PlayerProgress(storage, tuning, catalog);
             Assert.That(reloaded.IsOwned("speedster"), Is.True);
             Assert.That(reloaded.SelectedCar, Is.EqualTo("speedster"));
+        }
+
+        [Test]
+        public void AnAdCarIsTheirsOnlyAfterItsAdAndIsNeverForSale()
+        {
+            JsonUtility.FromJsonOverwrite("{\"cars\":[" +
+                "{\"id\":\"racer\",\"displayName\":\"RACER\",\"unlockLevel\":1}," +
+                "{\"id\":\"buggy\",\"displayName\":\"BUGGY\",\"unlockLevel\":1}]}", catalog);
+            // An old player (xp, no cars_owned) gets the priced cars their level gave, never the ad car.
+            storage.SetInt("xp_total", 1000);
+            progress = new PlayerProgress(storage, tuning, catalog);
+            Assert.That(progress.IsAdCar("buggy"), Is.True);
+            Assert.That(progress.IsAdCar("racer"), Is.False);
+            Assert.That(progress.IsUnlocked("buggy"), Is.True);
+            Assert.That(progress.IsOwned("buggy"), Is.False);
+            Assert.That(progress.IsForSale("buggy"), Is.False, "Coins do not buy it.");
+            Assert.That(progress.Select("buggy"), Is.False);
+
+            Assert.That(progress.UnlockByAd("racer"), Is.False, "Only an ad car.");
+            Assert.That(progress.UnlockByAd("buggy"), Is.True);
+            Assert.That(progress.IsOwned("buggy"), Is.True);
+            Assert.That(progress.SelectedCar, Is.EqualTo("buggy"));
+            Assert.That(progress.UnlockByAd("buggy"), Is.False, "Once.");
+            var reloaded = new PlayerProgress(storage, tuning, catalog);
+            Assert.That(reloaded.IsOwned("buggy"), Is.True);
+            Assert.That(reloaded.SelectedCar, Is.EqualTo("buggy"));
         }
 
         [Test]

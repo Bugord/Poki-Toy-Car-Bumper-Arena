@@ -37,6 +37,11 @@ namespace ToyCarArena.App
                     adBreaks.SetPlayed(seconds);
                     return $"{adBreaks.Played:0} s of rounds";
                 }));
+            CommandRegistry.Register("xp_boost", "Set the matches the XP boost runs for (0 ends it); the menu shows it "
+                + "when it opens next", (Func<int, string>)(matches => {
+                    progress.SetBoost(matches);
+                    return $"XP boost: {progress.BoostMatchesLeft} matches";
+                }));
         }
 
         public void Dispose()
@@ -44,6 +49,7 @@ namespace ToyCarArena.App
             CommandRegistry.Unregister("xp");
             CommandRegistry.Unregister("xp_add");
             CommandRegistry.Unregister("ad_play");
+            CommandRegistry.Unregister("xp_boost");
         }
 
         private string Describe() => $"{progress.TotalXp} XP, LVL {progress.Level}";

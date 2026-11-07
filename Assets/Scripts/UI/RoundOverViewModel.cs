@@ -76,10 +76,13 @@ namespace ToyCarArena.UI
         public bool HasNewCar => XpGain.UnlockedCarIds.Count > 0 || BonusXp.UnlockedCarIds?.Count > 0;
 
         /// <summary>
-        /// The round's own XP on its sticker: what CLAIM ×2 pays once more. The missions' XP stays on their rows and is
-        /// not doubled.
+        /// The round's own XP on its sticker: what CLAIM ×2 pays once more, the XP boost's share included. The missions'
+        /// XP stays on their rows and is not doubled.
         /// </summary>
         public int RoundXp => XpGain.Total - XpGain.MissionXp;
+
+        /// <summary>What the XP boost multiplies a round's own XP by: the stamp on a boosted round's XP sticker.</summary>
+        public int BoostMultiplier => tuning.Ads.BoostMultiplier;
 
         /// <summary>The round's own coins on their sticker, the missions' left out, as <see cref="RoundXp"/>.</summary>
         public int RoundCoins => Coins.Total - Coins.MissionCoins;
@@ -295,20 +298,20 @@ namespace ToyCarArena.UI
         public int ColorOf(int index) => colors[index];
 
         /// <summary>
-        /// The popup leaves this view attached and its reward animation running exactly once. True when the player
-        /// asked for the next match from the garage.
+        /// The popup leaves this view attached and its reward animation running exactly once. The garage has no NEXT
+        /// MATCH of its own: back returns here.
         /// </summary>
-        public async UniTask<bool> OpenGarage(CancellationToken token)
+        public async UniTask OpenGarage(CancellationToken token)
         {
             if (IsGarageOpen) {
-                return false;
+                return;
             }
 
             IsGarageOpen = true;
             try {
                 platform.MeasureGaragePressed();
                 progress.MarkGarageSeen();
-                return await navigator.RunAsync<GarageViewModel, bool>(token);
+                await navigator.RunAsync<GarageViewModel, bool>(token);
             }
             finally {
                 IsGarageOpen = false;

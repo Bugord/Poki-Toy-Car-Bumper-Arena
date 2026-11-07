@@ -321,16 +321,11 @@ namespace ToyCarArena.UI
 
         private async UniTask ShowGarage(CancellationToken token)
         {
-            var isNextMatch = await ViewModel.OpenGarage(token);
+            await ViewModel.OpenGarage(token);
             token.ThrowIfCancellationRequested();
             RefreshGarage();
             xpProgress.RefreshColor();
             ShowNewCar(false, false);
-            if (isNextMatch) {
-                // The garage already clicked for its NEXT MATCH.
-                isPlayAgainPressed = true;
-                ViewModel.PlayAgain();
-            }
         }
 
         private void ShowTitle()
