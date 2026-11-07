@@ -382,7 +382,7 @@ MonoBehaviour:
     warning: 1.2
     stay: 4
     radius: 1.6
-    height: 0.6
+    height: 1
     bounceOut: 6
     bounceUp: 4.7
     stagger: 0.4

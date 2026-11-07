@@ -44,6 +44,79 @@ namespace ToyCarArena.Gameplay.Arena
             return Finish("Ellipsoid", vertices, normals, triangles);
         }
 
+        /// <summary>
+        /// A smooth solid of revolution about the Y axis: <paramref name="profile"/> lists (radius, height) from the foot
+        /// outwards and up to the top's middle (radius 0), and is closed underneath by a flat disc. With
+        /// <paramref name="lobes"/> the radius swells and narrows round the axis by <paramref name="lobeDepth"/> of itself,
+        /// as a fluted jelly mould does; the swelling fades out along the profile from <paramref name="lobeFade"/> of the
+        /// way up, so a flat top stays round.
+        /// </summary>
+        public static Mesh Revolved(IReadOnlyList<Vector2> profile, int slices, int lobes = 0, float lobeDepth = 0f,
+            float lobeFade = 1f)
+        {
+            var vertices = new List<Vector3>();
+            var normals = new List<Vector3>();
+            var triangles = new List<int>();
+            var rows = profile.Count;
+            for (var row = 0; row < rows; row++) {
+                var along = rows > 1 ? (float)row / (rows - 1) : 0f;
+                var swell = lobeDepth * Mathf.Clamp01((1f - along) / Mathf.Max(0.01f, 1f - lobeFade));
+                for (var slice = 0; slice <= slices; slice++) {
+                    var theta = Mathf.PI * 2f * slice / slices;
+                    vertices.Add(PointOf(profile[row], theta, lobes, swell));
+                }
+            }
+
+            // Normals from the two directions of the surface: along the profile and round the axis.
+            for (var row = 0; row < rows; row++) {
+                for (var slice = 0; slice <= slices; slice++) {
+                    var up = vertices[Mathf.Min(rows - 1, row + 1) * (slices + 1) + slice];
+                    var down = vertices[Mathf.Max(0, row - 1) * (slices + 1) + slice];
+                    // The seam's last column is its first again, so round the axis it wraps over slices, not slices + 1.
+                    var around = slice % slices;
+                    var next = vertices[row * (slices + 1) + (around + 1) % slices];
+                    var previous = vertices[row * (slices + 1) + (around + slices - 1) % slices];
+                    var normal = Vector3.Cross(up - down, next - previous);
+                    if (normal.sqrMagnitude < 1e-10f) {
+                        normal = Vector3.up;
+                    }
+
+                    normals.Add(normal.normalized);
+                }
+            }
+
+            for (var row = 0; row < rows - 1; row++) {
+                for (var slice = 0; slice < slices; slice++) {
+                    var a = row * (slices + 1) + slice;
+                    var b = a + slices + 1;
+                    triangles.Add(a); triangles.Add(b); triangles.Add(a + 1);
+                    triangles.Add(a + 1); triangles.Add(b); triangles.Add(b + 1);
+                }
+            }
+
+            // The bottom, facing down.
+            var centre = vertices.Count;
+            vertices.Add(new Vector3(0f, profile[0].y, 0f));
+            normals.Add(Vector3.down);
+            var rim = vertices.Count;
+            for (var slice = 0; slice <= slices; slice++) {
+                vertices.Add(vertices[slice]);
+                normals.Add(Vector3.down);
+            }
+
+            for (var slice = 0; slice < slices; slice++) {
+                triangles.Add(centre); triangles.Add(rim + slice); triangles.Add(rim + slice + 1);
+            }
+
+            return Finish("Revolved", vertices, normals, triangles);
+        }
+
+        private static Vector3 PointOf(Vector2 point, float theta, int lobes, float swell)
+        {
+            var radius = point.x * (1f + (lobes > 0 ? swell * Mathf.Cos(lobes * theta) : 0f));
+            return new Vector3(Mathf.Cos(theta) * radius, point.y, Mathf.Sin(theta) * radius);
+        }
+
         /// <summary>A box centred on the origin.</summary>
         public static Mesh Box(Vector3 size)
         {

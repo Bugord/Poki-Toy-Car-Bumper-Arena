@@ -7,9 +7,9 @@ namespace ToyCarArena.Gameplay.Arena
 {
     /// <summary>
     /// The Mounds mechanic of the sandbox's bricks variant: from <see cref="GameTuning.MoundsSettings.Delay"/> seconds in,
-    /// and every <see cref="GameTuning.MoundsSettings.Interval"/> after, one or two spots of the floor are announced by a
-    /// darkening circle with crumbs hopping in it (<see cref="GameTuning.MoundsSettings.Warning"/>). Then a mound of sand
-    /// pops up there: a car over it at that moment is tossed up and outwards (nobody's hit, <see cref="HazardBlow"/>), and
+    /// and every <see cref="GameTuning.MoundsSettings.Interval"/> after, one or two spots of the floor are announced
+    /// (<see cref="GameTuning.MoundsSettings.Warning"/>): a ring the mound's size whose inside fills from the middle out as
+    /// the time runs down, and a low bulge of sand trembling up in its middle. Then the bulge pops up into a mound: a car over it at that moment is tossed up and outwards (nobody's hit, <see cref="HazardBlow"/>), and
     /// for <see cref="GameTuning.MoundsSettings.Stay"/> seconds the mound is slow sand, a layer of the arena's
     /// <see cref="ArenaSurface"/>. Then it sinks. A mound whose floor crumbles sinks at once. The mound is a picture and has
     /// no collider, so cars drive through it, slowed. The spots come from the bots' seed, so a simulation repeats them.
@@ -25,7 +25,6 @@ namespace ToyCarArena.Gameplay.Arena
         }
 
         private const int Pool = 4;
-        private const int Crumbs = 6;
         private const float PopTime = 0.28f;
         private const float SinkTime = 0.4f;
         // Half the car's width as the mound sees it, in metres, on top of the mound's radius.
@@ -33,6 +32,27 @@ namespace ToyCarArena.Gameplay.Arena
         // Metres over which the sand's effect fades in at the rim.
         private const float BlendWidth = 0.4f;
         private const float DecalHeight = 0.01f;
+        // The share of the mound's height the bulge reaches by the end of the warning, where the pop takes over.
+        private const float BulgeShare = 0.3f;
+        // How much wider than the mound the spill of sand round its foot is.
+        private const float SpillShare = 1.14f;
+
+        // The dune from its foot to its top, as shares of the radius and height: a short lip at the foot keeps the
+        // outline from sinking into the floor, then a soft rounded slope. It is damp, darker sand.
+        private static readonly Vector2[] Profile =
+        {
+            new(1f, 0f), new(0.99f, 0.07f), new(0.94f, 0.15f), new(0.83f, 0.3f), new(0.69f, 0.49f), new(0.53f, 0.68f),
+            new(0.37f, 0.84f), new(0.21f, 0.95f), new(0.09f, 0.99f), new(0f, 1f),
+        };
+
+        // A cap of dry, light sand over the dune's upper part, a hair proud of it so that its edge throws the outline: the
+        // arena's light falls from about where the camera is, so a smooth dune alone shades flat and reads as a disc.
+        private static readonly Vector2[] Cap =
+        {
+            new(0.883f, 0.3f), new(0.817f, 0.36f), new(0.757f, 0.44f), new(0.685f, 0.53f), new(0.607f, 0.62f),
+            new(0.525f, 0.71f), new(0.432f, 0.8f), new(0.332f, 0.88f), new(0.242f, 0.94f), new(0.135f, 0.98f),
+            new(0f, 1.012f),
+        };
 
         private sealed class Mound
         {
@@ -42,9 +62,7 @@ namespace ToyCarArena.Gameplay.Arena
             public Transform Root;
             public Transform Dome;
             public Transform Disc;
-            public Transform[] Crumb;
-            public Vector3[] CrumbSpot;
-            public float[] CrumbPhase;
+            public Transform Ring;
             public MaterialPropertyBlock Block;
             public MeshRenderer DiscRenderer;
             public float Scale;
@@ -58,8 +76,11 @@ namespace ToyCarArena.Gameplay.Arena
         private readonly IAudioService audioService;
         private readonly Mound[] mounds = new Mound[Pool];
         private readonly int colorId = Shader.PropertyToID("_BaseColor");
-        private readonly Color discDim = new(0.35f, 0.22f, 0.1f, 0.12f);
-        private readonly Color discDark = new(0.3f, 0.18f, 0.06f, 0.7f);
+        // The countdown inside the ring, from faint to strong, the ring itself, and the damp sand round a risen mound.
+        private readonly Color fillFaint = new(0.42f, 0.25f, 0.1f, 0.15f);
+        private readonly Color fillFull = new(0.42f, 0.25f, 0.1f, 0.4f);
+        private readonly Color ringColour = new(0.42f, 0.25f, 0.1f, 0.9f);
+        private readonly Color spill = new(0.5f, 0.33f, 0.15f, 0.3f);
 
         private HazardBlow blow;
         private System.Random random;
@@ -299,20 +320,10 @@ namespace ToyCarArena.Gameplay.Arena
                 mound.Scale = 0f;
                 mound.Root.position = spot;
                 mound.Root.gameObject.SetActive(true);
-                mound.Dome.gameObject.SetActive(false);
-                mound.Disc.gameObject.SetActive(true);
-                mound.Disc.localScale = new Vector3(settings.Radius, 1f, settings.Radius);
-                foreach (var crumb in mound.Crumb) {
-                    crumb.gameObject.SetActive(true);
-                }
-
-                for (var i = 0; i < Crumbs; i++) {
-                    var angle = (float)random.NextDouble() * Mathf.PI * 2f;
-                    var radius = (0.25f + (float)random.NextDouble() * 0.7f) * settings.Radius;
-                    mound.CrumbSpot[i] = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
-                    mound.CrumbPhase[i] = (float)random.NextDouble() * Mathf.PI * 2f;
-                }
-
+                mound.Ring.gameObject.SetActive(true);
+                mound.Ring.localScale = new Vector3(settings.Radius, 1f, settings.Radius);
+                mound.Disc.localScale = Vector3.zero;
+                SetDome(mound);
                 return true;
             }
 
@@ -322,15 +333,14 @@ namespace ToyCarArena.Gameplay.Arena
         private void TickWarning(Mound mound)
         {
             var progress = Mathf.Clamp01(mound.Time / settings.Warning);
-            mound.Block.SetColor(colorId, Color.Lerp(discDim, discDark, progress));
+            mound.Block.SetColor(colorId, Color.Lerp(fillFaint, fillFull, progress));
             mound.DiscRenderer.SetPropertyBlock(mound.Block);
-            // The circle shivers more as the pop nears, and the crumbs hop faster.
-            var shiver = 1f + Mathf.Sin(mound.Time * 40f) * 0.03f * progress;
-            mound.Disc.localScale = new Vector3(settings.Radius * shiver, 1f, settings.Radius * shiver);
-            for (var i = 0; i < Crumbs; i++) {
-                var hop = Mathf.Abs(Mathf.Sin(mound.Time * (10f + 12f * progress) + mound.CrumbPhase[i])) * (0.15f + 0.25f * progress);
-                mound.Crumb[i].localPosition = mound.CrumbSpot[i] + Vector3.up * (0.08f + hop);
-            }
+            // The fill spreads from the middle to the ring as the time runs down; the bulge swells and trembles harder.
+            var fill = settings.Radius * Mathf.Sqrt(progress);
+            mound.Disc.localScale = new Vector3(fill, 1f, fill);
+            var tremble = 1f + Mathf.Sin(mound.Time * 45f) * 0.12f * progress;
+            mound.Scale = BulgeShare * progress * progress * tremble;
+            SetDome(mound);
 
             if (!Edge.IsSolid(mound.Position)) {
                 Release(mound);
@@ -346,12 +356,9 @@ namespace ToyCarArena.Gameplay.Arena
         {
             mound.Stage = Stage.Risen;
             mound.Time = 0f;
-            mound.Disc.gameObject.SetActive(false);
-            foreach (var crumb in mound.Crumb) {
-                crumb.gameObject.SetActive(false);
-            }
-
-            mound.Dome.gameObject.SetActive(true);
+            mound.Ring.gameObject.SetActive(false);
+            mound.Block.SetColor(colorId, spill);
+            mound.DiscRenderer.SetPropertyBlock(mound.Block);
             if (audioService != null) {
                 audioService.Play(audioService.Library.HitLight, 0.5f);
             }
@@ -380,8 +387,10 @@ namespace ToyCarArena.Gameplay.Arena
         private void TickRisen(Mound mound)
         {
             var pop = Mathf.Clamp01(mound.Time / PopTime);
-            // Up with an overshoot, then settling.
-            mound.Scale = pop < 1f ? Mathf.Sin(pop * Mathf.PI * 0.5f) * (1f + 0.25f * Mathf.Sin(pop * Mathf.PI)) : 1f;
+            // Up from the bulge with an overshoot, then settling.
+            mound.Scale = pop < 1f
+                ? Mathf.Lerp(BulgeShare, 1f, Mathf.Sin(pop * Mathf.PI * 0.5f)) * (1f + 0.25f * Mathf.Sin(pop * Mathf.PI))
+                : 1f;
             SetDome(mound);
             // The sand goes when its time is up or the floor no longer reaches its edge.
             if (mound.Time >= settings.Stay || Edge.DistanceToEdge(mound.Position) < settings.Radius * 0.6f) {
@@ -401,9 +410,13 @@ namespace ToyCarArena.Gameplay.Arena
 
         private void SetDome(Mound mound)
         {
-            // Wide at the foot while it is low, as sand slumps.
-            var width = Mathf.Lerp(0.6f, 1f, Mathf.Clamp01(mound.Scale));
-            mound.Dome.localScale = new Vector3(settings.Radius * width, settings.Height * mound.Scale, settings.Radius * width);
+            // Narrow while it is a bulge, out to the full radius as it rises; the spill of damp sand follows the foot.
+            var width = settings.Radius * Mathf.Lerp(0.45f, 1f, Mathf.Clamp01(mound.Scale));
+            mound.Dome.localScale = new Vector3(width, Mathf.Max(0.001f, settings.Height * mound.Scale), width);
+            if (mound.Stage != Stage.Warning) {
+                var foot = width * SpillShare;
+                mound.Disc.localScale = new Vector3(foot, 1f, foot);
+            }
         }
 
         private static void Release(Mound mound)
@@ -416,33 +429,34 @@ namespace ToyCarArena.Gameplay.Arena
         private void BuildLook()
         {
             var sand = art.Get("mound_sand");
-            var crumbMaterial = art.Get("mound_crumb");
-            var discMaterial = art.Get("mound_ring");
-            var dome = Own(ToyMeshes.Ellipsoid(Vector3.one, 20, 8, Mathf.PI * 0.5f));
-            var disc = Own(ToyMeshes.Disc(1f, 28));
-            var crumb = Own(ToyMeshes.Box(Vector3.one * 0.34f));
+            var damp = art.Get("mound_sand_dark");
+            var decal = art.Get("mound_ring");
+            var dune = Own(ToyMeshes.Revolved(Profile, 36));
+            var cap = Own(ToyMeshes.Revolved(Cap, 36));
+            var disc = Own(ToyMeshes.Disc(1f, 40));
+            var ring = Own(ToyMeshes.Ring(0.9f, 1f, 48));
+            var ringBlock = new MaterialPropertyBlock();
+            ringBlock.SetColor(colorId, ringColour);
             for (var i = 0; i < Pool; i++) {
                 var mound = new Mound {
                     Root = new GameObject("Mound").transform,
-                    Crumb = new Transform[Crumbs],
-                    CrumbSpot = new Vector3[Crumbs],
-                    CrumbPhase = new float[Crumbs],
                     Block = new MaterialPropertyBlock(),
                 };
                 mound.Root.SetParent(Root, false);
-                mound.Dome = ToyMeshes.Part(mound.Root, "Sand", dome, sand, Vector3.zero);
-                var decal = ToyMeshes.Decal(mound.Root, "Ring", disc, discMaterial, -4);
-                decal.transform.localPosition = Vector3.up * DecalHeight;
-                mound.Disc = decal.transform;
-                mound.DiscRenderer = decal;
-                // The sand and the crumbs are outlined, the flat circle carries its own colour only.
+                mound.Dome = new GameObject("Sand").transform;
+                mound.Dome.SetParent(mound.Root, false);
+                ToyMeshes.Part(mound.Dome, "Dune", dune, damp, Vector3.zero);
+                ToyMeshes.Part(mound.Dome, "Cap", cap, sand, Vector3.zero);
+                // Only the sand is outlined; the flat fill and ring carry their own colour.
                 ToyMeshes.Outlined(mound.Dome.gameObject);
-                for (var k = 0; k < Crumbs; k++) {
-                    mound.Crumb[k] = ToyMeshes.Part(mound.Root, "Crumb", crumb, crumbMaterial, Vector3.zero,
-                        new Vector3(20f * k, 35f * k, 0f));
-                    ToyMeshes.Outlined(mound.Crumb[k].gameObject);
-                }
-
+                var fill = ToyMeshes.Decal(mound.Root, "Fill", disc, decal, -5);
+                fill.transform.localPosition = Vector3.up * DecalHeight;
+                mound.Disc = fill.transform;
+                mound.DiscRenderer = fill;
+                var band = ToyMeshes.Decal(mound.Root, "Ring", ring, decal, -4);
+                band.transform.localPosition = Vector3.up * (DecalHeight + 0.002f);
+                band.SetPropertyBlock(ringBlock);
+                mound.Ring = band.transform;
                 mound.Root.gameObject.SetActive(false);
                 mounds[i] = mound;
             }

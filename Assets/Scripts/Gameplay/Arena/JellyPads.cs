@@ -25,10 +25,18 @@ namespace ToyCarArena.Gameplay.Arena
     /// </summary>
     public sealed class JellyPads : ITickable, IDisposable
     {
-        private const int DomeSlices = 20;
-        private const int DomeStacks = 10;
-        private const float DomeHeight = 0.34f;
-        private const float OutlineThickness = 0.1f;
+        private const int Slices = 40;
+        private const float Height = 0.75f;
+
+        // The jelly's side from the foot up to the middle of its top, in shares of the pad's radius and of its height: a
+        // slight lip at the foot keeps the outline under it, a wide lower tier, a step and a rounded upper tier, so seen
+        // from above it is two rings, a jelly mould's and a target's.
+        private static readonly Vector2[] Profile =
+        {
+            new(0.94f, 0f), new(1f, 0.06f), new(1f, 0.2f), new(0.98f, 0.36f), new(0.93f, 0.47f), new(0.84f, 0.52f),
+            new(0.66f, 0.54f), new(0.62f, 0.6f), new(0.6f, 0.78f), new(0.55f, 0.9f), new(0.45f, 0.97f), new(0.28f, 1f),
+            new(0f, 1f),
+        };
 
         // A car must be this close to the floor to be driving over a pad, rather than flying over it.
         private const float OnFloor = 0.6f;
@@ -39,8 +47,6 @@ namespace ToyCarArena.Gameplay.Arena
         // The floor's edge nearer than this share of the radius to a pad's middle takes the pad away.
         private const float VanishShare = 0.45f;
         private const float VanishSpeed = 4f;
-
-        private static readonly string[] ColourKeys = { "jelly_red", "jelly_green", "jelly_blue", "jelly_orange" };
 
         private sealed class Pad
         {
@@ -258,44 +264,31 @@ namespace ToyCarArena.Gameplay.Arena
             root.transform.SetParent(parent, false);
             var radius = settings.PadRadius;
 
-            var dome = new PropMesh();
-            dome.Sphere(Vector3.zero, Quaternion.identity, new Vector3(radius, DomeHeight, radius), DomeSlices, DomeStacks,
-                true);
-            dome.Submesh = 1;
-            dome.Sphere(new Vector3(-radius * 0.28f, DomeHeight * 0.88f, radius * 0.3f), Quaternion.Euler(0f, -35f, 0f),
-                new Vector3(radius * 0.26f, 0.05f, radius * 0.13f), 10, 6, false);
-            var domeMesh = dome.ToMesh("Jelly Pad");
-            var hull = new PropMesh();
-            hull.Sphere(Vector3.zero, Quaternion.identity, new Vector3(radius, DomeHeight, radius), DomeSlices, DomeStacks,
-                true);
-            var hullMesh = hull.ToHull("Jelly Pad Outline", OutlineThickness);
-            meshes.Add(domeMesh);
-            meshes.Add(hullMesh);
+            // One jelly for every pad, so a pink pudding on the chocolate always means a bounce.
+            var profile = new Vector2[Profile.Length];
+            for (var i = 0; i < Profile.Length; i++) {
+                profile[i] = new Vector2(Profile[i].x * radius, Profile[i].y * Height);
+            }
 
+            var bodyMesh = ToyMeshes.Revolved(profile, Slices);
+            var shineMesh = ToyMeshes.Ellipsoid(new Vector3(radius * 0.2f, 0.035f, radius * 0.075f), 14, 4);
+            meshes.Add(bodyMesh);
+            meshes.Add(shineMesh);
+
+            var body = art.Get("jelly_body");
             var shine = art.Get("jelly_shine");
-            var outline = art.Get("jelly_outline");
             for (var i = 0; i < places.Count; i++) {
                 var pad = new Pad { Centre = places[i], Phase = i * 1.7f };
                 pad.Root = new GameObject("Pad " + i).transform;
                 pad.Root.SetParent(root.transform, false);
                 pad.Root.position = new Vector3(pad.Centre.x, 0.004f, pad.Centre.z);
-                pad.Body = new GameObject("Body").transform;
-                pad.Body.SetParent(pad.Root, false);
-                Add(pad.Body.gameObject, domeMesh, art.Get(ColourKeys[i % ColourKeys.Length]), shine);
-                var shell = new GameObject("Outline");
-                shell.transform.SetParent(pad.Body, false);
-                Add(shell, hullMesh, outline);
+                pad.Body = ToyMeshes.Part(pad.Root, "Body", bodyMesh, body, Vector3.zero);
+                // Outlined before the gloss is added, so the gloss stays a plain white stroke.
+                ToyMeshes.Outlined(pad.Body.gameObject);
+                ToyMeshes.Part(pad.Body, "Shine", shineMesh, shine, new Vector3(-radius * 0.24f, Height * 0.95f, radius * 0.24f),
+                    new Vector3(-8f, -45f, 8f));
                 pads.Add(pad);
             }
-        }
-
-        private static void Add(GameObject target, Mesh mesh, params Material[] materials)
-        {
-            target.AddComponent<MeshFilter>().sharedMesh = mesh;
-            var renderer = target.AddComponent<MeshRenderer>();
-            renderer.sharedMaterials = materials;
-            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            renderer.receiveShadows = false;
         }
     }
 }
