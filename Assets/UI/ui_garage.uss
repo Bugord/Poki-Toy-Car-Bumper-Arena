@@ -605,32 +605,60 @@
 
 /* -- The window before BUY or UNLOCK -------------------------------------------------------------------------------- */
 
+/* Sized from the GarageB2 confirm board: 350 design px wide, about 2.9 reference px to one. */
 .garage__sheet {
     width: 1040px;
+    padding: 70px 64px 58px 64px;
     align-items: center;
+    border-width: 9px;
+    border-bottom-width: 26px;
+    border-radius: 82px;
 }
-
-.garage__sheet .menu__sheet-head { align-self: stretch; }
 
 .garage__sheet-title {
-    flex-shrink: 1;
-}
-
-.garage__sheet-title-text {
-    margin: 0;
+    align-self: stretch;
+    margin: 0 120px;
     padding: 0;
-    font-size: 68px;
-    color: var(--gold);
-    -unity-text-outline-width: 13px;
-    text-shadow: 0 10px 0 rgb(29, 43, 79);
+    font-size: 86px;
+    -unity-text-align: middle-center;
+    color: var(--navy);
 }
 
-.garage__sheet-title-text.stroke__face { -unity-text-outline-width: 0; text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+.garage__sheet-close {
+    position: absolute;
+    top: 40px;
+    right: 40px;
+}
+
+.garage__sheet-frame {
+    align-self: stretch;
+    height: 540px;
+    margin-top: 66px;
+    overflow: hidden;
+    border-width: 9px;
+    border-color: var(--navy);
+    border-radius: 58px;
+    background-color: #3db5ff;
+    background-size: 100% 100%;
+}
+
+.garage__sheet-light {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 1620px;
+    height: 1620px;
+    margin-left: -810px;
+    margin-top: -810px;
+}
 
 .garage__sheet-art {
-    width: 720px;
-    height: 450px;
-    background-size: 100% 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .garage__sheet-portrait {
@@ -641,28 +669,32 @@
     bottom: 0;
 }
 
+/* The stats bare under the picture, without the pill they wear under the pedestal. */
 .garage__sheet-stats {
-    margin-top: 10px;
+    margin-top: 58px;
+    padding: 0;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
 }
 
-.garage__sheet-stats .garage-stats__stat { margin: 0 8px; }
-.garage__sheet-stats .garage-stats__label { font-size: 28px; margin-right: 10px; }
-.garage__sheet-stats .garage-stats__pip { width: 22px; height: 18px; }
+.garage__sheet-stats .garage-stats__stat { margin: 0 17px; }
+.garage__sheet-stats .garage-stats__label { font-size: 32px; margin-right: 17px; }
+.garage__sheet-stats .garage-stats__pip { width: 23px; height: 20px; }
 
 .garage__sheet-coins {
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    margin-top: 34px;
+    margin-top: 66px;
 }
 
 .garage__sheet-pill {
     flex-direction: row;
     align-items: center;
-    height: 92px;
-    padding: 0 30px 0 14px;
-    border-width: 6px;
-    border-bottom-width: 11px;
+    height: 116px;
+    padding: 0 40px 0 22px;
+    border-width: 9px;
+    border-bottom-width: 18px;
     border-color: var(--navy);
     border-radius: 999px;
     background-color: var(--white);
@@ -671,56 +703,90 @@
 .garage__sheet-pill--after { background-color: #fff4cf; }
 
 .garage__sheet-pill-count {
-    margin: 0 0 0 12px;
+    margin: 0 0 0 16px;
     padding: 0;
-    font-size: 48px;
+    font-size: 58px;
     color: var(--navy);
 }
 
 .garage__sheet-arrow {
-    width: 70px;
-    height: 56px;
-    margin: 0 18px;
+    width: 86px;
+    height: 70px;
+    margin: 0 29px;
 }
 
 .garage__sheet-free {
     flex-direction: row;
     align-items: center;
-    height: 92px;
-    margin-top: 34px;
-    padding: 0 34px 0 18px;
-    border-width: 6px;
-    border-bottom-width: 11px;
+    height: 116px;
+    margin-top: 66px;
+    padding: 0 46px 0 28px;
+    border-width: 9px;
+    border-bottom-width: 18px;
     border-color: var(--navy);
     border-radius: 999px;
     background-color: var(--white);
 }
 
 .garage__sheet-free-text {
-    margin: 0;
+    margin: 0 0 0 20px;
     padding: 0;
-    font-size: 48px;
+    font-size: 58px;
     color: var(--navy);
 }
 
+/* BUY gold, as the bottom button's BUY; WATCH AD purple. 76 design px tall, CANCEL 52 under them. */
 .garage__sheet-buy,
 .garage__sheet-watch {
     align-self: stretch;
-    height: 170px;
-    margin-top: 40px;
-    padding: 0 40px 20px 40px;
+    min-width: 0;
+    height: 220px;
+    margin-top: 75px;
+    padding: 0 40px 26px 40px;
+    border-radius: 70px;
+}
+
+.garage__sheet-buy > .button__face,
+.garage__sheet-watch > .button__face { border-radius: 61px; }
+
+.garage__sheet-buy { background-color: #e9a91c; }
+.garage__sheet-buy > .button__face { background-color: var(--gold); }
+.garage__sheet-buy:hover > .button__face { background-color: #ffd65e; }
+
+.garage__sheet-cancel {
+    align-self: stretch;
+    min-width: 0;
+    height: 150px;
+    margin-top: 46px;
+    padding: 0 40px 12px 40px;
+    border-bottom-width: 18px;
+    border-radius: 58px;
+}
+
+.garage__sheet-cancel > .button__face { bottom: 0; border-radius: 49px; }
+
+.garage__sheet-cancel-label {
+    font-size: 70px;
+    color: var(--navy);
 }
 
 .garage__sheet-buy-label-text {
-    font-size: 80px;
-    -unity-text-outline-width: 12px;
+    font-size: 98px;
+    color: var(--white);
+    -unity-text-outline-width: 16px;
+    -unity-text-outline-color: var(--navy);
     text-shadow: 0 6px 0 rgb(29, 43, 79);
 }
 
 .garage__sheet-buy-label-text.stroke__face { -unity-text-outline-width: 0; text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
 
+/* The coin between BUY and the price as big as the design's, a 30 px coin beside 34 px words. */
 .garage__sheet-buy-coin {
-    margin-left: 26px;
+    width: 84px;
+    height: 84px;
+    margin: 0 10px 0 30px;
+    border-width: 8px;
+    border-bottom-width: 12px;
 }
 
 .garage__sheet-buy-price {
@@ -730,9 +796,9 @@
 .garage__sheet-buy-price-text {
     margin: 0;
     padding: 0;
-    font-size: 64px;
+    font-size: 98px;
     color: var(--white);
-    -unity-text-outline-width: 10px;
+    -unity-text-outline-width: 16px;
     -unity-text-outline-color: var(--navy);
     text-shadow: 0 5px 0 rgb(29, 43, 79);
 }
@@ -757,9 +823,25 @@
 .garage__sheet-watch-key .key__text,
 .garage__sheet-cancel-key .key__text { font-size: 28px; }
 
-/* The ad window's X sits on the button's top edge, as the AD tag does, at the other end. */
-.garage__sheet-watch-key { right: auto; left: 34px; }
+/* ESC sits after CANCEL, in the row, as in the design. */
+.garage__sheet-cancel-key { position: relative; top: 0; right: 0; margin: 0 0 0 26px; }
+
+/* The AD tag a white pill on the left of WATCH AD's top edge, as in the design; the X key at the other end. */
+.garage__sheet-watch .menu__watch-tag {
+    top: -40px;
+    left: 46px;
+    right: auto;
+    padding: 4px 22px 6px 22px;
+    border-width: 7px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+    color: var(--navy);
+    font-size: 36px;
+}
 
 .garage--desktop .garage__sheet-key,
 .garage--desktop .garage__sheet-watch-key,
 .garage--desktop .garage__sheet-cancel-key { display: flex; }
+
+.garage__sheet-buy-coin > .coin__inner { width: 32px; height: 32px; }

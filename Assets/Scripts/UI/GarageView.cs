@@ -67,6 +67,9 @@ namespace ToyCarArena.UI
 
         private static readonly Color CheckerColor = new(1f, 1f, 1f, 0.07f);
         private const float CheckerShare = 1f / 6f;
+        // The confirm window's picture is small, so its checker is brighter and its squares a bigger share of it.
+        private static readonly Color SheetChecker = new(1f, 1f, 1f, 0.12f);
+        private const float SheetCheckerShare = 0.16f;
 
         private enum Tab
         {
@@ -550,17 +553,31 @@ namespace ToyCarArena.UI
             sheet.AddToClassList("menu__sheet");
             sheet.AddToClassList("garage__sheet");
             sheet.pickingMode = PickingMode.Position;
-            var head = Element("menu__sheet-head");
-            head.Add(RoundOverProgress.Outlined("", "garage__sheet-title", out sheetTitle));
-            head.Add(MenuView.CloseSticker(() => CloseConfirm(true)));
-            sheet.Add(head);
+            // As the design: a plain navy question in the middle, the cross in the corner.
+            var title = Text("garage__sheet-title");
+            sheetTitle = new[] { title };
+            title.RegisterCallback<GeometryChangedEvent>(_ => RefitTitle());
+            sheet.Add(title);
+            var close = MenuView.CloseSticker(() => CloseConfirm(true));
+            close.AddToClassList("garage__sheet-close");
+            sheet.Add(close);
 
+            // The car in a framed piece of the garage's sky: the checker and the turning light behind it.
+            var frame = Element("garage__sheet-frame");
+            frame.style.backgroundImage = new StyleBackground(LeagueLook.SkyOf(ViewModel.League));
+            DriftingChecker.AddTo(frame, SheetChecker, SheetCheckerShare);
+            var light = Element("garage__sheet-light");
+            light.generateVisualContent += MenuView.DrawLight;
+            light.schedule.Execute(() =>
+                light.style.rotate = new Rotate(Time.unscaledTime / RaysTurnSeconds * 360f % 360f)).Every(16);
+            frame.Add(light);
             sheetArt = Element("garage__sheet-art");
             sheetPortraitRoot = Element("car-portrait");
             sheetPortraitRoot.AddToClassList("garage__sheet-portrait");
             sheetArt.Add(sheetPortraitRoot);
             sheetPortrait = new CarPortrait(sheetPortraitRoot);
-            sheet.Add(sheetArt);
+            frame.Add(sheetArt);
+            sheet.Add(frame);
             sheetStats = BuildStats("garage__sheet-stats");
             sheet.Add(sheetStats);
 
@@ -579,7 +596,6 @@ namespace ToyCarArena.UI
             sheetBuy = new Button(Confirm);
             sheetBuy.RemoveFromClassList(Button.ussClassName);
             sheetBuy.AddToClassList("button");
-            sheetBuy.AddToClassList("button--green");
             sheetBuy.AddToClassList("garage__sheet-buy");
             sheetBuy.focusable = false;
             sheetBuy.Add(Element("button__face"));
@@ -626,11 +642,11 @@ namespace ToyCarArena.UI
             cancel.RemoveFromClassList(Button.ussClassName);
             cancel.AddToClassList("button");
             cancel.AddToClassList("button--white");
-            cancel.AddToClassList("menu__no-thanks");
+            cancel.AddToClassList("garage__sheet-cancel");
             cancel.focusable = false;
             cancel.Add(Element("button__face"));
             var cancelLabel = Text("button__label");
-            cancelLabel.AddToClassList("menu__no-thanks-label");
+            cancelLabel.AddToClassList("garage__sheet-cancel-label");
             text.Set(cancelLabel, () => Strings.Get("garage.cancel"));
             cancel.Add(cancelLabel);
             cancel.Add(KeyCap("ESC", "garage__sheet-cancel-key"));
@@ -638,6 +654,35 @@ namespace ToyCarArena.UI
 
             confirm.Add(sheet);
             screen.Add(confirm);
+        }
+
+        /// <summary>
+        /// Keeps the question on one line between the cross and the other edge: a long name or language (BUY
+        /// SPEEDSTER? in Russian) shrinks it, down to half its size, rather than running under the cross.
+        /// </summary>
+        private void FitTitle()
+        {
+            sheetTitle[0].style.fontSize = StyleKeyword.Null;
+            sheetTitle[0].schedule.Execute(RefitTitle);
+        }
+
+        /// <summary>
+        /// Down to the width the title has once it is laid out; also on its first layout, as the window opens hidden.
+        /// </summary>
+        private void RefitTitle()
+        {
+            var title = sheetTitle[0];
+            var width = title.contentRect.width;
+            var size = title.resolvedStyle.fontSize;
+            if (float.IsNaN(width) || width <= 0f || size <= 0f || string.IsNullOrEmpty(title.text)) {
+                return;
+            }
+
+            var text = title.MeasureTextSize(title.text, 0f, VisualElement.MeasureMode.Undefined, 0f,
+                VisualElement.MeasureMode.Undefined).x;
+            if (text > width) {
+                title.style.fontSize = Mathf.Max(size * 0.5f, size * width * 0.96f / text);
+            }
         }
 
         private Label CoinPill(VisualElement parent, string classNames)
@@ -962,6 +1007,8 @@ namespace ToyCarArena.UI
             foreach (var label in sheetTitle) {
                 label.text = Strings.Format(isAd ? "garage.unlock_title" : "garage.buy_title", name);
             }
+
+            FitTitle();
 
             // The picture is the pedestal's, the car (in the hat) turning as it does behind the dim.
             if (heroTexture != null) {
