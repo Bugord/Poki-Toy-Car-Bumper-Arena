@@ -25,21 +25,35 @@ namespace ToyCarArena.Gameplay.Cars
         // podium camera (with a short far plane of its own) never sees the arena or its world.
         private static readonly Vector3 Stage = new(0f, 1500f, 0f);
 
-        private const int TextureSize = 768;
+        /// <summary>
+        /// Where the top of the car's roof over the turning axis is in the picture, as a share of its height from the top
+        /// (its middle across): every car is framed to put it there, so the result screen can set a crown on it.
+        /// </summary>
+        public const float RoofTop = 0.12f;
+
+        // Twice as wide as tall: the car and its podium are wide, and on a phone held upright the picture gets a short,
+        // wide box over the cards, which it fits by its height.
+        private const int TextureWidth = 1024;
+        private const int TextureHeight = 512;
         private const float TurnSeconds = 4f;
         // The car hops off the podium with a whole turn as it comes in, then settles to the slow turn.
         private const float HopSeconds = 0.55f;
-        private const float HopHeight = 0.9f;
-        private const float BaseRadius = 2.1f;
-        private const float BaseHeight = 0.7f;
-        private const float TopRadius = 1.8f;
+        // Low, so the roof stays in the picture, which keeps little room over it.
+        private const float HopHeight = 0.3f;
+        // A little wider than a car's diagonal: the podium is the car's stage, not the picture's subject.
+        private const float BaseRadius = 1.6f;
+        private const float BaseHeight = 0.34f;
+        private const float TopRadius = 1.38f;
         private const float TopHeight = 0.18f;
         private const float FieldOfView = 26f;
-        private const float CameraPitch = 16f;
+        private const float CameraPitch = 13f;
         // The car first faces three quarters to the camera, as the portraits do.
         private const float StartYaw = 215f;
-        // The texture shows at about half its size, so its comic outline is drawn thicker to read as the arena's.
-        private const float LineBoost = 2.4f;
+        // Room kept between the podium or the car and the picture's edges, as a share of the picture, for the outline.
+        private const float FrameMargin = 0.03f;
+        // The texture shows at about its own size on a phone held upright; its short side is under the 1080 the
+        // outline's width is measured at, so the line is drawn a little thicker to read as the arena's.
+        private const float LineBoost = 1.6f;
 
         private readonly ArenaRound round;
         private readonly MechanicArt art;
@@ -71,12 +85,21 @@ namespace ToyCarArena.Gameplay.Cars
                 return null;
             }
 
+            return Show(look.Model, look.ModelRotation, look.ModelScale, look.ModelMaterial);
+        }
+
+        /// <summary>
+        /// Puts a copy of a car's model (as <see cref="CarLook"/> holds it: turned and scaled under the car) on the
+        /// podium and starts drawing it; the screenshot tests show a catalog car this way, without a round.
+        /// </summary>
+        public RenderTexture Show(GameObject model, Quaternion rotation, Vector3 scale, Material material)
+        {
             Build();
             if (car != null) {
                 Object.Destroy(car.gameObject);
             }
 
-            car = CopyCar(look);
+            car = CopyCar(model, rotation, scale, material);
             shownAt = Time.unscaledTime;
             camera.enabled = true;
             OutlineBoost.Set(camera, LineBoost);
@@ -150,7 +173,7 @@ namespace ToyCarArena.Gameplay.Cars
             }
             ToyMeshes.Outlined(turntable.gameObject);
 
-            texture = new RenderTexture(TextureSize, TextureSize, 24, RenderTextureFormat.ARGB32) {
+            texture = new RenderTexture(TextureWidth, TextureHeight, 24, RenderTextureFormat.ARGB32) {
                 name = "Winner Podium",
                 antiAliasing = 1,
             };
@@ -161,6 +184,7 @@ namespace ToyCarArena.Gameplay.Cars
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = Color.clear;
             camera.fieldOfView = FieldOfView;
+            camera.aspect = (float)TextureWidth / TextureHeight;
             camera.nearClipPlane = 1f;
             camera.farClipPlane = 40f;
             camera.targetTexture = texture;
@@ -173,17 +197,17 @@ namespace ToyCarArena.Gameplay.Cars
         // A copy of the car's model as the round drew it: its own painted body, the normal material even if the car
         // ended the match see-through after coming back, and the outline. The car itself may already be switched off
         // below the arena; the copy is not.
-        private Transform CopyCar(CarLook look)
+        private Transform CopyCar(GameObject source, Quaternion rotation, Vector3 scale, Material material)
         {
             var holder = new GameObject("Car").transform;
             holder.SetParent(turntable, false);
-            var model = Object.Instantiate(look.Model, holder, false);
+            var model = Object.Instantiate(source, holder, false);
             model.SetActive(true);
             model.transform.localPosition = Vector3.zero;
-            model.transform.localRotation = look.ModelRotation;
+            model.transform.localRotation = rotation;
             // The car's own size: a match can end with a mega item still running.
-            model.transform.localScale = look.ModelScale;
-            CarModel.SetMaterial(model, look.ModelMaterial);
+            model.transform.localScale = scale;
+            CarModel.SetMaterial(model, material);
             Outline.Apply(model);
 
             // The model's footprint centred on the podium, its wheels on the top.
@@ -194,19 +218,42 @@ namespace ToyCarArena.Gameplay.Cars
             return holder;
         }
 
-        // The camera sees the podium and the car whole, from the podium's foot to the car's roof, looking a little down.
+        // The camera looks a little down at the podium and the car, with the roof over the axis at RoofTop and as close
+        // as lets the podium's foot and both sides of the car and the podium in: a tall car stands further away, so
+        // every car's roof is in the same place and the whole stage stays in the picture.
         private void Frame(Vector3 carSize)
         {
-            var bottom = -TopHeight - BaseHeight;
-            var top = carSize.y + HopHeight * 0.3f;
-            var halfWidth = Mathf.Max(BaseRadius, new Vector2(carSize.x, carSize.z).magnitude * 0.5f);
-            // The near side of the podium's foot reaches lower than its middle, so the frame keeps room under it.
-            var radius = Mathf.Max(halfWidth, (top - bottom) * 0.5f) * 1.14f;
-            var target = new Vector3(0f, (top + bottom) * 0.5f - 0.2f, 0f);
-            var distance = radius / Mathf.Sin(FieldOfView * 0.5f * Mathf.Deg2Rad);
             var rotation = Quaternion.Euler(CameraPitch, 180f, 0f);
             camera.transform.localRotation = rotation;
-            camera.transform.localPosition = target - rotation * Vector3.forward * distance;
+            var roof = new Vector3(0f, carSize.y, 0f);
+            var bottom = -TopHeight - BaseHeight;
+            var half = new Vector2(carSize.x, carSize.z).magnitude * 0.5f;
+            var tan = Mathf.Tan(FieldOfView * 0.5f * Mathf.Deg2Rad);
+            Span<Vector3> edges = stackalloc Vector3[] {
+                new(0f, bottom, BaseRadius), new(BaseRadius, bottom, 0f), new(-BaseRadius, bottom, 0f),
+                new(BaseRadius * 0.7f, bottom, BaseRadius * 0.7f), new(-BaseRadius * 0.7f, bottom, BaseRadius * 0.7f),
+                new(half, carSize.y, 0f), new(-half, carSize.y, 0f), new(half, 0f, 0f), new(-half, 0f, 0f),
+            };
+            for (var distance = 3f; distance < 40f; distance *= 1.02f) {
+                // In the camera's own space the roof is this far ahead and as high as puts it at RoofTop.
+                var height = (0.5f - RoofTop) * 2f * distance * tan;
+                camera.transform.localPosition = roof - rotation * new Vector3(0f, height, distance);
+                if (Fits(edges)) {
+                    break;
+                }
+            }
+        }
+
+        private bool Fits(Span<Vector3> points)
+        {
+            foreach (var point in points) {
+                var at = camera.WorldToViewportPoint(root.transform.TransformPoint(point));
+                if (at.x < FrameMargin || at.x > 1f - FrameMargin || at.y < FrameMargin || at.y > 1f - FrameMargin) {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }
