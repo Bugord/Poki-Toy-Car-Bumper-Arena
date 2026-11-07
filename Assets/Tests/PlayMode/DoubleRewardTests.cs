@@ -206,8 +206,8 @@ namespace ToyCarArena.Tests.PlayMode
         public void TheCommercialBreakWaitsForTheFreePlay()
         {
             var breaks = new AdBreaks();
-            var free = tuning.Ads.FreePlaySeconds;
-            Assert.That(free, Is.GreaterThan(0f));
+            Assert.That(breaks.IsDue(tuning.Ads.FreePlaySeconds), Is.True, "no free play: every NEXT MATCH asks");
+            const float free = 180f;
             Assert.That(breaks.IsDue(free), Is.False);
             breaks.AddPlay(free - 1f);
             Assert.That(breaks.IsDue(free), Is.False);

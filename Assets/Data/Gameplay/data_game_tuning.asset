@@ -803,7 +803,7 @@ MonoBehaviour:
       shieldThreat: 4
       shieldThreatSpeed: 4
   ads:
-    freePlaySeconds: 180
+    freePlaySeconds: 0
     doubleReward: 1
     xpBoost: 1
     boostMultiplier: 2
