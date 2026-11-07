@@ -7,12 +7,14 @@ using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
 using UIKit.Runtime.Abstractions;
+using UnityEngine;
 
 namespace ToyCarArena.UI
 {
     /// <summary>
-    /// Cosmetic selection for the next round, backed by the same saved progress as the reward screen. The result is
-    /// true when the player asks for the next match from here, false when they go back to the result.
+    /// Cosmetic selection for the next round, backed by the same saved progress as the reward screen. The garage has
+    /// no PLAY of its own: the player goes back to the menu or the result, whose PLAY or NEXT MATCH starts the round, so
+    /// the result is always false (kept a bool so the callers' navigation stays as it is).
     /// </summary>
     public sealed class GarageViewModel : ResultViewModel<bool>
     {
@@ -23,6 +25,9 @@ namespace ToyCarArena.UI
         private readonly PlayerWallet wallet;
         private readonly GameTuning tuning;
         private readonly LevelScene levelScene;
+        // A rewarded ad came back without a reward this fast: there was none to play.
+        private const float AdPlayedSeconds = 2f;
+
         private GarageStage stage;
         private bool isToppersPressed;
 
@@ -39,6 +44,12 @@ namespace ToyCarArena.UI
         }
 
         public bool IsSettingsOpen { get; private set; }
+
+        /// <summary>A rewarded ad for an ad car plays: the garage takes no presses until it is back.</summary>
+        public bool IsAdPlaying { get; private set; }
+
+        /// <summary>The player's league (their rank), which tints the sky and the pedestal's top as in the menu.</summary>
+        public int League => PlayerRank.TierOf(progress.Level);
 
         /// <summary>
         /// The 3D pictures of the car and the toppers, from the arena scene under the result (or the one a test gives);
@@ -72,12 +83,61 @@ namespace ToyCarArena.UI
         public int SelectedColor => progress.SelectedColor;
         public bool IsUnlocked(string id) => progress.IsUnlocked(id);
 
-        /// <summary>The car's speed, power and boost for the player.</summary>
+        /// <summary>The car's speed, power, weight and boost for the player.</summary>
         public GameTuning.CarStatLine StatsOf(CarCatalog.Entry car) => tuning.CarStats.Of(car.Id);
 
         /// <summary>Whether cars boost in this build, so the boost stat means something.</summary>
         public bool HasBoost => tuning.Boost.IsEnabled;
         public bool IsForSale(string id) => progress.IsForSale(id);
+        public bool IsOwnedCar(string id) => progress.IsOwned(id);
+
+        /// <summary>A car a rewarded ad opens (BUGGY) instead of its level or coins.</summary>
+        public bool IsAdCar(string id) => progress.IsAdCar(id);
+
+        /// <summary>
+        /// Whether the platform can show a rewarded ad. Without one an ad car the player does not own is left out of the
+        /// garage, as CLAIM ×2 leaves the result: a button that can never work would only frustrate.
+        /// </summary>
+        public bool CanWatchAds => !platform.IsAdBlocked;
+
+        /// <summary>The ad car's window opened (its UNLOCK? question).</summary>
+        public void AdCarShown(string id) => platform.MeasureAdCarShown(id);
+
+        /// <summary>
+        /// Plays the rewarded ad for the ad car <paramref name="id"/> and, when it pays, gives the car and drives it
+        /// next. False when the ad brought no reward (none to play, or closed early) or the car is no ad car.
+        /// </summary>
+        public async UniTask<bool> WatchAdCar(string id, CancellationToken token)
+        {
+            if (IsAdPlaying || !progress.IsAdCar(id) || progress.IsOwned(id)) {
+                return false;
+            }
+
+            platform.MeasureAdCarPressed(id);
+            var started = Time.realtimeSinceStartup;
+            bool isRewarded;
+            IsAdPlaying = true;
+            try {
+                isRewarded = await AdPause.Run(() => platform.RewardedBreak(token));
+            }
+            finally {
+                IsAdPlaying = false;
+            }
+
+            if (!isRewarded) {
+                platform.MeasureAdCarEnded(id, Time.realtimeSinceStartup - started < AdPlayedSeconds
+                    ? "unavailable" : "dismissed");
+                return false;
+            }
+
+            platform.MeasureAdCarEnded(id, "granted");
+            if (!progress.UnlockByAd(id)) {
+                return false;
+            }
+
+            platform.MeasureGarageEquip(id);
+            return true;
+        }
         public int PriceOf(string id) => progress.PriceOf(id);
         public bool CanAffordCar(string id) => wallet.Coins >= progress.PriceOf(id);
 
@@ -171,8 +231,6 @@ namespace ToyCarArena.UI
         }
 
         public void Back() => SetResult(false);
-
-        public void NextMatch() => SetResult(true);
 
         public bool SelectColor(int id)
         {

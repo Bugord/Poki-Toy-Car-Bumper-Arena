@@ -4,7 +4,7 @@ using UnityEngine;
 namespace ToyCarArena.Gameplay
 {
     /// <summary>
-    /// What a car of the catalog does for the player beside its looks: its speed, power and boost, each from 1 to 5,
+    /// What a car of the catalog does for the player beside its looks: its speed, power, weight and boost, each 1 to 5,
     /// shown in the garage and on the popup that opens it. 3 is the tuned car of <see cref="CarSettings"/> and
     /// <see cref="BoostSettings"/>; each point off it moves the player's car a small step, so a later car feels better
     /// without leaving the bots behind. Only the player's car reads them: a bot's car is its look.
@@ -37,6 +37,11 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float powerStep = 0.08f;
 
+            [Tooltip("Share of the car's mass one point of weight adds above 3, or takes below: a heavier car is harder to push off and pushes harder")]
+            [Range(0f, 0.3f)]
+            [SerializeField]
+            private float weightStep = 0.1f;
+
             [Tooltip("Share of the boost's cooldown one point of boost takes off above 3, or adds below")]
             [Range(0f, 0.2f)]
             [SerializeField]
@@ -45,14 +50,14 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Each car's stats by its catalog id, 1 to 5")]
             [SerializeField]
             private CarStatLine[] cars = {
-                new("racer", 3, 2, 3),
-                new("speedster", 5, 2, 2),
-                new("vintage", 3, 3, 3),
-                new("suv", 2, 4, 3),
-                new("drag-racer", 5, 2, 4),
-                new("truck", 2, 5, 3),
-                new("monster-truck", 3, 5, 4),
-                new("buggy", 4, 2, 5),
+                new("racer", 3, 2, 3, 3),
+                new("speedster", 5, 2, 2, 2),
+                new("vintage", 3, 3, 3, 3),
+                new("suv", 2, 4, 3, 4),
+                new("drag-racer", 5, 2, 4, 2),
+                new("truck", 2, 5, 3, 5),
+                new("monster-truck", 3, 5, 4, 5),
+                new("buggy", 4, 2, 5, 2),
             };
 
             /// <summary>The car's stats; the middle of the scale for a car with no row.</summary>
@@ -64,7 +69,7 @@ namespace ToyCarArena.Gameplay
                     }
                 }
 
-                return new CarStatLine(id, Middle, Middle, Middle);
+                return new CarStatLine(id, Middle, Middle, Middle, Middle);
             }
 
             /// <summary>Times the tuned top speed and acceleration the player's car drives at.</summary>
@@ -72,6 +77,9 @@ namespace ToyCarArena.Gameplay
 
             /// <summary>Times the push of the player's hits.</summary>
             public float PowerScale(CarStatLine stats) => 1f + powerStep * (stats.Power - Middle);
+
+            /// <summary>Times the tuned mass of the player's car.</summary>
+            public float WeightScale(CarStatLine stats) => Mathf.Max(0.1f, 1f + weightStep * (stats.Weight - Middle));
 
             /// <summary>Times the tuned boost cooldown.</summary>
             public float CooldownScale(CarStatLine stats) => Mathf.Max(0.1f, 1f - boostStep * (stats.Boost - Middle));
@@ -96,18 +104,24 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private int boost = CarStatSettings.Middle;
 
-            public CarStatLine(string id, int speed, int power, int boost)
+            [Range(1, CarStatSettings.Max)]
+            [SerializeField]
+            private int weight = CarStatSettings.Middle;
+
+            public CarStatLine(string id, int speed, int power, int boost, int weight)
             {
                 this.id = id;
                 this.speed = speed;
                 this.power = power;
                 this.boost = boost;
+                this.weight = weight;
             }
 
             public string Id => id;
             public int Speed => speed;
             public int Power => power;
             public int Boost => boost;
+            public int Weight => weight;
         }
     }
 }

@@ -5,13 +5,13 @@ using UnityEngine.UIElements;
 namespace ToyCarArena.UI
 {
     /// <summary>
-    /// A car's speed, power and boost (<see cref="GameTuning.CarStatLine"/>) as racing games show them: a row per stat,
+    /// A car's speed, power, weight and boost (<see cref="GameTuning.CarStatLine"/>) as racing games show them: a row per stat,
     /// its name and a rounded bar filled to its value out of 5 in the stat's own colour, the steps marked across the
     /// bar (car-stats in ui_screens). The garage shows it under the car it looks at, the popup under a new car.
     /// </summary>
     internal static class CarStatsView
     {
-        private static readonly string[] Names = { "speed", "power", "boost" };
+        private static readonly string[] Names = { "speed", "power", "weight", "boost" };
 
         public static VisualElement Create(string className = null)
         {
@@ -57,10 +57,10 @@ namespace ToyCarArena.UI
         /// </summary>
         public static void Set(VisualElement root, GameTuning.CarStatLine stats, bool hasBoost)
         {
-            var values = new[] { stats.Speed, stats.Power, stats.Boost };
+            var values = new[] { stats.Speed, stats.Power, stats.Weight, stats.Boost };
             for (var i = 0; i < Names.Length; i++) {
                 var row = root[i];
-                row.style.display = i < 2 || hasBoost ? DisplayStyle.Flex : DisplayStyle.None;
+                row.style.display = Names[i] != "boost" || hasBoost ? DisplayStyle.Flex : DisplayStyle.None;
                 row.Q<Label>(className: "car-stats__label").text = Strings.Get($"car.stat_{Names[i]}");
                 row.Q(className: "car-stats__fill").style.width =
                     Length.Percent(100f * values[i] / GameTuning.CarStatSettings.Max);

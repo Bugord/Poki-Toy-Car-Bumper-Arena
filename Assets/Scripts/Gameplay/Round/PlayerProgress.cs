@@ -17,6 +17,7 @@ namespace ToyCarArena.Gameplay.Round
         private const string SelectedKey = "car_selected";
         private const string ColorKey = "car_color";
         private const string OwnedKey = "cars_owned";
+        private const string AdOwnedKey = "cars_ad";
         private const string GarageSeenKey = "garage_seen_level";
         private const string LeagueSeenKey = "league_seen";
         private const string BoostKey = "xp_boost";
@@ -159,11 +160,37 @@ namespace ToyCarArena.Gameplay.Round
                 return false;
             }
 
-            if (PriceOf(id) == 0) {
-                return true;
+            if (IsAdCar(id)) {
+                return Contains(AdOwnedKey, id);
             }
 
-            foreach (var owned in storage.GetString(OwnedKey).Split(',')) {
+            return PriceOf(id) == 0 || Contains(OwnedKey, id);
+        }
+
+        /// <summary>Open, priced and not bought yet: what coins can buy.</summary>
+        public bool IsForSale(string id) => IsUnlocked(id) && !IsAdCar(id) && !IsOwned(id);
+
+        /// <summary>A car a rewarded ad opens (<see cref="GameTuning.CoinSettings.IsAdCar"/>) instead of a level or coins.</summary>
+        public bool IsAdCar(string id) => coins.IsAdCar(id);
+
+        /// <summary>
+        /// Gives the player an ad car after its rewarded ad played, and drives it next. False when it is no ad car or is
+        /// theirs already.
+        /// </summary>
+        public bool UnlockByAd(string id)
+        {
+            if (!IsAdCar(id) || !IsUnlocked(id) || IsOwned(id)) {
+                return false;
+            }
+
+            Add(AdOwnedKey, id);
+            Select(id);
+            return true;
+        }
+
+        private bool Contains(string key, string id)
+        {
+            foreach (var owned in storage.GetString(key).Split(',')) {
                 if (owned == id) {
                     return true;
                 }
@@ -172,8 +199,11 @@ namespace ToyCarArena.Gameplay.Round
             return false;
         }
 
-        /// <summary>Open, priced and not bought yet: what coins can buy.</summary>
-        public bool IsForSale(string id) => IsUnlocked(id) && !IsOwned(id);
+        private void Add(string key, string id)
+        {
+            var saved = storage.GetString(key);
+            storage.SetString(key, string.IsNullOrEmpty(saved) ? id : saved + "," + id);
+        }
 
         /// <summary>
         /// Pays for an open car from <paramref name="wallet"/> and drives it next. False, with nothing spent, when it is
@@ -185,8 +215,7 @@ namespace ToyCarArena.Gameplay.Round
                 return false;
             }
 
-            var saved = storage.GetString(OwnedKey);
-            storage.SetString(OwnedKey, saved.Length == 0 ? id : saved + "," + id);
+            Add(OwnedKey, id);
             Select(id);
             return true;
         }

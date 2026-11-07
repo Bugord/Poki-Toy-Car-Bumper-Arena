@@ -91,6 +91,7 @@ garage.in_use,Selected car or hat card status,EQUIPPED,ÉQUIPÉ,IN USO,AKTIV,EQU
 garage.use,Owned car or hat card status: tap to put it on,EQUIP,ÉQUIPER,SCEGLI,WÄHLEN,EQUIPAR,SEÇ,EQUIPAR,ВЫБРАТЬ
 car.stat_speed,"Car stat label in the garage and the new car popup: top speed",SPEED,VITESSE,VELOCITÀ,TEMPO,VELOCIDAD,HIZ,VELOCIDADE,СКОРОСТЬ
 car.stat_power,"Car stat label: how hard its hits push",POWER,PUISSANCE,POTENZA,KRAFT,POTENCIA,GÜÇ,FORÇA,СИЛА
+car.stat_weight,"Car stat label: how heavy it is, so how hard it is to push off",WEIGHT,POIDS,PESO,GEWICHT,PESO,AĞIRLIK,PESO,ВЕС
 car.stat_boost,"Car stat label: how often it can boost (the BOOST button)",BOOST,TURBO,TURBO,BOOST,TURBO,TURBO,TURBO,РЫВОК
 garage.unlock_at,Locked car tooltip,UNLOCK AT LVL {0},DÉBLOQUÉE AU NIV. {0},SBLOCCO AL LIV. {0},AB LVL {0},SE DESBLOQUEA EN NIV. {0},{0}. SEVİYEDE AÇILIR,LIBERA NO NÍV. {0},ОТКРОЕТСЯ НА УР. {0}
 garage.need_more,Over a too dear card: how many coins are missing; max ~16 chars,NEED {0} MORE,ENCORE {0},NE MANCANO {0},NOCH {0},FALTAN {0},{0} DAHA LAZIM,FALTAM {0},НУЖНО ЕЩЁ {0}
@@ -149,6 +150,16 @@ hud.space_or_click,Desktop arrow sticker over the boost indicator,SPACE OR CLICK
 garage.cars,Garage tab with the cars; max ~10 chars,CARS,VOITURES,AUTO,AUTOS,COCHES,ARABALAR,CARROS,МАШИНКИ
 garage.toppers,Garage tab with the roof hats bought for coins; max ~10 chars,HATS,CHAPEAUX,CAPPELLI,HÜTE,GORROS,ŞAPKALAR,CHAPÉUS,ШАПКИ
 garage.none,Topper card that takes the topper off,NONE,AUCUN,NESSUNO,KEINER,NINGUNO,YOK,NENHUM,БЕЗ ШАПКИ
+garage.paint,Garage tab with the eight paints; max ~10 chars,PAINT,PEINTURE,VERNICE,LACK,PINTURA,BOYA,PINTURA,ПОКРАСКА
+garage.select,"Garage bottom button: drive this car or wear this hat next; short",SELECT,CHOISIR,SCEGLI,WÄHLEN,ELEGIR,SEÇ,ESCOLHER,ВЫБРАТЬ
+garage.selected,"Garage bottom button on the car or hat already chosen; short",SELECTED,CHOISI,SCELTO,GEWÄHLT,ELEGIDO,SEÇİLDİ,ESCOLHIDO,ВЫБРАНО
+garage.unlock,"Garage bottom button on a car opened by watching an ad; short",UNLOCK,DÉBLOQUER,SBLOCCA,FREISCHALTEN,DESBLOQUEAR,AÇ,DESBLOQUEAR,ОТКРЫТЬ
+garage.buy_title,"Title of the window that asks before buying, with the car or hat name",BUY {0}?,ACHETER {0} ?,COMPRARE {0}?,{0} KAUFEN?,¿COMPRAR {0}?,{0} ALINSIN MI?,COMPRAR {0}?,КУПИТЬ {0}?
+garage.unlock_title,"Title of the window that asks before an ad opens a car, with its name",UNLOCK {0}?,DÉBLOQUER {0} ?,SBLOCCARE {0}?,{0} FREISCHALTEN?,¿DESBLOQUEAR {0}?,{0} AÇILSIN MI?,DESBLOQUEAR {0}?,ОТКРЫТЬ {0}?
+garage.free,"Pill in the ad window: the car costs no coins",FREE,GRATUIT,GRATIS,GRATIS,GRATIS,ÜCRETSİZ,GRÁTIS,БЕСПЛАТНО
+garage.watch_ad,"Button in the ad window that plays the rewarded ad; short",WATCH AD,VOIR LA PUB,GUARDA AD,WERBUNG SEHEN,VER ANUNCIO,REKLAM İZLE,VER ANÚNCIO,СМОТРЕТЬ
+garage.cancel,"Button that closes the buy or ad window without doing anything",CANCEL,ANNULER,ANNULLA,ABBRECHEN,CANCELAR,İPTAL,CANCELAR,ОТМЕНА
+garage.no_ad,"Over WATCH AD when the ad did not play or was closed early; max ~16 chars",NO AD RIGHT NOW,PAS DE PUB,NESSUN AD ORA,KEINE WERBUNG,SIN ANUNCIO,REKLAM YOK,SEM ANÚNCIO,РЕКЛАМЫ НЕТ
 topper.top-hat.name,Topper name: a tall black top hat,TOP HAT,HAUT-DE-FORME,CILINDRO,ZYLINDER,CHISTERA,SİLİNDİR ŞAPKA,CARTOLA,ЦИЛИНДР
 topper.party-hat.name,Topper name,PARTY HAT,CHAPEAU DE FÊTE,CAPPELLO PARTY,PARTYHUT,GORRO DE FIESTA,PARTİ ŞAPKASI,CHAPÉU DE FESTA,КОЛПАК
 topper.cone.name,Topper name: a traffic cone,CONE,CÔNE,CONO,PYLONE,CONO,KONİ,CONE,КОНУС

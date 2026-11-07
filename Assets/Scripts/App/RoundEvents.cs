@@ -251,6 +251,20 @@ namespace ToyCarArena.App
         public static void MeasureBoostEnded(this IGamePlatform platform, string how) =>
             platform.Measure(AdCategory, XpBoost, how);
 
+        /// <summary>
+        /// A car opened by a rewarded ad in the garage (BUGGY): <c>shop / ad-&lt;id&gt; / visible</c> when its UNLOCK? window
+        /// opens, <c>ad / car-&lt;id&gt; / interact</c> on WATCH AD, then how the ad ended (granted, unavailable or dismissed,
+        /// as for CLAIM ×2).
+        /// </summary>
+        public static void MeasureAdCarShown(this IGamePlatform platform, string carId) =>
+            platform.MeasureVisible("shop", $"ad-{carId}");
+
+        public static void MeasureAdCarPressed(this IGamePlatform platform, string carId) =>
+            platform.MeasureInteract(AdCategory, $"car-{carId}");
+
+        public static void MeasureAdCarEnded(this IGamePlatform platform, string carId, string how) =>
+            platform.Measure(AdCategory, $"car-{carId}", how);
+
         public static void MeasureScoreboardShown(this IGamePlatform platform) =>
             platform.Measure("scoreboard", "shown", "visible");
 

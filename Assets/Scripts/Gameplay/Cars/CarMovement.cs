@@ -64,6 +64,8 @@ namespace ToyCarArena.Gameplay.Cars
         private float boostCooldownOverride = -1f;
         private float speedScale = 1f;
         private float cooldownScale = 1f;
+        // The player's car's weight stat: times the tuned mass under any pickup or special round on top.
+        private float weightScale = 1f;
 
         // The last shove an arena object gave and the balance it took, with the frame they came in, so a shield can take
         // the whole hit back (see UndoHazardKick).
@@ -141,12 +143,14 @@ namespace ToyCarArena.Gameplay.Cars
 
         /// <summary>
         /// The player's car's stats (<see cref="GameTuning.CarStatSettings"/>): times the tuned top speed and
-        /// acceleration, and times the tuned boost cooldown.
+        /// acceleration, times the tuned boost cooldown, and times the tuned mass (its weight).
         /// </summary>
-        public void SetStats(float speed, float cooldown)
+        public void SetStats(float speed, float cooldown, float weight)
         {
             speedScale = speed;
             cooldownScale = cooldown;
+            weightScale = Mathf.Max(0.1f, weight);
+            body.mass = settings.Mass * massScale * weightScale;
         }
 
         /// <summary>
@@ -307,7 +311,7 @@ namespace ToyCarArena.Gameplay.Cars
         public void SetMassScale(float scale)
         {
             massScale = Mathf.Max(0.01f, scale);
-            body.mass = settings.Mass * massScale;
+            body.mass = settings.Mass * massScale * weightScale;
         }
 
         /// <summary>
@@ -442,7 +446,7 @@ namespace ToyCarArena.Gameplay.Cars
             DiagnosticHoldRemoved = 0f;
             DiagnosticHoldSuppressed = false;
 #endif
-            body.mass = settings.Mass * massScale;
+            body.mass = settings.Mass * massScale * weightScale;
             body.centerOfMass = new Vector3(0f, settings.CenterOfMassHeight, 0f);
             if (IsCarried) {
                 StepCarry();

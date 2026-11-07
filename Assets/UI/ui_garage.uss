@@ -1,0 +1,847 @@
+/* The garage (GarageView builds it), in the menu's look: the league's sky under the drifting checker, a top bar (back,
+   GARAGE, the coins, the gear), the car on the 3D pedestal under the turning light with its name and stats, and the
+   CARS / HATS / PAINT switcher over one panel of cards and the single bottom button. The design is GarageB2 in Claude
+   Design (claude.ai/artifact/PWuwUnPztaKrVyjfKk4Xev). The menu's stickers, coins, popups and WATCH come from
+   ui_menu.uss; this sheet adds the garage's own. Sizes are reference pixels of the 1080x1920 panel; GarageView places
+   the groups and scales them up on a phone held sideways. */
+
+.garage {
+    background-color: var(--blue);
+    background-size: cover;
+    color: var(--navy);
+    overflow: hidden;
+}
+
+/* -- Top bar ------------------------------------------------------------------------------------------------------- */
+
+.garage__top {
+    position: absolute;
+    flex-direction: row;
+    align-items: center;
+    height: 112px;
+    transform-origin: left top;
+}
+
+.garage__back {
+    width: 112px;
+    height: 112px;
+    margin-bottom: 14px;
+}
+
+.garage__back > .menu__drop,
+.garage__back > .menu__face { border-radius: 36px; }
+
+.garage__back-arrow {
+    width: 56px;
+    height: 56px;
+}
+
+.garage__title {
+    margin-left: 30px;
+}
+
+.garage__title-text {
+    margin: 0;
+    padding: 0;
+    font-size: 84px;
+    -unity-text-outline-width: 14px;
+    text-shadow: 0 10px 0 rgb(29, 43, 79);
+}
+
+.garage__coins--short .menu__coins-face { background-color: #ffd9d9; }
+.garage__coins--short .menu__coins-count { color: var(--red); }
+
+/* -- The car -------------------------------------------------------------------------------------------------------- */
+
+.garage__body {
+    position: absolute;
+}
+
+.garage__show {
+    position: absolute;
+}
+
+.garage__rays {
+    position: absolute;
+}
+
+.garage__hero {
+    position: absolute;
+    background-size: 100% 100%;
+    transform-origin: center bottom;
+}
+
+.garage__hero-portrait {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.garage__caption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+}
+
+.garage__name-text {
+    margin: 0;
+    padding: 0;
+    font-size: 76px;
+    -unity-text-outline-width: 13px;
+    text-shadow: 0 10px 0 rgb(29, 43, 79);
+}
+
+/* The stats: one white pill, each stat's name and five pips side by side. */
+.garage-stats {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 24px;
+    padding: 16px 26px 18px 26px;
+    border-width: 7px;
+    border-bottom-width: 13px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+}
+
+.garage-stats__stat {
+    flex-direction: row;
+    align-items: center;
+    margin: 0 14px;
+}
+
+.garage-stats__label {
+    margin: 0 12px 0 0;
+    padding: 0;
+    font-size: 32px;
+    color: var(--navy);
+}
+
+/* As in the design: a soft capsule track with a navy rim, five square cells inside it, the outer ends of the end
+   cells round, the empty ones a faint navy. */
+.garage-stats__pips {
+    flex-direction: row;
+    padding: 5px;
+    border-width: 6px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--soft);
+}
+
+.garage-stats__pip {
+    width: 24px;
+    height: 20px;
+    margin-left: 5px;
+    border-radius: 8px;
+    background-color: rgba(29, 43, 79, 0.12);
+}
+
+.garage-stats__pip--first {
+    margin-left: 0;
+    border-top-left-radius: 999px;
+    border-bottom-left-radius: 999px;
+}
+
+.garage-stats__pip--last {
+    border-top-right-radius: 999px;
+    border-bottom-right-radius: 999px;
+}
+
+.garage-stats__stat--speed .garage-stats__pip--on { background-color: var(--blue); }
+.garage-stats__stat--power .garage-stats__pip--on { background-color: var(--red); }
+.garage-stats__stat--weight .garage-stats__pip--on { background-color: var(--purple); }
+.garage-stats__stat--boost .garage-stats__pip--on { background-color: var(--orange); }
+
+/* -- The switcher --------------------------------------------------------------------------------------------------- */
+
+.garage__side {
+    position: absolute;
+    transform-origin: right bottom;
+}
+
+.garage__tabs {
+    height: 124px;
+    flex-shrink: 0;
+}
+
+.garage__tabs > .menu__drop { border-radius: 999px; }
+
+.garage__tabs-face {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    flex-direction: row;
+    border-width: 8px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+    overflow: hidden;
+}
+
+.garage__tab {
+    flex-grow: 1;
+    flex-basis: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    border-width: 0;
+    border-radius: 0;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: none;
+}
+
+.garage__tab--split {
+    border-left-width: 6px;
+    border-color: var(--navy);
+}
+
+.garage__tab:hover { background-color: var(--soft); }
+
+.garage__tab--on,
+.garage__tab--on:hover { background-color: var(--green); }
+
+.garage__tab-label-text {
+    margin: 0;
+    padding: 0;
+    font-size: 44px;
+    color: var(--navy);
+    -unity-text-outline-width: 0;
+    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+}
+
+/* The chosen tab: white on green, the outline and its drop on the layer under the face. */
+.garage__tab--on .garage__tab-label-text {
+    color: var(--white);
+    -unity-text-outline-width: 9px;
+    -unity-text-outline-color: var(--navy);
+    text-shadow: 0 5px 0 rgb(29, 43, 79);
+}
+
+.garage__tab--on .garage__tab-label-text.stroke__face {
+    -unity-text-outline-width: 0;
+    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+}
+
+.garage__tab-key {
+    display: none;
+    margin-left: 14px;
+    padding: 0 12px 2px 12px;
+    border-width: 4px;
+    border-bottom-width: 8px;
+    border-radius: 10px;
+}
+
+.garage__tab-key .key__text { font-size: 26px; }
+
+.garage--desktop .garage__tab-key { display: flex; }
+
+.garage__tab-dot {
+    position: absolute;
+    top: 14px;
+    right: 26px;
+    width: 30px;
+    height: 30px;
+    border-width: 5px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--red);
+}
+
+/* -- The panel ------------------------------------------------------------------------------------------------------ */
+
+.garage__panel {
+    flex-shrink: 1;
+    margin-top: 24px;
+    border-width: 8px;
+    border-bottom-width: 18px;
+    border-color: var(--navy);
+    border-radius: 48px;
+    background-color: var(--soft);
+    overflow: hidden;
+}
+
+.garage--wide .garage__panel { flex-grow: 1; }
+
+.garage__scroll {
+    flex-grow: 1;
+}
+
+.garage__grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 44px 36px 10px 36px;
+}
+
+/* A card: a sticker with its picture, its name, and a badge on its corner. */
+.garage__card {
+    flex-shrink: 0;
+}
+
+.garage__card > .menu__drop {
+    top: 10px;
+    bottom: -10px;
+    border-radius: 34px;
+}
+
+.garage__card > .menu__face {
+    justify-content: flex-start;
+    padding: 12px 10px 14px 10px;
+    border-width: 6px;
+    border-radius: 34px;
+}
+
+.garage__card-art {
+    flex-grow: 1;
+    align-self: stretch;
+    align-items: center;
+    justify-content: center;
+}
+
+.garage__card-portrait,
+.garage__card-hat {
+    width: 100%;
+    height: 100%;
+}
+
+.garage__card-name {
+    margin: 4px 0 0 0;
+    padding: 0;
+    font-size: 32px;
+    color: var(--navy);
+    white-space: nowrap;
+}
+
+.garage__card--selected > .menu__drop { background-color: var(--green-shade); }
+
+.garage__card--selected > .menu__face {
+    border-color: var(--green-shade);
+    background-color: #effbe9;
+}
+
+.garage__card--locked > .menu__face { background-color: #dfe6f1; }
+.garage__card--locked .garage__card-name { color: var(--muted); }
+
+.garage__card--previewed > .menu__face {
+    border-color: #f0a800;
+    border-width: 9px;
+}
+
+.garage__badge {
+    position: absolute;
+    top: -26px;
+    right: -26px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    height: 80px;
+    min-width: 80px;
+    padding: 0 18px;
+    border-width: 7px;
+    border-bottom-width: 12px;
+    border-color: var(--navy);
+    border-radius: 999px;
+}
+
+.garage__badge--selected { padding: 0; background-color: var(--green); }
+.garage__badge--price { padding-left: 8px; background-color: var(--gold); }
+.garage__badge--dear { padding-left: 8px; background-color: var(--shade); }
+.garage__badge--locked { padding-left: 12px; background-color: var(--navy); }
+.garage__badge--ad { padding: 0 10px; background-color: var(--purple); }
+
+.garage__badge-tick,
+.garage__action-tick,
+.garage__paint-check {
+    width: 30px;
+    height: 16px;
+    margin-top: -8px;
+    border-left-width: 8px;
+    border-bottom-width: 8px;
+    border-color: var(--white);
+    rotate: -45deg;
+}
+
+.garage__badge-coin {
+    width: 44px;
+    height: 44px;
+    border-width: 4px;
+    border-bottom-width: 6px;
+}
+
+.garage__badge-lock {
+    width: 36px;
+    height: 40px;
+}
+
+.garage__badge-play.double__play {
+    width: 52px;
+    height: 52px;
+    margin: 0;
+}
+
+.garage__badge-text {
+    margin: 0 0 0 8px;
+    padding: 0;
+    font-size: 38px;
+    color: var(--navy);
+}
+
+.garage__badge--dear .garage__badge-text { color: var(--muted); }
+.garage__badge--locked .garage__badge-text { color: var(--white); }
+
+/* -- The paints ----------------------------------------------------------------------------------------------------- */
+
+.garage__paints {
+    flex-grow: 1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: center;
+    justify-content: center;
+    padding: 30px 35px;
+}
+
+.garage__paint {
+    margin: 25px;
+    padding: 0;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: none;
+}
+
+.garage__paint-drop {
+    position: absolute;
+    left: 0;
+    top: 12px;
+    right: 0;
+    bottom: -12px;
+    border-radius: 999px;
+    background-color: var(--navy);
+}
+
+.garage__paint-dot {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    border-width: 8px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    transition-property: translate;
+    transition-duration: 0.08s;
+}
+
+.garage__paint:active > .garage__paint-dot { translate: 0 8px; }
+
+.garage__paint-shade {
+    position: absolute;
+    left: 18%;
+    top: 14%;
+    width: 30%;
+    height: 20%;
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.35);
+}
+
+.garage__paint-check {
+    display: none;
+    width: 40%;
+    height: 22%;
+    border-left-width: 12px;
+    border-bottom-width: 12px;
+}
+
+.garage__paint--on > .garage__paint-dot { border-color: var(--white); border-width: 12px; }
+.garage__paint--on > .garage__paint-drop { left: -10px; top: -10px; right: -10px; bottom: -22px; }
+.garage__paint--on .garage__paint-check { display: flex; }
+
+/* -- The bottom button ---------------------------------------------------------------------------------------------- */
+
+.garage__action {
+    flex-shrink: 0;
+    height: 190px;
+    min-width: 0;
+    margin-top: 30px;
+    padding: 0 40px 20px 40px;
+}
+
+.garage__action-label-text {
+    font-size: 84px;
+    color: var(--white);
+    -unity-text-outline-width: 14px;
+    -unity-text-outline-color: var(--navy);
+    text-shadow: 0 8px 0 rgb(29, 43, 79);
+}
+
+.garage__action-label-text.stroke__face { -unity-text-outline-width: 0; text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+
+.garage__action-plain {
+    font-size: 76px;
+    color: var(--navy);
+}
+
+.garage__action-tick {
+    width: 50px;
+    height: 26px;
+    margin: -14px 26px 0 0;
+    border-left-width: 13px;
+    border-bottom-width: 13px;
+    border-color: var(--green-shade);
+}
+
+.garage__action-lock {
+    width: 64px;
+    height: 72px;
+    margin-right: 22px;
+}
+
+.garage__action-play.double__play {
+    width: 84px;
+    height: 84px;
+    margin-right: 20px;
+}
+
+.garage__action-price {
+    flex-direction: row;
+    align-items: center;
+    height: 96px;
+    margin-left: 26px;
+    padding: 0 26px 0 12px;
+    border-width: 6px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+}
+
+.garage__action-count {
+    margin: 0 0 0 10px;
+    padding: 0;
+    font-size: 52px;
+    color: var(--navy);
+}
+
+.garage__action-tag {
+    position: absolute;
+    top: -26px;
+    left: 40px;
+    margin: 0;
+    padding: 2px 16px 4px 16px;
+    border-radius: 14px;
+    background-color: var(--navy);
+    color: var(--white);
+    font-size: 30px;
+    letter-spacing: 1px;
+}
+
+.garage__action-key {
+    display: none;
+    position: absolute;
+    top: -36px;
+    right: 30px;
+    margin: 0;
+}
+
+.garage--desktop .garage__action-key { display: flex; }
+.garage--desktop .garage__action-key--off { display: none; }
+
+/* The colours: SELECTED white, SELECT green, BUY gold, too dear grey, closed navy, the ad purple. */
+.garage__action--selected { background-color: var(--shade); }
+.garage__action--selected > .button__face { background-color: var(--white); }
+
+.garage__action--select { background-color: var(--green-shade); }
+.garage__action--select > .button__face { background-color: var(--green); }
+.garage__action--select:hover > .button__face { background-color: var(--green-hover); }
+
+.garage__action--buy { background-color: #e9a91c; }
+.garage__action--buy > .button__face { background-color: var(--gold); }
+.garage__action--buy:hover > .button__face { background-color: #ffd65e; }
+
+.garage__action--dear { background-color: #a9b6cf; }
+.garage__action--dear > .button__face { background-color: var(--shade); }
+.garage__action--dear .garage__action-price { background-color: #eef3fb; }
+.garage__action--dear .garage__action-count { color: var(--muted); }
+
+.garage__action--locked { background-color: #0f1a33; }
+.garage__action--locked > .button__face { background-color: var(--navy); }
+
+.garage__action--ad { background-color: #8a46d9; }
+.garage__action--ad > .button__face { background-color: var(--purple); }
+.garage__action--ad:hover > .button__face { background-color: #bf86ff; }
+
+/* -- The floating line ---------------------------------------------------------------------------------------------- */
+
+.garage__toast {
+    position: absolute;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    height: 120px;
+}
+
+.garage__toast-coin {
+    margin-right: 14px;
+}
+
+.garage__toast-label-text {
+    font-size: 64px;
+    color: var(--red);
+    -unity-text-outline-width: 12px;
+    -unity-text-outline-color: var(--white);
+    text-shadow: 0 8px 0 rgb(29, 43, 79);
+}
+
+.garage__toast-label-text.stroke__face { -unity-text-outline-width: 0; text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+
+.garage__toast--gold .garage__toast-label-text { color: var(--gold); -unity-text-outline-color: var(--navy); }
+
+/* -- The window before BUY or UNLOCK -------------------------------------------------------------------------------- */
+
+/* Sized from the GarageB2 confirm board: 350 design px wide, about 2.9 reference px to one. */
+.garage__sheet {
+    width: 1040px;
+    padding: 70px 64px 58px 64px;
+    align-items: center;
+    border-width: 9px;
+    border-bottom-width: 26px;
+    border-radius: 82px;
+}
+
+.garage__sheet-title {
+    align-self: stretch;
+    margin: 0 120px;
+    padding: 0;
+    font-size: 86px;
+    -unity-text-align: middle-center;
+    color: var(--navy);
+}
+
+.garage__sheet-close {
+    position: absolute;
+    top: 40px;
+    right: 40px;
+}
+
+.garage__sheet-frame {
+    align-self: stretch;
+    height: 540px;
+    margin-top: 66px;
+    overflow: hidden;
+    border-width: 9px;
+    border-color: var(--navy);
+    border-radius: 58px;
+    background-color: #3db5ff;
+    background-size: 100% 100%;
+}
+
+.garage__sheet-light {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 1620px;
+    height: 1620px;
+    margin-left: -810px;
+    margin-top: -810px;
+}
+
+.garage__sheet-art {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.garage__sheet-portrait {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+/* The stats bare under the picture, without the pill they wear under the pedestal. */
+.garage__sheet-stats {
+    margin-top: 58px;
+    padding: 0;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.garage__sheet-stats .garage-stats__stat { margin: 0 17px; }
+.garage__sheet-stats .garage-stats__label { font-size: 32px; margin-right: 17px; }
+.garage__sheet-stats .garage-stats__pip { width: 23px; height: 20px; }
+
+.garage__sheet-coins {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-top: 66px;
+}
+
+.garage__sheet-pill {
+    flex-direction: row;
+    align-items: center;
+    height: 116px;
+    padding: 0 40px 0 22px;
+    border-width: 9px;
+    border-bottom-width: 18px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+}
+
+.garage__sheet-pill--after { background-color: #fff4cf; }
+
+.garage__sheet-pill-count {
+    margin: 0 0 0 16px;
+    padding: 0;
+    font-size: 58px;
+    color: var(--navy);
+}
+
+.garage__sheet-arrow {
+    width: 86px;
+    height: 70px;
+    margin: 0 29px;
+}
+
+.garage__sheet-free {
+    flex-direction: row;
+    align-items: center;
+    height: 116px;
+    margin-top: 66px;
+    padding: 0 46px 0 28px;
+    border-width: 9px;
+    border-bottom-width: 18px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+}
+
+.garage__sheet-free-text {
+    margin: 0 0 0 20px;
+    padding: 0;
+    font-size: 58px;
+    color: var(--navy);
+}
+
+/* BUY gold, as the bottom button's BUY; WATCH AD purple. 76 design px tall, CANCEL 52 under them. */
+.garage__sheet-buy,
+.garage__sheet-watch {
+    align-self: stretch;
+    min-width: 0;
+    height: 220px;
+    margin-top: 75px;
+    padding: 0 40px 26px 40px;
+    border-radius: 70px;
+}
+
+.garage__sheet-buy > .button__face,
+.garage__sheet-watch > .button__face { border-radius: 61px; }
+
+.garage__sheet-buy { background-color: #e9a91c; }
+.garage__sheet-buy > .button__face { background-color: var(--gold); }
+.garage__sheet-buy:hover > .button__face { background-color: #ffd65e; }
+
+.garage__sheet-cancel {
+    align-self: stretch;
+    min-width: 0;
+    height: 150px;
+    margin-top: 46px;
+    padding: 0 40px 12px 40px;
+    border-bottom-width: 18px;
+    border-radius: 58px;
+}
+
+.garage__sheet-cancel > .button__face { bottom: 0; border-radius: 49px; }
+
+.garage__sheet-cancel-label {
+    font-size: 70px;
+    color: var(--navy);
+}
+
+.garage__sheet-buy-label-text {
+    font-size: 98px;
+    color: var(--white);
+    -unity-text-outline-width: 16px;
+    -unity-text-outline-color: var(--navy);
+    text-shadow: 0 6px 0 rgb(29, 43, 79);
+}
+
+.garage__sheet-buy-label-text.stroke__face { -unity-text-outline-width: 0; text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+
+/* The coin between BUY and the price as big as the design's, a 30 px coin beside 34 px words. */
+.garage__sheet-buy-coin {
+    width: 84px;
+    height: 84px;
+    margin: 0 10px 0 30px;
+    border-width: 8px;
+    border-bottom-width: 12px;
+}
+
+.garage__sheet-buy-price {
+    margin-left: 12px;
+}
+
+.garage__sheet-buy-price-text {
+    margin: 0;
+    padding: 0;
+    font-size: 98px;
+    color: var(--white);
+    -unity-text-outline-width: 16px;
+    -unity-text-outline-color: var(--navy);
+    text-shadow: 0 5px 0 rgb(29, 43, 79);
+}
+
+.garage__sheet-buy-price-text.stroke__face { -unity-text-outline-width: 0; text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+
+.garage__sheet-key,
+.garage__sheet-watch-key,
+.garage__sheet-cancel-key {
+    display: none;
+    position: absolute;
+    top: -30px;
+    right: 30px;
+    margin: 0;
+    padding: 0 14px 2px 14px;
+    border-width: 5px;
+    border-bottom-width: 9px;
+    border-radius: 12px;
+}
+
+.garage__sheet-key .key__text,
+.garage__sheet-watch-key .key__text,
+.garage__sheet-cancel-key .key__text { font-size: 28px; }
+
+/* ESC sits after CANCEL, in the row, as in the design. */
+.garage__sheet-cancel-key { position: relative; top: 0; right: 0; margin: 0 0 0 26px; }
+
+/* The AD tag a white pill on the left of WATCH AD's top edge, as in the design; the X key at the other end. */
+.garage__sheet-watch .menu__watch-tag {
+    top: -40px;
+    left: 46px;
+    right: auto;
+    padding: 4px 22px 6px 22px;
+    border-width: 7px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+    color: var(--navy);
+    font-size: 36px;
+}
+
+.garage--desktop .garage__sheet-key,
+.garage--desktop .garage__sheet-watch-key,
+.garage--desktop .garage__sheet-cancel-key { display: flex; }
+
+.garage__sheet-buy-coin > .coin__inner { width: 32px; height: 32px; }

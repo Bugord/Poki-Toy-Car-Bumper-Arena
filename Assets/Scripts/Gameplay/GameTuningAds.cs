@@ -20,11 +20,11 @@ namespace ToyCarArena.Gameplay
         [Serializable]
         public sealed class AdSettings
         {
-            [Tooltip("Seconds of rounds a visit plays before NEXT MATCH shows a commercial break under the curtain: the "
-                + "first rounds, which decide whether a new player stays, go straight in, as in SMUP")]
+            [Tooltip("Seconds of rounds a visit plays before NEXT MATCH shows a commercial break under the curtain. 0 asks "
+                + "for one on every NEXT MATCH from the first; Poki itself spaces them out")]
             [Min(0f)]
             [SerializeField]
-            private float freePlaySeconds = 180f;
+            private float freePlaySeconds;
 
             [Tooltip("The result offers CLAIM ×2: a rewarded ad that pays the round's own XP and coins once more")]
             [SerializeField]

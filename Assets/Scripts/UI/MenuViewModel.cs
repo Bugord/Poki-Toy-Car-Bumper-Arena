@@ -168,8 +168,7 @@ namespace ToyCarArena.UI
         public bool IsSettingsOpen { get; private set; }
 
         /// <summary>
-        /// The garage over the menu. Its NEXT MATCH is PLAY from here, so it sets the menu's result and the menu goes
-        /// to the lobby; BACK returns to the menu.
+        /// The garage over the menu. It has no PLAY of its own: back returns to the menu, whose PLAY starts the round.
         /// </summary>
         public async UniTask OpenGarage(CancellationToken token)
         {
@@ -178,18 +177,13 @@ namespace ToyCarArena.UI
             }
 
             IsGarageOpen = true;
-            bool play;
             try {
                 platform.MeasureMenuPressed("garage");
                 progress.MarkGarageSeen();
-                play = await navigator.RunAsync<GarageViewModel, bool>(token);
+                await navigator.RunAsync<GarageViewModel, bool>(token);
             }
             finally {
                 IsGarageOpen = false;
-            }
-
-            if (play) {
-                Play();
             }
         }
 

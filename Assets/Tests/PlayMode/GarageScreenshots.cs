@@ -20,15 +20,18 @@ using UnityEngine.UIElements;
 namespace ToyCarArena.Tests.PlayMode
 {
     /// <summary>
-    /// Pictures of the garage on its CARS and TOPPERS tabs, upright and wide, with a finger (phones) and with a mouse
-    /// (desktops), for a player well on (every car open, coins for the speedster but not the monster truck, a topper worn)
-    /// and a new one (cars still locked, toppers too dear), plus a pass in Russian, the line over a too dear car and a
-    /// hat tried on before it is bought:
-    /// <c>Logs/garage/&lt;save&gt;_&lt;tab&gt;_&lt;w&gt;x&lt;h&gt;.png</c>. Explicit: it is for looking at, and needs graphics.
+    /// Pictures of the garage (GarageB2) on its CARS, HATS and PAINT tabs, upright and wide, with a finger (phones) and
+    /// with a mouse (desktops), for a player well on (level 7, coins for the speedster but not the SUV,
+    /// a topper worn) and a new one (cars still locked, toppers too dear), plus a pass in Russian. The well-on player also
+    /// shows the bottom button's looks: a car to buy on the pedestal and its BUY window, the too dear one and its NEED N
+    /// MORE, a closed one, BUGGY for an ad and its window, an owned car to select, and a hat tried on:
+    /// <c>Logs/garage/&lt;save&gt;_&lt;frame&gt;_&lt;w&gt;x&lt;h&gt;.png</c>. Explicit: it is for looking at, and needs graphics.
     /// </summary>
     [Explicit]
     public sealed class GarageScreenshots
     {
+        private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
+
         private static readonly (int Width, int Height, bool IsTouch)[] Sizes = {
             (1080, 1920, true), (1080, 2340, true), (2340, 1080, true),
             (1920, 1080, false), (1920, 1200, false), (2048, 1536, false),
@@ -41,28 +44,31 @@ namespace ToyCarArena.Tests.PlayMode
             var directory = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "garage");
             Directory.CreateDirectory(directory);
             foreach (var size in Sizes) {
-                // Level 7: every car open, the speedster and the monster truck still to buy, 260 coins.
-                yield return Capture(directory, "rich", size, 540, 260, "party-hat", true);
+                // Level 7, 60 coins: the speedster to buy, the SUV too dear, the truck and up still closed.
+                yield return Capture(directory, "rich", size, 540, 60, "party-hat", true);
                 // Level 2, 30 coins: most cars locked and every topper too dear.
                 yield return Capture(directory, "new", size, 60, 30, "", false);
             }
 
             Strings.SetLanguage("ru");
-            yield return Capture(directory, "ru", (1080, 1920, true), 540, 260, "party-hat", false);
+            yield return Capture(directory, "ru", (1080, 1920, true), 540, 60, "party-hat", true);
             yield return Capture(directory, "ru", (1920, 1080, false), 540, 260, "party-hat", false);
             Strings.SetLanguage("en");
             typeof(Strings).GetField("table", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
         }
 
         private static IEnumerator Capture(string directory, string save, (int Width, int Height, bool IsTouch) size,
-            int xp, int coins, string topper, bool tapTooDear)
+            int xp, int coins, string topper, bool withStates)
         {
             var catalog = AssetDatabase.LoadAssetAtPath<CarCatalog>("Assets/Data/Cars/data_car_catalog.asset");
             var tuning = AssetDatabase.LoadAssetAtPath<GameTuning>("Assets/Data/Gameplay/data_game_tuning.asset");
             var library = AssetDatabase.LoadAssetAtPath<AudioLibrary>("Assets/Data/Audio/data_audio_library.asset");
-            var showTab = typeof(GarageView).GetMethod("ShowTab", BindingFlags.Instance | BindingFlags.NonPublic);
-            var select = typeof(GarageView).GetMethod("Select", BindingFlags.Instance | BindingFlags.NonPublic);
-            var pickTopper = typeof(GarageView).GetMethod("PickTopper", BindingFlags.Instance | BindingFlags.NonPublic);
+            var tabType = typeof(GarageView).GetNestedType("Tab", BindingFlags.NonPublic);
+            var showTab = typeof(GarageView).GetMethod("ShowTab", Private);
+            var pickCar = typeof(GarageView).GetMethod("PickCar", Private);
+            var pickHat = typeof(GarageView).GetMethod("PickHat", Private);
+            var pressAction = typeof(GarageView).GetMethod("PressAction", Private);
+            var closeConfirm = typeof(GarageView).GetMethod("CloseConfirm", Private);
             var (width, height, isTouch) = size;
             var storage = new RoundOverScreenshots.MemoryStorage();
             storage.SetInt("xp_total", xp);
@@ -97,33 +103,52 @@ namespace ToyCarArena.Tests.PlayMode
                 document.rootVisualElement.Add(screen);
                 view.Bind(model);
                 // UIKit hands a view the UXML's own root, not the template container around it.
-                view.Attach(screen.hierarchy[0]);
+                var root = screen.hierarchy[0];
+                view.Attach(root);
                 // The editor has no touch screen: the phone sizes take the touch look by hand.
-                screen.hierarchy[0].EnableInClassList("garage--touch", isTouch);
+                typeof(GarageView).GetField("isTouch", Private)?.SetValue(view, isTouch);
+                root.EnableInClassList("garage--desktop", !isTouch);
                 view.ShowAsync(CancellationToken.None).Forget();
-                foreach (var isToppers in new[] { false, true }) {
-                    showTab.Invoke(view, new object[] { isToppers });
+                yield return Wait(0.6f);
+                var frame = $"{width}x{height}";
+                foreach (var (tab, name) in new[] { (0, "cars"), (1, "hats"), (2, "paint") }) {
+                    showTab.Invoke(view, new[] { System.Enum.ToObject(tabType, tab) });
                     yield return Wait(0.8f);
-                    Save(target, Path.Combine(directory, $"{save}_{(isToppers ? "toppers" : "cars")}_{width}x{height}.png"));
+                    Save(target, Path.Combine(directory, $"{save}_{name}_{frame}.png"));
                 }
 
-                if (tapTooDear) {
-                    showTab.Invoke(view, new object[] { false });
+                if (withStates) {
+                    showTab.Invoke(view, new[] { System.Enum.ToObject(tabType, 0) });
                     yield return Wait(0.3f);
-                    var monster = catalog.Find("monster-truck");
-                    // The first tap shows it on the plinth, the second tries to buy it.
-                    select.Invoke(view, new object[] { monster, screen.Q<Button>($"garage-car-{monster.Id}") });
-                    yield return Wait(0.6f);
-                    Save(target, Path.Combine(directory, $"{save}_preview_{width}x{height}.png"));
-                    select.Invoke(view, new object[] { monster, screen.Q<Button>($"garage-car-{monster.Id}") });
-                    yield return Wait(0.25f);
-                    Save(target, Path.Combine(directory, $"{save}_toodear_{width}x{height}.png"));
-                    // A hat the coins pay for, tried on the hero by the first tap: gold frame and BUY on its tag.
-                    showTab.Invoke(view, new object[] { true });
+                    foreach (var (id, name) in new[] {
+                        ("speedster", "buy"), ("suv", "dear"), ("monster-truck", "locked"), ("buggy", "ad"),
+                        ("vintage", "select"),
+                    }) {
+                        var car = catalog.Find(id);
+                        pickCar.Invoke(view, new object[] { car, root.Q<Button>($"garage-car-{id}") });
+                        yield return Wait(0.6f);
+                        Save(target, Path.Combine(directory, $"{save}_{name}_{frame}.png"));
+                        if (name is "buy" or "ad") {
+                            // The second tap presses the bottom button: the window asks first.
+                            pickCar.Invoke(view, new object[] { car, root.Q<Button>($"garage-car-{id}") });
+                            yield return Wait(0.5f);
+                            Save(target, Path.Combine(directory, $"{save}_{name}-confirm_{frame}.png"));
+                            closeConfirm.Invoke(view, new object[] { false });
+                        }
+                        else if (name is "dear" or "locked") {
+                            pressAction.Invoke(view, null);
+                            yield return Wait(0.25f);
+                            Save(target, Path.Combine(directory, $"{save}_{name}-press_{frame}.png"));
+                            yield return Wait(0.8f);
+                        }
+                    }
+
+                    // A hat the coins pay for, tried on the car by its first tap: gold frame and BUY at the bottom.
+                    showTab.Invoke(view, new[] { System.Enum.ToObject(tabType, 1) });
                     yield return Wait(0.3f);
-                    pickTopper.Invoke(view, new object[] { "horns", screen.Q<Button>("garage-topper-horns") });
+                    pickHat.Invoke(view, new object[] { "cone", root.Q<Button>("garage-topper-cone") });
                     yield return Wait(0.6f);
-                    Save(target, Path.Combine(directory, $"{save}_hat_{width}x{height}.png"));
+                    Save(target, Path.Combine(directory, $"{save}_hat_{frame}.png"));
                 }
             }
             finally {
