@@ -10,10 +10,12 @@ using VContainer.Unity;
 namespace ToyCarArena.Gameplay.Arena
 {
     /// <summary>
-    /// The Jack mechanic of the Playroom arena: a handful of yellow lids marked with a "?" lie on the floor. Every few
-    /// seconds one or two of them are announced: the lid rattles and a pulsing circle on the floor shows how far the box
-    /// will reach. After the warning a jack-in-the-box springs up out of the floor (a coil and a clown's head) and tosses
-    /// every car inside the circle up and away from itself, then stays up for a moment and folds back down.
+    /// The Jack mechanic of the Playroom arena: a handful of low toy boxes (a red box, a blue lid with a white star) stand
+    /// on the floor. Every few seconds one or two of them are announced: the lid rattles, and a ring on the floor shows how
+    /// far the box will reach while its inside fills from the middle out as the time runs down. After the warning the lid
+    /// flips open, a jack (a coil and a clown's head) springs up and tosses every car inside the ring up and away from
+    /// the box, then stays up for a moment and folds back in. The box has no "?" so that it is never taken for the
+    /// boxes of items.
     /// <para>
     /// Spots are laid once, at random places that are whole and clear of the cars' starting places
     /// (<see cref="PropPlacement"/>), from the seed the bots share. A spot whose floor crumbles is gone. A hazard for the
@@ -35,15 +37,17 @@ namespace ToyCarArena.Gameplay.Arena
             Gone,
         }
 
-        private const float LidHalf = 0.8f;
-        private const float LidThickness = 0.05f;
-        private const float SpringHeight = 1.7f;
-        private const float HeadRadius = 0.72f;
-        private const float OutlineThickness = 0.075f;
+        private const float BoxHalf = 0.75f;
+        private const float BoxHeight = 0.45f;
+        private const float LidHalf = 0.78f;
+        private const float LidThickness = 0.1f;
+        private const float SpringHeight = 1.6f;
+        private const float SpringRadius = 0.3f;
+        private const int Coils = 6;
+        private const float HeadRadius = 0.6f;
+        private const float RingWidth = 0.24f;
         private const float CloseTime = 0.35f;
-        private const float PopTime = 0.18f;
         private const float RattleRate = 70f;
-        private const float PulseRate = 5f;
 
         // The floor nearer than this to a lid's middle takes the spot away.
         private const float VanishDistance = 1.0f;
@@ -55,13 +59,11 @@ namespace ToyCarArena.Gameplay.Arena
             public Transform LidHinge;
             public Transform Spring;
             public Transform Head;
-            public GameObject Hole;
             public GameObject Ring;
-            public MeshRenderer RingRenderer;
+            public Transform Fill;
             public SpotState State;
             public float Since;
             public float Presence = 1f;
-            public int Beat;
         }
 
         private readonly GameTuning.JackSettings settings;
@@ -77,8 +79,6 @@ namespace ToyCarArena.Gameplay.Arena
         private readonly List<Spot> spots = new();
         private readonly List<Mesh> meshes = new();
         private readonly List<int> idle = new();
-        private Material[] ringBeatA;
-        private Material[] ringBeatB;
         private GameObject root;
         private System.Random random;
         private EffectPlayer effects;
@@ -311,27 +311,24 @@ namespace ToyCarArena.Gameplay.Arena
             }
 
             spot.Root.localScale = Vector3.one * Mathf.SmoothStep(0f, 1f, spot.Presence);
-            spot.LidHinge.localPosition = new Vector3(0f, 0f, -LidHalf) + rattle;
-            spot.LidHinge.localRotation = Quaternion.Euler(-lidAngle, rattle.x * 40f, 0f);
+            spot.LidHinge.localPosition = new Vector3(0f, BoxHeight, LidHalf) + rattle;
+            spot.LidHinge.localRotation = Quaternion.Euler(lidAngle, rattle.x * 40f, 0f);
             var isUp = extension > 0.01f;
-            spot.Hole.SetActive(isUp || spot.State == SpotState.Warning);
             spot.Spring.gameObject.SetActive(isUp);
             spot.Head.gameObject.SetActive(isUp);
             if (isUp) {
                 var height = Mathf.Max(0.02f, extension);
                 spot.Spring.localScale = new Vector3(1f, height, 1f);
-                spot.Head.localPosition = new Vector3(0f, 0.05f + SpringHeight * height + HeadRadius * 0.8f, 0f);
+                spot.Head.localPosition = new Vector3(0f, BoxHeight + SpringHeight * height + HeadRadius * 0.8f, 0f);
                 spot.Head.localRotation = Quaternion.Euler(0f, 0f, tilt);
             }
 
             var warning = spot.State == SpotState.Warning;
             spot.Ring.SetActive(warning);
             if (warning) {
-                var beat = Mathf.FloorToInt(spot.Since * PulseRate) % 2;
-                if (beat != spot.Beat) {
-                    spot.Beat = beat;
-                    spot.RingRenderer.sharedMaterials = beat == 0 ? ringBeatA : ringBeatB;
-                }
+                // The inside of the ring fills from the middle out, full when the box springs.
+                var fill = settings.HitRadius * Mathf.Sqrt(Mathf.Clamp01(spot.Since / settings.Warning));
+                spot.Fill.localScale = new Vector3(fill, 1f, fill);
             }
         }
 
@@ -416,128 +413,99 @@ namespace ToyCarArena.Gameplay.Arena
             root = new GameObject("Jack Boxes");
             root.transform.SetParent(parent, false);
 
-            var outline = art.Get("jack_outline");
+            var navy = art.Get("jack_outline");
+            var red = art.Get("jack_red");
+            var blue = art.Get("jack_lid");
+            var white = art.Get("jack_white");
+            var yellow = art.Get("jack_spring");
+            var skin = art.Get("jack_skin");
 
-            // The lid, hinged at one edge so it can flip up: its middle is half a lid beyond the hinge.
-            var lid = new PropMesh();
-            lid.Box(new Vector3(0f, LidThickness, LidHalf), new Vector3(LidHalf, LidThickness, LidHalf), Quaternion.identity);
-            lid.Submesh = 1;
-            // The "?": a hook, a stem and a dot, in navy, just above the lid.
-            const float mark = LidThickness * 2f + 0.006f;
-            var hook = new Vector3(0f, mark, LidHalf + 0.28f);
-            lid.FlatRing(hook, 0.17f, 0.33f, 14, -80f * Mathf.Deg2Rad, 200f * Mathf.Deg2Rad);
-            var hookEnd = hook + new Vector3(Mathf.Cos(-80f * Mathf.Deg2Rad), 0f, Mathf.Sin(-80f * Mathf.Deg2Rad)) * 0.25f;
-            lid.FlatQuad(hookEnd + new Vector3(-0.08f, 0f, 0f), hookEnd + new Vector3(0.08f, 0f, 0f),
-                hookEnd + new Vector3(0.08f, 0f, -0.28f), hookEnd + new Vector3(-0.08f, 0f, -0.28f));
-            lid.FlatDisc(new Vector3(hookEnd.x, mark, LidHalf - 0.5f), 0.1f, 10);
-            var lidMesh = Keep(lid.ToMesh("Jack Lid"));
-            var lidHull = new PropMesh();
-            lidHull.Box(new Vector3(0f, LidThickness, LidHalf), new Vector3(LidHalf, LidThickness, LidHalf), Quaternion.identity);
-            var lidOutline = Keep(lidHull.ToHull("Jack Lid Outline", OutlineThickness));
-
-            var hole = new PropMesh();
-            hole.FlatDisc(new Vector3(0f, 0.011f, 0f), 0.85f, 16);
-            var holeMesh = Keep(hole.ToMesh("Jack Hole"));
-
-            var spring = new PropMesh();
-            const int coils = 7;
-            for (var i = 0; i < coils; i++) {
-                spring.Submesh = i % 2;
-                spring.Cylinder(new Vector3(0f, (i + 0.5f) * SpringHeight / coils, 0f), Quaternion.identity, 0.36f, 0.36f,
-                    SpringHeight / coils * 0.5f, 12);
-            }
-
-            var springMesh = Keep(spring.ToMesh("Jack Spring"));
-            var springHull = new PropMesh();
-            springHull.Cylinder(new Vector3(0f, SpringHeight * 0.5f, 0f), Quaternion.identity, 0.36f, 0.36f,
-                SpringHeight * 0.5f, 12);
-            var springOutline = Keep(springHull.ToHull("Jack Spring Outline", OutlineThickness));
-
-            var head = new PropMesh();
-            head.Sphere(Vector3.zero, Quaternion.identity, Vector3.one * HeadRadius, 18, 12, false);
-            head.Submesh = 1;
-            head.Sphere(new Vector3(0f, -0.04f, -HeadRadius), Quaternion.identity, Vector3.one * 0.19f, 10, 6, false);
-            head.Submesh = 2;
-            head.Sphere(new Vector3(-0.26f, 0.18f, -HeadRadius * 0.92f), Quaternion.identity, Vector3.one * 0.11f, 8, 5, false);
-            head.Sphere(new Vector3(0.26f, 0.18f, -HeadRadius * 0.92f), Quaternion.identity, Vector3.one * 0.11f, 8, 5, false);
-            head.Submesh = 3;
-            head.Cylinder(new Vector3(0f, HeadRadius + 0.3f, 0f), Quaternion.identity, 0.62f, 0.04f, 0.5f, 14);
-            head.Submesh = 1;
-            head.Sphere(new Vector3(0f, HeadRadius + 0.88f, 0f), Quaternion.identity, Vector3.one * 0.15f, 8, 5, false);
-            var headMesh = Keep(head.ToMesh("Jack Head"));
-            var headHull = new PropMesh();
-            headHull.Sphere(Vector3.zero, Quaternion.identity, Vector3.one * HeadRadius, 18, 12, false);
-            headHull.Cylinder(new Vector3(0f, HeadRadius + 0.3f, 0f), Quaternion.identity, 0.62f, 0.04f, 0.5f, 14);
-            var headOutline = Keep(headHull.ToHull("Jack Head Outline", OutlineThickness));
-
-            var ring = new PropMesh();
-            ring.FlatDisc(new Vector3(0f, 0.0125f, 0f), settings.HitRadius, 28);
-            ring.Submesh = 1;
-            ring.FlatRing(new Vector3(0f, 0.0135f, 0f), settings.HitRadius - 0.14f, settings.HitRadius, 28, 0f,
-                Mathf.PI * 2f);
-            var ringMesh = Keep(ring.ToMesh("Jack Warning"));
+            var box = Keep(ToyMeshes.Box(new Vector3(BoxHalf * 2f, BoxHeight, BoxHalf * 2f)));
+            var lid = Keep(ToyMeshes.Box(new Vector3(LidHalf * 2f, LidThickness, LidHalf * 2f)));
+            var star = Keep(Star(0.42f, 0.19f));
+            var coil = Keep(ToyMeshes.Cylinder(SpringRadius, SpringRadius, SpringHeight / Coils * 0.62f, 16));
+            var face = Keep(ToyMeshes.Ellipsoid(Vector3.one * HeadRadius, 20, 12));
+            var eye = Keep(ToyMeshes.Ellipsoid(new Vector3(0.085f, 0.11f, 0.06f), 8, 5));
+            var nose = Keep(ToyMeshes.Ellipsoid(Vector3.one * 0.15f, 10, 6));
+            var hat = Keep(ToyMeshes.Cylinder(0.46f, 0f, 0.62f, 16));
+            var bobble = Keep(ToyMeshes.Ellipsoid(Vector3.one * 0.13f, 8, 5));
+            var band = Keep(ToyMeshes.Ring(settings.HitRadius - RingWidth, settings.HitRadius, 56));
+            var disc = Keep(ToyMeshes.Disc(1f, 56));
 
             var glow = art.Get("jack_glow");
             var glowBright = art.Get("jack_glow_bright");
-            ringBeatA = new[] { glow, glowBright };
-            ringBeatB = new[] { glowBright, glow };
             for (var i = 0; i < places.Count; i++) {
                 var spot = new Spot { Centre = places[i] };
                 spot.Root = new GameObject("Spot " + i).transform;
                 spot.Root.SetParent(root.transform, false);
                 spot.Root.position = new Vector3(spot.Centre.x, 0.002f, spot.Centre.z);
 
+                var body = ToyMeshes.Part(spot.Root, "Box", box, red, new Vector3(0f, BoxHeight * 0.5f, 0f));
+                ToyMeshes.Outlined(body.gameObject);
+
+                // The lid is hinged at its far edge, so it flips up and away from the camera.
                 spot.LidHinge = new GameObject("Lid").transform;
                 spot.LidHinge.SetParent(spot.Root, false);
-                Add(spot.LidHinge.gameObject, lidMesh, art.Get("jack_lid"), outline);
-                Add(Child(spot.LidHinge, "Outline"), lidOutline, outline);
+                ToyMeshes.Part(spot.LidHinge, "Cover", lid, blue, new Vector3(0f, LidThickness * 0.5f, -LidHalf));
+                ToyMeshes.Outlined(spot.LidHinge.gameObject);
+                ToyMeshes.Part(spot.LidHinge, "Star", star, art.Get("jack_star"), new Vector3(0f, LidThickness + 0.006f, -LidHalf));
 
-                spot.Hole = Child(spot.Root, "Hole");
-                Add(spot.Hole, holeMesh, outline);
+                spot.Spring = new GameObject("Spring").transform;
+                spot.Spring.SetParent(spot.Root, false);
+                spot.Spring.localPosition = new Vector3(0f, BoxHeight, 0f);
+                for (var c = 0; c < Coils; c++) {
+                    ToyMeshes.Part(spot.Spring, "Coil", coil, c % 2 == 0 ? yellow : white,
+                        new Vector3(0f, (c + 0.5f) * SpringHeight / Coils, 0f));
+                }
 
-                spot.Spring = Child(spot.Root, "Spring").transform;
-                spot.Spring.localPosition = new Vector3(0f, 0.05f, 0f);
-                Add(spot.Spring.gameObject, springMesh, art.Get("jack_spring"), art.Get("jack_white"));
-                Add(Child(spot.Spring, "Outline"), springOutline, outline);
+                ToyMeshes.Outlined(spot.Spring.gameObject);
 
-                spot.Head = Child(spot.Root, "Head").transform;
-                Add(spot.Head.gameObject, headMesh, art.Get("jack_skin"), art.Get("jack_red"), outline, art.Get("jack_hat"));
-                Add(Child(spot.Head, "Outline"), headOutline, outline);
+                spot.Head = new GameObject("Head").transform;
+                spot.Head.SetParent(spot.Root, false);
+                ToyMeshes.Part(spot.Head, "Face", face, skin, Vector3.zero);
+                ToyMeshes.Part(spot.Head, "Nose", nose, red, new Vector3(0f, -0.06f, -HeadRadius * 0.97f));
+                ToyMeshes.Part(spot.Head, "Hat", hat, blue, new Vector3(0f, HeadRadius * 0.82f + 0.26f, 0f),
+                    new Vector3(-8f, 0f, 0f));
+                ToyMeshes.Part(spot.Head, "Bobble", bobble, white, new Vector3(0f, HeadRadius * 0.82f + 0.6f, 0.05f));
+                ToyMeshes.Outlined(spot.Head.gameObject);
+                // The eyes are navy already: an outline would only make them blots.
+                ToyMeshes.Part(spot.Head, "Eye", eye, navy, new Vector3(-0.22f, 0.16f, -HeadRadius * 0.93f));
+                ToyMeshes.Part(spot.Head, "Eye", eye, navy, new Vector3(0.22f, 0.16f, -HeadRadius * 0.93f));
 
-                spot.Ring = Child(spot.Root, "Warning");
-                spot.RingRenderer = Add(spot.Ring, ringMesh, ringBeatA);
-                spot.RingRenderer.sortingOrder = -3;
+                spot.Ring = new GameObject("Warning");
+                spot.Ring.transform.SetParent(spot.Root, false);
+                var fill = ToyMeshes.Decal(spot.Ring.transform, "Fill", disc, glow, -4);
+                fill.transform.localPosition = Vector3.up * 0.011f;
+                spot.Fill = fill.transform;
+                var edgeRing = ToyMeshes.Decal(spot.Ring.transform, "Ring", band, glowBright, -3);
+                edgeRing.transform.localPosition = Vector3.up * 0.013f;
                 spot.Ring.SetActive(false);
-                spot.Hole.SetActive(false);
                 spot.Spring.gameObject.SetActive(false);
                 spot.Head.gameObject.SetActive(false);
                 spots.Add(spot);
             }
         }
 
+        /// <summary>A flat five-pointed star facing up, its first point away from the camera.</summary>
+        private static Mesh Star(float outer, float inner)
+        {
+            var star = new PropMesh();
+            for (var k = 0; k < 10; k++) {
+                var a = Mathf.PI * 0.5f + k * Mathf.PI / 5f;
+                var b = Mathf.PI * 0.5f + (k + 1) * Mathf.PI / 5f;
+                var ra = k % 2 == 0 ? outer : inner;
+                var rb = k % 2 == 0 ? inner : outer;
+                star.FlatTriangle(Vector3.zero, new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * ra,
+                    new Vector3(Mathf.Cos(b), 0f, Mathf.Sin(b)) * rb);
+            }
+
+            return star.ToMesh("Jack Star");
+        }
+
         private Mesh Keep(Mesh mesh)
         {
             meshes.Add(mesh);
             return mesh;
-        }
-
-        private static GameObject Child(Transform of, string name)
-        {
-            var child = new GameObject(name);
-            child.transform.SetParent(of, false);
-            return child;
-        }
-
-        private static GameObject Child(GameObject of, string name) => Child(of.transform, name);
-
-        private static MeshRenderer Add(GameObject target, Mesh mesh, params Material[] materials)
-        {
-            target.AddComponent<MeshFilter>().sharedMesh = mesh;
-            var renderer = target.AddComponent<MeshRenderer>();
-            renderer.sharedMaterials = materials;
-            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            renderer.receiveShadows = false;
-            return renderer;
         }
     }
 }
