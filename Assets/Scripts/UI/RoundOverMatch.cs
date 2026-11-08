@@ -1,5 +1,4 @@
 using System;
-using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -13,7 +12,8 @@ namespace ToyCarArena.UI
     /// <para>
     /// After a round of the last car standing the podium stands alone in the middle, without the table, as big as the
     /// screen allows, its foot tucked under the cards below: the player's own car with no name over it (the title says
-    /// whose it is), a crown on its roof on a win, and the car that pushed them off on a loss to one, its name red with
+    /// whose it is) and no crown either (a flat one reads oddly on the 3D car), and the car that pushed them off on a
+    /// loss to one, its name red with
     /// the REVENGE horns and a red REVENGE NEXT ROUND tag under it.
     /// </para>
     /// <para>
@@ -51,13 +51,6 @@ namespace ToyCarArena.UI
         private const int RayCount = 12;
         // The rays reach past the podium's square a little, so their tips fade off its corners.
         private const float RaysScale = 1.25f;
-        // The crown on a round's podium sits on the roof over the turning axis (in the middle across, at
-        // WinnerPodium.RoofTop down), as wide as this share of the picture, a little right for its tilt.
-        private const float RoofCrownWidth = 0.13f;
-        private const float RoofCrownShift = 0.01f;
-        // The share of the crown's height under its bottom edge's middle, where it meets the roof.
-        private const float RoofCrownSink = 0.85f;
-        private const float CrownAspect = 64f / 92f;
 
         private readonly VisualElement root;
         private readonly RoundOverViewModel model;
@@ -70,7 +63,6 @@ namespace ToyCarArena.UI
         private readonly VisualElement rows;
         private readonly LiveText text = new();
         private VisualElement youRow;
-        private bool isRoofCrown;
         private IVisualElementScheduledItem turn;
         private bool isWide;
         private bool isPlayed;
@@ -91,7 +83,6 @@ namespace ToyCarArena.UI
             table = root.Q<VisualElement>("results");
             rows = root.Q<VisualElement>("results-rows");
             podium.RegisterCallback<GeometryChangedEvent>(OnPodiumGeometry);
-            car.RegisterCallback<GeometryChangedEvent>(OnCarGeometry);
 
             if (model.Podium != null) {
                 car.style.backgroundImage = Background.FromRenderTexture((RenderTexture)model.Podium);
@@ -152,7 +143,6 @@ namespace ToyCarArena.UI
             rays.generateVisualContent -= DrawRays;
             crown.generateVisualContent -= DrawCrown;
             podium.UnregisterCallback<GeometryChangedEvent>(OnPodiumGeometry);
-            car.UnregisterCallback<GeometryChangedEvent>(OnCarGeometry);
             text.Dispose();
         }
 
@@ -184,29 +174,6 @@ namespace ToyCarArena.UI
             rays.style.top = (evt.newRect.height - raySize) * 0.5f;
         }
 
-        // The crown on the roof of a round's own car: where the roof is in the picture, which the box fits by its height
-        // or its width.
-        private void OnCarGeometry(GeometryChangedEvent evt)
-        {
-            if (!isRoofCrown || model.Podium == null || model.Podium.height <= 0) {
-                return;
-            }
-
-            var box = evt.newRect;
-            var aspect = (float)model.Podium.width / model.Podium.height;
-            var width = Mathf.Min(box.width, box.height * aspect);
-            var height = width / aspect;
-            var left = box.x + (box.width - width) * 0.5f;
-            var top = box.y + (box.height - height) * 0.5f;
-            var crownWidth = width * RoofCrownWidth;
-            var crownHeight = crownWidth * CrownAspect;
-            crown.style.width = crownWidth;
-            crown.style.height = crownHeight;
-            crown.style.marginLeft = 0;
-            crown.style.left = left + width * (0.5f + RoofCrownShift) - crownWidth * 0.5f;
-            crown.style.top = top + height * WinnerPodium.RoofTop - crownHeight * RoofCrownSink;
-        }
-
         private void BuildWinner()
         {
             var index = model.PodiumCar;
@@ -221,15 +188,10 @@ namespace ToyCarArena.UI
             text.Set(name, () => model.NameOf(index));
             crown.style.display = model.IsPodiumWinner ? DisplayStyle.Flex : DisplayStyle.None;
             podium.EnableInClassList("podium--rival", isRival);
-            // A round's own car needs no name over it: the title already says it is the player's. Its crown sits on its
-            // roof instead of on the pill.
+            // A round's own car needs no name over it, and so no crown: the title already says it is the player's, and
+            // the WINNER ribbon under it says they won.
             if (!model.IsMatch && !isRival) {
                 winner.style.display = DisplayStyle.None;
-                isRoofCrown = model.IsPodiumWinner;
-                if (isRoofCrown) {
-                    podium.Add(crown);
-                    crown.AddToClassList("podium__crown--roof");
-                }
             }
 
             root.Q<Label>("podium-winner-tag").style.display = model.IsPodiumWinner ? DisplayStyle.Flex : DisplayStyle.None;
