@@ -27,7 +27,7 @@ namespace ToyCarArena.Gameplay.Cars
 
         /// <summary>
         /// Where the top of the car's roof over the turning axis is in the picture, as a share of its height from the top
-        /// (its middle across): every car is framed to put it there, so the result screen can set a crown on it.
+        /// (its middle across): every car is framed to put it there, so cars of any height fill the picture alike.
         /// </summary>
         public const float RoofTop = 0.12f;
 

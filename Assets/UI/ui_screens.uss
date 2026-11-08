@@ -4208,11 +4208,6 @@
     top: 90px;
 }
 
-/* A won round's crown on the car's roof (RoundOverMatch places and sizes it on the picture), tilted as if dropped on. */
-.podium__crown--roof {
-    rotate: 14deg;
-}
-
 /* WINNER under a won round's title, the one sticker there when neither REVENGE! nor the streak has it. */
 .round-over__ribbon {
     flex-shrink: 0;
