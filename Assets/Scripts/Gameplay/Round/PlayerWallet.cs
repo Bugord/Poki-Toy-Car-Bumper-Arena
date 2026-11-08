@@ -168,10 +168,11 @@ namespace ToyCarArena.Gameplay.Round
         }
 
         /// <summary>
-        /// Pays a decided round: its own coins (a streak round's multiplied, <paramref name="isStreakRound"/>) plus the
-        /// coins of the missions it completed.
+        /// Pays a decided round: its own coins (a streak round's multiplied, <paramref name="isStreakRound"/>, and the
+        /// first win of the day's by <paramref name="firstWinMultiplier"/> on top) plus the coins of the missions and
+        /// daily tasks it completed (<paramref name="missionCoins"/>).
         /// </summary>
-        public CoinGain Record(RoundResult result, bool isStreakRound, int missionCoins)
+        public CoinGain Record(RoundResult result, bool isStreakRound, int missionCoins, int firstWinMultiplier = 1)
         {
             var settings = tuning.Coins;
             var before = Coins;
@@ -179,10 +180,12 @@ namespace ToyCarArena.Gameplay.Round
             var knockouts = result.RewardKnockouts * settings.KnockoutCoins;
             var win = result.Outcome == RoundOutcome.Won ? settings.WinCoins : 0;
             var streak = isStreakRound ? tuning.Streaks.Bonus(round + knockouts + win) : 0;
-            var after = (int)Math.Min(int.MaxValue, (long)before + round + knockouts + win + streak + missionCoins);
+            var firstWin = firstWinMultiplier > 1 ? (round + knockouts + win + streak) * (firstWinMultiplier - 1) : 0;
+            var after = (int)Math.Min(int.MaxValue,
+                (long)before + round + knockouts + win + streak + firstWin + missionCoins);
             storage.SetInt(CoinsKey, after);
             Changed?.Invoke();
-            return new CoinGain(before, after, round, knockouts, win, streak, missionCoins);
+            return new CoinGain(before, after, round, knockouts, win, streak, missionCoins, firstWin);
         }
 
         /// <summary>The extra coins a watched ad gave the result (CLAIM ×2), as a reward of its own.</summary>
@@ -252,10 +255,13 @@ namespace ToyCarArena.Gameplay.Round
         public readonly int StreakCoins;
         public readonly int MissionCoins;
 
+        /// <summary>The first win of the day's extra on the round's own coins; 0 on any other round.</summary>
+        public readonly int FirstWinCoins;
+
         public int Total => After - Before;
 
         public CoinGain(int before, int after, int roundCoins, int knockoutCoins, int winCoins, int streakCoins,
-            int missionCoins)
+            int missionCoins, int firstWinCoins = 0)
         {
             this.Before = before;
             this.After = after;
@@ -264,6 +270,7 @@ namespace ToyCarArena.Gameplay.Round
             this.WinCoins = winCoins;
             this.StreakCoins = streakCoins;
             this.MissionCoins = missionCoins;
+            this.FirstWinCoins = firstWinCoins;
         }
     }
 }

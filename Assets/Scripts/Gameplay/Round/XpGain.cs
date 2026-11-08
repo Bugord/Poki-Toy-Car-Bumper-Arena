@@ -25,15 +25,21 @@ namespace ToyCarArena.Gameplay.Round
         /// bought with an ad runs; 0 otherwise.
         /// </summary>
         public readonly int BoostXp;
+
+        /// <summary>
+        /// The first win of the day's extra on the round's own XP (the streak's and the boost's shares included, the
+        /// missions' and daily tasks' not); 0 on any other round.
+        /// </summary>
+        public readonly int FirstWinXp;
         public readonly XpLevel Before;
         public readonly XpLevel After;
         public readonly IReadOnlyList<string> UnlockedCarIds;
 
-        public int Total => RoundXp + PlaceXp + WinXp + KnockoutXp + StreakXp + BoostXp + MissionXp;
+        public int Total => RoundXp + PlaceXp + WinXp + KnockoutXp + StreakXp + BoostXp + FirstWinXp + MissionXp;
 
         public XpGain(int totalBefore, int totalAfter, int roundXp, int placeXp, int winXp, int knockoutXp,
             XpLevel before, XpLevel after, IReadOnlyList<string> unlockedCarIds, int streakXp = 0, int missionXp = 0,
-            int boostXp = 0)
+            int boostXp = 0, int firstWinXp = 0)
         {
             this.TotalBefore = totalBefore;
             this.TotalAfter = totalAfter;
@@ -44,6 +50,7 @@ namespace ToyCarArena.Gameplay.Round
             this.StreakXp = streakXp;
             this.MissionXp = missionXp;
             this.BoostXp = boostXp;
+            this.FirstWinXp = firstWinXp;
             this.Before = before;
             this.After = after;
             this.UnlockedCarIds = unlockedCarIds;

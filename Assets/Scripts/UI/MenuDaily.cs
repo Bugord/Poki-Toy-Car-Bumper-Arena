@@ -14,8 +14,13 @@ namespace ToyCarArena.UI
     /// what tomorrow brings, and CLAIM with CLAIM ×2 for a rewarded ad beside it. Upright the calendar is two rows of four
     /// cells, the last two wide; sideways it is one row (<c>menu--wide</c> in ui_menu). Days already taken this week are
     /// pale with a green tick, today's is gold-ringed and lifted. Once claimed it shows the claim and celebrates
-    /// it (<see cref="RewardCelebration"/>), and the menu closes it after; opened again the same day it shows the
-    /// calendar with CONTINUE. <see cref="MenuView"/> owns the frame, the keys and when it opens and closes.
+    /// it (<see cref="RewardCelebration"/>), and the menu turns to the tasks after; opened again the same day it shows the
+    /// tasks with CONTINUE. <see cref="MenuView"/> owns the frame, the keys and when it opens and closes.
+    /// <para>
+    /// A GIFT | TASKS switch at the top (as the garage's) turns to the day's tasks: the first win of the day, which pays
+    /// twice, and the three daily tasks (<see cref="DailyTasks"/>) with their progress and reward, under them when the
+    /// next ones come.
+    /// </para>
     /// </summary>
     internal sealed class MenuDaily
     {
@@ -29,6 +34,20 @@ namespace ToyCarArena.UI
         private static readonly Color Red = new Color32(0xff, 0x4d, 0x4d, 0xff);
 
         private readonly VisualElement sheet;
+        private readonly VisualElement tabs;
+        private readonly Button giftTab;
+        private readonly Button tasksTab;
+        private readonly VisualElement giftDot;
+        private readonly VisualElement giftPage;
+        private readonly VisualElement tasksPage;
+        private readonly VisualElement firstWin;
+        private readonly Label firstWinBadge;
+        private readonly Label firstWinTitle;
+        private readonly Label firstWinHint;
+        private readonly VisualElement taskList;
+        private readonly Label tasksHint;
+        private readonly Label[] giftTabLabels;
+        private readonly Label[] tasksTabLabels;
         private readonly Label streak;
         private readonly VisualElement days;
         private readonly Label hint;
@@ -38,17 +57,54 @@ namespace ToyCarArena.UI
         private readonly Button continueButton;
         private Cell[] cells = Array.Empty<Cell>();
 
-        public MenuDaily(VisualElement sheet, Action pressDouble, Action pressClaim, Action pressContinue)
+        public MenuDaily(VisualElement sheet, Action pressDouble, Action pressClaim, Action pressContinue,
+            Action<bool> pressTab)
         {
             this.sheet = sheet;
             sheet.AddToClassList("menu__daily-sheet");
 
+            // GIFT | TASKS: a white pill, the chosen half green, a red dot on GIFT while it waits.
+            tabs = Element("menu__daily-tabs");
+            tabs.Add(Element("menu__drop"));
+            var tabsFace = Element("menu__daily-tabs-face");
+            giftTab = Tab(() => pressTab(false), false, out giftTabLabels);
+            giftDot = Element("menu__daily-tab-dot");
+            giftTab.Add(giftDot);
+            tasksTab = Tab(() => pressTab(true), true, out tasksTabLabels);
+            tabsFace.Add(giftTab);
+            tabsFace.Add(tasksTab);
+            tabs.Add(tabsFace);
+            sheet.Add(tabs);
+
+            giftPage = Element("menu__daily-page");
+            sheet.Add(giftPage);
             streak = Text("menu__daily-streak");
-            sheet.Add(streak);
+            giftPage.Add(streak);
             days = Element("menu__daily-days");
-            sheet.Add(days);
+            giftPage.Add(days);
             hint = Text("menu__daily-hint");
-            sheet.Add(hint);
+            giftPage.Add(hint);
+
+            // The tasks: the day's first win on an orange card, then the three tasks as the missions' rows.
+            tasksPage = Element("menu__daily-page");
+            sheet.Add(tasksPage);
+            firstWin = Element("menu__daily-first");
+            firstWinBadge = Text("menu__daily-first-badge");
+            firstWin.Add(firstWinBadge);
+            var firstWinText = Element("menu__daily-first-text");
+            firstWinTitle = Text("menu__daily-first-title");
+            firstWinText.Add(firstWinTitle);
+            firstWinHint = Text("menu__daily-first-hint");
+            firstWinText.Add(firstWinHint);
+            firstWin.Add(firstWinText);
+            var firstWinTick = Element("menu__daily-tick");
+            firstWinTick.Add(Element("mission__mark"));
+            firstWin.Add(firstWinTick);
+            tasksPage.Add(firstWin);
+            taskList = Element("menu__daily-tasks");
+            tasksPage.Add(taskList);
+            tasksHint = Text("menu__daily-hint");
+            tasksPage.Add(tasksHint);
 
             claimRow = Element("menu__daily-buttons");
             doubleButton = Button("button--purple", "menu__daily-double", pressDouble);
@@ -82,7 +138,7 @@ namespace ToyCarArena.UI
             SpaceKey = KeyCap(Strings.Get("common.space"), "menu__daily-key");
             claimButton.Add(SpaceKey);
             claimRow.Add(claimButton);
-            sheet.Add(claimRow);
+            giftPage.Add(claimRow);
 
             continueButton = Button("button--white", "menu__daily-continue", pressContinue);
             var continueLabel = Text("button__label");
@@ -101,6 +157,12 @@ namespace ToyCarArena.UI
         /// <summary>The popup's card, which the menu scales to the screen.</summary>
         public VisualElement Sheet => sheet;
 
+        /// <summary>Whether the TASKS half shows, rather than the gift's calendar.</summary>
+        public bool IsTasks { get; private set; }
+
+        /// <summary>Turns to the tasks or the gift; <see cref="Fill"/> draws it.</summary>
+        public void SetTab(bool isTasks) => IsTasks = isTasks;
+
         /// <summary>The CLAIM ×2 button, which shakes when its ad came back empty.</summary>
         public VisualElement DoubleButton => doubleButton;
 
@@ -110,6 +172,29 @@ namespace ToyCarArena.UI
         /// </summary>
         public void Fill(MenuViewModel model)
         {
+            // A build with only one half shows it without the switch.
+            IsTasks = model.HasDailyGift ? IsTasks && model.HasDailyTasks : model.HasDailyTasks;
+            tabs.style.display = model.HasDailyGift && model.HasDailyTasks ? DisplayStyle.Flex : DisplayStyle.None;
+            giftTab.EnableInClassList(TabOnClass, !IsTasks);
+            tasksTab.EnableInClassList(TabOnClass, IsTasks);
+            giftDot.style.display = model.CanClaimDaily ? DisplayStyle.Flex : DisplayStyle.None;
+            foreach (var label in giftTabLabels) {
+                label.text = Strings.Get("daily.tab_gift");
+            }
+
+            foreach (var label in tasksTabLabels) {
+                label.text = Strings.Format("daily.tab_tasks", model.DailyTasksDone, model.TodaysTasks.Count);
+            }
+
+            giftPage.style.display = IsTasks ? DisplayStyle.None : DisplayStyle.Flex;
+            tasksPage.style.display = IsTasks ? DisplayStyle.Flex : DisplayStyle.None;
+            ContinueLabel.text = Strings.Get("result.continue");
+            if (IsTasks) {
+                FillTasks(model);
+                continueButton.style.display = DisplayStyle.Flex;
+                return;
+            }
+
             var canClaim = model.CanClaimDaily;
             var today = model.DailySlot;
             streak.text = Strings.Format("daily.streak", model.DailyStreak);
@@ -156,7 +241,73 @@ namespace ToyCarArena.UI
 
             AdTag.text = Strings.Get("result.ad");
             SpaceKey.Q<Label>().text = Strings.Get("common.space");
-            ContinueLabel.text = Strings.Get("result.continue");
+        }
+
+        // The first win of the day (still to come, or taken today) and the day's three tasks, each a row: the check,
+        // the task, its progress (DONE! once done) and what it pays.
+        private void FillTasks(MenuViewModel model)
+        {
+            firstWin.style.display = model.IsFirstWinOn ? DisplayStyle.Flex : DisplayStyle.None;
+            var isWinTaken = !model.HasFirstWin;
+            firstWin.EnableInClassList("menu__daily-first--done", isWinTaken);
+            firstWinBadge.text = $"×{model.FirstWinMultiplier}";
+            firstWinTitle.text = Strings.Get("daily.first_win");
+            firstWinHint.text = isWinTaken ? Strings.Get("daily.first_win_done")
+                : Strings.Format("daily.first_win_hint", model.FirstWinMultiplier);
+
+            taskList.Clear();
+            foreach (var task in model.TodaysTasks) {
+                var definition = task.Definition;
+                var row = Element("mission");
+                row.AddToClassList("menu__daily-task");
+                row.EnableInClassList("mission--done", task.IsDone);
+                var check = Element("mission__check");
+                check.Add(Element("mission__mark"));
+                row.Add(check);
+                var text = Text("mission__task");
+                text.text = model.MissionText(definition);
+                row.Add(text);
+                var progress = Text("mission__progress");
+                progress.text = task.IsDone ? Strings.Get("daily.task_done") : $"{task.Progress}/{task.Target}";
+                row.Add(progress);
+                var reward = Element("menu__daily-task-reward");
+                var xp = Text("menu__daily-task-xp");
+                xp.text = $"+{model.DailyTaskXp(definition)} XP";
+                reward.Add(xp);
+                var coins = Element("menu__reward");
+                coins.Add(RoundOverMeta.Coin());
+                var count = Text("menu__reward-count");
+                count.text = model.DailyTaskCoins(definition).ToString();
+                coins.Add(count);
+                reward.Add(coins);
+                row.Add(reward);
+                taskList.Add(row);
+            }
+
+            tasksHint.text = Strings.Format("daily.tasks_next", TimeText(model.DailyTasksTimeLeft));
+        }
+
+        /// <summary>The time to midnight as the DAILY tile shows it: hours and minutes, or minutes under an hour.</summary>
+        internal static string TimeText(TimeSpan left)
+        {
+            var hours = (int)left.TotalHours;
+            var minutes = Mathf.Max(hours > 0 ? 0 : 1, left.Minutes);
+            return hours > 0 ? Strings.Format("daily.time_hm", hours, minutes) : Strings.Format("daily.time_m", minutes);
+        }
+
+        private const string TabOnClass = "menu__daily-tab--on";
+
+        private static Button Tab(Action pressed, bool isSplit, out Label[] labels)
+        {
+            var button = new Button(pressed);
+            button.RemoveFromClassList(UnityEngine.UIElements.Button.ussClassName);
+            button.AddToClassList("menu__daily-tab");
+            // A navy line between the halves (USS has no :first-child).
+            button.EnableInClassList("menu__daily-tab--split", isSplit);
+            button.focusable = false;
+            // Two layers, as the garage's tabs: the navy outline under a clean face.
+            button.Add(RoundOverProgress.Outlined("", "menu__daily-tab-label", out labels));
+            return button;
         }
 
         /// <summary>

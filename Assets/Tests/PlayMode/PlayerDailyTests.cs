@@ -261,8 +261,9 @@ namespace ToyCarArena.Tests.PlayMode
         private MenuViewModel Menu(IGamePlatform platform)
         {
             var catalog = AssetDatabase.LoadAssetAtPath<CarCatalog>("Assets/Data/Cars/data_car_catalog.asset");
-            return new MenuViewModel(new PlayerProgress(storage, tuning, catalog), wallet,
-                new MissionTracker(storage, tuning), catalog, null, tuning, null, platform, null, daily) {
+            var progress = new PlayerProgress(storage, tuning, catalog);
+            return new MenuViewModel(progress, wallet, new MissionTracker(storage, tuning), catalog, null, tuning, null,
+                platform, null, daily, new DailyTasks(storage, tuning, progress)) {
                 Clock = () => Monday,
             };
         }

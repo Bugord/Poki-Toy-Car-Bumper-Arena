@@ -161,6 +161,8 @@ namespace ToyCarArena.UI
         // The daily popup shows a gift just taken: it keeps the claim on screen until it closes.
         private bool isDailyClaimed;
         private bool wasDailyReady;
+        // The calendar day the menu last drew: midnight brings new tasks and a new first win, as it brings a new gift.
+        private int dailyDay;
 
         public MenuView(IAudioService audioService, HudControls controls)
         {
@@ -629,12 +631,38 @@ namespace ToyCarArena.UI
         /// <summary>The daily gift: its calendar, CLAIM and CLAIM ×2 (<see cref="MenuDaily"/>) on the menu's popup card.</summary>
         private void BuildDailyPopup(VisualElement menu)
         {
-            dailyPopup = Popup(menu, () => Strings.Get("daily.title"), out var sheet);
+            dailyPopup = Popup(menu, () => Strings.Get(daily is { IsTasks: true } ? "daily.tasks_title" : "daily.title"),
+                out var sheet);
             dailyPopup.AddToClassList("menu__daily-popup");
             daily = new MenuDaily(sheet, PressDailyDouble, PressDailyClaim, () => {
                 audioService.PlayUiClick();
                 ClosePopups();
-            });
+            }, PressDailyTab);
+        }
+
+        // GIFT or TASKS pressed: a click, the half drawn, the title to match; a gift being celebrated keeps its half.
+        private void PressDailyTab(bool isTasks)
+        {
+            if (IsBusy || !IsDailyOpen || isDailyClaimed || daily.IsTasks == isTasks) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            ShowDailyTab(isTasks);
+        }
+
+        private void ShowDailyTab(bool isTasks)
+        {
+            daily.SetTab(isTasks);
+            daily.Fill(ViewModel);
+            dailyPopup.EnableInClassList("menu__daily-popup--tasks", daily.IsTasks);
+            foreach (var title in dailyPopup.Query<Label>(className: "menu__sheet-title").ToList()) {
+                title.text = Strings.Get(daily.IsTasks ? "daily.tasks_title" : "daily.title");
+            }
+
+            if (daily.IsTasks) {
+                ViewModel.DailyTasksShown();
+            }
         }
 
         private Button PlayButton(string className, bool hasKey)
@@ -842,17 +870,13 @@ namespace ToyCarArena.UI
             dailyTile.style.display = ViewModel.HasDaily ? DisplayStyle.Flex : DisplayStyle.None;
             var isReady = ViewModel.CanClaimDaily;
             wasDailyReady = isReady;
+            dailyDay = ViewModel.Today;
             dailyTile.EnableInClassList("menu__tile--dot", isReady);
             dailyTile.EnableInClassList("menu__tile--daily-ready", isReady);
             dailyTime.text = isReady ? Strings.Get("daily.ready") : TimeText(ViewModel.DailyTimeLeft);
         }
 
-        private static string TimeText(System.TimeSpan left)
-        {
-            var hours = (int)left.TotalHours;
-            var minutes = Mathf.Max(hours > 0 ? 0 : 1, left.Minutes);
-            return hours > 0 ? Strings.Format("daily.time_hm", hours, minutes) : Strings.Format("daily.time_m", minutes);
-        }
+        private static string TimeText(System.TimeSpan left) => MenuDaily.TimeText(left);
 
         // Once a second: the timer, and the whole menu when midnight brings a new gift.
         private void TickDaily()
@@ -862,11 +886,18 @@ namespace ToyCarArena.UI
                 return;
             }
 
-            if (ViewModel.CanClaimDaily != wasDailyReady) {
+            if (ViewModel.CanClaimDaily != wasDailyReady || ViewModel.Today != dailyDay) {
                 Refresh();
             }
-            else if (!wasDailyReady) {
-                dailyTime.text = TimeText(ViewModel.DailyTimeLeft);
+            else {
+                if (!wasDailyReady) {
+                    dailyTime.text = TimeText(ViewModel.DailyTimeLeft);
+                }
+
+                // The tasks' NEW TASKS IN … counts down with the tile.
+                if (IsDailyOpen && daily.IsTasks && !isDailyClaimed) {
+                    daily.Fill(ViewModel);
+                }
             }
         }
 
@@ -1198,7 +1229,7 @@ namespace ToyCarArena.UI
             if (IsDailyOpen && evt.keyCode is not KeyCode.Escape) {
                 evt.StopPropagation();
                 if (evt.keyCode is KeyCode.Space or KeyCode.Return or KeyCode.KeypadEnter) {
-                    if (ViewModel.CanClaimDaily) {
+                    if (ViewModel.CanClaimDaily && !daily.IsTasks) {
                         PressDailyClaim();
                     }
                     else {
@@ -1206,8 +1237,11 @@ namespace ToyCarArena.UI
                         ClosePopups();
                     }
                 }
-                else if (evt.keyCode == KeyCode.X) {
+                else if (evt.keyCode == KeyCode.X && !daily.IsTasks) {
                     PressDailyDouble();
+                }
+                else if (evt.keyCode is KeyCode.LeftArrow or KeyCode.RightArrow or KeyCode.Tab) {
+                    PressDailyTab(!daily.IsTasks);
                 }
 
                 return;
@@ -1415,11 +1449,12 @@ namespace ToyCarArena.UI
             ShowDaily();
         }
 
+        // The gift's half while a gift waits, otherwise the day's tasks.
         private void ShowDaily()
         {
             isDailyClaimed = false;
-            daily.Fill(ViewModel);
             dailyPopup.AddToClassList(OpenClass);
+            ShowDailyTab(!ViewModel.CanClaimDaily);
             ViewModel.DailyShown();
         }
 
@@ -1471,8 +1506,9 @@ namespace ToyCarArena.UI
             CelebrateDaily(claim);
         }
 
-        // The gift is taken: the cell turns done, the celebration plays, the coins land in the counter, and the card
-        // closes once it is over (as the garage's window does); the DAILY tile shows the time to the next.
+        // The gift is taken: the cell turns done, the celebration plays, the coins land in the counter, and once it is
+        // over the card turns to the day's tasks (or closes, in a build without them); the DAILY tile shows the time to
+        // the next.
         private void CelebrateDaily(DailyClaim claim)
         {
             isDailyClaimed = true;
@@ -1486,8 +1522,14 @@ namespace ToyCarArena.UI
                 }
 
                 if (IsDailyOpen && isDailyClaimed) {
-                    dailyPopup.RemoveFromClassList(OpenClass);
                     isDailyClaimed = false;
+                    if (ViewModel.HasDailyTasks) {
+                        ShowDailyTab(true);
+                    }
+                    else {
+                        dailyPopup.RemoveFromClassList(OpenClass);
+                    }
+
                     Root.Focus();
                 }
 

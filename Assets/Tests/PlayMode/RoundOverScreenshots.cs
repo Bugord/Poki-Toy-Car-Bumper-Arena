@@ -52,6 +52,7 @@ namespace ToyCarArena.Tests.PlayMode
             // car, which stands on the podium.
             var cases = new[] {
                 "lost", "won", "winner", "rival", "offer", "gift", "double", "boosted", "bought", "hat", "legend",
+                "firstwin", "firstwin-boosted",
             };
             if (System.Environment.GetEnvironmentVariable("SHOTS_CASES") is { Length: > 0 } only) {
                 cases = only.Split(',');
@@ -203,11 +204,11 @@ namespace ToyCarArena.Tests.PlayMode
 
             var isWon = name is not ("lost" or "rival");
             var isRival = name == "rival";
-            if (name is "double" or "boosted") {
+            if (name is "double" or "boosted" or "firstwin" or "firstwin-boosted") {
                 // Level 12 with every car open: the bonus crosses a plain level, so no popup covers the card.
                 storage.SetInt("xp_total", 1250);
             }
-            if (name == "boosted") {
+            if (name is "boosted" or "firstwin-boosted") {
                 // The menu's XP boost running: the sticker's ×2 BOOST stamp, then CLAIM ×2's own ×2 beside it.
                 storage.SetInt("xp_boost", 3);
             }
@@ -223,8 +224,11 @@ namespace ToyCarArena.Tests.PlayMode
             missions.Seed(1);
             var round = missions.Record(new MissionStats(true, result.Outcome, result.Place, result.Knockouts, 3,
                 false, 0, 0, 0, "sandbox"), 3, 3);
-            var xp = new PlayerProgress(storage, tuning, catalog).Record(result, isWon ? tuning.Streaks : null, round.Xp);
-            var coins = new PlayerWallet(storage, tuning).Record(result, isWon, round.Coins);
+            // The day's first win: its own XP and coins twice, the FIRST WIN ×2 stamp under the stickers.
+            var firstWin = name.StartsWith("firstwin") ? tuning.Daily.FirstWinMultiplier : 1;
+            var xp = new PlayerProgress(storage, tuning, catalog).Record(result, isWon ? tuning.Streaks : null, round.Xp,
+                firstWin);
+            var coins = new PlayerWallet(storage, tuning).Record(result, isWon, round.Coins, firstWin);
             var streak = name == "winner" ? new StreakChange(0, 1, 2)
                 : isWon ? new StreakChange(2, 3, 2) : new StreakChange(3, 0, 2);
             var record = new RoundRecord(result, 1, 2, false, false).WithXp(xp)

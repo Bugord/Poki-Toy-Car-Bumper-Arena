@@ -76,13 +76,18 @@ namespace ToyCarArena.UI
         public bool HasNewCar => XpGain.UnlockedCarIds.Count > 0 || BonusXp.UnlockedCarIds?.Count > 0;
 
         /// <summary>
-        /// The round's own XP on its sticker: what CLAIM ×2 pays once more, the XP boost's share included. The missions'
-        /// XP stays on their rows and is not doubled.
+        /// The round's own XP on its sticker: what CLAIM ×2 pays once more, the XP boost's and the first win's shares
+        /// included. The XP of the missions and the daily tasks stays on their rows and is not doubled.
         /// </summary>
         public int RoundXp => XpGain.Total - XpGain.MissionXp;
 
         /// <summary>What the XP boost multiplies a round's own XP by: the stamp on a boosted round's XP sticker.</summary>
         public int BoostMultiplier => tuning.Ads.BoostMultiplier;
+
+        /// <summary>The round was the day's first win, which paid its own XP and coins twice: the stickers' stamp.</summary>
+        public bool IsFirstWin => XpGain.FirstWinXp > 0 || Coins.FirstWinCoins > 0;
+
+        public int FirstWinMultiplier => tuning.Daily.FirstWinMultiplier;
 
         /// <summary>The round's own coins on their sticker, the missions' left out, as <see cref="RoundXp"/>.</summary>
         public int RoundCoins => Coins.Total - Coins.MissionCoins;

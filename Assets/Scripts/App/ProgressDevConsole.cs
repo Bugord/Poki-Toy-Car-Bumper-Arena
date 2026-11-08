@@ -14,12 +14,14 @@ namespace ToyCarArena.App
         private readonly PlayerProgress progress;
         private readonly AdBreaks adBreaks;
         private readonly PlayerDaily daily;
+        private readonly DailyTasks dailyTasks;
 
-        public ProgressDevConsole(PlayerProgress progress, AdBreaks adBreaks, PlayerDaily daily)
+        public ProgressDevConsole(PlayerProgress progress, AdBreaks adBreaks, PlayerDaily daily, DailyTasks dailyTasks)
         {
             this.progress = progress;
             this.adBreaks = adBreaks;
             this.daily = daily;
+            this.dailyTasks = dailyTasks;
         }
 
         public void Start()
@@ -53,6 +55,18 @@ namespace ToyCarArena.App
                         ? $"Daily gift due: day {daily.Streak(now)} in a row"
                         : $"Daily gift claimed: day {daily.Streak(now)} in a row";
                 }));
+            CommandRegistry.Register("daily_tasks", "Draw today's daily tasks again (0) or complete them all (1)",
+                (Func<int, string>)(isDone => {
+                    var now = DateTime.Now;
+                    dailyTasks.Reset(now, isDone != 0);
+                    return $"Daily tasks: {dailyTasks.DoneCount(now)}/{DailyTasks.Count} done";
+                }));
+            CommandRegistry.Register("first_win", "Bring today's first win back (0) or take it (1)",
+                (Func<int, string>)(isTaken => {
+                    var now = DateTime.Now;
+                    daily.SetFirstWin(now, isTaken != 0);
+                    return daily.HasFirstWin(now) ? "First win of the day: still to come" : "First win of the day: taken";
+                }));
         }
 
         public void Dispose()
@@ -62,6 +76,8 @@ namespace ToyCarArena.App
             CommandRegistry.Unregister("ad_play");
             CommandRegistry.Unregister("xp_boost");
             CommandRegistry.Unregister("daily");
+            CommandRegistry.Unregister("daily_tasks");
+            CommandRegistry.Unregister("first_win");
         }
 
         private string Describe() => $"{progress.TotalXp} XP, LVL {progress.Level}";

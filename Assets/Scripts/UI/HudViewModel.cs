@@ -73,6 +73,9 @@ namespace ToyCarArena.UI
         /// <summary>A mission was done during the round: the state counts them, the view pops MISSION!.</summary>
         public event Action MissionDone;
 
+        /// <summary>A daily task was done during the round: the view pops DAILY TASK!.</summary>
+        public event Action DailyTaskDone;
+
         private readonly IScreenNavigator navigator;
         private Car player;
         private readonly HudControls controls;
@@ -294,6 +297,8 @@ namespace ToyCarArena.UI
         public const int NoKickoff = -1;
 
         public void ShowMissionDone() => MissionDone?.Invoke();
+
+        public void ShowDailyTaskDone() => DailyTaskDone?.Invoke();
 
         /// <summary>
         /// Shows a step of the kick-off (3, 2, 1, or 0 for GO!) for this many unscaled seconds.

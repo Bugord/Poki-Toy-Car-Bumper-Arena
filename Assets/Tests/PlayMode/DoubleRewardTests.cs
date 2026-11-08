@@ -172,7 +172,7 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         private MenuViewModel Menu() => new(progress, wallet, new MissionTracker(storage, tuning), catalog, arenas, tuning,
-            null, platform, null, new PlayerDaily(storage, tuning, wallet));
+            null, platform, null, new PlayerDaily(storage, tuning, wallet), new DailyTasks(storage, tuning, progress));
 
         [Test]
         public void BlockedAdsOfferNoDouble()

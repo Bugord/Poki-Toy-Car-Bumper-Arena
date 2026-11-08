@@ -116,6 +116,10 @@ def summarise(data):
         "daily_claim": other(o, r"daily-(day-[0-9]+|reset|hat)-claim"),
         "ad_daily": i.get("ad-daily"),
         "ad_daily_end": other(o, r"ad-daily-(granted|unavailable|dismissed)"),
+        "daily_tasks_shown": i.get("daily-tasks"),
+        "first_win": other(o, r"daily-first-win-(r[0-9]+(?:plus)?)-win"),
+        "task_done": other(o, r"daily-task-(.+)-complete"),
+        "tasks_done": other(o, r"daily-tasks-([0-9]+)-done"),
         "levels": other(o, r"progress-level-(2|3|4|5|6|7|8|9|10|10plus)-level-up"),
         "unlocks": other(o, r"progress-(?!map-)([a-z]+(?:-[a-z]+)*)-unlock"),
         "map_unlocks": other(o, r"progress-map-([a-z]+)-unlock"),
@@ -468,6 +472,19 @@ def report(version, previous):
         out.append(line("CLAIM x2 (нажали / показано)", lambda s: f"{num(s['ad_daily'], 'interacted')} / {num(s['ad_daily'], 'seen')} ({pct(num(s['ad_daily'], 'interacted'), num(s['ad_daily'], 'seen'))})"))
         for how in ("granted", "unavailable", "dismissed"):
             out.append(line(f"CLAIM x2 подарка: {how} (визиты)", lambda s, how=how: str(s["ad_daily_end"].get(how, 0))))
+
+    # The day's three tasks and the first win of the day: the TASKS tab looked at, each task done, how many a visit
+    # finished, and on which round of the visit the first win came.
+    if any(s and (s["first_win"] or s["task_done"]) for s in (cur, old)):
+        out += ["", "## Ежедневные задания и первая победа дня (после v0.16.0)", "", head, sep]
+        out.append(line("Вкладка TASKS открыта (визиты)", lambda s: str(num(s["daily_tasks_shown"], "seen"))))
+        for r in ("r1", "r2", "r3", "r4plus"):
+            out.append(line(f"Первая победа дня в {r.upper()} (визиты)", lambda s, r=r: str(s["first_win"].get(r, 0))))
+        for n in ("1", "2", "3"):
+            out.append(line(f"Выполнено заданий за день: {n} (визиты)", lambda s, n=n: str(s["tasks_done"].get(n, 0))))
+        ids = sorted({t for s in (cur, old) if s for t in s["task_done"]})
+        for task in ids:
+            out.append(line(f"Задание {task} выполнено (визиты)", lambda s, task=task: str(s["task_done"].get(task, 0))))
     print("\n".join(out))
 
 

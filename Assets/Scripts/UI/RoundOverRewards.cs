@@ -56,6 +56,28 @@ namespace ToyCarArena.UI
             row.Add(xp);
             row.Add(coins);
 
+            // The day's first win paid both twice: one orange stamp across the two stickers, or under the coins
+            // when the boost's own stamp already sits under the XP.
+            if (viewModel.IsFirstWin) {
+                var firstWin = new VisualElement { pickingMode = PickingMode.Ignore };
+                firstWin.AddToClassList("reward__boost");
+                firstWin.AddToClassList("reward__first-win");
+                var firstWinLabel = RoundOverProgress.Outlined("", "reward__boost-label", out var firstWinLabels);
+                foreach (var part in firstWinLabels) {
+                    text.Set(part, () => Strings.Format("result.first_win_stamp", viewModel.FirstWinMultiplier));
+                }
+
+                firstWin.Add(firstWinLabel);
+                if (viewModel.XpGain.BoostXp > 0) {
+                    coins.Add(firstWin);
+                }
+                else {
+                    row.Add(firstWin);
+                    row.RegisterCallback<GeometryChangedEvent>(_ =>
+                        firstWin.style.left = (xp.layout.xMax + coins.layout.xMin) * 0.5f);
+                }
+            }
+
             Claim = new Button { name = "double-button" };
             Claim.RemoveFromClassList(Button.ussClassName);
             Claim.AddToClassList("button");

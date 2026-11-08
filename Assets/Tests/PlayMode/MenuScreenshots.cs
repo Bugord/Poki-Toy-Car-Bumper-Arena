@@ -80,6 +80,9 @@ namespace ToyCarArena.Tests.PlayMode
                 // The daily gift on day 3 (coins, CLAIM ×2 beside CLAIM) and day 7 (the mystery hat).
                 yield return Capture(directory, "daily", size, false, dailyStreak: 2);
                 yield return Capture(directory, "daily7", size, false, dailyStreak: 6);
+                // The day's tasks: under way with the first win still to come, then one done and the first win taken.
+                yield return Capture(directory, "tasks", size, false, tasks: 1);
+                yield return Capture(directory, "tasks-done", size, false, tasks: 2);
             }
 
             Strings.SetLanguage("ru");
@@ -88,13 +91,15 @@ namespace ToyCarArena.Tests.PlayMode
             yield return Capture(directory, "ru-boosted", (1080, 1920, true), false, boost: 3);
             yield return Capture(directory, "ru-daily", (1080, 1920, true), false, dailyStreak: 2);
             yield return Capture(directory, "ru-daily", (1920, 1080, false), false, dailyStreak: 2);
+            yield return Capture(directory, "ru-tasks", (1080, 1920, true), false, tasks: 2);
+            yield return Capture(directory, "ru-tasks", (1920, 1080, false), false, tasks: 2);
             Strings.SetLanguage("en");
             typeof(Strings).GetField("table", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
         }
 
         private static IEnumerator Capture(string directory, string name, (int Width, int Height, bool IsTouch) size,
             bool withPopups, int xp = 540, int leagueSeen = 0, bool withLeagues = false, int boost = 0,
-            int dailyStreak = 0)
+            int dailyStreak = 0, int tasks = 0)
         {
             var catalog = AssetDatabase.LoadAssetAtPath<CarCatalog>("Assets/Data/Cars/data_car_catalog.asset");
             var arenas = AssetDatabase.LoadAssetAtPath<ArenaCatalog>("Assets/Data/Arenas/data_arena_catalog.asset");
@@ -129,8 +134,22 @@ namespace ToyCarArena.Tests.PlayMode
             var host = new GameObject("Menu screenshot");
             var document = host.AddComponent<UIDocument>();
             document.panelSettings = panelSettings;
-            var model = new MenuViewModel(new PlayerProgress(storage, tuning, catalog), wallet,
-                missions, catalog, arenas, tuning, null, new MatchTests.RecordingPlatform(), null, daily);
+            var progress = new PlayerProgress(storage, tuning, catalog);
+            var dailyTasks = new DailyTasks(storage, tuning, progress);
+            if (tasks > 0) {
+                // A lost round with two KOs and a box, and for the second case a won one with more: the day's tasks
+                // part-way, one of them done.
+                var now = System.DateTime.Now;
+                dailyTasks.Record(new MissionStats(true, RoundOutcome.Out, 3, 2, 0, false, 1, 1, 0, "sandbox"), now);
+                if (tasks > 1) {
+                    dailyTasks.Record(new MissionStats(true, RoundOutcome.Won, 1, 4, 0, true, 4, 4, 1, "tabletop"),
+                        now);
+                    daily.SetFirstWin(now, true);
+                }
+            }
+
+            var model = new MenuViewModel(progress, wallet, missions, catalog, arenas, tuning, null,
+                new MatchTests.RecordingPlatform(), null, daily, dailyTasks);
             var light = new GameObject("Menu screenshot light").AddComponent<Light>();
             light.type = LightType.Directional;
             light.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
@@ -178,6 +197,14 @@ namespace ToyCarArena.Tests.PlayMode
                     Save(target, Path.Combine(directory, $"{name}-claimed_{width}x{height}.png"));
                     yield return Wait(1.2f);
                     Save(target, Path.Combine(directory, $"{name}-after_{width}x{height}.png"));
+                    typeof(MenuView).GetMethod("ClosePopups", Private)?.Invoke(view, null);
+                }
+
+                if (tasks > 0) {
+                    // The gift is taken today: DAILY opens on the tasks.
+                    typeof(MenuView).GetMethod("OpenDaily", Private)?.Invoke(view, null);
+                    yield return Wait(0.4f);
+                    Save(target, Path.Combine(directory, $"{name}-popup_{width}x{height}.png"));
                     typeof(MenuView).GetMethod("ClosePopups", Private)?.Invoke(view, null);
                 }
 

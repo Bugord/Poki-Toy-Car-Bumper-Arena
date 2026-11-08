@@ -55,13 +55,18 @@ namespace ToyCarArena.App
         private readonly IArenaRotation arenaRotation;
         private readonly PlayerWallet wallet;
         private readonly MissionTracker missions;
+        private readonly PlayerDaily daily;
+        private readonly DailyTasks dailyTasks;
         private readonly AdBreaks adBreaks;
         private readonly MatchLobby lobby;
 
         public RoundState(LevelScene levelScene, IScreenNavigator navigator, ScreenCurtain curtain, IGamePlatform platform,
             SessionProgress progress, PersonalBests bests, PlayerProgress playerProgress, IArenaRotation arenaRotation,
-            PlayerWallet wallet, MissionTracker missions, AdBreaks adBreaks, MatchLobby lobby)
+            PlayerWallet wallet, MissionTracker missions, PlayerDaily daily, DailyTasks dailyTasks, AdBreaks adBreaks,
+            MatchLobby lobby)
         {
+            this.daily = daily;
+            this.dailyTasks = dailyTasks;
             this.lobby = lobby;
             this.adBreaks = adBreaks;
             this.wallet = wallet;
@@ -144,19 +149,28 @@ namespace ToyCarArena.App
             MissionStats LiveStats() => new(false, RoundOutcome.Survived, 0, round.PlayerKnockouts, driver.Boosts,
                 round.RevengeTaken, driver.ItemsUsed, pickupCount, itemKnockouts, playedMap);
 
+            // The daily tasks done this round pop too, as DAILY TASK!.
             async UniTaskVoid WatchMissions(HudViewModel hudModel)
             {
                 var shown = missions.CountDone(LiveStats());
+                var shownTasks = dailyTasks.CountDone(LiveStats(), DateTime.Now);
                 while (!round.IsFinished) {
                     if (await UniTask.Delay(MissionWatchInterval, true, cancellationToken: token)
                             .SuppressCancellationThrow()) {
                         return;
                     }
 
-                    var done = missions.CountDone(LiveStats());
+                    var stats = LiveStats();
+                    var done = missions.CountDone(stats);
                     if (done > shown && !round.IsFinished) {
                         shown = done;
                         hudModel.ShowMissionDone();
+                    }
+
+                    var tasksDone = dailyTasks.CountDone(stats, DateTime.Now);
+                    if (tasksDone > shownTasks && !round.IsFinished) {
+                        shownTasks = tasksDone;
+                        hudModel.ShowDailyTaskDone();
                     }
                 }
             }
@@ -224,12 +238,18 @@ namespace ToyCarArena.App
                 var streakBefore = progress.WinStreak;
                 var isStreakRound = streakBefore >= streaks.Start;
                 progress.Record(result, streaks.Start);
-                // Missions count first, so their XP lands in the same saved reward and fills the same bar.
-                var missionRound = missions.Record(new MissionStats(true, result.Outcome, result.Place,
-                        result.Knockouts, driver.Boosts, result.RevengeTaken, driver.ItemsUsed, pickupCount,
-                        itemKnockouts, playedMap), playerProgress.Level, progress.Round);
-                var xpGain = playerProgress.Record(result, isStreakRound ? streaks : null, missionRound.Xp);
-                var coinGain = wallet.Record(result, isStreakRound, missionRound.Coins);
+                // Missions and the daily tasks count first, so their XP lands in the same saved reward and fills the
+                // same bar. One clock for the round's whole day: a round over midnight counts for the new day.
+                var now = DateTime.Now;
+                var stats = new MissionStats(true, result.Outcome, result.Place, result.Knockouts, driver.Boosts,
+                    result.RevengeTaken, driver.ItemsUsed, pickupCount, itemKnockouts, playedMap);
+                var missionRound = missions.Record(stats, playerProgress.Level, progress.Round);
+                var taskRound = dailyTasks.Record(stats, now);
+                // The day's first win doubles the round's own reward, taken (and saved) before it pays.
+                var firstWin = daily.TakeFirstWin(now, result);
+                var xpGain = playerProgress.Record(result, isStreakRound ? streaks : null,
+                    missionRound.Xp + taskRound.Xp, firstWin);
+                var coinGain = wallet.Record(result, isStreakRound, missionRound.Coins + taskRound.Coins, firstWin);
                 // The free topper of its level: the result offers to wear it.
                 wallet.TryGift(xpGain.After.Level);
                 var record = bests.Record(result).WithXp(xpGain).WithKnocker(
@@ -254,6 +274,7 @@ namespace ToyCarArena.App
                 platform.MeasureRoundVariant(roundNumber, playedMap, playedVariant);
                 platform.MeasureMapUnlocks(record.XpGain, tuning);
                 platform.MeasureMeta(roundNumber, record, missions.DoneThisVisit);
+                platform.MeasureDailyRound(roundNumber, firstWin > 1, taskRound);
 
                 var delay = result.IsMatch ? tuning.Match.ResultDelay :
                     result.Outcome == RoundOutcome.Out ? tuning.Round.OutResultDelay : tuning.Round.ResultDelay;
