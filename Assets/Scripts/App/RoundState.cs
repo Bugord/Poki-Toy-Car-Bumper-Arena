@@ -45,6 +45,10 @@ namespace ToyCarArena.App
         // spring, and nothing a frame would notice.
         private const int MissionWatchInterval = 200;
 
+        // How long DAILY TASK! waits after MISSION! over the same car, in unscaled seconds: about the sticker's spring
+        // in, hold and fly away, so the two never sit on each other.
+        private const float PopupGap = 1.2f;
+
         private readonly LevelScene levelScene;
         private readonly IScreenNavigator navigator;
         private readonly ScreenCurtain curtain;
@@ -149,11 +153,14 @@ namespace ToyCarArena.App
             MissionStats LiveStats() => new(false, RoundOutcome.Survived, 0, round.PlayerKnockouts, driver.Boosts,
                 round.RevengeTaken, driver.ItemsUsed, pickupCount, itemKnockouts, playedMap);
 
-            // The daily tasks done this round pop too, as DAILY TASK!.
+            // The daily tasks done this round pop too, as DAILY TASK!. Both pop over the player's car, and one knock-out
+            // can finish a mission and a task with the same counter: the task's pop then waits for the mission's to
+            // clear.
             async UniTaskVoid WatchMissions(HudViewModel hudModel)
             {
                 var shown = missions.CountDone(LiveStats());
                 var shownTasks = dailyTasks.CountDone(LiveStats(), DateTime.Now);
+                var lastMissionPop = float.NegativeInfinity;
                 while (!round.IsFinished) {
                     if (await UniTask.Delay(MissionWatchInterval, true, cancellationToken: token)
                             .SuppressCancellationThrow()) {
@@ -164,11 +171,13 @@ namespace ToyCarArena.App
                     var done = missions.CountDone(stats);
                     if (done > shown && !round.IsFinished) {
                         shown = done;
+                        lastMissionPop = Time.unscaledTime;
                         hudModel.ShowMissionDone();
                     }
 
                     var tasksDone = dailyTasks.CountDone(stats, DateTime.Now);
-                    if (tasksDone > shownTasks && !round.IsFinished) {
+                    if (tasksDone > shownTasks && !round.IsFinished &&
+                        Time.unscaledTime - lastMissionPop >= PopupGap) {
                         shownTasks = tasksDone;
                         hudModel.ShowDailyTaskDone();
                     }

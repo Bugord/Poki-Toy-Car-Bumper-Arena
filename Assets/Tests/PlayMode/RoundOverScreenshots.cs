@@ -81,7 +81,7 @@ namespace ToyCarArena.Tests.PlayMode
                     // The gift waits behind the popup of the level the round opens, each closing by itself after 4 s.
                     // CLAIM ×2 is pressed after the first picture, its ad paying at once.
                     var moments = name == "gift" ? new[] { 0.6f, 3.0f, 20.0f }
-                        : name is "double" or "boosted" ? new[] { 0.6f, 1.2f, 4.0f }
+                        : name is "double" or "boosted" or "firstwin" or "firstwin-boosted" ? new[] { 0.6f, 1.2f, 4.0f }
                         // The popup's BUY & EQUIP is pressed after the first picture: the celebration plays on.
                         : name is "bought" or "hat" ? new[] { 3.0f, 3.3f, 3.7f, 4.4f, 6.0f }
                         : name == "legend" ? new[] { 0.6f, 1.6f, 2.4f, 3.2f, 4.5f, 9.0f } : new[] { 0.6f, 3.0f };
@@ -155,7 +155,7 @@ namespace ToyCarArena.Tests.PlayMode
                                     }
                                 }
 
-                                if (name is "double" or "boosted" && moment < 1f) {
+                                if (name is "double" or "boosted" or "firstwin" or "firstwin-boosted" && moment < 1f) {
                                     typeof(RoundOverView).GetMethod("ClaimDouble",
                                         BindingFlags.Instance | BindingFlags.NonPublic)?.Invoke(view, null);
                                 }
@@ -207,6 +207,10 @@ namespace ToyCarArena.Tests.PlayMode
             if (name is "double" or "boosted" or "firstwin" or "firstwin-boosted") {
                 // Level 12 with every car open: the bonus crosses a plain level, so no popup covers the card.
                 storage.SetInt("xp_total", 1250);
+            }
+            if (name.StartsWith("firstwin")) {
+                // The first win is not held to one level: past every car (MONSTER opens at 13), so no popup covers it.
+                storage.SetInt("xp_total", LevelStart(tuning, 15));
             }
             if (name is "boosted" or "firstwin-boosted") {
                 // The menu's XP boost running: the sticker's ×2 BOOST stamp, then CLAIM ×2's own ×2 beside it.
