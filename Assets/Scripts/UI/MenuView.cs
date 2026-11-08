@@ -594,12 +594,30 @@ namespace ToyCarArena.UI
 
         private VisualElement Popup(VisualElement menu, System.Func<string> title, out VisualElement sheet)
         {
+            var popup = PopupFrame(menu, out sheet, out var titles, () => {
+                audioService.PlayUiClick();
+                ClosePopups();
+            }, ClosePopups);
+            foreach (var label in titles) {
+                text.Set(label, title);
+            }
+
+            return popup;
+        }
+
+        /// <summary>
+        /// The frame of the menu's popups, also for the daily gift over a result: a dim over the screen, which a tap
+        /// closes with <paramref name="tapOutside"/>, and a white card with the title (twice, outline and face, for the
+        /// caller to fill) and the close button at its top.
+        /// </summary>
+        internal static VisualElement PopupFrame(VisualElement parent, out VisualElement sheet, out Label[] titles,
+            System.Action pressClose, System.Action tapOutside)
+        {
             var popup = Element("menu__popup");
             popup.pickingMode = PickingMode.Position;
-            // A tap on the dim around the card closes it.
             popup.RegisterCallback<ClickEvent>(evt => {
                 if (evt.target == popup) {
-                    ClosePopups();
+                    tapOutside();
                 }
             });
             sheet = Element("card");
@@ -607,22 +625,20 @@ namespace ToyCarArena.UI
             sheet.pickingMode = PickingMode.Position;
             var head = Element("menu__sheet-head");
             var stroke = Element("stroke");
+            titles = new Label[2];
             foreach (var isFace in new[] { false, true }) {
                 var label = Text("display");
                 label.AddToClassList("menu__sheet-title");
                 label.EnableInClassList("stroke__face", isFace);
-                text.Set(label, title);
+                titles[isFace ? 1 : 0] = label;
                 stroke.Add(label);
             }
 
             head.Add(stroke);
-            head.Add(CloseSticker(() => {
-                audioService.PlayUiClick();
-                ClosePopups();
-            }));
+            head.Add(CloseSticker(pressClose));
             sheet.Add(head);
             popup.Add(sheet);
-            menu.Add(popup);
+            parent.Add(popup);
             return popup;
         }
 
@@ -793,7 +809,7 @@ namespace ToyCarArena.UI
                 dailyTile.style.display == DisplayStyle.Flex ? DisplayStyle.Flex : DisplayStyle.None;
             // A gift just taken stays on the card as it was claimed (the hat's day would show coins once the hat is owned).
             if (IsDailyOpen && !isDailyClaimed) {
-                daily.Fill(ViewModel);
+                daily.Fill(ViewModel.Daily);
             }
 
             var car = ViewModel.Car;
@@ -1418,7 +1434,7 @@ namespace ToyCarArena.UI
         private void ShowDaily()
         {
             isDailyClaimed = false;
-            daily.Fill(ViewModel);
+            daily.Fill(ViewModel.Daily);
             dailyPopup.AddToClassList(OpenClass);
             ViewModel.DailyShown();
         }
@@ -1463,7 +1479,7 @@ namespace ToyCarArena.UI
             Root.Focus();
             if (claim == null) {
                 // No reward: CLAIM ×2 goes, and CLAIM still takes the gift.
-                daily.Fill(ViewModel);
+                daily.Fill(ViewModel.Daily);
                 daily.Refuse(dailyPopup, lifetime.Token);
                 return;
             }

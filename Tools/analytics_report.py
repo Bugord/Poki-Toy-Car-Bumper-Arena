@@ -113,6 +113,8 @@ def summarise(data):
         "boosted": other(o, r"result-boosted-(r(?:1|2|3|4plus))-xp-boost"),
         # после v0.16.0: ежедневный подарок в меню (попап с подарком показан, день календаря, сброс серии, шапка, CLAIM x2)
         "daily_offer": i.get("daily-offer"),
+        "daily_offer_result": i.get("daily-offer-result"),
+        "result_daily_no": i.get("result-daily-no"),
         "daily_claim": other(o, r"daily-(day-[0-9]+|reset|hat)-claim"),
         "ad_daily": i.get("ad-daily"),
         "ad_daily_end": other(o, r"ad-daily-(granted|unavailable|dismissed)"),
@@ -460,7 +462,10 @@ def report(version, previous):
         shown = lambda s: num(s["daily_offer"], "seen")
         out.append(line("Попап с подарком показан (визиты)", lambda s: str(shown(s))))
         out.append(line("Плитка DAILY нажата", lambda s: str(num(s["menu_press"].get("daily"), "interacted"))))
-        out.append(line("Закрыли, не забрав", lambda s: (lambda n: f"{n} ({pct(n, shown(s))})")(num(s["menu_press"].get("daily-no"), "interacted"))))
+        out.append(line("Закрыли в меню, не забрав", lambda s: (lambda n: f"{n} ({pct(n, shown(s))})")(num(s["menu_press"].get("daily-no"), "interacted"))))
+        on_result = lambda s: num(s.get("daily_offer_result"), "seen")
+        out.append(line("Из них над первым результатом визита", lambda s: f"{on_result(s)} ({pct(on_result(s), shown(s))})"))
+        out.append(line("Закрыли над результатом, не забрав", lambda s: (lambda n: f"{n} ({pct(n, on_result(s))})")(num(s.get("result_daily_no"), "interacted"))))
         for day in range(1, 8):
             out.append(line(f"Забрали день {day} (визиты)", lambda s, day=day: str(s["daily_claim"].get(f"day-{day}", 0))))
         out.append(line("Серия сброшена (визиты)", lambda s: str(s["daily_claim"].get("reset", 0))))

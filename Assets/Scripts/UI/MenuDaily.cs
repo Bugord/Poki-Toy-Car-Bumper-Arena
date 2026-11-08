@@ -9,13 +9,14 @@ using UnityEngine.UIElements;
 namespace ToyCarArena.UI
 {
     /// <summary>
-    /// The daily gift's popup in the main menu (macket MenuB_Daily): a tilted gold DAILY GIFT!, the days in a row on an
+    /// The daily gift's popup (macket MenuB_Daily), in the main menu and over a visit's first result: a tilted gold DAILY GIFT!, the days in a row on an
     /// orange tag, the calendar of seven days (coins rising day by day, the last one twice as wide with the mystery hat),
     /// what tomorrow brings, and CLAIM with CLAIM ×2 for a rewarded ad beside it. Upright the calendar is two rows of four
     /// cells, the last two wide; sideways it is one row (<c>menu--wide</c> in ui_menu). Days already taken this week are
     /// pale with a green tick, today's is gold-ringed and lifted. Once claimed it shows the claim and celebrates
     /// it (<see cref="RewardCelebration"/>), and the menu closes it after; opened again the same day it shows the
-    /// calendar with CONTINUE. <see cref="MenuView"/> owns the frame, the keys and when it opens and closes.
+    /// calendar with CONTINUE. The screen it is on (<see cref="MenuView"/>, <see cref="ResultDaily"/>) owns the frame, the
+    /// keys and when it opens and closes.
     /// </summary>
     internal sealed class MenuDaily
     {
@@ -105,17 +106,17 @@ namespace ToyCarArena.UI
         public VisualElement DoubleButton => doubleButton;
 
         /// <summary>
-        /// Shows the calendar as <paramref name="model"/> has it now: the days taken, today's, what is to come, and the
+        /// Shows the calendar as <paramref name="gift"/> has it now: the days taken, today's, what is to come, and the
         /// buttons a gift still to claim or a taken one leaves. Also redraws the words in the language shown.
         /// </summary>
-        public void Fill(MenuViewModel model)
+        public void Fill(DailyGift gift)
         {
-            var canClaim = model.CanClaimDaily;
-            var today = model.DailySlot;
-            streak.text = Strings.Format("daily.streak", model.DailyStreak);
-            if (cells.Length != model.DailyDays) {
+            var canClaim = gift.CanClaim;
+            var today = gift.Slot;
+            streak.text = Strings.Format("daily.streak", gift.Streak);
+            if (cells.Length != gift.Days) {
                 days.Clear();
-                cells = new Cell[model.DailyDays];
+                cells = new Cell[gift.Days];
                 for (var i = 0; i < cells.Length; i++) {
                     cells[i] = new Cell(i == cells.Length - 1);
                     days.Add(cells[i].Root);
@@ -129,22 +130,22 @@ namespace ToyCarArena.UI
                 cell.Root.EnableInClassList(TodayClass, isToday);
                 cell.Root.EnableInClassList(DoneClass, isDone);
                 cell.Caption.text = isToday ? Strings.Get("daily.today") : Strings.Format("daily.day", i + 1);
-                var hat = model.DailyHatOf(i);
+                var hat = gift.HatOf(i);
                 if (hat != null) {
                     cell.ShowGift(Strings.Get("daily.mystery"));
                 }
                 else {
-                    cell.ShowCoins(model.DailyCoinsOf(i), CoinsIn(i, cells.Length));
+                    cell.ShowCoins(gift.CoinsOf(i), CoinsIn(i, cells.Length));
                 }
             }
 
-            var next = model.NextDailySlot;
-            hint.text = model.DailyHatOf(next) != null
+            var next = gift.NextSlot;
+            hint.text = gift.HatOf(next) != null
                 ? Strings.Get("daily.tomorrow_hat")
-                : Strings.Format("daily.tomorrow", model.DailyCoinsOf(next));
+                : Strings.Format("daily.tomorrow", gift.CoinsOf(next));
 
             claimRow.style.display = canClaim ? DisplayStyle.Flex : DisplayStyle.None;
-            doubleButton.style.display = model.CanDoubleDaily ? DisplayStyle.Flex : DisplayStyle.None;
+            doubleButton.style.display = gift.CanDouble ? DisplayStyle.Flex : DisplayStyle.None;
             continueButton.style.display = canClaim ? DisplayStyle.None : DisplayStyle.Flex;
             foreach (var label in DoubleLabels) {
                 label.text = Strings.Get("result.claim_x2");

@@ -37,10 +37,15 @@ namespace ToyCarArena.Tests.PlayMode
             tuning = ScriptableObject.CreateInstance<GameTuning>();
             wallet = new PlayerWallet(storage, tuning);
             daily = new PlayerDaily(storage, tuning, wallet);
+            DailyGift.ForgetOffer();
         }
 
         [TearDown]
-        public void TearDown() => Object.DestroyImmediate(tuning);
+        public void TearDown()
+        {
+            DailyGift.ForgetOffer();
+            Object.DestroyImmediate(tuning);
+        }
 
         [Test]
         public void TheFirstClaimIsDayOneAndTodaysGiftIsTakenOnce()
@@ -256,6 +261,72 @@ namespace ToyCarArena.Tests.PlayMode
             var menu = Menu(new MatchTests.RecordingPlatform());
             Assert.That(menu.DailyHatOf(menu.DailySlot), Is.EqualTo(tuning.Daily.Hat));
             Assert.That(menu.CanDoubleDaily, Is.False);
+        }
+
+        [Test]
+        public void AVisitsFirstResultOffersTheGiftOnce()
+        {
+            var platform = new MatchTests.RecordingPlatform();
+            var first = Result(platform);
+
+            Assert.That(first.TakeDailyOffer(), Is.True, "a first visit's first result, with no menu before it");
+            first.DailyShown();
+            first.DailyDeclined();
+            Assert.That(Result(platform).TakeDailyOffer(), Is.False, "a later result of the same visit");
+            Assert.That(platform.Events, Does.Contain(("daily", "offer", "visible")));
+            Assert.That(platform.Events, Does.Contain(("daily", "offer-result", "visible")));
+            Assert.That(platform.Events, Does.Contain(("result", "daily-no", "interact")));
+            foreach (var (category, what, action) in platform.Events) {
+                Assert.That(GameEvent.CountNumbers(category, what, action), Is.LessThanOrEqualTo(GameEvent.MaxNumbers));
+            }
+        }
+
+        [Test]
+        public void AResultAfterTheMenusOfferDoesNotAskAgain()
+        {
+            Assert.That(Menu(new MatchTests.RecordingPlatform()).TakeDailyOffer(), Is.True);
+            Assert.That(Result(new MatchTests.RecordingPlatform()).TakeDailyOffer(), Is.False);
+        }
+
+        [Test]
+        public void AResultOffersNothingWithTodaysGiftTakenOrTheTuningOff()
+        {
+            daily.Claim(Monday);
+            Assert.That(Result(new MatchTests.RecordingPlatform()).TakeDailyOffer(), Is.False, "taken today");
+
+            var tomorrow = Result(new MatchTests.RecordingPlatform());
+            tomorrow.Daily.Clock = () => Monday.AddDays(1);
+            typeof(GameTuning.DailySettings).GetField("onResult",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .SetValue(tuning.Daily, false);
+            Assert.That(tomorrow.TakeDailyOffer(), Is.False, "the tuning keeps it to the menu");
+            Assert.That(Result(new MatchTests.RecordingPlatform(), withDaily: false).TakeDailyOffer(), Is.False);
+        }
+
+        [Test]
+        public void ClaimingOverTheResultPaysAsTheMenuDoes()
+        {
+            var result = Result(new MatchTests.RecordingPlatform());
+            Assert.That(result.TakeDailyOffer(), Is.True);
+
+            var claim = result.Daily.Claim();
+            Assert.That(claim.Coins, Is.EqualTo(tuning.Daily.CoinsOf(0)));
+            Assert.That(result.CoinsNow, Is.EqualTo(claim.CoinsAfter));
+            Assert.That(result.Daily.CanClaim, Is.False);
+        }
+
+        private RoundOverViewModel Result(IGamePlatform platform, bool withDaily = true)
+        {
+            var catalog = AssetDatabase.LoadAssetAtPath<CarCatalog>("Assets/Data/Cars/data_car_catalog.asset");
+            var arenas = AssetDatabase.LoadAssetAtPath<ToyCarArena.Gameplay.Arena.ArenaCatalog>(
+                "Assets/Data/Arenas/data_arena_catalog.asset");
+            var model = new RoundOverViewModel(catalog, arenas, tuning, new PlayerProgress(storage, tuning, catalog),
+                null, platform, wallet, null, withDaily ? daily : null);
+            if (model.Daily != null) {
+                model.Daily.Clock = () => Monday;
+            }
+
+            return model;
         }
 
         private MenuViewModel Menu(IGamePlatform platform)

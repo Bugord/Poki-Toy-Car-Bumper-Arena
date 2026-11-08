@@ -10,6 +10,7 @@ using NUnit.Framework;
 using ToyCarArena.App;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
+using ToyCarArena.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -40,6 +41,8 @@ namespace ToyCarArena.Tests.PlayMode
         {
             storage = new RoundOverScreenshots.MemoryStorage();
             platform = new MatchTests.RecordingPlatform();
+            // The daily gift's offer is the visit's: each test is a visit of its own.
+            DailyGift.ForgetOffer();
             keptRoots = new HashSet<GameObject>(PersistentRoots());
             testScene = SceneManager.GetActiveScene();
             // A visit's first menu reports its time; each test is a visit of its own.

@@ -45,8 +45,9 @@ namespace ToyCarArena.UI
 
         public RoundOverViewModel(CarCatalog catalog, ArenaCatalog arenaCatalog, GameTuning tuning,
             PlayerProgress progress, IScreenNavigator navigator, IGamePlatform platform, PlayerWallet wallet,
-            LevelScene levelScene)
+            LevelScene levelScene, PlayerDaily daily = null)
         {
+            this.Daily = daily != null ? new DailyGift(daily, tuning, platform) : null;
             this.wallet = wallet;
             this.levelScene = levelScene;
             this.catalog = catalog;
@@ -94,8 +95,10 @@ namespace ToyCarArena.UI
         public bool CanDouble => tuning.Ads.DoubleReward && !platform.IsAdBlocked && !isDoubleTried &&
             (RoundXp > 0 || RoundCoins > 0);
 
-        /// <summary>The rewarded ad of CLAIM ×2 is playing: the screen takes no presses meanwhile.</summary>
-        public bool IsAdPlaying { get; private set; }
+        /// <summary>A rewarded ad (CLAIM ×2's or the daily gift's) is playing: the screen takes no presses meanwhile.</summary>
+        public bool IsAdPlaying => isDoublePlaying || Daily is { IsAdPlaying: true };
+
+        private bool isDoublePlaying;
 
         public bool IsDoubled { get; private set; }
 
@@ -120,12 +123,12 @@ namespace ToyCarArena.UI
             platform.MeasureDoublePressed();
             var started = Time.realtimeSinceStartup;
             bool isRewarded;
-            IsAdPlaying = true;
+            isDoublePlaying = true;
             try {
                 isRewarded = await AdPause.Run(() => platform.RewardedBreak(token));
             }
             finally {
-                IsAdPlaying = false;
+                isDoublePlaying = false;
             }
 
             if (!isRewarded) {
@@ -273,6 +276,24 @@ namespace ToyCarArena.UI
         }
 
         public void HideGiftHat() => Stage?.Hide();
+
+        /// <summary>
+        /// Today's daily gift (<see cref="DailyGift"/>), which a visit's first result offers when no menu has (a first
+        /// visit goes straight to its round); null where nothing keeps it (tests).
+        /// </summary>
+        public DailyGift Daily { get; }
+
+        /// <summary>
+        /// Whether this result opens the daily gift before anything else plays: the visit's offer not made yet, with a
+        /// gift to claim, and the tuning asking for it on the result. Taking it marks the offer made.
+        /// </summary>
+        public bool TakeDailyOffer() => Daily != null && tuning.Daily.IsOnResult && Daily.IsEnabled && Daily.TakeOffer();
+
+        /// <summary>The gift's popup is up over the result: <c>daily / offer / visible</c> and <c>offer-result</c>.</summary>
+        public void DailyShown() => Daily?.Shown(true);
+
+        /// <summary>The popup closed over the result with its gift still to claim: <c>result / daily-no / interact</c>.</summary>
+        public void DailyDeclined() => platform.MeasureDailyResultDeclined();
 
         /// <summary>The garage's stage in the arena scene under the result (or the one a test gives); null without one.</summary>
         public GarageStage Stage

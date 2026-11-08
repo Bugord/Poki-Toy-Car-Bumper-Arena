@@ -258,10 +258,18 @@ namespace ToyCarArena.App
         /// claim (by itself on the menu or from the DAILY tile, which is <c>menu / daily / interact</c>), then on the
         /// claim <c>daily / day-N / claim</c>, N the calendar day 1..7 (one number), with <c>daily / reset / claim</c>
         /// beside it when a missed day started the calendar again and <c>daily / hat / claim</c> when the last day gave the
-        /// hat. Closing it without claiming is <c>menu / daily-no / interact</c>.
+        /// hat. Closing it without claiming is <c>menu / daily-no / interact</c>. Over a visit's first result (no menu
+        /// offered it) the popup also sends <c>daily / offer-result / visible</c>, and closing it there unclaimed is
+        /// <c>result / daily-no / interact</c>.
         /// </summary>
         public static void MeasureDailyShown(this IGamePlatform platform) =>
             platform.MeasureVisible(DailyCategory, "offer");
+
+        public static void MeasureDailyResultShown(this IGamePlatform platform) =>
+            platform.MeasureVisible(DailyCategory, "offer-result");
+
+        public static void MeasureDailyResultDeclined(this IGamePlatform platform) =>
+            platform.MeasureInteract(ResultCategory, "daily-no");
 
         public static void MeasureDailyClaimed(this IGamePlatform platform, DailyClaim claim)
         {

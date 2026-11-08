@@ -17,8 +17,8 @@ namespace ToyCarArena.Gameplay
         public DailySettings Daily => daily;
 
         /// <summary>
-        /// One gift a calendar day, claimed in the main menu. Days in a row climb the calendar; a missed day starts it
-        /// again from the first. The last day gives <see cref="Hat"/>, one of the exclusive toppers, and once the player
+        /// One gift a calendar day, claimed in the main menu (or over a visit's first result, <see cref="IsOnResult"/>).
+        /// Days in a row climb the calendar; a missed day starts it again from the first. The last day gives <see cref="Hat"/>, one of the exclusive toppers, and once the player
         /// owns it, <see cref="HatCoins"/> instead; the week after the last day starts again from the first.
         /// </summary>
         [Serializable]
@@ -47,6 +47,11 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private int adMultiplier = 2;
 
+            [Tooltip("Whether the first result of a visit offers today's gift too, when no menu has: a first visit " +
+                "goes straight to its round, so without it a new player would not hear of the calendar")]
+            [SerializeField]
+            private bool onResult = true;
+
             public bool IsEnabled => enabled && dayCoins.Length > 0;
 
             /// <summary>The days of the calendar: those with coins and the hat's.</summary>
@@ -55,6 +60,7 @@ namespace ToyCarArena.Gameplay
             public string Hat => hat;
             public int HatCoins => hatCoins;
             public int AdMultiplier => Math.Max(1, adMultiplier);
+            public bool IsOnResult => onResult;
 
             /// <summary>The calendar slot (0 for the first day) of the <paramref name="streak"/>-th day in a row, from 1.</summary>
             public int SlotOf(int streak) => (Math.Max(1, streak) - 1) % Days;

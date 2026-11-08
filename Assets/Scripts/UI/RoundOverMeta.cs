@@ -23,6 +23,8 @@ namespace ToyCarArena.UI
         private const int SwapDelay = 1500;
         private const int CoinsDelay = 450;
         private const float CountDuration = 0.8f;
+        // The daily gift's coins land in the corner about this long after its claim.
+        private const int GiftDelay = 600;
 
         private const string RowEnterClass = "mission--enter";
         private const string RowDoneClass = "mission--done";
@@ -125,6 +127,18 @@ namespace ToyCarArena.UI
             CountCoins(0, recount.Token).Forget();
         }
 
+        /// <summary>
+        /// The daily gift's coins, flown into the corner before the round's count: it counts them up once they land and
+        /// the round's count goes on from there.
+        /// </summary>
+        public void CountGift(int coins, CancellationToken token)
+        {
+            recount?.Cancel();
+            recount?.Dispose();
+            recount = CancellationTokenSource.CreateLinkedTokenSource(token);
+            CountCoins(GiftDelay, recount.Token, shownCoins + coins).Forget();
+        }
+
         public void Dispose()
         {
             Stop();
@@ -166,7 +180,7 @@ namespace ToyCarArena.UI
             CoinPill.schedule.Execute(() => CoinPill.RemoveFromClassList("coin-pill--bump")).StartingIn(150);
         }
 
-        private async UniTaskVoid CountCoins(int delay, CancellationToken token)
+        private async UniTaskVoid CountCoins(int delay, CancellationToken token, int target = -1)
         {
             if (await UniTask.Delay(delay, ignoreTimeScale: true, cancellationToken: token)
                     .SuppressCancellationThrow()) {
@@ -178,7 +192,7 @@ namespace ToyCarArena.UI
             while (!token.IsCancellationRequested) {
                 var share = Mathf.Clamp01((Time.unscaledTime - start) / CountDuration);
                 // Towards the coins now: a car bought from a level's popup meanwhile is already taken off.
-                shownCoins = Mathf.RoundToInt(Mathf.Lerp(from, viewModel.CoinsNow, share));
+                shownCoins = Mathf.RoundToInt(Mathf.Lerp(from, target < 0 ? viewModel.CoinsNow : target, share));
                 coinCount.text = shownCoins.ToString();
                 if (share >= 1f) {
                     CoinPill.AddToClassList("coin-pill--bump");
