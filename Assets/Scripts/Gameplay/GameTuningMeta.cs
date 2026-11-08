@@ -270,14 +270,37 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private int hatOfferLevel = 5;
 
+            [Tooltip("Toppers sold nowhere: only a reward gives them (the daily gift's last day). The garage shows " +
+                "one once it is owned; the price is unused")]
+            [SerializeField]
+            private TopperDefinition[] exclusiveToppers = {
+                new("wizard-hat", 0),
+            };
+
+            /// <summary>The toppers on sale, in the garage's order; the exclusive ones are not among them.</summary>
             public IReadOnlyList<TopperDefinition> All => toppers;
+
+            /// <summary>The toppers only a reward gives.</summary>
+            public IReadOnlyList<TopperDefinition> Exclusive => exclusiveToppers;
             public string GiftTopper => giftTopper;
             public int GiftLevel => giftLevel;
             public int HatOfferLevel => hatOfferLevel;
 
-            public TopperDefinition Find(string id)
+            /// <summary>A topper on sale or exclusive, by id; null for none.</summary>
+            public TopperDefinition Find(string id) => FindIn(toppers, id) ?? FindIn(exclusiveToppers, id);
+
+            /// <summary>Whether coins buy the topper: it is one of <see cref="All"/>.</summary>
+            public bool IsOnSale(string id) => FindIn(toppers, id) != null;
+
+            public bool IsExclusive(string id) => FindIn(exclusiveToppers, id) != null;
+
+            private static TopperDefinition FindIn(TopperDefinition[] list, string id)
             {
-                foreach (var topper in toppers) {
+                if (list == null) {
+                    return null;
+                }
+
+                foreach (var topper in list) {
                     if (topper.Id == id) {
                         return topper;
                     }

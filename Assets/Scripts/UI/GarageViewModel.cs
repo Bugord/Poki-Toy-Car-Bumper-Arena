@@ -164,7 +164,23 @@ namespace ToyCarArena.UI
         }
 
         public int Coins => wallet.Coins;
-        public IReadOnlyList<GameTuning.TopperDefinition> Toppers => tuning.Toppers.All;
+        /// <summary>
+        /// The toppers of the HATS tab: those on sale, then the exclusive ones the player has earned (a reward gives
+        /// them, coins do not, so one not owned stays hidden).
+        /// </summary>
+        public IReadOnlyList<GameTuning.TopperDefinition> Toppers
+        {
+            get {
+                var list = new List<GameTuning.TopperDefinition>(tuning.Toppers.All);
+                foreach (var topper in tuning.Toppers.Exclusive) {
+                    if (wallet.IsOwned(topper.Id)) {
+                        list.Add(topper);
+                    }
+                }
+
+                return list;
+            }
+        }
         public string SelectedTopper => wallet.SelectedTopper;
         public bool IsOwned(string id) => wallet.IsOwned(id);
         public bool CanAfford(GameTuning.TopperDefinition topper) => wallet.Coins >= topper.Price;
