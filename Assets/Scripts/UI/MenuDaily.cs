@@ -13,9 +13,9 @@ namespace ToyCarArena.UI
     /// orange tag, the calendar of seven days (coins rising day by day, the last one twice as wide with the mystery hat),
     /// what tomorrow brings, and CLAIM with CLAIM ×2 for a rewarded ad beside it. Upright the calendar is two rows of four
     /// cells, the last two wide; sideways it is one row (<c>menu--wide</c> in ui_menu). Days already taken this week are
-    /// pale with a green tick, today's is gold-ringed and lifted. Once claimed it shows the claim, celebrates it
-    /// (<see cref="RewardCelebration"/>) and leaves CONTINUE; <see cref="MenuView"/> owns the frame, the keys and when
-    /// it opens.
+    /// pale with a green tick, today's is gold-ringed and lifted. Once claimed it shows the claim and celebrates
+    /// it (<see cref="RewardCelebration"/>), and the menu closes it after; opened again the same day it shows the
+    /// calendar with CONTINUE. <see cref="MenuView"/> owns the frame, the keys and when it opens and closes.
     /// </summary>
     internal sealed class MenuDaily
     {

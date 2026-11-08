@@ -857,7 +857,8 @@ namespace ToyCarArena.UI
         // Once a second: the timer, and the whole menu when midnight brings a new gift.
         private void TickDaily()
         {
-            if (Root?.panel == null || !ViewModel.HasDaily) {
+            // Hidden or past PLAY, the menu waits: a whole refresh would wake the garage stage's camera.
+            if (Root?.panel == null || !IsShown || ViewModel.IsDecided || !ViewModel.HasDaily) {
                 return;
             }
 
