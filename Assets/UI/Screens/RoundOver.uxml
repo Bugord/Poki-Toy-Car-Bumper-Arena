@@ -34,6 +34,11 @@
                 <Bugord.App.Localization.LocalizedText property="text" key="hud.revenge_taken" />
             </Bindings>
         </ui:Label>
+        <ui:Label name="winner-ribbon" text="WINNER" picking-mode="Ignore" class="best best--new round-over__ribbon">
+            <Bindings>
+                <Bugord.App.Localization.LocalizedText property="text" key="result.winner" />
+            </Bindings>
+        </ui:Label>
         <ui:VisualElement name="match-results" picking-mode="Ignore" class="round-over__match">
             <ui:VisualElement name="podium" picking-mode="Ignore" class="podium">
                 <ui:VisualElement name="podium-rays" picking-mode="Ignore" class="podium__rays" />

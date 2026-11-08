@@ -29,6 +29,10 @@ namespace ToyCarArena.Tests.PlayMode
     [Explicit]
     public sealed class RoundOverScreenshots
     {
+        // The podium of the game scene, drawing a catalog car instead of one from a round, under a light like the sun.
+        private static WinnerPodium podium;
+        private static GameObject podiumHost;
+
         [UnityTest]
         [Timeout(900000)]
         public IEnumerator CaptureTheResultWithMissions()
@@ -44,7 +48,11 @@ namespace ToyCarArena.Tests.PlayMode
             var shots = new[] {
                 (1080, 1920, false), (1920, 1080, false), (1080, 1920, true), (2340, 1080, true), (2048, 1536, true),
             };
-            var cases = new[] { "lost", "won", "offer", "gift", "double", "boosted", "bought", "hat", "legend" };
+            // winner: a won round without a streak, so WINNER has the sticker under the title; rival: pushed off by a
+            // car, which stands on the podium.
+            var cases = new[] {
+                "lost", "won", "winner", "rival", "offer", "gift", "double", "boosted", "bought", "hat", "legend",
+            };
             if (System.Environment.GetEnvironmentVariable("SHOTS_CASES") is { Length: > 0 } only) {
                 cases = only.Split(',');
             }
@@ -54,6 +62,15 @@ namespace ToyCarArena.Tests.PlayMode
             if (System.Environment.GetEnvironmentVariable("SHOTS_LANG") is { Length: > 0 } extra) {
                 languages = new List<string>(extra.Split(','));
             }
+
+            podiumHost = new GameObject("Podium screenshot");
+            var sun = new GameObject("Podium screenshot light").AddComponent<Light>();
+            sun.transform.SetParent(podiumHost.transform, false);
+            sun.type = LightType.Directional;
+            sun.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+            podium = new WinnerPodium(null,
+                AssetDatabase.LoadAssetAtPath<MechanicArt>("Assets/Data/Arenas/data_mechanic_art.asset"),
+                podiumHost.transform);
 
             foreach (var language in languages) {
                 Strings.SetLanguage(language);
@@ -73,6 +90,10 @@ namespace ToyCarArena.Tests.PlayMode
                             AssetDatabase.LoadAssetAtPath<PanelSettings>("Assets/UI/ui_panel_settings.asset"));
                         var target = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
                         panelSettings.targetTexture = target;
+                        // Cleared each frame to the sandbox's sky, as the arena behind the screen would be: without a camera
+                        // under it the turning rays and the confetti would pile up on the last frames.
+                        panelSettings.clearColor = true;
+                        panelSettings.colorClearValue = new Color(0.56f, 0.83f, 0.78f, 1f);
                         var host = new GameObject("Result screenshot");
                         var document = host.AddComponent<UIDocument>();
                         document.panelSettings = panelSettings;
@@ -156,6 +177,9 @@ namespace ToyCarArena.Tests.PlayMode
 
             Strings.SetLanguage("en");
             typeof(Strings).GetField("table", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
+            podium.Dispose();
+            podium = null;
+            Object.Destroy(podiumHost);
         }
 
         // A round as RoundState saves it: a fall after a streak, or a win that keeps one going.
@@ -177,7 +201,8 @@ namespace ToyCarArena.Tests.PlayMode
                 storage.SetString("cars_owned", "speedster,suv,truck,monster-truck");
             }
 
-            var isWon = name != "lost";
+            var isWon = name is not ("lost" or "rival");
+            var isRival = name == "rival";
             if (name is "double" or "boosted") {
                 // Level 12 with every car open: the bonus crosses a plain level, so no popup covers the card.
                 storage.SetInt("xp_total", 1250);
@@ -192,18 +217,21 @@ namespace ToyCarArena.Tests.PlayMode
                 storage.SetInt("xp_total", LevelStart(tuning, 100) - 10);
             }
             var result = new RoundResult(isWon ? RoundOutcome.Won : RoundOutcome.Out, isWon ? 1 : 3, 4, 40f,
-                isWon ? 2 : 1, RoundResult.Nobody, FallCause.Drive, false, false);
+                isWon ? 2 : 1, isRival ? 1 : RoundResult.Nobody, FallCause.Drive, false, false,
+                colors: new[] { 0, 1, 2, 3 });
             var missions = new MissionTracker(storage, tuning);
             missions.Seed(1);
             var round = missions.Record(new MissionStats(true, result.Outcome, result.Place, result.Knockouts, 3,
                 false, 0, 0, 0, "sandbox"), 3, 3);
             var xp = new PlayerProgress(storage, tuning, catalog).Record(result, isWon ? tuning.Streaks : null, round.Xp);
             var coins = new PlayerWallet(storage, tuning).Record(result, isWon, round.Coins);
-            var streak = isWon ? new StreakChange(2, 3, 2) : new StreakChange(3, 0, 2);
+            var streak = name == "winner" ? new StreakChange(0, 1, 2)
+                : isWon ? new StreakChange(2, 3, 2) : new StreakChange(3, 0, 2);
             var record = new RoundRecord(result, 1, 2, false, false).WithXp(xp)
                 .WithRoster(new[] { "YOU", "ZOOMER", "BONKY", "SKID" },
                     name == "legend" ? new[] { 99, 57, 31, 120 } : new[] { 3, 2, 4, 1 }, RoundResult.Nobody)
-                .WithMeta(coins, round, streak).WithPodium(Podium());
+                .WithMeta(coins, round, streak)
+                .WithPodium(Podium(catalog, isRival ? "monster-truck" : "racer", isRival ? 1 : 0));
             return (record, storage);
         }
 
@@ -219,14 +247,19 @@ namespace ToyCarArena.Tests.PlayMode
             return total;
         }
 
-        // A grey square where the podium's car would turn: the screen takes a render texture there.
-        private static RenderTexture Podium()
+        // The podium's picture of a catalog car in a colour, built as the arena builds the cars. The podium keeps one
+        // texture, so each record's picture is the car of the record shot last.
+        private static RenderTexture Podium(CarCatalog catalog, string carId, int colorId)
         {
-            var texture = new RenderTexture(256, 256, 0);
-            var previous = RenderTexture.active;
-            RenderTexture.active = texture;
-            GL.Clear(true, true, new Color(0.6f, 0.6f, 0.65f, 1f));
-            RenderTexture.active = previous;
+            var look = AssetDatabase.LoadAssetAtPath<Car>("Assets/Prefabs/Cars/Car.prefab").GetComponent<CarLook>();
+            var entry = catalog.Find(carId);
+            var holder = new GameObject("Podium car");
+            holder.transform.SetParent(podiumHost.transform, false);
+            var model = CarLook.BuildModel(entry, holder.transform, look.ModelRotation, look.ModelMaterial, look.Reference);
+            CarModel.PaintBody(CarModel.FindBody(model, out _), entry.BodySwatch, look.SwatchOf(colorId));
+            var texture = podium.Show(model, model.transform.localRotation, model.transform.localScale,
+                look.ModelMaterial);
+            holder.SetActive(false);
             return texture;
         }
 

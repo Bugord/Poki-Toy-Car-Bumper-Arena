@@ -4188,9 +4188,36 @@
     display: none;
 }
 
-/* The crown sits over the podium's box: room for it under the subtitle. */
+/* A round's podium has no subtitle or name pill over the player's own car: the car takes that height, and its
+   picture reaches down under the cards below (later in the tree, so drawn over it), which cover the podium's foot. */
 .round-over--podium .podium {
-    margin-top: 40px;
+    margin-top: 0;
+}
+
+.round-over--podium .podium__car {
+    top: 0;
+    bottom: -70px;
+}
+
+/* The car that pushed the player off keeps its name pill, up at the podium's top, over the car's roof. */
+.round-over--podium .podium--rival .podium__winner {
+    top: 0;
+}
+
+.round-over--podium .podium--rival .podium__car {
+    top: 90px;
+}
+
+/* A won round's crown on the car's roof (RoundOverMatch places and sizes it on the picture), tilted as if dropped on. */
+.podium__crown--roof {
+    rotate: 14deg;
+}
+
+/* WINNER under a won round's title, the one sticker there when neither REVENGE! nor the streak has it. */
+.round-over__ribbon {
+    flex-shrink: 0;
+    margin-top: 12px;
+    rotate: -3deg;
 }
 
 .podium {
@@ -5370,6 +5397,11 @@
 
 .round-over--columns.round-over--landscape .round-over__spacer {
     display: none;
+}
+
+/* Beside the cards, not over them: the picture stays inside its own column. */
+.round-over--columns.round-over--landscape .podium__car {
+    bottom: 0;
 }
 
 .round-over--columns.round-over--landscape .podium {

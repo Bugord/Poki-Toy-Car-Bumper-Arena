@@ -359,9 +359,19 @@ namespace ToyCarArena.UI
                 isKnockedByCar = false;
             }
 
+            // A round's podium tells the rest: the title says how it ended, the car under it is the player's own or the
+            // one that pushed them off (named on the podium), so the subtitle would only repeat them. A match keeps its
+            // place and knock-outs there.
+            var isRoundPodium = !ViewModel.IsMatch && ViewModel.Podium != null;
             var subtitleLabel = Root.Q<Label>("subtitle");
             subtitleLabel.text = subtitle;
-            subtitleLabel.style.display = isKnockedByCar ? DisplayStyle.None : DisplayStyle.Flex;
+            subtitleLabel.style.display = isKnockedByCar || isRoundPodium ? DisplayStyle.None : DisplayStyle.Flex;
+            // A won round's WINNER, a ribbon under the title instead of a tag over the car, unless REVENGE! or the
+            // streak already has the one sticker there.
+            var streak = ViewModel.Streak;
+            var isRibbon = isRoundPodium && ViewModel.Outcome == RoundOutcome.Won && !ViewModel.RevengeTaken &&
+                !streak.IsStreak && !streak.IsLost;
+            Root.Q<Label>("winner-ribbon").EnableInClassList(BestShownClass, isRibbon);
             Root.Q<VisualElement>("knocked-by").EnableInClassList(KnockedByShownClass, isKnockedByCar);
             if (isKnockedByCar) {
                 Root.Q<VisualElement>("by-car-body").AddToClassList(CarColor.ClassOf(ViewModel.ColorOf(knockedOutBy)));
