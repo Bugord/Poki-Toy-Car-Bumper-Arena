@@ -110,7 +110,7 @@ namespace ToyCarArena.UI
             line.Add(barFill);
             bar.Add(line);
             barTo = BarLevel(bar);
-            levelUp = Outlined("", "xp-bar__level-up", out var levelUpLabels);
+            levelUp = StrokeText.Outlined("", "xp-bar__level-up", out var levelUpLabels);
             foreach (var label in levelUpLabels) {
                 text.Set(label, () => Strings.Get("result.level_up"));
             }
@@ -599,7 +599,7 @@ namespace ToyCarArena.UI
             var card = new VisualElement { pickingMode = PickingMode.Ignore };
             card.AddToClassList("card");
             card.AddToClassList("level-reward__card");
-            card.Add(Outlined(title, "level-reward__title", out _));
+            card.Add(StrokeText.Outlined(title, "level-reward__title", out _));
             card.Add(Text(tag, "level-reward__tag"));
             var frame = new VisualElement { pickingMode = PickingMode.Ignore };
             frame.AddToClassList("level-reward__art");
@@ -811,54 +811,11 @@ namespace ToyCarArena.UI
             return value;
         }
 
-        /// <summary>Text with the outline of the titles: the same text twice, the face over the outline.</summary>
         // A button's outlined label, shrunk to the width the button leaves it (FitText).
         private static VisualElement FitOutlined(string value, string className)
         {
-            var element = Outlined(value, className, out var labels);
+            var element = StrokeText.Outlined(value, className, out var labels);
             FitText.Fit(element, labels);
-            return element;
-        }
-
-        internal static VisualElement Outlined(string value, string className, out Label[] labels)
-        {
-            var element = new VisualElement { pickingMode = PickingMode.Ignore };
-            element.AddToClassList("stroke");
-            element.AddToClassList(className);
-            var outline = Text(value, "display");
-            outline.AddToClassList(className + "-text");
-            var face = Text(value, "display");
-            face.AddToClassList(className + "-text");
-            face.AddToClassList("stroke__face");
-            element.Add(outline);
-            element.Add(face);
-            labels = new[] { outline, face };
-            return element;
-        }
-
-        /// <summary>
-        /// A big title as the stickers draw it, its drop a third layer: under the outline (<see cref="Outlined"/>) and the
-        /// face, a navy copy of the outlined text moved down (<c>stroke__drop</c>, moved by its own style). The labels
-        /// get <c>className-text</c> and no <c>display</c>, so the title's style sheet sets them whole. text-shadow is
-        /// lost on the letters of the fallback font (Cyrillic, the Turkish ones), so a title with it has no drop in
-        /// Russian; this drop is the same in every language, and as wide as the outlined letters.
-        /// The labels come drop, outline, face; <see cref="FitText"/> gives all three one size.
-        /// </summary>
-        internal static VisualElement Dropped(string className, out Label[] labels)
-        {
-            var element = new VisualElement { pickingMode = PickingMode.Ignore };
-            element.AddToClassList("stroke");
-            element.AddToClassList(className);
-            labels = new Label[3];
-            for (var i = 0; i < labels.Length; i++) {
-                var label = new Label { pickingMode = PickingMode.Ignore };
-                label.AddToClassList(className + "-text");
-                label.EnableInClassList("stroke__drop", i == 0);
-                label.EnableInClassList("stroke__face", i == 2);
-                element.Add(label);
-                labels[i] = label;
-            }
-
             return element;
         }
 

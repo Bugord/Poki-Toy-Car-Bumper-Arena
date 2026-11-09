@@ -40,8 +40,7 @@ namespace ToyCarArena.UI
         private readonly VisualElement listItems;
         private readonly VisualElement listTrack;
         private readonly VisualElement listKey;
-        private Label listTitle;
-        private Label listTitleFace;
+        private Label[] listTitles;
         private Label listHint;
         private int listLevel;
         private bool isWide;
@@ -72,16 +71,8 @@ namespace ToyCarArena.UI
             list.Add(rays);
             listBody = Element("menu__leagues-body");
             var head = Element("menu__leagues-head");
-            var stroke = Element("stroke");
-            listTitle = Text("display");
-            listTitle.AddToClassList("menu__leagues-title");
-            listTitleFace = Text("display");
-            listTitleFace.AddToClassList("menu__leagues-title");
-            listTitleFace.AddToClassList("stroke__face");
-            stroke.Add(listTitle);
-            stroke.Add(listTitleFace);
-            stroke.AddToClassList("menu__leagues-title-box");
-            head.Add(stroke);
+            head.Add(StrokeText.Create("", "menu__leagues-title-box", out listTitles, "display",
+                "menu__leagues-title"));
             listKey = Element("key");
             listKey.AddToClassList("menu__leagues-key");
             var keyText = Text("key__text");
@@ -174,15 +165,7 @@ namespace ToyCarArena.UI
             go.AddToClassList("menu__league-continue");
             go.focusable = false;
             go.Add(Element("button__face"));
-            var label = Element("stroke");
-            foreach (var isFace in new[] { false, true }) {
-                var text = Text("button__label");
-                text.EnableInClassList("stroke__face", isFace);
-                text.text = Strings.Get("result.continue");
-                label.Add(text);
-            }
-
-            go.Add(label);
+            go.Add(StrokeText.Create(Strings.Get("result.continue"), null, out _, "button__label"));
             if (isDesktop) {
                 var key = Element("key");
                 key.AddToClassList("menu__league-key");
@@ -266,7 +249,7 @@ namespace ToyCarArena.UI
 
         private void FillList()
         {
-            listTitle.text = listTitleFace.text = Strings.Get("menu.leagues");
+            StrokeText.SetText(listTitles, Strings.Get("menu.leagues"));
             listHint.text = Strings.Get("menu.climb");
             listItems.Clear();
             listTrack.Clear();
@@ -577,16 +560,7 @@ namespace ToyCarArena.UI
 
         private static VisualElement Stroked(string className, string value)
         {
-            var stroke = Element("stroke");
-            foreach (var isFace in new[] { false, true }) {
-                var label = Text("display");
-                label.AddToClassList(className);
-                label.EnableInClassList("stroke__face", isFace);
-                label.text = value;
-                stroke.Add(label);
-            }
-
-            return stroke;
+            return StrokeText.Create(value, null, out _, "display", className);
         }
 
         private static VisualElement Icon(string className, Action<MeshGenerationContext> draw)

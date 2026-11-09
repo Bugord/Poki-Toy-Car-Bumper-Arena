@@ -143,20 +143,7 @@ namespace ToyCarArena.UI
 
         private static VisualElement Outlined(string value, string textClass)
         {
-            var text = new VisualElement { pickingMode = PickingMode.Ignore };
-            text.AddToClassList("stroke");
-            foreach (var isFace in new[] { false, true }) {
-                var label = new Label(value) { pickingMode = PickingMode.Ignore };
-                label.AddToClassList("display");
-                label.AddToClassList(textClass);
-                if (isFace) {
-                    label.AddToClassList("stroke__face");
-                }
-
-                text.Add(label);
-            }
-
-            return text;
+            return StrokeText.Create(value, null, out _, "display", textClass);
         }
     }
 }

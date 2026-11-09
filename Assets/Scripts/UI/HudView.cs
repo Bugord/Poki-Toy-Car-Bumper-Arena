@@ -359,6 +359,8 @@ namespace ToyCarArena.UI
 
         protected override void OnAttached()
         {
+            // The outlined texts of the UXML get their drop layer (StrokeText).
+            StrokeText.AddDrops(Root);
             // The HUD lies over the game: nothing on it may take a click or a touch from the controls but the boost
             // button and the settings button, which tell the controls where they are so a finger on them does not steer.
             Root.pickingMode = PickingMode.Ignore;
@@ -1380,20 +1382,7 @@ namespace ToyCarArena.UI
 
         private static VisualElement CreateOutlinedText(string value, string textClass)
         {
-            var text = new VisualElement { pickingMode = PickingMode.Ignore };
-            text.AddToClassList("stroke");
-            foreach (var isFace in new[] { false, true }) {
-                var label = new Label(value) { pickingMode = PickingMode.Ignore };
-                label.AddToClassList("display");
-                label.AddToClassList(textClass);
-                if (isFace) {
-                    label.AddToClassList("stroke__face");
-                }
-
-                text.Add(label);
-            }
-
-            return text;
+            return StrokeText.Create(value, null, out _, "display", textClass);
         }
 
         /// <summary>

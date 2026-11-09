@@ -43,6 +43,8 @@ namespace ToyCarArena.UI
 
         protected override void OnAttached()
         {
+            // The outlined texts of the UXML get their drop layer (StrokeText).
+            StrokeText.AddDrops(Root);
             SafeArea.Pad(Root);
             Root.focusable = true;
             Root.delegatesFocus = true;

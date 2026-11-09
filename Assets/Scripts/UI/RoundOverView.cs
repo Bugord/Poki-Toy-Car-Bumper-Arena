@@ -72,6 +72,8 @@ namespace ToyCarArena.UI
 
         protected override void OnAttached()
         {
+            // The outlined texts of the UXML get their drop layer (StrokeText).
+            StrokeText.AddDrops(Root);
             // The navigator focuses the screen, which hands the focus to the button, so Space and Enter reach us.
             Root.focusable = true;
             Root.delegatesFocus = true;
