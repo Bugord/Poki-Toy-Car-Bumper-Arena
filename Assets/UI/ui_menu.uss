@@ -1681,12 +1681,8 @@
 .menu__daily-day--big .menu__daily-amount { color: var(--white); }
 .menu__daily-day--big .menu__daily-amount { font-size: 34px; }
 
-/* Coins stacked overlapping: one on the first days, two in the middle, three at the end. */
-.menu__daily-stack { flex-direction: row; align-items: flex-end; }
-.menu__daily-coin { width: 70px; height: 70px; }
-.menu__daily-coin .coin__inner { width: 28px; height: 28px; }
-.menu__daily-coin--1 { margin-left: -30px; margin-bottom: 14px; }
-.menu__daily-coin--2 { margin-left: -30px; }
+/* A pile of coins growing day by day (MenuDaily.CoinPile, painter2D), stood on the bottom of the art. */
+.menu__daily-pile { width: 160px; height: 120px; flex-shrink: 1; }
 
 .menu__daily-gift { width: 110px; height: 110px; }
 .menu__daily-hat { width: 170px; height: 110px; }
@@ -1715,6 +1711,8 @@
 .menu__daily-day--done .menu__daily-art,
 .menu__daily-day--done .menu__daily-amount { opacity: 0.55; }
 .menu__daily-day--done .menu__daily-tick { display: flex; }
+/* The pile draws itself pale: under opacity its overlapping coins would show each other's outlines. */
+.menu__daily-day--done .menu__daily-art--pile { opacity: 1; }
 
 /* Today: cream, ringed in gold and lifted. */
 .menu__daily-day--today {
@@ -1726,7 +1724,8 @@
     scale: 1.06 1.06;
 }
 
-.menu__daily-day--today .menu__daily-caption { color: var(--navy); }
+.menu__daily-day--today .menu__daily-caption,
+.menu__daily-day--today .menu__daily-amount { color: var(--navy); }
 
 /* The hat just given: a pale face, the hat and its name at full strength. */
 .menu__daily-day--hat.menu__daily-day--big { background-color: #efe6ff; }
@@ -1744,8 +1743,9 @@
     -unity-text-align: middle-center;
 }
 
-/* CLAIM ×2 (purple, a gold AD tag at the top left) and CLAIM side by side; CLAIM alone fills the row. */
-.menu__daily-buttons { flex-direction: row; }
+/* CLAIM ×2 (purple, a gold AD tag at the top left) and CLAIM side by side; CLAIM alone fills the row. Well clear of
+   the calendar: the AD tag and the key caps on their top edges stand 26px over the buttons. */
+.menu__daily-buttons { flex-direction: row; margin-top: 58px; }
 
 .menu__daily-double,
 .menu__daily-claim {
