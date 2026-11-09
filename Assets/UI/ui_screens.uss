@@ -2800,21 +2800,31 @@
     background-color: rgba(29, 43, 79, 0.62);
 }
 
+/* The menu's light behind the card (MenuView.DrawLight), turning. */
 .level-reward__rays {
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 1400px;
-    height: 1400px;
-    margin-left: -700px;
-    margin-top: -800px;
+    width: 2200px;
+    height: 2200px;
+    margin-left: -1100px;
+    margin-top: -1100px;
 }
 
-.level-reward__card {
-    width: 760px;
-    padding: 110px 40px 50px 40px;
+/* The card and the hint under it, scaled together to the screen (RoundOverProgress.FitReward): the card's own scale
+   pops and shrinks it. */
+.level-reward__holder {
     align-items: center;
-    border-radius: 70px;
+}
+
+/* As wide as the garage's BUY window, whose picture and stats it shows. */
+.level-reward__card {
+    width: 1040px;
+    padding: 110px 64px 52px 64px;
+    align-items: center;
+    border-width: 9px;
+    border-bottom-width: 26px;
+    border-radius: 82px;
 }
 
 .level-reward__title {
@@ -2844,23 +2854,23 @@
     color: var(--white);
 }
 
-.level-reward__art {
-    width: 520px;
-    height: 320px;
-    margin-top: 16px;
-    align-items: center;
-    justify-content: center;
+/* The reward in a framed piece of the league's sky (GarageView.SkyFrame, garage__sheet-frame in ui_garage). */
+.level-reward__card .level-reward__frame {
+    margin-top: 30px;
 }
 
-.level-reward__arena {
-    width: 240px;
-    height: 240px;
-    border-width: 12px;
-    border-bottom-width: 22px;
-    border-color: var(--navy);
-    border-radius: 999px;
+/* A hat's flat icon where the arena's stage is not there to draw the car wearing it (tests). */
+.level-reward__hat-icon {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 300px;
+    height: 300px;
+    margin-left: -150px;
+    margin-top: -150px;
 }
 
+/* The rank's badge as the old rank popup showed it: only the badge screenshots still draw it. */
 .level-reward__rank {
     min-width: 220px;
     height: 200px;
@@ -2868,24 +2878,6 @@
 
 .level-reward__rank .level-badge__value {
     font-size: 120px;
-}
-
-/* The free topper: its 3D model as the garage's card shows it, drawn by the garage's stage. */
-.level-reward__gift {
-    width: 520px;
-    height: 320px;
-    align-items: center;
-    justify-content: center;
-}
-
-.level-reward__gift-model {
-    width: 320px;
-    height: 320px;
-}
-
-.level-reward__gift-icon {
-    width: 240px;
-    height: 240px;
 }
 
 /* EQUIP, the gift button: the BUY pill without a price. */
@@ -5259,83 +5251,9 @@
     top: 10px;
 }
 
-/* A car's speed, power and boost (CarStatsView), as racing games show them: a row per stat, its name and a rounded bar
-   filled to its value out of 5 in the stat's colour, the steps marked across it. Radii are half the heights, not
-   999px: UI Toolkit draws an oversized radius as an ellipse. */
-.car-stats {
-    flex-shrink: 0;
-    width: 560px;
-}
-
-.car-stats__row {
-    flex-direction: row;
-    align-items: center;
-    height: 42px;
-    margin: 2px 0;
-}
-
-.car-stats__label {
-    width: 200px;
-    margin: 0 14px 0 0;
-    padding: 0;
-    font-size: 34px;
-    -unity-text-auto-size: best-fit 20px 34px;
-    -unity-text-align: middle-right;
-    white-space: nowrap;
-    color: var(--navy);
-}
-
-.car-stats__bar {
-    flex-grow: 1;
-    height: 32px;
-    border-width: 5px;
-    border-color: var(--navy);
-    border-radius: 16px;
-    background-color: rgba(29, 43, 79, 0.14);
-    overflow: hidden;
-}
-
-.car-stats__fill {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    border-radius: 11px;
-}
-
-.car-stats__shine {
-    position: absolute;
-    left: 10px;
-    right: 10px;
-    top: 3px;
-    height: 5px;
-    border-radius: 3px;
-    background-color: rgba(255, 255, 255, 0.4);
-}
-
-.car-stats__tick {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    margin-left: -2px;
-    background-color: rgba(29, 43, 79, 0.3);
-}
-
-.car-stats__row--speed .car-stats__fill { background-color: var(--blue); }
-.car-stats__row--power .car-stats__fill { background-color: var(--red); }
-.car-stats__row--weight .car-stats__fill { background-color: var(--purple); }
-.car-stats__row--boost .car-stats__fill { background-color: var(--orange); }
-
-.level-reward__stats {
-    margin: 18px 0 0 0;
-}
-
-/* On the card the names start at the block's left edge: right-aligned in a wide column, they left a gap that pushed
-   the whole block right of the card's middle. */
-.level-reward__stats .car-stats__label {
-    width: 150px;
-    -unity-text-align: middle-left;
+/* The garage's stats under the reward, a little closer than in its window. */
+.level-reward__card .level-reward__stats {
+    margin-top: 34px;
 }
 
 /* No boosts in this build (GameTuning.Boost off): no BOOST button, and the start prompt teaches only driving. The

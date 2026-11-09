@@ -103,7 +103,7 @@ namespace ToyCarArena.UI
             }
             finally {
                 popup.RemoveFromClassList(OpenClass);
-                viewModel.HideGiftHat();
+                viewModel.HideHero();
                 if (counterParent != null && coinCounter.parent == counterParent) {
                     counterParent.Insert(counterIndex, coinCounter);
                 }

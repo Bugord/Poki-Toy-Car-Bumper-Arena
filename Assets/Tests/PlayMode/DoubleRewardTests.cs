@@ -189,7 +189,7 @@ namespace ToyCarArena.Tests.PlayMode
             // NEXT MATCH before its popup: the next result offers it again, and once shown it is gone.
             var next = Result(out _, out _);
             Assert.That(next.Gift, Is.EqualTo(gift));
-            next.ShowGiftHat(out _);
+            next.GiftShown();
             Assert.That(platform.Events, Does.Contain(("gift", gift, "visible")));
             Assert.That(Result(out _, out _).Gift, Is.Null);
         }

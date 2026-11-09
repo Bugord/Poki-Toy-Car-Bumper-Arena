@@ -211,30 +211,26 @@ namespace ToyCarArena.UI
         /// <summary>The topper this round gave free (<see cref="PlayerWallet.TryGift"/>), or null.</summary>
         public string Gift { get; private set; }
 
-        /// <summary>
-        /// The gift's 3D model as the garage's cards show it, drawn by the garage's stage (<see cref="GarageStage"/>) in
-        /// the arena's scene: the toppers' texture and the gift's part of it (<paramref name="cell"/>, in UV); null
-        /// where there is no stage (tests).
-        /// </summary>
-        public RenderTexture ShowGiftHat(out Rect cell)
+        /// <summary>The gift's popup is up: the wallet gives it up and <c>gift / &lt;id&gt; / visible</c> goes.</summary>
+        public void GiftShown()
         {
             wallet.TakeGift();
             platform.MeasureGiftShown(Gift);
-            return ShowHat(Gift, out cell);
         }
 
-        /// <summary>A topper's 3D model as the garage's cards show it (see <see cref="ShowGiftHat"/>).</summary>
-        public RenderTexture ShowHat(string id, out Rect cell)
-        {
-            cell = default;
-            if (Stage == null) {
-                return null;
-            }
+        /// <summary>The player's league now (<see cref="PlayerRank.TierOf"/>): its sky and pedestal frame the rewards.</summary>
+        public int League => PlayerRank.TierOf(progress.Level);
 
-            var texture = Stage.ShowToppers(CarTopper.Ids);
-            cell = Stage.CellOf(id);
-            return texture;
-        }
+        /// <summary>The topper the player wears now, or empty.</summary>
+        public string WornTopper => wallet.SelectedTopper;
+
+        /// <summary>
+        /// <paramref name="car"/> (null: the player's own) in the player's colour, wearing <paramref name="topper"/>, on
+        /// the league's pedestal and turning, as the garage's hero shows it (<see cref="GarageStage.ShowCar"/>); null
+        /// where there is no stage (tests). <see cref="HideHero"/> stops it.
+        /// </summary>
+        public RenderTexture ShowCarHero(CarCatalog.Entry car, string topper) =>
+            Stage?.ShowCar(car ?? SelectedCar, progress.SelectedColor, topper, true, LeagueLook.PedestalOf(League));
 
         /// <summary>
         /// Whether a car this result opened gets its popup: every one does, each on a level of its own, so the player
@@ -277,7 +273,8 @@ namespace ToyCarArena.UI
             return true;
         }
 
-        public void HideGiftHat() => Stage?.Hide();
+        /// <summary>Stops the reward popups' 3D car (<see cref="ShowCarHero"/>).</summary>
+        public void HideHero() => Stage?.Hide();
 
         /// <summary>
         /// Today's daily gift (<see cref="DailyGift"/>), which a visit's first result offers when no menu has (a first
@@ -487,7 +484,7 @@ namespace ToyCarArena.UI
             XpGain = payload.XpGain;
             Coins = payload.Coins;
             Missions = payload.Missions;
-            // The gift stays with the wallet until its popup shows (ShowGiftHat): a result left before it carries it to the
+            // The gift stays with the wallet until its popup shows (GiftShown): a result left before it carries it to the
             // next one. Once a hat is on, the popup's EQUIP has nothing to give.
             if (wallet.UnseenGift != null && !string.IsNullOrEmpty(wallet.SelectedTopper)) {
                 wallet.TakeGift();

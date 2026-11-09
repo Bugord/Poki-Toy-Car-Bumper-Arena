@@ -116,10 +116,10 @@ namespace ToyCarArena.Tests.PlayMode
                         var model = new RoundOverViewModel(catalog, arenas, tuning, progress, null, platform, wallet,
                             null, name == "daily" ? new PlayerDaily(record.storage, tuning, wallet) : null);
                         model.SetPayload(record.record);
-                        // The gift's 3D hat as the arena scene's garage stage draws it, under a light like its sun.
+                        // The reward popups' 3D car as the arena scene's garage stage draws it, under a light like its sun.
                         Light light = null;
                         GarageStage stage = null;
-                        if (name is "gift" or "hat") {
+                        if (name is "gift" or "hat" or "offer" or "bought") {
                             light = new GameObject("Gift screenshot light").AddComponent<Light>();
                             light.type = LightType.Directional;
                             light.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
