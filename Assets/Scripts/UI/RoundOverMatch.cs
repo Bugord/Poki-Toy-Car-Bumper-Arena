@@ -1,4 +1,5 @@
 using System;
+using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -31,6 +32,9 @@ namespace ToyCarArena.UI
         private const string RaysEnterClass = "podium__rays--enter";
         private const string WinnerEnterClass = "podium__winner--enter";
         private const string CrownEnterClass = "podium__crown--enter";
+        private const string ColumnsClass = "round-over--columns";
+        // The rival's pill sits this far over the car's roof: the REVENGE NEXT ROUND tag under it and a little air.
+        private const float RivalPillGap = 76f;
 
         // The narrow form shows this many leaders, then the player's own row when it is lower.
         private const int CompactLeaders = 3;
@@ -83,6 +87,8 @@ namespace ToyCarArena.UI
             table = root.Q<VisualElement>("results");
             rows = root.Q<VisualElement>("results-rows");
             podium.RegisterCallback<GeometryChangedEvent>(OnPodiumGeometry);
+            car.RegisterCallback<GeometryChangedEvent>(OnRivalGeometry);
+            winner.RegisterCallback<GeometryChangedEvent>(OnRivalGeometry);
 
             if (model.Podium != null) {
                 car.style.backgroundImage = Background.FromRenderTexture((RenderTexture)model.Podium);
@@ -143,6 +149,8 @@ namespace ToyCarArena.UI
             rays.generateVisualContent -= DrawRays;
             crown.generateVisualContent -= DrawCrown;
             podium.UnregisterCallback<GeometryChangedEvent>(OnPodiumGeometry);
+            car.UnregisterCallback<GeometryChangedEvent>(OnRivalGeometry);
+            winner.UnregisterCallback<GeometryChangedEvent>(OnRivalGeometry);
             text.Dispose();
         }
 
@@ -172,6 +180,29 @@ namespace ToyCarArena.UI
             rays.style.height = raySize;
             rays.style.left = (evt.newRect.width - raySize) * 0.5f;
             rays.style.top = (evt.newRect.height - raySize) * 0.5f;
+        }
+
+        // In the wide columns the podium is tall and the picture (twice as wide as high) sits in its middle, so the
+        // rival's pill at the podium's top hung far over the car: it stands on the car's roof instead, which the
+        // podium's camera keeps at WinnerPodium.RoofTop of the picture's height.
+        private void OnRivalGeometry(GeometryChangedEvent evt)
+        {
+            if (!model.IsPodiumRival) {
+                return;
+            }
+
+            if (!root.ClassListContains(ColumnsClass)) {
+                winner.style.top = StyleKeyword.Null;
+                return;
+            }
+
+            var box = car.layout;
+            var height = Mathf.Min(box.height, box.width * 0.5f);
+            var roof = box.y + (box.height - height) * 0.5f + height * WinnerPodium.RoofTop;
+            var top = Mathf.Round(Mathf.Max(0f, roof - winner.layout.height - RivalPillGap));
+            if (Mathf.Abs(winner.resolvedStyle.top - top) > 1.5f) {
+                winner.style.top = top;
+            }
         }
 
         private void BuildWinner()

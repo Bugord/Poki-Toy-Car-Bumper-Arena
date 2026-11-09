@@ -51,7 +51,6 @@ namespace ToyCarArena.UI
         private readonly RoundOverViewModel viewModel;
         private readonly bool isTouch;
         private readonly VisualElement bar;
-        private readonly Label barFrom;
         private readonly Label barTo;
         private readonly VisualElement barFill;
         private readonly VisualElement levelUp;
@@ -88,20 +87,20 @@ namespace ToyCarArena.UI
             reached = reward.After;
             SetLevel(reward.Before.Level);
             text.Set(total, () => Strings.Format("result.xp_total", reward.Before.Xp, reward.Before.Cost));
-            text.Set(rankLabel, () => Strings.Format("result.rank_level", PlayerRank.NameOf(shownLevel), shownLevel));
+            text.Set(rankLabel, () => PlayerRank.NameOf(shownLevel));
             var track = root.Q<VisualElement>("xp-track");
             BuildTrack(track, reward.Before.Level);
 
             // The bar of the first step lies over the track, which is still empty then: nothing in the card moves.
             bar = new VisualElement { pickingMode = PickingMode.Ignore };
             bar.AddToClassList("xp-bar");
-            barFrom = BarLevel(bar);
+            // Only the next level at the bar's end: the card's own badge beside it already shows the level reached.
             var line = new VisualElement { pickingMode = PickingMode.Ignore };
             line.AddToClassList("xp-bar__line");
             barFill = new VisualElement { pickingMode = PickingMode.Ignore };
             barFill.AddToClassList("xp-bar__fill");
             line.Add(barFill);
-            bar.Insert(1, line);
+            bar.Add(line);
             barTo = BarLevel(bar);
             levelUp = Outlined("", "xp-bar__level-up", out var levelUpLabels);
             foreach (var label in levelUpLabels) {
@@ -743,9 +742,7 @@ namespace ToyCarArena.UI
 
         private void SetBarLevels(int level)
         {
-            barFrom.text = level.ToString();
             barTo.text = (level + 1).ToString();
-            SetRank(barFrom.parent, level);
             SetRank(barTo.parent, level + 1);
         }
 
@@ -830,7 +827,7 @@ namespace ToyCarArena.UI
         {
             levelLabel.text = level.ToString();
             shownLevel = level;
-            text.Set(rankLabel, () => Strings.Format("result.rank_level", PlayerRank.NameOf(shownLevel), shownLevel));
+            text.Set(rankLabel, () => PlayerRank.NameOf(shownLevel));
             LevelBadge.SetRank(levelBadge, level);
         }
 

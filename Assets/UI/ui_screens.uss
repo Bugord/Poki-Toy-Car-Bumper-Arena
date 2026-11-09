@@ -2190,11 +2190,13 @@
     min-height: 60px;
 }
 
+/* The text fits its width (best-fit), but its thick outline and the tilt reach past it: the margins keep KNOCKED OUT
+   (and a longer title in French or Russian) clear of the screen's sides. */
 .round-over__title {
     flex-shrink: 0;
     align-self: stretch;
-    margin-left: 40px;
-    margin-right: 40px;
+    margin-left: 100px;
+    margin-right: 100px;
     rotate: -3deg;
     transition-property: scale, opacity;
     transition-duration: 0.35s;
@@ -2663,8 +2665,8 @@
     background-color: var(--xp);
 }
 
-/* The first step of the XP: a plain bar from the level to the next, laid over the still empty track, the two levels on
-   badges at its ends and LEVEL UP! under it when it fills. */
+/* The first step of the XP: a plain bar to the next level, laid over the still empty track, that level on a badge at
+   its end (the card's badge beside it shows the level reached) and LEVEL UP! under it when it fills. */
 .xp-bar {
     position: absolute;
     left: 30px;
@@ -2683,7 +2685,9 @@
 .xp-bar__line {
     flex-grow: 1;
     height: 56px;
-    margin: 0 -10px;
+    margin: 0 -10px 0 0;
+    border-top-left-radius: 28px;
+    border-bottom-left-radius: 28px;
     border-width: 7px;
     border-bottom-width: 12px;
     border-color: var(--navy);
@@ -4721,20 +4725,6 @@
     margin: 0 10px 0 0;
 }
 
-.reward--xp .ko-star__back {
-    left: 6px;
-    top: 6px;
-    width: 36px;
-    height: 36px;
-}
-
-.reward--xp .ko-star__front {
-    left: 12px;
-    top: 12px;
-    width: 24px;
-    height: 24px;
-    background-color: var(--xp);
-}
 
 .reward--coins .reward__icon {
     border-width: 5px;
@@ -5505,6 +5495,33 @@
     margin-left: 900px;
 }
 
+/* The rival a size up beside the cards (a phone held sideways shows the panel at about half size), its pill standing
+   on the car's roof (RoundOverMatch.OnRivalGeometry) rather than at the podium's top. */
+.round-over--columns.round-over--landscape .podium--rival .podium__winner {
+    padding: 12px 52px 14px 16px;
+    border-width: 9px;
+    border-bottom-width: 18px;
+    border-radius: 70px;
+}
+
+.round-over--columns.round-over--landscape .podium--rival .podium__name { font-size: 76px; margin-left: 18px; }
+
+.round-over--columns.round-over--landscape .podium--rival .podium__level {
+    min-width: 84px;
+    height: 72px;
+    border-radius: 22px;
+}
+
+.round-over--columns.round-over--landscape .podium--rival .podium__level .level-badge__value { font-size: 44px; }
+
+.round-over--columns.round-over--landscape .podium--rival .podium__tag {
+    bottom: -60px;
+    padding: 2px 30px 4px 30px;
+    border-width: 7px;
+    border-radius: 30px;
+    font-size: 40px;
+}
+
 .round-over--columns.round-over--landscape .round-over__spacer-bottom {
     height: 40px;
 }
@@ -5537,10 +5554,14 @@
     width: auto;
 }
 
-/* With a mouse the key that presses NEXT MATCH sits on it, in place of the OR PRESS SPACE line under it. */
+/* With a mouse the key that presses NEXT MATCH sits on its top edge (as X on CLAIM x2 and the menu's keys, top left),
+   in place of the OR PRESS SPACE line under it: inside the button it crowded the label. */
 .round-over--columns.round-over--desktop .round-over__next-key {
     display: flex;
-    margin-left: 24px;
+    position: absolute;
+    top: -30px;
+    left: 30px;
+    margin: 0;
     padding: 0 18px 2px 18px;
     border-width: 5px;
     border-bottom-width: 9px;

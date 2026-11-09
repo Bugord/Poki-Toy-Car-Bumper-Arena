@@ -258,6 +258,9 @@ namespace ToyCarArena.UI
         /// podium the rest of the width. The column grows by its scale, not its layout, so the cards keep the
         /// proportions they have upright.
         /// </summary>
+        // The height the column leaves free above and below it, as last placed.
+        private float columnsSpare;
+
         private void PlaceColumns()
         {
             if (bottom == null) {
@@ -296,12 +299,23 @@ namespace ToyCarArena.UI
             var scale = Mathf.Min(ColumnsMaxScale, size.x * ColumnsShare / width,
                 (size.y - top - low) / Mathf.Max(1f, missionsHeight + bottom.layout.height));
             var grown = new Scale(new Vector3(scale, scale, 1f));
+            // A screen wider than the column needs (a 16:9 desktop) left a hole between the missions and the cards
+            // under them: the column keeps together, in the middle of the height it has.
+            // Whole pixels, and kept within a pixel: snapping the moved cards to the pixel grid changes their heights by
+            // a fraction, which would move them again, and again.
+            var spare = Mathf.Round(Mathf.Max(0f,
+                size.y - top - low - (missionsHeight + bottom.layout.height) * scale) * 0.5f);
+            if (Mathf.Abs(spare - columnsSpare) < 1.5f) {
+                spare = columnsSpare;
+            }
+
+            columnsSpare = spare;
             bottom.style.right = side;
-            bottom.style.bottom = low;
+            bottom.style.bottom = low + spare;
             bottom.style.scale = grown;
             if (missions != null) {
                 missions.style.right = side;
-                missions.style.top = top;
+                missions.style.top = top + spare;
                 missions.style.scale = grown;
             }
 

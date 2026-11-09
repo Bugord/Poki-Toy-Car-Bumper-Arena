@@ -62,7 +62,9 @@ namespace ToyCarArena.UI
             streak.AddToClassList("round-over__streak");
             var change = viewModel.Streak;
             // REVENGE! has its own sticker there and starts a streak by itself: one sticker under the title is enough.
-            var isShown = !viewModel.RevengeTaken && (change.IsStreak || change.IsLost);
+            // After a knock-out the podium already says REVENGE NEXT ROUND, which is what a lost streak leads to.
+            var isShown = !viewModel.RevengeTaken &&
+                (change.IsStreak || change.IsLost && !(viewModel.IsPodiumRival && viewModel.Podium != null));
             streak.EnableInClassList("best--shown", isShown);
             streak.EnableInClassList("best--new", isShown && !change.IsLost);
             streak.EnableInClassList("round-over__streak--lost", change.IsLost);

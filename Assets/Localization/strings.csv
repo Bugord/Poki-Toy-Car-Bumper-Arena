@@ -65,10 +65,8 @@ result.match_won_subtitle,Match result subtitle for first place,MOST KNOCKOUTS!,
 result.match_place,"Match result subtitle: place, then knock-outs, e.g. PLACE 3 · 5 KO","PLACE {0} · {1} KO","PLACE {0} · {1} K.-O.","{0}° POSTO · {1} K.O.","PLATZ {0} · {1} K.O.","PUESTO {0} · {1} K.O.","{0}. SIRA · {1} NAKAVT","{0}º LUGAR · {1} NOCAUTES","{0} МЕСТО · НОКАУТОВ: {1}"
 result.pushed_by,Before the name of the bot that knocked the player off,PUSHED OFF BY,POUSSÉ PAR,SPINTO DA,RUNTERGESCHUBST VON,TE EMPUJÓ,SENİ İTEN,EMPURRADO POR,ТЕБЯ СТОЛКНУЛ
 result.or_press,Before the SPACE key cap under NEXT MATCH,OR PRESS,OU APPUIE SUR,O PREMI,ODER DRÜCKE,O PULSA,YA DA BAS,OU APERTE,ИЛИ НАЖМИ
-result.car,Round garage button caption; max ~6 chars,CAR,AUTO,AUTO,AUTO,COCHE,ARABA,CARRO,АВТО
 result.new_car,Unlock sticker with the car name,NEW CAR! {0},NOUVELLE VOITURE ! {0},NUOVA AUTO! {0},NEUES AUTO! {0},¡NUEVO COCHE! {0},YENİ ARABA! {0},CARRO NOVO! {0},НОВАЯ МАШИНА! {0}
 result.xp_total,XP in the level and its price,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} ОПЫТА
-result.rank_level,"Rank name and level, e.g. BRONZE · LEVEL 12",{0} · LEVEL {1},{0} · NIVEAU {1},{0} · LIVELLO {1},{0} · LEVEL {1},{0} · NIVEL {1},{0} · SEVİYE {1},{0} · NÍVEL {1},{0} · УРОВЕНЬ {1}
 result.rank_stop,"Track caption of the next rank, e.g. SILVER RANK",{0} RANK,RANG {0},GRADO {0},RANG {0},RANGO {0},{0} RÜTBESİ,RANKING {0},РАНГ {0}
 result.match_results,Header of the results table at the end of a match,MATCH RESULTS,RÉSULTATS,RISULTATI,ERGEBNISSE,RESULTADOS,MAÇ SONUCU,RESULTADOS,ИТОГИ МАТЧА
 result.winner,Gold tag under the match winner's name; max ~8 chars,WINNER,VAINQUEUR,VINCITORE,SIEGER,GANADOR,KAZANAN,VENCEDOR,ПОБЕДИТЕЛЬ
