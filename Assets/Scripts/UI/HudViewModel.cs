@@ -92,6 +92,22 @@ namespace ToyCarArena.UI
         /// <summary>The round of the visit this HUD shows, 1 for the first, captured before progress moves on.</summary>
         public int RoundNumber { get; private set; }
 
+        /// <summary>
+        /// The player's round counting every visit on this device, 1 for the very first: the teaching follows the
+        /// player, not the visit, so a returning player is not shown again what they have already learned.
+        /// </summary>
+        public int PlayerRound { get; private set; }
+
+        /// <summary>
+        /// The player's very first round: the large ghost joystick with its caption, the idle reminders and the first
+        /// boost's hint, and no handles over the bots. <see cref="IsFirstRound"/> is about the visit (the round waits
+        /// for the first input, with no count); this one is about teaching.
+        /// </summary>
+        public bool IsTutorial => PlayerRound == 1;
+
+        /// <summary>The player's first rounds, in which a touch screen keeps the faint ghost joystick.</summary>
+        public bool KeepsGhostStick => Controls != null && PlayerRound <= Controls.GhostStickRounds;
+
         /// <summary>The player has never finished a round, so the start screen also says what the game is about.</summary>
         public bool IsNewPlayer { get; private set; }
 
@@ -114,7 +130,7 @@ namespace ToyCarArena.UI
         {
             get
             {
-                if (!IsFirstRound || !IsRunning || driver.Boosts > 0 || !IsBoostReady) {
+                if (!IsTutorial || !IsRunning || driver.Boosts > 0 || !IsBoostReady) {
                     return false;
                 }
 
@@ -349,6 +365,7 @@ namespace ToyCarArena.UI
             // Capture it now: session progress already advances as this round finishes.
             IsFirstRound = payload.IsFirstRound;
             RoundNumber = payload.RoundNumber;
+            PlayerRound = payload.PlayerRound;
             IsNewPlayer = payload.IsNewPlayer;
             Streak = payload.Streak;
             Special = payload.Special;
@@ -438,13 +455,18 @@ namespace ToyCarArena.UI
         public GameTuning.ControlSettings Controls { get; }
         public bool IsFirstRound { get; }
         public int RoundNumber { get; }
+
+        /// <summary>The player's round counting every visit; the visit's <see cref="RoundNumber"/> when not given.</summary>
+        public int PlayerRound { get; }
         public bool IsNewPlayer { get; }
         public int Streak { get; }
         public SpecialRound Special { get; }
 
         public HudRound(ArenaRound round, PlayerDriver driver, GameTuning.ControlSettings controls, bool isFirstRound,
-            int roundNumber, bool isNewPlayer, int streak = 0, SpecialRound special = SpecialRound.None)
+            int roundNumber, bool isNewPlayer, int streak = 0, SpecialRound special = SpecialRound.None,
+            int playerRound = 0)
         {
+            PlayerRound = playerRound > 0 ? playerRound : roundNumber;
             IsNewPlayer = isNewPlayer;
             Streak = streak;
             Special = special;
