@@ -282,8 +282,8 @@ namespace ToyCarArena.UI
             rank.Add(place);
             row.Add(rank);
 
-            row.Add(HudView.CreateLevelBadge(model.LevelOf(index), "results__level",
-                index != 0 && index == model.Nemesis, true));
+            row.Add(HudView.InLevelSlot(HudView.CreateLevelBadge(model.LevelOf(index), "results__level",
+                index != 0 && index == model.Nemesis, true), "results__level-slot"));
 
             var name = new Label { pickingMode = PickingMode.Ignore };
             name.AddToClassList("results__name");

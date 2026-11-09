@@ -391,9 +391,12 @@
 .lobby__special .lobby__badge--special .sticker-text__text {
     font-size: 42px;
     color: var(--white);
-    -unity-text-outline-width: 5px;
+    -unity-text-outline-width: 8px;
     -unity-text-outline-color: var(--navy);
 }
+
+/* Only the lower layer carries the outline: on the face it would eat into the letters from inside. */
+.lobby__special .lobby__badge--special .sticker-text__text.stroke__face { -unity-text-outline-width: 0; }
 
 .lobby__special-rule {
     margin: 0;
@@ -2406,22 +2409,36 @@
     -unity-text-align: middle-center;
 }
 
-/* LV N beside a nick: the prefix small and a little faded, on the number's baseline. */
-.level-badge--labelled {
-    flex-direction: row;
-    align-items: flex-end;
-    padding-bottom: 2px;
-}
-
+/* LV N beside a nick: LV a tiny navy tag on the badge's top edge (as AD on CLAIM), so the badge keeps the width of its
+   number. Silver, gold and legend wear a crest or a crown on top, so their tag hangs from the bottom edge instead. */
 .level-badge__prefix {
-    margin: 0 3px 3px 0;
-    padding: 0;
-    font-size: 19px;
-    opacity: 0.7;
-    -unity-text-align: lower-left;
+    position: absolute;
+    left: 50%;
+    top: 0;
+    translate: -50% -62%;
+    margin: 0;
+    padding: 0 6px 1px 6px;
+    border-radius: 999px;
+    background-color: var(--navy);
+    color: var(--white);
+    font-size: 15px;
+    -unity-text-align: middle-center;
+    white-space: nowrap;
 }
 
-.level-badge--labelled .level-badge__value { -unity-text-align: lower-left; }
+.level-badge--labelled.level-badge--silver > .level-badge__prefix,
+.level-badge--labelled.level-badge--gold > .level-badge__prefix,
+.level-badge--labelled.level-badge--legend > .level-badge__prefix {
+    top: 100%;
+    translate: -50% -30%;
+}
+
+/* A list row's level column: one width for any badge, its wings and the rival's horns, the badge in the middle. */
+.level-slot {
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+}
 
 .level-badge--big .level-badge__value {
     font-size: 70px;
@@ -3836,20 +3853,12 @@
     -unity-text-outline-width: 0;
     -unity-text-align: middle-center;
 }
+.lobby__badge.lobby__badge--streak { padding: 0 24px; }
 .lobby__row .lobby__you-chip { border-color: var(--white); }
 
-.lobby__level {
-    margin-left: 20px;
-    margin-right: 14px;
-}
-/* Wings, plates and rival horns reach past the badge box: keep them off the chip and the nick. */
-.lobby__level.level-badge--bronze,
-.lobby__level.level-badge--silver,
-.lobby__level.level-badge--gold,
-.lobby__level.level-badge--legend,
-.lobby__level.level-badge--rival {
-    margin-left: 34px;
-    margin-right: 30px;
+.lobby__level-slot {
+    width: 140px;
+    margin: 0 8px;
 }
 .lobby__row .hud__chip-ring {
     width: 66px;
@@ -4197,8 +4206,11 @@
     transition-duration: 0.05s;
 }
 
-/* The face of each two-label text has no outline of its own, as everywhere else (.stroke > .stroke__face). */
-.scoreboard__row .stroke > .stroke__face { -unity-text-outline-width: 0; }
+/* The face of each two-label text has no outline of its own, as everywhere else (.stroke > .stroke__face); the wide
+   form sets the outline on .sticker-text__text, so the face needs the same weight of selector to stay clean. */
+.scoreboard__row .stroke > .stroke__face,
+.scoreboard--wide .scoreboard__name .sticker-text__text.stroke__face,
+.scoreboard--wide .scoreboard__ko .sticker-text__text.stroke__face { -unity-text-outline-width: 0; }
 
 /* The end of a match (RoundOverMatch): the winner turning on its podium over slow white rays (drawn in code), a white
    pill with a crown over it, and the results table beside it: at its right on a phone held upright, where the two
@@ -4475,10 +4487,14 @@
     -unity-text-align: middle-center;
 }
 
+.results__level-slot {
+    width: 96px;
+    margin-left: 6px;
+}
+
 .results__level {
     min-width: 46px;
     height: 38px;
-    margin-left: 12px;
     padding: 0 6px;
     border-width: 4px;
     border-bottom-width: 7px;
@@ -4560,6 +4576,7 @@
 .results--wide .results__rank { width: 62px; height: 62px; border-radius: 31px; }
 .results--wide .results__rank-text { font-size: 32px; }
 .results--wide .results__level { min-width: 56px; height: 46px; }
+.results--wide .results__level-slot { width: 124px; }
 .results--wide .results__level .level-badge__value { font-size: 26px; }
 .results--wide .results__name { font-size: 44px; }
 .results--wide .results__ko { font-size: 44px; min-width: 60px; }
@@ -4863,6 +4880,10 @@
     -unity-text-outline-width: 11px;
     -unity-text-outline-color: var(--navy);
 }
+
+/* A button's face label never has an outline of its own: .button--purple .button__label comes after the general
+   .stroke > .stroke__face and would otherwise outline the face too, thinning the letters from inside. */
+.button .button__label.stroke__face { -unity-text-outline-width: 0; }
 
 .double {
     flex-grow: 1.25;
@@ -5563,6 +5584,7 @@
 }
 
 .round-over--columns.round-over--landscape .podium--rival .podium__level .level-badge__value { font-size: 44px; }
+.round-over--columns.round-over--landscape .podium--rival .podium__level .level-badge__prefix { font-size: 22px; }
 
 .round-over--columns.round-over--landscape .podium--rival .podium__tag {
     bottom: -60px;

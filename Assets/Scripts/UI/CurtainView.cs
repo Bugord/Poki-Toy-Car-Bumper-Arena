@@ -296,9 +296,11 @@ namespace ToyCarArena.UI
             var chip = CarColor.CreateChip(row.ColorId, row.Index == 0);
             chip.EnableInClassList("lobby__you-chip", row.Index == 0);
             sticker.Add(chip);
-            if (!isLeft && row.Level > 0) {
-                sticker.Add(HudView.CreateLevelBadge(row.Level, "lobby__level", row.IsNemesis, true));
-            }
+            // The slot stays even without a badge (a LEFT seat), so every nick starts on the same line.
+            var level = !isLeft && row.Level > 0
+                ? HudView.CreateLevelBadge(row.Level, "lobby__level", row.IsNemesis, true)
+                : null;
+            sticker.Add(HudView.InLevelSlot(level, "lobby__level-slot"));
             var name = OutlinedText(isLeft ? row.LeftName : row.Name, "lobby__name");
             name.EnableInClassList("lobby__name--revenge", row.IsNemesis && !isLeft);
             sticker.Add(name);

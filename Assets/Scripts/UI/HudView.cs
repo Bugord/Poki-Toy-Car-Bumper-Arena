@@ -1295,17 +1295,17 @@ namespace ToyCarArena.UI
             badge.AddToClassList("level-badge");
             badge.AddToClassList(PlayerRank.ClassOf(level));
             badge.AddToClassList(className);
-            // Beside a nick a bare number reads as a place: a small LV in front says it is the level.
+            var value = new Label(level.ToString()) { pickingMode = PickingMode.Ignore };
+            value.AddToClassList("level-badge__value");
+            badge.Add(value);
+            // Beside a nick a bare number reads as a place: a tiny LV tag on the badge's edge says it is the level,
+            // without widening the badge (LV inline made a three-digit badge twice as wide as the number).
             if (isLabelled) {
                 badge.AddToClassList("level-badge--labelled");
                 var prefix = new Label(Strings.Get("common.lv")) { pickingMode = PickingMode.Ignore };
                 prefix.AddToClassList("level-badge__prefix");
                 badge.Add(prefix);
             }
-
-            var value = new Label(level.ToString()) { pickingMode = PickingMode.Ignore };
-            value.AddToClassList("level-badge__value");
-            badge.Add(value);
             if (isRival) {
                 badge.AddToClassList("level-badge--rival");
                 var isCrowned = LevelBadge.IsCrowned(level);
@@ -1322,6 +1322,22 @@ namespace ToyCarArena.UI
             // After the horns, so the crown stands in front of them.
             LevelBadge.Decorate(badge);
             return badge;
+        }
+
+        /// <summary>
+        /// A level badge in a fixed-width slot of a list row, centred, so the nicks after it start on one line whatever
+        /// the number's digits, the rank's wings or the rival's horns.
+        /// </summary>
+        internal static VisualElement InLevelSlot(VisualElement badge, string slotClass)
+        {
+            var slot = new VisualElement { pickingMode = PickingMode.Ignore };
+            slot.AddToClassList("level-slot");
+            slot.AddToClassList(slotClass);
+            if (badge != null) {
+                slot.Add(badge);
+            }
+
+            return slot;
         }
 
         private static void DrawLeftHorn(MeshGenerationContext context) => DrawHorn(context, false);
