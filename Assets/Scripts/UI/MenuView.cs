@@ -106,7 +106,7 @@ namespace ToyCarArena.UI
         // gear (their width and gaps, reference pixels).
         private const float WideLevelShare = 0.42f;
         private const float LevelMinWidth = 640f;
-        private const float WalletWidth = 420f;
+        private const float WalletWidth = 520f;
         // The bar's text starts this far past the badge that covers the bar's left end.
         private const float XpTextGap = 22f;
 

@@ -284,6 +284,51 @@
     color: var(--navy);
 }
 
+/* Sideways the coins are as tall as the gear beside them, with its drop (menu and garage). */
+.menu--wide .menu__coins,
+.garage--wide .menu__coins {
+    height: 112px;
+    margin-bottom: 14px;
+}
+
+.menu--wide .menu__coins-drop,
+.garage--wide .menu__coins-drop {
+    top: 14px;
+    bottom: -14px;
+    border-radius: 56px;
+}
+
+.menu--wide .menu__coins-face,
+.garage--wide .menu__coins-face {
+    height: 112px;
+    padding: 0 40px 0 20px;
+    border-width: 8px;
+    border-radius: 56px;
+}
+
+.menu--wide .menu__coins-fill,
+.garage--wide .menu__coins-fill { border-radius: 48px; }
+
+.menu--wide .menu__coins-count,
+.garage--wide .menu__coins-count {
+    margin-left: 16px;
+    font-size: 62px;
+}
+
+.menu--wide .menu__coins .coin,
+.garage--wide .menu__coins .coin {
+    width: 72px;
+    height: 72px;
+    border-width: 7px;
+    border-bottom-width: 10px;
+}
+
+.menu--wide .menu__coins .coin__inner,
+.garage--wide .menu__coins .coin__inner {
+    width: 28px;
+    height: 28px;
+}
+
 .menu__gear {
     width: 112px;
     height: 112px;
