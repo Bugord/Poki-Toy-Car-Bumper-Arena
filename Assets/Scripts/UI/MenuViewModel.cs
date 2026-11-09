@@ -81,6 +81,10 @@ namespace ToyCarArena.UI
         /// <summary>The car the player drives next, as the garage shows it: its colour and its topper.</summary>
         public CarCatalog.Entry Car => catalog.Find(progress.SelectedCar);
         public int CarColor => progress.SelectedColor;
+
+        /// <summary>What a league gives (its car and hat), by its tier; null for a league that gives none.</summary>
+        public GameTuning.LeagueReward LeagueReward(int tier) => LeagueRewards.Of(tuning, tier);
+        public CarCatalog.Entry FindCar(string id) => catalog.Find(id);
         public string Topper => wallet.SelectedTopper;
 
         /// <summary>

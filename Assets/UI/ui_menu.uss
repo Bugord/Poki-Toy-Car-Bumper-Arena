@@ -1469,6 +1469,47 @@
     margin-right: 18px;
 }
 
+/* What the league gives, on a sticker at the foot of its emblem: the car, and its hat over the car's roof. */
+.menu__league-reward {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: -18px;
+    height: 84px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    border-width: 6px;
+    border-bottom-width: 12px;
+    border-color: var(--navy);
+    border-radius: 42px;
+    background-color: var(--white);
+}
+
+.menu__league-reward-car {
+    width: 96px;
+    height: 64px;
+}
+
+.menu__league-reward-hat {
+    width: 56px;
+    height: 56px;
+    margin-left: -6px;
+}
+
+.menu__league-card-emblem .menu__league-reward {
+    left: 24px;
+    right: 24px;
+    bottom: -24px;
+    height: 116px;
+    border-width: 8px;
+    border-bottom-width: 16px;
+    border-radius: 58px;
+}
+
+.menu__league-card-emblem .menu__league-reward-car { width: 140px; height: 90px; }
+.menu__league-card-emblem .menu__league-reward-hat { width: 78px; height: 78px; }
+
 .menu__league-done {
     flex-shrink: 0;
     width: 94px;

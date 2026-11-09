@@ -283,22 +283,38 @@ namespace ToyCarArena.Gameplay
                 new("wizard-hat", 0),
             };
 
+            [Tooltip("Toppers sold nowhere that a league gives (LeagueRewardSettings): owned from its level on. The " +
+                "garage shows them all along, locked until their league; the price is unused")]
+            [SerializeField]
+            private TopperDefinition[] leagueToppers = {
+                new("ember", 0),
+                new("silver-torch", 0),
+                new("fire-crown", 0),
+                new("phoenix", 0),
+            };
+
             /// <summary>The toppers on sale, in the garage's order; the exclusive ones are not among them.</summary>
             public IReadOnlyList<TopperDefinition> All => toppers;
 
             /// <summary>The toppers only a reward gives.</summary>
             public IReadOnlyList<TopperDefinition> Exclusive => exclusiveToppers;
+
+            /// <summary>The toppers the leagues give, in the leagues' order.</summary>
+            public IReadOnlyList<TopperDefinition> League => leagueToppers;
             public string GiftTopper => giftTopper;
             public int GiftLevel => giftLevel;
             public int HatOfferLevel => hatOfferLevel;
 
-            /// <summary>A topper on sale or exclusive, by id; null for none.</summary>
-            public TopperDefinition Find(string id) => FindIn(toppers, id) ?? FindIn(exclusiveToppers, id);
+            /// <summary>A topper on sale, exclusive or a league's, by id; null for none.</summary>
+            public TopperDefinition Find(string id) =>
+                FindIn(toppers, id) ?? FindIn(exclusiveToppers, id) ?? FindIn(leagueToppers, id);
 
             /// <summary>Whether coins buy the topper: it is one of <see cref="All"/>.</summary>
             public bool IsOnSale(string id) => FindIn(toppers, id) != null;
 
             public bool IsExclusive(string id) => FindIn(exclusiveToppers, id) != null;
+
+            public bool IsLeague(string id) => FindIn(leagueToppers, id) != null;
 
             private static TopperDefinition FindIn(TopperDefinition[] list, string id)
             {

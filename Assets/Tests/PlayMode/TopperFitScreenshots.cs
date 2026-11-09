@@ -1,5 +1,6 @@
 using System.Collections;
 using System.IO;
+using System.Linq;
 using NUnit.Framework;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
@@ -29,7 +30,7 @@ namespace ToyCarArena.Tests.PlayMode
             yield return LoadGame();
             var stage = GameScope().Container.Resolve<GarageStage>();
             var cars = LoadCarCatalog().Cars;
-            foreach (var topper in LoadTuning().Toppers.All) {
+            foreach (var topper in LoadTuning().Toppers.All.Concat(LoadTuning().Toppers.League)) {
                 var sheet = new Texture2D(CellWidth * cars.Count, CellHeight, TextureFormat.RGBA32, false);
                 for (var i = 0; i < cars.Count; i++) {
                     var texture = stage.ShowCar(cars[i], 0, topper.Id);

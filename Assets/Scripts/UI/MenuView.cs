@@ -220,7 +220,12 @@ namespace ToyCarArena.UI
             leagues = new MenuLeagues(menu, audioService.PlayUiClick, () => {
                 Root?.Focus();
                 Root?.schedule.Execute(OfferDaily);
-            });
+            }) {
+                RewardOf = tier => ViewModel.LeagueReward(tier) is { } reward
+                    ? (ViewModel.FindCar(reward.Car), reward.Topper)
+                    : (null, null),
+                RewardColor = () => ViewModel.CarColor,
+            };
             // The DAILY tile's timer counts down, and the gift turns ready at midnight while the menu is up.
             Root.schedule.Execute(TickDaily).Every(1000);
 

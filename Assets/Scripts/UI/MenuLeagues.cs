@@ -1,5 +1,6 @@
 using System;
 using Bugord.App.Localization;
+using ToyCarArena.Gameplay.Cars;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -104,6 +105,13 @@ namespace ToyCarArena.UI
             list.Add(listBody);
             menu.Add(list);
         }
+
+        /// <summary>
+        /// What each league gives (<see cref="LeagueRewards"/>), by tier: its car and its hat, or nulls for a league
+        /// that gives none; the list shows them on the league's emblem, the car in <see cref="RewardColor"/>.
+        /// </summary>
+        public Func<int, (CarCatalog.Entry Car, string Topper)> RewardOf { get; set; }
+        public Func<int> RewardColor { get; set; }
 
         public bool IsNewLeagueOpen => popup.ClassListContains(OpenClass);
         public bool IsListOpen => list.ClassListContains(OpenClass);
@@ -297,7 +305,7 @@ namespace ToyCarArena.UI
             body.Add(Stroked("menu__league-row-name", PlayerRank.NameOfTier(tier)));
             body.Add(tier == current ? Track(current) : FromLevel(tier));
             face.Add(body);
-            face.Add(Emblem(tier, "menu__league-row-emblem"));
+            face.Add(Prize(tier, "menu__league-row-emblem"));
             face.Add(Status(tier, current));
             return row;
         }
@@ -308,7 +316,7 @@ namespace ToyCarArena.UI
             var card = Item("menu__league-card-item", tier, current, LeagueLook.CardSkyOf(tier), new Vector2(0.5f, 0.3f),
                 out var face);
             face.Add(Plate(tier == current ? listLevel : PlayerRank.StartOf(tier), "menu__league-card-badge"));
-            face.Add(Emblem(tier, "menu__league-card-emblem"));
+            face.Add(Prize(tier, "menu__league-card-emblem"));
             face.Add(Stroked("menu__league-card-name", PlayerRank.NameOfTier(tier)));
             face.Add(FromLevel(tier));
             face.Add(Element("menu__spacer"));
@@ -343,6 +351,31 @@ namespace ToyCarArena.UI
             var emblem = Element("menu__league-emblem");
             emblem.AddToClassList(className);
             emblem.AddToClassList("menu__league-emblem--" + PlayerRank.IdOfTier(tier));
+            return emblem;
+        }
+
+        // The league's emblem with what the league gives on a sticker at its foot: the car and, over its roof, the hat.
+        // A league that gives nothing (the first) shows the emblem alone.
+        private VisualElement Prize(int tier, string className)
+        {
+            var emblem = Emblem(tier, className);
+            var (car, topper) = RewardOf?.Invoke(tier) ?? (null, null);
+            if (car == null && string.IsNullOrEmpty(topper)) {
+                return emblem;
+            }
+
+            var reward = Element("menu__league-reward");
+            if (car != null) {
+                var portrait = Element("menu__league-reward-car");
+                new CarPortrait(portrait).Set(car, RewardColor?.Invoke() ?? 0);
+                reward.Add(portrait);
+            }
+
+            if (!string.IsNullOrEmpty(topper)) {
+                reward.Add(TopperIcon.Create(topper, "menu__league-reward-hat"));
+            }
+
+            emblem.Add(reward);
             return emblem;
         }
 

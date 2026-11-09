@@ -93,6 +93,7 @@ car.stat_power,"Car stat label: how hard its hits push",POWER,PUISSANCE,POTENZA,
 car.stat_weight,"Car stat label: how heavy it is, so how hard it is to push off",WEIGHT,POIDS,PESO,GEWICHT,PESO,AĞIRLIK,PESO,ВЕС
 car.stat_boost,"Car stat label: how often it can boost (the BOOST button)",BOOST,TURBO,TURBO,BOOST,TURBO,TURBO,TURBO,РЫВОК
 garage.unlock_at,Locked car tooltip,UNLOCK AT LVL {0},DÉBLOQUÉE AU NIV. {0},SBLOCCO AL LIV. {0},AB LVL {0},SE DESBLOQUEA EN NIV. {0},{0}. SEVİYEDE AÇILIR,LIBERA NO NÍV. {0},ОТКРОЕТСЯ НА УР. {0}
+garage.reach,"Locked league reward: the league that gives it, {0} the league name (BRONZE, SILVER, GOLD, LEGEND); on the garage button and tooltip",REACH {0},ATTEINS {0},RAGGIUNGI {0},ERREICHE {0},ALCANZA {0},{0} LİGİNE ULAŞ,ALCANCE {0},ДОСТИГНИ: {0}
 garage.need_more,Over a too dear card: how many coins are missing; max ~16 chars,NEED {0} MORE,ENCORE {0},NE MANCANO {0},NOCH {0},FALTAN {0},{0} DAHA LAZIM,FALTAM {0},НУЖНО ЕЩЁ {0}
 settings.title,Settings popup title,SETTINGS,RÉGLAGES,IMPOSTAZIONI,EINSTELLUNGEN,AJUSTES,AYARLAR,CONFIGURAÇÕES,НАСТРОЙКИ
 settings.music,Music toggle caption,MUSIC,MUSIQUE,MUSICA,MUSIK,MÚSICA,MÜZİK,MÚSICA,МУЗЫКА
@@ -257,3 +258,7 @@ daily.ready,"Small green pill on the DAILY tile while the gift waits; max ~6 cha
 daily.time_hm,"Small pill on the DAILY tile: time to the next gift, {0} hours and {1} minutes; max ~7 chars",{0}H {1}M,{0}H {1}M,{0}H {1}M,{0}H {1}M,{0}H {1}M,{0}S {1}D,{0}H {1}M,{0}Ч {1}М
 daily.time_m,"Small pill on the DAILY tile: time to the next gift under an hour, {0} minutes; max ~7 chars",{0}M,{0}M,{0}M,{0}M,{0}M,{0}D,{0}M,{0}М
 topper.wizard-hat.name,"Topper name: a purple wizard's hat with gold stars, the daily gift's prize",WIZARD HAT,CHAPEAU DE SORCIER,CAPPELLO DA MAGO,ZAUBERHUT,SOMBRERO DE MAGO,BÜYÜCÜ ŞAPKASI,CHAPÉU DE MAGO,ШЛЯПА МАГА
+topper.ember.name,"Topper name: a copper bowl with a small flame, the bronze league's prize",EMBER,BRAISE,BRACE,GLUT,BRASA,KOR,BRASA,УГОЛЁК
+topper.silver-torch.name,"Topper name: a silver torch with a blue flame, the silver league's prize",SILVER TORCH,TORCHE D'ARGENT,TORCIA D'ARGENTO,SILBERFACKEL,ANTORCHA DE PLATA,GÜMÜŞ MEŞALE,TOCHA DE PRATA,СЕРЕБРЯНЫЙ ФАКЕЛ
+topper.fire-crown.name,"Topper name: a gold crown with a flame on each point, the gold league's prize",FIRE CROWN,COURONNE DE FEU,CORONA DI FUOCO,FEUERKRONE,CORONA DE FUEGO,ATEŞ TACI,COROA DE FOGO,ОГНЕННАЯ КОРОНА
+topper.phoenix.name,"Topper name: a fire bird with rainbow wings, the legend league's prize",PHOENIX,PHÉNIX,FENICE,PHÖNIX,FÉNIX,ANKA,FÊNIX,ФЕНИКС

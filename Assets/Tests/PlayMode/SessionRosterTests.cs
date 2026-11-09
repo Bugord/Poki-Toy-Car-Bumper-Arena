@@ -87,6 +87,42 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [Test]
+        public void ABotDrivesAndWearsALeaguesPrizeOnlyFromThatLeaguesLevel()
+        {
+            var leagues = ScriptableObject.CreateInstance<CarCatalog>();
+            JsonUtility.FromJsonOverwrite("{\"cars\":[{\"id\":\"racer\"},{\"id\":\"hot-rod\",\"unlockLevel\":10}," +
+                "{\"id\":\"police\",\"unlockLevel\":25},{\"id\":\"dozer\",\"unlockLevel\":50}," +
+                "{\"id\":\"comet\",\"unlockLevel\":100}]}", leagues);
+            var player = new TestPlayerCar { Level = 24 };
+            var bots = new SessionRoster(leagues, player, tuning);
+            var rewards = tuning.LeagueRewards;
+            var leagueCars = 0;
+            var leagueHats = 0;
+            try {
+                bots.ForRound(6);
+                for (var round = 0; round < 300; round++) {
+                    bots.NextRound(6, 6, RoundResult.Nobody, tuning.Players);
+                    foreach (var seated in bots.ForRound(6)) {
+                        var carLevel = rewards.LevelOfCar(seated.Car.Id);
+                        var hatLevel = rewards.LevelOfTopper(seated.Topper);
+                        Assert.That(seated.Level, Is.GreaterThanOrEqualTo(carLevel), seated.Car.Id);
+                        Assert.That(seated.Level, Is.GreaterThanOrEqualTo(hatLevel), seated.Topper);
+                        leagueCars += carLevel > 0 ? 1 : 0;
+                        leagueHats += hatLevel > 0 ? 1 : 0;
+                    }
+                }
+            }
+            finally {
+                bots.Dispose();
+                Object.DestroyImmediate(leagues);
+            }
+
+            // Bots round level 24 pass bronze, and now and then silver: the prizes do show up on the arena.
+            Assert.That(leagueCars, Is.GreaterThan(0));
+            Assert.That(leagueHats, Is.GreaterThan(0));
+        }
+
+        [Test]
         public void ABotKeepsItsHatWhenThePlayerTakesItsColour()
         {
             Random.InitState(5);
@@ -302,7 +338,7 @@ namespace ToyCarArena.Tests.PlayMode
         {
             public string SelectedCar => "racer";
             public int SelectedColor { get; private set; }
-            public int Level => 1;
+            public int Level { get; set; } = 1;
             public event System.Action<int> ColorChanged;
 
             public bool SelectColor(int id)
