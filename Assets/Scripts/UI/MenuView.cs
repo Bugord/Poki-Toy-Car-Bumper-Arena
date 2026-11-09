@@ -80,7 +80,7 @@ namespace ToyCarArena.UI
         // The glow's radius against the rays'.
         private const float GlowShare = 0.42f;
         private const int GlowSides = 48;
-        private const float RaysTurnSeconds = 24f;
+        internal const float RaysTurnSeconds = 24f;
         // The rays' span against the car's picture: past its sides, where their faded tips are lost in the checker.
         private const float RaysScale = 1.7f;
 
@@ -154,6 +154,8 @@ namespace ToyCarArena.UI
         private Button hero;
         private VisualElement heroPortraitRoot;
         private CarPortrait heroPortrait;
+        // The player's 3D car on the league's pedestal the menu shows, for NEW LEAGUE! to show it too.
+        private RenderTexture heroTexture;
         private float heroAspect = 1.6f;
         private Label carName;
         private VisualElement carPill;
@@ -245,7 +247,7 @@ namespace ToyCarArena.UI
             // The first menu in a new league greets it, over the league's sky and plinth already behind the dim.
             if (!ViewModel.IsDecided && ViewModel.TakeNewLeague()) {
                 ClosePopups();
-                leagues.ShowNewLeague(ViewModel.Level.Level, !isTouch);
+                leagues.ShowNewLeague(ViewModel.Level.Level, !isTouch, heroTexture);
                 return;
             }
 
@@ -936,12 +938,14 @@ namespace ToyCarArena.UI
                 // The 3D car stands on a 3D pedestal drawn with it; the flat plinth is only under a portrait.
                 var texture = garageStage.ShowCar(car, ViewModel.CarColor, ViewModel.Topper, true,
                     LeagueLook.PedestalOf(ViewModel.League));
+                heroTexture = texture;
                 heroAspect = (float)texture.width / texture.height;
                 hero.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(texture));
                 heroPortraitRoot.style.display = DisplayStyle.None;
                 plinth.style.display = DisplayStyle.None;
             }
             else {
+                heroTexture = null;
                 hero.style.backgroundImage = StyleKeyword.None;
                 heroPortraitRoot.style.display = DisplayStyle.Flex;
                 plinth.style.display = DisplayStyle.Flex;
@@ -1074,8 +1078,9 @@ namespace ToyCarArena.UI
             daily.Sheet.style.scale = new Scale(new Vector3(dailyFit, dailyFit, 1f));
 
             leagues.Top = topEdge;
-            // The new league's card is taller than the menu's sheets.
-            leagues.Place(isWide, scale, Mathf.Max(0.55f, Mathf.Min(sheetFit, (size.y - 2f * Edge) / 1750f)), size,
+            // The new league's card grows as the menu's sheets and shrinks by itself to fit (NewLeaguePopup).
+            leagues.Place(isWide, scale,
+                sheetFit, size,
                 isWide ? Mathf.Max(left, WideLeaguesSide) : left, isWide ? Mathf.Max(right, WideLeaguesSide) : right,
                 Edge + insets.Bottom);
 

@@ -2,5 +2,6 @@
     <ui:VisualElement name="menu" class="screen menu">
         <Style src="../ui_screens.uss" />
         <Style src="../ui_menu.uss" />
+        <Style src="../ui_garage.uss" />
     </ui:VisualElement>
 </ui:UXML>
