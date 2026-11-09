@@ -284,6 +284,51 @@
     color: var(--navy);
 }
 
+/* Sideways the coins are as tall as the gear beside them, with its drop (menu and garage). */
+.menu--wide .menu__coins,
+.garage--wide .menu__coins {
+    height: 112px;
+    margin-bottom: 14px;
+}
+
+.menu--wide .menu__coins-drop,
+.garage--wide .menu__coins-drop {
+    top: 14px;
+    bottom: -14px;
+    border-radius: 56px;
+}
+
+.menu--wide .menu__coins-face,
+.garage--wide .menu__coins-face {
+    height: 112px;
+    padding: 0 40px 0 20px;
+    border-width: 8px;
+    border-radius: 56px;
+}
+
+.menu--wide .menu__coins-fill,
+.garage--wide .menu__coins-fill { border-radius: 48px; }
+
+.menu--wide .menu__coins-count,
+.garage--wide .menu__coins-count {
+    margin-left: 16px;
+    font-size: 62px;
+}
+
+.menu--wide .menu__coins .coin,
+.garage--wide .menu__coins .coin {
+    width: 72px;
+    height: 72px;
+    border-width: 7px;
+    border-bottom-width: 10px;
+}
+
+.menu--wide .menu__coins .coin__inner,
+.garage--wide .menu__coins .coin__inner {
+    width: 28px;
+    height: 28px;
+}
+
 .menu__gear {
     width: 112px;
     height: 112px;
@@ -762,8 +807,9 @@
     height: 210px;
 }
 
+/* Wide enough that QUICK MATCH keeps its full size with room before the chevron; PLAY grows into the rest. */
 .menu__mode {
-    width: 420px;
+    width: 460px;
     height: 196px;
     margin-right: 30px;
 }
@@ -771,7 +817,7 @@
 .menu__mode > .menu__face {
     flex-direction: row;
     justify-content: space-between;
-    padding: 0 26px 0 36px;
+    padding: 0 32px 0 36px;
 }
 
 .menu__mode-caption {
@@ -782,12 +828,13 @@
     color: var(--muted);
 }
 
-/* Shrinks with the card, so a long name (BYSTRYI MATCH) shrinks instead of running under the chevron. */
+/* Shrinks with the card, so a long name (BYSTRYI MATCH) shrinks instead of running under the chevron, and keeps a
+   clear gap before it: the chevron belongs to the plate, not to the text. */
 .menu__mode-texts {
     flex-grow: 1;
     flex-shrink: 1;
     min-width: 0;
-    margin-right: 10px;
+    margin-right: 28px;
 }
 
 .menu__mode-name {
@@ -799,11 +846,13 @@
     -unity-text-auto-size: best-fit 26px 46px;
 }
 
-/* The plate opens the modes: its chevron says so. */
+/* The plate opens the modes: its chevron says so, as a select's does, at the trailing edge and centred on the whole
+   plate (both lines), as tall as the name's capitals (DrawChevron strokes 70% of the box), its stroke about theirs.
+   Its far point sits about as far in from the right as the texts from the left. */
 .menu__chevron {
     flex-shrink: 0;
-    width: 40px;
-    height: 56px;
+    width: 32px;
+    height: 46px;
 }
 
 .menu__play {

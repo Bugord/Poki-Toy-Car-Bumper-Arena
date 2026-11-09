@@ -79,6 +79,10 @@ namespace ToyCarArena.Gameplay.Cars
         private RenderTexture hatTexture;
         private string shownKey;
         private float shownAt;
+        // Seconds the turntable had turned when it was last hidden: the next ShowCar turns on from there, so the car
+        // keeps its turn from the garage back to the menu as it does from the menu into the garage (which finds the
+        // camera still on).
+        private float turned;
         private int hatFrame = -1;
 
         public GarageStage(Car carPrefab, MechanicArt art, Transform parent)
@@ -95,9 +99,13 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public Vector2 HeroGround { get; private set; } = new(0.5f, 0.5f);
 
+        /// <summary>The turntable's turn in degrees about the vertical, as last drawn.</summary>
+        public float Yaw => turntable != null ? turntable.localEulerAngles.y : StartYaw;
+
         /// <summary>
         /// Puts <paramref name="entry"/> on the turntable in the colour and the topper given (none for an empty id) and
-        /// starts drawing it; the same car again keeps turning as it was. With <paramref name="onPedestal"/> it stands
+        /// starts drawing it. The turntable turns on from where it was, even after <see cref="Hide"/> and for another
+        /// car, colour or topper: the menu and the garage hand the car to each other mid-turn. With <paramref name="onPedestal"/> it stands
         /// on a 3D pedestal framed with it (the main menu); without, on nothing (the garage has a plinth of its own). The
         /// texture is the stage's to release. <paramref name="pedestalTopColor"/> tints the pedestal's top (the menu's
         /// league); without it the top is the white of the stickers.
@@ -117,7 +125,7 @@ namespace ToyCarArena.Gameplay.Cars
             }
 
             if (!heroCamera.enabled) {
-                shownAt = Time.unscaledTime;
+                shownAt = Time.unscaledTime - turned;
                 heroCamera.enabled = true;
                 OutlineBoost.Set(heroCamera, HeroBoost);
             }
@@ -161,6 +169,10 @@ namespace ToyCarArena.Gameplay.Cars
         public void Hide()
         {
             if (heroCamera != null) {
+                if (heroCamera.enabled) {
+                    turned = Time.unscaledTime - shownAt;
+                }
+
                 heroCamera.enabled = false;
                 OutlineBoost.Clear(heroCamera);
                 hatCamera.enabled = false;
