@@ -869,7 +869,8 @@
     background-color: var(--soft);
 }
 
-.menu__mission-row:last-child { margin-bottom: 0; }
+/* USS has no :last-child: the view marks the last row. */
+.menu__mission-row--last { margin-bottom: 0; }
 
 .menu__mission-row-body {
     flex-grow: 1;

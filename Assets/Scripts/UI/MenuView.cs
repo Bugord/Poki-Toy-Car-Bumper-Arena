@@ -929,6 +929,11 @@ namespace ToyCarArena.UI
                 row.Add(progress);
                 missionsList.Add(row);
             }
+
+            // USS has no :last-child, so the last row drops its gap under it by a class.
+            if (missionsList.childCount > 0) {
+                missionsList[missionsList.childCount - 1].AddToClassList("menu__mission-row--last");
+            }
         }
 
         // -- Layout --------------------------------------------------------------------------------------------------
