@@ -30,6 +30,7 @@
 
 .garage__back > .menu__drop,
 .garage__back > .menu__face { border-radius: 36px; }
+.garage__back .menu__fill { border-radius: 28px; }
 
 .garage__back-arrow {
     width: 56px;
@@ -48,7 +49,7 @@
     text-shadow: 0 10px 0 rgb(29, 43, 79);
 }
 
-.garage__coins--short .menu__coins-face { background-color: #ffd9d9; }
+.garage__coins--short .menu__coins-fill { background-color: #ffd9d9; }
 .garage__coins--short .menu__coins-count { color: var(--red); }
 
 /* -- The car -------------------------------------------------------------------------------------------------------- */
@@ -265,8 +266,19 @@
     border-width: 8px;
     border-color: var(--navy);
     border-radius: 999px;
-    background-color: var(--white);
+    background-color: var(--navy);
     overflow: hidden;
+}
+
+/* The switcher's white inside its border (MenuView.Face), so its rim stays navy over the drop. */
+.garage__tabs-fill {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 999px;
+    background-color: var(--white);
 }
 
 .garage__tab {
@@ -383,6 +395,8 @@
     border-radius: 34px;
 }
 
+.garage__card .menu__fill { border-radius: 28px; }
+
 .garage__card-art {
     flex-grow: 1;
     align-self: stretch;
@@ -413,16 +427,21 @@
 
 .garage__card--selected > .menu__face {
     border-color: var(--green-shade);
-    background-color: #effbe9;
+    background-color: var(--green-shade);
 }
 
-.garage__card--locked > .menu__face { background-color: #dfe6f1; }
+.garage__card--selected .menu__fill { background-color: #effbe9; }
+
+.garage__card--locked .menu__fill { background-color: #dfe6f1; }
 .garage__card--locked .garage__card-name { color: var(--muted); }
 
 .garage__card--previewed > .menu__face {
     border-color: #f0a800;
     border-width: 9px;
+    background-color: #f0a800;
 }
+
+.garage__card--previewed .menu__fill { border-radius: 25px; }
 
 /* The badge sits inside the card's corner: hanging over the edge it covered the card beside and above it. */
 .garage__badge {
@@ -528,8 +547,19 @@
     border-width: 8px;
     border-color: var(--navy);
     border-radius: 999px;
+    background-color: var(--navy);
     transition-property: translate;
     transition-duration: 0.08s;
+}
+
+/* The paint inside the dot's rim (MenuView.Face): on the dot itself it showed through the rim's edge. */
+.garage__paint-fill {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 999px;
 }
 
 .garage__paint:active > .garage__paint-dot { translate: 0 8px; }
@@ -552,7 +582,7 @@
     border-bottom-width: 12px;
 }
 
-.garage__paint--on > .garage__paint-dot { border-color: var(--white); border-width: 12px; }
+.garage__paint--on > .garage__paint-dot { border-color: var(--white); border-width: 12px; background-color: var(--white); }
 .garage__paint--on > .garage__paint-drop { left: -10px; top: -10px; right: -10px; bottom: -22px; }
 .garage__paint--on .garage__paint-check { display: flex; }
 

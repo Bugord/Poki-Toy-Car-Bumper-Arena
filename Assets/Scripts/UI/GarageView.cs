@@ -274,7 +274,7 @@ namespace ToyCarArena.UI
             coinsPill = Element("menu__coins");
             coinsPill.AddToClassList("garage__coins");
             coinsPill.Add(Element("menu__coins-drop"));
-            var coinFace = Element("menu__coins-face");
+            var coinFace = MenuView.Face("menu__coins-face", "menu__coins-fill");
             coinFace.Add(RoundOverMeta.Coin());
             coins = Text("menu__coins-count");
             coinFace.Add(coins);
@@ -382,7 +382,7 @@ namespace ToyCarArena.UI
             side = Element("garage__side");
             var switcher = Element("garage__tabs");
             switcher.Add(Element("menu__drop"));
-            var face = Element("garage__tabs-face");
+            var face = MenuView.Face("garage__tabs-face", "garage__tabs-fill");
             var keys = new[] { "garage.cars", "garage.toppers", "garage.paint" };
             for (var i = 0; i < tabs.Length; i++) {
                 var shown = (Tab)i;
@@ -495,8 +495,8 @@ namespace ToyCarArena.UI
                 button.focusable = false;
                 button.tooltip = CarPaint.NameOf(id).ToUpperInvariant();
                 button.Add(Element("garage__paint-drop"));
-                var dot = Element("garage__paint-dot");
-                dot.AddToClassList(CarColor.ClassOf(id));
+                var dot = MenuView.Face("garage__paint-dot", "garage__paint-fill");
+                dot.Q<VisualElement>(className: "garage__paint-fill").AddToClassList(CarColor.ClassOf(id));
                 // The dark paint on its navy rim reads as a hole: a light ring inside keeps it a paint.
                 if (CarPaint.NameOf(id) == "dark") {
                     dot.Add(Element("garage__paint-ring"));
@@ -1560,7 +1560,7 @@ namespace ToyCarArena.UI
             button.AddToClassList(className);
             button.focusable = false;
             button.Add(Element("menu__drop"));
-            button.Add(Element("menu__face"));
+            button.Add(MenuView.Face("menu__face"));
             return button;
         }
 

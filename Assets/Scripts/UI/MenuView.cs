@@ -275,7 +275,7 @@ namespace ToyCarArena.UI
             // The bar: its navy drop behind it, its left end square and under the badge, its right end round.
             xp = Element("menu__xp");
             xp.Add(Element("menu__xp-drop"));
-            var track = Element("menu__xp-track");
+            var track = Face("menu__xp-track", "menu__xp-back");
             xpFill = Element("menu__xp-fill");
             xpFill.Add(Element("menu__xp-shade"));
             track.Add(xpFill);
@@ -303,7 +303,7 @@ namespace ToyCarArena.UI
 
             coinPill = Element("menu__coins");
             coinPill.Add(Element("menu__coins-drop"));
-            var coinFace = Element("menu__coins-face");
+            var coinFace = Face("menu__coins-face", "menu__coins-fill");
             coinFace.Add(RoundOverMeta.Coin());
             coins = Text("menu__coins-count");
             coinFace.Add(coins);
@@ -727,8 +727,19 @@ namespace ToyCarArena.UI
             button.AddToClassList(className);
             button.focusable = false;
             button.Add(Element("menu__drop"));
-            button.Add(Element("menu__face"));
+            button.Add(Face("menu__face"));
             return button;
+        }
+
+        /// <summary>A sticker's face: navy itself, its colour a layer of its own inside the border (menu__fill).</summary>
+        /// <remarks>UI Toolkit blends a face's own background into the anti-aliased outer edge of its border, which
+        /// draws a light seam where the face meets its navy drop. A navy face with the colour inside its border leaves
+        /// that edge navy on navy.</remarks>
+        internal static VisualElement Face(string className, string fillClass = "menu__fill")
+        {
+            var face = Element(className);
+            face.Add(Element(fillClass));
+            return face;
         }
 
         /// <summary>The round white close button of the menu's popups, its cross drawn by two bars.</summary>

@@ -50,14 +50,26 @@
     border-width: 8px;
     border-color: var(--navy);
     border-radius: 40px;
-    background-color: var(--white);
+    background-color: var(--navy);
     align-items: center;
     justify-content: center;
     transition-property: translate;
     transition-duration: 0.08s;
 }
 
-.menu__sticker:hover > .menu__face { background-color: var(--soft); }
+/* The face's colour, inside its border (MenuView.Face): a face filled itself shows its colour through the soft outer
+   edge of its border, a light seam over the drop. Its radius is the face's less the border. */
+.menu__fill {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 32px;
+    background-color: var(--white);
+}
+
+.menu__sticker:hover > .menu__face > .menu__fill { background-color: var(--soft); }
 .menu__sticker:active > .menu__face { translate: 0 10px; }
 
 /* -- Top bar ------------------------------------------------------------------------------------------------------- */
@@ -128,8 +140,20 @@
 .menu__xp-track {
     border-width: 7px;
     border-color: var(--navy);
-    background-color: var(--soft);
+    background-color: var(--navy);
     overflow: hidden;
+}
+
+/* The track's colour inside its border, as a sticker's fill (MenuView.Face). */
+.menu__xp-back {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border-top-right-radius: 29px;
+    border-bottom-right-radius: 29px;
+    background-color: var(--soft);
 }
 
 .menu__xp-fill {
@@ -239,6 +263,17 @@
     padding: 0 30px 0 14px;
     border-width: 7px;
     border-color: var(--navy);
+    background-color: var(--navy);
+}
+
+/* The pill's colour inside its border, as a sticker's fill (MenuView.Face). */
+.menu__coins-fill {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 29px;
     background-color: var(--white);
 }
 
@@ -256,7 +291,8 @@
 }
 
 .menu__gear > .menu__drop,
-.menu__gear > .menu__face { border-radius: 999px; }
+.menu__gear > .menu__face,
+.menu__gear .menu__fill { border-radius: 999px; }
 
 /* -- Rail ---------------------------------------------------------------------------------------------------------- */
 
@@ -348,8 +384,8 @@
 .menu__rail--right { transform-origin: right top; }
 
 /* Offered: a pale blue face, the blue star and a gold AD tag in the corner. */
-.menu__tile--boost .menu__face { background-color: #d6e7ff; }
-.menu__tile--boost .menu__sticker:hover > .menu__face { background-color: #e6f0ff; }
+.menu__tile--boost .menu__fill { background-color: #d6e7ff; }
+.menu__tile--boost .menu__sticker:hover > .menu__face > .menu__fill { background-color: #e6f0ff; }
 
 .menu__ad {
     position: absolute;
@@ -395,8 +431,8 @@
     display: none;
 }
 
-.menu__tile--boost-on .menu__face,
-.menu__tile--boost-on .menu__sticker:hover > .menu__face { background-color: var(--xp); }
+.menu__tile--boost-on .menu__fill,
+.menu__tile--boost-on .menu__sticker:hover > .menu__face > .menu__fill { background-color: var(--xp); }
 .menu__tile--boost-on .menu__icon,
 .menu__tile--boost-on .menu__ad,
 .menu__tile--boost-on .menu__key { display: none; }
@@ -643,7 +679,8 @@
 }
 
 .menu__car-pill > .menu__drop,
-.menu__car-pill > .menu__face { border-radius: 999px; }
+.menu__car-pill > .menu__face,
+.menu__car-pill .menu__fill { border-radius: 999px; }
 
 /* The face lies in the flow here, so the pill is as wide as the name. */
 .menu__car-pill > .menu__face {
@@ -846,7 +883,8 @@
 }
 
 .menu__close > .menu__drop,
-.menu__close > .menu__face { border-radius: 999px; }
+.menu__close > .menu__face,
+.menu__close .menu__fill { border-radius: 999px; }
 
 .menu__close-bar {
     position: absolute;
