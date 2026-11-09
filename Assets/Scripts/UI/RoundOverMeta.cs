@@ -228,7 +228,7 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>
-        /// One slot: the slot's sign, the task, its count with a thin bar (more than one step), and the coins it pays;
+        /// One slot: the task's sign, the task, its count with a thin bar (more than one step), and the coins it pays;
         /// once done the sign turns into a gold tick, the XP joins the coins, and then the next task takes the row.
         /// </summary>
         private sealed class Row
@@ -248,7 +248,7 @@ namespace ToyCarArena.UI
                 Root.AddToClassList("mission");
                 Root.AddToClassList(RowEnterClass);
                 var definition = line.Definition;
-                icon = MissionLook.IconOf(definition.Slot);
+                icon = MissionLook.IconOf(definition);
                 Root.Add(icon);
                 task = Text("", "mission__task");
                 Root.Add(task);
@@ -274,7 +274,7 @@ namespace ToyCarArena.UI
                 }
 
                 Root.AddToClassList(RowDoneClass);
-                icon.Set(line.Definition.Slot, true);
+                icon.Set(line.Definition, true);
                 progress.style.display = DisplayStyle.None;
                 ShowReward(line.Definition, true);
             }
@@ -301,7 +301,7 @@ namespace ToyCarArena.UI
 
                 var next = line.Next.Definition;
                 owner.text.Set(task, () => owner.viewModel.MissionText(next));
-                icon.Set(next.Slot, false);
+                icon.Set(next, false);
                 progress.Set(line.Next.Progress, next.Target);
                 ShowReward(next, false);
                 Root.RemoveFromClassList(RowDoneClass);

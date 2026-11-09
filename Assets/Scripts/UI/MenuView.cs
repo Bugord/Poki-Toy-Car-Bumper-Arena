@@ -429,11 +429,11 @@ namespace ToyCarArena.UI
         private void BuildBottom(VisualElement menu)
         {
             bottom = Element("menu__bottom");
-            // The slot's sign, the task (on two lines if it must: a Russian task is long) over its reward, and the count
+            // The task's sign, the task (on two lines if it must: a Russian task is long) over its reward, and the count
             // with a thin bar at the right for a mission of more than one step.
             missionCard = Sticker("menu__mission", OpenMissions);
             var face = missionCard.Q<VisualElement>(className: "menu__face");
-            missionIcon = MissionLook.IconOf(MissionSlot.Round);
+            missionIcon = MissionLook.IconOf(null);
             face.Add(missionIcon);
             var body = Element("menu__mission-body");
             missionTask = Text("menu__mission-task");
@@ -860,7 +860,7 @@ namespace ToyCarArena.UI
             missionCard.style.display = nearest == null ? DisplayStyle.None : DisplayStyle.Flex;
             if (nearest != null) {
                 var definition = nearest.Definition;
-                missionIcon.Set(definition.Slot, false);
+                missionIcon.Set(definition, false);
                 missionTask.text = ViewModel.MissionText(definition);
                 missionProgress.Set(nearest.Progress, definition.Target);
                 missionReward.Clear();
@@ -953,10 +953,10 @@ namespace ToyCarArena.UI
         {
             missionsList.Clear();
             foreach (var mission in ViewModel.Missions) {
-                // The slot's sign, the task over its XP and coins, and the count with its bar for more than one step.
+                // The task's sign, the task over its XP and coins, and the count with its bar for more than one step.
                 var definition = mission.Definition;
                 var row = Element("menu__mission-row");
-                row.Add(MissionLook.IconOf(definition.Slot));
+                row.Add(MissionLook.IconOf(definition));
                 var body = Element("menu__mission-row-body");
                 var task = Text("menu__mission-row-task");
                 task.text = ViewModel.MissionText(definition);

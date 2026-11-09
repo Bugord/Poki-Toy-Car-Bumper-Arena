@@ -1347,10 +1347,16 @@ namespace ToyCarArena.UI
         private static void DrawHorn(MeshGenerationContext context, bool isMirrored)
         {
             var rect = context.visualElement.contentRect;
-            var w = rect.width;
-            var h = rect.height;
-            Vector2 At(float x, float y) => new(isMirrored ? (1f - x) * w : x * w, y * h);
-            var painter = context.painter2D;
+            PaintHorn(context.painter2D, new Rect(0f, 0f, rect.width, rect.height), isMirrored,
+                Mathf.Max(3f, rect.width * 0.14f));
+        }
+
+        /// <summary>The rival's horn in a box: the REVENGE mark on a level badge and a revenge mission's sign.</summary>
+        internal static void PaintHorn(Painter2D painter, Rect box, bool isMirrored, float lineWidth)
+        {
+            var w = box.width;
+            var h = box.height;
+            Vector2 At(float x, float y) => new(box.x + (isMirrored ? (1f - x) * w : x * w), box.y + y * h);
             painter.BeginPath();
             painter.MoveTo(At(0.3f, 1f));
             painter.LineTo(At(0.2f, 0.7f));
@@ -1363,7 +1369,7 @@ namespace ToyCarArena.UI
             painter.fillColor = new Color32(0xff, 0x4d, 0x4d, 0xff);
             painter.Fill();
             painter.strokeColor = new Color32(0x1d, 0x2b, 0x4f, 0xff);
-            painter.lineWidth = Mathf.Max(3f, w * 0.14f);
+            painter.lineWidth = lineWidth;
             painter.lineJoin = LineJoin.Round;
             painter.Stroke();
         }
@@ -1774,13 +1780,16 @@ namespace ToyCarArena.UI
                 return;
             }
 
-            var p = context.painter2D;
-            var centre = r.center;
-            var outer = Mathf.Min(r.width, r.height) * 0.46f;
+            PaintBurst(context.painter2D, r.center, Mathf.Min(r.width, r.height) * 0.46f, element.resolvedStyle.color);
+        }
+
+        /// <summary>The knock-out burst's path, filled and outlined navy: the HUD's KO mark and a knock-out mission's sign.</summary>
+        internal static void PaintBurst(Painter2D p, Vector2 centre, float outer, Color fill)
+        {
             p.lineWidth = outer * 0.17f;
             p.lineJoin = LineJoin.Round;
             p.strokeColor = CarColor.Silhouette;
-            p.fillColor = element.resolvedStyle.color;
+            p.fillColor = fill;
             p.BeginPath();
             var spikes = BurstReach.Length;
             for (var i = 0; i < spikes * 2; i++) {
