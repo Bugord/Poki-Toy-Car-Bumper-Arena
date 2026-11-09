@@ -17,15 +17,17 @@ namespace ToyCarArena.UI
     /// </summary>
     internal sealed class HudPotato : IDisposable
     {
-        // Metres over the bomb's middle the fuse sticker hangs.
-        private const float FuseLift = 0.9f;
+        // Reference pixels right of the bomb's middle the fuse sticker's middle sits: beside the bomb, clear of the
+        // holder's name pill over it.
+        private const float FuseSide = 120f;
         private const float FuseMargin = 24f;
         // The beat of the fuse's last seconds: up to this scale on each second, easing back.
         private const float BeatScale = 1.35f;
         private const float BeatSeconds = 0.25f;
 
-        // Reference pixels under the top of the safe area the banner sits at: under the HUD bar.
-        private const float PassTop = 250f;
+        // Reference pixels under the top of the safe area the banner sits at: under the HUD bar and the kill feed's three
+        // rows at its left in portrait.
+        private const float PassTop = 480f;
         private const float PassPulse = 0.07f;
         private const float PassRate = 5f;
         private const float PassHurryRate = 10f;
@@ -119,15 +121,15 @@ namespace ToyCarArena.UI
 
             fuseSticker.style.scale = new Scale(new Vector3(scale, scale, 1f));
 
-            var position = model.BombPosition + Vector3.up * FuseLift;
-            var panelPoint = RuntimePanelUtils.CameraTransformWorldToPanel(fuse.panel, position, camera);
+            var panelPoint = RuntimePanelUtils.CameraTransformWorldToPanel(fuse.panel, model.BombPosition, camera);
             var point = layer.WorldToLocal(panelPoint);
+            point.x += FuseSide;
             var size = layer.layout.size;
             var halfWidth = fuseSticker.layout.width * 0.5f + FuseMargin;
-            var height = fuseSticker.layout.height + FuseMargin;
+            var halfHeight = fuseSticker.layout.height * 0.5f + FuseMargin;
             var minX = halfWidth + left;
             point.x = Mathf.Clamp(point.x, minX, Mathf.Max(minX, size.x - halfWidth - right));
-            point.y = Mathf.Clamp(point.y, height + top, Mathf.Max(height + top, size.y - FuseMargin));
+            point.y = Mathf.Clamp(point.y, halfHeight + top, Mathf.Max(halfHeight + top, size.y - halfHeight));
             fuse.style.left = point.x;
             fuse.style.top = point.y;
         }

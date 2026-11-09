@@ -302,7 +302,7 @@ namespace ToyCarArena.Gameplay.Bots
                 }
             }
 
-            Wander(edge, position, potato);
+            Wander(edge, position, potato, deltaTime);
         }
 
         /// <summary>
@@ -331,10 +331,12 @@ namespace ToyCarArena.Gameplay.Bots
         /// With no holder to run from, drives at an easy pace to a spot on the floor away from the walls, a new one now
         /// and then, the far side from the holder if there is one.
         /// </summary>
-        private void Wander(IArenaEdge edge, Vector3 position, HotPotato potato)
+        private void Wander(IArenaEdge edge, Vector3 position, HotPotato potato, float deltaTime)
         {
             if (Time.time >= wanderUntil || Vector3.Distance(position, wander) < 2f) {
                 wanderUntil = Time.time + Range(1.5f, 3f);
+                // Where the bot is, if no try finds floor: the middle may be a hole (the candy arena's).
+                wander = position;
                 var extent = edge.SafeExtent;
                 for (var attempt = 0; attempt < 8; attempt++) {
                     var angle = Range(0f, Mathf.PI * 2f);
@@ -350,8 +352,8 @@ namespace ToyCarArena.Gameplay.Bots
                 }
             }
 
-            var heading = GoRoundPits(edge, position, wander - position, settings.EdgeMargin, Time.deltaTime);
-            Car.Movement.Drive(heading, 0.6f);
+            var heading = GoRoundPits(edge, position, wander - position, settings.EdgeMargin, deltaTime);
+            Car.Movement.Drive(heading, wander == position ? 0f : 0.6f);
         }
 
         /// <summary>
