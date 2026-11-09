@@ -407,8 +407,8 @@
     -unity-text-align: middle-center;
 }
 
-/* The REVENGE rival's row: tinted red, with a red plaque at its end. */
-.lobby__row.lobby__row--rival { background-color: rgba(255, 77, 77, 0.28); }
+/* The REVENGE rival's row: pale red, with a red plaque at its end. */
+.lobby__row.lobby__row--rival { background-color: rgb(255, 226, 226); }
 
 .lobby__row .lobby__badge--revenge {
     width: auto;
@@ -429,7 +429,8 @@
     margin-bottom: 12px;
 }
 
-/* Seats are quiet translucent strips on the navy curtain; only the player's own is brighter. */
+/* A found seat is a white sticker with a navy outline and a hard shadow under it, as the menu's cards; the player's
+   own is pale gold. The radius is set, not 999px: rows are built after PillShape looked at the screen. */
 .lobby__row {
     position: absolute;
     left: 0;
@@ -438,19 +439,15 @@
     height: 122px;
     flex-direction: row;
     align-items: center;
-    padding: 0 36px 0 22px;
-    border-radius: 999px;
-    background-color: rgba(255, 255, 255, 0.08);
+    padding: 0 26px 0 14px;
+    border-width: 6px;
+    border-bottom-width: 12px;
+    border-color: var(--navy);
+    border-radius: 40px;
+    background-color: var(--white);
 }
 
-.lobby__row--you { background-color: rgba(255, 255, 255, 0.18); }
-
-.lobby__row .hud__chip {
-    position: relative;
-    flex-shrink: 0;
-    margin-right: 22px;
-    transition-duration: 0s;
-}
+.lobby__row--you { background-color: rgb(255, 236, 168); }
 
 .lobby__name {
     flex-grow: 1;
@@ -492,15 +489,18 @@
     -unity-text-align: middle-center;
 }
 
-.lobby__row--left { background-color: rgba(255, 255, 255, 0.04); }
-.lobby__row--left .hud__chip { background-color: var(--muted); }
+.lobby__row--left { background-color: var(--track); }
 .lobby__row--left .lobby__name { color: var(--muted); }
 .lobby__badge--left { background-color: var(--silver); }
 .lobby__badge--streak { width: auto; padding: 8px 18px; rotate: -3deg; }
 
-/* A seat still searching: a dimmer strip with a spinning ring where the chip goes and SEARCHING..., until a player is
-   found for it and pops in over it. */
-.lobby__row--searching { background-color: rgba(255, 255, 255, 0.05); }
+/* A seat still searching: a quiet translucent strip without an outline, a spinning ring and SEARCHING..., until the
+   white sticker of a found player pops in over it. */
+.lobby__row.lobby__row--searching {
+    padding-left: 28px;
+    border-width: 0;
+    background-color: rgba(255, 255, 255, 0.08);
+}
 
 .lobby__spinner {
     flex-shrink: 0;
@@ -3811,12 +3811,11 @@
 }
 .lobby__name .sticker-text__text {
     font-size: 56px;
-    color: var(--white);
+    color: var(--navy);
     -unity-text-outline-width: 0;
 }
 .lobby__name--revenge .sticker-text__text { color: var(--red); }
-/* Silver at 0.6 over navy, as an opaque colour: a translucent outlined name shows its stroke layer inside the letters. */
-.lobby__row--left .lobby__name .sticker-text__text { color: rgb(123, 136, 161); }
+.lobby__row--left .lobby__name .sticker-text__text { color: var(--muted); }
 
 /* A loading bar under the seats (in the flow, so seven seats on a 1920 high panel never run into it) and a tip at the
    bottom of the curtain: the arena loads behind it. */
@@ -3874,18 +3873,25 @@
     -unity-text-align: middle-center;
 }
 .lobby__badge.lobby__badge--streak { padding: 0 24px; }
-.lobby__row .lobby__you-chip { border-color: var(--white); }
 
+/* The level opens the row, big enough to read its number and league from across the screen; the slot is one width
+   for any badge, its wings and the rival's horns, so every nick starts on the same line. */
 .lobby__level-slot {
-    width: 140px;
-    margin: 0 8px;
+    width: 170px;
+    margin: 0 18px 0 0;
 }
-.lobby__row .hud__chip-ring {
-    width: 66px;
-    height: 66px;
-    right: auto;
-    bottom: auto;
+
+.lobby__level {
+    min-width: 92px;
+    height: 78px;
+    padding: 0 14px;
+    border-width: 6px;
+    border-bottom-width: 11px;
+    border-radius: 22px;
 }
+
+.lobby__level .level-badge__value { font-size: 46px; }
+.lobby__level .level-badge__prefix { font-size: 20px; padding: 0 8px 1px 8px; }
 
 /* One short feed below the portrait pills; the wide layout uses the free top-left corner. */
 .feed {
