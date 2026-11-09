@@ -154,6 +154,7 @@ namespace ToyCarArena.UI
         private CarPortrait heroPortrait;
         private float heroAspect = 1.6f;
         private Label carName;
+        private VisualElement carPill;
         private VisualElement bottom;
         private VisualElement missionCard;
         private VisualElement actions;
@@ -410,7 +411,7 @@ namespace ToyCarArena.UI
             // The car's name on a white pill with a green garage sign: smaller than PLAY, and it says the car opens
             // the garage.
             var name = carNameBox = Element("menu__car-name");
-            var pill = Sticker("menu__car-pill", OpenGarage);
+            var pill = carPill = Sticker("menu__car-pill", OpenGarage);
             var pillFace = pill.Q<VisualElement>(className: "menu__face");
             carName = Text("menu__car-name-text");
             // A longer or shorter name may or may not fit between the bottom cards sideways (PlaceStage).
@@ -1117,7 +1118,9 @@ namespace ToyCarArena.UI
                 // cards, when it fits between the mission and the mode, and the car above grows into the room.
                 var missionBox = Root.WorldToLocal(missionCard.worldBound);
                 var actionsBox = Root.WorldToLocal(actions.worldBound);
-                var nameWidth = Root.WorldToLocal(carName.worldBound).width;
+                // The whole pill, its garage sign and padding with the name: the name alone let the pill run into
+                // the mode's plate on 4:3.
+                var nameWidth = Root.WorldToLocal(carPill.worldBound).width;
                 // The name stays centred under the car, and the gap need not be centred on the screen.
                 var reach = nameWidth / 2f + NameGap;
                 var middle = size.x / 2f;
