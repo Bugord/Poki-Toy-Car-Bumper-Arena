@@ -45,14 +45,21 @@ namespace ToyCarArena.UI
         {
             this.viewModel = viewModel;
 
-            // The player's coins in the corner, left of the gear: what the garage's toppers are bought with.
+            // The player's coins in the corner, left of the gear: what the garage's toppers are bought with. The menu's
+            // pill (its drop a layer of its own, its colour inside the border), as tall as the gear beside it.
             CoinPill = new VisualElement { name = "coin-pill", pickingMode = PickingMode.Ignore };
-            CoinPill.AddToClassList("pill");
             CoinPill.AddToClassList("coin-pill");
-            CoinPill.Add(Coin());
-            coinCount = Text(viewModel.Coins.Before.ToString(), "coin-pill__count");
+            CoinPill.AddToClassList("menu__coins");
+            CoinPill.Add(new VisualElement { pickingMode = PickingMode.Ignore });
+            CoinPill[0].AddToClassList("menu__coins-drop");
+            var face = MenuView.Face("menu__coins-face", "menu__coins-fill");
+            face.pickingMode = PickingMode.Ignore;
+            face[0].pickingMode = PickingMode.Ignore;
+            face.Add(Coin());
+            coinCount = Text(viewModel.Coins.Before.ToString(), "menu__coins-count");
             viewModel.CarBought += OnCarBought;
-            CoinPill.Add(coinCount);
+            face.Add(coinCount);
+            CoinPill.Add(face);
             // Inside the screen's own element, which carries the style sheet.
             (root.Q<VisualElement>("round-over") ?? root).Add(CoinPill);
 

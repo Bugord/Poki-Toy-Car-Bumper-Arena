@@ -15,8 +15,9 @@ namespace ToyCarArena.UI
     /// Replays an already saved reward in three steps: first a plain bar from the level the round started at to the
     /// next fills with the round's XP (LEVEL UP! and the badge bumps on each level crossed), then each level crossed
     /// that gives something (a car, an arena, a rank) shows it in a popup over the screen until a tap or a few seconds,
-    /// and last the level track: a row of stops from the level the round started at to the next rewards and the next
-    /// rank, which builds left to right empty, then fills, each stop it reaches turning gold. Its lifetime belongs to
+    /// and last the level track: a row of stops from the card's own level badge (so the level shows once) to the next
+    /// rewards and the next rank, which builds left to right empty, then fills, each stop it reaches turning gold. The
+    /// bar of the first step grows out of the same badge. Its lifetime belongs to
     /// the result view, so NEXT MATCH can leave at any point, including halfway through a popup, without holding up
     /// the next round or touching a detached screen.
     /// <para>
@@ -38,6 +39,9 @@ namespace ToyCarArena.UI
         // The bar holds this long full of the round's XP before it gives way to the track.
         private const int BarHold = 600;
         private const float ShrinkDuration = 0.2f;
+        // The track's padding each side (.track in ui_screens), and how far a bar runs under a stop.
+        private const float TrackInset = 30f;
+        private const float BadgeTuck = 14f;
         // A reward popup closes on its own after this long, so a player who just watches is not stuck under it.
         private const float RewardAutoClose = 4f;
         private const float RewardFadeIn = 0.15f;
@@ -62,6 +66,8 @@ namespace ToyCarArena.UI
         private readonly List<Segment> segments = new();
         private readonly List<CarPortrait> trackCars = new();
         private readonly List<VisualElement> trackRows = new();
+        private readonly VisualElement head;
+        private VisualElement badgeSlot;
         private readonly LiveText text = new();
         private int shownLevel;
         // The levels whose popups have shown, and whether the gift's has, so a replay cut short shows what it skipped.
@@ -89,9 +95,11 @@ namespace ToyCarArena.UI
             text.Set(total, () => Strings.Format("result.xp_total", reward.Before.Xp, reward.Before.Cost));
             text.Set(rankLabel, () => PlayerRank.NameOf(shownLevel));
             var track = root.Q<VisualElement>("xp-track");
+            head = root.Q<VisualElement>(className: "level-card__head");
             BuildTrack(track, reward.Before.Level);
 
-            // The bar of the first step lies over the track, which is still empty then: nothing in the card moves.
+            // The bar of the first step lies over the track, which is still empty then: nothing in the card moves. It
+            // goes between the bars and the stops, so the badge it grows out of is drawn over its end.
             bar = new VisualElement { pickingMode = PickingMode.Ignore };
             bar.AddToClassList("xp-bar");
             // Only the next level at the bar's end: the card's own badge beside it already shows the level reached.
@@ -107,13 +115,14 @@ namespace ToyCarArena.UI
                 text.Set(label, () => Strings.Get("result.level_up"));
             }
             bar.Add(levelUp);
-            track.Add(bar);
+            track.Insert(1, bar);
+            levelBadge.RegisterCallback<GeometryChangedEvent>(_ => FitToBadge());
 
             SetScale(levelBadge, 0f);
             SetScale(bar, 0f);
             SetScale(levelUp, 0f);
-            foreach (var stop in stops) {
-                SetScale(stop.Node, 0f);
+            for (var i = 1; i < stops.Count; i++) {
+                SetScale(stops[i].Node, 0f);
             }
             foreach (var segment in segments) {
                 segment.Root.style.scale = new Scale(new Vector3(0f, 1f, 1f));
@@ -168,10 +177,17 @@ namespace ToyCarArena.UI
             var nodes = Row(track, "track__row--nodes");
             trackRows.Add(bars);
             trackRows.Add(nodes);
-            Slot(bars, false);
-            stops.Add(CreateStop(nodes, from, null, null, true));
+            // The track starts at the card's own level badge, so the level the round started at shows once: the badge
+            // is the first stop, and its slot in the bars' row follows its width (FitToBadge).
+            badgeSlot = Slot(bars, false);
+            levelBadge.RemoveFromHierarchy();
+            levelBadge.AddToClassList("track__badge");
+            nodes.Add(levelBadge);
+            stops.Add(new Waypoint(from, levelBadge, true));
             var previous = from;
+            var isCaptioned = false;
             foreach (var trackStop in viewModel.TrackStops()) {
+                isCaptioned |= trackStop.Name != null;
                 // Dotted only where the rank is further than one level: the bar to it would hardly move.
                 var segment = new Segment(trackStop.IsRank && trackStop.Level - previous > 1);
                 previous = trackStop.Level;
@@ -181,8 +197,27 @@ namespace ToyCarArena.UI
                 gap.AddToClassList("track__gap");
                 nodes.Add(gap);
                 Slot(bars, trackStop.IsRank);
-                stops.Add(CreateStop(nodes, trackStop.Level, trackStop.Name, trackStop, false));
+                stops.Add(CreateStop(nodes, trackStop.Level, trackStop.Name, trackStop));
             }
+
+            // Plain levels have no captions: no room kept under them.
+            track.EnableInClassList("track--plain", !isCaptioned);
+        }
+
+        /// <summary>
+        /// The badge's width sets its slot under the bars, where the first bar starts, the step's bar, which grows out
+        /// of it, and the rank and XP line over the track, which starts beside it.
+        /// </summary>
+        private void FitToBadge()
+        {
+            var width = levelBadge.layout.width;
+            if (float.IsNaN(width) || width <= 0f) {
+                return;
+            }
+
+            badgeSlot.style.width = width;
+            bar.style.left = TrackInset + width - BadgeTuck;
+            head.style.paddingLeft = TrackInset + width;
         }
 
         private static VisualElement Row(VisualElement track, string className)
@@ -194,24 +229,21 @@ namespace ToyCarArena.UI
             return row;
         }
 
-        private static void Slot(VisualElement bars, bool isRank)
+        private static VisualElement Slot(VisualElement bars, bool isRank)
         {
             var slot = new VisualElement { pickingMode = PickingMode.Ignore };
             slot.AddToClassList("track__slot");
             slot.EnableInClassList("track__slot--rank", isRank);
             bars.Add(slot);
+            return slot;
         }
 
-        private Waypoint CreateStop(VisualElement track, int level, string name, TrackStop reward, bool isCurrent)
+        private Waypoint CreateStop(VisualElement track, int level, string name, TrackStop reward)
         {
             var node = new VisualElement { pickingMode = PickingMode.Ignore };
             node.AddToClassList("track__node");
             track.Add(node);
-            if (isCurrent) {
-                node.AddToClassList(ReachedClass);
-                node.Add(Text(level.ToString(), "track__level"));
-            }
-            else if (name == null) {
+            if (name == null) {
                 node.Add(Text(level.ToString(), "track__level"));
             }
             else if (reward.IsRank) {
@@ -257,7 +289,7 @@ namespace ToyCarArena.UI
             mark.AddToClassList("track__tick-mark");
             reach.Add(mark);
             node.Add(reach);
-            return new Waypoint(level, node, isCurrent);
+            return new Waypoint(level, node, false);
         }
 
         private static Label Text(string text, string className)
@@ -278,7 +310,7 @@ namespace ToyCarArena.UI
             await ShowHatOffer(token);
             await Shrink(bar, token);
             bar.style.display = DisplayStyle.None;
-            await Pop(stops[0].Node, token);
+            // The first stop is the card's badge, up since the start.
             for (var i = 0; i < segments.Count; i++) {
                 await Grow(segments[i].Root, token);
                 Pop(stops[i + 1].Node, token).Forget();
@@ -385,10 +417,15 @@ namespace ToyCarArena.UI
             await UniTask.Delay(BarHold, ignoreTimeScale: true, cancellationToken: token);
         }
 
+        /// <summary>Hides the track under the bar, all but its first stop: the card's badge the bar grows out of.</summary>
         private void SetTrackShown(bool isShown)
         {
             foreach (var row in trackRows) {
-                row.style.visibility = isShown ? Visibility.Visible : Visibility.Hidden;
+                foreach (var child in row.Children()) {
+                    if (child != levelBadge) {
+                        child.style.visibility = isShown ? Visibility.Visible : Visibility.Hidden;
+                    }
+                }
             }
         }
 

@@ -116,6 +116,8 @@ namespace ToyCarArena.UI
         // The colour of XP across the game (--xp in ui_theme).
         private static readonly Color XpBlue = new Color32(0x3d, 0x8b, 0xff, 0xff);
         private static readonly Color White = Color.white;
+        // --green in ui_theme: the ticks on MISSIONS' clipboard.
+        private static readonly Color Green = new Color32(0x5b, 0xd3, 0x4a, 0xff);
         // A mode not out yet keeps its sign, greyed: --shade filled, --muted outlined, its sand between.
         private static readonly Color SoonFill = new Color32(0xc7, 0xd3, 0xea, 0xff);
         private static readonly Color SoonLine = new Color32(0x5b, 0x6b, 0x8c, 0xff);
@@ -341,7 +343,7 @@ namespace ToyCarArena.UI
         {
             rail = Element("menu__rail");
             garageTile = Tile(DrawGarage, () => Strings.Get("garage.title"), "G", OpenGarage);
-            missionsTile = Tile(DrawTarget, () => Strings.Get("mission.title"), "M", OpenMissions);
+            missionsTile = Tile(DrawMissions,() => Strings.Get("mission.title"), "M", OpenMissions);
             // AWARDS waits until there are awards: a locked tile that explains nothing only takes the rail.
             rail.Add(garageTile);
             rail.Add(missionsTile);
@@ -1695,18 +1697,80 @@ namespace ToyCarArena.UI
             p.Fill();
         }
 
-        private static void DrawTarget(MeshGenerationContext context)
+        /// <summary>
+        /// MISSIONS' sign: a clipboard with a checklist of two green ticks. The rings of a target read as an eye at the
+        /// tile's size; a list of ticks is what games draw for tasks. Two rows, not three: the tile is about 30 CSS px
+        /// on a phone, and a third row only turns the list into noise.
+        /// </summary>
+        private static void DrawMissions(MeshGenerationContext context)
         {
             var r = context.visualElement.contentRect;
             var p = context.painter2D;
-            var centre = r.center;
-            var radius = Mathf.Min(r.width, r.height) / 2f;
-            foreach (var (share, color) in new[] { (1f, Navy), (0.8f, Red), (0.58f, White), (0.38f, Red), (0.16f, Navy) }) {
-                p.fillColor = color;
+            float X(float x) => r.x + x * r.width;
+            float Y(float y) => r.y + y * r.height;
+            var outline = r.height * 0.08f;
+            p.strokeColor = Navy;
+            p.lineJoin = LineJoin.Round;
+            p.lineCap = LineCap.Round;
+
+            // The gold board, then the white sheet on it.
+            p.lineWidth = outline;
+            p.fillColor = Gold;
+            RoundBox(p, X(0.1f), Y(0.1f), X(0.9f), Y(0.96f), r.width * 0.12f);
+            p.Fill();
+            p.Stroke();
+            p.fillColor = White;
+            RoundBox(p, X(0.21f), Y(0.23f), X(0.79f), Y(0.85f), r.width * 0.05f);
+            p.Fill();
+            p.Stroke();
+
+            // Two rows, each a tick and a navy line for the task.
+            foreach (var y in new[] { 0.42f, 0.67f }) {
+                Tick(new Vector2(X(0.29f), Y(y)), new Vector2(X(0.36f), Y(y + 0.07f)), new Vector2(X(0.48f), Y(y - 0.075f)));
+                p.strokeColor = Navy;
+                p.lineWidth = outline;
                 p.BeginPath();
-                p.Arc(centre, radius * share, 0f, 360f);
-                p.Fill();
+                p.MoveTo(new Vector2(X(0.56f), Y(y)));
+                p.LineTo(new Vector2(X(0.7f), Y(y)));
+                p.Stroke();
             }
+
+            // The clip: a navy plate over the board's top edge with a gold hole.
+            p.lineWidth = outline;
+            p.fillColor = Navy;
+            RoundBox(p, X(0.32f), Y(0.05f), X(0.68f), Y(0.22f), r.width * 0.05f);
+            p.Fill();
+            p.Stroke();
+            p.fillColor = Gold;
+            p.BeginPath();
+            p.Arc(new Vector2(X(0.5f), Y(0.12f)), r.width * 0.05f, 0f, 360f);
+            p.Fill();
+
+            // A green tick with a navy edge: the navy stroke under a narrower green one.
+            void Tick(Vector2 a, Vector2 b, Vector2 c)
+            {
+                foreach (var (color, width) in new[] { (Navy, outline * 1.6f), (Green, outline * 0.8f) }) {
+                    p.strokeColor = color;
+                    p.lineWidth = width;
+                    p.BeginPath();
+                    p.MoveTo(a);
+                    p.LineTo(b);
+                    p.LineTo(c);
+                    p.Stroke();
+                }
+            }
+        }
+
+        // A rectangle with rounded corners as the current path.
+        private static void RoundBox(Painter2D p, float left, float top, float right, float bottom, float radius)
+        {
+            p.BeginPath();
+            p.MoveTo(new Vector2(left + radius, top));
+            p.ArcTo(new Vector2(right, top), new Vector2(right, bottom), radius);
+            p.ArcTo(new Vector2(right, bottom), new Vector2(left, bottom), radius);
+            p.ArcTo(new Vector2(left, bottom), new Vector2(left, top), radius);
+            p.ArcTo(new Vector2(left, top), new Vector2(right, top), radius);
+            p.ClosePath();
         }
 
         /// <summary>The MODE plate's chevron: it says the plate opens the modes.</summary>
