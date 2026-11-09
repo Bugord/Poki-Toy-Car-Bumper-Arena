@@ -241,7 +241,7 @@ namespace ToyCarArena.App
                 levelScene.Resolve<ISessionRoster>().NextRound(result.CarCount - 1,
                     RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis, tuning.Players);
                 platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, driver, tuning.Boost.IsEnabled,
-                    waitsForPlayer);
+                    waitsForPlayer, special == SpecialRound.HotPotato);
                 if (pickups.IsEnabled) {
                     platform.MeasureMatchPickups(roundNumber, pickupCount, result.IsMatch);
                 }

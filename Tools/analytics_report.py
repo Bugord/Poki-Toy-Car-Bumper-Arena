@@ -83,7 +83,7 @@ def summarise(data):
         # с v0.16.0: главное меню визитов 2+ (показ, через сколько секунд после старта движка, что нажали), HOME на результате
         "menu": i.get("menu-shown"),
         "menu_time": other(o, r"menu-ready-([0-9a-z-]+)-start-time"),
-        "menu_press": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"menu-(play|garage|missions|mode|leagues|boost|boost-no|daily|daily-no)", e))},
+        "menu_press": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"menu-(play|garage|missions|mode|leagues|boost|boost-no|daily|daily-no|mode-hot-potato|mode-quick)", e))},
         # после v0.16.0: попап NEW LEAGUE! в меню, по лиге (раз на игрока и лигу)
         "menu_league": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"menu-league-(bronze|silver|gold|legend)", e))},
         "home": i.get("result-home"),
@@ -244,7 +244,9 @@ def report(version, previous):
         shown = lambda s: num(s["menu"], "seen")
         out.append(line("Меню показано", lambda s: str(shown(s)) if s["menu"] else "-"))
         for key, name in (("play", "PLAY"), ("garage", "GARAGE"), ("missions", "MISSIONS"), ("mode", "MODE (до feature/ux-fixes: потом это плашка, не кнопка)"),
-                          ("leagues", "значок или шкалу опыта (лиги; после v0.16.0)")):
+                          ("leagues", "значок или шкалу опыта (лиги; после v0.16.0)"),
+                          ("mode-hot-potato", "HOT POTATO в CHOOSE MODE (режим, feature/hot-potato)"),
+                          ("mode-quick", "QUICK MATCH в CHOOSE MODE (feature/hot-potato)")):
             out.append(line(f"Нажали {name}, от показов меню",
                             lambda s, k=key: (lambda n: f"{n} ({pct(n, shown(s))})")(num(s["menu_press"].get(k), "interacted"))
                             if s["menu"] else "-"))
@@ -389,7 +391,7 @@ def report(version, previous):
         # это ушли посреди цикла этого варианта, а «раундов» это циклов.
         ("Раунды по варианту арены (после v0.5.1; визиты: старты / победы / поражения / ушли посреди; "
          "в матче по циклам пола)", "arenas", arena),
-        ("Особые раунды (после v0.15.0; визиты: старты / победы / поражения / ушли посреди)", "specials",
+        ("Особые раунды и режим HOT POTATO (после v0.15.0, hot-potato с feature/hot-potato это режим; визиты: старты / победы / поражения / ушли посреди)", "specials",
          lambda s, k: arena(s, k, "specials")),
     ):
         keys = keys_of(key)
