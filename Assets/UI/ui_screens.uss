@@ -2445,10 +2445,18 @@
 }
 
 /* The level track, as in the design: round stops joined by bars that tuck under the next stop, the captions hanging
-   under the stops. A reached stop turns into a gold disc with a navy tick; the current level is gold from the start. */
+   under the stops. A reached stop turns into a gold disc with a navy tick. The first stop is the card's own level
+   badge (RoundOverProgress moves it here), so the level shows once; the rank and XP line sits over the track beside
+   it. */
 .track {
-    margin-top: 26px;
+    /* Room for the crown a rank stop wears over its circle, clear of the XP line. */
+    margin-top: 36px;
     padding: 0 30px 96px 30px;
+}
+
+/* Only plain levels ahead (past the last reward and rank): no captions, no room kept for them. */
+.track--plain {
+    padding-bottom: 12px;
 }
 
 /* The bars' row and, laid exactly over it, the stops' row (RoundOverProgress.BuildTrack). Every bar and every gap
@@ -2713,8 +2721,9 @@
     background-color: var(--xp);
 }
 
-/* The first step of the XP: a plain bar to the next level, laid over the still empty track, that level on a badge at
-   its end (the card's badge beside it shows the level reached) and LEVEL UP! under it when it fills. */
+/* The first step of the XP: a plain bar to the next level, laid over the still empty track and growing out of the
+   card's badge (its left edge follows the badge, RoundOverProgress.FitToBadge), that level on a badge at its end and
+   LEVEL UP! under it when it fills. */
 .xp-bar {
     position: absolute;
     left: 30px;
