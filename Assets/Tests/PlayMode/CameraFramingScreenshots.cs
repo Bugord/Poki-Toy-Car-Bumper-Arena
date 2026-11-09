@@ -43,29 +43,56 @@ namespace ToyCarArena.Tests.PlayMode
             (1920, 1080, false), (1080, 1920, true), (2340, 1080, true),
         };
 
+        private static readonly FieldInfo CrumbleDelayField =
+            typeof(GameTuning.ArenaSettings).GetField("crumbleDelay", BindingFlags.Instance | BindingFlags.NonPublic);
+
         private static readonly string[] Arenas = { "sandbox", "tabletop", "candy", "playroom" };
 
         [UnityTest]
         public IEnumerator CaptureTheFraming([ValueSource(nameof(Arenas))] string arena)
         {
+            return Capture(arena, false);
+        }
+
+        /// <summary>
+        /// The first round of a visit waiting for the player, TAP TO START over the arena, at the start only.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator CaptureTheFirstRoundStart()
+        {
+            return Capture("sandbox", true);
+        }
+
+        private IEnumerator Capture(string arena, bool isFirstRound)
+        {
             var tuning = UseMode(GameTuning.GameMode.LastStanding);
-            CreateParent(new SimulationInput(), new SimulationProgress { Round = 7 }, arena);
+            // The floor must not crumble while the pictures are taken: its delay is put off in memory and put back after.
+            var settings = tuning.Maps.First(entry => entry.Id == arena).Arena;
+            var crumbleDelay = settings.CrumbleDelay;
+            CrumbleDelayField.SetValue(settings, 1000f);
+            CreateParent(new SimulationInput(), new SimulationProgress { Round = isFirstRound ? 1 : 7 }, arena);
             yield return LoadGame();
             var container = GameScope().Container;
             var round = container.Resolve<ArenaRound>();
             var map = container.Resolve<ArenaMap>();
             FreezeBots(container);
             Strings.Load(new StringTable(AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Localization/strings.csv").text));
-            // Placed but not begun: the floor does not crumble, so every picture shows the whole arena.
             round.Place();
+            if (!isFirstRound) {
+                // The camera follows the player from GO.
+                round.Begin();
+            }
+
             var start = round.Player.Position;
-            var places = new (string Name, Vector3 Position)[]
-            {
-                ("start", start),
-                ("right", AtRim(map, Vector3.right)),
-                ("near", AtRim(map, Vector3.back)),
-                ("far", AtRim(map, Vector3.forward)),
-            };
+            var places = isFirstRound
+                ? new[] { ("first", start) }
+                : new (string Name, Vector3 Position)[]
+                {
+                    ("start", start),
+                    ("right", AtRim(map, Vector3.right)),
+                    ("near", AtRim(map, Vector3.back)),
+                    ("far", AtRim(map, Vector3.forward)),
+                };
 
             var panelSettings = Object.Instantiate(
                 AssetDatabase.LoadAssetAtPath<PanelSettings>("Assets/UI/ui_panel_settings.asset"));
@@ -77,7 +104,7 @@ namespace ToyCarArena.Tests.PlayMode
 
             var controls = new HudControls();
             var model = new HudViewModel(null, controls);
-            model.SetPayload(new HudRound(round, null, tuning.Controls, false, 7, false));
+            model.SetPayload(new HudRound(round, null, tuning.Controls, isFirstRound, isFirstRound ? 1 : 7, isFirstRound));
             var view = new HudView(controls, container.Resolve<IAudioService>());
             view.Bind(model);
             var hud = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/Screens/Hud.uxml").Instantiate();
@@ -128,6 +155,7 @@ namespace ToyCarArena.Tests.PlayMode
                 }
             }
             finally {
+                CrumbleDelayField.SetValue(settings, crumbleDelay);
                 Time.captureDeltaTime = captureDeltaTime;
                 camera.targetTexture = null;
                 PlayModeWindow.SetCustomRenderingResolution((uint)screenWidth, (uint)screenHeight, "Camera screenshot");

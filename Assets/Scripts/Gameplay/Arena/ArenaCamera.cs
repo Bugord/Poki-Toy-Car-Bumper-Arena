@@ -20,8 +20,10 @@ namespace ToyCarArena.Gameplay.Arena
     /// shakes, so a car on a shaking ring stays in view.
     /// </para>
     /// <para>
-    /// The camera follows the player only while their car is in play: once it is out it stays where it was (over the
-    /// result too), and when a match brings the car back somewhere else it pans there.
+    /// The camera follows the player only from GO and while their car is in play: before the round begins it keeps the
+    /// car where it stood on the screen with the whole arena in view, around which the start screen's HUD is laid out;
+    /// once the car is out it stays where it was (over the result too), and when a match brings the car back somewhere
+    /// else it pans there.
     /// </para>
     /// <para>
     /// It also shakes on a big hit (<see cref="Shake"/>): a small offset across the view on top of the fitted place,
@@ -266,19 +268,27 @@ namespace ToyCarArena.Gameplay.Arena
 
         /// <summary>
         /// The point on the floor the camera would look at: a little ahead of the player's car and pulled towards the
-        /// arena's middle while the car is in play, else the last one (the middle before the cars are placed).
+        /// arena's middle while the car is in play in a begun round, before GO where the car keeps its spot on the screen
+        /// of the whole arena's view, the middle before the cars are placed, else the last one.
         /// </summary>
         private Vector3 Aim()
         {
             var player = round?.Player;
-            // Before the cars are placed (the menu's arena) there is no player yet, and the aim stays on the middle.
-            if (closeUp > 1f && player != null && round.IsPlaced && !player.IsOut) {
+            if (closeUp <= 1f || player == null || !round.IsPlaced) {
+                // The menu's arena has no cars yet: the middle.
+                aim = Vector3.zero;
+            }
+            else if (!round.HasBegun) {
+                // Until GO the player's car stands about where it stood on the screen with the whole arena in view, a third
+                // of the way from its spot towards the middle at a close-up of 1.5: the start screen's HUD (TAP TO START,
+                // the ghost stick, the countdown) is laid out around that spot and would cover the car anywhere else.
+                var point = player.Position * (1f - 1f / closeUp);
+                aim = new Vector3(point.x, 0f, point.z);
+            }
+            else if (!player.IsOut) {
                 var ahead = Vector3.ClampMagnitude(player.Movement.Velocity * lead, maxLead);
                 var point = Vector3.Lerp(player.Position + ahead, Vector3.zero, centrePull);
                 aim = new Vector3(point.x, 0f, point.z);
-            }
-            else if (closeUp <= 1f) {
-                aim = Vector3.zero;
             }
 
             return aim;
