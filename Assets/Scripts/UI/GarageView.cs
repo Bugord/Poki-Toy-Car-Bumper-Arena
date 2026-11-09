@@ -42,12 +42,13 @@ namespace ToyCarArena.UI
         // The top bar's height and the gap under it, reference pixels.
         private const float TopHeight = 112f;
         private const float TopGap = 30f;
-        // Upright: the tabs, the gaps and the bottom button under the panel, and the least the car keeps above them.
+        // Upright: the tabs, the gaps and the bottom button under the panel.
         private const float SideChrome = 124f + 24f + ActionRoom;
         private const float ActionRoom = 30f + 190f;
-        // The stats pill and its gap under the car's name.
+        // The car's name under it, and the stats pill and its gap under the name (cars only).
+        private const float NameRoom = 130f;
         private const float StatsRoom = 170f;
-        private const float ShowMin = 580f;
+        // The panel upright: never less than a row and the start of the next (a list to scroll), never more than this.
         private const float PanelMin = 440f;
         private const float PanelMax = 980f;
         // Sideways the switcher, the panel and the button take this share of the width at the right.
@@ -1257,11 +1258,14 @@ namespace ToyCarArena.UI
                 show.style.bottom = 0f;
             }
             else {
-                // The hats have no stats under the car: the panel takes that room for a further row. The paints have no
-                // stats and no bottom button: that room goes to the car, the thing being painted.
+                // The car first: it gets the room to be as large as the width allows (with its name, and its stats on
+                // the cars' tab), and the panel the rest, at least a row and a half. Before, the panel came first and the
+                // car on a phone was a small thing over a list of three rows. The paints have no bottom button: that
+                // room goes to the car too, the thing being painted.
                 var chrome = SideChrome - (tab == Tab.Paint ? ActionRoom : 0f);
-                var spare = tab == Tab.Hats ? StatsRoom : 0f;
-                var panelHeight = Mathf.Clamp(height - SideChrome - ShowMin + spare, PanelMin, PanelMax + spare);
+                var captionRoom = NameRoom + (tab == Tab.Cars ? StatsRoom : 0f);
+                var showRoom = Mathf.Min(width, HeroMaxWidth) / heroAspect + captionRoom;
+                var panelHeight = Mathf.Clamp(height - SideChrome - showRoom - 10f, PanelMin, PanelMax);
                 side.style.width = width;
                 side.style.height = StyleKeyword.Auto;
                 side.style.scale = new Scale(Vector3.one);
