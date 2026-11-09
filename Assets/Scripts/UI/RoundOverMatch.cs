@@ -1,4 +1,5 @@
 using System;
+using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -10,9 +11,11 @@ namespace ToyCarArena.UI
     /// crowned name pill above it (level and name: the car itself shows its colour), and the results table, a row per car in place order. A phone held upright shows the
     /// top three and, apart, the player's own row; a wide screen every car, the table at the left of the podium.
     /// <para>
-    /// After a round of the last car standing the podium stands alone in the middle, without the table: the player's
-    /// own car crowned on a win, the car that pushed them off on a loss to one (its name red with the REVENGE target
-    /// and a red REVENGE NEXT ROUND tag under it), and the player's own car without a crown otherwise.
+    /// After a round of the last car standing the podium stands alone in the middle, without the table, as big as the
+    /// screen allows, its foot tucked under the cards below: the player's own car with no name over it (the title says
+    /// whose it is) and no crown either (a flat one reads oddly on the 3D car), and the car that pushed them off on a
+    /// loss to one, its name red with
+    /// the REVENGE horns and a red REVENGE NEXT ROUND tag under it.
     /// </para>
     /// <para>
     /// Everything springs in once, on the panel's scheduler (real time, so a hit-stop at the buzzer slows nothing), and
@@ -29,6 +32,9 @@ namespace ToyCarArena.UI
         private const string RaysEnterClass = "podium__rays--enter";
         private const string WinnerEnterClass = "podium__winner--enter";
         private const string CrownEnterClass = "podium__crown--enter";
+        private const string ColumnsClass = "round-over--columns";
+        // The rival's pill sits this far over the car's roof: the REVENGE NEXT ROUND tag under it and a little air.
+        private const float RivalPillGap = 76f;
 
         // The narrow form shows this many leaders, then the player's own row when it is lower.
         private const int CompactLeaders = 3;
@@ -81,6 +87,8 @@ namespace ToyCarArena.UI
             table = root.Q<VisualElement>("results");
             rows = root.Q<VisualElement>("results-rows");
             podium.RegisterCallback<GeometryChangedEvent>(OnPodiumGeometry);
+            car.RegisterCallback<GeometryChangedEvent>(OnRivalGeometry);
+            winner.RegisterCallback<GeometryChangedEvent>(OnRivalGeometry);
 
             if (model.Podium != null) {
                 car.style.backgroundImage = Background.FromRenderTexture((RenderTexture)model.Podium);
@@ -141,6 +149,8 @@ namespace ToyCarArena.UI
             rays.generateVisualContent -= DrawRays;
             crown.generateVisualContent -= DrawCrown;
             podium.UnregisterCallback<GeometryChangedEvent>(OnPodiumGeometry);
+            car.UnregisterCallback<GeometryChangedEvent>(OnRivalGeometry);
+            winner.UnregisterCallback<GeometryChangedEvent>(OnRivalGeometry);
             text.Dispose();
         }
 
@@ -172,6 +182,29 @@ namespace ToyCarArena.UI
             rays.style.top = (evt.newRect.height - raySize) * 0.5f;
         }
 
+        // In the wide columns the podium is tall and the picture (twice as wide as high) sits in its middle, so the
+        // rival's pill at the podium's top hung far over the car: it stands on the car's roof instead, which the
+        // podium's camera keeps at WinnerPodium.RoofTop of the picture's height.
+        private void OnRivalGeometry(GeometryChangedEvent evt)
+        {
+            if (!model.IsPodiumRival) {
+                return;
+            }
+
+            if (!root.ClassListContains(ColumnsClass)) {
+                winner.style.top = StyleKeyword.Null;
+                return;
+            }
+
+            var box = car.layout;
+            var height = Mathf.Min(box.height, box.width * 0.5f);
+            var roof = box.y + (box.height - height) * 0.5f + height * WinnerPodium.RoofTop;
+            var top = Mathf.Round(Mathf.Max(0f, roof - winner.layout.height - RivalPillGap));
+            if (Mathf.Abs(winner.resolvedStyle.top - top) > 1.5f) {
+                winner.style.top = top;
+            }
+        }
+
         private void BuildWinner()
         {
             var index = model.PodiumCar;
@@ -180,11 +213,18 @@ namespace ToyCarArena.UI
             // The rival's badge horned, as over the REVENGE bot on the arena, which this car is next round.
             var isMarked = isRival || (index != 0 && index == model.Nemesis);
             name.parent.Insert(name.parent.IndexOf(name),
-                HudView.CreateLevelBadge(model.LevelOf(index), "podium__level", isMarked));
+                HudView.CreateLevelBadge(model.LevelOf(index), "podium__level", isMarked, true));
 
             name.EnableInClassList("podium__name--revenge", isMarked);
             text.Set(name, () => model.NameOf(index));
             crown.style.display = model.IsPodiumWinner ? DisplayStyle.Flex : DisplayStyle.None;
+            podium.EnableInClassList("podium--rival", isRival);
+            // A round's own car needs no name over it, and so no crown: the title already says it is the player's, and
+            // the WINNER ribbon under it says they won.
+            if (!model.IsMatch && !isRival) {
+                winner.style.display = DisplayStyle.None;
+            }
+
             root.Q<Label>("podium-winner-tag").style.display = model.IsPodiumWinner ? DisplayStyle.Flex : DisplayStyle.None;
             root.Q<Label>("podium-rival-tag").style.display = isRival ? DisplayStyle.Flex : DisplayStyle.None;
         }
@@ -242,7 +282,8 @@ namespace ToyCarArena.UI
             rank.Add(place);
             row.Add(rank);
 
-            row.Add(HudView.CreateLevelBadge(model.LevelOf(index), "results__level", index != 0 && index == model.Nemesis));
+            row.Add(HudView.InLevelSlot(HudView.CreateLevelBadge(model.LevelOf(index), "results__level",
+                index != 0 && index == model.Nemesis, true), "results__level-slot"));
 
             var name = new Label { pickingMode = PickingMode.Ignore };
             name.AddToClassList("results__name");

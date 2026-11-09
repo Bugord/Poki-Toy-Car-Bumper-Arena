@@ -13,18 +13,10 @@ MonoBehaviour:
   m_Name: data_mechanic_art
   m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Arena.MechanicArt
   items:
-  - key: jelly_red
-    material: {fileID: 2100000, guid: 2bec7291f63a7e248bd4735ed3f5dbe5, type: 2}
-  - key: jelly_green
-    material: {fileID: 2100000, guid: 36e98bbc0adc91343af45f60be14abff, type: 2}
-  - key: jelly_blue
-    material: {fileID: 2100000, guid: 48d0d100bb5c7a64d8a923429f5a218e, type: 2}
-  - key: jelly_orange
-    material: {fileID: 2100000, guid: 63d1b49476aded54ba094aa290654b34, type: 2}
   - key: jelly_shine
     material: {fileID: 2100000, guid: c1311044606aac943ae9a97f7a25673c, type: 2}
-  - key: jelly_outline
-    material: {fileID: 2100000, guid: 2fcc23a2fbb245f429a73e64a3a22d89, type: 2}
+  - key: jelly_body
+    material: {fileID: 2100000, guid: 689cd0d307804e39909dd30934aa9f4e, type: 2}
   - key: stirrer_red
     material: {fileID: 2100000, guid: d093cb07d36800c4eba4a022dc20c500, type: 2}
   - key: stirrer_white
@@ -73,12 +65,12 @@ MonoBehaviour:
     material: {fileID: 2100000, guid: ba9facca339c08047bc01cf96beff85a, type: 2}
   - key: jack_red
     material: {fileID: 2100000, guid: 2c7939b252ea8a647970e2e1da456611, type: 2}
-  - key: jack_hat
-    material: {fileID: 2100000, guid: 7e271ef11eb720c47a3d075271d6b0ad, type: 2}
   - key: jack_glow
     material: {fileID: 2100000, guid: 0145501b50d3c5c4fa210ddf82b148de, type: 2}
   - key: jack_glow_bright
     material: {fileID: 2100000, guid: f9f318cec67808546b58e34c96603d7c, type: 2}
+  - key: jack_star
+    material: {fileID: 2100000, guid: 8c4df3d008c74016a493674605bcdc1d, type: 2}
   - key: crab_shell
     material: {fileID: 2100000, guid: 6fc8f998ac6442b4b8673dade33e04d1, type: 2}
   - key: crab_claw
@@ -93,8 +85,6 @@ MonoBehaviour:
     material: {fileID: 2100000, guid: 5e91639e08ff27d45a8d76063230a24f, type: 2}
   - key: mound_sand
     material: {fileID: 2100000, guid: b3fee23d0c4589141bb4c0bf3061c03f, type: 2}
-  - key: mound_crumb
-    material: {fileID: 2100000, guid: 2848648811493c64ca0098976744e0c2, type: 2}
   - key: top_body
     material: {fileID: 2100000, guid: 7227e3669c7ed7f43abcf67b47cb8508, type: 2}
   - key: top_stripe
@@ -119,6 +109,8 @@ MonoBehaviour:
     material: {fileID: 2100000, guid: 6592cc6968a8a7742a7cac271a60a321, type: 2}
   - key: mound_ring
     material: {fileID: 2100000, guid: 6f02a00efe3fd6b41bb248a18fcacc85, type: 2}
+  - key: mound_sand_dark
+    material: {fileID: 2100000, guid: 5d2101bb81394e909f44db5b732262ea, type: 2}
   - key: top_ring
     material: {fileID: 2100000, guid: 2d668da795d51a4479b04ce2493ca92a, type: 2}
   - key: top_dot

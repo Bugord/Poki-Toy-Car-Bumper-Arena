@@ -4,6 +4,7 @@ common.back,Back button,BACK,RETOUR,INDIETRO,ZURÜCK,ATRÁS,GERİ,VOLTAR,НАЗ�
 common.next_match,Big green button that starts the next round,NEXT MATCH,SUIVANT,AVANTI,WEITER,SIGUIENTE,DEVAM,PRÓXIMA,ДАЛЬШЕ
 common.new,Small gold badge: a new player or arena; max ~5 chars,NEW,NEUF,NUOVO,NEU,NUEVO,YENİ,NOVO,НОВЫЙ
 common.level_short,"Level caption with its number, e.g. LVL 5; short",LVL {0},NIV. {0},LIV. {0},LVL {0},NIV. {0},SV. {0},NÍV. {0},УР. {0}
+common.lv,"Tiny prefix before a level number beside a nick, so it is not read as a place; max 3 chars",LV,NIV,LIV,LV,NV,SV,NV,УР
 common.space,Space bar key cap,SPACE,ESPACE,SPAZIO,LEERTASTE,ESPACIO,BOŞLUK,ESPAÇO,ПРОБЕЛ
 hud.tap_to_start,Start prompt on a touch screen,TAP TO START,TOUCHE POUR JOUER,TOCCA PER INIZIARE,TIPPEN ZUM START,TOCA PARA EMPEZAR,BAŞLAMAK İÇİN DOKUN,TOQUE PARA COMEÇAR,"НАЖМИ, ЧТОБЫ НАЧАТЬ"
 hud.click_to_start,Start prompt with a mouse,CLICK TO START,CLIQUE POUR JOUER,CLICCA PER INIZIARE,KLICKEN ZUM START,HAZ CLIC PARA EMPEZAR,BAŞLAMAK İÇİN TIKLA,CLIQUE PARA COMEÇAR,"КЛИКНИ, ЧТОБЫ НАЧАТЬ"
@@ -65,10 +66,8 @@ result.match_won_subtitle,Match result subtitle for first place,MOST KNOCKOUTS!,
 result.match_place,"Match result subtitle: place, then knock-outs, e.g. PLACE 3 · 5 KO","PLACE {0} · {1} KO","PLACE {0} · {1} K.-O.","{0}° POSTO · {1} K.O.","PLATZ {0} · {1} K.O.","PUESTO {0} · {1} K.O.","{0}. SIRA · {1} NAKAVT","{0}º LUGAR · {1} NOCAUTES","{0} МЕСТО · НОКАУТОВ: {1}"
 result.pushed_by,Before the name of the bot that knocked the player off,PUSHED OFF BY,POUSSÉ PAR,SPINTO DA,RUNTERGESCHUBST VON,TE EMPUJÓ,SENİ İTEN,EMPURRADO POR,ТЕБЯ СТОЛКНУЛ
 result.or_press,Before the SPACE key cap under NEXT MATCH,OR PRESS,OU APPUIE SUR,O PREMI,ODER DRÜCKE,O PULSA,YA DA BAS,OU APERTE,ИЛИ НАЖМИ
-result.car,Round garage button caption; max ~6 chars,CAR,AUTO,AUTO,AUTO,COCHE,ARABA,CARRO,АВТО
 result.new_car,Unlock sticker with the car name,NEW CAR! {0},NOUVELLE VOITURE ! {0},NUOVA AUTO! {0},NEUES AUTO! {0},¡NUEVO COCHE! {0},YENİ ARABA! {0},CARRO NOVO! {0},НОВАЯ МАШИНА! {0}
 result.xp_total,XP in the level and its price,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} ОПЫТА
-result.rank_level,"Rank name and level, e.g. BRONZE · LEVEL 12",{0} · LEVEL {1},{0} · NIVEAU {1},{0} · LIVELLO {1},{0} · LEVEL {1},{0} · NIVEL {1},{0} · SEVİYE {1},{0} · NÍVEL {1},{0} · УРОВЕНЬ {1}
 result.rank_stop,"Track caption of the next rank, e.g. SILVER RANK",{0} RANK,RANG {0},GRADO {0},RANG {0},RANGO {0},{0} RÜTBESİ,RANKING {0},РАНГ {0}
 result.match_results,Header of the results table at the end of a match,MATCH RESULTS,RÉSULTATS,RISULTATI,ERGEBNISSE,RESULTADOS,MAÇ SONUCU,RESULTADOS,ИТОГИ МАТЧА
 result.winner,Gold tag under the match winner's name; max ~8 chars,WINNER,VAINQUEUR,VINCITORE,SIEGER,GANADOR,KAZANAN,VENCEDOR,ПОБЕДИТЕЛЬ
@@ -160,6 +159,14 @@ garage.free,"Pill in the ad window: the car costs no coins",FREE,GRATUIT,GRATIS,
 garage.watch_ad,"Button in the ad window that plays the rewarded ad; short",WATCH AD,VOIR LA PUB,GUARDA AD,WERBUNG SEHEN,VER ANUNCIO,REKLAM İZLE,VER ANÚNCIO,СМОТРЕТЬ
 garage.cancel,"Button that closes the buy or ad window without doing anything",CANCEL,ANNULER,ANNULLA,ABBRECHEN,CANCELAR,İPTAL,CANCELAR,ОТМЕНА
 garage.no_ad,"Over WATCH AD when the ad did not play or was closed early; max ~16 chars",NO AD RIGHT NOW,PAS DE PUB,NESSUN AD ORA,KEINE WERBUNG,SIN ANUNCIO,REKLAM YOK,SEM ANÚNCIO,РЕКЛАМЫ НЕТ
+paint.green,Garage paint name under its swatch; max ~10 chars,GREEN,VERT,VERDE,GRÜN,VERDE,YEŞİL,VERDE,ЗЕЛЁНЫЙ
+paint.red,Garage paint name under its swatch; max ~10 chars,RED,ROUGE,ROSSO,ROT,ROJO,KIRMIZI,VERMELHO,КРАСНЫЙ
+paint.blue,Garage paint name under its swatch; max ~10 chars,BLUE,BLEU,BLU,BLAU,AZUL,MAVİ,AZUL,СИНИЙ
+paint.yellow,Garage paint name under its swatch; max ~10 chars,YELLOW,JAUNE,GIALLO,GELB,AMARILLO,SARI,AMARELO,ЖЁЛТЫЙ
+paint.purple,Garage paint name under its swatch; max ~10 chars,PURPLE,VIOLET,VIOLA,LILA,MORADO,MOR,ROXO,ФИОЛЕТОВЫЙ
+paint.orange,Garage paint name under its swatch; max ~10 chars,ORANGE,ORANGE,ARANCIONE,ORANGE,NARANJA,TURUNCU,LARANJA,ОРАНЖЕВЫЙ
+paint.pink,Garage paint name under its swatch; max ~10 chars,PINK,ROSE,ROSA,ROSA,ROSA,PEMBE,ROSA,РОЗОВЫЙ
+paint.dark,Garage paint name under its swatch; max ~10 chars,DARK,NOIR,NERO,SCHWARZ,NEGRO,SİYAH,PRETO,ЧЁРНЫЙ
 topper.top-hat.name,Topper name: a tall black top hat,TOP HAT,HAUT-DE-FORME,CILINDRO,ZYLINDER,CHISTERA,SİLİNDİR ŞAPKA,CARTOLA,ЦИЛИНДР
 topper.party-hat.name,Topper name,PARTY HAT,CHAPEAU DE FÊTE,CAPPELLO PARTY,PARTYHUT,GORRO DE FIESTA,PARTİ ŞAPKASI,CHAPÉU DE FESTA,КОЛПАК
 topper.cone.name,Topper name: a traffic cone,CONE,CÔNE,CONO,PYLONE,CONO,KONİ,CONE,КОНУС
@@ -226,3 +233,17 @@ menu.boost_hint,Under the XP boost offer: the ad plays only on WATCH,WATCH A SHO
 menu.watch,Button that plays the rewarded ad of the XP boost; short,WATCH,REGARDER,GUARDA,ANSEHEN,VER,İZLE,ASSISTIR,СМОТРЕТЬ
 menu.no_thanks,Button that turns the XP boost offer down; short,NO THANKS,NON MERCI,NO GRAZIE,NEIN DANKE,"NO, GRACIAS",HAYIR,"NÃO, VALEU","НЕТ, СПАСИБО"
 menu.boost_left,"On the XP boost tile while it runs: the matches it still lasts, {0} a number from 1; max ~8 chars; keep it right for any number",{0} LEFT,ENCORE {0},ANCORA {0},NOCH {0},{0} MÁS,{0} KALDI,MAIS {0},ЕЩЁ {0}
+menu.daily,"Main menu tile that opens the daily gift; max ~9 chars",DAILY,QUOTIDIEN,GIORNO,TÄGLICH,DIARIO,GÜNLÜK,DIÁRIO,ПОДАРОК
+daily.title,Title of the daily gift popup,DAILY GIFT!,CADEAU DU JOUR !,REGALO DEL GIORNO!,TAGESGESCHENK!,¡REGALO DIARIO!,GÜNÜN HEDİYESİ!,PRESENTE DIÁRIO!,ПОДАРОК ДНЯ!
+daily.streak,"Tag on the daily gift: how many days in a row the player has come, {0} a number from 1; short",DAY {0} IN A ROW,JOUR {0} D'AFFILÉE,GIORNO {0} DI FILA,TAG {0} IN FOLGE,DÍA {0} SEGUIDO,ÜST ÜSTE {0}. GÜN,DIA {0} SEGUIDO,ДЕНЬ {0} ПОДРЯД
+daily.today,"Caption of today's cell in the daily gift calendar; max ~7 chars",TODAY,AUJOURD'HUI,OGGI,HEUTE,HOY,BUGÜN,HOJE,СЕГОДНЯ
+daily.day,"Caption of a cell in the daily gift calendar, {0} the day 1..7; max ~7 chars",DAY {0},JOUR {0},GIORNO {0},TAG {0},DÍA {0},{0}. GÜN,DIA {0},ДЕНЬ {0}
+daily.mystery,"The last day's prize in the daily gift calendar: a hat kept secret until claimed; short",MYSTERY HAT,CHAPEAU MYSTÈRE,CAPPELLO MISTERO,GEHEIMHUT,SOMBRERO MISTERIO,GİZEMLİ ŞAPKA,CHAPÉU MISTÉRIO,ТАЙНАЯ ШАПКА
+daily.tomorrow,"Under the daily gift calendar: what tomorrow's gift is, {0} a number of coins",COME BACK TOMORROW FOR {0} COINS,REVIENS DEMAIN POUR {0} PIÈCES,TORNA DOMANI PER {0} MONETE,KOMM MORGEN WIEDER FÜR {0} MÜNZEN,VUELVE MAÑANA POR {0} MONEDAS,{0} ALTIN İÇİN YARIN GEL,VOLTE AMANHÃ POR {0} MOEDAS,ЗАВТРА ЖДУТ {0} МОНЕТ
+daily.tomorrow_hat,Under the daily gift calendar when tomorrow's gift is the mystery hat,COME BACK TOMORROW FOR THE MYSTERY HAT,REVIENS DEMAIN POUR LE CHAPEAU MYSTÈRE,TORNA DOMANI PER IL CAPPELLO MISTERO,KOMM MORGEN WIEDER FÜR DEN GEHEIMHUT,VUELVE MAÑANA POR EL SOMBRERO MISTERIO,GİZEMLİ ŞAPKA İÇİN YARIN GEL,VOLTE AMANHÃ PELO CHAPÉU MISTÉRIO,ЗАВТРА ЖДЁТ ТАЙНАЯ ШАПКА
+daily.claim,Green button that takes the daily gift; short,CLAIM,RÉCUPÉRER,RISCATTA,HOLEN,RECLAMAR,AL,RESGATAR,ЗАБРАТЬ
+daily.claimed,Stamp slammed over the daily gift once taken,CLAIMED!,RÉCUPÉRÉ !,RISCATTATO!,GEHOLT!,¡RECLAMADO!,ALINDI!,RESGATADO!,ПОЛУЧЕНО!
+daily.ready,"Small green pill on the DAILY tile while the gift waits; max ~6 chars",READY,PRÊT,PRONTO,BEREIT,LISTO,HAZIR,PRONTO,ЖДЁТ
+daily.time_hm,"Small pill on the DAILY tile: time to the next gift, {0} hours and {1} minutes; max ~7 chars",{0}H {1}M,{0}H {1}M,{0}H {1}M,{0}H {1}M,{0}H {1}M,{0}S {1}D,{0}H {1}M,{0}Ч {1}М
+daily.time_m,"Small pill on the DAILY tile: time to the next gift under an hour, {0} minutes; max ~7 chars",{0}M,{0}M,{0}M,{0}M,{0}M,{0}D,{0}M,{0}М
+topper.wizard-hat.name,"Topper name: a purple wizard's hat with gold stars, the daily gift's prize",WIZARD HAT,CHAPEAU DE SORCIER,CAPPELLO DA MAGO,ZAUBERHUT,SOMBRERO DE MAGO,BÜYÜCÜ ŞAPKASI,CHAPÉU DE MAGO,ШЛЯПА МАГА

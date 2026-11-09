@@ -140,6 +140,8 @@ namespace ToyCarArena.App
         private const string AdCategory = "ad";
         private const string DoubleReward = "double";
         private const string XpBoost = "boost";
+        private const string DailyCategory = "daily";
+        private const string DailyAd = "daily";
 
         /// <summary>
         /// A content bundle (<see cref="ContentBundles"/>) that never came (<c>failed</c>), or that a round or result
@@ -250,6 +252,50 @@ namespace ToyCarArena.App
 
         public static void MeasureBoostEnded(this IGamePlatform platform, string how) =>
             platform.Measure(AdCategory, XpBoost, how);
+
+        /// <summary>
+        /// The daily gift in the main menu: <c>daily / offer / visible</c> each time its popup shows a gift still to
+        /// claim (by itself on the menu or from the DAILY tile, which is <c>menu / daily / interact</c>), then on the
+        /// claim <c>daily / day-N / claim</c>, N the calendar day 1..7 (one number), with <c>daily / reset / claim</c>
+        /// beside it when a missed day started the calendar again and <c>daily / hat / claim</c> when the last day gave the
+        /// hat. Closing it without claiming is <c>menu / daily-no / interact</c>. Over a visit's first result (no menu
+        /// offered it) the popup also sends <c>daily / offer-result / visible</c>, and closing it there unclaimed is
+        /// <c>result / daily-no / interact</c>.
+        /// </summary>
+        public static void MeasureDailyShown(this IGamePlatform platform) =>
+            platform.MeasureVisible(DailyCategory, "offer");
+
+        public static void MeasureDailyResultShown(this IGamePlatform platform) =>
+            platform.MeasureVisible(DailyCategory, "offer-result");
+
+        public static void MeasureDailyResultDeclined(this IGamePlatform platform) =>
+            platform.MeasureInteract(ResultCategory, "daily-no");
+
+        public static void MeasureDailyClaimed(this IGamePlatform platform, DailyClaim claim)
+        {
+            const string action = "claim";
+            platform.Measure(DailyCategory, $"day-{claim.Slot + 1}", action);
+            if (claim.IsReset) {
+                platform.Measure(DailyCategory, "reset", action);
+            }
+
+            if (claim.Hat != null) {
+                platform.Measure(DailyCategory, "hat", action);
+            }
+        }
+
+        /// <summary>
+        /// CLAIM ×2 on the daily gift: <c>ad / daily / visible</c> when the popup offers it, <c>interact</c> on the press,
+        /// then how the rewarded ad ended, as for CLAIM ×2 on the result: granted, unavailable or dismissed.
+        /// </summary>
+        public static void MeasureDailyAdShown(this IGamePlatform platform) =>
+            platform.MeasureVisible(AdCategory, DailyAd);
+
+        public static void MeasureDailyAdPressed(this IGamePlatform platform) =>
+            platform.MeasureInteract(AdCategory, DailyAd);
+
+        public static void MeasureDailyAdEnded(this IGamePlatform platform, string how) =>
+            platform.Measure(AdCategory, DailyAd, how);
 
         /// <summary>
         /// A car opened by a rewarded ad in the garage (BUGGY): <c>shop / ad-&lt;id&gt; / visible</c> when its UNLOCK? window

@@ -16,8 +16,8 @@
      button__face, the coloured face over the darker band along its bottom; button__label is its text over the face.
    - key: a keyboard key cap (the SPACE hint).
    - pip: a little car seen from above, wheels and all (the PUSHED OFF BY badge); its pip__body takes the colour.
-   - ko-star: the knock-out star, eight gold points in a navy outline (two squares, one turned, over two bigger navy
-     ones); ko-star--big is the one on the KNOCKOUT! sticker.
+   - ko-star: the knock-out mark, a jagged gold burst in a navy outline drawn in code (HudView.DrawBurst);
+     ko-star--big is the one on the KNOCKOUT! sticker.
    - best: a small chip with the player's best (BEST #2); best--new is the gold NEW BEST! sticker.
    - car-color--N: the body colour of car N of the round (0 the player, 1..N the bots), as CarLook paints it.
 
@@ -246,58 +246,17 @@
     -unity-text-align: middle-center;
 }
 
+/* The knock-out burst (HudView.DrawBurst): its fill is this colour, its outline navy. */
 .ko-star {
     flex-shrink: 0;
     width: 56px;
     height: 56px;
-}
-
-.ko-star__back,
-.ko-star__front {
-    position: absolute;
-}
-
-.ko-star__back {
-    left: 8px;
-    top: 8px;
-    width: 40px;
-    height: 40px;
-    border-radius: 6px;
-    background-color: var(--navy);
-}
-
-.ko-star__front {
-    left: 15px;
-    top: 15px;
-    width: 26px;
-    height: 26px;
-    border-radius: 4px;
-    background-color: var(--gold);
-}
-
-.ko-star__turned {
-    rotate: 45deg;
+    color: var(--gold);
 }
 
 .ko-star--big {
     width: 124px;
     height: 124px;
-}
-
-.ko-star--big > .ko-star__back {
-    left: 18px;
-    top: 18px;
-    width: 88px;
-    height: 88px;
-    border-radius: 12px;
-}
-
-.ko-star--big > .ko-star__front {
-    left: 33px;
-    top: 33px;
-    width: 58px;
-    height: 58px;
-    border-radius: 8px;
 }
 
 /* Hidden until the view gives it best--shown. NEW BEST! springs in after the card (round-over--enter). */
@@ -405,12 +364,59 @@
     padding: 0 12px;
 }
 .lobby__arena .lobby__badge .sticker-text__text { font-size: 30px; }
-/* A special round's tag (MEGA ROUND!), tilted orange, as wide as its name. */
-.lobby__arena .lobby__badge--special {
-    padding: 0 18px;
+/* A special round's card under the arena pill: its name on a tilted orange tag over the card's top edge, the rule big
+   on the white card. */
+.lobby__special {
+    align-items: center;
+    width: 920px;
+    max-width: 100%;
+    margin: 20px 0 34px 0;
+    padding: 0 36px 26px 36px;
+    border-width: 6px;
+    border-bottom-width: 12px;
+    border-color: var(--navy);
+    border-radius: 44px;
+    background-color: var(--white);
+}
+
+.lobby__special .lobby__badge--special {
+    width: auto;
+    height: 76px;
+    margin: -40px 0 14px 0;
+    padding: 0 30px;
     background-color: var(--orange);
     rotate: -3deg;
 }
+
+.lobby__special .lobby__badge--special .sticker-text__text {
+    font-size: 42px;
+    color: var(--white);
+    -unity-text-outline-width: 8px;
+    -unity-text-outline-color: var(--navy);
+}
+
+/* Only the lower layer carries the outline: on the face it would eat into the letters from inside. */
+.lobby__special .lobby__badge--special .sticker-text__text.stroke__face { -unity-text-outline-width: 0; }
+
+.lobby__special-rule {
+    margin: 0;
+    padding: 0;
+    font-size: 46px;
+    color: var(--navy);
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+/* The REVENGE rival's row: tinted red, with a red plaque at its end. */
+.lobby__row.lobby__row--rival { background-color: rgba(255, 77, 77, 0.28); }
+
+.lobby__row .lobby__badge--revenge {
+    width: auto;
+    padding: 0 22px;
+    background-color: var(--red);
+}
+
+.lobby__row .lobby__badge--revenge .sticker-text__text { color: var(--white); }
 
 .lobby__rows {
     width: 920px;
@@ -525,7 +531,9 @@
     background-color: rgba(0, 0, 0, 0);
 }
 
-.lobby__title > .stroke__face { margin: 0; }
+/* The face is a child of the outline label and shares its class: it already turns with its parent, so its own -3deg
+   would turn it twice and its letters would poke out of the outline. */
+.lobby__title > .stroke__face { margin: 0; rotate: 0deg; }
 
 /* The HUD: one white bar at the top centre, 54 px from the edge: the stopwatch, a chip per car still in the round with
    their count, and from the first knock-out the player's KOs, each part split off by a short rule. On a wide screen it
@@ -703,23 +711,11 @@
 
 .hud__chip--player > .hud__chip-ring { display: flex; }
 
+/* The car from the side, drawn in code (CarColor.DrawCar); a little low so the wheels sit on the chip's middle. */
 .hud__chip-car {
-    width: 24px;
+    width: 50px;
     height: 36px;
-    border-width: 5px;
-    border-color: var(--navy);
-    border-radius: 8px;
-    background-color: var(--white);
-}
-
-.hud__chip-glass {
-    position: absolute;
-    left: 2px;
-    right: 2px;
-    top: 4px;
-    height: 7px;
-    border-radius: 2px;
-    background-color: var(--navy);
+    margin-top: 4px;
 }
 
 .hud__cars-count {
@@ -874,8 +870,8 @@
     color: var(--red);
 }
 
-.ko-pop--revenge .ko-star__front {
-    background-color: var(--orange);
+.ko-pop--revenge .ko-star {
+    color: var(--orange);
 }
 
 /* The player's knock-outs in a row: DOUBLE! in orange and bigger, TRIPLE! and RAMPAGE! bigger still, in pink. */
@@ -928,6 +924,27 @@
     align-items: center;
     padding-left: 8px;
 }
+
+/* The tail under a handle, pointing at its car; hangs below the sticker so the tag's bottom is its tip. */
+.car-name__tail {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    width: 28px;
+    height: 16px;
+    margin-left: -14px;
+    color: var(--name-backdrop);
+}
+
+.car-name { padding-bottom: 16px; }
+
+/* Before GO! the handles are faint, under the countdown. Colours, not opacity: a translucent outlined text lets its
+   stroke layer show through the face as a dark rim inside every letter. */
+.car-names--waiting .car-name__sticker { background-color: rgba(29, 43, 79, 0.3); }
+.car-names--waiting .car-name__tail { color: rgba(29, 43, 79, 0.3); }
+.car-names--waiting .car-name__text { color: rgb(196, 204, 222); }
+.car-names--waiting .car-name--revenge .car-name__text { color: rgb(236, 150, 150); }
+.car-names--waiting .car-name__level { opacity: 0.6; }
 
 .car-name__level {
     min-width: 46px;
@@ -2190,11 +2207,13 @@
     min-height: 60px;
 }
 
+/* The text fits its width (best-fit), but its thick outline and the tilt reach past it: the margins keep KNOCKED OUT
+   (and a longer title in French or Russian) clear of the screen's sides. */
 .round-over__title {
     flex-shrink: 0;
     align-self: stretch;
-    margin-left: 40px;
-    margin-right: 40px;
+    margin-left: 100px;
+    margin-right: 100px;
     rotate: -3deg;
     transition-property: scale, opacity;
     transition-duration: 0.35s;
@@ -2388,6 +2407,37 @@
     padding: 0;
     font-size: 30px;
     -unity-text-align: middle-center;
+}
+
+/* LV N beside a nick: LV a tiny navy tag on the badge's top edge (as AD on CLAIM), so the badge keeps the width of its
+   number. Silver, gold and legend wear a crest or a crown on top, so their tag hangs from the bottom edge instead. */
+.level-badge__prefix {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    translate: -50% -62%;
+    margin: 0;
+    padding: 0 6px 1px 6px;
+    border-radius: 999px;
+    background-color: var(--navy);
+    color: var(--white);
+    font-size: 15px;
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.level-badge--labelled.level-badge--silver > .level-badge__prefix,
+.level-badge--labelled.level-badge--gold > .level-badge__prefix,
+.level-badge--labelled.level-badge--legend > .level-badge__prefix {
+    top: 100%;
+    translate: -50% -30%;
+}
+
+/* A list row's level column: one width for any badge, its wings and the rival's horns, the badge in the middle. */
+.level-slot {
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
 }
 
 .level-badge--big .level-badge__value {
@@ -2663,8 +2713,8 @@
     background-color: var(--xp);
 }
 
-/* The first step of the XP: a plain bar from the level to the next, laid over the still empty track, the two levels on
-   badges at its ends and LEVEL UP! under it when it fills. */
+/* The first step of the XP: a plain bar to the next level, laid over the still empty track, that level on a badge at
+   its end (the card's badge beside it shows the level reached) and LEVEL UP! under it when it fills. */
 .xp-bar {
     position: absolute;
     left: 30px;
@@ -2683,7 +2733,9 @@
 .xp-bar__line {
     flex-grow: 1;
     height: 56px;
-    margin: 0 -10px;
+    margin: 0 -10px 0 0;
+    border-top-left-radius: 28px;
+    border-bottom-left-radius: 28px;
     border-width: 7px;
     border-bottom-width: 12px;
     border-color: var(--navy);
@@ -3743,7 +3795,8 @@
     -unity-text-outline-width: 0;
 }
 .lobby__name--revenge .sticker-text__text { color: var(--red); }
-.lobby__row--left .lobby__name .sticker-text__text { color: var(--silver); opacity: 0.6; }
+/* Silver at 0.6 over navy, as an opaque colour: a translucent outlined name shows its stroke layer inside the letters. */
+.lobby__row--left .lobby__name .sticker-text__text { color: rgb(123, 136, 161); }
 
 /* A loading bar under the seats (in the flow, so seven seats on a 1920 high panel never run into it) and a tip at the
    bottom of the curtain: the arena loads behind it. */
@@ -3800,11 +3853,12 @@
     -unity-text-outline-width: 0;
     -unity-text-align: middle-center;
 }
+.lobby__badge.lobby__badge--streak { padding: 0 24px; }
 .lobby__row .lobby__you-chip { border-color: var(--white); }
 
-.lobby__level {
-    margin-left: 20px;
-    margin-right: 14px;
+.lobby__level-slot {
+    width: 140px;
+    margin: 0 8px;
 }
 .lobby__row .hud__chip-ring {
     width: 66px;
@@ -3934,8 +3988,6 @@
     height: 40px;
 }
 
-.scoreboard__star > .ko-star__back { left: 6px; top: 6px; width: 28px; height: 28px; border-radius: 4px; }
-.scoreboard__star > .ko-star__front { left: 11px; top: 11px; width: 18px; height: 18px; border-radius: 3px; }
 
 .scoreboard--wide .scoreboard__header {
     height: 60px;
@@ -3943,8 +3995,6 @@
 }
 
 .scoreboard--wide .scoreboard__star { width: 56px; height: 56px; }
-.scoreboard--wide .scoreboard__star > .ko-star__back { left: 8px; top: 8px; width: 40px; height: 40px; border-radius: 6px; }
-.scoreboard--wide .scoreboard__star > .ko-star__front { left: 15px; top: 15px; width: 26px; height: 26px; border-radius: 4px; }
 
 .scoreboard__rows {
     height: 0;
@@ -3983,9 +4033,6 @@
     background-color: var(--white);
 }
 
-.scoreboard__row--out {
-    opacity: 0.5;
-}
 
 .scoreboard__row--hidden {
     opacity: 0;
@@ -4114,6 +4161,18 @@
 .scoreboard__row--revenge .scoreboard__name .sticker-text__text { color: var(--red); }
 .scoreboard__row--you .scoreboard__name .sticker-text__text { color: var(--navy); -unity-text-outline-width: 0; }
 
+/* A fallen car's row, dimmed by colour: opacity on an outlined StickerText shows its stroke layer through the face as a
+   dark rim inside every letter. */
+.scoreboard__row--out { background-color: rgba(29, 43, 79, 0.35); border-color: rgba(29, 43, 79, 0.6); }
+.scoreboard__row--you.scoreboard__row--out { background-color: rgba(255, 255, 255, 0.6); }
+.scoreboard__row--out .scoreboard__rank,
+.scoreboard__row--out .hud__chip,
+.scoreboard__row--out .scoreboard__target { opacity: 0.5; }
+.scoreboard__row--out .scoreboard__name .sticker-text__text { color: rgb(160, 170, 192); }
+.scoreboard__row--revenge.scoreboard__row--out .scoreboard__name .sticker-text__text { color: rgb(214, 128, 136); }
+.scoreboard__row--you.scoreboard__row--out .scoreboard__name .sticker-text__text { color: var(--navy); }
+.scoreboard__row--out .scoreboard__ko .sticker-text__text { color: rgb(196, 170, 104); }
+
 /* The knock-outs, in a column wide enough for two digits so the names do not move as they grow; gold as the star. */
 .scoreboard__ko {
     min-width: 46px;
@@ -4147,8 +4206,11 @@
     transition-duration: 0.05s;
 }
 
-/* The face of each two-label text has no outline of its own, as everywhere else (.stroke > .stroke__face). */
-.scoreboard__row .stroke > .stroke__face { -unity-text-outline-width: 0; }
+/* The face of each two-label text has no outline of its own, as everywhere else (.stroke > .stroke__face); the wide
+   form sets the outline on .sticker-text__text, so the face needs the same weight of selector to stay clean. */
+.scoreboard__row .stroke > .stroke__face,
+.scoreboard--wide .scoreboard__name .sticker-text__text.stroke__face,
+.scoreboard--wide .scoreboard__ko .sticker-text__text.stroke__face { -unity-text-outline-width: 0; }
 
 /* The end of a match (RoundOverMatch): the winner turning on its podium over slow white rays (drawn in code), a white
    pill with a crown over it, and the results table beside it: at its right on a phone held upright, where the two
@@ -4188,9 +4250,31 @@
     display: none;
 }
 
-/* The crown sits over the podium's box: room for it under the subtitle. */
+/* A round's podium has no subtitle or name pill over the player's own car: the car takes that height, and its
+   picture reaches down under the cards below (later in the tree, so drawn over it), which cover the podium's foot. */
 .round-over--podium .podium {
-    margin-top: 40px;
+    margin-top: 0;
+}
+
+.round-over--podium .podium__car {
+    top: 0;
+    bottom: -70px;
+}
+
+/* The car that pushed the player off keeps its name pill, up at the podium's top, over the car's roof. */
+.round-over--podium .podium--rival .podium__winner {
+    top: 0;
+}
+
+.round-over--podium .podium--rival .podium__car {
+    top: 90px;
+}
+
+/* WINNER under a won round's title, the one sticker there when neither REVENGE! nor the streak has it. */
+.round-over__ribbon {
+    flex-shrink: 0;
+    margin-top: 12px;
+    rotate: -3deg;
 }
 
 .podium {
@@ -4403,10 +4487,14 @@
     -unity-text-align: middle-center;
 }
 
+.results__level-slot {
+    width: 96px;
+    margin-left: 6px;
+}
+
 .results__level {
     min-width: 46px;
     height: 38px;
-    margin-left: 12px;
     padding: 0 6px;
     border-width: 4px;
     border-bottom-width: 7px;
@@ -4488,6 +4576,7 @@
 .results--wide .results__rank { width: 62px; height: 62px; border-radius: 31px; }
 .results--wide .results__rank-text { font-size: 32px; }
 .results--wide .results__level { min-width: 56px; height: 46px; }
+.results--wide .results__level-slot { width: 124px; }
 .results--wide .results__level .level-badge__value { font-size: 26px; }
 .results--wide .results__name { font-size: 44px; }
 .results--wide .results__ko { font-size: 44px; min-width: 60px; }
@@ -4699,20 +4788,6 @@
     margin: 0 10px 0 0;
 }
 
-.reward--xp .ko-star__back {
-    left: 6px;
-    top: 6px;
-    width: 36px;
-    height: 36px;
-}
-
-.reward--xp .ko-star__front {
-    left: 12px;
-    top: 12px;
-    width: 24px;
-    height: 24px;
-    background-color: var(--xp);
-}
 
 .reward--coins .reward__icon {
     border-width: 5px;
@@ -4806,6 +4881,10 @@
     -unity-text-outline-color: var(--navy);
 }
 
+/* A button's face label never has an outline of its own: .button--purple .button__label comes after the general
+   .stroke > .stroke__face and would otherwise outline the face too, thinning the letters from inside. */
+.button .button__label.stroke__face { -unity-text-outline-width: 0; }
+
 .double {
     flex-grow: 1.25;
     flex-basis: 0;
@@ -4827,8 +4906,12 @@
 }
 
 .double:disabled {
-    opacity: 0.6;
+    background-color: rgb(118, 96, 160);
 }
+
+/* Waiting for its ad, by colour rather than opacity: a translucent outlined label shows its stroke inside the letters. */
+.double:disabled > .button__face { background-color: rgb(172, 150, 214); }
+.double:disabled .button__label { color: rgb(226, 218, 242); }
 
 .double__play {
     flex-shrink: 0;
@@ -4975,7 +5058,7 @@
 .mission {
     flex-direction: row;
     align-items: center;
-    height: 54px;
+    height: 66px;
     transition-property: translate, opacity, scale;
     transition-duration: 0.25s;
     transition-timing-function: ease-out-back;
@@ -4991,21 +5074,7 @@
     opacity: 0;
 }
 
-.mission__check {
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
-    width: 46px;
-    height: 46px;
-    border-width: 5px;
-    border-color: var(--navy);
-    border-radius: 999px;
-    background-color: var(--soft);
-    transition-property: background-color, scale;
-    transition-duration: 0.25s;
-    transition-timing-function: ease-out-back;
-}
-
+/* A tick of two borders (the daily calendar's days). */
 .mission__mark {
     width: 13px;
     height: 23px;
@@ -5017,14 +5086,14 @@
     opacity: 0;
 }
 
-.mission--done .mission__check {
-    background-color: var(--gold);
-    scale: 1.2 1.2;
+.missions .mission-icon {
+    width: 56px;
+    height: 56px;
+    border-width: 5px;
+    border-radius: 16px;
 }
 
-.mission--done .mission__mark {
-    opacity: 1;
-}
+.mission--done .mission-icon { scale: 1.15 1.15; }
 
 .mission__task {
     flex-grow: 1;
@@ -5039,16 +5108,120 @@
     text-overflow: ellipsis;
 }
 
-.mission__progress {
+.missions .mission-progress__count { font-size: 32px; }
+.missions .mission-progress__bar { width: 96px; height: 18px; margin-top: 4px; border-width: 4px; }
+
+.mission__reward { margin-left: 20px; }
+.missions .mission-reward__xp-count,
+.missions .mission-reward__coin-count { font-size: 32px; }
+.missions .mission-reward .coin { width: 40px; height: 40px; border-bottom-width: 6px; }
+.missions .mission-reward__star { width: 36px; height: 36px; }
+
+/* -- A mission's parts (MissionLook): the menu's card and popup and the result ---------------------------------------- */
+
+/* The slot's sign on a white tile; a gold tile with a navy tick once done. Not a circle: it is not a button. */
+.mission-icon {
     flex-shrink: 0;
-    margin: 0 0 0 14px;
+    align-items: center;
+    justify-content: center;
+    width: 96px;
+    height: 96px;
+    border-width: 7px;
+    border-color: var(--navy);
+    border-radius: 26px;
+    background-color: var(--white);
+    transition-property: background-color, scale;
+    transition-duration: 0.25s;
+    transition-timing-function: ease-out-back;
+}
+
+.mission-icon--done { background-color: var(--gold); }
+
+.mission-icon__sign {
+    width: 64%;
+    height: 64%;
+}
+
+/* The count over a thin gold bar, for a mission of more than one step. */
+.mission-progress {
+    flex-shrink: 0;
+    align-items: flex-end;
+    margin-left: 18px;
+}
+
+.mission-progress__count {
+    margin: 0;
     padding: 0;
-    font-size: 36px;
+    font-size: 38px;
     color: var(--muted);
 }
 
-.mission--done .mission__progress {
-    color: var(--xp-shade);
+.mission-progress__bar {
+    width: 130px;
+    height: 26px;
+    margin-top: 6px;
+    border-width: 5px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--track);
+    overflow: hidden;
+}
+
+.mission-progress__fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 999px;
+    background-color: var(--gold);
+}
+
+/* +N XP in blue with the XP star, then the coins: the same reward wherever a mission is shown. */
+.mission-reward {
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: center;
+}
+
+.mission-reward__xp,
+.mission-reward__coins {
+    flex-direction: row;
+    align-items: center;
+}
+
+.mission-reward__xp { margin-right: 26px; }
+
+.mission-reward__star {
+    width: 40px;
+    height: 40px;
+    margin-right: 6px;
+}
+
+.mission-reward__xp-count,
+.mission-reward__coin-count {
+    margin: 0;
+    padding: 0;
+    font-size: 36px;
+    white-space: nowrap;
+}
+
+.mission-reward__xp-count { color: var(--xp); }
+
+.mission-reward__coin-count {
+    margin-left: 8px;
+    color: var(--navy);
+}
+
+.mission-reward .coin {
+    width: 42px;
+    height: 42px;
+    border-width: 4px;
+    border-bottom-width: 6px;
+}
+
+.mission-reward .coin__inner {
+    width: 16px;
+    height: 16px;
 }
 
 /* With the missions over it, the level card and the podium give up a little height, so a 16:9 portrait still fits. */
@@ -5372,6 +5545,11 @@
     display: none;
 }
 
+/* Beside the cards, not over them: the picture stays inside its own column. */
+.round-over--columns.round-over--landscape .podium__car {
+    bottom: 0;
+}
+
 .round-over--columns.round-over--landscape .podium {
     position: relative;
     left: auto;
@@ -5386,6 +5564,34 @@
 
 .round-over--columns.round-over--match .podium {
     margin-left: 900px;
+}
+
+/* The rival a size up beside the cards (a phone held sideways shows the panel at about half size), its pill standing
+   on the car's roof (RoundOverMatch.OnRivalGeometry) rather than at the podium's top. */
+.round-over--columns.round-over--landscape .podium--rival .podium__winner {
+    padding: 12px 52px 14px 16px;
+    border-width: 9px;
+    border-bottom-width: 18px;
+    border-radius: 70px;
+}
+
+.round-over--columns.round-over--landscape .podium--rival .podium__name { font-size: 76px; margin-left: 18px; }
+
+.round-over--columns.round-over--landscape .podium--rival .podium__level {
+    min-width: 84px;
+    height: 72px;
+    border-radius: 22px;
+}
+
+.round-over--columns.round-over--landscape .podium--rival .podium__level .level-badge__value { font-size: 44px; }
+.round-over--columns.round-over--landscape .podium--rival .podium__level .level-badge__prefix { font-size: 22px; }
+
+.round-over--columns.round-over--landscape .podium--rival .podium__tag {
+    bottom: -60px;
+    padding: 2px 30px 4px 30px;
+    border-width: 7px;
+    border-radius: 30px;
+    font-size: 40px;
 }
 
 .round-over--columns.round-over--landscape .round-over__spacer-bottom {
@@ -5420,10 +5626,14 @@
     width: auto;
 }
 
-/* With a mouse the key that presses NEXT MATCH sits on it, in place of the OR PRESS SPACE line under it. */
+/* With a mouse the key that presses NEXT MATCH sits on its top edge (as X on CLAIM x2 and the menu's keys, top left),
+   in place of the OR PRESS SPACE line under it: inside the button it crowded the label. */
 .round-over--columns.round-over--desktop .round-over__next-key {
     display: flex;
-    margin-left: 24px;
+    position: absolute;
+    top: -30px;
+    left: 30px;
+    margin: 0;
     padding: 0 18px 2px 18px;
     border-width: 5px;
     border-bottom-width: 9px;
@@ -5446,4 +5656,10 @@
     flex-grow: 1;
     width: auto;
     margin-left: 30px;
+}
+
+/* The daily gift over a visit's first result (ResultDaily): the still empty cards wait out of sight under it. */
+.round-over--gift .level-card,
+.round-over--gift .missions {
+    opacity: 0;
 }

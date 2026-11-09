@@ -289,8 +289,6 @@
 
 .menu__tile-caption.stroke__face { text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
 
-.menu__tile--locked .menu__face { background-color: #dfe6f1; }
-
 .menu__icon {
     width: 86px;
     height: 86px;
@@ -328,10 +326,11 @@
 /* NEW sits in the corner the dot would take; the dot moves down under it. */
 .menu__tile--new.menu__tile--dot .menu__dot { top: 36px; right: -24px; }
 
+/* Every key in one corner, the top left (PLAY's too): NEW, the red dot and the AD tag keep the top right. */
 .menu__key {
     position: absolute;
-    right: -18px;
-    bottom: -10px;
+    left: -18px;
+    top: -18px;
     margin: 0;
     padding: 0 12px 2px 12px;
     border-width: 5px;
@@ -356,13 +355,20 @@
     position: absolute;
     top: -24px;
     right: -30px;
-    padding: 2px 16px 4px 16px;
+    width: 76px;
+    height: 56px;
+    align-items: center;
+    justify-content: center;
     border-width: 6px;
     border-color: var(--navy);
     border-radius: 999px;
-    background-color: var(--gold);
-    font-size: 28px;
-    color: var(--navy);
+    background-color: var(--purple);
+}
+
+.menu__ad .double__play {
+    width: 38px;
+    height: 38px;
+    margin: 0;
 }
 
 .menu__boost-times { display: none; }
@@ -631,12 +637,44 @@
     align-items: center;
 }
 
+.menu__car-pill {
+    height: 120px;
+    padding-bottom: 14px;
+}
+
+.menu__car-pill > .menu__drop,
+.menu__car-pill > .menu__face { border-radius: 999px; }
+
+/* The face lies in the flow here, so the pill is as wide as the name. */
+.menu__car-pill > .menu__face {
+    position: relative;
+    flex-direction: row;
+    height: 106px;
+    padding: 0 14px 0 44px;
+}
+
 .menu__car-name-text {
-    margin: 0;
+    margin: 0 20px 0 0;
     padding: 0;
-    font-size: 96px;
-    -unity-text-outline-width: 16px;
-    text-shadow: 0 14px 0 rgb(29, 43, 79);
+    font-size: 58px;
+    color: var(--navy);
+    white-space: nowrap;
+}
+
+.menu__car-garage {
+    width: 78px;
+    height: 78px;
+    align-items: center;
+    justify-content: center;
+    border-width: 6px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--green);
+}
+
+.menu__car-garage-icon {
+    width: 44px;
+    height: 44px;
 }
 
 /* -- Bottom: the nearest mission, the mode and PLAY ----------------------------------------------------------------- */
@@ -650,7 +688,7 @@
 }
 
 .menu__mission {
-    height: 150px;
+    height: 190px;
     margin-bottom: 40px;
 }
 
@@ -660,74 +698,26 @@
     justify-content: flex-start;
 }
 
-.menu__mission-icon {
-    width: 82px;
-    height: 82px;
-    flex-shrink: 0;
-}
-
 .menu__mission-body {
     flex-grow: 1;
     flex-shrink: 1;
-    margin: 0 20px;
+    min-width: 0;
+    margin: 0 10px 0 24px;
 }
 
-.menu__mission-head {
-    flex-direction: row;
-    align-items: center;
-}
-
+/* Two lines at most: a long task (Russian) wraps instead of losing its end. */
 .menu__mission-task {
-    flex-grow: 1;
-    flex-shrink: 1;
     margin: 0;
-    padding: 0;
-    font-size: 38px;
-    color: var(--navy);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.menu__mission-count {
-    flex-shrink: 0;
-    margin: 0 0 0 14px;
-    padding: 0;
-    font-size: 38px;
-    color: var(--muted);
-}
-
-.menu__bar {
-    height: 30px;
-    margin-top: 8px;
-    border-width: 5px;
-    border-color: var(--navy);
-    border-radius: 999px;
-    background-color: var(--track);
-    overflow: hidden;
-}
-
-.menu__bar-fill {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    border-radius: 999px;
-    background-color: var(--gold);
-}
-
-.menu__reward {
-    flex-shrink: 0;
-    flex-direction: row;
-    align-items: center;
-}
-
-.menu__reward-count {
-    margin: 0 0 0 8px;
     padding: 0;
     font-size: 40px;
     color: var(--navy);
+    white-space: normal;
+    max-height: 96px;
+    overflow: hidden;
+    -unity-text-align: middle-left;
 }
+
+.menu__mission-reward { margin-top: 8px; }
 
 .menu__actions {
     flex-direction: row;
@@ -772,12 +762,6 @@
     -unity-text-auto-size: best-fit 26px 46px;
 }
 
-.menu__chevron {
-    flex-shrink: 0;
-    width: 40px;
-    height: 56px;
-}
-
 .menu__play {
     flex-grow: 1;
     min-width: 0;
@@ -789,8 +773,8 @@
 
 .menu__play-key {
     position: absolute;
-    top: -40px;
-    right: 30px;
+    top: -30px;
+    left: -18px;
     margin: 0;
     display: none;
 }
@@ -875,30 +859,33 @@
 
 .menu__close-bar--turned { rotate: -45deg; }
 
-.menu__sheet .mission {
-    height: 120px;
-    padding: 0 26px;
+.menu__mission-row {
+    flex-direction: row;
+    align-items: center;
+    min-height: 150px;
+    padding: 20px 30px 20px 24px;
     margin-bottom: 18px;
-    border-radius: 36px;
+    border-radius: 40px;
     background-color: var(--soft);
 }
 
-.menu__sheet .mission__check {
-    width: 64px;
-    height: 64px;
+.menu__mission-row:last-child { margin-bottom: 0; }
+
+.menu__mission-row-body {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    margin: 0 10px 0 26px;
 }
 
-.menu__sheet .mission__task {
-    font-size: 40px;
-    white-space: normal;
-}
-
-.menu__sheet .mission__progress {
+.menu__mission-row-task {
+    margin: 0 0 8px 0;
+    padding: 0;
     font-size: 42px;
-    margin: 0 18px;
+    color: var(--navy);
+    white-space: normal;
+    -unity-text-align: middle-left;
 }
-
-.menu__sheet .menu__reward-count { font-size: 42px; }
 
 .menu__modes-play {
     height: 190px;
@@ -1600,3 +1587,237 @@
 }
 
 .menu__leagues-progress-badge .level-badge__value { font-size: 50px; }
+
+/* -- DAILY, on top of the right rail, and its gift (macket MenuB_Daily) ------------------------------------------------ */
+
+/* The tile: a gift box, the time to the next gift on a navy pill across its bottom edge, READY on a green one and the
+   red dot while today's waits. Its key goes to the top left: the pill takes the bottom. */
+.menu__tile--daily .menu__tile-caption { margin-top: 26px; }
+
+.menu__daily-time {
+    position: absolute;
+    bottom: -26px;
+    align-self: center;
+    padding: 2px 16px 4px 16px;
+    border-width: 6px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--navy);
+    font-size: 28px;
+    color: var(--white);
+    white-space: nowrap;
+}
+
+.menu__tile--daily-ready .menu__daily-time { background-color: var(--green); }
+
+/* The popup: a gold tilted title over the calendar. */
+.menu__daily-popup .menu__sheet-head { margin-bottom: 4px; }
+.menu__daily-popup .menu__sheet-head > .stroke { rotate: -4deg; }
+.menu__daily-popup .menu__sheet-title { color: var(--gold); }
+.menu--wide .menu__daily-popup .menu__sheet { width: 1760px; }
+
+.menu__daily-streak {
+    align-self: center;
+    margin: 0 0 30px 0;
+    padding: 4px 28px 6px 28px;
+    border-width: 6px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--orange);
+    font-size: 34px;
+    color: var(--navy);
+    rotate: -2deg;
+}
+
+/* Four cells a row upright (the last day two wide), the seven days in one row sideways. */
+.menu__daily-days {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.menu__daily-day {
+    width: 23%;
+    height: 250px;
+    margin: 12px 1%;
+    padding: 10px 0 12px 0;
+    align-items: center;
+    justify-content: space-between;
+    border-width: 6px;
+    border-bottom-width: 11px;
+    border-color: var(--navy);
+    border-radius: 30px;
+    background-color: var(--white);
+}
+
+.menu__daily-day--big { width: 48%; background-color: var(--purple); }
+.menu--wide .menu__daily-day { width: 11.5%; margin: 12px 0.5%; }
+.menu--wide .menu__daily-day--big { width: 23.5%; }
+
+.menu__daily-caption {
+    margin: 0;
+    padding: 0;
+    font-size: 30px;
+    color: var(--muted);
+}
+
+.menu__daily-art {
+    flex-grow: 1;
+    align-self: stretch;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu__daily-amount {
+    margin: 0;
+    padding: 0;
+    font-size: 42px;
+    color: var(--navy);
+    white-space: nowrap;
+}
+
+.menu__daily-day--big .menu__daily-caption,
+.menu__daily-day--big .menu__daily-amount { color: var(--white); }
+.menu__daily-day--big .menu__daily-amount { font-size: 34px; }
+
+/* Coins stacked overlapping: one on the first days, two in the middle, three at the end. */
+.menu__daily-stack { flex-direction: row; align-items: flex-end; }
+.menu__daily-coin { width: 70px; height: 70px; }
+.menu__daily-coin .coin__inner { width: 28px; height: 28px; }
+.menu__daily-coin--1 { margin-left: -30px; margin-bottom: 14px; }
+.menu__daily-coin--2 { margin-left: -30px; }
+
+.menu__daily-gift { width: 110px; height: 110px; }
+.menu__daily-hat { width: 170px; height: 110px; }
+
+/* Taken: pale, with a green tick in the corner. */
+.menu__daily-tick {
+    position: absolute;
+    top: -18px;
+    right: -14px;
+    width: 52px;
+    height: 52px;
+    align-items: center;
+    justify-content: center;
+    border-width: 6px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--green);
+    display: none;
+}
+
+.menu__daily-tick .mission__mark { opacity: 1; border-color: var(--white); width: 11px; height: 20px; border-right-width: 5px; border-bottom-width: 5px; }
+
+.menu__daily-day--done { background-color: #e3e8f1; }
+.menu__daily-day--done.menu__daily-day--big { background-color: #b9a6d9; }
+.menu__daily-day--done .menu__daily-caption,
+.menu__daily-day--done .menu__daily-art,
+.menu__daily-day--done .menu__daily-amount { opacity: 0.55; }
+.menu__daily-day--done .menu__daily-tick { display: flex; }
+
+/* Today: cream, ringed in gold and lifted. */
+.menu__daily-day--today {
+    border-color: var(--gold);
+    border-width: 9px;
+    border-bottom-width: 14px;
+    background-color: #fff4c7;
+    translate: 0 -12px;
+    scale: 1.06 1.06;
+}
+
+.menu__daily-day--today .menu__daily-caption { color: var(--navy); }
+
+/* The hat just given: a pale face, the hat and its name at full strength. */
+.menu__daily-day--hat.menu__daily-day--big { background-color: #efe6ff; }
+.menu__daily-day--hat .menu__daily-art { opacity: 1; }
+.menu__daily-day--hat .menu__daily-amount { opacity: 1; color: var(--navy); }
+.menu__daily-day--hat .menu__daily-caption { color: var(--navy); }
+.menu__daily-day--today.menu__daily-day--done { translate: 0 0; scale: 1 1; border-color: var(--navy); border-width: 6px; border-bottom-width: 11px; }
+
+.menu__daily-hint {
+    margin: 26px 0 34px 0;
+    padding: 0;
+    font-size: 36px;
+    color: var(--muted);
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+/* CLAIM ×2 (purple, a gold AD tag at the top left) and CLAIM side by side; CLAIM alone fills the row. */
+.menu__daily-buttons { flex-direction: row; }
+
+.menu__daily-double,
+.menu__daily-claim {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+    height: 160px;
+    padding: 0 24px 20px 24px;
+}
+
+.menu__daily-double { flex-grow: 1.3; margin-right: 26px; }
+.menu__daily-double .double__play { flex-shrink: 0; width: 64px; height: 64px; margin-right: 14px; }
+
+.menu__daily-label { flex-grow: 0; flex-shrink: 1; min-width: 0; }
+
+/* CLAIM, then a coin and the amount it gives (CLAIM x2's already doubled), together in the middle of the button. */
+.menu__daily-double,
+.menu__daily-claim { justify-content: center; }
+
+.menu__daily-sum {
+    flex-direction: row;
+    flex-shrink: 0;
+    align-items: center;
+    margin-left: 18px;
+}
+
+.menu__daily-sum-coin {
+    width: 56px;
+    height: 56px;
+    margin-right: 10px;
+}
+
+.menu__daily-label-text {
+    font-size: 64px;
+    -unity-text-outline-width: 11px;
+    text-shadow: 0 6px 0 rgb(29, 43, 79);
+}
+
+.menu__daily-label-text.stroke__face { -unity-text-outline-width: 0; text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+
+.menu__daily-ad {
+    position: absolute;
+    top: -26px;
+    left: 24px;
+    padding: 2px 16px 4px 16px;
+    border-width: 6px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--gold);
+    font-size: 28px;
+    color: var(--navy);
+}
+
+.menu__daily-key {
+    display: none;
+    position: absolute;
+    top: -22px;
+    right: 24px;
+    margin: 0;
+    padding: 0 12px 2px 12px;
+    border-width: 5px;
+    border-bottom-width: 9px;
+    border-radius: 12px;
+}
+
+.menu__daily-key .key__text { font-size: 26px; }
+.menu--desktop .menu__daily-key { display: flex; }
+
+.menu__daily-continue {
+    align-self: center;
+    min-width: 60%;
+    height: 130px;
+    padding: 0 60px 16px 60px;
+}
+
+.menu__daily-continue-label { font-size: 52px; color: var(--navy); }

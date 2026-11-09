@@ -24,11 +24,18 @@ namespace ToyCarArena.Gameplay.Cars
         private static readonly Vector2Int Blue = new(5, 1);
         private static readonly Vector2Int Sky = new(6, 1);
         private static readonly Vector2Int Pink = new(0, 2);
+        private static readonly Vector2Int Purple = new(7, 1);
 
-        /// <summary>Every topper this builds, for the bots that wear one now and then.</summary>
+        /// <summary>
+        /// The toppers on sale this builds, for the bots that wear one now and then; the exclusive ones
+        /// (<see cref="ExclusiveIds"/>) stay the players' who earned them.
+        /// </summary>
         public static readonly IReadOnlyList<string> Ids = new[] {
             "top-hat", "party-hat", "cone", "antenna", "flag", "horns", "propeller", "fin", "crown",
         };
+
+        /// <summary>The toppers only a reward gives (the daily gift's last day), which no bot wears.</summary>
+        public static readonly IReadOnlyList<string> ExclusiveIds = new[] { "wizard-hat" };
 
         /// <summary>
         /// Where on the roof the topper stands, from the roof's middle in metres: a pole stands at the back corner, the
@@ -128,6 +135,19 @@ namespace ToyCarArena.Gameplay.Cars
                     Part(ToyMeshes.Ellipsoid(Vector3.one * 0.07f), Red, new Vector3(0f, 0.11f, 0.33f));
                     Part(ToyMeshes.Ellipsoid(Vector3.one * 0.06f), Blue, new Vector3(0.33f, 0.11f, 0f));
                     Part(ToyMeshes.Ellipsoid(Vector3.one * 0.06f), Green, new Vector3(-0.33f, 0.11f, 0f));
+                    break;
+                case "wizard-hat":
+                    // A wizard's hat: a wide purple brim, a tall cone leaning back with its tip bent further, a gold
+                    // band and gold stars, the daily gift's prize, so it reads as no hat of the shop.
+                    Part(ToyMeshes.Cylinder(0.46f, 0.46f, 0.06f, 20), Purple, new Vector3(0f, 0.03f, 0f));
+                    Part(ToyMeshes.Cylinder(0.27f, 0.12f, 0.58f, 16), Purple, new Vector3(0f, 0.32f, -0.03f),
+                        new Vector3(-10f, 0f, 0f));
+                    Part(ToyMeshes.Cylinder(0.12f, 0f, 0.36f, 12), Purple, new Vector3(0f, 0.73f, -0.16f),
+                        new Vector3(-38f, 0f, 0f));
+                    Part(ToyMeshes.Cylinder(0.28f, 0.27f, 0.09f, 16), Gold, new Vector3(0f, 0.1f, 0f));
+                    Part(ToyMeshes.Ellipsoid(Vector3.one * 0.09f), Gold, new Vector3(0f, 0.86f, -0.3f));
+                    Part(ToyMeshes.Ellipsoid(new Vector3(0.07f, 0.07f, 0.03f)), Gold, new Vector3(0.09f, 0.36f, 0.19f));
+                    Part(ToyMeshes.Ellipsoid(new Vector3(0.05f, 0.05f, 0.03f)), Gold, new Vector3(-0.1f, 0.5f, 0.12f));
                     break;
                 default:
                     Object.Destroy(root.gameObject);

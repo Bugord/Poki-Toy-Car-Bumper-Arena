@@ -2,7 +2,9 @@ using System.Threading;
 using Bugord.App.Localization;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.Audio;
+using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Cars;
+using ToyCarArena.Gameplay.Round;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -51,6 +53,9 @@ namespace ToyCarArena.UI
         // The wide leagues list keeps its five cards in from the sides, as the board does.
         private const float WideLeaguesSide = 200f;
 
+        // The rails with a mouse: at the reference size a tile's caption was about 16 px on a 1080p screen.
+        private const float DesktopRailScale = 1.25f;
+
         // The least distance of the groups from a side on a phone held sideways (about 48 CSS px).
         private const float TouchWideSide = 240f;
 
@@ -81,6 +86,10 @@ namespace ToyCarArena.UI
 
         // The bottom row's own width sideways (ui_menu: menu--wide .menu__bottom).
         private const float WideBottomWidth = 2000f;
+
+        // The daily gift's card: its width in reference pixels upright and sideways (ui_menu), for the fit to the screen.
+        private const float DailyWidth = 960f;
+        private const float DailyWideWidth = 1760f;
 
         // The XP bar sideways: this share of the top row, never shorter than upright and never into the coins and the
         // gear (their width and gaps, reference pixels).
@@ -127,27 +136,34 @@ namespace ToyCarArena.UI
         private CarPortrait heroPortrait;
         private float heroAspect = 1.6f;
         private Label carName;
-        private Label carNameFace;
         private VisualElement bottom;
         private VisualElement missionCard;
         private VisualElement actions;
         private Label missionTask;
-        private Label missionCount;
-        private VisualElement missionFill;
-        private Label missionReward;
+        private MissionLook.Icon missionIcon;
+        private MissionLook.Progress missionProgress;
+        private VisualElement missionReward;
         private VisualElement missionsPopup;
         private VisualElement missionsList;
         private VisualElement modesPopup;
         private CarPortrait modePortrait;
         private GarageStage garageStage;
         private MenuLeagues leagues;
-        private VisualElement boostRail;
+        private VisualElement rightRail;
         private VisualElement boostTile;
         private Label boostLeft;
         private VisualElement xpBoost;
         private Label[] xpBoostLabels;
         private VisualElement boostPopup;
         private VisualElement boostPips;
+        private VisualElement coinPill;
+        private VisualElement dailyTile;
+        private Label dailyTime;
+        private VisualElement dailyPopup;
+        private MenuDaily daily;
+        // The daily popup shows a gift just taken: it keeps the claim on screen until it closes.
+        private bool isDailyClaimed;
+        private bool wasDailyReady;
 
         public MenuView(IAudioService audioService, HudControls controls)
         {
@@ -176,7 +192,14 @@ namespace ToyCarArena.UI
             BuildMissionsPopup(menu);
             BuildModesPopup(menu);
             BuildBoostPopup(menu);
-            leagues = new MenuLeagues(menu, audioService.PlayUiClick, () => Root?.Focus());
+            BuildDailyPopup(menu);
+            // The daily gift waits behind NEW LEAGUE!: it opens once that closes, unless PLAY or the garage closed it.
+            leagues = new MenuLeagues(menu, audioService.PlayUiClick, () => {
+                Root?.Focus();
+                Root?.schedule.Execute(OfferDaily);
+            });
+            // The DAILY tile's timer counts down, and the gift turns ready at midnight while the menu is up.
+            Root.schedule.Execute(TickDaily).Every(1000);
 
             Root.RegisterCallback<GeometryChangedEvent>(OnGeometry);
             SafeArea.Watch(Root, safe => {
@@ -200,7 +223,11 @@ namespace ToyCarArena.UI
             if (!ViewModel.IsDecided && ViewModel.TakeNewLeague()) {
                 ClosePopups();
                 leagues.ShowNewLeague(ViewModel.Level.Level, !isTouch);
+                return;
             }
+
+            // The first menu of the visit with a gift to claim opens the daily gift by itself.
+            OfferDaily();
         }
 
         public override async UniTask HideAsync(CancellationToken token)
@@ -228,9 +255,11 @@ namespace ToyCarArena.UI
             ViewModel.IsAdPlaying;
 
         private bool IsPopupOpen => missionsPopup.ClassListContains(OpenClass) || modesPopup.ClassListContains(OpenClass) ||
-            IsBoostOpen || leagues.IsNewLeagueOpen || leagues.IsListOpen;
+            IsBoostOpen || IsDailyOpen || leagues.IsNewLeagueOpen || leagues.IsListOpen;
 
         private bool IsBoostOpen => boostPopup.ClassListContains(OpenClass);
+
+        private bool IsDailyOpen => dailyPopup.ClassListContains(OpenClass);
 
         // -- Building ------------------------------------------------------------------------------------------------
 
@@ -272,7 +301,7 @@ namespace ToyCarArena.UI
             top.Add(level);
             top.Add(Element("menu__spacer"));
 
-            var coinPill = Element("menu__coins");
+            coinPill = Element("menu__coins");
             coinPill.Add(Element("menu__coins-drop"));
             var coinFace = Element("menu__coins-face");
             coinFace.Add(RoundOverMeta.Coin());
@@ -292,22 +321,26 @@ namespace ToyCarArena.UI
             rail = Element("menu__rail");
             garageTile = Tile(DrawGarage, () => Strings.Get("garage.title"), "G", OpenGarage);
             missionsTile = Tile(DrawTarget, () => Strings.Get("mission.title"), "M", OpenMissions);
-            var awards = Tile(DrawLock, () => Strings.Get("menu.awards"), null, Locked);
-            awards.AddToClassList("menu__tile--locked");
+            // AWARDS waits until there are awards: a locked tile that explains nothing only takes the rail.
             rail.Add(garageTile);
             rail.Add(missionsTile);
-            rail.Add(awards);
             menu.Add(rail);
         }
 
         /// <summary>
-        /// XP BOOST on a rail of its own at the right: a blue star with an AD tag while it is offered, blue with ×2 and
-        /// the matches left while it runs.
+        /// The rail at the right: DAILY (a gift box, a green READY pill and a red dot while today's gift waits, the time
+        /// to the next on a navy pill after), then XP BOOST (a blue star with an AD tag while it is offered, blue with ×2
+        /// and the matches left while it runs).
         /// </summary>
         private void BuildBoost(VisualElement menu)
         {
-            boostRail = Element("menu__rail");
-            boostRail.AddToClassList("menu__rail--right");
+            rightRail = Element("menu__rail");
+            rightRail.AddToClassList("menu__rail--right");
+            dailyTile = Tile(MenuDaily.DrawGift, () => Strings.Get("menu.daily"), "D", OpenDaily);
+            dailyTile.AddToClassList("menu__tile--daily");
+            dailyTime = Text("menu__daily-time");
+            dailyTile.Q<VisualElement>(className: "menu__tile-button").Add(dailyTime);
+            rightRail.Add(dailyTile);
             boostTile = Tile(DrawXpStar, () => Strings.Get("menu.xp_boost"), "B", OpenBoost);
             boostTile.AddToClassList("menu__tile--boost");
             var button = boostTile.Q<VisualElement>(className: "menu__tile-button");
@@ -317,13 +350,14 @@ namespace ToyCarArena.UI
             }
 
             button.Q<VisualElement>(className: "menu__face").Add(times);
-            var ad = Text("menu__ad");
-            text.Set(ad, () => Strings.Get("result.ad"));
+            // A video sign on a purple tag, not a word: РЕКЛАМА or ANUNCIO ran into the tile beside it.
+            var ad = Element("menu__ad");
+            ad.Add(RoundOverRewards.PlaySign());
             button.Add(ad);
             boostLeft = Text("menu__boost-left");
             button.Add(boostLeft);
-            boostRail.Add(boostTile);
-            menu.Add(boostRail);
+            rightRail.Add(boostTile);
+            menu.Add(rightRail);
         }
 
         private void BuildStage(VisualElement menu)
@@ -353,18 +387,19 @@ namespace ToyCarArena.UI
             heroPortrait = new CarPortrait(heroPortraitRoot);
             stage.Add(hero);
 
+            // The car's name on a white pill with a green garage sign: smaller than PLAY, and it says the car opens
+            // the garage.
             var name = carNameBox = Element("menu__car-name");
-            var stroke = Element("stroke");
-            carName = Text("display");
+            var pill = Sticker("menu__car-pill", OpenGarage);
+            var pillFace = pill.Q<VisualElement>(className: "menu__face");
+            carName = Text("menu__car-name-text");
             // A longer or shorter name may or may not fit between the bottom cards sideways (PlaceStage).
             carName.RegisterCallback<GeometryChangedEvent>(_ => PlaceStage());
-            carName.AddToClassList("menu__car-name-text");
-            carNameFace = Text("display");
-            carNameFace.AddToClassList("menu__car-name-text");
-            carNameFace.AddToClassList("stroke__face");
-            stroke.Add(carName);
-            stroke.Add(carNameFace);
-            name.Add(stroke);
+            pillFace.Add(carName);
+            var sign = Element("menu__car-garage");
+            sign.Add(Icon("menu__car-garage-icon", DrawGarage));
+            pillFace.Add(sign);
+            name.Add(pill);
             stage.Add(name);
             stage.RegisterCallback<GeometryChangedEvent>(_ => PlaceHero());
             menu.Add(stage);
@@ -373,30 +408,27 @@ namespace ToyCarArena.UI
         private void BuildBottom(VisualElement menu)
         {
             bottom = Element("menu__bottom");
+            // The slot's sign, the task (on two lines if it must: a Russian task is long) over its reward, and the count
+            // with a thin bar at the right for a mission of more than one step.
             missionCard = Sticker("menu__mission", OpenMissions);
             var face = missionCard.Q<VisualElement>(className: "menu__face");
-            face.Add(Icon("menu__mission-icon", DrawTarget));
+            missionIcon = MissionLook.IconOf(MissionSlot.Round);
+            face.Add(missionIcon);
             var body = Element("menu__mission-body");
-            var head = Element("menu__mission-head");
             missionTask = Text("menu__mission-task");
-            missionCount = Text("menu__mission-count");
-            head.Add(missionTask);
-            head.Add(missionCount);
-            body.Add(head);
-            var bar = Element("menu__bar");
-            missionFill = Element("menu__bar-fill");
-            bar.Add(missionFill);
-            body.Add(bar);
+            body.Add(missionTask);
+            missionReward = Element("menu__mission-reward");
+            body.Add(missionReward);
             face.Add(body);
-            var reward = Element("menu__reward");
-            reward.Add(RoundOverMeta.Coin());
-            missionReward = Text("menu__reward-count");
-            reward.Add(missionReward);
-            face.Add(reward);
+            missionProgress = MissionLook.ProgressOf();
+            face.Add(missionProgress);
             bottom.Add(missionCard);
 
             actions = Element("menu__actions");
-            var mode = Sticker("menu__mode", OpenModes);
+            // One mode for now: a plate that names it, not a button that opens a choice of one (CUP and SURVIVAL come
+            // later, with OpenModes and its popup).
+            var mode = Sticker("menu__mode", null);
+            mode.pickingMode = PickingMode.Ignore;
             var modeFace = mode.Q<VisualElement>(className: "menu__face");
             var modeText = Element("menu__mode-texts");
             var caption = Text("menu__mode-caption");
@@ -406,7 +438,6 @@ namespace ToyCarArena.UI
             modeText.Add(caption);
             modeText.Add(modeName);
             modeFace.Add(modeText);
-            modeFace.Add(Icon("menu__chevron", DrawChevron));
             actions.Add(mode);
             actions.Add(PlayButton("menu__play", true));
             bottom.Add(actions);
@@ -562,12 +593,30 @@ namespace ToyCarArena.UI
 
         private VisualElement Popup(VisualElement menu, System.Func<string> title, out VisualElement sheet)
         {
+            var popup = PopupFrame(menu, out sheet, out var titles, () => {
+                audioService.PlayUiClick();
+                ClosePopups();
+            }, ClosePopups);
+            foreach (var label in titles) {
+                text.Set(label, title);
+            }
+
+            return popup;
+        }
+
+        /// <summary>
+        /// The frame of the menu's popups, also for the daily gift over a result: a dim over the screen, which a tap
+        /// closes with <paramref name="tapOutside"/>, and a white card with the title (twice, outline and face, for the
+        /// caller to fill) and the close button at its top.
+        /// </summary>
+        internal static VisualElement PopupFrame(VisualElement parent, out VisualElement sheet, out Label[] titles,
+            System.Action pressClose, System.Action tapOutside)
+        {
             var popup = Element("menu__popup");
             popup.pickingMode = PickingMode.Position;
-            // A tap on the dim around the card closes it.
             popup.RegisterCallback<ClickEvent>(evt => {
                 if (evt.target == popup) {
-                    ClosePopups();
+                    tapOutside();
                 }
             });
             sheet = Element("card");
@@ -575,23 +624,32 @@ namespace ToyCarArena.UI
             sheet.pickingMode = PickingMode.Position;
             var head = Element("menu__sheet-head");
             var stroke = Element("stroke");
+            titles = new Label[2];
             foreach (var isFace in new[] { false, true }) {
                 var label = Text("display");
                 label.AddToClassList("menu__sheet-title");
                 label.EnableInClassList("stroke__face", isFace);
-                text.Set(label, title);
+                titles[isFace ? 1 : 0] = label;
                 stroke.Add(label);
             }
 
             head.Add(stroke);
-            head.Add(CloseSticker(() => {
-                audioService.PlayUiClick();
-                ClosePopups();
-            }));
+            head.Add(CloseSticker(pressClose));
             sheet.Add(head);
             popup.Add(sheet);
-            menu.Add(popup);
+            parent.Add(popup);
             return popup;
+        }
+
+        /// <summary>The daily gift: its calendar, CLAIM and CLAIM ×2 (<see cref="MenuDaily"/>) on the menu's popup card.</summary>
+        private void BuildDailyPopup(VisualElement menu)
+        {
+            dailyPopup = Popup(menu, () => Strings.Get("daily.title"), out var sheet);
+            dailyPopup.AddToClassList("menu__daily-popup");
+            daily = new MenuDaily(sheet, PressDailyDouble, PressDailyClaim, () => {
+                audioService.PlayUiClick();
+                ClosePopups();
+            });
         }
 
         private Button PlayButton(string className, bool hasKey)
@@ -743,11 +801,19 @@ namespace ToyCarArena.UI
             plinthTop.style.backgroundColor = LeagueLook.PedestalOf(league);
 
             garageTile.EnableInClassList("menu__tile--new", ViewModel.HasNewCar);
-            garageTile.EnableInClassList("menu__tile--dot", ViewModel.CanShop);
+            // NEW says it already: the dot only when there is no new car to show.
+            garageTile.EnableInClassList("menu__tile--dot", ViewModel.CanShop && !ViewModel.HasNewCar);
             RefreshBoost();
+            RefreshDaily();
+            rightRail.style.display = boostTile.style.display == DisplayStyle.Flex ||
+                dailyTile.style.display == DisplayStyle.Flex ? DisplayStyle.Flex : DisplayStyle.None;
+            // A gift just taken stays on the card as it was claimed (the hat's day would show coins once the hat is owned).
+            if (IsDailyOpen && !isDailyClaimed) {
+                daily.Fill(ViewModel.Daily);
+            }
 
             var car = ViewModel.Car;
-            carName.text = carNameFace.text = GameText.Car(car);
+            carName.text = GameText.Car(car);
             modePortrait.Set(car, ViewModel.CarColor);
             ShowCar(car);
 
@@ -755,10 +821,12 @@ namespace ToyCarArena.UI
             missionCard.style.display = nearest == null ? DisplayStyle.None : DisplayStyle.Flex;
             if (nearest != null) {
                 var definition = nearest.Definition;
+                missionIcon.Set(definition.Slot, false);
                 missionTask.text = ViewModel.MissionText(definition);
-                missionCount.text = $"{nearest.Progress}/{definition.Target}";
-                missionFill.style.width = Length.Percent(100f * nearest.Progress / Mathf.Max(1, definition.Target));
-                missionReward.text = ViewModel.MissionCoins(definition).ToString();
+                missionProgress.Set(nearest.Progress, definition.Target);
+                missionReward.Clear();
+                missionReward.Add(MissionLook.Reward(ViewModel.MissionXp(definition),
+                    ViewModel.MissionCoins(definition)));
             }
 
             if (missionsPopup.ClassListContains(OpenClass)) {
@@ -770,7 +838,7 @@ namespace ToyCarArena.UI
         private void RefreshBoost()
         {
             var isBoosted = ViewModel.IsBoosted;
-            boostRail.style.display = isBoosted || ViewModel.CanOfferBoost ? DisplayStyle.Flex : DisplayStyle.None;
+            boostTile.style.display = isBoosted || ViewModel.CanOfferBoost ? DisplayStyle.Flex : DisplayStyle.None;
             boostTile.EnableInClassList("menu__tile--boost-on", isBoosted);
             boostLeft.text = Strings.Format("menu.boost_left", ViewModel.BoostMatchesLeft);
             xpBoost.style.display = isBoosted ? DisplayStyle.Flex : DisplayStyle.None;
@@ -783,6 +851,40 @@ namespace ToyCarArena.UI
                 for (var i = 0; i < ViewModel.BoostMatches; i++) {
                     boostPips.Add(Element("menu__boost-pip"));
                 }
+            }
+        }
+
+        /// <summary>The DAILY tile: READY and a red dot while today's gift waits, otherwise the time to the next.</summary>
+        private void RefreshDaily()
+        {
+            dailyTile.style.display = ViewModel.HasDaily ? DisplayStyle.Flex : DisplayStyle.None;
+            var isReady = ViewModel.CanClaimDaily;
+            wasDailyReady = isReady;
+            dailyTile.EnableInClassList("menu__tile--dot", isReady);
+            dailyTile.EnableInClassList("menu__tile--daily-ready", isReady);
+            dailyTime.text = isReady ? Strings.Get("daily.ready") : TimeText(ViewModel.DailyTimeLeft);
+        }
+
+        private static string TimeText(System.TimeSpan left)
+        {
+            var hours = (int)left.TotalHours;
+            var minutes = Mathf.Max(hours > 0 ? 0 : 1, left.Minutes);
+            return hours > 0 ? Strings.Format("daily.time_hm", hours, minutes) : Strings.Format("daily.time_m", minutes);
+        }
+
+        // Once a second: the timer, and the whole menu when midnight brings a new gift.
+        private void TickDaily()
+        {
+            // Hidden or past PLAY, the menu waits: a whole refresh would wake the garage stage's camera.
+            if (Root?.panel == null || !IsShown || ViewModel.IsDecided || !ViewModel.HasDaily) {
+                return;
+            }
+
+            if (ViewModel.CanClaimDaily != wasDailyReady) {
+                Refresh();
+            }
+            else if (!wasDailyReady) {
+                dailyTime.text = TimeText(ViewModel.DailyTimeLeft);
             }
         }
 
@@ -812,23 +914,19 @@ namespace ToyCarArena.UI
         {
             missionsList.Clear();
             foreach (var mission in ViewModel.Missions) {
+                // The slot's sign, the task over its XP and coins, and the count with its bar for more than one step.
                 var definition = mission.Definition;
-                var row = Element("mission");
-                var check = Element("mission__check");
-                check.Add(Element("mission__mark"));
-                row.Add(check);
-                var task = Text("mission__task");
+                var row = Element("menu__mission-row");
+                row.Add(MissionLook.IconOf(definition.Slot));
+                var body = Element("menu__mission-row-body");
+                var task = Text("menu__mission-row-task");
                 task.text = ViewModel.MissionText(definition);
-                row.Add(task);
-                var progress = Text("mission__progress");
-                progress.text = $"{mission.Progress}/{definition.Target}";
+                body.Add(task);
+                body.Add(MissionLook.Reward(ViewModel.MissionXp(definition), ViewModel.MissionCoins(definition)));
+                row.Add(body);
+                var progress = MissionLook.ProgressOf();
+                progress.Set(mission.Progress, definition.Target);
                 row.Add(progress);
-                var reward = Element("menu__reward");
-                reward.Add(RoundOverMeta.Coin());
-                var count = Text("menu__reward-count");
-                count.text = ViewModel.MissionCoins(definition).ToString();
-                reward.Add(count);
-                row.Add(reward);
                 missionsList.Add(row);
             }
         }
@@ -888,13 +986,15 @@ namespace ToyCarArena.UI
                 : StyleKeyword.Null;
 
             var topHeight = 130f * scale;
+            var railScale = isTouch ? scale : DesktopRailScale;
+            var railGrown = new Scale(new Vector3(railScale, railScale, 1f));
             rail.style.left = left;
             rail.style.top = topEdge + topHeight + 50f * scale;
-            rail.style.scale = grown;
-            boostRail.style.left = StyleKeyword.Auto;
-            boostRail.style.right = right;
-            boostRail.style.top = rail.style.top;
-            boostRail.style.scale = grown;
+            rail.style.scale = railGrown;
+            rightRail.style.left = StyleKeyword.Auto;
+            rightRail.style.right = right;
+            rightRail.style.top = rail.style.top;
+            rightRail.style.scale = railGrown;
 
             var low = 50f + insets.Bottom;
             bottom.style.bottom = low;
@@ -915,6 +1015,10 @@ namespace ToyCarArena.UI
                 var sheet = popup.Q<VisualElement>(className: "menu__sheet");
                 sheet.style.scale = new Scale(new Vector3(sheetFit, sheetFit, 1f));
             }
+
+            // The calendar's card is wider (one row of days sideways) and keeps inside the screen's width too.
+            var dailyFit = Mathf.Min(sheetFit, (size.x - left - right) / (isWide ? DailyWideWidth : DailyWidth));
+            daily.Sheet.style.scale = new Scale(new Vector3(dailyFit, dailyFit, 1f));
 
             leagues.Top = topEdge;
             // The new league's card is taller than the menu's sheets.
@@ -952,8 +1056,8 @@ namespace ToyCarArena.UI
             var bottomBox = Root.WorldToLocal(bottom.worldBound);
             var railRight = Root.WorldToLocal(railBox).xMax;
             // The car keeps clear of the boost's rail at the right as of the rail at the left.
-            if (boostRail.resolvedStyle.display == DisplayStyle.Flex) {
-                railRight = Mathf.Max(railRight, size.x - Root.WorldToLocal(boostRail.worldBound).xMin);
+            if (rightRail.resolvedStyle.display == DisplayStyle.Flex) {
+                railRight = Mathf.Max(railRight, size.x - Root.WorldToLocal(rightRail.worldBound).xMin);
             }
 
             stage.style.top = topBox.yMax + 20f;
@@ -1105,6 +1209,26 @@ namespace ToyCarArena.UI
                 return;
             }
 
+            // The daily gift: Space or Enter claims it (or closes the card once claimed), X watches the ad for ×2, Esc
+            // closes it; PLAY's and the tiles' keys do not reach through it.
+            if (IsDailyOpen && evt.keyCode is not KeyCode.Escape) {
+                evt.StopPropagation();
+                if (evt.keyCode is KeyCode.Space or KeyCode.Return or KeyCode.KeypadEnter) {
+                    if (ViewModel.CanClaimDaily) {
+                        PressDailyClaim();
+                    }
+                    else {
+                        audioService.PlayUiClick();
+                        ClosePopups();
+                    }
+                }
+                else if (evt.keyCode == KeyCode.X) {
+                    PressDailyDouble();
+                }
+
+                return;
+            }
+
             // The leagues list closes with Esc; PLAY's and the tiles' keys do not reach through it.
             if (leagues.IsListOpen && evt.keyCode is not KeyCode.Escape) {
                 evt.StopPropagation();
@@ -1127,6 +1251,10 @@ namespace ToyCarArena.UI
                 case KeyCode.B:
                     evt.StopPropagation();
                     OpenBoost();
+                    break;
+                case KeyCode.D:
+                    evt.StopPropagation();
+                    OpenDaily();
                     break;
                 case KeyCode.Escape:
                     evt.StopPropagation();
@@ -1231,7 +1359,7 @@ namespace ToyCarArena.UI
 
         private void OpenBoost()
         {
-            if (IsBusy || IsPopupOpen || boostRail.resolvedStyle.display == DisplayStyle.None) {
+            if (IsBusy || IsPopupOpen || boostTile.style.display == DisplayStyle.None) {
                 return;
             }
 
@@ -1282,6 +1410,108 @@ namespace ToyCarArena.UI
             Root.Focus();
         }
 
+        private void OpenDaily()
+        {
+            if (IsBusy || IsPopupOpen || !ViewModel.HasDaily) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            ViewModel.DailyOpened();
+            ShowDaily();
+        }
+
+        // The daily gift by itself: once a visit, on a menu that is up with nothing over it and a gift to claim.
+        private void OfferDaily()
+        {
+            if (Root?.panel == null || IsBusy || IsPopupOpen || !ViewModel.TakeDailyOffer()) {
+                return;
+            }
+
+            ShowDaily();
+        }
+
+        private void ShowDaily()
+        {
+            isDailyClaimed = false;
+            daily.Fill(ViewModel.Daily);
+            dailyPopup.AddToClassList(OpenClass);
+            ViewModel.DailyShown();
+        }
+
+        private void PressDailyClaim()
+        {
+            if (IsBusy || !IsDailyOpen || isDailyClaimed || !ViewModel.CanClaimDaily) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            var claim = ViewModel.ClaimDaily();
+            if (claim != null) {
+                CelebrateDaily(claim);
+            }
+        }
+
+        private void PressDailyDouble()
+        {
+            if (IsBusy || !IsDailyOpen || isDailyClaimed || !ViewModel.CanDoubleDaily) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            RunDailyAd(lifetime.Token).Forget();
+        }
+
+        private async UniTaskVoid RunDailyAd(CancellationToken token)
+        {
+            DailyClaim claim;
+            try {
+                claim = await ViewModel.WatchDaily(token);
+            }
+            catch (System.OperationCanceledException) {
+                return;
+            }
+
+            if (Root?.panel == null || !IsDailyOpen) {
+                return;
+            }
+
+            Root.Focus();
+            if (claim == null) {
+                // No reward: CLAIM ×2 goes, and CLAIM still takes the gift.
+                daily.Fill(ViewModel.Daily);
+                daily.Refuse(dailyPopup, lifetime.Token);
+                return;
+            }
+
+            CelebrateDaily(claim);
+        }
+
+        // The gift is taken: the cell turns done, the celebration plays, the coins land in the counter, and the card
+        // closes once it is over (as the garage's window does); the DAILY tile shows the time to the next.
+        private void CelebrateDaily(DailyClaim claim)
+        {
+            isDailyClaimed = true;
+            daily.Celebrate(dailyPopup, ViewModel.Daily, claim, garageStage ?? ViewModel.Stage, coinPill,
+                lifetime.Token);
+            audioService.Play(audioService.Library.KnockoutCredit);
+            audioService.PlayJingle(audioService.Library.Win);
+            RefreshDaily();
+            Root.schedule.Execute(() => {
+                if (Root?.panel == null || ViewModel.IsDecided) {
+                    return;
+                }
+
+                if (IsDailyOpen && isDailyClaimed) {
+                    dailyPopup.RemoveFromClassList(OpenClass);
+                    isDailyClaimed = false;
+                    Root.Focus();
+                }
+
+                Refresh();
+            }).StartingIn((long)(RewardCelebration.Duration * 1000f));
+        }
+
         // A quick jump, as a sticker answers a press: up and back over a fifth of a second, on the unscaled clock.
         private static void Pop(VisualElement element)
         {
@@ -1302,7 +1532,13 @@ namespace ToyCarArena.UI
                 ViewModel.BoostDeclined();
             }
 
+            if (IsDailyOpen && !ViewModel.IsAdPlaying && ViewModel.CanClaimDaily) {
+                ViewModel.DailyDeclined();
+            }
+
             boostPopup.RemoveFromClassList(OpenClass);
+            dailyPopup.RemoveFromClassList(OpenClass);
+            isDailyClaimed = false;
             missionsPopup.RemoveFromClassList(OpenClass);
             modesPopup.RemoveFromClassList(OpenClass);
             leagues?.Close();
@@ -1450,21 +1686,6 @@ namespace ToyCarArena.UI
 
             p.ClosePath();
             p.Fill();
-            p.Stroke();
-        }
-
-        private static void DrawChevron(MeshGenerationContext context)
-        {
-            var r = context.visualElement.contentRect;
-            var p = context.painter2D;
-            p.strokeColor = Navy;
-            p.lineWidth = r.width * 0.3f;
-            p.lineCap = LineCap.Round;
-            p.lineJoin = LineJoin.Round;
-            p.BeginPath();
-            p.MoveTo(new Vector2(r.x + r.width * 0.2f, r.y + r.height * 0.15f));
-            p.LineTo(new Vector2(r.x + r.width * 0.75f, r.y + r.height * 0.5f));
-            p.LineTo(new Vector2(r.x + r.width * 0.2f, r.y + r.height * 0.85f));
             p.Stroke();
         }
     }
