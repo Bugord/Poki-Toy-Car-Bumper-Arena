@@ -1755,10 +1755,27 @@
     padding: 0 24px 20px 24px;
 }
 
-.menu__daily-double { margin-right: 26px; }
+.menu__daily-double { flex-grow: 1.3; margin-right: 26px; }
 .menu__daily-double .double__play { flex-shrink: 0; width: 64px; height: 64px; margin-right: 14px; }
 
-.menu__daily-label { flex-grow: 1; flex-shrink: 1; min-width: 0; }
+.menu__daily-label { flex-grow: 0; flex-shrink: 1; min-width: 0; }
+
+/* CLAIM, then a coin and the amount it gives (CLAIM x2's already doubled), together in the middle of the button. */
+.menu__daily-double,
+.menu__daily-claim { justify-content: center; }
+
+.menu__daily-sum {
+    flex-direction: row;
+    flex-shrink: 0;
+    align-items: center;
+    margin-left: 18px;
+}
+
+.menu__daily-sum-coin {
+    width: 56px;
+    height: 56px;
+    margin-right: 10px;
+}
 
 .menu__daily-label-text {
     font-size: 64px;

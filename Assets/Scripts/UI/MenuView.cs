@@ -1492,7 +1492,8 @@ namespace ToyCarArena.UI
         private void CelebrateDaily(DailyClaim claim)
         {
             isDailyClaimed = true;
-            daily.Celebrate(dailyPopup, claim, garageStage ?? ViewModel.Stage, coinPill, lifetime.Token);
+            daily.Celebrate(dailyPopup, ViewModel.Daily, claim, garageStage ?? ViewModel.Stage, coinPill,
+                lifetime.Token);
             audioService.Play(audioService.Library.KnockoutCredit);
             audioService.PlayJingle(audioService.Library.Win);
             RefreshDaily();

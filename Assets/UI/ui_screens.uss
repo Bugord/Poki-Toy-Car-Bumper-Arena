@@ -5585,3 +5585,9 @@
     width: auto;
     margin-left: 30px;
 }
+
+/* The daily gift over a visit's first result (ResultDaily): the still empty cards wait out of sight under it. */
+.round-over--gift .level-card,
+.round-over--gift .missions {
+    opacity: 0;
+}

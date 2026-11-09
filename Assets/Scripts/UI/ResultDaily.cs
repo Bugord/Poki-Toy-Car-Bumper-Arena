@@ -93,12 +93,20 @@ namespace ToyCarArena.UI
             daily.Fill(viewModel.Daily);
             popup.AddToClassList(OpenClass);
             viewModel.DailyShown();
+            // The coins fly into the counter: it comes over the dim while the popup is up, or they would land in the
+            // dark under it.
+            var counterParent = coinCounter?.parent;
+            var counterIndex = counterParent?.IndexOf(coinCounter) ?? -1;
+            coinCounter?.BringToFront();
             try {
                 await UniTask.WaitUntil(() => !IsOpen, cancellationToken: lifetime.Token);
             }
             finally {
                 popup.RemoveFromClassList(OpenClass);
                 viewModel.HideGiftHat();
+                if (counterParent != null && coinCounter.parent == counterParent) {
+                    counterParent.Insert(counterIndex, coinCounter);
+                }
             }
         }
 
@@ -212,7 +220,7 @@ namespace ToyCarArena.UI
         {
             isClaimed = true;
             var token = lifetime.Token;
-            daily.Celebrate(popup, claim, viewModel.Stage, coinCounter, token);
+            daily.Celebrate(popup, viewModel.Daily, claim, viewModel.Stage, coinCounter, token);
             audioService.Play(audioService.Library.KnockoutCredit);
             audioService.PlayJingle(audioService.Library.Win);
             Claimed?.Invoke(claim);

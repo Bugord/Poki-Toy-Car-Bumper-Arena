@@ -20,6 +20,7 @@ namespace ToyCarArena.UI
         private const long EnterDelay = 80;
 
         private const string WonClass = "round-over__title--won";
+        private const string GiftClass = "round-over--gift";
         private const string OutClass = "round-over__title--out";
         private const string EnterClass = "round-over--enter";
         // The title's spring in (round-over__title in ui_screens) before the confetti bursts out of it, in milliseconds.
@@ -160,7 +161,11 @@ namespace ToyCarArena.UI
             rewardRun?.Cancel();
             rewardRun?.Dispose();
             rewardRun = CancellationTokenSource.CreateLinkedTokenSource(token, lifetime.Token);
-            if (await daily.Run(rewardRun.Token).SuppressCancellationThrow() || rewardRun.IsCancellationRequested) {
+            // The cards wait out of sight under the gift: still empty, they looked like a broken stub under its card.
+            Root.AddToClassList(GiftClass);
+            var isCancelled = await daily.Run(rewardRun.Token).SuppressCancellationThrow();
+            Root.RemoveFromClassList(GiftClass);
+            if (isCancelled || rewardRun.IsCancellationRequested) {
                 return;
             }
 

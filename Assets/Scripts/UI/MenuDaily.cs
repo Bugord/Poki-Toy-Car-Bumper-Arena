@@ -54,7 +54,7 @@ namespace ToyCarArena.UI
             claimRow = Element("menu__daily-buttons");
             doubleButton = Button("button--purple", "menu__daily-double", pressDouble);
             doubleButton.Add(RoundOverRewards.PlaySign());
-            var doubleLabel = RoundOverProgress.Outlined(Strings.Get("result.claim_x2"), "menu__daily-label",
+            var doubleLabel = RoundOverProgress.Outlined(Strings.Get("daily.claim"), "menu__daily-label",
                 out var doubleLabels);
             foreach (var label in doubleLabels) {
                 label.AddToClassList("button__label");
@@ -63,6 +63,8 @@ namespace ToyCarArena.UI
             FitText.Fit(doubleLabel, doubleLabels);
             doubleButton.Add(doubleLabel);
             DoubleLabels = doubleLabels;
+            DoubleAmount = Amount(doubleButton, out var doubleAmounts);
+            DoubleAmounts = doubleAmounts;
             var ad = Text("menu__daily-ad");
             ad.text = Strings.Get("result.ad");
             AdTag = ad;
@@ -80,6 +82,8 @@ namespace ToyCarArena.UI
             FitText.Fit(claimLabel, claimLabels);
             claimButton.Add(claimLabel);
             ClaimLabels = claimLabels;
+            ClaimAmount = Amount(claimButton, out var claimAmounts);
+            ClaimAmounts = claimAmounts;
             SpaceKey = KeyCap(Strings.Get("common.space"), "menu__daily-key");
             claimButton.Add(SpaceKey);
             claimRow.Add(claimButton);
@@ -95,6 +99,10 @@ namespace ToyCarArena.UI
 
         private Label[] DoubleLabels { get; }
         private Label[] ClaimLabels { get; }
+        private VisualElement DoubleAmount { get; }
+        private Label[] DoubleAmounts { get; }
+        private VisualElement ClaimAmount { get; }
+        private Label[] ClaimAmounts { get; }
         private Label AdTag { get; }
         private VisualElement SpaceKey { get; }
         private Label ContinueLabel { get; }
@@ -139,21 +147,24 @@ namespace ToyCarArena.UI
                 }
             }
 
-            var next = gift.NextSlot;
-            hint.text = gift.HatOf(next) != null
-                ? Strings.Get("daily.tomorrow_hat")
-                : Strings.Format("daily.tomorrow", gift.CoinsOf(next));
+            ShowTomorrow(gift, !canClaim);
 
             claimRow.style.display = canClaim ? DisplayStyle.Flex : DisplayStyle.None;
             doubleButton.style.display = gift.CanDouble ? DisplayStyle.Flex : DisplayStyle.None;
             continueButton.style.display = canClaim ? DisplayStyle.None : DisplayStyle.Flex;
             foreach (var label in DoubleLabels) {
-                label.text = Strings.Get("result.claim_x2");
+                label.text = Strings.Get("daily.claim");
             }
 
             foreach (var label in ClaimLabels) {
                 label.text = Strings.Get("daily.claim");
             }
+
+            // The amounts on the buttons, CLAIM ×2's already doubled: what the ad is worth is plain before it plays.
+            // A hat has no amount.
+            var coins = gift.HatOf(today) == null ? gift.CoinsOf(today) : 0;
+            SetAmount(ClaimAmount, ClaimAmounts, coins);
+            SetAmount(DoubleAmount, DoubleAmounts, coins * gift.AdMultiplier);
 
             AdTag.text = Strings.Get("result.ad");
             SpaceKey.Q<Label>().text = Strings.Get("common.space");
@@ -165,8 +176,8 @@ namespace ToyCarArena.UI
         /// and the celebration plays over the popup's dim with the stamp over the cell and, for coins,
         /// the coins flying from it into <paramref name="coinCounter"/>.
         /// </summary>
-        public void Celebrate(VisualElement overlay, DailyClaim claim, GarageStage stage, VisualElement coinCounter,
-            CancellationToken token)
+        public void Celebrate(VisualElement overlay, DailyGift gift, DailyClaim claim, GarageStage stage,
+            VisualElement coinCounter, CancellationToken token)
         {
             if (claim.Slot < 0 || claim.Slot >= cells.Length) {
                 return;
@@ -181,8 +192,10 @@ namespace ToyCarArena.UI
                 cell.ShowCoins(claim.Coins, CoinsIn(claim.Slot, cells.Length));
             }
 
-            // The buttons go; the menu closes the card once the celebration is over.
+            // The buttons go, and the line under the calendar says what tomorrow brings; the menu closes the card once
+            // the celebration is over.
             claimRow.style.display = DisplayStyle.None;
+            ShowTomorrow(gift, true);
             // The stamp goes over the whole calendar: a cell is too narrow for it.
             var stamp = Strings.Get(claim.Hat != null ? "result.equipped" : "daily.claimed");
             RewardCelebration.Play(overlay, sheet, days, stamp, claim.Hat == null ? cell.Art : null,
@@ -192,6 +205,39 @@ namespace ToyCarArena.UI
         /// <summary>The ad gave nothing: the card shakes and NO AD RIGHT NOW floats over CLAIM ×2.</summary>
         public void Refuse(VisualElement overlay, CancellationToken token) =>
             RewardCelebration.Refuse(overlay, sheet, doubleButton, Strings.Get("garage.no_ad"), token);
+
+        private void ShowTomorrow(DailyGift gift, bool isShown)
+        {
+            hint.style.display = isShown ? DisplayStyle.Flex : DisplayStyle.None;
+            var next = gift.NextSlot;
+            hint.text = gift.HatOf(next) != null
+                ? Strings.Get("daily.tomorrow_hat")
+                : Strings.Format("daily.tomorrow", gift.CoinsOf(next));
+        }
+
+        // A coin and an outlined amount after a button's CLAIM.
+        private static VisualElement Amount(VisualElement button, out Label[] labels)
+        {
+            var amount = Element("menu__daily-sum");
+            var coin = RoundOverMeta.Coin();
+            coin.AddToClassList("menu__daily-sum-coin");
+            amount.Add(coin);
+            amount.Add(RoundOverProgress.Outlined("", "menu__daily-label", out labels));
+            foreach (var label in labels) {
+                label.AddToClassList("button__label");
+            }
+
+            button.Add(amount);
+            return amount;
+        }
+
+        private static void SetAmount(VisualElement amount, Label[] labels, int coins)
+        {
+            amount.style.display = coins > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+            foreach (var label in labels) {
+                label.text = coins.ToString();
+            }
+        }
 
         // One coin on the first days, two in the middle, three at the end, as the macket stacks them.
         private static int CoinsIn(int slot, int count) => slot < 2 ? 1 : slot < Math.Min(4, count - 1) ? 2 : 3;
