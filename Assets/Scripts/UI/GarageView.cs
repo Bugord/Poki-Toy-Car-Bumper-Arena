@@ -97,7 +97,6 @@ namespace ToyCarArena.UI
             Ad,
         }
 
-        private static readonly string[] StatNames = { "speed", "power", "weight", "boost" };
 
         private readonly IAudioService audioService;
         private readonly HudControls controls;
@@ -306,76 +305,12 @@ namespace ToyCarArena.UI
 
             caption = Element("garage__caption");
             caption.Add(RoundOverProgress.Outlined("", "garage__name", out nameLabels));
-            stats = BuildStats("garage__stats");
+            stats = GarageStats.Build("garage__stats");
             caption.Add(stats);
             show.Add(caption);
             caption.RegisterCallback<GeometryChangedEvent>(_ => PlaceHero());
             show.RegisterCallback<GeometryChangedEvent>(_ => PlaceHero());
             body.Add(show);
-        }
-
-        /// <summary>
-        /// The stats as one white pill: each stat's name over five pips, filled to its value in the stat's colour, and
-        /// beside the name how much a car tried on the pedestal has more or less than the chosen one.
-        /// </summary>
-        private static VisualElement BuildStats(string className)
-        {
-            var pill = Element("garage-stats");
-            pill.AddToClassList(className);
-            foreach (var name in StatNames) {
-                var stat = Element("garage-stats__stat");
-                stat.AddToClassList($"garage-stats__stat--{name}");
-                var head = Element("garage-stats__head");
-                head.Add(Text("garage-stats__label"));
-                var diff = Element("garage-stats__diff");
-                diff.Add(Icon("garage-stats__arrow", DrawDiffArrow));
-                diff.Add(Text("garage-stats__diff-text"));
-                head.Add(diff);
-                stat.Add(head);
-                var pips = Element("garage-stats__pips");
-                for (var i = 0; i < GameTuning.CarStatSettings.Max; i++) {
-                    var pip = Element("garage-stats__pip");
-                    // USS has no :first-child, so the round ends of the track are classes.
-                    pip.EnableInClassList("garage-stats__pip--first", i == 0);
-                    pip.EnableInClassList("garage-stats__pip--last", i == GameTuning.CarStatSettings.Max - 1);
-                    pips.Add(pip);
-                }
-
-                stat.Add(pips);
-                pill.Add(stat);
-            }
-
-            return pill;
-        }
-
-        /// <summary>
-        /// Fills the pill with a car's stats. With <paramref name="against"/> (the chosen car, while another is tried
-        /// on) each stat also says what changes: the pips it would add pale, those it would lose outlined in red, and
-        /// ▲N or ▼N beside its name.
-        /// </summary>
-        private void SetStats(VisualElement pill, GameTuning.CarStatLine line, GameTuning.CarStatLine against = null)
-        {
-            var values = new[] { line.Speed, line.Power, line.Weight, line.Boost };
-            var bases = against == null ? values : new[] { against.Speed, against.Power, against.Weight, against.Boost };
-            for (var i = 0; i < StatNames.Length; i++) {
-                var stat = pill[i];
-                // Without boosts in the build the boost stat would promise nothing.
-                stat.style.display = StatNames[i] != "boost" || ViewModel.HasBoost ? DisplayStyle.Flex : DisplayStyle.None;
-                stat.Q<Label>(className: "garage-stats__label").text = Strings.Get($"car.stat_{StatNames[i]}");
-                var change = values[i] - bases[i];
-                var diff = stat.Q<VisualElement>(className: "garage-stats__diff");
-                Show(diff, change != 0);
-                diff.EnableInClassList("garage-stats__diff--up", change > 0);
-                diff.EnableInClassList("garage-stats__diff--down", change < 0);
-                diff.Q<Label>(className: "garage-stats__diff-text").text = Mathf.Abs(change).ToString();
-                diff.Q<VisualElement>(className: "garage-stats__arrow").MarkDirtyRepaint();
-                var pips = stat.Q<VisualElement>(className: "garage-stats__pips");
-                for (var pip = 0; pip < pips.childCount; pip++) {
-                    pips[pip].EnableInClassList("garage-stats__pip--on", pip < values[i]);
-                    pips[pip].EnableInClassList("garage-stats__pip--gain", pip >= bases[i] && pip < values[i]);
-                    pips[pip].EnableInClassList("garage-stats__pip--loss", pip >= values[i] && pip < bases[i]);
-                }
-            }
         }
 
         private void BuildSide()
@@ -605,14 +540,7 @@ namespace ToyCarArena.UI
             sheet.Add(close);
 
             // The car in a framed piece of the garage's sky: the checker and the turning light behind it.
-            var frame = Element("garage__sheet-frame");
-            frame.style.backgroundImage = new StyleBackground(LeagueLook.SkyOf(ViewModel.League));
-            DriftingChecker.AddTo(frame, SheetChecker, SheetCheckerShare);
-            var light = Element("garage__sheet-light");
-            light.generateVisualContent += MenuView.DrawLight;
-            light.schedule.Execute(() =>
-                light.style.rotate = new Rotate(Time.unscaledTime / RaysTurnSeconds * 360f % 360f)).Every(16);
-            frame.Add(light);
+            var frame = SkyFrame(ViewModel.League);
             sheetArt = Element("garage__sheet-art");
             sheetPortraitRoot = Element("car-portrait");
             sheetPortraitRoot.AddToClassList("garage__sheet-portrait");
@@ -620,7 +548,7 @@ namespace ToyCarArena.UI
             sheetPortrait = new CarPortrait(sheetPortraitRoot);
             frame.Add(sheetArt);
             sheet.Add(frame);
-            sheetStats = BuildStats("garage__sheet-stats");
+            sheetStats = GarageStats.Build("garage__sheet-stats");
             sheet.Add(sheetStats);
 
             sheetCoins = Element("garage__sheet-coins");
@@ -778,7 +706,7 @@ namespace ToyCarArena.UI
 
             // The stats belong to the cars: on the hats and the paints their room goes to the panel.
             Show(stats, tab == Tab.Cars);
-            SetStats(stats, ViewModel.StatsOf(car),
+            GarageStats.Set(stats, ViewModel.StatsOf(car), ViewModel.HasBoost,
                 previewedCar != null && tab == Tab.Cars ? ViewModel.StatsOf(ViewModel.SelectedEntry) : null);
             // A paint takes at once, so the paints have no bottom button.
             Show(action, tab != Tab.Paint);
@@ -1074,7 +1002,7 @@ namespace ToyCarArena.UI
 
             Show(sheetStats, confirmCar != null);
             if (confirmCar != null) {
-                SetStats(sheetStats, ViewModel.StatsOf(confirmCar));
+                GarageStats.Set(sheetStats, ViewModel.StatsOf(confirmCar), ViewModel.HasBoost);
             }
 
             var price = confirmCar != null ? ViewModel.PriceOf(confirmCar.Id) : confirmHat.Price;
@@ -1613,6 +1541,24 @@ namespace ToyCarArena.UI
             return icon;
         }
 
+        /// <summary>
+        /// A framed piece of the league's sky (<c>garage__sheet-frame</c>): its checker drifting and the menu's light
+        /// turning behind whatever is put in it. The BUY window frames the car in it, and so do the result's reward
+        /// popups, so a reward looks the same wherever it is offered.
+        /// </summary>
+        internal static VisualElement SkyFrame(int league)
+        {
+            var frame = Element("garage__sheet-frame");
+            frame.style.backgroundImage = new StyleBackground(LeagueLook.SkyOf(league));
+            DriftingChecker.AddTo(frame, SheetChecker, SheetCheckerShare);
+            var light = Element("garage__sheet-light");
+            light.generateVisualContent += MenuView.DrawLight;
+            light.schedule.Execute(() =>
+                light.style.rotate = new Rotate(Time.unscaledTime / RaysTurnSeconds * 360f % 360f)).Every(16);
+            frame.Add(light);
+            return frame;
+        }
+
         private static VisualElement Element(string className)
         {
             var element = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -1675,30 +1621,6 @@ namespace ToyCarArena.UI
             p.fillColor = new Color32(0xff, 0xc9, 0x3c, 0xff);
             p.BeginPath();
             p.Arc(new Vector2(X(0.5f), Y(0.68f)), r.width * 0.1f, 0f, 360f);
-            p.Fill();
-        }
-
-        // The ▲ or ▼ of a stat's change, in the tag's text colour (the fonts have no such glyphs).
-        private static void DrawDiffArrow(MeshGenerationContext context)
-        {
-            var element = context.visualElement;
-            var r = element.contentRect;
-            var isUp = element.parent?.ClassListContains("garage-stats__diff--up") ?? true;
-            var p = context.painter2D;
-            p.fillColor = element.resolvedStyle.color;
-            p.BeginPath();
-            if (isUp) {
-                p.MoveTo(new Vector2(r.center.x, r.y));
-                p.LineTo(new Vector2(r.xMax, r.yMax));
-                p.LineTo(new Vector2(r.x, r.yMax));
-            }
-            else {
-                p.MoveTo(new Vector2(r.x, r.y));
-                p.LineTo(new Vector2(r.xMax, r.y));
-                p.LineTo(new Vector2(r.center.x, r.yMax));
-            }
-
-            p.ClosePath();
             p.Fill();
         }
 

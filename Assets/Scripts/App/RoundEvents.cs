@@ -211,6 +211,14 @@ namespace ToyCarArena.App
         public static void MeasureLeagueShown(this IGamePlatform platform, string league) =>
             platform.MeasureVisible(MenuCategory, "league-" + league);
 
+        /// <summary>
+        /// <c>result / league-&lt;id&gt; / visible</c>: NEW LEAGUE! over the result of the round that reached the league
+        /// (after the branch feature/result-popups). The menu's <c>menu / league-&lt;id&gt;</c> then stays for a league
+        /// the result did not greet.
+        /// </summary>
+        public static void MeasureResultLeagueShown(this IGamePlatform platform, string league) =>
+            platform.MeasureVisible(ResultCategory, "league-" + league);
+
         /// <summary><c>result / home / visible</c> on every result, <c>interact</c> when HOME is pressed.</summary>
         public static void MeasureHomeShown(this IGamePlatform platform) => platform.MeasureVisible(ResultCategory, "home");
 

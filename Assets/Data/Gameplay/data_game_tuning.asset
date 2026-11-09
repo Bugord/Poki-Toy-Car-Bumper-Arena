@@ -132,6 +132,8 @@ MonoBehaviour:
       duelEscapeBoostChance: 0.25
     rampRounds: 6
     edgeAssistRounds: 12
+    returnLevel: 0.5
+    returnRounds: 2
     streakStart: 2
     streakEase: 0.25
     maxStreakEase: 0.75
@@ -443,24 +445,24 @@ MonoBehaviour:
     topPlaces: 3
     resultDelay: 0.8
   coins:
-    roundCoins: 30
-    knockoutCoins: 15
-    winCoins: 30
+    roundCoins: 20
+    knockoutCoins: 10
+    winCoins: 20
     carPrices:
     - id: speedster
       price: 30
     - id: suv
-      price: 80
-    - id: truck
-      price: 150
-    - id: monster-truck
       price: 300
+    - id: truck
+      price: 700
+    - id: monster-truck
+      price: 1500
   streaks:
     start: 2
     multiplier: 1.5
   missions:
     tierXp: 1e0000002d0000003c000000i
-    tierCoins: 280000003c0000005a000000i
+    tierCoins: 19000000280000003c000000i
     pool:
     - id: final-two
       slot: 0
@@ -593,23 +595,35 @@ MonoBehaviour:
   toppers:
     toppers:
     - id: top-hat
-      price: 60
+      price: 150
     - id: party-hat
-      price: 40
+      price: 50
     - id: cone
-      price: 40
+      price: 80
     - id: antenna
-      price: 60
+      price: 150
     - id: flag
-      price: 60
+      price: 200
+    - id: chef-hat
+      price: 250
     - id: horns
-      price: 90
-    - id: propeller
-      price: 90
-    - id: fin
-      price: 180
-    - id: crown
       price: 300
+    - id: cowboy-hat
+      price: 350
+    - id: propeller
+      price: 400
+    - id: viking-helmet
+      price: 500
+    - id: duck
+      price: 700
+    - id: fin
+      price: 800
+    - id: halo
+      price: 1000
+    - id: rocket
+      price: 1500
+    - id: crown
+      price: 2000
   jelly:
     padCount: 4
     padRadius: 1.3

@@ -116,10 +116,10 @@ namespace ToyCarArena.Tests.PlayMode
                         var model = new RoundOverViewModel(catalog, arenas, tuning, progress, null, platform, wallet,
                             null, name == "daily" ? new PlayerDaily(record.storage, tuning, wallet) : null);
                         model.SetPayload(record.record);
-                        // The gift's 3D hat as the arena scene's garage stage draws it, under a light like its sun.
+                        // The reward popups' 3D car as the arena scene's garage stage draws it, under a light like its sun.
                         Light light = null;
                         GarageStage stage = null;
-                        if (name is "gift" or "hat") {
+                        if (name is "gift" or "hat" or "offer" or "bought" or "legend") {
                             light = new GameObject("Gift screenshot light").AddComponent<Light>();
                             light.type = LightType.Directional;
                             light.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
@@ -228,7 +228,7 @@ namespace ToyCarArena.Tests.PlayMode
             }
             if (name == "legend") {
                 // A gold player a little short of level 100: the round crosses into legend, the card's badge and the bar
-                // change rank to the rainbow plate with its crown (the new league itself is the main menu's to greet).
+                // change rank to the rainbow plate with its crown, and NEW LEAGUE! greets the legend league.
                 storage.SetInt("xp_total", LevelStart(tuning, 100) - 10);
             }
             var result = new RoundResult(isWon ? RoundOutcome.Won : RoundOutcome.Out, isWon ? 1 : 3, 4, 40f,

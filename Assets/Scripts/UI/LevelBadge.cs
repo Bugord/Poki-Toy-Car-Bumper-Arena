@@ -7,7 +7,7 @@ namespace ToyCarArena.UI
     /// <summary>
     /// Gives each league a sticker silhouette: plain rookie, bevelled bronze shield, winged silver, crowned gold
     /// laurels and a star crest with gemmed wings for rainbow legend. Ornaments grow outside the unchanged layout box,
-    /// with a light rim on dark name pills and smaller growth on large badges. Round track stops keep their circular
+    /// with smaller growth on large badges. Round track stops keep their circular
     /// face. The frame follows the <see cref="PlayerRank.ClassOf"/> class; <see cref="SetRank"/> also repaints it and
     /// moves a rival's horns when a badge already on screen changes league.
     /// </summary>
@@ -19,9 +19,6 @@ namespace ToyCarArena.UI
         private const string OrnamentClass = "level-badge__ornament";
 
         // Side ornaments stay within the existing gaps before names; height carries most of the league silhouette.
-        // The rim traces exposed edges only, so it cannot draw a white seam through the sticker face.
-        private const float OrnamentRim = 0.45f;
-        private static readonly string[] DarkBackdrops = { "lobby__level", "car-name__level" };
 
         // Ornaments grow with the badge up to this height and then slower, so a big badge (the result card's, the
         // level-up popup's) keeps a crown that crowns it without reaching the stickers above.
@@ -39,7 +36,6 @@ namespace ToyCarArena.UI
         private static readonly Color32 Bronze = new(0xe8, 0xa4, 0x6a, 0xff);
         private static readonly Color32 Silver = new(0xd7, 0xe0, 0xee, 0xff);
         private static readonly Color32 Rival = new(0xff, 0x4d, 0x4d, 0xff);
-        private static readonly Color32 Rim = new(0xff, 0xff, 0xff, 0xd9);
 
         private static Texture2D rainbowTexture;
 
@@ -141,13 +137,6 @@ namespace ToyCarArena.UI
             painter.lineJoin = LineJoin.Round;
             painter.lineCap = LineCap.Round;
 
-            var rim = 0f;
-            foreach (var backdrop in DarkBackdrops) {
-                if (badge.ClassListContains(backdrop)) {
-                    rim = OrnamentRim * outline;
-                }
-            }
-
             // PillShape can resolve a round stop to a radius smaller than half its box because of its bottom shadow.
             var isRound = badge.ClassListContains("track__node")
                 || style.borderTopLeftRadius >= Mathf.Min(badge.layout.width, badgeHeight) / 2f;
@@ -159,9 +148,9 @@ namespace ToyCarArena.UI
                 : tier == 3 ? style.backgroundColor : Rainbow[1];
 
             DrawSide(painter, new Vector2(-style.borderLeftWidth + inset, centreY), height, -1f,
-                tier, colour, outline, rim);
+                tier, colour, outline);
             DrawSide(painter, new Vector2(ornament.contentRect.width + style.borderRightWidth - inset, centreY),
-                height, 1f, tier, colour, outline, rim);
+                height, 1f, tier, colour, outline);
 
             if (tier == 1) {
                 if (!isRound) {
@@ -171,7 +160,7 @@ namespace ToyCarArena.UI
                     painter.MoveTo(new Vector2(middle - height * 0.22f, bottom));
                     painter.LineTo(new Vector2(middle, bottom + height * 0.15f));
                     painter.LineTo(new Vector2(middle + height * 0.22f, bottom));
-                    FinishShape(painter, colour, outline, rim);
+                    FinishShape(painter, colour, outline);
                 }
             } else {
                 var crestWidth = height * (tier == 2 ? 0.38f : tier == 3 ? 0.72f : 0.78f);
@@ -183,14 +172,14 @@ namespace ToyCarArena.UI
                 }
 
                 DrawCrest(painter, new Vector2(middle, -border + sink), height, crestWidth, tier,
-                    tier == 2 ? (Color)Silver : tier == 3 ? style.backgroundColor : (Color)Rainbow[1], outline, rim);
+                    tier == 2 ? (Color)Silver : tier == 3 ? style.backgroundColor : (Color)Rainbow[1], outline);
             }
         }
 
         // Swept wings use broad, rounded feather lobes so their silhouette stays clear at phone size.
-        // Their open roots sit on the badge edge, keeping the closing stroke in its outline and the light rim outside.
+        // Their open roots sit on the badge edge, keeping the closing stroke in its outline.
         private static void DrawSide(Painter2D painter, Vector2 root, float size, float direction, int tier,
-            Color colour, float outline, float rim)
+            Color colour, float outline)
         {
             Vector2 At(float x, float y) => root + new Vector2(direction * x * size, y * size);
             painter.BeginPath();
@@ -226,7 +215,7 @@ namespace ToyCarArena.UI
                 painter.BezierCurveTo(At(0.05f, 0.34f), At(0.01f, 0.37f), At(0f, 0.40f));
             }
 
-            FinishShape(painter, colour, outline, rim);
+            FinishShape(painter, colour, outline);
 
             if (tier == 4) {
                 // A single gem distinguishes legend without another outline cutting across its wing.
@@ -235,7 +224,7 @@ namespace ToyCarArena.UI
         }
 
         private static void DrawCrest(Painter2D painter, Vector2 root, float size, float width, int tier,
-            Color colour, float outline, float rim)
+            Color colour, float outline)
         {
             Vector2 At(float x, float y) => root + new Vector2((x - 0.5f) * width, -y * size);
             painter.BeginPath();
@@ -258,7 +247,7 @@ namespace ToyCarArena.UI
             }
 
             painter.LineTo(At(1f, 0f));
-            FinishShape(painter, colour, outline, rim);
+            FinishShape(painter, colour, outline);
 
             if (tier == 2) {
                 DrawGem(painter, root + new Vector2(0f, -size * 0.14f), size * 0.07f, White);
@@ -280,7 +269,7 @@ namespace ToyCarArena.UI
                 }
 
                 painter.ClosePath();
-                FinishShape(painter, colour, outline, rim);
+                FinishShape(painter, colour, outline);
                 DrawGem(painter, centre, size * 0.085f, White);
             }
         }
@@ -297,15 +286,9 @@ namespace ToyCarArena.UI
             painter.Fill();
         }
 
-        // Call with an open root edge, except for a floating star, so the light rim stays outside the face.
-        private static void FinishShape(Painter2D painter, Color colour, float outline, float rim)
+        // Call with an open root edge, except for a floating star.
+        private static void FinishShape(Painter2D painter, Color colour, float outline)
         {
-            if (rim > 0f) {
-                painter.strokeColor = Rim;
-                painter.lineWidth = outline + rim * 2f;
-                painter.Stroke();
-            }
-
             painter.ClosePath();
             painter.fillColor = colour;
             painter.Fill();

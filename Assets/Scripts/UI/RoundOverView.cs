@@ -134,6 +134,7 @@ namespace ToyCarArena.UI
             xpProgress = new RoundOverProgress(Root, ViewModel, isTouch);
             xpProgress.RewardTaken += OnRewardTaken;
             xpProgress.RewardRefused += OnRewardRefused;
+            xpProgress.Clicked += audioService.PlayUiClick;
             rewards = new RoundOverRewards(Root, ViewModel, isTouch);
             rewards.Claim.clicked += ClaimDouble;
             match = RoundOverMatch.Create(Root, ViewModel);
@@ -219,6 +220,7 @@ namespace ToyCarArena.UI
             if (xpProgress != null) {
                 xpProgress.RewardTaken -= OnRewardTaken;
                 xpProgress.RewardRefused -= OnRewardRefused;
+                xpProgress.Clicked -= audioService.PlayUiClick;
                 xpProgress.Dispose();
             }
 
@@ -450,6 +452,17 @@ namespace ToyCarArena.UI
             // The daily gift takes every key while it is up: Space claims it there, not NEXT MATCH.
             if (daily.HandleKey(evt.keyCode)) {
                 evt.StopPropagation();
+                return;
+            }
+
+            // NEW LEAGUE! takes every key while it is up; Space, Enter and Esc close it.
+            if (xpProgress.IsLeagueOpen) {
+                evt.StopPropagation();
+                if (evt.keyCode is KeyCode.Space or KeyCode.Return or KeyCode.KeypadEnter or KeyCode.Escape) {
+                    audioService.PlayUiClick();
+                    xpProgress.CloseLeague();
+                }
+
                 return;
             }
 

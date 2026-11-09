@@ -35,8 +35,8 @@ namespace ToyCarArena.Gameplay.Cars
         private const float StartYaw = 215f;
         private const float HeroBoost = 3f;
 
-        private const int Columns = 5;
-        private const int Rows = 2;
+        private const int Columns = 6;
+        private const int Rows = 3;
         private const int CellSize = 256;
         private const float HatPitch = 16f;
         private const float HatYaw = 200f;
