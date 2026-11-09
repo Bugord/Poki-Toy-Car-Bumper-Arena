@@ -12,10 +12,11 @@ using DevConsole = Bugord.SuperConsole.SuperConsole;
 namespace ToyCarArena.App
 {
     /// <summary>
-    /// A small always-on readout for development builds: frames per second, average and worst frame time over the last
+    /// A small readout for development builds, off until <see cref="PerfDevTools"/> enables the component: frames per second, average and worst frame time over the last
     /// second, and the size the 3D scene renders at. Meant for a real phone, where the editor's profiler cannot go.
     /// IMGUI, because it needs no panel or asset and draws over everything; the text is rebuilt twice a second and the
-    /// frame times come from a ring buffer (<see cref="FrameStats"/>), so a frame allocates nothing.
+    /// frame times come from a ring buffer (<see cref="FrameStats"/>), so a frame allocates nothing. While the component is
+    /// disabled Unity calls neither <c>Update</c> nor <c>OnGUI</c>, so a hidden readout costs nothing.
     /// </summary>
     public sealed class PerfOverlay : MonoBehaviour
     {
@@ -43,6 +44,13 @@ namespace ToyCarArena.App
             background = new Texture2D(1, 1) { hideFlags = HideFlags.HideAndDontSave };
             background.SetPixel(0, 0, new Color(0f, 0f, 0f, 0.6f));
             background.Apply();
+        }
+
+        private void OnEnable()
+        {
+            // Rebuilt on the first Update, before this frame's OnGUI, instead of showing numbers from when it was hidden.
+            sinceRefresh = Refresh;
+            content.text = null;
         }
 
         private void OnDestroy()
