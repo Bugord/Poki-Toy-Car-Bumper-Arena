@@ -306,11 +306,14 @@ namespace ToyCarArena.UI
             var grown = new Scale(new Vector3(scale, scale, 1f));
             // A screen wider than the column needs (a 16:9 desktop) left a hole between the missions and the cards
             // under them: the column keeps together, in the middle of the height it has.
-            // Whole pixels, and kept within a pixel: snapping the moved cards to the pixel grid changes their heights by
-            // a fraction, which would move them again, and again.
+            // Kept until it moves by more than snapping can: layout snaps each edge of the moved cards to the device's
+            // pixels, so moving them changes their heights by a device pixel, which moved them back, and again (the
+            // layout failed to stabilize and froze the game on a 1289x725 window, where a device pixel is 2.65
+            // reference pixels). The two heights each change by a pixel, scaled with the column and halved.
             var spare = Mathf.Round(Mathf.Max(0f,
                 size.y - top - low - (missionsHeight + bottom.layout.height) * scale) * 0.5f);
-            if (Mathf.Abs(spare - columnsSpare) < 1.5f) {
+            var pixel = 1f / Mathf.Max(0.01f, screen.panel?.scaledPixelsPerPoint ?? 1f);
+            if (Mathf.Abs(spare - columnsSpare) <= pixel * ColumnsMaxScale + 1.5f) {
                 spare = columnsSpare;
             }
 
