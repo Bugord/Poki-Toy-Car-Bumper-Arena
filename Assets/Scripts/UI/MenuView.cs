@@ -106,7 +106,7 @@ namespace ToyCarArena.UI
         // gear (their width and gaps, reference pixels).
         private const float WideLevelShare = 0.42f;
         private const float LevelMinWidth = 640f;
-        private const float WalletWidth = 420f;
+        private const float WalletWidth = 520f;
         // The bar's text starts this far past the badge that covers the bar's left end.
         private const float XpTextGap = 22f;
 
@@ -154,6 +154,7 @@ namespace ToyCarArena.UI
         private CarPortrait heroPortrait;
         private float heroAspect = 1.6f;
         private Label carName;
+        private VisualElement carPill;
         private VisualElement bottom;
         private VisualElement missionCard;
         private VisualElement actions;
@@ -410,7 +411,7 @@ namespace ToyCarArena.UI
             // The car's name on a white pill with a green garage sign: smaller than PLAY, and it says the car opens
             // the garage.
             var name = carNameBox = Element("menu__car-name");
-            var pill = Sticker("menu__car-pill", OpenGarage);
+            var pill = carPill = Sticker("menu__car-pill", OpenGarage);
             var pillFace = pill.Q<VisualElement>(className: "menu__face");
             carName = Text("menu__car-name-text");
             // A longer or shorter name may or may not fit between the bottom cards sideways (PlaceStage).
@@ -428,11 +429,11 @@ namespace ToyCarArena.UI
         private void BuildBottom(VisualElement menu)
         {
             bottom = Element("menu__bottom");
-            // The slot's sign, the task (on two lines if it must: a Russian task is long) over its reward, and the count
+            // The task's sign, the task (on two lines if it must: a Russian task is long) over its reward, and the count
             // with a thin bar at the right for a mission of more than one step.
             missionCard = Sticker("menu__mission", OpenMissions);
             var face = missionCard.Q<VisualElement>(className: "menu__face");
-            missionIcon = MissionLook.IconOf(MissionSlot.Round);
+            missionIcon = MissionLook.IconOf(null);
             face.Add(missionIcon);
             var body = Element("menu__mission-body");
             missionTask = Text("menu__mission-task");
@@ -859,7 +860,7 @@ namespace ToyCarArena.UI
             missionCard.style.display = nearest == null ? DisplayStyle.None : DisplayStyle.Flex;
             if (nearest != null) {
                 var definition = nearest.Definition;
-                missionIcon.Set(definition.Slot, false);
+                missionIcon.Set(definition, false);
                 missionTask.text = ViewModel.MissionText(definition);
                 missionProgress.Set(nearest.Progress, definition.Target);
                 missionReward.Clear();
@@ -952,10 +953,10 @@ namespace ToyCarArena.UI
         {
             missionsList.Clear();
             foreach (var mission in ViewModel.Missions) {
-                // The slot's sign, the task over its XP and coins, and the count with its bar for more than one step.
+                // The task's sign, the task over its XP and coins, and the count with its bar for more than one step.
                 var definition = mission.Definition;
                 var row = Element("menu__mission-row");
-                row.Add(MissionLook.IconOf(definition.Slot));
+                row.Add(MissionLook.IconOf(definition));
                 var body = Element("menu__mission-row-body");
                 var task = Text("menu__mission-row-task");
                 task.text = ViewModel.MissionText(definition);
@@ -1117,7 +1118,9 @@ namespace ToyCarArena.UI
                 // cards, when it fits between the mission and the mode, and the car above grows into the room.
                 var missionBox = Root.WorldToLocal(missionCard.worldBound);
                 var actionsBox = Root.WorldToLocal(actions.worldBound);
-                var nameWidth = Root.WorldToLocal(carName.worldBound).width;
+                // The whole pill, its garage sign and padding with the name: the name alone let the pill run into
+                // the mode's plate on 4:3.
+                var nameWidth = Root.WorldToLocal(carPill.worldBound).width;
                 // The name stays centred under the car, and the gap need not be centred on the screen.
                 var reach = nameWidth / 2f + NameGap;
                 var middle = size.x / 2f;
