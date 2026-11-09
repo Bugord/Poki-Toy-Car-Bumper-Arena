@@ -59,6 +59,7 @@ namespace ToyCarArena.UI
         private readonly VisualElement root;
         private readonly RoundOverViewModel viewModel;
         private readonly bool isTouch;
+        private NewLeaguePopup league;
         private readonly VisualElement bar;
         private readonly Label barTo;
         private readonly VisualElement barFill;
@@ -149,6 +150,14 @@ namespace ToyCarArena.UI
 
         /// <summary>A reward popup is up: it takes the presses, so the keys under it wait too.</summary>
         public bool IsPopupOpen { get; private set; }
+
+        /// <summary>NEW LEAGUE! is up: Space, Enter and Esc close it (<see cref="CloseLeague"/>), not NEXT MATCH.</summary>
+        public bool IsLeagueOpen => league is { IsOpen: true };
+
+        public void CloseLeague() => league?.Continue();
+
+        /// <summary>A popup's button was pressed: the view plays its click.</summary>
+        public event Action Clicked;
 
         /// <summary>A popup's reward was taken (bought or put on): the view plays its sound.</summary>
         public event Action RewardTaken;
@@ -496,7 +505,11 @@ namespace ToyCarArena.UI
             }
 
             // A new arena has no popup: the lobby names it with NEW before its round, and the track shows it ahead.
-            // A new rank has none either: it is a league now, and the main menu greets it with NEW LEAGUE!.
+            // The level a league starts at greets it with NEW LEAGUE!, after what the level gave; the menu greets it
+            // only when the result did not.
+            if (level > 1 && PlayerRank.TierOf(level) > PlayerRank.TierOf(level - 1)) {
+                await ShowNewLeague(token);
+            }
 
             rewardsShownTo = level;
         }
@@ -548,6 +561,36 @@ namespace ToyCarArena.UI
             }
             finally {
                 viewModel.HideHero();
+            }
+        }
+
+        /// <summary>
+        /// NEW LEAGUE! over the result (<see cref="NewLeaguePopup"/>), as the menu shows it, once for the league the
+        /// player is in: the player's car on its pedestal, waiting for CONTINUE, a tap on the dim or a key.
+        /// </summary>
+        private async UniTask ShowNewLeague(CancellationToken token)
+        {
+            if (!viewModel.TakeNewLeague()) {
+                return;
+            }
+
+            popupsShown++;
+            var isClosed = false;
+            league = new NewLeaguePopup(root.Q<VisualElement>("round-over") ?? root, () => Clicked?.Invoke(),
+                () => isClosed = true);
+            league.Fit(isTouch ? RewardWideTouchScale : 1f);
+            league.Show(viewModel.PlayerLevel, !isTouch, viewModel.ShowCarHero(null, viewModel.WornTopper));
+            IsPopupOpen = true;
+            try {
+                while (!isClosed) {
+                    await UniTask.Yield(PlayerLoopTiming.Update, token);
+                }
+            }
+            finally {
+                league.Remove();
+                league = null;
+                viewModel.HideHero();
+                IsPopupOpen = false;
             }
         }
 

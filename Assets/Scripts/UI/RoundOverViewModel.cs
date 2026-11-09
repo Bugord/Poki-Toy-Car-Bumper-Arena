@@ -221,6 +221,26 @@ namespace ToyCarArena.UI
         /// <summary>The player's league now (<see cref="PlayerRank.TierOf"/>): its sky and pedestal frame the rewards.</summary>
         public int League => PlayerRank.TierOf(progress.Level);
 
+        /// <summary>The player's level now, this round's XP in.</summary>
+        public int PlayerLevel => progress.Level;
+
+        /// <summary>
+        /// Whether the result greets the player's league with NEW LEAGUE!: it is above the last one they saw
+        /// (<see cref="PlayerProgress.SeenLeague"/>). Asking marks it seen and sends <c>result / league-&lt;id&gt; /
+        /// visible</c>, so the menu does not greet it again; a result left before the popup leaves it to the menu.
+        /// </summary>
+        public bool TakeNewLeague()
+        {
+            var league = League;
+            if (league <= 0 || league <= progress.SeenLeague) {
+                return false;
+            }
+
+            progress.MarkLeagueSeen(league);
+            platform.MeasureResultLeagueShown(LeagueLook.IdOf(league));
+            return true;
+        }
+
         /// <summary>The topper the player wears now, or empty.</summary>
         public string WornTopper => wallet.SelectedTopper;
 

@@ -86,6 +86,8 @@ def summarise(data):
         "menu_press": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"menu-(play|garage|missions|mode|leagues|boost|boost-no|daily|daily-no)", e))},
         # после v0.16.0: попап NEW LEAGUE! в меню, по лиге (раз на игрока и лигу)
         "menu_league": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"menu-league-(bronze|silver|gold|legend)", e))},
+        # после feature/result-popups: тот же попап на результате раунда, который поднял лигу (меню показывает его, только если результат не показал)
+        "result_league": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"result-league-(bronze|silver|gold|legend)", e))},
         "home": i.get("result-home"),
         "place1": other(o, r"result-place-(\d+)-r1-place"),
         "ko1": other(o, r"result-knockouts-(\d+)-r1-knockouts"),
@@ -255,6 +257,9 @@ def report(version, previous):
         for league in ("bronze", "silver", "gold", "legend"):
             out.append(line(f"Попап NEW LEAGUE! {league.upper()} показан (после v0.16.0)",
                             lambda s, l=league: str(num(s["menu_league"].get(l), "seen")) if s["menu"] else "-"))
+        for league in ("bronze", "silver", "gold", "legend"):
+            out.append(line(f"Попап NEW LEAGUE! {league.upper()} на результате (после feature/result-popups)",
+                            lambda s, l=league: str(num(s["result_league"].get(l), "seen")) if s["result_league"] else "-"))
         out.append(line("HOME на результате: показан / нажат",
                         lambda s: f"{num(s['home'], 'seen')} / {num(s['home'], 'interacted')} ({pct(num(s['home'], 'interacted'), num(s['home'], 'seen'))})" if s["home"] else "-"))
 
