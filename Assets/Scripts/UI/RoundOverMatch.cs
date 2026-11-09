@@ -7,7 +7,7 @@ using UnityEngine.UIElements;
 namespace ToyCarArena.UI
 {
     /// <summary>
-    /// The end of a match on the result screen: the winner's car turning on its podium over slow white rays, with a
+    /// The end of a match on the result screen: the winner's car turning on its podium in the menu's soft light, with a
     /// crowned name pill above it (level and name: the car itself shows its colour), and the results table, a row per car in place order. A phone held upright shows the
     /// top three and, apart, the player's own row; a wide screen every car, the table at the left of the podium.
     /// <para>
@@ -50,11 +50,14 @@ namespace ToyCarArena.UI
         private const long YouPopAgainAt = 2150;
         private const long PopHold = 150;
 
-        // The rays turn once in this many seconds; the car's podium has its own, faster turn.
-        private const float RaysTurnSeconds = 14f;
+        // The light turns once in this many seconds, as the menu's; the car's podium has its own, faster turn.
+        private const float RaysTurnSeconds = 24f;
+        // The level reward's sunburst.
         private const int RayCount = 12;
-        // The rays reach past the podium's square a little, so their tips fade off its corners.
-        private const float RaysScale = 1.25f;
+        // The light's span against the podium picture's width: past the pedestal, its faded tips lost in the sky.
+        private const float RaysScale = 1.3f;
+        // The light's middle down the picture: behind the car's body over the pedestal, where the menu's light sits.
+        private const float RaysMiddle = 0.55f;
 
         private readonly VisualElement root;
         private readonly RoundOverViewModel model;
@@ -79,14 +82,20 @@ namespace ToyCarArena.UI
             root.AddToClassList(model.IsMatch ? MatchClass : PodiumClass);
             podium = root.Q<VisualElement>("podium");
             rays = root.Q<VisualElement>("podium-rays");
-            rays.generateVisualContent += DrawRays;
+            rays.generateVisualContent += MenuView.DrawLight;
+            // The light goes to the back of the screen, under the title and the stickers, as the menu's under its tiles:
+            // in the podium, after the title in the tree, it washed over the title's letters.
+            var screen = root.Q<VisualElement>("round-over") ?? root;
+            screen.Insert(0, rays);
             car = root.Q<VisualElement>("podium-car");
             winner = root.Q<VisualElement>("podium-winner");
             crown = root.Q<VisualElement>("podium-crown");
             crown.generateVisualContent += DrawCrown;
             table = root.Q<VisualElement>("results");
             rows = root.Q<VisualElement>("results-rows");
-            podium.RegisterCallback<GeometryChangedEvent>(OnPodiumGeometry);
+            podium.parent.RegisterCallback<GeometryChangedEvent>(OnPictureGeometry);
+            podium.RegisterCallback<GeometryChangedEvent>(OnPictureGeometry);
+            car.RegisterCallback<GeometryChangedEvent>(OnPictureGeometry);
             car.RegisterCallback<GeometryChangedEvent>(OnRivalGeometry);
             winner.RegisterCallback<GeometryChangedEvent>(OnRivalGeometry);
 
@@ -146,9 +155,11 @@ namespace ToyCarArena.UI
         public void Dispose()
         {
             ReleasePodium();
-            rays.generateVisualContent -= DrawRays;
+            rays.generateVisualContent -= MenuView.DrawLight;
             crown.generateVisualContent -= DrawCrown;
-            podium.UnregisterCallback<GeometryChangedEvent>(OnPodiumGeometry);
+            podium.parent.UnregisterCallback<GeometryChangedEvent>(OnPictureGeometry);
+            podium.UnregisterCallback<GeometryChangedEvent>(OnPictureGeometry);
+            car.UnregisterCallback<GeometryChangedEvent>(OnPictureGeometry);
             car.UnregisterCallback<GeometryChangedEvent>(OnRivalGeometry);
             winner.UnregisterCallback<GeometryChangedEvent>(OnRivalGeometry);
             text.Dispose();
@@ -171,15 +182,31 @@ namespace ToyCarArena.UI
             rays.style.rotate = new Rotate((Time.realtimeSinceStartup - shownAt) / RaysTurnSeconds * 360f % 360f);
         }
 
-        // The rays and the car are as big as the podium's box allows, centred in it.
-        private void OnPodiumGeometry(GeometryChangedEvent evt)
+        // The light follows the car's picture (twice as wide as high, fitted in the car's box), wherever the layout puts
+        // it: the rival's car lower under its pill, the round's foot under the cards, the wide columns' tall box. The light
+        // lies at the back of the screen, so the car's box is taken over to its parent's space whenever it, the podium or
+        // the row holding it moves.
+        private void OnPictureGeometry(GeometryChangedEvent evt)
         {
-            var size = Mathf.Min(evt.newRect.width, evt.newRect.height);
-            var raySize = size * RaysScale;
-            rays.style.width = raySize;
-            rays.style.height = raySize;
-            rays.style.left = (evt.newRect.width - raySize) * 0.5f;
-            rays.style.top = (evt.newRect.height - raySize) * 0.5f;
+            var layer = rays.parent;
+            if (layer == null || car.parent == null) {
+                return;
+            }
+
+            var box = car.parent.ChangeCoordinatesTo(layer, car.layout);
+            var width = Mathf.Min(box.width, box.height * 2f);
+            if (float.IsNaN(width) || width <= 0f) {
+                return;
+            }
+
+            var height = width * 0.5f;
+            var middle = new Vector2(box.center.x, box.y + (box.height - height) * 0.5f + height * RaysMiddle);
+            var span = width * RaysScale;
+            rays.style.width = span;
+            rays.style.height = span;
+            // An absolute child stands inside its parent's border, the layout's coordinates from its outer edge.
+            rays.style.left = middle.x - span * 0.5f - layer.resolvedStyle.borderLeftWidth;
+            rays.style.top = middle.y - span * 0.5f - layer.resolvedStyle.borderTopWidth;
         }
 
         // In the wide columns the podium is tall and the picture (twice as wide as high) sits in its middle, so the
@@ -301,11 +328,10 @@ namespace ToyCarArena.UI
             return row;
         }
 
-        // White wedges from the middle, every other gap empty: the sunburst of a winner's stage, drawn as triangles so it
-        // stays sharp at any size (USS has no conic gradient).
-        private static void DrawRays(MeshGenerationContext context) => DrawSunburst(context, new Color(1f, 1f, 1f, 0.42f));
-
-        /// <summary>The rays as wedges of one colour, also behind the level reward of the XP sequence.</summary>
+        /// <summary>
+        /// Wedges of one colour from the middle, drawn as triangles so they stay sharp at any size (USS has no conic
+        /// gradient): the golden rays behind the level reward and NEW LEAGUE!. The podium has the menu's soft light.
+        /// </summary>
         internal static void DrawSunburst(MeshGenerationContext context, Color color)
         {
             var rect = context.visualElement.contentRect;
