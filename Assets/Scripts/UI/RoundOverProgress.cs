@@ -86,6 +86,11 @@ namespace ToyCarArena.UI
             LevelBadge.Decorate(levelBadge);
             this.levelLabel = root.Q<Label>("xp-level-value");
             this.rankLabel = root.Q<Label>("xp-rank");
+            // The rank is the badge's caption, under it as every stop's name is under the stop: over the track it
+            // floated with nothing to belong to once the badge moved into the track.
+            rankLabel.RemoveFromHierarchy();
+            rankLabel.AddToClassList("level-card__rank--under");
+            levelBadge.Add(rankLabel);
             this.total = root.Q<Label>("xp-total");
 
             var reward = viewModel.XpGain;

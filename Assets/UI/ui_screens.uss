@@ -2370,6 +2370,19 @@
     -unity-text-align: middle-left;
 }
 
+.level-card__rank--under {
+    position: absolute;
+    top: 100%;
+    left: -80px;
+    right: -80px;
+    margin: 18px 0 0 0;
+    padding: 0;
+    font-size: 30px;
+    color: var(--navy);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
 .level-card__total {
     margin-left: auto;
     font-size: 34px;
@@ -2454,9 +2467,9 @@
     padding: 0 30px 96px 30px;
 }
 
-/* Only plain levels ahead (past the last reward and rank): no captions, no room kept for them. */
+/* Only plain levels ahead (past the last reward and rank): no captions but the badge's rank. */
 .track--plain {
-    padding-bottom: 12px;
+    padding-bottom: 56px;
 }
 
 /* The bars' row and, laid exactly over it, the stops' row (RoundOverProgress.BuildTrack). Every bar and every gap
