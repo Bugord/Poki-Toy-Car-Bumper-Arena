@@ -314,8 +314,8 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private int idleHintMax = 2;
 
-            [Tooltip("Visit rounds, from the first, in which a touch screen keeps a ghost joystick wherever no finger " +
-                "steers")]
+            [Tooltip("Rounds of the player, from the very first on this device (not of each visit), in which a touch " +
+                "screen keeps a ghost joystick wherever no finger steers")]
             [Min(0)]
             [SerializeField]
             private int ghostStickRounds = 5;
@@ -533,9 +533,10 @@ namespace ToyCarArena.Gameplay
 
         /// <summary>
         /// The bots: pick a target, speed up at it, stay away from the edge. How hard they play the player comes from
-        /// <see cref="Easy"/> and <see cref="Normal"/>, blended by the round of the visit and the player's losing streak,
-        /// so a new player wins early and keeps pressing "play again"; each bot's character is one of four
-        /// personalities, a few multipliers over the numbers here, so the bots do not all drive alike.
+        /// <see cref="Easy"/> and <see cref="Normal"/>, blended by the player's rounds on this device (a returning
+        /// player warming up over the visit's first rounds) and the visit's losing streak, so a new player wins early
+        /// and keeps pressing "play again"; each bot's character is one of four personalities, a few multipliers over
+        /// the numbers here, so the bots do not all drive alike.
         /// </summary>
         [Serializable]
         public sealed class BotSettings
@@ -712,6 +713,19 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private int edgeAssistRounds = 12;
 
+            [Tooltip("Where the first round of a visit starts for a returning player, from 0 (easy) to 1 (normal): the ramps " +
+                "count every round the player has finished on this device, so a returning player is past the easy " +
+                "first rounds, but after a break the first round of the visit is a warm-up from here rather than full " +
+                "normal at once")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float returnLevel = 0.5f;
+
+            [Tooltip("Rounds of a visit the warm-up of a returning player takes from Return Level back to the ramps")]
+            [Min(0)]
+            [SerializeField]
+            private int returnRounds = 2;
+
             [Tooltip("Rounds lost in a row from which the bots ease off")]
             [Min(1)]
             [SerializeField]
@@ -792,6 +806,8 @@ namespace ToyCarArena.Gameplay
             public DifficultySettings Normal => normal;
             public int RampRounds => rampRounds;
             public int EdgeAssistRounds => edgeAssistRounds;
+            public float ReturnLevel => returnLevel;
+            public int ReturnRounds => returnRounds;
             public int StreakStart => streakStart;
             public float StreakEase => streakEase;
             public float MaxStreakEase => maxStreakEase;

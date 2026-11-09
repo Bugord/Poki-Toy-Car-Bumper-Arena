@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using Bugord.Core.Storage;
 using ToyCarArena.Gameplay.Input;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -19,13 +20,18 @@ namespace ToyCarArena.UI
         public event Action BoostPressed;
         public event Action ItemPressed;
 
+        // Saved once the item hint has been shown: the player has seen how an item is used, in any visit.
+        private const string ItemHintKey = "hint_item";
+
         // Read once: whether the browser's main pointer is a finger does not change while the game runs.
         private readonly bool isTouchDevice = IsTouchDevice();
+        private readonly IKeyValueStorage storage;
 
         private VisualElement boostButton;
         private VisualElement itemButton;
         private VisualElement settingsButton;
         private bool isTouchSeen;
+        private bool hasShownItemHint;
 
         /// <summary>
         /// Whether a finger steers with the joystick now, and so the HUD draws it.
@@ -54,11 +60,38 @@ namespace ToyCarArena.UI
         /// </summary>
         public bool IsBoostOnLeft { get; private set; }
 
+        /// <param name="storage">Where the hints already shown are kept; null keeps them for this run only.</param>
+        public HudControls(IKeyValueStorage storage = null)
+        {
+            this.storage = storage;
+        }
+
         /// <summary>
-        /// Whether the HUD has shown how to use an item in this visit: once is enough, so it lives here, in the app's
-        /// scope, with the visit.
+        /// Whether the HUD has shown how to use an item: once is enough, for the player and not for each visit, so it
+        /// is saved, and kept here, in the app's scope, beside it.
         /// </summary>
-        public bool HasShownItemHint { get; set; }
+        public bool HasShownItemHint
+        {
+            get
+            {
+                // Once known, kept: the HUD asks every frame an item is ready until the hint is shown.
+                if (!hasShownItemHint && storage != null && storage.HasKey(ItemHintKey)) {
+                    hasShownItemHint = true;
+                }
+
+                return hasShownItemHint;
+            }
+            set
+            {
+                hasShownItemHint = value;
+                if (value) {
+                    storage?.SetInt(ItemHintKey, 1);
+                }
+                else {
+                    storage?.DeleteKey(ItemHintKey);
+                }
+            }
+        }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]

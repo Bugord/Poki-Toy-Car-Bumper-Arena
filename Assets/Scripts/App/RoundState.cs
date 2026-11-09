@@ -191,9 +191,11 @@ namespace ToyCarArena.App
                 pickupCar.ItemUsed += OnItemUsed;
                 pickups.Collected += OnCollected;
 
+                // The teaching follows the player's rounds on this device; waiting for the first input, the visit's.
                 var hudRound = new HudRound(round, driver, tuning.Controls, waitsForPlayer, roundNumber,
                     playerProgress.TotalXp == 0,
-                    progress.WinStreak >= tuning.Streaks.Start ? progress.WinStreak : 0, special);
+                    progress.WinStreak >= tuning.Streaks.Start ? progress.WinStreak : 0, special,
+                    progress.RoundsBefore + roundNumber);
                 hud = await navigator.OpenAsync<HudViewModel, HudRound>(hudRound, token);
                 await curtain.Hide();
                 // The page's loading screen stays up until the first round can be seen, past Poki's own loader.

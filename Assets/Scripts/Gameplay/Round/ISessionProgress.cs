@@ -13,6 +13,13 @@ namespace ToyCarArena.Gameplay.Round
         int Round { get; }
 
         /// <summary>
+        /// Rounds the player had finished on this device before this visit, 0 for a new player: what the player has
+        /// learned is the player's, not the visit's, so the easy first rounds and the teaching hints count from here.
+        /// Fixed for the visit; the player's round counting every visit is this plus <see cref="Round"/>.
+        /// </summary>
+        int RoundsBefore { get; }
+
+        /// <summary>
         /// Rounds in a row the player has lost (fallen off) up to this one; 0 after a win or a round survived.
         /// </summary>
         int LosingStreak { get; }
