@@ -4,6 +4,7 @@ common.back,Back button,BACK,RETOUR,INDIETRO,ZURÜCK,ATRÁS,GERİ,VOLTAR,НАЗ�
 common.next_match,Big green button that starts the next round,NEXT MATCH,SUIVANT,AVANTI,WEITER,SIGUIENTE,DEVAM,PRÓXIMA,ДАЛЬШЕ
 common.new,Small gold badge: a new player or arena; max ~5 chars,NEW,NEUF,NUOVO,NEU,NUEVO,YENİ,NOVO,НОВЫЙ
 common.level_short,"Level caption with its number, e.g. LVL 5; short",LVL {0},NIV. {0},LIV. {0},LVL {0},NIV. {0},SV. {0},NÍV. {0},УР. {0}
+common.lv,"Tiny prefix before a level number beside a nick, so it is not read as a place; max 3 chars",LV,NIV,LIV,LV,NV,SV,NV,УР
 common.space,Space bar key cap,SPACE,ESPACE,SPAZIO,LEERTASTE,ESPACIO,BOŞLUK,ESPAÇO,ПРОБЕЛ
 hud.tap_to_start,Start prompt on a touch screen,TAP TO START,TOUCHE POUR JOUER,TOCCA PER INIZIARE,TIPPEN ZUM START,TOCA PARA EMPEZAR,BAŞLAMAK İÇİN DOKUN,TOQUE PARA COMEÇAR,"НАЖМИ, ЧТОБЫ НАЧАТЬ"
 hud.click_to_start,Start prompt with a mouse,CLICK TO START,CLIQUE POUR JOUER,CLICCA PER INIZIARE,KLICKEN ZUM START,HAZ CLIC PARA EMPEZAR,BAŞLAMAK İÇİN TIKLA,CLIQUE PARA COMEÇAR,"КЛИКНИ, ЧТОБЫ НАЧАТЬ"
@@ -158,6 +159,14 @@ garage.free,"Pill in the ad window: the car costs no coins",FREE,GRATUIT,GRATIS,
 garage.watch_ad,"Button in the ad window that plays the rewarded ad; short",WATCH AD,VOIR LA PUB,GUARDA AD,WERBUNG SEHEN,VER ANUNCIO,REKLAM İZLE,VER ANÚNCIO,СМОТРЕТЬ
 garage.cancel,"Button that closes the buy or ad window without doing anything",CANCEL,ANNULER,ANNULLA,ABBRECHEN,CANCELAR,İPTAL,CANCELAR,ОТМЕНА
 garage.no_ad,"Over WATCH AD when the ad did not play or was closed early; max ~16 chars",NO AD RIGHT NOW,PAS DE PUB,NESSUN AD ORA,KEINE WERBUNG,SIN ANUNCIO,REKLAM YOK,SEM ANÚNCIO,РЕКЛАМЫ НЕТ
+paint.green,Garage paint name under its swatch; max ~10 chars,GREEN,VERT,VERDE,GRÜN,VERDE,YEŞİL,VERDE,ЗЕЛЁНЫЙ
+paint.red,Garage paint name under its swatch; max ~10 chars,RED,ROUGE,ROSSO,ROT,ROJO,KIRMIZI,VERMELHO,КРАСНЫЙ
+paint.blue,Garage paint name under its swatch; max ~10 chars,BLUE,BLEU,BLU,BLAU,AZUL,MAVİ,AZUL,СИНИЙ
+paint.yellow,Garage paint name under its swatch; max ~10 chars,YELLOW,JAUNE,GIALLO,GELB,AMARILLO,SARI,AMARELO,ЖЁЛТЫЙ
+paint.purple,Garage paint name under its swatch; max ~10 chars,PURPLE,VIOLET,VIOLA,LILA,MORADO,MOR,ROXO,ФИОЛЕТОВЫЙ
+paint.orange,Garage paint name under its swatch; max ~10 chars,ORANGE,ORANGE,ARANCIONE,ORANGE,NARANJA,TURUNCU,LARANJA,ОРАНЖЕВЫЙ
+paint.pink,Garage paint name under its swatch; max ~10 chars,PINK,ROSE,ROSA,ROSA,ROSA,PEMBE,ROSA,РОЗОВЫЙ
+paint.dark,Garage paint name under its swatch; max ~10 chars,DARK,NOIR,NERO,SCHWARZ,NEGRO,SİYAH,PRETO,ЧЁРНЫЙ
 topper.top-hat.name,Topper name: a tall black top hat,TOP HAT,HAUT-DE-FORME,CILINDRO,ZYLINDER,CHISTERA,SİLİNDİR ŞAPKA,CARTOLA,ЦИЛИНДР
 topper.party-hat.name,Topper name,PARTY HAT,CHAPEAU DE FÊTE,CAPPELLO PARTY,PARTYHUT,GORRO DE FIESTA,PARTİ ŞAPKASI,CHAPÉU DE FESTA,КОЛПАК
 topper.cone.name,Topper name: a traffic cone,CONE,CÔNE,CONO,PYLONE,CONO,KONİ,CONE,КОНУС

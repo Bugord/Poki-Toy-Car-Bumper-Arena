@@ -43,8 +43,11 @@ namespace ToyCarArena.UI
         private const float TopHeight = 112f;
         private const float TopGap = 30f;
         // Upright: the tabs, the gaps and the bottom button under the panel, and the least the car keeps above them.
-        private const float SideChrome = 124f + 24f + 30f + 190f;
-        private const float ShowMin = 620f;
+        private const float SideChrome = 124f + 24f + ActionRoom;
+        private const float ActionRoom = 30f + 190f;
+        // The stats pill and its gap under the car's name.
+        private const float StatsRoom = 170f;
+        private const float ShowMin = 580f;
         private const float PanelMin = 440f;
         private const float PanelMax = 980f;
         // Sideways the switcher, the panel and the button take this share of the width at the right.
@@ -56,9 +59,13 @@ namespace ToyCarArena.UI
         private const float RaysTurnSeconds = 24f;
 
         private const int Columns = 3;
-        private const int WideColumns = 4;
+        // Sideways too: four columns made the cards too small to read on a phone.
+        private const int WideColumns = 3;
         private const float CardGap = 30f;
-        private const float CardAspect = 1.18f;
+        // Squarer cards, so upright two full rows show under the car, with the next row's top peeking.
+        private const float CardAspect = 1f;
+        // Under each paint the room its name takes (garage__paint margin-bottom).
+        private const float PaintNameRoom = 64f;
 
         private const float BounceDuration = 0.3f;
         private const float ShakeDuration = 0.35f;
@@ -307,7 +314,8 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>
-        /// The stats as one white pill: each stat's name beside five pips, filled to its value in the stat's colour.
+        /// The stats as one white pill: each stat's name over five pips, filled to its value in the stat's colour, and
+        /// beside the name how much a car tried on the pedestal has more or less than the chosen one.
         /// </summary>
         private static VisualElement BuildStats(string className)
         {
@@ -316,7 +324,13 @@ namespace ToyCarArena.UI
             foreach (var name in StatNames) {
                 var stat = Element("garage-stats__stat");
                 stat.AddToClassList($"garage-stats__stat--{name}");
-                stat.Add(Text("garage-stats__label"));
+                var head = Element("garage-stats__head");
+                head.Add(Text("garage-stats__label"));
+                var diff = Element("garage-stats__diff");
+                diff.Add(Icon("garage-stats__arrow", DrawDiffArrow));
+                diff.Add(Text("garage-stats__diff-text"));
+                head.Add(diff);
+                stat.Add(head);
                 var pips = Element("garage-stats__pips");
                 for (var i = 0; i < GameTuning.CarStatSettings.Max; i++) {
                     var pip = Element("garage-stats__pip");
@@ -333,17 +347,32 @@ namespace ToyCarArena.UI
             return pill;
         }
 
-        private void SetStats(VisualElement pill, GameTuning.CarStatLine line)
+        /// <summary>
+        /// Fills the pill with a car's stats. With <paramref name="against"/> (the chosen car, while another is tried
+        /// on) each stat also says what changes: the pips it would add pale, those it would lose outlined in red, and
+        /// ▲N or ▼N beside its name.
+        /// </summary>
+        private void SetStats(VisualElement pill, GameTuning.CarStatLine line, GameTuning.CarStatLine against = null)
         {
             var values = new[] { line.Speed, line.Power, line.Weight, line.Boost };
+            var bases = against == null ? values : new[] { against.Speed, against.Power, against.Weight, against.Boost };
             for (var i = 0; i < StatNames.Length; i++) {
                 var stat = pill[i];
                 // Without boosts in the build the boost stat would promise nothing.
                 stat.style.display = StatNames[i] != "boost" || ViewModel.HasBoost ? DisplayStyle.Flex : DisplayStyle.None;
                 stat.Q<Label>(className: "garage-stats__label").text = Strings.Get($"car.stat_{StatNames[i]}");
+                var change = values[i] - bases[i];
+                var diff = stat.Q<VisualElement>(className: "garage-stats__diff");
+                Show(diff, change != 0);
+                diff.EnableInClassList("garage-stats__diff--up", change > 0);
+                diff.EnableInClassList("garage-stats__diff--down", change < 0);
+                diff.Q<Label>(className: "garage-stats__diff-text").text = Mathf.Abs(change).ToString();
+                diff.Q<VisualElement>(className: "garage-stats__arrow").MarkDirtyRepaint();
                 var pips = stat.Q<VisualElement>(className: "garage-stats__pips");
                 for (var pip = 0; pip < pips.childCount; pip++) {
                     pips[pip].EnableInClassList("garage-stats__pip--on", pip < values[i]);
+                    pips[pip].EnableInClassList("garage-stats__pip--gain", pip >= bases[i] && pip < values[i]);
+                    pips[pip].EnableInClassList("garage-stats__pip--loss", pip >= values[i] && pip < bases[i]);
                 }
             }
         }
@@ -468,9 +497,19 @@ namespace ToyCarArena.UI
                 button.Add(Element("garage__paint-drop"));
                 var dot = Element("garage__paint-dot");
                 dot.AddToClassList(CarColor.ClassOf(id));
+                // The dark paint on its navy rim reads as a hole: a light ring inside keeps it a paint.
+                if (CarPaint.NameOf(id) == "dark") {
+                    dot.Add(Element("garage__paint-ring"));
+                }
+
                 dot.Add(Element("garage__paint-shade"));
                 dot.Add(Element("garage__paint-check"));
                 button.Add(dot);
+                // Its name under it, so close shades (orange and yellow, purple and pink) are told apart.
+                var name = Text("garage__paint-name");
+                var key = $"paint.{CarPaint.NameOf(id)}";
+                text.Set(name, () => Strings.Get(key));
+                button.Add(name);
                 button.clicked += () => PickPaint(colorId, button);
                 paints[id] = button;
                 paintGrid.Add(button);
@@ -720,6 +759,7 @@ namespace ToyCarArena.UI
             paintGrid.style.display = shown == Tab.Paint ? DisplayStyle.Flex : DisplayStyle.None;
             scroll.scrollOffset = Vector2.zero;
             Refresh();
+            Place();
             LayoutCards();
         }
 
@@ -733,7 +773,12 @@ namespace ToyCarArena.UI
                 label.text = GameText.Car(car);
             }
 
-            SetStats(stats, ViewModel.StatsOf(car));
+            // The stats belong to the cars: on the hats and the paints their room goes to the panel.
+            Show(stats, tab == Tab.Cars);
+            SetStats(stats, ViewModel.StatsOf(car),
+                previewedCar != null && tab == Tab.Cars ? ViewModel.StatsOf(ViewModel.SelectedEntry) : null);
+            // A paint takes at once, so the paints have no bottom button.
+            Show(action, tab != Tab.Paint);
             coins.text = ViewModel.Coins.ToString();
             hatsDot.style.display = ViewModel.CanBuyTopper ? DisplayStyle.Flex : DisplayStyle.None;
             var color = ViewModel.SelectedColor;
@@ -752,7 +797,9 @@ namespace ToyCarArena.UI
                     : isAd ? Card.Badge.Ad
                     : isLocked ? Card.Badge.Locked
                     : ViewModel.CanAffordCar(id) ? Card.Badge.Price : Card.Badge.Dear;
-                card.Set(badge, badge == Card.Badge.Locked ? GameText.Level(entry.UnlockLevel)
+                // The lock already says "level": the badge carries only its number, so it fits inside the corner.
+                card.Set(badge, badge == Card.Badge.Locked ? entry.UnlockLevel.ToString()
+                    : badge == Card.Badge.Ad ? Strings.Get("result.ad")
                     : ViewModel.PriceOf(id).ToString(), id == selectedCar, isLocked, entry == previewedCar);
                 card.Button.tooltip = isLocked ? Strings.Format("garage.unlock_at", entry.UnlockLevel) : GameText.Car(entry);
             }
@@ -987,8 +1034,9 @@ namespace ToyCarArena.UI
                     BumpCoins(true);
                     break;
                 case Act.Locked:
+                    // The button already reads the level that opens it: it and the card shake, no line repeats it.
                     Refuse(action);
-                    ShowToast(action, Strings.Format("garage.unlock_at", value), false, false);
+                    ShakeCard(ShownCar);
                     break;
             }
         }
@@ -1207,7 +1255,11 @@ namespace ToyCarArena.UI
                 show.style.bottom = 0f;
             }
             else {
-                var panelHeight = Mathf.Clamp(height - SideChrome - ShowMin, PanelMin, PanelMax);
+                // The hats have no stats under the car: the panel takes that room for a further row. The paints have no
+                // stats and no bottom button: that room goes to the car, the thing being painted.
+                var chrome = SideChrome - (tab == Tab.Paint ? ActionRoom : 0f);
+                var spare = tab == Tab.Hats ? StatsRoom : 0f;
+                var panelHeight = Mathf.Clamp(height - SideChrome - ShowMin + spare, PanelMin, PanelMax + spare);
                 side.style.width = width;
                 side.style.height = StyleKeyword.Auto;
                 side.style.scale = new Scale(Vector3.one);
@@ -1219,7 +1271,7 @@ namespace ToyCarArena.UI
                 show.style.left = 0f;
                 show.style.right = 0f;
                 show.style.top = 0f;
-                show.style.bottom = panelHeight + SideChrome + 10f;
+                show.style.bottom = panelHeight + chrome + 10f;
             }
 
             var sheetFit = Mathf.Max(0.55f, Mathf.Min(isWide && isTouch ? 1.3f : 1f, (size.y - 2f * Edge) / 1750f));
@@ -1262,10 +1314,10 @@ namespace ToyCarArena.UI
                 }
             }
 
-            // The paints: two rows of four, as big as the panel holds.
+            // The paints: two rows of four, as big as the panel holds, each with its name under it.
             var paintBox = panel.contentRect;
             var across = (paintBox.width - 2f * 60f - 3f * 50f) / 4f;
-            var down = (paintBox.height - 2f * 50f - 70f) / 2f;
+            var down = (paintBox.height - 2f * 50f - 70f - 2f * PaintNameRoom) / 2f;
             var diameter = Mathf.Max(80f, Mathf.Min(across, down, 240f));
             foreach (var paint in paints) {
                 paint.style.width = diameter;
@@ -1408,6 +1460,19 @@ namespace ToyCarArena.UI
             actionTween.Play(ShakeDuration, t => {
                 element.style.translate = new Translate(28f * Mathf.Sin(t * Mathf.PI * 6f) * (1f - t), 0f);
             });
+        }
+
+        private void ShakeCard(CarCatalog.Entry car)
+        {
+            foreach (var (entry, card, _) in carCards) {
+                if (entry == car) {
+                    var button = card.Button;
+                    cardTween.Play(ShakeDuration, t => {
+                        button.style.translate = new Translate(18f * Mathf.Sin(t * Mathf.PI * 6f) * (1f - t), 0f);
+                    });
+                    return;
+                }
+            }
         }
 
         private void Bounce(VisualElement element)
@@ -1603,6 +1668,30 @@ namespace ToyCarArena.UI
             p.Fill();
         }
 
+        // The ▲ or ▼ of a stat's change, in the tag's text colour (the fonts have no such glyphs).
+        private static void DrawDiffArrow(MeshGenerationContext context)
+        {
+            var element = context.visualElement;
+            var r = element.contentRect;
+            var isUp = element.parent?.ClassListContains("garage-stats__diff--up") ?? true;
+            var p = context.painter2D;
+            p.fillColor = element.resolvedStyle.color;
+            p.BeginPath();
+            if (isUp) {
+                p.MoveTo(new Vector2(r.center.x, r.y));
+                p.LineTo(new Vector2(r.xMax, r.yMax));
+                p.LineTo(new Vector2(r.x, r.yMax));
+            }
+            else {
+                p.MoveTo(new Vector2(r.x, r.y));
+                p.LineTo(new Vector2(r.xMax, r.y));
+                p.LineTo(new Vector2(r.center.x, r.yMax));
+            }
+
+            p.ClosePath();
+            p.Fill();
+        }
+
         // The arrow between the coins before and after a purchase.
         private static void DrawArrow(MeshGenerationContext context)
         {
@@ -1691,7 +1780,7 @@ namespace ToyCarArena.UI
                 Show(coin, kind is Badge.Price or Badge.Dear);
                 Show(padlock, kind == Badge.Locked);
                 Show(play, kind == Badge.Ad);
-                Show(value, kind is Badge.Price or Badge.Dear or Badge.Locked);
+                Show(value, kind is Badge.Price or Badge.Dear or Badge.Locked or Badge.Ad);
                 value.text = label ?? "";
             }
         }

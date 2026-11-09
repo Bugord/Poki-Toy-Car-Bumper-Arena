@@ -156,6 +156,91 @@
 .garage-stats__stat--weight .garage-stats__pip--on { background-color: var(--purple); }
 .garage-stats__stat--boost .garage-stats__pip--on { background-color: var(--orange); }
 
+/* A car tried on against the chosen one: the pips it would add pale, the ones it would lose an empty red outline. */
+.garage-stats__pip--gain { opacity: 0.45; }
+
+.garage-stats__pip--loss {
+    border-width: 3px;
+    border-color: var(--red);
+    background-color: rgba(255, 77, 77, 0.12);
+}
+
+.garage-stats__head {
+    flex-direction: row;
+    align-items: center;
+}
+
+/* ▲N or ▼N beside a stat's name: green up, red down. */
+.garage-stats__diff {
+    display: none;
+    flex-direction: row;
+    align-items: center;
+    height: 44px;
+    margin-left: 10px;
+    padding: 0 12px 0 10px;
+    border-width: 4px;
+    border-color: var(--navy);
+    border-radius: 999px;
+}
+
+.garage-stats__diff--up { background-color: var(--green); color: var(--navy); }
+.garage-stats__diff--down { background-color: var(--red); color: var(--white); }
+
+.garage-stats__arrow {
+    width: 18px;
+    height: 14px;
+    margin-right: 5px;
+}
+
+.garage-stats__diff-text {
+    margin: 0;
+    padding: 0;
+    font-size: 28px;
+    color: var(--navy);
+}
+
+.garage-stats__diff--down .garage-stats__diff-text { color: var(--white); }
+
+/* Under the pedestal each stat's name stands over its pips, so the pill reads as three columns and the pips grow. */
+.garage__stats .garage-stats__stat {
+    flex-direction: column;
+    align-items: stretch;
+    margin: 0 18px;
+}
+
+.garage__stats .garage-stats__head {
+    justify-content: space-between;
+    height: 46px;
+    margin-bottom: 8px;
+}
+
+.garage__stats .garage-stats__label { margin: 0; }
+
+.garage__stats .garage-stats__pip {
+    width: 36px;
+    height: 24px;
+}
+
+/* Sideways the pill under the car is far from the eye on a phone: everything in it a size up. */
+.garage--wide .garage__stats {
+    padding: 20px 34px 24px 34px;
+}
+
+.garage--wide .garage__stats .garage-stats__stat { margin: 0 24px; }
+.garage--wide .garage__stats .garage-stats__label { font-size: 46px; }
+.garage--wide .garage__stats .garage-stats__head { height: 60px; margin-bottom: 10px; }
+.garage--wide .garage__stats .garage-stats__diff { height: 56px; }
+.garage--wide .garage__stats .garage-stats__diff-text { font-size: 38px; }
+.garage--wide .garage__stats .garage-stats__arrow { width: 24px; height: 18px; }
+
+.garage--wide .garage__stats .garage-stats__pip {
+    width: 52px;
+    height: 34px;
+    margin-left: 6px;
+}
+
+.garage--wide .garage__stats .garage-stats__pip--first { margin-left: 0; }
+
 /* -- The switcher --------------------------------------------------------------------------------------------------- */
 
 .garage__side {
@@ -293,7 +378,7 @@
 
 .garage__card > .menu__face {
     justify-content: flex-start;
-    padding: 12px 10px 14px 10px;
+    padding: 40px 10px 14px 10px;
     border-width: 6px;
     border-radius: 34px;
 }
@@ -305,10 +390,15 @@
     justify-content: center;
 }
 
-.garage__card-portrait,
-.garage__card-hat {
+.garage__card-portrait {
     width: 100%;
     height: 100%;
+}
+
+/* A hat fills its cell to the top: a little smaller, so the badge in the corner leaves it whole. */
+.garage__card-hat {
+    width: 84%;
+    height: 84%;
 }
 
 .garage__card-name {
@@ -334,27 +424,29 @@
     border-width: 9px;
 }
 
+/* The badge sits inside the card's corner: hanging over the edge it covered the card beside and above it. */
 .garage__badge {
     position: absolute;
-    top: -26px;
-    right: -26px;
+    top: 16px;
+    right: 16px;
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    height: 80px;
-    min-width: 80px;
-    padding: 0 18px;
-    border-width: 7px;
-    border-bottom-width: 12px;
+    height: 68px;
+    min-width: 68px;
+    padding: 0 16px;
+    border-width: 6px;
+    border-bottom-width: 10px;
     border-color: var(--navy);
     border-radius: 999px;
 }
 
 .garage__badge--selected { padding: 0; background-color: var(--green); }
-.garage__badge--price { padding-left: 8px; background-color: var(--gold); }
-.garage__badge--dear { padding-left: 8px; background-color: var(--shade); }
-.garage__badge--locked { padding-left: 12px; background-color: var(--navy); }
-.garage__badge--ad { padding: 0 10px; background-color: var(--purple); }
+.garage__badge--price { padding-left: 6px; background-color: var(--gold); }
+.garage__badge--dear { padding-left: 6px; background-color: var(--shade); }
+.garage__badge--locked { padding-left: 14px; background-color: var(--navy); }
+.garage__badge--ad { padding: 0 16px 0 8px; background-color: var(--purple); }
+.garage__badge--ad .garage__badge-text { color: var(--white); }
 
 .garage__badge-tick,
 .garage__action-tick,
@@ -369,27 +461,27 @@
 }
 
 .garage__badge-coin {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     border-width: 4px;
     border-bottom-width: 6px;
 }
 
 .garage__badge-lock {
-    width: 36px;
-    height: 40px;
+    width: 30px;
+    height: 34px;
 }
 
 .garage__badge-play.double__play {
-    width: 52px;
-    height: 52px;
+    width: 42px;
+    height: 42px;
     margin: 0;
 }
 
 .garage__badge-text {
     margin: 0 0 0 8px;
     padding: 0;
-    font-size: 38px;
+    font-size: 34px;
     color: var(--navy);
 }
 
@@ -408,7 +500,7 @@
 }
 
 .garage__paint {
-    margin: 25px;
+    margin: 25px 25px 89px 25px;
     padding: 0;
     border-width: 0;
     background-color: rgba(0, 0, 0, 0);
@@ -463,6 +555,43 @@
 .garage__paint--on > .garage__paint-dot { border-color: var(--white); border-width: 12px; }
 .garage__paint--on > .garage__paint-drop { left: -10px; top: -10px; right: -10px; bottom: -22px; }
 .garage__paint--on .garage__paint-check { display: flex; }
+
+/* The dark paint's light ring inside its rim, so it does not read as a hole in the panel. */
+.garage__paint-ring {
+    position: absolute;
+    left: 6px;
+    top: 6px;
+    right: 6px;
+    bottom: 6px;
+    border-width: 6px;
+    border-color: rgba(255, 255, 255, 0.55);
+    border-radius: 999px;
+}
+
+/* Each paint's name under it; the chosen one's on a navy pill. */
+.garage__paint-name {
+    position: absolute;
+    top: 100%;
+    left: -60px;
+    right: -60px;
+    margin: 26px 0 0 0;
+    padding: 0;
+    -unity-text-align: middle-center;
+    font-size: 32px;
+    color: var(--navy);
+    white-space: nowrap;
+}
+
+.garage__paint--on > .garage__paint-name {
+    align-self: center;
+    left: auto;
+    right: auto;
+    margin-top: 30px;
+    padding: 2px 22px 4px 22px;
+    border-radius: 999px;
+    background-color: var(--navy);
+    color: var(--white);
+}
 
 /* -- The bottom button ---------------------------------------------------------------------------------------------- */
 
