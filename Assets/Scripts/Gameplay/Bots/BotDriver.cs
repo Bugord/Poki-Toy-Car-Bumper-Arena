@@ -117,15 +117,22 @@ namespace ToyCarArena.Gameplay.Bots
                     bot.Reconsider();
                 }
 
-                // With the hot potato's bomb a bot goes for the nearest car to pass it on, and for nothing else.
-                if (potato.Holder == bot.Car) {
-                    var nearest = Nearest(bot.Car);
-                    if (nearest != bot.Target || bot.WantsTarget) {
-                        bot.SetTarget(nearest);
-                        bot.SetPickup(null);
+                // The HOT POTATO mode: nobody falls, so the bomb is all a bot plays for. With it the bot goes for the
+                // car it is best passed to; without it, it runs from the holder.
+                if (potato.IsActive) {
+                    if (potato.Holder == bot.Car) {
+                        var victim = ChooseVictim(bot.Car);
+                        if (victim != bot.Target || bot.WantsTarget) {
+                            bot.SetTarget(victim);
+                        }
                     }
+
+                    bot.SetPickup(null);
+                    bot.SteerPotato(edge, potato, deltaTime);
+                    continue;
                 }
-                else if (bot.WantsTarget) {
+
+                if (bot.WantsTarget) {
                     bot.SetTarget(PickTarget(bot, edge));
                     ChoosePickup(bot, edge);
                 }
@@ -181,11 +188,21 @@ namespace ToyCarArena.Gameplay.Bots
             }
         }
 
-        /// <summary>The nearest car in play other than <paramref name="self"/>; null when there is none.</summary>
-        private Car Nearest(Car self)
+        /// <summary>
+        /// The car the holder of the hot potato drives at: the nearest one in play, but never the car that just passed
+        /// the bomb (it cannot take it back, <see cref="HotPotato.IsPassBack"/>), and never the player in the first
+        /// seconds of the round (<see cref="RoundDifficulty.PlayerGrace"/>). The player counts as a little farther than
+        /// it is, more so on Easy, so the bots pass it the bomb less often than to each other. With no other choice the
+        /// passer and the player are taken after all; null when there is no car to pass to.
+        /// </summary>
+        private Car ChooseVictim(Car self)
         {
+            var playerScale = Mathf.Lerp(1.4f, 1.1f, difficulty.Level);
+            var isPlayerSpared = round.Elapsed < difficulty.PlayerGrace;
             Car best = null;
+            Car fallback = null;
             var bestDistance = float.PositiveInfinity;
+            var fallbackDistance = float.PositiveInfinity;
             var cars = round.Cars;
             for (var i = 0; i < cars.Count; i++) {
                 var car = cars[i];
@@ -193,14 +210,27 @@ namespace ToyCarArena.Gameplay.Bots
                     continue;
                 }
 
-                var distance = (car.Position - self.Position).sqrMagnitude;
+                var distance = (car.Position - self.Position).magnitude;
+                if (distance < fallbackDistance) {
+                    fallbackDistance = distance;
+                    fallback = car;
+                }
+
+                if (potato.IsPassBack(car) || car == round.Player && isPlayerSpared) {
+                    continue;
+                }
+
+                if (car == round.Player) {
+                    distance *= playerScale;
+                }
+
                 if (distance < bestDistance) {
                     bestDistance = distance;
                     best = car;
                 }
             }
 
-            return best;
+            return best ?? fallback;
         }
 
         /// <summary>

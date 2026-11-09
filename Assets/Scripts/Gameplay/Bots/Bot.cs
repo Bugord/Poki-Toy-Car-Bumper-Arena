@@ -64,6 +64,14 @@ namespace ToyCarArena.Gameplay.Bots
         private bool isEscaping;
         private bool mayEscapeBoost;
 
+        // The hot potato: the bomb as the bot last noticed it, when it reacts to a new one, the holder it runs from, and
+        // where it wanders while nobody holds the bomb (and until when).
+        private int seenBomb = -1;
+        private float bombReactAt;
+        private Car fleeFrom;
+        private Vector3 wander;
+        private float wanderUntil;
+
         // The item the bot has made up its mind about, how long its moment must last, and how long it has so far.
         private ItemKind heldItem;
         private float useDelay;
@@ -225,6 +233,125 @@ namespace ToyCarArena.Gameplay.Bots
             else {
                 pushTime = 0f;
             }
+        }
+
+        /// <summary>
+        /// Steers in the HOT POTATO mode, where nobody falls and the bomb is all there is. With the bomb the bot drives at
+        /// its target (the car <see cref="BotDriver"/> picked to pass it to) straight on, seen as any target is, with the
+        /// reaction and the aim error of the difficulty, and at the player at the difficulty's pace, a little faster as
+        /// the fuse runs short. Without it the bot runs from the holder once it has noticed who holds it (a reaction
+        /// drawn per bomb, later for the careless), along the fence rather than into it; at the player's bomb at the
+        /// difficulty's pace, so the player can catch someone. With no bomb about it wanders the floor.
+        /// </summary>
+        public void SteerPotato(IArenaEdge edge, HotPotato potato, float deltaTime)
+        {
+            retargetTimer -= deltaTime;
+            sinceSeen += deltaTime;
+            pushTime = 0f;
+            var position = Flat(Car.Position);
+            var potatoSettings = tuning.SpecialRounds.HotPotato;
+            var holder = potato.Holder;
+            var isHurried = holder != null && potato.FuseLeft <= potatoSettings.Hurry;
+
+            if (holder == Car) {
+                if (Target == null || !Target.IsTargetable) {
+                    Car.Movement.Drive(Vector3.zero, 0f);
+                    return;
+                }
+
+                Look();
+                var aim = seenPosition + seenVelocity * (sinceSeen + settings.AimLead);
+                var heading = Quaternion.AngleAxis(aimError, Vector3.up) * (aim - position);
+                heading = GoRoundPits(edge, position, heading, settings.EdgeMargin, deltaTime);
+                var pace = Target == player ? Mathf.Min(1f, difficulty.PlayerPace + (isHurried ? 0.1f : 0f)) : 1f;
+                Car.Movement.Drive(heading, pace);
+                // Close and facing it, a boost carries the bomb over the last metres, where the boost is on at all.
+                if (Vector3.Distance(Flat(Target.Position), position) < settings.PushDistance * 2f
+                    && Vector3.Angle(Flat(Car.transform.forward), heading) < settings.PushAngle) {
+                    Car.Movement.TryBoost();
+                }
+
+                return;
+            }
+
+            // A new bomb, or the bomb on a new car: noticed a moment later, longer for the careless.
+            if (potato.Version != seenBomb) {
+                seenBomb = potato.Version;
+                var reaction = difficulty.ReactionTime;
+                bombReactAt = Time.time + Range(reaction.x, reaction.y) / Mathf.Max(0.1f, Traits.Caution);
+            }
+
+            if (Time.time >= bombReactAt) {
+                fleeFrom = holder;
+            }
+
+            if (fleeFrom != null && (fleeFrom.IsOut || fleeFrom != holder && Time.time >= bombReactAt)) {
+                fleeFrom = null;
+            }
+
+            if (fleeFrom != null) {
+                var away = position - Flat(fleeFrom.Position);
+                var distance = away.magnitude;
+                var reach = potatoSettings.FleeRadius * (isHurried ? 1.5f : 1f);
+                if (distance < reach) {
+                    var heading = Flee(edge, position, distance > 0.01f ? away / distance : Flat(Car.transform.forward),
+                        potatoSettings.FenceMargin);
+                    var pace = fleeFrom == player ? difficulty.PlayerPace : 1f;
+                    Car.Movement.Drive(heading, pace);
+                    return;
+                }
+            }
+
+            Wander(edge, position, potato);
+        }
+
+        /// <summary>
+        /// The way to run from the holder: straight away, or as near it as the floor allows. Each try is scored by how
+        /// well it leads away and by how much floor lies ahead; a way into the fence (or a pit's) within
+        /// <paramref name="fenceMargin"/> scores low, so a cornered bot slides along the fence and round the holder.
+        /// </summary>
+        private Vector3 Flee(IArenaEdge edge, Vector3 position, Vector3 away, float fenceMargin)
+        {
+            var best = away;
+            var bestScore = float.NegativeInfinity;
+            for (var step = -4; step <= 4; step++) {
+                var option = Quaternion.AngleAxis(step * 30f, Vector3.up) * away;
+                var room = edge.DistanceToEdge(position + option * fenceMargin, 0f);
+                var score = Vector3.Dot(option, away) + Mathf.Clamp(room, -fenceMargin, fenceMargin) / fenceMargin * 1.5f;
+                if (score > bestScore) {
+                    bestScore = score;
+                    best = option;
+                }
+            }
+
+            return best;
+        }
+
+        /// <summary>
+        /// With no holder to run from, drives at an easy pace to a spot on the floor away from the walls, a new one now
+        /// and then, the far side from the holder if there is one.
+        /// </summary>
+        private void Wander(IArenaEdge edge, Vector3 position, HotPotato potato)
+        {
+            if (Time.time >= wanderUntil || Vector3.Distance(position, wander) < 2f) {
+                wanderUntil = Time.time + Range(1.5f, 3f);
+                var extent = edge.SafeExtent;
+                for (var attempt = 0; attempt < 8; attempt++) {
+                    var angle = Range(0f, Mathf.PI * 2f);
+                    var spot = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * Range(0.2f, 0.7f) * extent;
+                    if (potato.Holder != null && Vector3.Dot(spot - position, Flat(potato.Holder.Position) - position) > 0f) {
+                        continue;
+                    }
+
+                    if (edge.DistanceToEdge(spot, 3f) >= 0f) {
+                        wander = spot;
+                        break;
+                    }
+                }
+            }
+
+            var heading = GoRoundPits(edge, position, wander - position, settings.EdgeMargin, Time.deltaTime);
+            Car.Movement.Drive(heading, 0.6f);
         }
 
         /// <summary>
