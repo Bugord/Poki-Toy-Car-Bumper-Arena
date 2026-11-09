@@ -97,6 +97,11 @@ namespace ToyCarArena.UI
         private const float WideMissionsScale = 1.7f;
         private const float MissionsHeight = 800f;
 
+        // The modes' card sideways, for the same reason. It is taller (three cards and PLAY), so it grows less, to about
+        // the missions' card's height on screen.
+        private const float WideModesScale = 1.3f;
+        private const float ModesHeight = 1100f;
+
         // The XP bar sideways: this share of the top row, never shorter than upright and never into the coins and the
         // gear (their width and gaps, reference pixels).
         private const float WideLevelShare = 0.42f;
@@ -160,6 +165,7 @@ namespace ToyCarArena.UI
         private VisualElement missionsSheet;
         private VisualElement missionsList;
         private VisualElement modesPopup;
+        private VisualElement modesSheet;
         private CarPortrait modePortrait;
         private GarageStage garageStage;
         private MenuLeagues leagues;
@@ -468,7 +474,8 @@ namespace ToyCarArena.UI
 
         private void BuildModesPopup(VisualElement menu)
         {
-            modesPopup = Popup(menu, () => Strings.Get("menu.choose_mode"), out var sheet);
+            modesPopup = Popup(menu, () => Strings.Get("menu.choose_mode"), out modesSheet);
+            var sheet = modesSheet;
 
             var quick = Element("menu__mode-card");
             quick.AddToClassList("menu__mode-card--selected");
@@ -1055,6 +1062,8 @@ namespace ToyCarArena.UI
             if (isWide) {
                 var missionsFit = Mathf.Min(WideMissionsScale, (size.y - 2f * Mathf.Max(topEdge, low)) / MissionsHeight);
                 missionsSheet.style.scale = new Scale(new Vector3(missionsFit, missionsFit, 1f));
+                var modesFit = Mathf.Min(WideModesScale, (size.y - 2f * Mathf.Max(topEdge, low)) / ModesHeight);
+                modesSheet.style.scale = new Scale(new Vector3(modesFit, modesFit, 1f));
             }
 
             // The calendar's card is wider (one row of days sideways) and keeps inside the screen's width too.
