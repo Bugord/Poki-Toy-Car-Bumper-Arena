@@ -59,10 +59,11 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private int every = 3;
 
+            // Only low gravity is left in the rotation (after v0.17.4): the hot potato became a mode of its own in the
+            // menu (EventMode), and the user took mega, boss and ice out. Their code stays, reachable by Force.
             [Tooltip("The special rounds in the order they come, then again from the start")]
             [SerializeField]
-            private SpecialRound[] order =
-                { SpecialRound.Mega, SpecialRound.HotPotato, SpecialRound.Boss, SpecialRound.Ice, SpecialRound.LowGravity };
+            private SpecialRound[] order = { SpecialRound.LowGravity };
 
             [Header("Mega")]
             [Tooltip("How many times its own size every car is in a mega round")]

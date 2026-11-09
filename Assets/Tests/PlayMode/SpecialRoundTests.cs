@@ -27,13 +27,11 @@ namespace ToyCarArena.Tests.PlayMode
                 var specials = tuning.SpecialRounds;
                 Assert.That(specials.For(1), Is.EqualTo(SpecialRound.None));
                 Assert.That(specials.For(3), Is.EqualTo(SpecialRound.None));
-                Assert.That(specials.For(4), Is.EqualTo(SpecialRound.Mega));
+                // Only low gravity is left in the rotation; the hot potato is a mode of the menu.
+                Assert.That(specials.For(4), Is.EqualTo(SpecialRound.LowGravity));
                 Assert.That(specials.For(5), Is.EqualTo(SpecialRound.None));
-                Assert.That(specials.For(7), Is.EqualTo(SpecialRound.HotPotato));
-                Assert.That(specials.For(10), Is.EqualTo(SpecialRound.Boss));
-                Assert.That(specials.For(13), Is.EqualTo(SpecialRound.Ice));
-                Assert.That(specials.For(16), Is.EqualTo(SpecialRound.LowGravity));
-                Assert.That(specials.For(19), Is.EqualTo(SpecialRound.Mega));
+                Assert.That(specials.For(7), Is.EqualTo(SpecialRound.LowGravity));
+                Assert.That(specials.For(10), Is.EqualTo(SpecialRound.LowGravity));
                 specials.Force(SpecialRound.Boss);
                 Assert.That(specials.For(1), Is.EqualTo(SpecialRound.Boss));
                 specials.Force(null);
