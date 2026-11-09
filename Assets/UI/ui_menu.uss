@@ -799,6 +799,13 @@
     -unity-text-auto-size: best-fit 26px 46px;
 }
 
+/* The plate opens the modes: its chevron says so. */
+.menu__chevron {
+    flex-shrink: 0;
+    width: 40px;
+    height: 56px;
+}
+
 .menu__play {
     flex-grow: 1;
     min-width: 0;
@@ -817,6 +824,17 @@
 }
 
 .menu--desktop .menu__play-key { display: flex; }
+
+/* The mode's key as PLAY's beside it: the rails' smaller keys are drawn for their larger scale. */
+.menu__mode-key {
+    position: absolute;
+    top: -30px;
+    left: -18px;
+    margin: 0;
+    display: none;
+}
+
+.menu--desktop .menu__mode-key { display: flex; }
 
 /* Wide: one row at the bottom, the mission at the left and the mode and PLAY at the right. */
 .menu--wide .menu__bottom {
@@ -952,7 +970,8 @@
     background-color: var(--white);
 }
 
-.menu__mode-card--locked { opacity: 0.85; }
+/* A mode not out yet: greyed, its sign too, and nothing on hover; only its SOON plate keeps its colour. */
+.menu__mode-card--soon { background-color: var(--track); }
 
 .menu__mode-text {
     flex-grow: 1;
@@ -966,7 +985,7 @@
     color: var(--navy);
 }
 
-.menu__mode-card--locked .menu__mode-card-name { font-size: 44px; color: var(--muted); }
+.menu__mode-card--soon .menu__mode-card-name { font-size: 48px; color: var(--muted); }
 
 .menu__mode-hint {
     margin: 4px 0 0 0;
@@ -982,11 +1001,11 @@
     height: 180px;
 }
 
-.menu__mode-lock {
+.menu__mode-sign {
     flex-shrink: 0;
-    width: 64px;
-    height: 64px;
-    margin-right: 22px;
+    width: 96px;
+    height: 96px;
+    margin-right: 26px;
 }
 
 .menu__tag {
@@ -1007,6 +1026,17 @@
     right: 30px;
     margin: 0;
     background-color: var(--green);
+    color: var(--navy);
+}
+
+/* SOON on the card's top edge, tilted like NEW and the AD tag. */
+.menu__tag--soon {
+    position: absolute;
+    top: -24px;
+    right: 30px;
+    margin: 0;
+    rotate: 5deg;
+    background-color: var(--gold);
     color: var(--navy);
 }
 
