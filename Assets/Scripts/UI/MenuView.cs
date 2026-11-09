@@ -91,6 +91,12 @@ namespace ToyCarArena.UI
         private const float DailyWidth = 960f;
         private const float DailyWideWidth = 1760f;
 
+        // The missions' card sideways. The Expand panel is always 1920 reference pixels tall there, so at the sheets'
+        // usual scale the card read far smaller than upright; at this scale its text is about as large as upright on a
+        // 16:9 screen. Its height (three rows, with room for a task on two lines) keeps it inside the screen's height.
+        private const float WideMissionsScale = 1.7f;
+        private const float MissionsHeight = 800f;
+
         // The XP bar sideways: this share of the top row, never shorter than upright and never into the coins and the
         // gear (their width and gaps, reference pixels).
         private const float WideLevelShare = 0.42f;
@@ -144,6 +150,7 @@ namespace ToyCarArena.UI
         private MissionLook.Progress missionProgress;
         private VisualElement missionReward;
         private VisualElement missionsPopup;
+        private VisualElement missionsSheet;
         private VisualElement missionsList;
         private VisualElement modesPopup;
         private CarPortrait modePortrait;
@@ -446,9 +453,9 @@ namespace ToyCarArena.UI
 
         private void BuildMissionsPopup(VisualElement menu)
         {
-            missionsPopup = Popup(menu, () => Strings.Get("mission.title"), out var sheet);
+            missionsPopup = Popup(menu, () => Strings.Get("mission.title"), out missionsSheet);
             missionsList = Element(null);
-            sheet.Add(missionsList);
+            missionsSheet.Add(missionsList);
         }
 
         private void BuildModesPopup(VisualElement menu)
@@ -1019,6 +1026,11 @@ namespace ToyCarArena.UI
             foreach (var popup in new[] { missionsPopup, modesPopup, boostPopup }) {
                 var sheet = popup.Q<VisualElement>(className: "menu__sheet");
                 sheet.style.scale = new Scale(new Vector3(sheetFit, sheetFit, 1f));
+            }
+
+            if (isWide) {
+                var missionsFit = Mathf.Min(WideMissionsScale, (size.y - 2f * Mathf.Max(topEdge, low)) / MissionsHeight);
+                missionsSheet.style.scale = new Scale(new Vector3(missionsFit, missionsFit, 1f));
             }
 
             // The calendar's card is wider (one row of days sideways) and keeps inside the screen's width too.
