@@ -1299,7 +1299,11 @@ namespace ToyCarArena.UI
 
             var columns = isWide ? WideColumns : Columns;
             var padding = 2f * 36f;
-            var cardWidth = Mathf.Floor((inner - padding - CardGap * (columns - 1)) / columns);
+            // The layout rounds every card and gap to the screen's pixels, and on a small window a pixel is several
+            // reference pixels: cards that filled the row exactly could come out wider together than the row, and the
+            // third wrapped (two a row, the rows out of line). Two pixels a card leave room for that rounding.
+            var pixel = 1f / Mathf.Max(0.01f, panel.panel?.scaledPixelsPerPoint ?? 1f);
+            var cardWidth = Mathf.Floor((inner - padding - CardGap * (columns - 1) - 2f * pixel * columns) / columns);
             var cardHeight = Mathf.Floor(cardWidth * CardAspect);
             foreach (var grid in new[] { carGrid, hatGrid }) {
                 var shown = 0;
