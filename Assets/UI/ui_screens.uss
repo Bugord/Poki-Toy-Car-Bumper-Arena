@@ -5109,7 +5109,8 @@
 }
 
 .missions .mission-progress__count { font-size: 32px; }
-.missions .mission-progress__bar { width: 96px; height: 18px; margin-top: 4px; border-width: 4px; }
+.missions .mission-progress__bar { width: 96px; height: 18px; margin-top: 4px; border-width: 4px; border-radius: 9px; }
+.missions .mission-progress__fill { border-radius: 5px; }
 
 .mission__reward { margin-left: 20px; }
 .missions .mission-reward__xp-count,
@@ -5142,7 +5143,8 @@
     height: 80%;
 }
 
-/* The count over a thin gold bar, for a mission of more than one step. */
+/* The count over a thin gold bar, for a mission of more than one step. The bar's and the fill's radii are half their
+   heights, not 999px: UI Toolkit clamps a radius on each axis apart, and 999px on a bar this flat drew a flat oval. */
 .mission-progress {
     flex-shrink: 0;
     align-items: flex-end;
@@ -5162,7 +5164,7 @@
     margin-top: 6px;
     border-width: 5px;
     border-color: var(--navy);
-    border-radius: 999px;
+    border-radius: 13px;
     background-color: var(--track);
     overflow: hidden;
 }
@@ -5172,7 +5174,7 @@
     left: 0;
     top: 0;
     bottom: 0;
-    border-radius: 999px;
+    border-radius: 8px;
     background-color: var(--gold);
 }
 
