@@ -416,7 +416,9 @@ namespace ToyCarArena.UI
             scroll = new ScrollView(ScrollViewMode.Vertical) {
                 horizontalScrollerVisibility = ScrollerVisibility.Hidden,
                 verticalScrollerVisibility = ScrollerVisibility.Hidden,
-                touchScrollBehavior = ScrollView.TouchScrollBehavior.Elastic,
+                // Clamped, not Elastic: Elastic unclamps the scrollers, so a wheel tick past either end pushes the
+                // grid out and the spring pulls it back, which jerks. A finger still drags and flicks with inertia.
+                touchScrollBehavior = ScrollView.TouchScrollBehavior.Clamped,
             };
             scroll.AddToClassList("garage__scroll");
             panel.Add(scroll);
