@@ -1500,7 +1500,7 @@
 .menu__league-card-emblem .menu__league-reward {
     left: 24px;
     right: 24px;
-    bottom: -24px;
+    bottom: -20px;
     height: 116px;
     border-width: 8px;
     border-bottom-width: 16px;
@@ -1683,7 +1683,7 @@
 .menu__league-card-emblem {
     width: 280px;
     height: 280px;
-    margin: 20px 0 10px 0;
+    margin: 20px 0 34px 0;
 }
 
 .menu__league-card-name {

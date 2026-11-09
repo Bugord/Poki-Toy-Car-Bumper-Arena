@@ -479,13 +479,13 @@
 .garage__badge--ad { padding: 0 16px 0 8px; background-color: var(--purple); }
 /* A league's prize: the padlock and the league's emblem, which is the league's name in a picture. */
 .garage__badge--league { padding: 0 6px 0 14px; background-color: var(--navy); }
-.garage__badge--ad .garage__badge-emblem {
+.garage__badge--ad .garage__badge-text { color: var(--white); }
+
+.garage__badge-emblem {
     width: 58px;
     height: 58px;
     margin: -6px 0 -6px 4px;
 }
-
-.garage__badge-text { color: var(--white); }
 
 .garage__badge-tick,
 .garage__action-tick,
@@ -652,6 +652,11 @@
     min-width: 0;
     margin-top: 30px;
     padding: 0 40px 20px 40px;
+}
+
+.garage__action-label {
+    flex-shrink: 1;
+    min-width: 0;
 }
 
 .garage__action-label-text {

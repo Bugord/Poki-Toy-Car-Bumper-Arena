@@ -542,10 +542,14 @@ namespace ToyCarArena.UI
             actionPlay = RoundOverRewards.PlaySign();
             actionPlay.AddToClassList("garage__action-play");
             face.Add(actionPlay);
-            face.Add(RoundOverProgress.Outlined("", "garage__action-label", out actionLabels));
+            var actionLabel = RoundOverProgress.Outlined("", "garage__action-label", out actionLabels);
             foreach (var label in actionLabels) {
                 label.AddToClassList("button__label");
             }
+
+            // REACH <LEAGUE> runs long in some languages: the label shrinks to the button rather than spill past it.
+            FitText.Fit(actionLabel, actionLabels);
+            face.Add(actionLabel);
 
             actionPlain = Text("garage__action-plain");
             actionPlain.AddToClassList("button__label");
