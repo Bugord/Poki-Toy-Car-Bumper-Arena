@@ -97,6 +97,12 @@ namespace ToyCarArena.Gameplay.Pickups
 
         public int Version { get; private set; }
 
+        /// <summary>Whether the fuse is in its last seconds (<see cref="GameTuning.HotPotatoSettings.Hurry"/>).</summary>
+        public bool IsHurried => Holder != null && FuseLeft <= settings.Hurry;
+
+        /// <summary>Where the bomb rides over its holder, without its bob; the holder's position with none.</summary>
+        public Vector3 BombPosition => Holder != null ? Holder.Position + Vector3.up * (RideHeight * Holder.Growth) : Vector3.zero;
+
         /// <summary>
         /// Whether the bomb cannot pass to <paramref name="car"/> now: it just came from it. The bots holding it look
         /// past that car.

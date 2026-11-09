@@ -193,7 +193,8 @@ namespace ToyCarArena.App
 
                 var hudRound = new HudRound(round, driver, tuning.Controls, waitsForPlayer, roundNumber,
                     playerProgress.TotalXp == 0,
-                    progress.WinStreak >= tuning.Streaks.Start ? progress.WinStreak : 0, special);
+                    progress.WinStreak >= tuning.Streaks.Start ? progress.WinStreak : 0, special,
+                    levelScene.Resolve<HotPotato>());
                 hud = await navigator.OpenAsync<HudViewModel, HudRound>(hudRound, token);
                 await curtain.Hide();
                 // The page's loading screen stays up until the first round can be seen, past Poki's own loader.
