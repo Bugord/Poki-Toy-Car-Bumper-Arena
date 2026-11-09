@@ -161,6 +161,8 @@ namespace ToyCarArena.Gameplay
             builder.RegisterEntryPoint<ArenaPickups>().AsSelf().WithParameter(transform);
             // The bomb of a hot potato round; in any other round it builds nothing.
             builder.RegisterEntryPoint<HotPotato>().AsSelf().WithParameter(transform);
+            // The fence of the hot potato mode, round the rim and every hole; in any other round it builds nothing.
+            builder.RegisterEntryPoint<ArenaFence>().AsSelf().WithParameter(transform);
             // The objects of the sandbox and tabletop variants: each does nothing unless its variant names it.
             builder.RegisterEntryPoint<ArenaCrab>().AsSelf().WithParameter(transform);
             builder.RegisterEntryPoint<ArenaMounds>().AsSelf().WithParameter(transform);
