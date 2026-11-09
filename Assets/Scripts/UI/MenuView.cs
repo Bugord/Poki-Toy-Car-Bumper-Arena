@@ -435,7 +435,7 @@ namespace ToyCarArena.UI
             // The mode in play, and a chevron: it opens the modes, where CUP and SURVIVAL wait as SOON. As a plate that
             // did nothing, players tapped it and took the menu for broken.
             var mode = Sticker("menu__mode", OpenModes);
-            mode.Add(KeyCap(ModesKey.ToString(), "menu__key"));
+            mode.Add(KeyCap(ModesKey.ToString(), "menu__mode-key"));
             var modeFace = mode.Q<VisualElement>(className: "menu__face");
             var modeText = Element("menu__mode-texts");
             var caption = Text("menu__mode-caption");

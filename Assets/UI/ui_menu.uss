@@ -788,6 +788,17 @@
 
 .menu--desktop .menu__play-key { display: flex; }
 
+/* The mode's key as PLAY's beside it: the rails' smaller keys are drawn for their larger scale. */
+.menu__mode-key {
+    position: absolute;
+    top: -30px;
+    left: -18px;
+    margin: 0;
+    display: none;
+}
+
+.menu--desktop .menu__mode-key { display: flex; }
+
 /* Wide: one row at the bottom, the mission at the left and the mode and PLAY at the right. */
 .menu--wide .menu__bottom {
     flex-direction: row;
