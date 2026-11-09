@@ -1079,7 +1079,7 @@
     margin-right: 4px;
 }
 
-.menu__event-tag-text {
+.menu__event-tag-label-text {
     margin: 0;
     padding: 0;
     font-size: 32px;
@@ -1087,6 +1087,8 @@
     -unity-text-outline-width: 8px;
     -unity-text-outline-color: var(--navy);
 }
+
+.menu__event-tag-label-text.stroke__drop { translate: 0 14%; }
 
 .menu__event-title-box {
     align-self: flex-start;
@@ -1186,7 +1188,7 @@
     height: 30px;
 }
 
-.menu__mode-selected-text {
+.menu__mode-selected-label-text {
     margin: 0;
     padding: 0;
     font-size: 30px;
@@ -1194,6 +1196,8 @@
     -unity-text-outline-width: 8px;
     -unity-text-outline-color: var(--navy);
 }
+
+.menu__mode-selected-label-text.stroke__drop { translate: 0 14%; }
 
 /* A mode not out yet: a low grey row with a gold padlock and a white SOON pill; nothing on hover. */
 .menu__mode-soon {

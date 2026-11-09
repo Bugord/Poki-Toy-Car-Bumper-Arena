@@ -506,7 +506,7 @@ namespace ToyCarArena.UI
             eventFace.Add(Element("menu__event-art"));
             var tag = Element("menu__event-tag");
             tag.Add(Icon("menu__event-bolt", DrawBolt));
-            var tagText = RoundOverProgress.Outlined("", "menu__event-tag-text", out var tagLabels);
+            var tagText = RoundOverProgress.Dropped("menu__event-tag-label", out var tagLabels);
             foreach (var label in tagLabels) {
                 text.Set(label, () => Strings.Get("menu.event"));
             }
@@ -569,7 +569,7 @@ namespace ToyCarArena.UI
             var tick = Element("menu__mode-tick");
             tick.Add(Icon("menu__mode-tick-mark", DrawTick));
             selected.Add(tick);
-            var selectedText = RoundOverProgress.Outlined("", "menu__mode-selected-text", out var labels);
+            var selectedText = RoundOverProgress.Dropped("menu__mode-selected-label", out var labels);
             foreach (var label in labels) {
                 text.Set(label, () => Strings.Get("menu.selected"));
             }
