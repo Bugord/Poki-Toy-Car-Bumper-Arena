@@ -47,26 +47,26 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Coins for every finished round, whatever its outcome")]
             [Min(0)]
             [SerializeField]
-            private int roundCoins = 30;
+            private int roundCoins = 20;
 
             [Tooltip("Coins for each knock-out credited to the player")]
             [Min(0)]
             [SerializeField]
-            private int knockoutCoins = 15;
+            private int knockoutCoins = 10;
 
             [Tooltip("Extra coins for being the last car standing")]
             [Min(0)]
             [SerializeField]
-            private int winCoins = 30;
+            private int winCoins = 20;
 
             [Tooltip("Cars bought for coins once their level opens them, every other one of the catalog: the first is " +
-                "cheap enough for the coins a new player has after one round, with some left over; the last two are long goals")]
+                "cheap enough for the coins a new player has after one round, with some left over; the rest climb steeply, so the last two are goals for many visits")]
             [SerializeField]
             private CarPrice[] carPrices = {
                 new("speedster", 30),
-                new("suv", 80),
-                new("truck", 150),
-                new("monster-truck", 300),
+                new("suv", 300),
+                new("truck", 700),
+                new("monster-truck", 1500),
             };
 
             [Tooltip("Cars opened by watching a rewarded ad in the garage instead of by a level or coins: open to everyone " +
@@ -133,7 +133,7 @@ namespace ToyCarArena.Gameplay
 
             [Tooltip("Coins for a done mission of each tier: easy, medium, hard")]
             [SerializeField]
-            private int[] tierCoins = { 40, 60, 90 };
+            private int[] tierCoins = { 25, 40, 60 };
 
             [Tooltip("Every mission that can be drawn; ids are saved and measured, so they never change and carry no " +
                 "digits")]
@@ -244,15 +244,21 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Each topper's id (saved and measured: no digits) and price in coins")]
             [SerializeField]
             private TopperDefinition[] toppers = {
-                new("top-hat", 60),
-                new("party-hat", 40),
-                new("cone", 40),
-                new("antenna", 60),
-                new("flag", 60),
-                new("horns", 90),
-                new("propeller", 90),
-                new("fin", 180),
-                new("crown", 300),
+                new("top-hat", 150),
+                new("party-hat", 50),
+                new("cone", 80),
+                new("antenna", 150),
+                new("flag", 200),
+                new("chef-hat", 250),
+                new("horns", 300),
+                new("cowboy-hat", 350),
+                new("propeller", 400),
+                new("viking-helmet", 500),
+                new("duck", 700),
+                new("fin", 800),
+                new("halo", 1000),
+                new("rocket", 1500),
+                new("crown", 2000),
             };
 
             [Tooltip("The topper given free on reaching GiftLevel, once, to a player who owns none: the result offers to " +
