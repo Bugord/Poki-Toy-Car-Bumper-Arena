@@ -28,10 +28,10 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private bool enabled = true;
 
-            [Tooltip("Coins on each day in a row but the last, from the first: a little under a round's at first, " +
+            [Tooltip("Coins on each day in a row but the last, from the first: about a round's at first, " +
                 "rising so a week in a row is worth coming back for")]
             [SerializeField]
-            private int[] dayCoins = { 20, 30, 40, 50, 60, 80 };
+            private int[] dayCoins = { 40, 60, 80, 100, 120, 160 };
 
             [Tooltip("The exclusive topper the last day gives (TopperSettings' exclusive list)")]
             [SerializeField]
@@ -40,7 +40,7 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Coins the last day gives once the player owns the hat")]
             [Min(0)]
             [SerializeField]
-            private int hatCoins = 150;
+            private int hatCoins = 300;
 
             [Tooltip("What CLAIM ×2 multiplies a day's coins by, for a rewarded ad; not on the hat's day")]
             [Min(1)]

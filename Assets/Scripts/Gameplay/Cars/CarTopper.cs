@@ -31,7 +31,8 @@ namespace ToyCarArena.Gameplay.Cars
         /// (<see cref="ExclusiveIds"/>) stay the players' who earned them.
         /// </summary>
         public static readonly IReadOnlyList<string> Ids = new[] {
-            "top-hat", "party-hat", "cone", "antenna", "flag", "horns", "propeller", "fin", "crown",
+            "top-hat", "party-hat", "cone", "antenna", "flag", "chef-hat", "horns", "cowboy-hat", "propeller",
+            "viking-helmet", "duck", "fin", "halo", "rocket", "crown",
         };
 
         /// <summary>The toppers only a reward gives (the daily gift's last day), which no bot wears.</summary>
@@ -135,6 +136,81 @@ namespace ToyCarArena.Gameplay.Cars
                     Part(ToyMeshes.Ellipsoid(Vector3.one * 0.07f), Red, new Vector3(0f, 0.11f, 0.33f));
                     Part(ToyMeshes.Ellipsoid(Vector3.one * 0.06f), Blue, new Vector3(0.33f, 0.11f, 0f));
                     Part(ToyMeshes.Ellipsoid(Vector3.one * 0.06f), Green, new Vector3(-0.33f, 0.11f, 0f));
+                    break;
+                case "chef-hat":
+                    // A chef's toque: a white band under a big puffed top, a smaller puff on it.
+                    Part(ToyMeshes.Cylinder(0.27f, 0.29f, 0.22f, 18), White, new Vector3(0f, 0.11f, 0f));
+                    Part(ToyMeshes.Ellipsoid(new Vector3(0.38f, 0.24f, 0.38f)), White, new Vector3(0f, 0.38f, 0f));
+                    Part(ToyMeshes.Ellipsoid(new Vector3(0.24f, 0.17f, 0.24f)), White, new Vector3(0.02f, 0.56f, -0.03f));
+                    break;
+                case "cowboy-hat":
+                    // A straw cowboy hat: a wide brim curled up at the sides, a pinched crown and a red band.
+                    Part(ToyMeshes.Cylinder(0.5f, 0.5f, 0.05f, 22), Cream, new Vector3(0f, 0.06f, 0f));
+                    Part(ToyMeshes.Ellipsoid(new Vector3(0.1f, 0.05f, 0.4f)), Cream, new Vector3(-0.46f, 0.14f, 0f),
+                        new Vector3(0f, 0f, -38f));
+                    Part(ToyMeshes.Ellipsoid(new Vector3(0.1f, 0.05f, 0.4f)), Cream, new Vector3(0.46f, 0.14f, 0f),
+                        new Vector3(0f, 0f, 38f));
+                    Part(ToyMeshes.Cylinder(0.27f, 0.22f, 0.36f, 18), Cream, new Vector3(0f, 0.26f, 0f));
+                    Part(ToyMeshes.Ellipsoid(new Vector3(0.22f, 0.08f, 0.2f)), Cream, new Vector3(0f, 0.44f, 0f));
+                    Part(ToyMeshes.Cylinder(0.28f, 0.27f, 0.08f, 18), Red, new Vector3(0f, 0.13f, 0f));
+                    break;
+                case "viking-helmet":
+                    // A viking's helmet: a grey dome on a gold rim, a nose guard and two horns curving out and up.
+                    Part(ToyMeshes.Ellipsoid(new Vector3(0.34f, 0.34f, 0.34f), 18, 6, Mathf.PI * 0.5f), Grey, Vector3.zero);
+                    Part(ToyMeshes.Cylinder(0.36f, 0.36f, 0.09f, 18), Gold, new Vector3(0f, 0.045f, 0f));
+                    Part(ToyMeshes.Box(new Vector3(0.08f, 0.3f, 0.06f)), Gold, new Vector3(0f, 0.16f, 0.33f));
+                    Part(ToyMeshes.Cylinder(0.12f, 0f, 0.5f, 10), Cream, new Vector3(-0.38f, 0.4f, 0f),
+                        new Vector3(0f, 0f, 30f));
+                    Part(ToyMeshes.Cylinder(0.12f, 0f, 0.5f, 10), Cream, new Vector3(0.38f, 0.4f, 0f),
+                        new Vector3(0f, 0f, -30f));
+                    break;
+                case "duck":
+                    // A rubber duck riding on the roof: a yellow body and head, an orange beak, dark eyes, a tail.
+                    Part(ToyMeshes.Ellipsoid(new Vector3(0.32f, 0.22f, 0.4f)), Gold, new Vector3(0f, 0.22f, -0.04f));
+                    Part(ToyMeshes.Ellipsoid(new Vector3(0.12f, 0.1f, 0.12f)), Gold, new Vector3(0f, 0.34f, -0.42f),
+                        new Vector3(-30f, 0f, 0f));
+                    Part(ToyMeshes.Ellipsoid(Vector3.one * 0.2f), Gold, new Vector3(0f, 0.56f, 0.18f));
+                    Part(ToyMeshes.Ellipsoid(new Vector3(0.11f, 0.05f, 0.12f)), Orange, new Vector3(0f, 0.52f, 0.38f));
+                    Part(ToyMeshes.Ellipsoid(Vector3.one * 0.04f), Dark, new Vector3(-0.1f, 0.62f, 0.33f));
+                    Part(ToyMeshes.Ellipsoid(Vector3.one * 0.04f), Dark, new Vector3(0.1f, 0.62f, 0.33f));
+                    break;
+                case "halo":
+                    // An angel's gold halo floating over two little white wings.
+                    // Each wing is three feathers, each higher, shorter and swept further back, so the scalloped
+                    // edge reads as a wing from the side too.
+                    for (var side = -1; side <= 1; side += 2) {
+                        for (var i = 0; i < 3; i++) {
+                            Part(ToyMeshes.Ellipsoid(new Vector3(0.05f, 0.075f, 0.34f - 0.06f * i)), White,
+                                new Vector3(side * (0.2f + 0.03f * i), 0.16f + 0.1f * i, -0.12f - 0.05f * i),
+                                new Vector3(18f + 14f * i, -side * 45f, -side * 18f));
+                        }
+                    }
+
+                    const int haloParts = 16;
+                    const float haloRadius = 0.3f;
+                    for (var i = 0; i < haloParts; i++) {
+                        var angle = Mathf.PI * 2f * (i + 0.5f) / haloParts;
+                        var tangent = new Vector3(-Mathf.Sin(angle), 0f, Mathf.Cos(angle));
+                        var point = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * haloRadius;
+                        var length = 2f * haloRadius * Mathf.Sin(Mathf.PI / haloParts) + 0.04f;
+                        Part(ToyMeshes.Cylinder(0.055f, 0.055f, length, 8), Gold, point + Vector3.up * 0.64f,
+                            Quaternion.FromToRotation(Vector3.up, tangent).eulerAngles);
+                    }
+
+                    break;
+                case "rocket":
+                    // A toy rocket standing on its fins: a white body, a red nose, a sky window and an orange flame.
+                    Part(ToyMeshes.Cylinder(0.13f, 0f, 0.16f, 12), Orange, new Vector3(0f, 0.08f, 0f), new Vector3(180f, 0f, 0f));
+                    Part(ToyMeshes.Cylinder(0.2f, 0.2f, 0.56f, 16), White, new Vector3(0f, 0.44f, 0f));
+                    Part(ToyMeshes.Cylinder(0.2f, 0f, 0.3f, 16), Red, new Vector3(0f, 0.87f, 0f));
+                    Part(ToyMeshes.Ellipsoid(new Vector3(0.09f, 0.09f, 0.04f)), Sky, new Vector3(0f, 0.56f, 0.19f));
+                    for (var i = 0; i < 3; i++) {
+                        var angle = Mathf.PI * 2f * i / 3f + Mathf.PI * 0.5f;
+                        var outward = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+                        Part(ToyMeshes.Box(new Vector3(0.04f, 0.28f, 0.2f)), Red, outward * 0.24f + Vector3.up * 0.3f,
+                            new Vector3(0f, 90f - angle * Mathf.Rad2Deg, 0f));
+                    }
+
                     break;
                 case "wizard-hat":
                     // A wizard's hat: a wide purple brim, a tall cone leaning back with its tip bent further, a gold

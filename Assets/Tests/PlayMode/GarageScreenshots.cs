@@ -115,6 +115,14 @@ namespace ToyCarArena.Tests.PlayMode
                     showTab.Invoke(view, new[] { System.Enum.ToObject(tabType, tab) });
                     yield return Wait(0.8f);
                     Save(target, Path.Combine(directory, $"{save}_{name}_{frame}.png"));
+                    if (tab == 1) {
+                        // The end of the hat grid: the dearest hats and the longest names sit below the first rows.
+                        var scroll = root.Q<ScrollView>(className: "garage__scroll");
+                        scroll.scrollOffset = new Vector2(0f, scroll.contentContainer.layout.height);
+                        yield return Wait(0.3f);
+                        Save(target, Path.Combine(directory, $"{save}_{name}-end_{frame}.png"));
+                        scroll.scrollOffset = Vector2.zero;
+                    }
                 }
 
                 if (withStates) {
