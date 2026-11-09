@@ -5138,8 +5138,8 @@
 .mission-icon--done { background-color: var(--gold); }
 
 .mission-icon__sign {
-    width: 64%;
-    height: 64%;
+    width: 80%;
+    height: 80%;
 }
 
 /* The count over a thin gold bar, for a mission of more than one step. */
