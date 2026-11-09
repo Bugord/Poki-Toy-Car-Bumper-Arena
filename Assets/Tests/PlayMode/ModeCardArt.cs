@@ -16,8 +16,9 @@ using UnityEditor;
 namespace ToyCarArena.Tests.PlayMode
 {
     /// <summary>
-    /// The picture on the menu's HOT POTATO card, made from the game's own models: the blue monster truck in three
-    /// quarters from above, as the garage shows the cars, with the mode's bomb riding over it, its fuse lit, all in the
+    /// The picture on the menu's HOT POTATO card, made from the game's own models: the red monster truck in three
+    /// quarters from the front and above, as the catalog's portraits show the cars (the QUICK MATCH card's), with the
+    /// mode's bomb riding on its roof, its fuse lit, all in the
     /// arena's outline and the Game scene's sun, transparent around them. Written to
     /// <c>Assets/Art/Sprites/UI/sprite_mode_hot_potato.png</c> at half the size it is drawn, so its edges are smooth.
     /// Explicit: it is for making the picture, and needs graphics.
@@ -28,18 +29,18 @@ namespace ToyCarArena.Tests.PlayMode
         private const string Output = "Assets/Art/Sprites/UI/sprite_mode_hot_potato.png";
         private static readonly Vector3 Stage = new(0f, 4000f, 0f);
 
-        // Drawn at twice the size it is kept, then halved.
-        private const int Width = 1024;
-        private const int Height = 864;
-        private const float Pitch = 24f;
-        // Nose to the camera's left, as the card's picture sits on its right and drives into the card.
-        private const float Yaw = 215f;
-        private const float BombScale = 1.15f;
-        private const float BombGap = 0.1f;
+        // Drawn at twice the size it is kept, then halved; as tall for its width as the board's picture.
+        private const int Width = 928;
+        private const int Height = 1024;
+        // CarCatalogUpdater's portrait camera, seen from (4, 3, 5): 25 degrees down, 38.7 degrees round.
+        private const float Pitch = 25f;
+        private const float Yaw = -218.66f;
+        private const float BombScale = 1f;
+        private const float BombGap = 0.02f;
         private const float Margin = 1.06f;
         private const float Boost = 4f;
-        // CarPaint's blue: it reads on the card's orange.
-        private const int TruckColor = 2;
+        // CarPaint's red, as the board's truck: apart from the slate bomb on it.
+        private const int TruckColor = 1;
 
         [UnityTest]
         public IEnumerator DrawTheHotPotatoCard()
@@ -73,7 +74,7 @@ namespace ToyCarArena.Tests.PlayMode
             var bomb = Object.Instantiate(sceneBomb, root.transform, false).transform;
             bomb.gameObject.SetActive(true);
             bomb.localScale = Vector3.one * BombScale;
-            bomb.localRotation = Quaternion.Euler(-12f, 160f, 14f);
+            bomb.localRotation = Quaternion.Euler(0f, -10f, 8f);
             var radius = PickupArtRadius * BombScale;
             bomb.localPosition = Vector3.up * (bounds.size.y + BombGap + radius);
             var flash = bomb.Find("Flash");
@@ -108,11 +109,15 @@ namespace ToyCarArena.Tests.PlayMode
             picture.ReadPixels(new Rect(0, 0, half.width, half.height), 0, 0);
             picture.Apply();
             RenderTexture.active = previous;
-            File.WriteAllBytes(Path.Combine(Directory.GetCurrentDirectory(), Output), picture.EncodeToPNG());
+            // Cut to what was drawn, as the board's picture is: the card places the toy, not empty margins.
+            var cropped = Crop(picture);
+            File.WriteAllBytes(Path.Combine(Directory.GetCurrentDirectory(), Output), cropped.EncodeToPNG());
+            Debug.Log($"Mode card art: {cropped.width}x{cropped.height}");
             Import();
 
             OutlineBoost.Clear(camera);
             Object.Destroy(picture);
+            Object.Destroy(cropped);
             camera.targetTexture = null;
             texture.Release();
             half.Release();
@@ -153,6 +158,43 @@ namespace ToyCarArena.Tests.PlayMode
             camera.transform.position = root.position + rotation * new Vector3(middle.x, middle.y, min.z - 20f);
         }
 
+        // The picture cut to its visible pixels, with a couple of clear pixels round them so the outline's soft edge stays.
+        private static Texture2D Crop(Texture2D picture)
+        {
+            const int Pad = 2;
+            var pixels = picture.GetPixels32();
+            int minX = picture.width, minY = picture.height, maxX = -1, maxY = -1;
+            for (var y = 0; y < picture.height; y++) {
+                for (var x = 0; x < picture.width; x++) {
+                    if (pixels[y * picture.width + x].a < 8) {
+                        continue;
+                    }
+
+                    minX = Mathf.Min(minX, x);
+                    maxX = Mathf.Max(maxX, x);
+                    minY = Mathf.Min(minY, y);
+                    maxY = Mathf.Max(maxY, y);
+                }
+            }
+
+            minX = Mathf.Max(0, minX - Pad);
+            minY = Mathf.Max(0, minY - Pad);
+            maxX = Mathf.Min(picture.width - 1, maxX + Pad);
+            maxY = Mathf.Min(picture.height - 1, maxY + Pad);
+            // Sides in fours, as the compressed blocks need.
+            while ((maxX - minX + 1) % 4 != 0) {
+                if (maxX < picture.width - 1) maxX++; else minX--;
+            }
+
+            while ((maxY - minY + 1) % 4 != 0) {
+                if (maxY < picture.height - 1) maxY++; else minY--;
+            }
+            var cropped = new Texture2D(maxX - minX + 1, maxY - minY + 1, TextureFormat.RGBA32, false);
+            cropped.SetPixels(picture.GetPixels(minX, minY, cropped.width, cropped.height));
+            cropped.Apply();
+            return cropped;
+        }
+
         private static void Import()
         {
 #if UNITY_EDITOR
@@ -161,6 +203,8 @@ namespace ToyCarArena.Tests.PlayMode
             importer.textureType = TextureImporterType.Default;
             importer.alphaIsTransparency = true;
             importer.mipmapEnabled = false;
+            // Kept at its own size: scaled to a power of two, the picture would be squeezed out of shape.
+            importer.npotScale = TextureImporterNPOTScale.None;
             importer.wrapMode = TextureWrapMode.Clamp;
             importer.maxTextureSize = 512;
             importer.textureCompression = TextureImporterCompression.Compressed;

@@ -1139,12 +1139,13 @@
     margin-top: 6px;
 }
 
+/* As the board's picture: the toy as tall as the card, cut to its pixels, bleeding off the bottom right over the rays' middle. */
 .menu__event-art {
     position: absolute;
-    right: -16px;
-    bottom: -34px;
-    width: 480px;
-    height: 405px;
+    right: -20px;
+    bottom: -48px;
+    width: 312px;
+    height: 440px;
     background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_hot_potato.png?fileID=2800000&guid=64c7f85dcef645e409866a1a16d2c310&type=3#sprite_mode_hot_potato");
     -unity-background-scale-mode: scale-to-fit;
 }

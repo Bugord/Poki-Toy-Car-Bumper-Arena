@@ -501,7 +501,7 @@ namespace ToyCarArena.UI
             eventFace.style.backgroundImage = EventBack();
             eventFace.Add(Icon("menu__event-rays", DrawEventRays));
             // The picture under the words: a long name in another language runs over it, not under.
-            // The game's own blue monster truck with the mode's bomb riding on it, drawn once from the models
+            // The game's own red monster truck with the mode's bomb riding on it, drawn once from the models
             // (ModeCardArt) into the picture the style sheet names.
             eventFace.Add(Element("menu__event-art"));
             var tag = Element("menu__event-tag");
