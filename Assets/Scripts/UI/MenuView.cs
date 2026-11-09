@@ -105,6 +105,13 @@ namespace ToyCarArena.UI
         // The colour of XP across the game (--xp in ui_theme).
         private static readonly Color XpBlue = new Color32(0x3d, 0x8b, 0xff, 0xff);
         private static readonly Color White = Color.white;
+        // A mode not out yet keeps its sign, greyed: --shade filled, --muted outlined, its sand between.
+        private static readonly Color SoonFill = new Color32(0xc7, 0xd3, 0xea, 0xff);
+        private static readonly Color SoonLine = new Color32(0x5b, 0x6b, 0x8c, 0xff);
+        private static readonly Color SoonSand = new Color32(0x9a, 0xa8, 0xc4, 0xff);
+        // The desktop key that opens the modes: M is MISSIONS, and the plate reads QUICK MATCH.
+        private const KeyCode ModesKey = KeyCode.Q;
+        private const float ShakeSeconds = 0.3f;
 
         private readonly IAudioService audioService;
         private readonly HudControls controls;
@@ -425,10 +432,10 @@ namespace ToyCarArena.UI
             bottom.Add(missionCard);
 
             actions = Element("menu__actions");
-            // One mode for now: a plate that names it, not a button that opens a choice of one (CUP and SURVIVAL come
-            // later, with OpenModes and its popup).
-            var mode = Sticker("menu__mode", null);
-            mode.pickingMode = PickingMode.Ignore;
+            // The mode in play, and a chevron: it opens the modes, where CUP and SURVIVAL wait as SOON. As a plate that
+            // did nothing, players tapped it and took the menu for broken.
+            var mode = Sticker("menu__mode", OpenModes);
+            mode.Add(KeyCap(ModesKey.ToString(), "menu__key"));
             var modeFace = mode.Q<VisualElement>(className: "menu__face");
             var modeText = Element("menu__mode-texts");
             var caption = Text("menu__mode-caption");
@@ -438,6 +445,7 @@ namespace ToyCarArena.UI
             modeText.Add(caption);
             modeText.Add(modeName);
             modeFace.Add(modeText);
+            modeFace.Add(Icon("menu__chevron", DrawChevron));
             actions.Add(mode);
             actions.Add(PlayButton("menu__play", true));
             bottom.Add(actions);
@@ -480,8 +488,8 @@ namespace ToyCarArena.UI
             quick.Add(selected);
             sheet.Add(quick);
 
-            sheet.Add(LockedMode("menu.cup", "menu.cup_hint"));
-            sheet.Add(LockedMode("menu.survival", "menu.survival_hint"));
+            sheet.Add(SoonMode("menu.cup", "menu.cup_hint", DrawCup));
+            sheet.Add(SoonMode("menu.survival", "menu.survival_hint", DrawHourglass));
 
             var play = PlayButton("menu__modes-play", false);
             sheet.Add(play);
@@ -570,13 +578,17 @@ namespace ToyCarArena.UI
             return cap;
         }
 
-        private VisualElement LockedMode(string nameKey, string hintKey)
+        /// <summary>
+        /// A mode that is not out yet: its sign, name and what it will be, all greyed, and a tilted SOON plate on its top
+        /// edge. A press only shakes it; it never becomes the mode in play.
+        /// </summary>
+        private VisualElement SoonMode(string nameKey, string hintKey, System.Action<MeshGenerationContext> draw)
         {
             var card = Element("menu__mode-card");
-            card.AddToClassList("menu__mode-card--locked");
+            card.AddToClassList("menu__mode-card--soon");
             card.pickingMode = PickingMode.Position;
-            card.RegisterCallback<ClickEvent>(_ => Locked());
-            card.Add(Icon("menu__mode-lock", DrawLock));
+            card.RegisterCallback<ClickEvent>(_ => Soon(card));
+            card.Add(Icon("menu__mode-sign", draw));
             var body = Element("menu__mode-text");
             var name = Text("menu__mode-card-name");
             text.Set(name, () => Strings.Get(nameKey));
@@ -586,6 +598,7 @@ namespace ToyCarArena.UI
             body.Add(hint);
             card.Add(body);
             var soon = Text("menu__tag");
+            soon.AddToClassList("menu__tag--soon");
             text.Set(soon, () => Strings.Get("menu.soon"));
             card.Add(soon);
             return card;
@@ -1253,6 +1266,10 @@ namespace ToyCarArena.UI
                     evt.StopPropagation();
                     OpenMissions();
                     break;
+                case ModesKey:
+                    evt.StopPropagation();
+                    OpenModes();
+                    break;
                 case KeyCode.B:
                     evt.StopPropagation();
                     OpenBoost();
@@ -1549,12 +1566,32 @@ namespace ToyCarArena.UI
             leagues?.Close();
         }
 
-        // A locked tile or mode: a click and nothing else for now.
-        private void Locked()
+        // A mode not out yet answers a press with a click and a little shake, and stays as it is.
+        private void Soon(VisualElement card)
         {
-            if (!IsBusy) {
-                audioService.PlayUiClick();
+            if (IsBusy) {
+                return;
             }
+
+            audioService.PlayUiClick();
+            Shake(card);
+        }
+
+        // Side to side and settling over ShakeSeconds, on the unscaled clock; a press during a shake starts it again.
+        private static void Shake(VisualElement element)
+        {
+            var started = Time.unscaledTime;
+            element.userData = started;
+            bool IsOwn() => element.userData is float at && Mathf.Approximately(at, started);
+            element.schedule.Execute(() => {
+                var t = Mathf.Clamp01((Time.unscaledTime - started) / ShakeSeconds);
+                element.style.translate = new Translate(16f * Mathf.Sin(t * Mathf.PI * 6f) * (1f - t), 0f);
+            }).Every(16).Until(() => !IsOwn() || Time.unscaledTime - started > ShakeSeconds);
+            element.schedule.Execute(() => {
+                if (IsOwn()) {
+                    element.style.translate = StyleKeyword.Null;
+                }
+            }).StartingIn((long)(ShakeSeconds * 1000f) + 40);
         }
 
         // -- Icons ---------------------------------------------------------------------------------------------------
@@ -1635,6 +1672,113 @@ namespace ToyCarArena.UI
                 p.Arc(centre, radius * share, 0f, 360f);
                 p.Fill();
             }
+        }
+
+        /// <summary>The MODE plate's chevron: it says the plate opens the modes.</summary>
+        private static void DrawChevron(MeshGenerationContext context)
+        {
+            var r = context.visualElement.contentRect;
+            var p = context.painter2D;
+            p.strokeColor = Navy;
+            p.lineWidth = r.width * 0.3f;
+            p.lineCap = LineCap.Round;
+            p.lineJoin = LineJoin.Round;
+            p.BeginPath();
+            p.MoveTo(new Vector2(r.x + r.width * 0.2f, r.y + r.height * 0.15f));
+            p.LineTo(new Vector2(r.x + r.width * 0.75f, r.y + r.height * 0.5f));
+            p.LineTo(new Vector2(r.x + r.width * 0.2f, r.y + r.height * 0.85f));
+            p.Stroke();
+        }
+
+        /// <summary>CUP's sign, greyed while it is not out: a cup with two handles on a stem and a base.</summary>
+        private static void DrawCup(MeshGenerationContext context)
+        {
+            var r = context.visualElement.contentRect;
+            var p = context.painter2D;
+            float X(float x) => r.x + x * r.width;
+            float Y(float y) => r.y + y * r.height;
+            p.lineJoin = LineJoin.Round;
+            p.lineCap = LineCap.Round;
+            p.strokeColor = SoonLine;
+            p.lineWidth = r.width * 0.08f;
+            p.BeginPath();
+            p.Arc(new Vector2(X(0.24f), Y(0.32f)), r.width * 0.13f, 90f, 270f);
+            p.Stroke();
+            p.BeginPath();
+            p.Arc(new Vector2(X(0.76f), Y(0.32f)), r.width * 0.13f, -90f, 90f);
+            p.Stroke();
+
+            p.fillColor = SoonFill;
+            p.lineWidth = r.width * 0.07f;
+            p.BeginPath();
+            p.MoveTo(new Vector2(X(0.24f), Y(0.12f)));
+            p.LineTo(new Vector2(X(0.76f), Y(0.12f)));
+            p.LineTo(new Vector2(X(0.73f), Y(0.36f)));
+            p.Arc(new Vector2(X(0.5f), Y(0.36f)), r.width * 0.23f, 0f, 180f);
+            p.ClosePath();
+            p.Fill();
+            p.Stroke();
+            Box(p, X(0.43f), Y(0.58f), X(0.57f), Y(0.76f));
+            Box(p, X(0.27f), Y(0.76f), X(0.73f), Y(0.9f));
+        }
+
+        /// <summary>SURVIVAL's sign, greyed while it is not out: an hourglass, its sand running down.</summary>
+        private static void DrawHourglass(MeshGenerationContext context)
+        {
+            var r = context.visualElement.contentRect;
+            var p = context.painter2D;
+            float X(float x) => r.x + x * r.width;
+            float Y(float y) => r.y + y * r.height;
+            p.lineJoin = LineJoin.Round;
+            p.strokeColor = SoonLine;
+            p.lineWidth = r.width * 0.07f;
+            p.fillColor = White;
+            Glass();
+            p.Fill();
+            p.fillColor = SoonSand;
+            p.BeginPath();
+            p.MoveTo(new Vector2(X(0.37f), Y(0.27f)));
+            p.LineTo(new Vector2(X(0.63f), Y(0.27f)));
+            p.LineTo(new Vector2(X(0.5f), Y(0.45f)));
+            p.ClosePath();
+            p.Fill();
+            p.BeginPath();
+            p.MoveTo(new Vector2(X(0.33f), Y(0.82f)));
+            p.LineTo(new Vector2(X(0.5f), Y(0.6f)));
+            p.LineTo(new Vector2(X(0.67f), Y(0.82f)));
+            p.ClosePath();
+            p.Fill();
+            // The glass's outline over its sand, then the two caps.
+            Glass();
+            p.Stroke();
+            p.fillColor = SoonFill;
+            Box(p, X(0.18f), Y(0.06f), X(0.82f), Y(0.17f));
+            Box(p, X(0.18f), Y(0.83f), X(0.82f), Y(0.94f));
+
+            void Glass()
+            {
+                p.BeginPath();
+                p.MoveTo(new Vector2(X(0.27f), Y(0.16f)));
+                p.LineTo(new Vector2(X(0.73f), Y(0.16f)));
+                p.LineTo(new Vector2(X(0.55f), Y(0.5f)));
+                p.LineTo(new Vector2(X(0.73f), Y(0.84f)));
+                p.LineTo(new Vector2(X(0.27f), Y(0.84f)));
+                p.LineTo(new Vector2(X(0.45f), Y(0.5f)));
+                p.ClosePath();
+            }
+        }
+
+        // A filled and outlined rectangle in the painter's current colours.
+        private static void Box(Painter2D p, float left, float top, float right, float bottom)
+        {
+            p.BeginPath();
+            p.MoveTo(new Vector2(left, top));
+            p.LineTo(new Vector2(right, top));
+            p.LineTo(new Vector2(right, bottom));
+            p.LineTo(new Vector2(left, bottom));
+            p.ClosePath();
+            p.Fill();
+            p.Stroke();
         }
 
         internal static void DrawLock(MeshGenerationContext context)
