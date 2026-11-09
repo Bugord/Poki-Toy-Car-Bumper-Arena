@@ -27,5 +27,11 @@ namespace ToyCarArena.Gameplay.Round
         /// The colour index of the rival to take revenge on next round, or <see cref="RoundResult.Nobody"/>.
         /// </summary>
         int Nemesis { get; }
+
+        /// <summary>
+        /// The mode the player picked in the menu for the rounds to come: QUICK MATCH (none) or an event mode. The next
+        /// scene is built for it (<see cref="RoundRules"/>), as for the round's number.
+        /// </summary>
+        EventMode Mode { get; }
     }
 }
