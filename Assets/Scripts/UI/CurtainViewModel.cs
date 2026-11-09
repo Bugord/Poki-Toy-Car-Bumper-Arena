@@ -49,12 +49,12 @@ namespace ToyCarArena.UI
             Special = special;
             ArenaName = arenaName;
             ArenaIsNew = arenaIsNew;
-            var rows = new List<LobbyRow> { new(0, roster.ColorOf(0), GameText.You, roster.LevelOf(0), null, false) };
+            var rows = new List<LobbyRow> { new(0, GameText.You, roster.LevelOf(0), null, false) };
             for (var index = 1; index <= SessionRoster.MaxBots; index++) {
                 var left = roster.LeftNameOf(index);
                 if (index <= botCount || left != null) {
                     var isSeated = index <= botCount;
-                    rows.Add(new LobbyRow(index, roster.ColorOf(index), isSeated ? roster.NameOf(index) : null,
+                    rows.Add(new LobbyRow(index, isSeated ? roster.NameOf(index) : null,
                         isSeated ? roster.LevelOf(index) : 0, left, index == nemesis,
                         isSeated ? roster.StreakOf(index) : 0));
                 }
@@ -79,7 +79,6 @@ namespace ToyCarArena.UI
     public readonly struct LobbyRow
     {
         public readonly int Index;
-        public readonly int ColorId;
         public readonly string Name;
         /// <summary>The seated player's level, 0 for a row that only leaves.</summary>
         public readonly int Level;
@@ -88,11 +87,10 @@ namespace ToyCarArena.UI
         /// <summary>The win streak a bot joined on, 0 for none.</summary>
         public readonly int Streak;
 
-        public LobbyRow(int index, int colorId, string name, int level, string leftName, bool isNemesis,
+        public LobbyRow(int index, string name, int level, string leftName, bool isNemesis,
             int streak = 0)
         {
             this.Index = index;
-            this.ColorId = colorId;
             this.Name = name;
             this.Level = level;
             this.LeftName = leftName;

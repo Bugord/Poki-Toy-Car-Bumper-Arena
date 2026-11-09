@@ -1,6 +1,5 @@
 using System;
 using Bugord.App.Localization;
-using ToyCarArena.Gameplay.Cars;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -23,7 +22,6 @@ namespace ToyCarArena.UI
         private const string WideClass = "menu__leagues--wide";
 
         private static readonly Color Navy = new Color32(0x1d, 0x2b, 0x4f, 0xff);
-        private static readonly Color Burst = new(1f, 0.79f, 0.24f, 0.45f);
         // The pedestal's colours that stay in every league, as the 3D one in the menu: its navy side, its gold band
         // and rim (MechanicArt's train_dark and train_yellow).
         private static readonly Color PlinthSide = new Color32(0x2c, 0x3a, 0x62, 0xff);
@@ -34,8 +32,7 @@ namespace ToyCarArena.UI
 
         private readonly Action click;
         private readonly Action closed;
-        private readonly VisualElement popup;
-        private readonly VisualElement popupCard;
+        private readonly NewLeaguePopup newLeague;
         private readonly VisualElement list;
         private readonly VisualElement listBody;
         private readonly VisualElement listItems;
@@ -52,19 +49,7 @@ namespace ToyCarArena.UI
             this.click = click;
             this.closed = closed;
 
-            popup = Element("menu__popup");
-            popup.AddToClassList("menu__league-popup");
-            popup.pickingMode = PickingMode.Position;
-            popup.RegisterCallback<ClickEvent>(evt => {
-                if (evt.target == popup) {
-                    Continue();
-                }
-            });
-            popupCard = Element("card");
-            popupCard.AddToClassList("menu__league-card");
-            popupCard.pickingMode = PickingMode.Position;
-            popup.Add(popupCard);
-            menu.Add(popup);
+            newLeague = new NewLeaguePopup(menu, click, closed);
 
             list = Element("menu__leagues");
             list.pickingMode = PickingMode.Position;
@@ -106,14 +91,7 @@ namespace ToyCarArena.UI
             menu.Add(list);
         }
 
-        /// <summary>
-        /// What each league gives (<see cref="LeagueRewards"/>), by tier: its car and its hat, or nulls for a league
-        /// that gives none; the list shows them on the league's emblem, the car in <see cref="RewardColor"/>.
-        /// </summary>
-        public Func<int, (CarCatalog.Entry Car, string Topper)> RewardOf { get; set; }
-        public Func<int> RewardColor { get; set; }
-
-        public bool IsNewLeagueOpen => popup.ClassListContains(OpenClass);
+        public bool IsNewLeagueOpen => newLeague.IsOpen;
         public bool IsListOpen => list.ClassListContains(OpenClass);
 
         /// <summary>The panel's top inset the list's head keeps, as the menu's top bar does.</summary>
@@ -126,106 +104,14 @@ namespace ToyCarArena.UI
         // -- NEW LEAGUE! ---------------------------------------------------------------------------------------------
 
         /// <summary>
-        /// Opens the popup for the league <paramref name="level"/> is in: the badge in its new frame, the change from
-        /// the league before, what the league gave (its sky, its plinth, the badge's frame) and the league after it.
+        /// Opens NEW LEAGUE! (<see cref="NewLeaguePopup"/>) for the league <paramref name="level"/> is in, the player's
+        /// 3D car <paramref name="hero"/> on its pedestal.
         /// </summary>
-        public void ShowNewLeague(int level, bool isDesktop)
-        {
-            var tier = PlayerRank.TierOf(level);
-            popupCard.Clear();
-
-            var title = Element("menu__league-title");
-            title.Add(Stroked("menu__league-title-text", Strings.Get("menu.new_league")));
-            popupCard.Add(title);
-
-            var hero = Element("menu__league-hero");
-            var burst = Element("menu__league-burst");
-            burst.generateVisualContent += context => RoundOverMatch.DrawSunburst(context, Burst);
-            hero.Add(burst);
-            hero.Add(HudView.CreateLevelBadge(level, "menu__league-big"));
-            popupCard.Add(hero);
-
-            var change = Element("menu__league-change");
-            change.Add(HudView.CreateLevelBadge(PlayerRank.StartOf(tier - 1), "menu__league-small"));
-            change.Add(Icon("menu__league-arrow", DrawArrow));
-            change.Add(HudView.CreateLevelBadge(PlayerRank.StartOf(tier), "menu__league-small"));
-            popupCard.Add(change);
-
-            popupCard.Add(Stroked("menu__league-name", LeagueName(tier)));
-            var caption = Text("menu__league-caption");
-            caption.text = Strings.Get("menu.you_unlocked");
-            popupCard.Add(caption);
-
-            var gets = Element("menu__league-gets");
-            var swatch = Element("menu__league-swatch");
-            swatch.style.backgroundImage = new StyleBackground(LeagueLook.CardSkyOf(tier));
-            gets.Add(Get(swatch, "menu.unlock_background"));
-            gets.Add(Get(Plinth(tier, "menu__league-plinth"), "menu.unlock_plinth"));
-            gets.Add(Get(HudView.CreateLevelBadge(PlayerRank.StartOf(tier), "menu__league-get-badge"),
-                "menu.unlock_badge"));
-            popupCard.Add(gets);
-
-            var next = Text("menu__league-next");
-            next.text = tier + 1 < PlayerRank.Count
-                ? Strings.Format("menu.next_league", PlayerRank.NameOfTier(tier + 1), PlayerRank.StartOf(tier + 1))
-                : Strings.Get("menu.top_league");
-            popupCard.Add(next);
-
-            var go = new Button(() => {
-                click();
-                Continue();
-            });
-            go.RemoveFromClassList(Button.ussClassName);
-            go.AddToClassList("button");
-            go.AddToClassList("button--green");
-            go.AddToClassList("button--big");
-            go.AddToClassList("menu__league-continue");
-            go.focusable = false;
-            go.Add(Element("button__face"));
-            var label = Element("stroke");
-            foreach (var isFace in new[] { false, true }) {
-                var text = Text("button__label");
-                text.EnableInClassList("stroke__face", isFace);
-                text.text = Strings.Get("result.continue");
-                label.Add(text);
-            }
-
-            go.Add(label);
-            if (isDesktop) {
-                var key = Element("key");
-                key.AddToClassList("menu__league-key");
-                var keyText = Text("key__text");
-                keyText.text = Strings.Get("common.space");
-                key.Add(keyText);
-                go.Add(key);
-            }
-
-            popupCard.Add(go);
-            popup.AddToClassList(OpenClass);
-        }
+        public void ShowNewLeague(int level, bool isDesktop, Texture hero, NewLeaguePopup.Prize prize = null) =>
+            newLeague.Show(level, isDesktop, hero, prize);
 
         /// <summary>CONTINUE, Space, Enter, Esc or a press on the dim: the menu behind, in its new colours.</summary>
-        public void Continue()
-        {
-            if (!IsNewLeagueOpen) {
-                return;
-            }
-
-            popup.RemoveFromClassList(OpenClass);
-            closed();
-        }
-
-        private VisualElement Get(VisualElement picture, string key)
-        {
-            var tile = Element("menu__league-get");
-            var pic = Element("menu__league-get-picture");
-            pic.Add(picture);
-            tile.Add(pic);
-            var label = Text("menu__league-get-label");
-            label.text = Strings.Get(key);
-            tile.Add(label);
-            return tile;
-        }
+        public void Continue() => newLeague.Continue();
 
         // -- The list ------------------------------------------------------------------------------------------------
 
@@ -266,7 +152,7 @@ namespace ToyCarArena.UI
             listBody.style.height = height / fit;
             listBody.style.transformOrigin = new TransformOrigin(0f, 0f);
             listBody.style.scale = new Scale(new Vector3(fit, fit, 1f));
-            popupCard.style.scale = new Scale(new Vector3(sheetScale, sheetScale, 1f));
+            newLeague.Fit(sheetScale);
             if (turned && IsListOpen) {
                 FillList();
             }
@@ -305,7 +191,7 @@ namespace ToyCarArena.UI
             body.Add(Stroked("menu__league-row-name", PlayerRank.NameOfTier(tier)));
             body.Add(tier == current ? Track(current) : FromLevel(tier));
             face.Add(body);
-            face.Add(Prize(tier, "menu__league-row-emblem"));
+            face.Add(Emblem(tier, "menu__league-row-emblem"));
             face.Add(Status(tier, current));
             return row;
         }
@@ -316,7 +202,7 @@ namespace ToyCarArena.UI
             var card = Item("menu__league-card-item", tier, current, LeagueLook.CardSkyOf(tier), new Vector2(0.5f, 0.3f),
                 out var face);
             face.Add(Plate(tier == current ? listLevel : PlayerRank.StartOf(tier), "menu__league-card-badge"));
-            face.Add(Prize(tier, "menu__league-card-emblem"));
+            face.Add(Emblem(tier, "menu__league-card-emblem"));
             face.Add(Stroked("menu__league-card-name", PlayerRank.NameOfTier(tier)));
             face.Add(FromLevel(tier));
             face.Add(Element("menu__spacer"));
@@ -346,36 +232,11 @@ namespace ToyCarArena.UI
         }
 
         // The league's emblem, a shield that grows richer from league to league (sprite_league_<id>, set in ui_menu).
-        private static VisualElement Emblem(int tier, string className)
+        internal static VisualElement Emblem(int tier, string className)
         {
             var emblem = Element("menu__league-emblem");
             emblem.AddToClassList(className);
             emblem.AddToClassList("menu__league-emblem--" + PlayerRank.IdOfTier(tier));
-            return emblem;
-        }
-
-        // The league's emblem with what the league gives on a sticker at its foot: the car and, over its roof, the hat.
-        // A league that gives nothing (the first) shows the emblem alone.
-        private VisualElement Prize(int tier, string className)
-        {
-            var emblem = Emblem(tier, className);
-            var (car, topper) = RewardOf?.Invoke(tier) ?? (null, null);
-            if (car == null && string.IsNullOrEmpty(topper)) {
-                return emblem;
-            }
-
-            var reward = Element("menu__league-reward");
-            if (car != null) {
-                var portrait = Element("menu__league-reward-car");
-                new CarPortrait(portrait).Set(car, RewardColor?.Invoke() ?? 0);
-                reward.Add(portrait);
-            }
-
-            if (!string.IsNullOrEmpty(topper)) {
-                reward.Add(TopperIcon.Create(topper, "menu__league-reward-hat"));
-            }
-
-            emblem.Add(reward);
             return emblem;
         }
 
@@ -486,7 +347,7 @@ namespace ToyCarArena.UI
         /// inside it the top in the league's colour with its light middle. Only the top changes from league to league,
         /// as on the pedestal itself.
         /// </summary>
-        private static VisualElement Plinth(int tier, string className)
+        internal static VisualElement Plinth(int tier, string className)
         {
             var plinth = Element(className);
             plinth.generateVisualContent += context => DrawPlinth(context, tier);
@@ -591,7 +452,7 @@ namespace ToyCarArena.UI
             p.Stroke();
         }
 
-        private static void DrawArrow(MeshGenerationContext context)
+        internal static void DrawArrow(MeshGenerationContext context)
         {
             var r = context.visualElement.contentRect;
             var p = context.painter2D;
@@ -608,7 +469,7 @@ namespace ToyCarArena.UI
             p.Stroke();
         }
 
-        private static VisualElement Stroked(string className, string value)
+        internal static VisualElement Stroked(string className, string value)
         {
             var stroke = Element("stroke");
             foreach (var isFace in new[] { false, true }) {
@@ -622,7 +483,7 @@ namespace ToyCarArena.UI
             return stroke;
         }
 
-        private static VisualElement Icon(string className, Action<MeshGenerationContext> draw)
+        internal static VisualElement Icon(string className, Action<MeshGenerationContext> draw)
         {
             var icon = Element(className);
             icon.generateVisualContent += draw;

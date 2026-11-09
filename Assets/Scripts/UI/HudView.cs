@@ -405,9 +405,10 @@ namespace ToyCarArena.UI
             stickBase = Root.Q<VisualElement>("stick-base");
             stickKnob = Root.Q<VisualElement>("stick-knob");
             ghost = Root.Q<VisualElement>("ghost");
-            Root.Q<VisualElement>("ghost-stick").style.opacity = ViewModel.IsFirstRound ? GhostOpacity : GhostLaterOpacity;
+            // The player's very first round teaches with the full ghost and its caption; the next few keep a faint one.
+            Root.Q<VisualElement>("ghost-stick").style.opacity = ViewModel.IsTutorial ? GhostOpacity : GhostLaterOpacity;
             Root.Q<VisualElement>(className: "hud__ghost-caption").style.display =
-                ViewModel.IsFirstRound ? DisplayStyle.Flex : DisplayStyle.None;
+                ViewModel.IsTutorial ? DisplayStyle.Flex : DisplayStyle.None;
             // The side the player plays on carries over from the round before, without the button moving at the start.
             isBoostOnLeft = controls.IsBoostOnLeft;
             boostSlot.EnableInClassList(BoostLeftClass, isBoostOnLeft);
@@ -1230,14 +1231,14 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>
-        /// TAP TO USE, or RIGHT CLICK with the E key cap on a desktop, over the slot the first time in a visit an item
-        /// lands in it, the button pulsing with it, for a moment; the visit's controls remember it was shown.
+        /// TAP TO USE, or RIGHT CLICK with the E key cap on a desktop, over the slot the first time an item lands in it,
+        /// the button pulsing with it, for a moment; the controls remember it was shown, for good.
         /// </summary>
         private void RefreshItemHint(bool isTouch)
         {
             var now = Time.unscaledTime;
             if (!isItemHintShown) {
-                if (controls.HasShownItemHint || !ViewModel.IsItemReady || isItemShownRolling) {
+                if (!ViewModel.IsItemReady || isItemShownRolling || controls.HasShownItemHint) {
                     return;
                 }
 
@@ -1640,9 +1641,9 @@ namespace ToyCarArena.UI
             tail.AddToClassList("car-name__tail");
             tail.generateVisualContent += DrawNameTail;
             sticker.Add(tail);
-            // The visit's first round shows no handles: a new player has the cars, the floor and the edge to read.
-            // The tag stays, empty, so what follows it (the bots' quips) still knows where the car is.
-            if (ViewModel.IsFirstRound) {
+            // The player's very first round shows no handles: a new player has the cars, the floor and the edge to
+            // read. The tag stays, empty, so what follows it (the bots' quips) still knows where the car is.
+            if (ViewModel.IsTutorial) {
                 sticker.style.display = DisplayStyle.None;
             }
             nameLayer.Add(tag);
@@ -1937,10 +1938,11 @@ namespace ToyCarArena.UI
             var elapsed = Mathf.Max(0f, now - teachingTime);
             teachingTime = now;
             var isTouch = IsShown && controls.CheckTouchScreen();
-            var enabled = isTouch && ViewModel.IsFirstRound;
-            // The visit's first rounds keep the ghost wherever no finger steers: it yields to a touch and comes back
+            // The demonstration and the idle reminders teach the player's very first round, not every visit's.
+            var enabled = isTouch && ViewModel.IsTutorial;
+            // The player's first rounds keep the ghost wherever no finger steers: it yields to a touch and comes back
             // once the finger lifts.
-            var keepsGhost = isTouch && ViewModel.RoundNumber <= ViewModel.Controls.GhostStickRounds &&
+            var keepsGhost = isTouch && ViewModel.KeepsGhostStick &&
                 (ViewModel.IsRunning || ViewModel.IsBeforeStart);
 
             if (ViewModel.LastTouchTime > seenTouchTime) {
@@ -1978,7 +1980,7 @@ namespace ToyCarArena.UI
             }
 
             // The desktop gets the same first-round nudge over its gauge, in its own words; no finger to hint beside.
-            var canHintBoost = IsShown && ViewModel.IsFirstRound && ViewModel.CanHintBoost;
+            var canHintBoost = IsShown && ViewModel.CanHintBoost;
             boostHint.EnableInClassList(BoostHintDesktopClass, !isTouch);
             if (!canHintBoost || now - boostHintTime >= BoostHintDuration) {
                 isBoostHintShown = false;
@@ -2015,7 +2017,7 @@ namespace ToyCarArena.UI
             // Keep the demonstration still as cars drive past; find a clear place again only on show or resize.
             if (size != ghostPanelSize) {
                 ghostPanelSize = size;
-                ghostCenter = controls.HasJoystickPlace && !ViewModel.IsFirstRound ? PlaceGhostAtThumb(size, radius) :
+                ghostCenter = controls.HasJoystickPlace && !ViewModel.IsTutorial ? PlaceGhostAtThumb(size, radius) :
                     size.x >= size.y ? PlaceWideGhost(size, radius) :
                     new Vector2(size.x * 0.5f, size.y * GhostPortraitY);
                 if (!safeInsets.Equals(default(SafeInsets))) {

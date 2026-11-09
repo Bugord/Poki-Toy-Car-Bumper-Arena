@@ -5,10 +5,13 @@ namespace ToyCarArena.Gameplay.Round
     /// <summary>
     /// How hard this round is for the player, blended between <see cref="GameTuning.BotSettings.Easy"/> and
     /// <see cref="GameTuning.BotSettings.Normal"/>: how many bots there are, how hard they play the player, and how much
-    /// the player's car is kept from driving off the edge on its own. The brief's soft start: the first round of a
-    /// visit is easy, so a new player wins about half the time and wants another go; over
-    /// <see cref="GameTuning.BotSettings.RampRounds"/> rounds it grows to normal, and a run of lost rounds steps it back
-    /// part of the way, so a struggling player is not stuck losing. Read from the session's progress as the scene is
+    /// the player's car is kept from driving off the edge on its own. The brief's soft start: a new player's first round
+    /// is easy, so a new player wins about half the time and wants another go; over
+    /// <see cref="GameTuning.BotSettings.RampRounds"/> rounds it grows to normal, and a run of lost rounds in the visit
+    /// steps it back part of the way, so a struggling player is not stuck losing. The ramps count the player's rounds
+    /// on this device, not the visit's: a returning player has learned the game and does not get the newcomer's rounds
+    /// again, only a short warm-up from <see cref="GameTuning.BotSettings.ReturnLevel"/> over the visit's first
+    /// <see cref="GameTuning.BotSettings.ReturnRounds"/> rounds. Read from the session's progress as the scene is
     /// built, and fixed for the round. Duel settings take over when only the player and one bot remain: on the Poki
     /// test 38% of newcomers lost to that last bot, so the final fight needs its own levers.
     /// </summary>
@@ -63,7 +66,17 @@ namespace ToyCarArena.Gameplay.Round
 
         private static float LevelFor(GameTuning.BotSettings settings, ISessionProgress progress, int rampRounds)
         {
-            var ramp = rampRounds > 0 ? Mathf.Clamp01((progress.Round - 1f) / rampRounds) : 1f;
+            var before = Mathf.Max(0, progress.RoundsBefore);
+            var ramp = rampRounds > 0 ? Mathf.Clamp01((before + progress.Round - 1f) / rampRounds) : 1f;
+            // A returning player warms up in the visit's first rounds; one who has played only a round or two is still
+            // below the warm-up on the ramp itself.
+            if (before > 0) {
+                var warmUp = settings.ReturnRounds > 0
+                    ? Mathf.Lerp(settings.ReturnLevel, 1f, (progress.Round - 1f) / settings.ReturnRounds)
+                    : 1f;
+                ramp = Mathf.Min(ramp, warmUp);
+            }
+
             var streak = progress.LosingStreak - settings.StreakStart + 1;
             var ease = streak > 0 ? Mathf.Min(settings.MaxStreakEase, settings.StreakEase * streak) : 0f;
             return Mathf.Clamp01(ramp - ease);

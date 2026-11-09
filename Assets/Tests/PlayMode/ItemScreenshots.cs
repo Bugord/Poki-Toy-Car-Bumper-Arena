@@ -109,7 +109,7 @@ namespace ToyCarArena.Tests.PlayMode
                         controls.BeginTouchSteering(left ? new Vector2(float.MaxValue, 0f) : Vector2.zero);
                     }
 
-                    // The first-use hint shows once a visit and for a moment: put it up afresh for each picture.
+                    // The first-use hint shows once and for a moment: put it up afresh for each picture.
                     HideItemHint.Invoke(view, null);
                     controls.HasShownItemHint = false;
 

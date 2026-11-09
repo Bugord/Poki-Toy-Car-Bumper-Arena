@@ -82,9 +82,9 @@ namespace ToyCarArena.UI
         public CarCatalog.Entry Car => catalog.Find(progress.SelectedCar);
         public int CarColor => progress.SelectedColor;
 
-        /// <summary>What a league gives (its car and hat), by its tier; null for a league that gives none.</summary>
-        public GameTuning.LeagueReward LeagueReward(int tier) => LeagueRewards.Of(tuning, tier);
-        public CarCatalog.Entry FindCar(string id) => catalog.Find(id);
+        /// <summary>What the player's league gives besides its look, for NEW LEAGUE!; null for none.</summary>
+        internal NewLeaguePopup.Prize LeaguePrize =>
+            LeagueRewards.PrizeAt(tuning, catalog, progress.Level, progress.SelectedColor, Stage);
         public string Topper => wallet.SelectedTopper;
 
         /// <summary>
