@@ -1093,19 +1093,22 @@
     flex-shrink: 0;
     max-width: 68%;
     margin-top: 14px;
+    margin-bottom: 16px;
 }
 
-.menu__event-title {
+.menu__event-title-text {
     margin: 0;
     padding: 0;
-    font-size: 74px;
+    font-size: 76px;
     color: var(--white);
     white-space: nowrap;
     -unity-text-align: middle-left;
     -unity-text-outline-width: 14px;
     -unity-text-outline-color: var(--navy);
-    text-shadow: 0 10px 0 rgb(29, 43, 79);
 }
+
+/* As the popups' titles: 12 px at 76 px, a share of the size so a shrunk name keeps its drop in proportion. */
+.menu__event-title-text.stroke__drop { translate: 0 16%; }
 
 .menu__mode-card-name {
     margin: 0;
@@ -1113,6 +1116,11 @@
     font-size: 64px;
     color: var(--navy);
     white-space: nowrap;
+}
+
+.menu__mode-card-name-box {
+    width: 60%;
+    overflow: hidden;
 }
 
 .menu__mode-desc {
@@ -1131,26 +1139,12 @@
 
 .menu__event-art {
     position: absolute;
-    right: -24px;
-    bottom: -44px;
-    width: 390px;
-    height: 330px;
-}
-
-.menu__event-car {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 300px;
-}
-
-.menu__event-bomb {
-    position: absolute;
-    left: 120px;
-    top: -26px;
-    width: 180px;
-    height: 180px;
+    right: -16px;
+    bottom: -34px;
+    width: 480px;
+    height: 405px;
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_hot_potato.png?fileID=2800000&guid=64c7f85dcef645e409866a1a16d2c310&type=3#sprite_mode_hot_potato");
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .menu__mode-portrait {

@@ -176,7 +176,6 @@ namespace ToyCarArena.UI
         private VisualElement modesPopup;
         private VisualElement modesSheet;
         private CarPortrait modePortrait;
-        private CarPortrait eventPortrait;
         private VisualElement eventCard;
         private VisualElement quickCard;
         private Label modeName;
@@ -502,13 +501,9 @@ namespace ToyCarArena.UI
             eventFace.style.backgroundImage = EventBack();
             eventFace.Add(Icon("menu__event-rays", DrawEventRays));
             // The picture under the words: a long name in another language runs over it, not under.
-            var eventArt = Element("menu__event-art");
-            var eventCar = Element("menu__event-car");
-            eventCar.AddToClassList("car-portrait");
-            eventPortrait = new CarPortrait(eventCar);
-            eventArt.Add(eventCar);
-            eventArt.Add(Icon("menu__event-bomb", DrawCardBomb));
-            eventFace.Add(eventArt);
+            // The game's own blue monster truck with the mode's bomb riding on it, drawn once from the models
+            // (ModeCardArt) into the picture the style sheet names.
+            eventFace.Add(Element("menu__event-art"));
             var tag = Element("menu__event-tag");
             tag.Add(Icon("menu__event-bolt", DrawBolt));
             var tagText = RoundOverProgress.Outlined("", "menu__event-tag-text", out var tagLabels);
@@ -518,7 +513,7 @@ namespace ToyCarArena.UI
 
             tag.Add(tagText);
             eventFace.Add(tag);
-            var title = RoundOverProgress.Outlined("", "menu__event-title", out var titleLabels);
+            var title = RoundOverProgress.Dropped("menu__event-title", out var titleLabels);
             foreach (var label in titleLabels) {
                 text.Set(label, () => Strings.Get("menu.hot_potato"));
             }
@@ -536,7 +531,12 @@ namespace ToyCarArena.UI
             quickCard = ModeCard(EventMode.None, out var quickFace);
             var quickName = Text("menu__mode-card-name");
             text.Set(quickName, () => Strings.Get("menu.quick_match"));
-            quickFace.Add(quickName);
+            // In a box of fixed width left of the SELECTED tag: a longer name in another language shrinks instead of
+            // running under it. The box, not the label, sets the room, or the label's width would follow its own size.
+            var quickNameBox = Element("menu__mode-card-name-box");
+            quickNameBox.Add(quickName);
+            quickFace.Add(quickNameBox);
+            FitText.Fit(quickNameBox, new[] { quickName });
             var quickHint = Text("menu__mode-desc");
             text.Set(quickHint, () => Strings.Get("menu.quick_match_hint"));
             quickFace.Add(quickHint);
@@ -960,7 +960,6 @@ namespace ToyCarArena.UI
             var car = ViewModel.Car;
             carName.text = GameText.Car(car);
             modePortrait.Set(car, ViewModel.CarColor);
-            eventPortrait.Set(ViewModel.EventCar, ViewModel.EventCarColor);
             ShowMode();
             ShowCar(car);
 
@@ -1956,72 +1955,6 @@ namespace ToyCarArena.UI
             p.ClosePath();
             p.Fill();
             p.Stroke();
-        }
-
-        /// <summary>
-        /// The bomb over the event card's car: a navy ball with a white glint and a cap, its fuse and a burning spark
-        /// with rays, in the stickers' navy outline.
-        /// </summary>
-        private static void DrawCardBomb(MeshGenerationContext context)
-        {
-            var r = context.visualElement.contentRect;
-            var p = context.painter2D;
-            var w = r.width;
-            var centre = new Vector2(r.x + w * 0.44f, r.y + r.height * 0.6f);
-            var radius = w * 0.3f;
-            p.lineCap = LineCap.Round;
-            p.lineJoin = LineJoin.Round;
-
-            // The fuse: navy under, gold over, curling up to the spark.
-            var capTop = centre + new Vector2(radius * 0.42f, -radius * 0.98f);
-            var spark = centre + new Vector2(radius * 1.25f, -radius * 1.55f);
-            foreach (var (colour, width) in new[] { (Navy, w * 0.09f), ((Color)Gold, w * 0.04f) }) {
-                p.strokeColor = colour;
-                p.lineWidth = width;
-                p.BeginPath();
-                p.MoveTo(capTop);
-                p.QuadraticCurveTo(centre + new Vector2(radius * 0.6f, -radius * 1.75f), spark);
-                p.Stroke();
-            }
-
-            p.strokeColor = Navy;
-            p.lineWidth = w * 0.045f;
-            p.fillColor = Navy;
-            p.BeginPath();
-            p.Arc(centre, radius, 0f, 360f);
-            p.Fill();
-            p.fillColor = White;
-            RoundBox(p, centre.x + radius * 0.12f, centre.y - radius * 1.12f, centre.x + radius * 0.72f,
-                centre.y - radius * 0.78f, w * 0.03f);
-            p.Fill();
-            p.Stroke();
-            p.BeginPath();
-            p.Arc(centre + new Vector2(-radius * 0.38f, -radius * 0.36f), radius * 0.2f, 0f, 360f);
-            p.Fill();
-
-            // The spark: short gold rays round an orange flame with a white heart.
-            p.strokeColor = Gold;
-            p.lineWidth = w * 0.035f;
-            for (var i = 0; i < 8; i++) {
-                var angle = i * Mathf.PI / 4f + 0.3f;
-                var direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
-                p.BeginPath();
-                p.MoveTo(spark + direction * w * 0.09f);
-                p.LineTo(spark + direction * w * 0.15f);
-                p.Stroke();
-            }
-
-            p.strokeColor = Navy;
-            p.lineWidth = w * 0.035f;
-            p.fillColor = Orange;
-            p.BeginPath();
-            p.Arc(spark, w * 0.07f, 0f, 360f);
-            p.Fill();
-            p.Stroke();
-            p.fillColor = White;
-            p.BeginPath();
-            p.Arc(spark, w * 0.03f, 0f, 360f);
-            p.Fill();
         }
 
         /// <summary>The event card's sun rays: soft white wedges from low on its right, under the picture.</summary>

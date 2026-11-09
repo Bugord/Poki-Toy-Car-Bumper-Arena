@@ -86,14 +86,6 @@ namespace ToyCarArena.UI
         public CarCatalog.Entry Car => catalog.Find(progress.SelectedCar);
         public int CarColor => progress.SelectedColor;
 
-        /// <summary>The car on the HOT POTATO card: a monster truck in blue, which reads on the card's orange.</summary>
-        public CarCatalog.Entry EventCar => catalog.Find(EventCarId) ?? Car;
-
-        public int EventCarColor => EventColor;
-
-        private const string EventCarId = "monster-truck";
-        // CarPaint's blue.
-        private const int EventColor = 2;
         public string Topper => wallet.SelectedTopper;
 
         /// <summary>

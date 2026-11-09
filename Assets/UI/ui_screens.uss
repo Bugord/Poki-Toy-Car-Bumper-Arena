@@ -3418,6 +3418,18 @@
     text-shadow: 0 0 0 rgba(0, 0, 0, 0);
 }
 
+/* A drop drawn as a layer (RoundOverProgress.Dropped): the outlined text again in navy under the outline, moved down by
+   its own title's translate. text-shadow is lost on the fallback font's letters, this drop is not. */
+.stroke > .stroke__drop {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    color: var(--navy);
+    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+}
+
 /* Two aligned layers: a neutral car and its separately tinted white body. */
 .car-portrait {
     width: 100%;
