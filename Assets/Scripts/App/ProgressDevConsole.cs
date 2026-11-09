@@ -13,11 +13,13 @@ namespace ToyCarArena.App
     {
         private readonly PlayerProgress progress;
         private readonly AdBreaks adBreaks;
+        private readonly PlayerDaily daily;
 
-        public ProgressDevConsole(PlayerProgress progress, AdBreaks adBreaks)
+        public ProgressDevConsole(PlayerProgress progress, AdBreaks adBreaks, PlayerDaily daily)
         {
             this.progress = progress;
             this.adBreaks = adBreaks;
+            this.daily = daily;
         }
 
         public void Start()
@@ -42,6 +44,15 @@ namespace ToyCarArena.App
                     progress.SetBoost(matches);
                     return $"XP boost: {progress.BoostMatchesLeft} matches";
                 }));
+            CommandRegistry.Register("daily", "Set the daily gift's last claim N days ago with S days in a row (1 makes "
+                + "the next day due, more breaks the streak, a negative N forgets every claim); the menu shows it when "
+                + "it opens next", (Func<int, int, string>)((daysAgo, streak) => {
+                    var now = DateTime.Now;
+                    daily.SetLastClaim(now, daysAgo, streak);
+                    return daily.CanClaim(now)
+                        ? $"Daily gift due: day {daily.Streak(now)} in a row"
+                        : $"Daily gift claimed: day {daily.Streak(now)} in a row";
+                }));
         }
 
         public void Dispose()
@@ -50,6 +61,7 @@ namespace ToyCarArena.App
             CommandRegistry.Unregister("xp_add");
             CommandRegistry.Unregister("ad_play");
             CommandRegistry.Unregister("xp_boost");
+            CommandRegistry.Unregister("daily");
         }
 
         private string Describe() => $"{progress.TotalXp} XP, LVL {progress.Level}";

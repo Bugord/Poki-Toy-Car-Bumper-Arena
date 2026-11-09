@@ -134,7 +134,17 @@ namespace ToyCarArena.Gameplay.Cars
         {
             Build();
             if (cells.Count == 0) {
-                BuildToppers(ids);
+                // Every topper, on sale and exclusive, whatever the first caller asks for: the texture is drawn once,
+                // and the garage, the result's gift and the menu's daily gift each crop their own from it.
+                var all = new List<string>(CarTopper.Ids);
+                all.AddRange(CarTopper.ExclusiveIds);
+                foreach (var id in ids) {
+                    if (!all.Contains(id)) {
+                        all.Add(id);
+                    }
+                }
+
+                BuildToppers(all);
             }
 
             // One frame is enough: the toppers stand still, and the phones have no fill to spare under the garage.

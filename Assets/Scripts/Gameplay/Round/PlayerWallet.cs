@@ -94,7 +94,7 @@ namespace ToyCarArena.Gameplay.Round
         public bool Buy(string id)
         {
             var topper = tuning.Toppers.Find(id);
-            if (topper == null || IsOwned(id) || Coins < topper.Price) {
+            if (topper == null || !tuning.Toppers.IsOnSale(id) || IsOwned(id) || Coins < topper.Price) {
                 return false;
             }
 
@@ -124,6 +124,23 @@ namespace ToyCarArena.Gameplay.Round
             UnseenGift = id;
             Changed?.Invoke();
             return id;
+        }
+
+        /// <summary>
+        /// Gives a topper as a reward, not for coins (the daily gift's exclusive hat), and wears it. False, with
+        /// nothing changed, for an unknown one or one owned already.
+        /// </summary>
+        public bool Give(string id)
+        {
+            if (tuning.Toppers.Find(id) == null || IsOwned(id)) {
+                return false;
+            }
+
+            var owned = new List<string>(Owned()) { id };
+            storage.SetString(OwnedKey, string.Join(",", owned));
+            storage.SetString(SelectedKey, id);
+            Changed?.Invoke();
+            return true;
         }
 
         /// <summary>The topper just given, until the result's popup takes it; null when there is none.</summary>

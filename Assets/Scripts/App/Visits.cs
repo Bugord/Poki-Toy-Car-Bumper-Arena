@@ -1,6 +1,7 @@
 using System;
 using Bugord.App.Platform;
 using Bugord.Core.Storage;
+using ToyCarArena.Gameplay.Round;
 using VContainer.Unity;
 
 namespace ToyCarArena.App
@@ -63,7 +64,7 @@ namespace ToyCarArena.App
             }
 
             isCounted = true;
-            var day = DayNumber(today);
+            var day = CalendarDay.Of(today);
             var saved = Math.Max(0, storage.GetInt(CountKey));
             var isOld = saved == 0 && storage.HasKey(XpKey);
             var previous = isOld ? 1 : saved;
@@ -93,7 +94,5 @@ namespace ToyCarArena.App
 
             return days <= 7 ? "back-d2-7" : "back-d8plus";
         }
-
-        private static int DayNumber(DateTime date) => (int)(date.Date - DateTime.MinValue.Date).TotalDays;
     }
 }

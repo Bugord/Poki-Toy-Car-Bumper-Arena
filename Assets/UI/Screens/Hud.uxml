@@ -45,12 +45,7 @@
         </ui:VisualElement>
         <ui:VisualElement name="ko-badge" picking-mode="Ignore" class="hud__section hud__ko">
             <ui:VisualElement picking-mode="Ignore" class="hud__sep" />
-            <ui:VisualElement picking-mode="Ignore" class="ko-star">
-                <ui:VisualElement picking-mode="Ignore" class="ko-star__back" />
-                <ui:VisualElement picking-mode="Ignore" class="ko-star__back ko-star__turned" />
-                <ui:VisualElement picking-mode="Ignore" class="ko-star__front" />
-                <ui:VisualElement picking-mode="Ignore" class="ko-star__front ko-star__turned" />
-            </ui:VisualElement>
+            <ui:VisualElement picking-mode="Ignore" class="ko-star" />
             <ui:Label name="ko" text="0" picking-mode="Ignore" class="hud__ko-text" />
         </ui:VisualElement>
         </ui:VisualElement>

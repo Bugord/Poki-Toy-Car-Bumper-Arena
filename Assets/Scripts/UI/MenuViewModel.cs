@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using Bugord.App.Platform;
@@ -16,7 +17,8 @@ namespace ToyCarArena.UI
     /// The main menu a returning visit opens on (<see cref="MenuState"/>): the player's level, XP and coins, their car on
     /// its plinth, the missions, the mode and PLAY. The result is set once, by PLAY (in the menu or the garage's NEXT
     /// MATCH); the garage, the settings, the missions and the modes open over the menu and come back to it. XP BOOST
-    /// plays a rewarded ad for double XP over the next matches.
+    /// plays a rewarded ad for double XP over the next matches. DAILY holds the daily gift (<see cref="PlayerDaily"/>): the
+    /// first menu of a visit with a gift to claim opens it by itself.
     /// </summary>
     public sealed class MenuViewModel : ResultViewModel<bool>
     {
@@ -34,11 +36,13 @@ namespace ToyCarArena.UI
         // An ad back without its reward sooner than this had no ad to show (as CLAIM ×2 on the result reads it).
         private const float AdPlayedSeconds = 2f;
         private bool isBoostTried;
+        private bool isBoostPlaying;
 
         public MenuViewModel(PlayerProgress progress, PlayerWallet wallet, MissionTracker missions, CarCatalog catalog,
             ArenaCatalog arenaCatalog, GameTuning tuning, IScreenNavigator navigator, IGamePlatform platform,
-            LevelScene levelScene)
+            LevelScene levelScene, PlayerDaily daily)
         {
+            this.Daily = new DailyGift(daily, tuning, platform);
             this.progress = progress;
             this.wallet = wallet;
             this.missions = missions;
@@ -99,6 +103,8 @@ namespace ToyCarArena.UI
 
         public int MissionCoins(GameTuning.MissionDefinition mission) => tuning.Missions.CoinsOf(mission.Tier);
 
+        public int MissionXp(GameTuning.MissionDefinition mission) => tuning.Missions.XpOf(mission.Tier);
+
         /// <summary>A level reached since the garage was last opened has opened a car: GARAGE carries NEW.</summary>
         public bool HasNewCar => progress.HasUnseenCar;
 
@@ -118,8 +124,8 @@ namespace ToyCarArena.UI
         /// </summary>
         public bool CanOfferBoost => tuning.Ads.XpBoost && !platform.IsAdBlocked && !IsBoosted && !isBoostTried;
 
-        /// <summary>The boost's ad is playing: the menu takes no presses meanwhile.</summary>
-        public bool IsAdPlaying { get; private set; }
+        /// <summary>An ad is playing (the boost's or the daily gift's): the menu takes no presses meanwhile.</summary>
+        public bool IsAdPlaying => isBoostPlaying || Daily.IsAdPlaying;
 
         /// <summary><c>ad / boost / visible</c>: the menu shows the boost's offer.</summary>
         public void BoostShown() => platform.MeasureBoostShown();
@@ -144,12 +150,12 @@ namespace ToyCarArena.UI
             platform.MeasureBoostPressed();
             var started = Time.realtimeSinceStartup;
             bool isRewarded;
-            IsAdPlaying = true;
+            isBoostPlaying = true;
             try {
                 isRewarded = await AdPause.Run(() => platform.RewardedBreak(token));
             }
             finally {
-                IsAdPlaying = false;
+                isBoostPlaying = false;
             }
 
             if (!isRewarded) {
@@ -163,6 +169,69 @@ namespace ToyCarArena.UI
             progress.StartBoost();
             return true;
         }
+
+        // -- Daily gift ----------------------------------------------------------------------------------------------
+
+        /// <summary>Today's gift, as the DAILY tile and its popup (<see cref="MenuDaily"/>) show it.</summary>
+        public DailyGift Daily { get; }
+
+        /// <summary>The clock the daily gift reads: the player's, or a test's.</summary>
+        public Func<DateTime> Clock
+        {
+            get => Daily.Clock;
+            set => Daily.Clock = value;
+        }
+
+        /// <summary>Whether the menu has the daily gift at all.</summary>
+        public bool HasDaily => Daily.IsEnabled;
+
+        /// <summary>Today's gift waits: DAILY reads READY and its popup offers CLAIM.</summary>
+        public bool CanClaimDaily => Daily.CanClaim;
+
+        /// <summary>The days in a row the calendar shows, from 1, and today's slot of it, from 0.</summary>
+        public int DailyStreak => Daily.Streak;
+        public int DailySlot => Daily.Slot;
+        public int DailyDays => Daily.Days;
+        public int DailyAdMultiplier => Daily.AdMultiplier;
+
+        /// <summary>A slot's coins, or its hat (null once owned: the last day pays coins then).</summary>
+        public int DailyCoinsOf(int slot) => Daily.CoinsOf(slot);
+        public string DailyHatOf(int slot) => Daily.HatOf(slot);
+
+        /// <summary>Tomorrow's slot, for COME BACK TOMORROW FOR.</summary>
+        public int NextDailySlot => Daily.NextSlot;
+
+        /// <summary>Time to the next gift, for the tile's countdown; zero while one waits.</summary>
+        public TimeSpan DailyTimeLeft => Daily.TimeLeft;
+
+        /// <summary>CLAIM ×2 is offered (<see cref="DailyGift.CanDouble"/>).</summary>
+        public bool CanDoubleDaily => Daily.CanDouble;
+
+        /// <summary>
+        /// Whether the menu should open the daily gift by itself: the visit's first offer with a gift to claim (a
+        /// first visit's result may have made it already). Taking it marks the offer made, so call it as the popup opens.
+        /// </summary>
+        public bool TakeDailyOffer() => !IsDecided && Daily.TakeOffer();
+
+        /// <summary>The popup is up: <c>daily / offer / visible</c> with a gift to claim, and its CLAIM ×2 offer.</summary>
+        public void DailyShown() => Daily.Shown(false);
+
+        /// <summary>The DAILY tile opened the popup: <c>menu / daily / interact</c>.</summary>
+        public void DailyOpened() => platform.MeasureMenuPressed("daily");
+
+        /// <summary>The popup closed with its gift still to claim: <c>menu / daily-no / interact</c>.</summary>
+        public void DailyDeclined() => platform.MeasureMenuPressed("daily-no");
+
+        /// <summary>CLAIM: today's gift, saved at once. Null when it was taken already.</summary>
+        public DailyClaim ClaimDaily() => IsDecided ? null : Daily.Claim();
+
+        /// <summary>
+        /// CLAIM ×2: a rewarded ad, the game held still under it; with its reward, today's coins times
+        /// <see cref="DailyAdMultiplier"/>. Null when the ad gave nothing: the gift still waits for CLAIM, and the
+        /// popup stops offering the ad.
+        /// </summary>
+        public UniTask<DailyClaim> WatchDaily(CancellationToken token) =>
+            IsAdPlaying || IsDecided ? UniTask.FromResult<DailyClaim>(null) : Daily.Watch(token);
 
         public bool IsGarageOpen { get; private set; }
         public bool IsSettingsOpen { get; private set; }
@@ -205,6 +274,7 @@ namespace ToyCarArena.UI
 
         /// <summary>The menu's own popups opened: <c>menu / missions, mode, leagues, boost / interact</c>.</summary>
         public void MissionsOpened() => platform.MeasureMenuPressed("missions");
+        /// <remarks>Not sent since feature/ux-fixes: MODE is a plate while there is one mode; kept for CUP and SURVIVAL.</remarks>
         public void ModesOpened() => platform.MeasureMenuPressed("mode");
         public void LeaguesOpened() => platform.MeasureMenuPressed("leagues");
 

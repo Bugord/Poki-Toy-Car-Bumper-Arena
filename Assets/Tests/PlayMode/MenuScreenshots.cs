@@ -22,7 +22,8 @@ namespace ToyCarArena.Tests.PlayMode
     /// <summary>
     /// Pictures of the main menu upright and wide, with a finger (phones) and with a mouse (desktops), for a returning
     /// player (level 7, a topper worn, coins for the shop, a new car not yet seen in the garage), with its missions and
-    /// modes popups, the XP boost's offer and the boost running, and once in Russian; then in every league (its sky, pedestal and badge) with the leagues list
+    /// modes popups, the XP boost's offer and the boost running, the daily gift (day 3, and day 7 with the mystery hat:
+    /// the menu with DAILY ready, its popup and the gift just claimed), and once in Russian; then in every league (its sky, pedestal and badge) with the leagues list
     /// over it, and the NEW LEAGUE! popup: <c>Logs/menu/&lt;case&gt;_&lt;w&gt;x&lt;h&gt;.png</c>. Explicit: it is for
     /// looking at, and needs graphics.
     /// </summary>
@@ -76,18 +77,24 @@ namespace ToyCarArena.Tests.PlayMode
                 yield return Capture(directory, "menu", size, true);
                 // The XP boost running: its tile blue with the matches left, ×2 XP on the bar.
                 yield return Capture(directory, "boosted", size, false, boost: 3);
+                // The daily gift on day 3 (coins, CLAIM ×2 beside CLAIM) and day 7 (the mystery hat).
+                yield return Capture(directory, "daily", size, false, dailyStreak: 2);
+                yield return Capture(directory, "daily7", size, false, dailyStreak: 6);
             }
 
             Strings.SetLanguage("ru");
             yield return Capture(directory, "ru", (1080, 1920, true), true);
             yield return Capture(directory, "ru", (1920, 1080, false), false);
             yield return Capture(directory, "ru-boosted", (1080, 1920, true), false, boost: 3);
+            yield return Capture(directory, "ru-daily", (1080, 1920, true), false, dailyStreak: 2);
+            yield return Capture(directory, "ru-daily", (1920, 1080, false), false, dailyStreak: 2);
             Strings.SetLanguage("en");
             typeof(Strings).GetField("table", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
         }
 
         private static IEnumerator Capture(string directory, string name, (int Width, int Height, bool IsTouch) size,
-            bool withPopups, int xp = 540, int leagueSeen = 0, bool withLeagues = false, int boost = 0)
+            bool withPopups, int xp = 540, int leagueSeen = 0, bool withLeagues = false, int boost = 0,
+            int dailyStreak = 0)
         {
             var catalog = AssetDatabase.LoadAssetAtPath<CarCatalog>("Assets/Data/Cars/data_car_catalog.asset");
             var arenas = AssetDatabase.LoadAssetAtPath<ArenaCatalog>("Assets/Data/Arenas/data_arena_catalog.asset");
@@ -107,6 +114,13 @@ namespace ToyCarArena.Tests.PlayMode
             storage.SetString("toppers_owned", "party-hat");
             storage.SetString("topper_selected", "party-hat");
             storage.SetInt("xp_boost", boost);
+            // The daily gift taken today (the tile shows the time to the next), or yesterday after this many days in a
+            // row: today's waits. The menu does not open it by itself here; the daily cases open it by hand.
+            var wallet = new PlayerWallet(storage, tuning);
+            var daily = new PlayerDaily(storage, tuning, wallet);
+            daily.SetLastClaim(System.DateTime.Now, dailyStreak > 0 ? 1 : 0, dailyStreak > 0 ? dailyStreak : 3);
+            typeof(MenuViewModel).GetField("isDailyOffered", BindingFlags.Static | BindingFlags.NonPublic)
+                ?.SetValue(null, true);
             var missions = new MissionTracker(storage, tuning);
             var panelSettings = Object.Instantiate(
                 AssetDatabase.LoadAssetAtPath<PanelSettings>("Assets/UI/ui_panel_settings.asset"));
@@ -115,8 +129,8 @@ namespace ToyCarArena.Tests.PlayMode
             var host = new GameObject("Menu screenshot");
             var document = host.AddComponent<UIDocument>();
             document.panelSettings = panelSettings;
-            var model = new MenuViewModel(new PlayerProgress(storage, tuning, catalog), new PlayerWallet(storage, tuning),
-                missions, catalog, arenas, tuning, null, new MatchTests.RecordingPlatform(), null);
+            var model = new MenuViewModel(new PlayerProgress(storage, tuning, catalog), wallet,
+                missions, catalog, arenas, tuning, null, new MatchTests.RecordingPlatform(), null, daily);
             var light = new GameObject("Menu screenshot light").AddComponent<Light>();
             light.type = LightType.Directional;
             light.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
@@ -153,6 +167,18 @@ namespace ToyCarArena.Tests.PlayMode
                             $"{(name == "menu" ? "" : name + "-")}{shot}_{width}x{height}.png"));
                         typeof(MenuView).GetMethod("ClosePopups", Private)?.Invoke(view, null);
                     }
+                }
+
+                if (dailyStreak > 0) {
+                    typeof(MenuView).GetMethod("OpenDaily", Private)?.Invoke(view, null);
+                    yield return Wait(0.4f);
+                    Save(target, Path.Combine(directory, $"{name}-popup_{width}x{height}.png"));
+                    typeof(MenuView).GetMethod("PressDailyClaim", Private)?.Invoke(view, null);
+                    yield return Wait(0.8f);
+                    Save(target, Path.Combine(directory, $"{name}-claimed_{width}x{height}.png"));
+                    yield return Wait(1.2f);
+                    Save(target, Path.Combine(directory, $"{name}-after_{width}x{height}.png"));
+                    typeof(MenuView).GetMethod("ClosePopups", Private)?.Invoke(view, null);
                 }
 
                 if (withLeagues) {

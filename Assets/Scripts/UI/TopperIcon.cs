@@ -22,6 +22,7 @@ namespace ToyCarArena.UI
         private static readonly Color32 Sky = new(0x98, 0xbc, 0xeb, 0xff);
         private static readonly Color32 Pink = new(0xca, 0x77, 0xeb, 0xff);
         private static readonly Color32 Green = new(0x3f, 0xa8, 0x7a, 0xff);
+        private static readonly Color32 Purple = new(0x8f, 0x5c, 0xd6, 0xff);
 
         public static VisualElement Create(string id, string className)
         {
@@ -133,6 +134,13 @@ namespace ToyCarArena.UI
                     Circle(Red, 0.5f, 0.68f, 0.07f);
                     Circle(Blue, 0.27f, 0.7f, 0.05f);
                     Circle(Green, 0.73f, 0.7f, 0.05f);
+                    break;
+                case "wizard-hat":
+                    Rect(Purple, 0.08f, 0.8f, 0.92f, 0.9f);
+                    Shape(Purple, new(0.28f, 0.8f), new(0.46f, 0.3f), new(0.7f, 0.08f), new(0.6f, 0.36f), new(0.72f, 0.8f));
+                    Rect(Gold, 0.28f, 0.68f, 0.72f, 0.8f);
+                    Circle(Gold, 0.7f, 0.1f, 0.07f);
+                    Circle(Gold, 0.52f, 0.52f, 0.05f);
                     break;
                 default:
                     painter.BeginPath();

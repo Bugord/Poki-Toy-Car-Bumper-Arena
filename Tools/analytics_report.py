@@ -83,7 +83,7 @@ def summarise(data):
         # с v0.16.0: главное меню визитов 2+ (показ, через сколько секунд после старта движка, что нажали), HOME на результате
         "menu": i.get("menu-shown"),
         "menu_time": other(o, r"menu-ready-([0-9a-z-]+)-start-time"),
-        "menu_press": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"menu-(play|garage|missions|mode|leagues|boost|boost-no)", e))},
+        "menu_press": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"menu-(play|garage|missions|mode|leagues|boost|boost-no|daily|daily-no)", e))},
         # после v0.16.0: попап NEW LEAGUE! в меню, по лиге (раз на игрока и лигу)
         "menu_league": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"menu-league-(bronze|silver|gold|legend)", e))},
         "home": i.get("result-home"),
@@ -111,6 +111,13 @@ def summarise(data):
         "ad_boost": i.get("ad-boost"),
         "ad_boost_end": other(o, r"ad-boost-(granted|unavailable|dismissed)"),
         "boosted": other(o, r"result-boosted-(r(?:1|2|3|4plus))-xp-boost"),
+        # после v0.16.0: ежедневный подарок в меню (попап с подарком показан, день календаря, сброс серии, шапка, CLAIM x2)
+        "daily_offer": i.get("daily-offer"),
+        "daily_offer_result": i.get("daily-offer-result"),
+        "result_daily_no": i.get("result-daily-no"),
+        "daily_claim": other(o, r"daily-(day-[0-9]+|reset|hat)-claim"),
+        "ad_daily": i.get("ad-daily"),
+        "ad_daily_end": other(o, r"ad-daily-(granted|unavailable|dismissed)"),
         "levels": other(o, r"progress-level-(2|3|4|5|6|7|8|9|10|10plus)-level-up"),
         "unlocks": other(o, r"progress-(?!map-)([a-z]+(?:-[a-z]+)*)-unlock"),
         "map_unlocks": other(o, r"progress-map-([a-z]+)-unlock"),
@@ -236,7 +243,7 @@ def report(version, previous):
         out += ["", "## Главное меню (с v0.16.0; визиты 2+)", "", head, sep]
         shown = lambda s: num(s["menu"], "seen")
         out.append(line("Меню показано", lambda s: str(shown(s)) if s["menu"] else "-"))
-        for key, name in (("play", "PLAY"), ("garage", "GARAGE"), ("missions", "MISSIONS"), ("mode", "MODE"),
+        for key, name in (("play", "PLAY"), ("garage", "GARAGE"), ("missions", "MISSIONS"), ("mode", "MODE (до feature/ux-fixes: потом это плашка, не кнопка)"),
                           ("leagues", "значок или шкалу опыта (лиги; после v0.16.0)")):
             out.append(line(f"Нажали {name}, от показов меню",
                             lambda s, k=key: (lambda n: f"{n} ({pct(n, shown(s))})")(num(s["menu_press"].get(k), "interacted"))
@@ -448,6 +455,24 @@ def report(version, previous):
             out.append(line(f"Реклама буста: {how} (визиты)", lambda s, how=how: str(s["ad_boost_end"].get(how, 0))))
         for r in ("r1", "r2", "r3", "r4plus"):
             out.append(line(f"Раунды под бустом, {r.upper()} (визиты)", lambda s, r=r: str(s["boosted"].get(r, 0))))
+
+    # The daily gift: the popup with a gift to claim, its days, a streak broken, the hat, and CLAIM x2.
+    if any(s and s["daily_offer"] for s in (cur, old)):
+        out += ["", "## Ежедневный подарок (после v0.16.0; меряем visit-2+ и back-d1 в «Повторных визитах»)", "", head, sep]
+        shown = lambda s: num(s["daily_offer"], "seen")
+        out.append(line("Попап с подарком показан (визиты)", lambda s: str(shown(s))))
+        out.append(line("Плитка DAILY нажата", lambda s: str(num(s["menu_press"].get("daily"), "interacted"))))
+        out.append(line("Закрыли в меню, не забрав", lambda s: (lambda n: f"{n} ({pct(n, shown(s))})")(num(s["menu_press"].get("daily-no"), "interacted"))))
+        on_result = lambda s: num(s.get("daily_offer_result"), "seen")
+        out.append(line("Из них над первым результатом визита", lambda s: f"{on_result(s)} ({pct(on_result(s), shown(s))})"))
+        out.append(line("Закрыли над результатом, не забрав", lambda s: (lambda n: f"{n} ({pct(n, on_result(s))})")(num(s.get("result_daily_no"), "interacted"))))
+        for day in range(1, 8):
+            out.append(line(f"Забрали день {day} (визиты)", lambda s, day=day: str(s["daily_claim"].get(f"day-{day}", 0))))
+        out.append(line("Серия сброшена (визиты)", lambda s: str(s["daily_claim"].get("reset", 0))))
+        out.append(line("Шапка недели (визиты)", lambda s: str(s["daily_claim"].get("hat", 0))))
+        out.append(line("CLAIM x2 (нажали / показано)", lambda s: f"{num(s['ad_daily'], 'interacted')} / {num(s['ad_daily'], 'seen')} ({pct(num(s['ad_daily'], 'interacted'), num(s['ad_daily'], 'seen'))})"))
+        for how in ("granted", "unavailable", "dismissed"):
+            out.append(line(f"CLAIM x2 подарка: {how} (визиты)", lambda s, how=how: str(s["ad_daily_end"].get(how, 0))))
     print("\n".join(out))
 
 

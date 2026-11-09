@@ -36,8 +36,11 @@ namespace ToyCarArena.UI
             this.viewModel = viewModel;
             var row = new VisualElement { name = "rewards", pickingMode = PickingMode.Ignore };
             row.AddToClassList("rewards");
-            xp = Sticker("reward--xp", HudView.CreateStar("ko-star"), "result.reward_xp", viewModel.RoundXp, 0,
-                out xpValue);
+            // XP has one sign everywhere, the blue five-pointed star of the menu and the missions; the eight-pointed
+            // star is the knock-out's.
+            var star = new VisualElement { pickingMode = PickingMode.Ignore };
+            star.generateVisualContent += MenuView.DrawXpStar;
+            xp = Sticker("reward--xp", star, "result.reward_xp", viewModel.RoundXp, 0, out xpValue);
             // The XP boost bought in the menu paid for this round: its XP already counts it.
             if (viewModel.XpGain.BoostXp > 0) {
                 var boost = new VisualElement { pickingMode = PickingMode.Ignore };

@@ -52,6 +52,7 @@ namespace ToyCarArena.Tests.PlayMode
             // car, which stands on the podium.
             var cases = new[] {
                 "lost", "won", "winner", "rival", "offer", "gift", "double", "boosted", "bought", "hat", "legend",
+                "daily",
             };
             if (System.Environment.GetEnvironmentVariable("SHOTS_CASES") is { Length: > 0 } only) {
                 cases = only.Split(',');
@@ -83,7 +84,10 @@ namespace ToyCarArena.Tests.PlayMode
                         : name is "double" or "boosted" ? new[] { 0.6f, 1.2f, 4.0f }
                         // The popup's BUY & EQUIP is pressed after the first picture: the celebration plays on.
                         : name is "bought" or "hat" ? new[] { 3.0f, 3.3f, 3.7f, 4.4f, 6.0f }
-                        : name == "legend" ? new[] { 0.6f, 1.6f, 2.4f, 3.2f, 4.5f, 9.0f } : new[] { 0.6f, 3.0f };
+                        : name == "legend" ? new[] { 0.6f, 1.6f, 2.4f, 3.2f, 4.5f, 9.0f }
+                        // The visit's first result with today's gift: CLAIM is pressed after the first picture, the
+                        // celebration plays, the popup closes and the result's own reward plays on.
+                        : name == "daily" ? new[] { 0.8f, 1.3f, 2.0f, 4.5f } : new[] { 0.6f, 3.0f };
                     foreach (var (width, height, isTouch) in shots) {
                         var record = Record(name, tuning, catalog);
                         var panelSettings = Object.Instantiate(
@@ -107,8 +111,10 @@ namespace ToyCarArena.Tests.PlayMode
                             wallet.TryGift(tuning.Toppers.GiftLevel);
                         }
 
-                        var model = new RoundOverViewModel(catalog, arenas, tuning, progress, null,
-                            new MatchTests.RecordingPlatform { Rewards = true }, wallet, null);
+                        var platform = new MatchTests.RecordingPlatform { Rewards = true };
+                        DailyGift.ForgetOffer();
+                        var model = new RoundOverViewModel(catalog, arenas, tuning, progress, null, platform, wallet,
+                            null, name == "daily" ? new PlayerDaily(record.storage, tuning, wallet) : null);
                         model.SetPayload(record.record);
                         // The gift's 3D hat as the arena scene's garage stage draws it, under a light like its sun.
                         Light light = null;
@@ -151,6 +157,15 @@ namespace ToyCarArena.Tests.PlayMode
                                         using var submit = NavigationSubmitEvent.GetPooled();
                                         submit.target = buy;
                                         buy.SendEvent(submit);
+                                    }
+                                }
+
+                                if (name == "daily" && moment < 1f) {
+                                    var claim = screen.Q<Button>(className: "menu__daily-claim");
+                                    if (claim != null) {
+                                        using var submit = NavigationSubmitEvent.GetPooled();
+                                        submit.target = claim;
+                                        claim.SendEvent(submit);
                                     }
                                 }
 

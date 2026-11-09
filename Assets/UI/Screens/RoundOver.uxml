@@ -1,6 +1,7 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
     <ui:VisualElement name="round-over" class="screen round-over">
         <Style src="../ui_screens.uss" />
+        <Style src="../ui_menu.uss" />
         <ui:VisualElement picking-mode="Ignore" class="round-over__spacer-top" />
         <ui:VisualElement name="title" picking-mode="Ignore" class="stroke round-over__title">
             <ui:Label text="TIME UP!" picking-mode="Ignore" class="display round-over__title-text" />
@@ -96,9 +97,9 @@
                     </ui:Button>
                     <ui:Button name="garage-button" class="pill round-over__garage">
                         <ui:VisualElement name="garage-portrait" picking-mode="Ignore" class="car-portrait round-over__garage-portrait" />
-                        <ui:Label text="CAR" picking-mode="Ignore" class="round-over__garage-label">
+                        <ui:Label text="GARAGE" picking-mode="Ignore" class="round-over__garage-label">
                             <Bindings>
-                                <Bugord.App.Localization.LocalizedText property="text" key="result.car" />
+                                <Bugord.App.Localization.LocalizedText property="text" key="garage.title" />
                             </Bindings>
                         </ui:Label>
                         <ui:VisualElement name="garage-dot" picking-mode="Ignore" class="round-over__garage-dot" />
