@@ -24,6 +24,7 @@ namespace ToyCarArena.UI
         private const string TodayClass = "menu__daily-day--today";
         private const string BigClass = "menu__daily-day--big";
         private const string HatClass = "menu__daily-day--hat";
+        private const string PileArtClass = "menu__daily-art--pile";
 
         private static readonly Color Navy = new Color32(0x1d, 0x2b, 0x4f, 0xff);
         private static readonly Color Gold = new Color32(0xff, 0xc9, 0x3c, 0xff);
@@ -143,7 +144,7 @@ namespace ToyCarArena.UI
                     cell.ShowGift(Strings.Get("daily.mystery"));
                 }
                 else {
-                    cell.ShowCoins(gift.CoinsOf(i), CoinsIn(i, cells.Length));
+                    cell.ShowCoins(gift.CoinsOf(i), PileOf(i, cells.Length));
                 }
             }
 
@@ -189,7 +190,7 @@ namespace ToyCarArena.UI
                 cell.ShowHat(claim.Hat, stage, GameText.Topper(claim.Hat));
             }
             else {
-                cell.ShowCoins(claim.Coins, CoinsIn(claim.Slot, cells.Length));
+                cell.ShowCoins(claim.Coins, PileOf(claim.Slot, cells.Length));
             }
 
             // The buttons go, and the line under the calendar says what tomorrow brings; the menu closes the card once
@@ -239,8 +240,21 @@ namespace ToyCarArena.UI
             }
         }
 
-        // One coin on the first days, two in the middle, three at the end, as the macket stacks them.
-        private static int CoinsIn(int slot, int count) => slot < 2 ? 1 : slot < Math.Min(4, count - 1) ? 2 : 3;
+        // The pile a day's coins are drawn as (1 to 4, see CoinPile): the first day the smallest, the last coin days
+        // (and a seventh day paid in coins) the biggest heap, the days between two sizes in between.
+        private static int PileOf(int slot, int count)
+        {
+            if (slot <= 0) {
+                return 1;
+            }
+
+            if (slot >= count - 2) {
+                return 4;
+            }
+
+            var between = Math.Max(1, count - 3);
+            return 2 + Math.Min(1, (slot - 1) * 2 / between);
+        }
 
         private static Button Button(string colour, string className, Action pressed)
         {
@@ -336,6 +350,7 @@ namespace ToyCarArena.UI
             public readonly Label Caption;
             public readonly VisualElement Art;
             private readonly Label amount;
+            private CoinPile pile;
 
             public Cell(bool isBig)
             {
@@ -352,26 +367,27 @@ namespace ToyCarArena.UI
                 Root.Add(tick);
             }
 
-            public void ShowCoins(int coins, int count)
+            public void ShowCoins(int coins, int size)
             {
                 Root.RemoveFromClassList(HatClass);
-                Art.Clear();
-                var stack = Element("menu__daily-stack");
-                stack.AddToClassList($"menu__daily-stack--{count}");
-                for (var i = 0; i < count; i++) {
-                    var coin = RoundOverMeta.Coin();
-                    coin.AddToClassList("menu__daily-coin");
-                    coin.AddToClassList($"menu__daily-coin--{i}");
-                    stack.Add(coin);
+                // The pile draws itself pale on a day taken (CoinPile), not through the art's opacity: overlapping
+                // coins under opacity would show each other's outlines through.
+                Art.AddToClassList(PileArtClass);
+                if (pile == null || pile.Element.parent != Art) {
+                    Art.Clear();
+                    pile = new CoinPile(Root);
+                    Art.Add(pile.Element);
                 }
 
-                Art.Add(stack);
+                pile.Show(size);
                 amount.text = coins.ToString();
             }
 
             public void ShowGift(string text)
             {
                 Root.RemoveFromClassList(HatClass);
+                Art.RemoveFromClassList(PileArtClass);
+                pile = null;
                 Art.Clear();
                 var gift = Element("menu__daily-gift");
                 gift.generateVisualContent += DrawGift;
@@ -383,6 +399,8 @@ namespace ToyCarArena.UI
             {
                 // A pale face and the hat at full strength: the purple hat would be lost on the purple day.
                 Root.AddToClassList(HatClass);
+                Art.RemoveFromClassList(PileArtClass);
+                pile = null;
                 Art.Clear();
                 VisualElement hat;
                 var texture = stage?.ShowToppers(CarTopper.ExclusiveIds);
@@ -401,6 +419,158 @@ namespace ToyCarArena.UI
 
                 Art.Add(hat);
                 amount.text = name;
+            }
+        }
+
+        /// <summary>
+        /// A day's coins as a pile that grows with the amount: a short stack and a coin beside it on the first day,
+        /// then two and three stacks, and a heap of stacks with a coin standing in front on the last coin days. Each
+        /// coin lies flat, seen from above at an angle: a gold top with a pale disc, a darker gold edge, a navy
+        /// outline, as the coins of <see cref="RoundOverMeta.Coin"/>. Every size is drawn at the same scale, so a
+        /// bigger pile is bigger on screen. On a day taken it is drawn pale towards the cell's face.
+        /// </summary>
+        private sealed class CoinPile
+        {
+            // The design box the piles are laid out in, scaled to fit the element and stood on its bottom.
+            private const float BoxWidth = 160f;
+            private const float BoxHeight = 120f;
+            private const float CoinX = 25f;
+            private const float CoinY = 11f;
+            private const float Thickness = 9f;
+            private const float Line = 5f;
+            private const float Kappa = 0.5523f;
+            private const float PaleShare = 0.55f;
+
+            private static readonly Color Face = new Color32(0xff, 0xc9, 0x3c, 0xff);
+            private static readonly Color Light = new Color32(0xff, 0xe3, 0x9a, 0xff);
+            private static readonly Color Edge = new Color32(0xe5, 0x9a, 0x12, 0xff);
+
+            // Each pile's stacks back to front: centre x, the bottom of the lowest coin, how many coins.
+            private static readonly Vector3[][] Stacks = {
+                new[] { new Vector3(66f, 110f, 2f), new Vector3(100f, 117f, 1f) },
+                new[] { new Vector3(58f, 106f, 3f), new Vector3(102f, 108f, 2f), new Vector3(80f, 118f, 1f) },
+                new[] {
+                    new Vector3(80f, 100f, 5f), new Vector3(46f, 109f, 3f), new Vector3(114f, 109f, 4f),
+                    new Vector3(80f, 118f, 2f),
+                },
+                new[] {
+                    new Vector3(102f, 96f, 7f), new Vector3(62f, 98f, 6f), new Vector3(34f, 108f, 3f),
+                    new Vector3(128f, 107f, 4f), new Vector3(80f, 118f, 3f),
+                },
+            };
+
+            // A coin standing up in front of the biggest piles: centre and radius (0 for none).
+            private static readonly Vector3[] Standing = {
+                Vector3.zero, Vector3.zero, Vector3.zero, new Vector3(126f, 96f, 20f),
+            };
+
+            private readonly VisualElement cell;
+            private int size = 1;
+
+            public CoinPile(VisualElement cell)
+            {
+                this.cell = cell;
+                Element = new VisualElement { pickingMode = PickingMode.Ignore };
+                Element.AddToClassList("menu__daily-pile");
+                Element.generateVisualContent += Draw;
+            }
+
+            public VisualElement Element { get; }
+
+            public void Show(int pileSize)
+            {
+                size = Mathf.Clamp(pileSize, 1, Stacks.Length);
+                Element.MarkDirtyRepaint();
+            }
+
+            private void Draw(MeshGenerationContext context)
+            {
+                var r = Element.contentRect;
+                var scale = Mathf.Min(r.width / BoxWidth, r.height / BoxHeight);
+                if (scale <= 0f) {
+                    return;
+                }
+
+                var origin = new Vector2(r.x + (r.width - BoxWidth * scale) * 0.5f, r.yMax - BoxHeight * scale);
+                var isPale = cell.ClassListContains(DoneClass);
+                var behind = cell.resolvedStyle.backgroundColor;
+                Color Tint(Color colour) => isPale ? Color.Lerp(behind, colour, PaleShare) : colour;
+                var navy = Tint(Navy);
+                var face = Tint(Face);
+                var light = Tint(Light);
+                var edge = Tint(Edge);
+
+                var p = context.painter2D;
+                p.lineWidth = Line * scale;
+                p.lineJoin = LineJoin.Round;
+                p.strokeColor = navy;
+                Vector2 At(float x, float y) => origin + new Vector2(x, y) * scale;
+
+                foreach (var stack in Stacks[size - 1]) {
+                    var count = (int)stack.z;
+                    // The lowest coin's top sits a coin's edge and half its top above the stack's bottom.
+                    var top = stack.y - Thickness - CoinY;
+                    for (var i = 0; i < count; i++) {
+                        Coin(stack.x, top - i * Thickness, i == count - 1);
+                    }
+                }
+
+                var standing = Standing[size - 1];
+                if (standing.z > 0f) {
+                    Upright(standing.x, standing.y, standing.z);
+                }
+
+                // A coin lying flat with its top at (x, y): its silhouette in the edge's colour, then its top face
+                // if no coin lies on it.
+                void Coin(float x, float y, bool hasFace)
+                {
+                    p.fillColor = edge;
+                    p.BeginPath();
+                    p.MoveTo(At(x - CoinX, y));
+                    p.LineTo(At(x - CoinX, y + Thickness));
+                    p.BezierCurveTo(At(x - CoinX, y + Thickness + Kappa * CoinY),
+                        At(x - Kappa * CoinX, y + Thickness + CoinY), At(x, y + Thickness + CoinY));
+                    p.BezierCurveTo(At(x + Kappa * CoinX, y + Thickness + CoinY),
+                        At(x + CoinX, y + Thickness + Kappa * CoinY), At(x + CoinX, y + Thickness));
+                    p.LineTo(At(x + CoinX, y));
+                    p.BezierCurveTo(At(x + CoinX, y - Kappa * CoinY), At(x + Kappa * CoinX, y - CoinY),
+                        At(x, y - CoinY));
+                    p.BezierCurveTo(At(x - Kappa * CoinX, y - CoinY), At(x - CoinX, y - Kappa * CoinY),
+                        At(x - CoinX, y));
+                    p.ClosePath();
+                    p.Fill();
+                    p.Stroke();
+                    if (!hasFace) {
+                        return;
+                    }
+
+                    Ellipse(x, y, CoinX, CoinY, face, true);
+                    Ellipse(x, y, CoinX * 0.55f, CoinY * 0.5f, light, false);
+                }
+
+                // A coin standing up, facing the camera: a navy drop under it, the gold disc and its pale middle.
+                void Upright(float x, float y, float radius)
+                {
+                    Ellipse(x, y + 3f, radius, radius, navy, true);
+                    Ellipse(x, y, radius, radius, face, true);
+                    Ellipse(x, y, radius * 0.42f, radius * 0.42f, light, false);
+                }
+
+                void Ellipse(float x, float y, float rx, float ry, Color fill, bool isOutlined)
+                {
+                    p.fillColor = fill;
+                    p.BeginPath();
+                    p.MoveTo(At(x + rx, y));
+                    p.BezierCurveTo(At(x + rx, y + Kappa * ry), At(x + Kappa * rx, y + ry), At(x, y + ry));
+                    p.BezierCurveTo(At(x - Kappa * rx, y + ry), At(x - rx, y + Kappa * ry), At(x - rx, y));
+                    p.BezierCurveTo(At(x - rx, y - Kappa * ry), At(x - Kappa * rx, y - ry), At(x, y - ry));
+                    p.BezierCurveTo(At(x + Kappa * rx, y - ry), At(x + rx, y - Kappa * ry), At(x + rx, y));
+                    p.ClosePath();
+                    p.Fill();
+                    if (isOutlined) {
+                        p.Stroke();
+                    }
+                }
             }
         }
     }
