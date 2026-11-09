@@ -528,7 +528,9 @@
     background-color: rgba(0, 0, 0, 0);
 }
 
-.lobby__title > .stroke__face { margin: 0; }
+/* The face is a child of the outline label and shares its class: it already turns with its parent, so its own -3deg
+   would turn it twice and its letters would poke out of the outline. */
+.lobby__title > .stroke__face { margin: 0; rotate: 0deg; }
 
 /* The HUD: one white bar at the top centre, 54 px from the edge: the stopwatch, a chip per car still in the round with
    their count, and from the first knock-out the player's KOs, each part split off by a short rule. On a wide screen it
@@ -933,8 +935,13 @@
 
 .car-name { padding-bottom: 16px; }
 
-/* Before GO! the handles are faint, under the countdown. */
-.car-names--waiting .car-name__sticker { opacity: 0.45; }
+/* Before GO! the handles are faint, under the countdown. Colours, not opacity: a translucent outlined text lets its
+   stroke layer show through the face as a dark rim inside every letter. */
+.car-names--waiting .car-name__sticker { background-color: rgba(29, 43, 79, 0.3); }
+.car-names--waiting .car-name__tail { color: rgba(29, 43, 79, 0.3); }
+.car-names--waiting .car-name__text { color: rgb(196, 204, 222); }
+.car-names--waiting .car-name--revenge .car-name__text { color: rgb(236, 150, 150); }
+.car-names--waiting .car-name__level { opacity: 0.6; }
 
 .car-name__level {
     min-width: 46px;
@@ -3771,7 +3778,8 @@
     -unity-text-outline-width: 0;
 }
 .lobby__name--revenge .sticker-text__text { color: var(--red); }
-.lobby__row--left .lobby__name .sticker-text__text { color: var(--silver); opacity: 0.6; }
+/* Silver at 0.6 over navy, as an opaque colour: a translucent outlined name shows its stroke layer inside the letters. */
+.lobby__row--left .lobby__name .sticker-text__text { color: rgb(123, 136, 161); }
 
 /* A loading bar under the seats (in the flow, so seven seats on a 1920 high panel never run into it) and a tip at the
    bottom of the curtain: the arena loads behind it. */
@@ -4016,9 +4024,6 @@
     background-color: var(--white);
 }
 
-.scoreboard__row--out {
-    opacity: 0.5;
-}
 
 .scoreboard__row--hidden {
     opacity: 0;
@@ -4146,6 +4151,18 @@
 
 .scoreboard__row--revenge .scoreboard__name .sticker-text__text { color: var(--red); }
 .scoreboard__row--you .scoreboard__name .sticker-text__text { color: var(--navy); -unity-text-outline-width: 0; }
+
+/* A fallen car's row, dimmed by colour: opacity on an outlined StickerText shows its stroke layer through the face as a
+   dark rim inside every letter. */
+.scoreboard__row--out { background-color: rgba(29, 43, 79, 0.35); border-color: rgba(29, 43, 79, 0.6); }
+.scoreboard__row--you.scoreboard__row--out { background-color: rgba(255, 255, 255, 0.6); }
+.scoreboard__row--out .scoreboard__rank,
+.scoreboard__row--out .hud__chip,
+.scoreboard__row--out .scoreboard__target { opacity: 0.5; }
+.scoreboard__row--out .scoreboard__name .sticker-text__text { color: rgb(160, 170, 192); }
+.scoreboard__row--revenge.scoreboard__row--out .scoreboard__name .sticker-text__text { color: rgb(214, 128, 136); }
+.scoreboard__row--you.scoreboard__row--out .scoreboard__name .sticker-text__text { color: var(--navy); }
+.scoreboard__row--out .scoreboard__ko .sticker-text__text { color: rgb(196, 170, 104); }
 
 /* The knock-outs, in a column wide enough for two digits so the names do not move as they grow; gold as the star. */
 .scoreboard__ko {
@@ -4868,8 +4885,12 @@
 }
 
 .double:disabled {
-    opacity: 0.6;
+    background-color: rgb(118, 96, 160);
 }
+
+/* Waiting for its ad, by colour rather than opacity: a translucent outlined label shows its stroke inside the letters. */
+.double:disabled > .button__face { background-color: rgb(172, 150, 214); }
+.double:disabled .button__label { color: rgb(226, 218, 242); }
 
 .double__play {
     flex-shrink: 0;
