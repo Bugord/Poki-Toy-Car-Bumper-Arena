@@ -109,8 +109,9 @@ namespace ToyCarArena.UI
                 safeInsets = insets;
                 settingsButton.style.top = 40f + insets.Top;
                 settingsButton.style.right = 40f + insets.Right;
-                meta.CoinPill.style.top = 52f + insets.Top;
-                meta.CoinPill.style.right = 184f + insets.Right;
+                // Level with the gear (both 112 tall over the same drop), a gap to its left.
+                meta.CoinPill.style.top = 40f + insets.Top;
+                meta.CoinPill.style.right = 176f + insets.Right;
                 PlaceColumns();
                 daily.Place(Root.layout.size, insets);
             });

@@ -144,14 +144,18 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement picking-mode="Ignore" class="round-over__spacer-bottom" />
-        <ui:Button name="settings-button" class="pill gear-button round-over__settings">
-            <ui:VisualElement picking-mode="Ignore" class="gear">
-                <ui:VisualElement picking-mode="Ignore" class="gear__tooth" />
-                <ui:VisualElement picking-mode="Ignore" class="gear__tooth gear__tooth--45" />
-                <ui:VisualElement picking-mode="Ignore" class="gear__tooth gear__tooth--90" />
-                <ui:VisualElement picking-mode="Ignore" class="gear__tooth gear__tooth--135" />
-                <ui:VisualElement picking-mode="Ignore" class="gear__hub">
-                    <ui:VisualElement picking-mode="Ignore" class="gear__hole" />
+        <ui:Button name="settings-button" class="menu__sticker menu__gear round-over__settings">
+            <ui:VisualElement picking-mode="Ignore" class="menu__drop" />
+            <ui:VisualElement picking-mode="Ignore" class="menu__face">
+                <ui:VisualElement picking-mode="Ignore" class="menu__fill" />
+                <ui:VisualElement picking-mode="Ignore" class="gear">
+                    <ui:VisualElement picking-mode="Ignore" class="gear__tooth" />
+                    <ui:VisualElement picking-mode="Ignore" class="gear__tooth gear__tooth--45" />
+                    <ui:VisualElement picking-mode="Ignore" class="gear__tooth gear__tooth--90" />
+                    <ui:VisualElement picking-mode="Ignore" class="gear__tooth gear__tooth--135" />
+                    <ui:VisualElement picking-mode="Ignore" class="gear__hub">
+                        <ui:VisualElement picking-mode="Ignore" class="gear__hole" />
+                    </ui:VisualElement>
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:Button>

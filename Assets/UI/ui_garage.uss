@@ -141,15 +141,18 @@
     background-color: rgba(29, 43, 79, 0.12);
 }
 
+/* Only the outer side of an end cell is round, by half its height; its inner side keeps the middle cells' corner.
+   Not 999px: UI Toolkit cuts a too-large radius to the cell's width, not proportionally as CSS does, and the cell came
+   out round on both sides. Each cell size below sets its own half height. */
 .garage-stats__pip--first {
     margin-left: 0;
-    border-top-left-radius: 999px;
-    border-bottom-left-radius: 999px;
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
 }
 
 .garage-stats__pip--last {
-    border-top-right-radius: 999px;
-    border-bottom-right-radius: 999px;
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
 }
 
 .garage-stats__stat--speed .garage-stats__pip--on { background-color: var(--blue); }
@@ -222,6 +225,9 @@
     height: 24px;
 }
 
+.garage__stats .garage-stats__pip--first { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+.garage__stats .garage-stats__pip--last { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+
 /* Sideways the pill under the car is far from the eye on a phone: everything in it a size up. */
 .garage--wide .garage__stats {
     padding: 20px 34px 24px 34px;
@@ -240,7 +246,13 @@
     margin-left: 6px;
 }
 
-.garage--wide .garage__stats .garage-stats__pip--first { margin-left: 0; }
+.garage--wide .garage__stats .garage-stats__pip--first {
+    margin-left: 0;
+    border-top-left-radius: 17px;
+    border-bottom-left-radius: 17px;
+}
+
+.garage--wide .garage__stats .garage-stats__pip--last { border-top-right-radius: 17px; border-bottom-right-radius: 17px; }
 
 /* -- The switcher --------------------------------------------------------------------------------------------------- */
 
@@ -564,12 +576,13 @@
 
 .garage__paint:active > .garage__paint-dot { translate: 0 8px; }
 
+/* The glint: a small round spot, not a bar (the dot is square, so equal shares make a circle). */
 .garage__paint-shade {
     position: absolute;
-    left: 18%;
-    top: 14%;
-    width: 30%;
-    height: 20%;
+    left: 20%;
+    top: 16%;
+    width: 22%;
+    height: 22%;
     border-radius: 999px;
     background-color: rgba(255, 255, 255, 0.35);
 }
