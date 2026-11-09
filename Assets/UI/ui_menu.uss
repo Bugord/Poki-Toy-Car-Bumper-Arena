@@ -1100,11 +1100,31 @@
 
 .menu__league-popup { background-color: rgba(29, 43, 79, 0.72); }
 
-.menu__league-card {
-    width: 940px;
-    padding: 110px 44px 50px 44px;
+/* The menu's light turning behind the card (MenuView.DrawLight). */
+.menu__league-light {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 2400px;
+    height: 2400px;
+    margin-left: -1200px;
+    margin-top: -1200px;
+}
+
+/* The card's holder: the screen's scale goes on it (NewLeaguePopup.Fit). */
+.menu__league-holder {
     align-items: center;
     transform-origin: center;
+}
+
+/* As wide as the result's reward popups and the garage's BUY window, whose sky frame it shares. */
+.menu__league-card {
+    width: 1040px;
+    padding: 110px 64px 52px 64px;
+    align-items: center;
+    border-width: 9px;
+    border-bottom-width: 26px;
+    border-radius: 82px;
 }
 
 .menu__league-title {
@@ -1127,69 +1147,87 @@
 
 .menu__league-title-text.stroke__face { text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
 
-.menu__league-hero {
-    width: 100%;
-    height: 330px;
-    align-items: center;
-    justify-content: center;
+/* The player's car on the new pedestal in the new sky (GarageView.SkyFrame), the emblem as a medal on its lower edge. */
+.menu__league-stage {
+    align-self: stretch;
+    margin-top: 10px;
+    padding-bottom: 92px;
 }
 
-.menu__league-burst {
+.menu__league-card .menu__league-frame {
+    height: 440px;
+    margin-top: 0;
+}
+
+.menu__league-frame-plinth {
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 560px;
-    height: 560px;
-    translate: -50% -50%;
+    width: 420px;
+    height: 220px;
+    margin-left: -210px;
+    margin-top: -60px;
 }
 
-.menu__league-big {
-    min-width: 230px;
-    height: 230px;
-    padding: 0 40px;
-    border-width: 14px;
-    border-bottom-width: 14px;
-    border-radius: 66px;
-}
-
-.menu__league-big .level-badge__value { font-size: 120px; }
-
-.menu__league-change {
-    flex-direction: row;
-    align-items: center;
-    margin: 30px 0 14px 0;
-}
-
-.menu__league-small {
-    min-width: 96px;
-    height: 80px;
-    padding: 0 14px;
-    border-width: 6px;
-    border-bottom-width: 6px;
-    border-radius: 24px;
-}
-
-.menu__league-small .level-badge__value { font-size: 40px; }
-
-.menu__league-arrow {
-    width: 70px;
-    height: 46px;
-    margin: 0 22px;
+.menu__league-medal {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 200px;
+    height: 200px;
+    margin-left: -100px;
 }
 
 .menu__league-name {
-    margin: 0;
+    margin: 4px 0 0 0;
     padding: 0;
     font-size: 94px;
     -unity-text-outline-width: 16px;
     text-shadow: 0 12px 0 rgb(29, 43, 79);
     white-space: nowrap;
+    -unity-text-auto-size: best-fit 48px 94px;
 }
 
 .menu__league-name.stroke__face { text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
 
+/* The level the league starts at, an arrow and the player's level in the new frame: badges wider than tall, as
+   everywhere else. */
+.menu__league-change {
+    flex-direction: row;
+    align-items: center;
+    margin: 26px 0 0 0;
+}
+
+.menu__league-small {
+    min-width: 128px;
+    height: 88px;
+    padding: 0 22px;
+    border-width: 6px;
+    border-bottom-width: 6px;
+    border-radius: 26px;
+}
+
+.menu__league-small .level-badge__value { font-size: 44px; }
+
+.menu__league-arrow {
+    width: 70px;
+    height: 46px;
+    margin: 0 26px;
+}
+
+.menu__league-big {
+    min-width: 200px;
+    height: 136px;
+    padding: 0 34px;
+    border-width: 10px;
+    border-bottom-width: 10px;
+    border-radius: 40px;
+}
+
+.menu__league-big .level-badge__value { font-size: 72px; }
+
 .menu__league-caption {
-    margin: 26px 0 20px 0;
+    margin: 34px 0 16px 0;
     padding: 0;
     font-size: 36px;
     letter-spacing: 2px;
@@ -1204,8 +1242,8 @@
 
 .menu__league-get {
     width: 31%;
-    height: 260px;
-    padding: 0 10px 22px 10px;
+    height: 220px;
+    padding: 0 10px 20px 10px;
     border-width: 8px;
     border-bottom-width: 16px;
     border-color: var(--navy);
@@ -1233,11 +1271,11 @@
 }
 
 .menu__league-swatch {
-    width: 128px;
-    height: 128px;
+    width: 112px;
+    height: 112px;
     border-width: 8px;
     border-color: var(--navy);
-    border-radius: 64px;
+    border-radius: 56px;
     background-size: cover;
 }
 
@@ -1247,31 +1285,78 @@
 }
 
 .menu__league-get-badge {
-    min-width: 128px;
-    height: 112px;
-    padding: 0 18px;
+    min-width: 150px;
+    height: 104px;
+    padding: 0 24px;
     border-width: 8px;
     border-bottom-width: 8px;
-    border-radius: 34px;
+    border-radius: 32px;
 }
 
 .menu__league-get-badge .level-badge__value { font-size: 50px; }
 
+/* The next league, locked: its emblem greyed under a lock, and when it opens. */
 .menu__league-next {
-    margin: 36px 0 40px 0;
-    padding: 0;
-    font-size: 36px;
-    letter-spacing: 1px;
-    color: var(--muted);
+    flex-direction: row;
+    align-items: center;
+    margin: 34px 0 36px 0;
+    padding: 8px 40px 8px 12px;
+    border-width: 6px;
+    border-bottom-width: 12px;
+    border-color: var(--navy);
+    border-radius: 60px;
+    background-color: var(--soft);
 }
+
+.menu__league-next--top {
+    padding: 22px 48px;
+    background-color: var(--gold);
+}
+
+.menu__league-next-emblem {
+    width: 104px;
+    height: 104px;
+    align-items: center;
+    justify-content: center;
+    -unity-background-image-tint-color: rgb(150, 160, 190);
+}
+
+.menu__league-next-lock {
+    width: 48px;
+    height: 54px;
+    margin-top: 6px;
+}
+
+.menu__league-next-name {
+    margin: 0 0 0 14px;
+    padding: 0;
+    font-size: 40px;
+    color: var(--navy);
+    white-space: nowrap;
+}
+
+.menu__league-next--top .menu__league-next-name { margin: 0; }
 
 .menu__league-continue {
     width: 100%;
-    height: 196px;
-    padding-bottom: 36px;
+    height: 184px;
+    padding-bottom: 34px;
 }
 
 .menu__league-continue .button__label { font-size: 80px; }
+
+/* On a wide screen the card is short in the hand: a lower picture and lower tiles keep it readable. */
+.menu__league-card--wide .menu__league-frame { height: 360px; }
+.menu__league-card--wide .menu__league-stage { padding-bottom: 64px; }
+.menu__league-card--wide .menu__league-medal { width: 150px; height: 150px; margin-left: -75px; bottom: -6px; }
+.menu__league-card--wide .menu__league-get { height: 170px; }
+.menu__league-card--wide .menu__league-get-picture { padding-top: 10px; }
+.menu__league-card--wide .menu__league-get-badge { min-width: 116px; height: 78px; padding: 0 18px; border-radius: 24px; }
+.menu__league-card--wide .menu__league-get-badge .level-badge__value { font-size: 40px; }
+.menu__league-card--wide .menu__league-swatch { width: 92px; height: 92px; }
+.menu__league-card--wide .menu__league-plinth { width: 170px; height: 88px; }
+.menu__league-card--wide .menu__league-caption { margin: 22px 0 12px 0; }
+.menu__league-card--wide .menu__league-next { margin: 24px 0 26px 0; }
 
 .menu__league-key {
     position: absolute;

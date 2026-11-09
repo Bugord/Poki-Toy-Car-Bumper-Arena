@@ -407,8 +407,8 @@
     -unity-text-align: middle-center;
 }
 
-/* The REVENGE rival's row: tinted red, with a red plaque at its end. */
-.lobby__row.lobby__row--rival { background-color: rgba(255, 77, 77, 0.28); }
+/* The REVENGE rival's row: pale red, with a red plaque at its end. */
+.lobby__row.lobby__row--rival { background-color: rgb(255, 226, 226); }
 
 .lobby__row .lobby__badge--revenge {
     width: auto;
@@ -429,7 +429,8 @@
     margin-bottom: 12px;
 }
 
-/* Seats are quiet translucent strips on the navy curtain; only the player's own is brighter. */
+/* A found seat is a white sticker with a navy outline and a hard shadow under it, as the menu's cards; the player's
+   own is pale gold. The radius is set, not 999px: rows are built after PillShape looked at the screen. */
 .lobby__row {
     position: absolute;
     left: 0;
@@ -438,19 +439,15 @@
     height: 122px;
     flex-direction: row;
     align-items: center;
-    padding: 0 36px 0 22px;
-    border-radius: 999px;
-    background-color: rgba(255, 255, 255, 0.08);
+    padding: 0 26px 0 14px;
+    border-width: 6px;
+    border-bottom-width: 12px;
+    border-color: var(--navy);
+    border-radius: 40px;
+    background-color: var(--white);
 }
 
-.lobby__row--you { background-color: rgba(255, 255, 255, 0.18); }
-
-.lobby__row .hud__chip {
-    position: relative;
-    flex-shrink: 0;
-    margin-right: 22px;
-    transition-duration: 0s;
-}
+.lobby__row--you { background-color: rgb(255, 236, 168); }
 
 .lobby__name {
     flex-grow: 1;
@@ -492,15 +489,18 @@
     -unity-text-align: middle-center;
 }
 
-.lobby__row--left { background-color: rgba(255, 255, 255, 0.04); }
-.lobby__row--left .hud__chip { background-color: var(--muted); }
+.lobby__row--left { background-color: var(--track); }
 .lobby__row--left .lobby__name { color: var(--muted); }
 .lobby__badge--left { background-color: var(--silver); }
 .lobby__badge--streak { width: auto; padding: 8px 18px; rotate: -3deg; }
 
-/* A seat still searching: a dimmer strip with a spinning ring where the chip goes and SEARCHING..., until a player is
-   found for it and pops in over it. */
-.lobby__row--searching { background-color: rgba(255, 255, 255, 0.05); }
+/* A seat still searching: a quiet translucent strip without an outline, a spinning ring and SEARCHING..., until the
+   white sticker of a found player pops in over it. */
+.lobby__row.lobby__row--searching {
+    padding-left: 28px;
+    border-width: 0;
+    background-color: rgba(255, 255, 255, 0.08);
+}
 
 .lobby__spinner {
     flex-shrink: 0;
@@ -2370,6 +2370,19 @@
     -unity-text-align: middle-left;
 }
 
+.level-card__rank--under {
+    position: absolute;
+    top: 100%;
+    left: -80px;
+    right: -80px;
+    margin: 18px 0 0 0;
+    padding: 0;
+    font-size: 30px;
+    color: var(--navy);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
 .level-card__total {
     margin-left: auto;
     font-size: 34px;
@@ -2454,9 +2467,9 @@
     padding: 0 30px 96px 30px;
 }
 
-/* Only plain levels ahead (past the last reward and rank): no captions, no room kept for them. */
+/* Only plain levels ahead (past the last reward and rank): no captions but the badge's rank. */
 .track--plain {
-    padding-bottom: 12px;
+    padding-bottom: 56px;
 }
 
 /* The bars' row and, laid exactly over it, the stops' row (RoundOverProgress.BuildTrack). Every bar and every gap
@@ -2787,21 +2800,31 @@
     background-color: rgba(29, 43, 79, 0.62);
 }
 
+/* The menu's light behind the card (MenuView.DrawLight), turning. */
 .level-reward__rays {
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 1400px;
-    height: 1400px;
-    margin-left: -700px;
-    margin-top: -800px;
+    width: 2200px;
+    height: 2200px;
+    margin-left: -1100px;
+    margin-top: -1100px;
 }
 
-.level-reward__card {
-    width: 760px;
-    padding: 110px 40px 50px 40px;
+/* The card and the hint under it, scaled together to the screen (RoundOverProgress.FitReward): the card's own scale
+   pops and shrinks it. */
+.level-reward__holder {
     align-items: center;
-    border-radius: 70px;
+}
+
+/* As wide as the garage's BUY window, whose picture and stats it shows. */
+.level-reward__card {
+    width: 1040px;
+    padding: 110px 64px 52px 64px;
+    align-items: center;
+    border-width: 9px;
+    border-bottom-width: 26px;
+    border-radius: 82px;
 }
 
 .level-reward__title {
@@ -2831,23 +2854,23 @@
     color: var(--white);
 }
 
-.level-reward__art {
-    width: 520px;
-    height: 320px;
-    margin-top: 16px;
-    align-items: center;
-    justify-content: center;
+/* The reward in a framed piece of the league's sky (GarageView.SkyFrame, garage__sheet-frame in ui_garage). */
+.level-reward__card .level-reward__frame {
+    margin-top: 30px;
 }
 
-.level-reward__arena {
-    width: 240px;
-    height: 240px;
-    border-width: 12px;
-    border-bottom-width: 22px;
-    border-color: var(--navy);
-    border-radius: 999px;
+/* A hat's flat icon where the arena's stage is not there to draw the car wearing it (tests). */
+.level-reward__hat-icon {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 300px;
+    height: 300px;
+    margin-left: -150px;
+    margin-top: -150px;
 }
 
+/* The rank's badge as the old rank popup showed it: only the badge screenshots still draw it. */
 .level-reward__rank {
     min-width: 220px;
     height: 200px;
@@ -2855,24 +2878,6 @@
 
 .level-reward__rank .level-badge__value {
     font-size: 120px;
-}
-
-/* The free topper: its 3D model as the garage's card shows it, drawn by the garage's stage. */
-.level-reward__gift {
-    width: 520px;
-    height: 320px;
-    align-items: center;
-    justify-content: center;
-}
-
-.level-reward__gift-model {
-    width: 320px;
-    height: 320px;
-}
-
-.level-reward__gift-icon {
-    width: 240px;
-    height: 240px;
 }
 
 /* EQUIP, the gift button: the BUY pill without a price. */
@@ -3806,12 +3811,11 @@
 }
 .lobby__name .sticker-text__text {
     font-size: 56px;
-    color: var(--white);
+    color: var(--navy);
     -unity-text-outline-width: 0;
 }
 .lobby__name--revenge .sticker-text__text { color: var(--red); }
-/* Silver at 0.6 over navy, as an opaque colour: a translucent outlined name shows its stroke layer inside the letters. */
-.lobby__row--left .lobby__name .sticker-text__text { color: rgb(123, 136, 161); }
+.lobby__row--left .lobby__name .sticker-text__text { color: var(--muted); }
 
 /* A loading bar under the seats (in the flow, so seven seats on a 1920 high panel never run into it) and a tip at the
    bottom of the curtain: the arena loads behind it. */
@@ -3869,18 +3873,25 @@
     -unity-text-align: middle-center;
 }
 .lobby__badge.lobby__badge--streak { padding: 0 24px; }
-.lobby__row .lobby__you-chip { border-color: var(--white); }
 
+/* The level opens the row, big enough to read its number and league from across the screen; the slot is one width
+   for any badge, its wings and the rival's horns, so every nick starts on the same line. */
 .lobby__level-slot {
-    width: 140px;
-    margin: 0 8px;
+    width: 170px;
+    margin: 0 18px 0 0;
 }
-.lobby__row .hud__chip-ring {
-    width: 66px;
-    height: 66px;
-    right: auto;
-    bottom: auto;
+
+.lobby__level {
+    min-width: 92px;
+    height: 78px;
+    padding: 0 14px;
+    border-width: 6px;
+    border-bottom-width: 11px;
+    border-radius: 22px;
 }
+
+.lobby__level .level-badge__value { font-size: 46px; }
+.lobby__level .level-badge__prefix { font-size: 20px; padding: 0 8px 1px 8px; }
 
 /* One short feed below the portrait pills; the wide layout uses the free top-left corner. */
 .feed {
@@ -5246,83 +5257,9 @@
     top: 10px;
 }
 
-/* A car's speed, power and boost (CarStatsView), as racing games show them: a row per stat, its name and a rounded bar
-   filled to its value out of 5 in the stat's colour, the steps marked across it. Radii are half the heights, not
-   999px: UI Toolkit draws an oversized radius as an ellipse. */
-.car-stats {
-    flex-shrink: 0;
-    width: 560px;
-}
-
-.car-stats__row {
-    flex-direction: row;
-    align-items: center;
-    height: 42px;
-    margin: 2px 0;
-}
-
-.car-stats__label {
-    width: 200px;
-    margin: 0 14px 0 0;
-    padding: 0;
-    font-size: 34px;
-    -unity-text-auto-size: best-fit 20px 34px;
-    -unity-text-align: middle-right;
-    white-space: nowrap;
-    color: var(--navy);
-}
-
-.car-stats__bar {
-    flex-grow: 1;
-    height: 32px;
-    border-width: 5px;
-    border-color: var(--navy);
-    border-radius: 16px;
-    background-color: rgba(29, 43, 79, 0.14);
-    overflow: hidden;
-}
-
-.car-stats__fill {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    border-radius: 11px;
-}
-
-.car-stats__shine {
-    position: absolute;
-    left: 10px;
-    right: 10px;
-    top: 3px;
-    height: 5px;
-    border-radius: 3px;
-    background-color: rgba(255, 255, 255, 0.4);
-}
-
-.car-stats__tick {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    margin-left: -2px;
-    background-color: rgba(29, 43, 79, 0.3);
-}
-
-.car-stats__row--speed .car-stats__fill { background-color: var(--blue); }
-.car-stats__row--power .car-stats__fill { background-color: var(--red); }
-.car-stats__row--weight .car-stats__fill { background-color: var(--purple); }
-.car-stats__row--boost .car-stats__fill { background-color: var(--orange); }
-
-.level-reward__stats {
-    margin: 18px 0 0 0;
-}
-
-/* On the card the names start at the block's left edge: right-aligned in a wide column, they left a gap that pushed
-   the whole block right of the card's middle. */
-.level-reward__stats .car-stats__label {
-    width: 150px;
-    -unity-text-align: middle-left;
+/* The garage's stats under the reward, a little closer than in its window. */
+.level-reward__card .level-reward__stats {
+    margin-top: 34px;
 }
 
 /* No boosts in this build (GameTuning.Boost off): no BOOST button, and the start prompt teaches only driving. The

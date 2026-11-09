@@ -2,6 +2,7 @@
     <ui:VisualElement name="round-over" class="screen round-over">
         <Style src="../ui_screens.uss" />
         <Style src="../ui_menu.uss" />
+        <Style src="../ui_garage.uss" />
         <ui:VisualElement picking-mode="Ignore" class="round-over__spacer-top" />
         <ui:VisualElement name="title" picking-mode="Ignore" class="stroke round-over__title">
             <ui:Label text="TIME UP!" picking-mode="Ignore" class="display round-over__title-text" />

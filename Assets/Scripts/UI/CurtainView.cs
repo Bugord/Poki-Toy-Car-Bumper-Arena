@@ -293,10 +293,8 @@ namespace ToyCarArena.UI
             sticker.EnableInClassList("lobby__row--you", row.Index == 0);
             var isRival = row.IsNemesis && !isLeft;
             sticker.EnableInClassList("lobby__row--rival", isRival);
-            var chip = CarColor.CreateChip(row.ColorId, row.Index == 0);
-            chip.EnableInClassList("lobby__you-chip", row.Index == 0);
-            sticker.Add(chip);
-            // The slot stays even without a badge (a LEFT seat), so every nick starts on the same line.
+            // The level opens the row (no colour chip: the lobby has no car to match it to, as the match results have
+            // none). The slot stays even without a badge (a LEFT seat), so every nick starts on the same line.
             var level = !isLeft && row.Level > 0
                 ? HudView.CreateLevelBadge(row.Level, "lobby__level", row.IsNemesis, true)
                 : null;

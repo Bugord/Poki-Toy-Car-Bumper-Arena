@@ -102,7 +102,7 @@ namespace ToyCarArena.Tests.PlayMode
                     slot.style.height = 122;
                     slot.style.marginRight = 24;
                     slot.style.marginBottom = 20;
-                    var row = new LobbyRow(index, index % 8, "BLITZ", level, null, isRival);
+                    var row = new LobbyRow(index, "BLITZ", level, null, isRival);
                     slot.Add((VisualElement)createRow!.Invoke(null, new object[] { row, false, 0 }));
                     lobby.Add(slot);
                     index++;
