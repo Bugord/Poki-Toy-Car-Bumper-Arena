@@ -289,8 +289,6 @@
 
 .menu__tile-caption.stroke__face { text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
 
-.menu__tile--locked .menu__face { background-color: #dfe6f1; }
-
 .menu__icon {
     width: 86px;
     height: 86px;
@@ -328,10 +326,11 @@
 /* NEW sits in the corner the dot would take; the dot moves down under it. */
 .menu__tile--new.menu__tile--dot .menu__dot { top: 36px; right: -24px; }
 
+/* Every key in one corner, the top left (PLAY's too): NEW, the red dot and the AD tag keep the top right. */
 .menu__key {
     position: absolute;
-    right: -18px;
-    bottom: -10px;
+    left: -18px;
+    top: -18px;
     margin: 0;
     padding: 0 12px 2px 12px;
     border-width: 5px;
@@ -356,13 +355,20 @@
     position: absolute;
     top: -24px;
     right: -30px;
-    padding: 2px 16px 4px 16px;
+    width: 76px;
+    height: 56px;
+    align-items: center;
+    justify-content: center;
     border-width: 6px;
     border-color: var(--navy);
     border-radius: 999px;
-    background-color: var(--gold);
-    font-size: 28px;
-    color: var(--navy);
+    background-color: var(--purple);
+}
+
+.menu__ad .double__play {
+    width: 38px;
+    height: 38px;
+    margin: 0;
 }
 
 .menu__boost-times { display: none; }
@@ -631,12 +637,44 @@
     align-items: center;
 }
 
+.menu__car-pill {
+    height: 120px;
+    padding-bottom: 14px;
+}
+
+.menu__car-pill > .menu__drop,
+.menu__car-pill > .menu__face { border-radius: 999px; }
+
+/* The face lies in the flow here, so the pill is as wide as the name. */
+.menu__car-pill > .menu__face {
+    position: relative;
+    flex-direction: row;
+    height: 106px;
+    padding: 0 14px 0 44px;
+}
+
 .menu__car-name-text {
-    margin: 0;
+    margin: 0 20px 0 0;
     padding: 0;
-    font-size: 96px;
-    -unity-text-outline-width: 16px;
-    text-shadow: 0 14px 0 rgb(29, 43, 79);
+    font-size: 58px;
+    color: var(--navy);
+    white-space: nowrap;
+}
+
+.menu__car-garage {
+    width: 78px;
+    height: 78px;
+    align-items: center;
+    justify-content: center;
+    border-width: 6px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--green);
+}
+
+.menu__car-garage-icon {
+    width: 44px;
+    height: 44px;
 }
 
 /* -- Bottom: the nearest mission, the mode and PLAY ----------------------------------------------------------------- */
@@ -650,7 +688,7 @@
 }
 
 .menu__mission {
-    height: 150px;
+    height: 190px;
     margin-bottom: 40px;
 }
 
@@ -660,74 +698,26 @@
     justify-content: flex-start;
 }
 
-.menu__mission-icon {
-    width: 82px;
-    height: 82px;
-    flex-shrink: 0;
-}
-
 .menu__mission-body {
     flex-grow: 1;
     flex-shrink: 1;
-    margin: 0 20px;
+    min-width: 0;
+    margin: 0 10px 0 24px;
 }
 
-.menu__mission-head {
-    flex-direction: row;
-    align-items: center;
-}
-
+/* Two lines at most: a long task (Russian) wraps instead of losing its end. */
 .menu__mission-task {
-    flex-grow: 1;
-    flex-shrink: 1;
     margin: 0;
-    padding: 0;
-    font-size: 38px;
-    color: var(--navy);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.menu__mission-count {
-    flex-shrink: 0;
-    margin: 0 0 0 14px;
-    padding: 0;
-    font-size: 38px;
-    color: var(--muted);
-}
-
-.menu__bar {
-    height: 30px;
-    margin-top: 8px;
-    border-width: 5px;
-    border-color: var(--navy);
-    border-radius: 999px;
-    background-color: var(--track);
-    overflow: hidden;
-}
-
-.menu__bar-fill {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    border-radius: 999px;
-    background-color: var(--gold);
-}
-
-.menu__reward {
-    flex-shrink: 0;
-    flex-direction: row;
-    align-items: center;
-}
-
-.menu__reward-count {
-    margin: 0 0 0 8px;
     padding: 0;
     font-size: 40px;
     color: var(--navy);
+    white-space: normal;
+    max-height: 96px;
+    overflow: hidden;
+    -unity-text-align: middle-left;
 }
+
+.menu__mission-reward { margin-top: 8px; }
 
 .menu__actions {
     flex-direction: row;
@@ -772,12 +762,6 @@
     -unity-text-auto-size: best-fit 26px 46px;
 }
 
-.menu__chevron {
-    flex-shrink: 0;
-    width: 40px;
-    height: 56px;
-}
-
 .menu__play {
     flex-grow: 1;
     min-width: 0;
@@ -789,8 +773,8 @@
 
 .menu__play-key {
     position: absolute;
-    top: -40px;
-    right: 30px;
+    top: -30px;
+    left: -18px;
     margin: 0;
     display: none;
 }
@@ -875,30 +859,33 @@
 
 .menu__close-bar--turned { rotate: -45deg; }
 
-.menu__sheet .mission {
-    height: 120px;
-    padding: 0 26px;
+.menu__mission-row {
+    flex-direction: row;
+    align-items: center;
+    min-height: 150px;
+    padding: 20px 30px 20px 24px;
     margin-bottom: 18px;
-    border-radius: 36px;
+    border-radius: 40px;
     background-color: var(--soft);
 }
 
-.menu__sheet .mission__check {
-    width: 64px;
-    height: 64px;
+.menu__mission-row:last-child { margin-bottom: 0; }
+
+.menu__mission-row-body {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    margin: 0 10px 0 26px;
 }
 
-.menu__sheet .mission__task {
-    font-size: 40px;
-    white-space: normal;
-}
-
-.menu__sheet .mission__progress {
+.menu__mission-row-task {
+    margin: 0 0 8px 0;
+    padding: 0;
     font-size: 42px;
-    margin: 0 18px;
+    color: var(--navy);
+    white-space: normal;
+    -unity-text-align: middle-left;
 }
-
-.menu__sheet .menu__reward-count { font-size: 42px; }
 
 .menu__modes-play {
     height: 190px;
@@ -1606,7 +1593,6 @@
 /* The tile: a gift box, the time to the next gift on a navy pill across its bottom edge, READY on a green one and the
    red dot while today's waits. Its key goes to the top left: the pill takes the bottom. */
 .menu__tile--daily .menu__tile-caption { margin-top: 26px; }
-.menu__tile--daily .menu__key { top: -14px; bottom: auto; right: auto; left: -18px; }
 
 .menu__daily-time {
     position: absolute;

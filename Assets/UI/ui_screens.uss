@@ -4997,7 +4997,7 @@
 .mission {
     flex-direction: row;
     align-items: center;
-    height: 54px;
+    height: 66px;
     transition-property: translate, opacity, scale;
     transition-duration: 0.25s;
     transition-timing-function: ease-out-back;
@@ -5013,21 +5013,7 @@
     opacity: 0;
 }
 
-.mission__check {
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
-    width: 46px;
-    height: 46px;
-    border-width: 5px;
-    border-color: var(--navy);
-    border-radius: 999px;
-    background-color: var(--soft);
-    transition-property: background-color, scale;
-    transition-duration: 0.25s;
-    transition-timing-function: ease-out-back;
-}
-
+/* A tick of two borders (the daily calendar's days). */
 .mission__mark {
     width: 13px;
     height: 23px;
@@ -5039,14 +5025,14 @@
     opacity: 0;
 }
 
-.mission--done .mission__check {
-    background-color: var(--gold);
-    scale: 1.2 1.2;
+.missions .mission-icon {
+    width: 56px;
+    height: 56px;
+    border-width: 5px;
+    border-radius: 16px;
 }
 
-.mission--done .mission__mark {
-    opacity: 1;
-}
+.mission--done .mission-icon { scale: 1.15 1.15; }
 
 .mission__task {
     flex-grow: 1;
@@ -5061,16 +5047,120 @@
     text-overflow: ellipsis;
 }
 
-.mission__progress {
+.missions .mission-progress__count { font-size: 32px; }
+.missions .mission-progress__bar { width: 96px; height: 18px; margin-top: 4px; border-width: 4px; }
+
+.mission__reward { margin-left: 20px; }
+.missions .mission-reward__xp-count,
+.missions .mission-reward__coin-count { font-size: 32px; }
+.missions .mission-reward .coin { width: 40px; height: 40px; border-bottom-width: 6px; }
+.missions .mission-reward__star { width: 36px; height: 36px; }
+
+/* -- A mission's parts (MissionLook): the menu's card and popup and the result ---------------------------------------- */
+
+/* The slot's sign on a white tile; a gold tile with a navy tick once done. Not a circle: it is not a button. */
+.mission-icon {
     flex-shrink: 0;
-    margin: 0 0 0 14px;
+    align-items: center;
+    justify-content: center;
+    width: 96px;
+    height: 96px;
+    border-width: 7px;
+    border-color: var(--navy);
+    border-radius: 26px;
+    background-color: var(--white);
+    transition-property: background-color, scale;
+    transition-duration: 0.25s;
+    transition-timing-function: ease-out-back;
+}
+
+.mission-icon--done { background-color: var(--gold); }
+
+.mission-icon__sign {
+    width: 64%;
+    height: 64%;
+}
+
+/* The count over a thin gold bar, for a mission of more than one step. */
+.mission-progress {
+    flex-shrink: 0;
+    align-items: flex-end;
+    margin-left: 18px;
+}
+
+.mission-progress__count {
+    margin: 0;
     padding: 0;
-    font-size: 36px;
+    font-size: 38px;
     color: var(--muted);
 }
 
-.mission--done .mission__progress {
-    color: var(--xp-shade);
+.mission-progress__bar {
+    width: 130px;
+    height: 26px;
+    margin-top: 6px;
+    border-width: 5px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--track);
+    overflow: hidden;
+}
+
+.mission-progress__fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 999px;
+    background-color: var(--gold);
+}
+
+/* +N XP in blue with the XP star, then the coins: the same reward wherever a mission is shown. */
+.mission-reward {
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: center;
+}
+
+.mission-reward__xp,
+.mission-reward__coins {
+    flex-direction: row;
+    align-items: center;
+}
+
+.mission-reward__xp { margin-right: 26px; }
+
+.mission-reward__star {
+    width: 40px;
+    height: 40px;
+    margin-right: 6px;
+}
+
+.mission-reward__xp-count,
+.mission-reward__coin-count {
+    margin: 0;
+    padding: 0;
+    font-size: 36px;
+    white-space: nowrap;
+}
+
+.mission-reward__xp-count { color: var(--xp); }
+
+.mission-reward__coin-count {
+    margin-left: 8px;
+    color: var(--navy);
+}
+
+.mission-reward .coin {
+    width: 42px;
+    height: 42px;
+    border-width: 4px;
+    border-bottom-width: 6px;
+}
+
+.mission-reward .coin__inner {
+    width: 16px;
+    height: 16px;
 }
 
 /* With the missions over it, the level card and the podium give up a little height, so a 16:9 portrait still fits. */

@@ -103,6 +103,8 @@ namespace ToyCarArena.UI
 
         public int MissionCoins(GameTuning.MissionDefinition mission) => tuning.Missions.CoinsOf(mission.Tier);
 
+        public int MissionXp(GameTuning.MissionDefinition mission) => tuning.Missions.XpOf(mission.Tier);
+
         /// <summary>A level reached since the garage was last opened has opened a car: GARAGE carries NEW.</summary>
         public bool HasNewCar => progress.HasUnseenCar;
 
@@ -272,6 +274,7 @@ namespace ToyCarArena.UI
 
         /// <summary>The menu's own popups opened: <c>menu / missions, mode, leagues, boost / interact</c>.</summary>
         public void MissionsOpened() => platform.MeasureMenuPressed("missions");
+        /// <remarks>Not sent since feature/ux-fixes: MODE is a plate while there is one mode; kept for CUP and SURVIVAL.</remarks>
         public void ModesOpened() => platform.MeasureMenuPressed("mode");
         public void LeaguesOpened() => platform.MeasureMenuPressed("leagues");
 

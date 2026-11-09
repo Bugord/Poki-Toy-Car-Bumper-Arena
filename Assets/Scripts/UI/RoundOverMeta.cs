@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Bugord.App.Localization;
 using Cysharp.Threading.Tasks;
+using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -224,13 +225,18 @@ namespace ToyCarArena.UI
             return label;
         }
 
-        /// <summary>One slot: the check, the task and its progress, or once done the reward and then the next task.</summary>
+        /// <summary>
+        /// One slot: the slot's sign, the task, its count with a thin bar (more than one step), and the coins it pays;
+        /// once done the sign turns into a gold tick, the XP joins the coins, and then the next task takes the row.
+        /// </summary>
         private sealed class Row
         {
             private readonly RoundOverMeta owner;
             private readonly MissionLine line;
+            private readonly MissionLook.Icon icon;
             private readonly Label task;
-            private readonly Label progress;
+            private readonly MissionLook.Progress progress;
+            private readonly VisualElement reward;
 
             public Row(RoundOverMeta owner, MissionLine line)
             {
@@ -239,21 +245,21 @@ namespace ToyCarArena.UI
                 Root = new VisualElement { pickingMode = PickingMode.Ignore };
                 Root.AddToClassList("mission");
                 Root.AddToClassList(RowEnterClass);
-                var check = new VisualElement { pickingMode = PickingMode.Ignore };
-                check.AddToClassList("mission__check");
-                var mark = new VisualElement { pickingMode = PickingMode.Ignore };
-                mark.AddToClassList("mission__mark");
-                check.Add(mark);
-                Root.Add(check);
+                var definition = line.Definition;
+                icon = MissionLook.IconOf(definition.Slot);
+                Root.Add(icon);
                 task = Text("", "mission__task");
                 Root.Add(task);
-                progress = Text("", "mission__progress");
+                progress = MissionLook.ProgressOf();
                 Root.Add(progress);
+                reward = new VisualElement { pickingMode = PickingMode.Ignore };
+                reward.AddToClassList("mission__reward");
+                Root.Add(reward);
                 owner.missions.Add(Root);
-                var definition = line.Definition;
                 owner.text.Set(task, () => owner.viewModel.MissionText(definition));
                 // The progress as it was before this round; Tick moves it to after.
-                progress.text = $"{line.Before}/{definition.Target}";
+                progress.Set(line.Before, definition.Target);
+                ShowReward(definition, false);
             }
 
             public VisualElement Root { get; }
@@ -261,12 +267,22 @@ namespace ToyCarArena.UI
             public void Tick()
             {
                 if (!line.IsDone) {
-                    progress.text = $"{line.After}/{line.Definition.Target}";
+                    progress.Set(line.After, line.Definition.Target);
                     return;
                 }
 
                 Root.AddToClassList(RowDoneClass);
-                progress.text = $"+{owner.viewModel.MissionXp(line.Definition)} XP";
+                icon.Set(line.Definition.Slot, true);
+                progress.style.display = DisplayStyle.None;
+                ShowReward(line.Definition, true);
+            }
+
+            // The coins a mission pays, and once it is done the XP it paid beside them.
+            private void ShowReward(GameTuning.MissionDefinition definition, bool isDone)
+            {
+                reward.Clear();
+                reward.Add(MissionLook.Reward(owner.viewModel.MissionXp(definition),
+                    owner.viewModel.MissionCoins(definition), isDone));
             }
 
             /// <summary>A done mission gives way to the one that replaces it.</summary>
@@ -283,7 +299,9 @@ namespace ToyCarArena.UI
 
                 var next = line.Next.Definition;
                 owner.text.Set(task, () => owner.viewModel.MissionText(next));
-                progress.text = $"{line.Next.Progress}/{next.Target}";
+                icon.Set(next.Slot, false);
+                progress.Set(line.Next.Progress, next.Target);
+                ShowReward(next, false);
                 Root.RemoveFromClassList(RowDoneClass);
                 Root.RemoveFromClassList(RowSwapClass);
             }

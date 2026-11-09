@@ -70,6 +70,8 @@ namespace ToyCarArena.UI
 
         public int MissionXp(GameTuning.MissionDefinition mission) => tuning.Missions.XpOf(mission.Tier);
 
+        public int MissionCoins(GameTuning.MissionDefinition mission) => tuning.Missions.CoinsOf(mission.Tier);
+
         /// <summary>A mission's task in the language shown, its arena named.</summary>
         public string MissionText(GameTuning.MissionDefinition mission) =>
             GameText.Mission(mission, mission.Map.Length > 0 ? GameText.Arena(arenaCatalog.Find(mission.Map)) : null);

@@ -243,7 +243,7 @@ def report(version, previous):
         out += ["", "## Главное меню (с v0.16.0; визиты 2+)", "", head, sep]
         shown = lambda s: num(s["menu"], "seen")
         out.append(line("Меню показано", lambda s: str(shown(s)) if s["menu"] else "-"))
-        for key, name in (("play", "PLAY"), ("garage", "GARAGE"), ("missions", "MISSIONS"), ("mode", "MODE"),
+        for key, name in (("play", "PLAY"), ("garage", "GARAGE"), ("missions", "MISSIONS"), ("mode", "MODE (до feature/ux-fixes: потом это плашка, не кнопка)"),
                           ("leagues", "значок или шкалу опыта (лиги; после v0.16.0)")):
             out.append(line(f"Нажали {name}, от показов меню",
                             lambda s, k=key: (lambda n: f"{n} ({pct(n, shown(s))})")(num(s["menu_press"].get(k), "interacted"))

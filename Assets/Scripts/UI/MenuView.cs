@@ -2,6 +2,7 @@ using System.Threading;
 using Bugord.App.Localization;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.Audio;
+using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
@@ -51,6 +52,9 @@ namespace ToyCarArena.UI
         private const float BadgeOrnament = 32f;
         // The wide leagues list keeps its five cards in from the sides, as the board does.
         private const float WideLeaguesSide = 200f;
+
+        // The rails with a mouse: at the reference size a tile's caption was about 16 px on a 1080p screen.
+        private const float DesktopRailScale = 1.25f;
 
         // The least distance of the groups from a side on a phone held sideways (about 48 CSS px).
         private const float TouchWideSide = 240f;
@@ -132,14 +136,13 @@ namespace ToyCarArena.UI
         private CarPortrait heroPortrait;
         private float heroAspect = 1.6f;
         private Label carName;
-        private Label carNameFace;
         private VisualElement bottom;
         private VisualElement missionCard;
         private VisualElement actions;
         private Label missionTask;
-        private Label missionCount;
-        private VisualElement missionFill;
-        private Label missionReward;
+        private MissionLook.Icon missionIcon;
+        private MissionLook.Progress missionProgress;
+        private VisualElement missionReward;
         private VisualElement missionsPopup;
         private VisualElement missionsList;
         private VisualElement modesPopup;
@@ -318,11 +321,9 @@ namespace ToyCarArena.UI
             rail = Element("menu__rail");
             garageTile = Tile(DrawGarage, () => Strings.Get("garage.title"), "G", OpenGarage);
             missionsTile = Tile(DrawTarget, () => Strings.Get("mission.title"), "M", OpenMissions);
-            var awards = Tile(DrawLock, () => Strings.Get("menu.awards"), null, Locked);
-            awards.AddToClassList("menu__tile--locked");
+            // AWARDS waits until there are awards: a locked tile that explains nothing only takes the rail.
             rail.Add(garageTile);
             rail.Add(missionsTile);
-            rail.Add(awards);
             menu.Add(rail);
         }
 
@@ -349,8 +350,9 @@ namespace ToyCarArena.UI
             }
 
             button.Q<VisualElement>(className: "menu__face").Add(times);
-            var ad = Text("menu__ad");
-            text.Set(ad, () => Strings.Get("result.ad"));
+            // A video sign on a purple tag, not a word: РЕКЛАМА or ANUNCIO ran into the tile beside it.
+            var ad = Element("menu__ad");
+            ad.Add(RoundOverRewards.PlaySign());
             button.Add(ad);
             boostLeft = Text("menu__boost-left");
             button.Add(boostLeft);
@@ -385,18 +387,19 @@ namespace ToyCarArena.UI
             heroPortrait = new CarPortrait(heroPortraitRoot);
             stage.Add(hero);
 
+            // The car's name on a white pill with a green garage sign: smaller than PLAY, and it says the car opens
+            // the garage.
             var name = carNameBox = Element("menu__car-name");
-            var stroke = Element("stroke");
-            carName = Text("display");
+            var pill = Sticker("menu__car-pill", OpenGarage);
+            var pillFace = pill.Q<VisualElement>(className: "menu__face");
+            carName = Text("menu__car-name-text");
             // A longer or shorter name may or may not fit between the bottom cards sideways (PlaceStage).
             carName.RegisterCallback<GeometryChangedEvent>(_ => PlaceStage());
-            carName.AddToClassList("menu__car-name-text");
-            carNameFace = Text("display");
-            carNameFace.AddToClassList("menu__car-name-text");
-            carNameFace.AddToClassList("stroke__face");
-            stroke.Add(carName);
-            stroke.Add(carNameFace);
-            name.Add(stroke);
+            pillFace.Add(carName);
+            var sign = Element("menu__car-garage");
+            sign.Add(Icon("menu__car-garage-icon", DrawGarage));
+            pillFace.Add(sign);
+            name.Add(pill);
             stage.Add(name);
             stage.RegisterCallback<GeometryChangedEvent>(_ => PlaceHero());
             menu.Add(stage);
@@ -405,30 +408,27 @@ namespace ToyCarArena.UI
         private void BuildBottom(VisualElement menu)
         {
             bottom = Element("menu__bottom");
+            // The slot's sign, the task (on two lines if it must: a Russian task is long) over its reward, and the count
+            // with a thin bar at the right for a mission of more than one step.
             missionCard = Sticker("menu__mission", OpenMissions);
             var face = missionCard.Q<VisualElement>(className: "menu__face");
-            face.Add(Icon("menu__mission-icon", DrawTarget));
+            missionIcon = MissionLook.IconOf(MissionSlot.Round);
+            face.Add(missionIcon);
             var body = Element("menu__mission-body");
-            var head = Element("menu__mission-head");
             missionTask = Text("menu__mission-task");
-            missionCount = Text("menu__mission-count");
-            head.Add(missionTask);
-            head.Add(missionCount);
-            body.Add(head);
-            var bar = Element("menu__bar");
-            missionFill = Element("menu__bar-fill");
-            bar.Add(missionFill);
-            body.Add(bar);
+            body.Add(missionTask);
+            missionReward = Element("menu__mission-reward");
+            body.Add(missionReward);
             face.Add(body);
-            var reward = Element("menu__reward");
-            reward.Add(RoundOverMeta.Coin());
-            missionReward = Text("menu__reward-count");
-            reward.Add(missionReward);
-            face.Add(reward);
+            missionProgress = MissionLook.ProgressOf();
+            face.Add(missionProgress);
             bottom.Add(missionCard);
 
             actions = Element("menu__actions");
-            var mode = Sticker("menu__mode", OpenModes);
+            // One mode for now: a plate that names it, not a button that opens a choice of one (CUP and SURVIVAL come
+            // later, with OpenModes and its popup).
+            var mode = Sticker("menu__mode", null);
+            mode.pickingMode = PickingMode.Ignore;
             var modeFace = mode.Q<VisualElement>(className: "menu__face");
             var modeText = Element("menu__mode-texts");
             var caption = Text("menu__mode-caption");
@@ -438,7 +438,6 @@ namespace ToyCarArena.UI
             modeText.Add(caption);
             modeText.Add(modeName);
             modeFace.Add(modeText);
-            modeFace.Add(Icon("menu__chevron", DrawChevron));
             actions.Add(mode);
             actions.Add(PlayButton("menu__play", true));
             bottom.Add(actions);
@@ -802,7 +801,8 @@ namespace ToyCarArena.UI
             plinthTop.style.backgroundColor = LeagueLook.PedestalOf(league);
 
             garageTile.EnableInClassList("menu__tile--new", ViewModel.HasNewCar);
-            garageTile.EnableInClassList("menu__tile--dot", ViewModel.CanShop);
+            // NEW says it already: the dot only when there is no new car to show.
+            garageTile.EnableInClassList("menu__tile--dot", ViewModel.CanShop && !ViewModel.HasNewCar);
             RefreshBoost();
             RefreshDaily();
             rightRail.style.display = boostTile.style.display == DisplayStyle.Flex ||
@@ -813,7 +813,7 @@ namespace ToyCarArena.UI
             }
 
             var car = ViewModel.Car;
-            carName.text = carNameFace.text = GameText.Car(car);
+            carName.text = GameText.Car(car);
             modePortrait.Set(car, ViewModel.CarColor);
             ShowCar(car);
 
@@ -821,10 +821,12 @@ namespace ToyCarArena.UI
             missionCard.style.display = nearest == null ? DisplayStyle.None : DisplayStyle.Flex;
             if (nearest != null) {
                 var definition = nearest.Definition;
+                missionIcon.Set(definition.Slot, false);
                 missionTask.text = ViewModel.MissionText(definition);
-                missionCount.text = $"{nearest.Progress}/{definition.Target}";
-                missionFill.style.width = Length.Percent(100f * nearest.Progress / Mathf.Max(1, definition.Target));
-                missionReward.text = ViewModel.MissionCoins(definition).ToString();
+                missionProgress.Set(nearest.Progress, definition.Target);
+                missionReward.Clear();
+                missionReward.Add(MissionLook.Reward(ViewModel.MissionXp(definition),
+                    ViewModel.MissionCoins(definition)));
             }
 
             if (missionsPopup.ClassListContains(OpenClass)) {
@@ -912,23 +914,19 @@ namespace ToyCarArena.UI
         {
             missionsList.Clear();
             foreach (var mission in ViewModel.Missions) {
+                // The slot's sign, the task over its XP and coins, and the count with its bar for more than one step.
                 var definition = mission.Definition;
-                var row = Element("mission");
-                var check = Element("mission__check");
-                check.Add(Element("mission__mark"));
-                row.Add(check);
-                var task = Text("mission__task");
+                var row = Element("menu__mission-row");
+                row.Add(MissionLook.IconOf(definition.Slot));
+                var body = Element("menu__mission-row-body");
+                var task = Text("menu__mission-row-task");
                 task.text = ViewModel.MissionText(definition);
-                row.Add(task);
-                var progress = Text("mission__progress");
-                progress.text = $"{mission.Progress}/{definition.Target}";
+                body.Add(task);
+                body.Add(MissionLook.Reward(ViewModel.MissionXp(definition), ViewModel.MissionCoins(definition)));
+                row.Add(body);
+                var progress = MissionLook.ProgressOf();
+                progress.Set(mission.Progress, definition.Target);
                 row.Add(progress);
-                var reward = Element("menu__reward");
-                reward.Add(RoundOverMeta.Coin());
-                var count = Text("menu__reward-count");
-                count.text = ViewModel.MissionCoins(definition).ToString();
-                reward.Add(count);
-                row.Add(reward);
                 missionsList.Add(row);
             }
         }
@@ -988,13 +986,15 @@ namespace ToyCarArena.UI
                 : StyleKeyword.Null;
 
             var topHeight = 130f * scale;
+            var railScale = isTouch ? scale : DesktopRailScale;
+            var railGrown = new Scale(new Vector3(railScale, railScale, 1f));
             rail.style.left = left;
             rail.style.top = topEdge + topHeight + 50f * scale;
-            rail.style.scale = grown;
+            rail.style.scale = railGrown;
             rightRail.style.left = StyleKeyword.Auto;
             rightRail.style.right = right;
             rightRail.style.top = rail.style.top;
-            rightRail.style.scale = grown;
+            rightRail.style.scale = railGrown;
 
             var low = 50f + insets.Bottom;
             bottom.style.bottom = low;
@@ -1685,21 +1685,6 @@ namespace ToyCarArena.UI
 
             p.ClosePath();
             p.Fill();
-            p.Stroke();
-        }
-
-        private static void DrawChevron(MeshGenerationContext context)
-        {
-            var r = context.visualElement.contentRect;
-            var p = context.painter2D;
-            p.strokeColor = Navy;
-            p.lineWidth = r.width * 0.3f;
-            p.lineCap = LineCap.Round;
-            p.lineJoin = LineJoin.Round;
-            p.BeginPath();
-            p.MoveTo(new Vector2(r.x + r.width * 0.2f, r.y + r.height * 0.15f));
-            p.LineTo(new Vector2(r.x + r.width * 0.75f, r.y + r.height * 0.5f));
-            p.LineTo(new Vector2(r.x + r.width * 0.2f, r.y + r.height * 0.85f));
             p.Stroke();
         }
     }
