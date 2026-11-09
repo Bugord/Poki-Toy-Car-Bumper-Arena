@@ -50,14 +50,26 @@
     border-width: 8px;
     border-color: var(--navy);
     border-radius: 40px;
-    background-color: var(--white);
+    background-color: var(--navy);
     align-items: center;
     justify-content: center;
     transition-property: translate;
     transition-duration: 0.08s;
 }
 
-.menu__sticker:hover > .menu__face { background-color: var(--soft); }
+/* The face's colour, inside its border (MenuView.Face): a face filled itself shows its colour through the soft outer
+   edge of its border, a light seam over the drop. Its radius is the face's less the border. */
+.menu__fill {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 32px;
+    background-color: var(--white);
+}
+
+.menu__sticker:hover > .menu__face > .menu__fill { background-color: var(--soft); }
 .menu__sticker:active > .menu__face { translate: 0 10px; }
 
 /* -- Top bar ------------------------------------------------------------------------------------------------------- */
@@ -128,8 +140,20 @@
 .menu__xp-track {
     border-width: 7px;
     border-color: var(--navy);
-    background-color: var(--soft);
+    background-color: var(--navy);
     overflow: hidden;
+}
+
+/* The track's colour inside its border, as a sticker's fill (MenuView.Face). */
+.menu__xp-back {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border-top-right-radius: 29px;
+    border-bottom-right-radius: 29px;
+    background-color: var(--soft);
 }
 
 .menu__xp-fill {
@@ -239,6 +263,17 @@
     padding: 0 30px 0 14px;
     border-width: 7px;
     border-color: var(--navy);
+    background-color: var(--navy);
+}
+
+/* The pill's colour inside its border, as a sticker's fill (MenuView.Face). */
+.menu__coins-fill {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 29px;
     background-color: var(--white);
 }
 
@@ -256,7 +291,8 @@
 }
 
 .menu__gear > .menu__drop,
-.menu__gear > .menu__face { border-radius: 999px; }
+.menu__gear > .menu__face,
+.menu__gear .menu__fill { border-radius: 999px; }
 
 /* -- Rail ---------------------------------------------------------------------------------------------------------- */
 
@@ -348,8 +384,8 @@
 .menu__rail--right { transform-origin: right top; }
 
 /* Offered: a pale blue face, the blue star and a gold AD tag in the corner. */
-.menu__tile--boost .menu__face { background-color: #d6e7ff; }
-.menu__tile--boost .menu__sticker:hover > .menu__face { background-color: #e6f0ff; }
+.menu__tile--boost .menu__fill { background-color: #d6e7ff; }
+.menu__tile--boost .menu__sticker:hover > .menu__face > .menu__fill { background-color: #e6f0ff; }
 
 .menu__ad {
     position: absolute;
@@ -395,8 +431,8 @@
     display: none;
 }
 
-.menu__tile--boost-on .menu__face,
-.menu__tile--boost-on .menu__sticker:hover > .menu__face { background-color: var(--xp); }
+.menu__tile--boost-on .menu__fill,
+.menu__tile--boost-on .menu__sticker:hover > .menu__face > .menu__fill { background-color: var(--xp); }
 .menu__tile--boost-on .menu__icon,
 .menu__tile--boost-on .menu__ad,
 .menu__tile--boost-on .menu__key { display: none; }
@@ -643,7 +679,8 @@
 }
 
 .menu__car-pill > .menu__drop,
-.menu__car-pill > .menu__face { border-radius: 999px; }
+.menu__car-pill > .menu__face,
+.menu__car-pill .menu__fill { border-radius: 999px; }
 
 /* The face lies in the flow here, so the pill is as wide as the name. */
 .menu__car-pill > .menu__face {
@@ -762,6 +799,13 @@
     -unity-text-auto-size: best-fit 26px 46px;
 }
 
+/* The plate opens the modes: its chevron says so. */
+.menu__chevron {
+    flex-shrink: 0;
+    width: 40px;
+    height: 56px;
+}
+
 .menu__play {
     flex-grow: 1;
     min-width: 0;
@@ -780,6 +824,17 @@
 }
 
 .menu--desktop .menu__play-key { display: flex; }
+
+/* The mode's key as PLAY's beside it: the rails' smaller keys are drawn for their larger scale. */
+.menu__mode-key {
+    position: absolute;
+    top: -30px;
+    left: -18px;
+    margin: 0;
+    display: none;
+}
+
+.menu--desktop .menu__mode-key { display: flex; }
 
 /* Wide: one row at the bottom, the mission at the left and the mode and PLAY at the right. */
 .menu--wide .menu__bottom {
@@ -846,7 +901,8 @@
 }
 
 .menu__close > .menu__drop,
-.menu__close > .menu__face { border-radius: 999px; }
+.menu__close > .menu__face,
+.menu__close .menu__fill { border-radius: 999px; }
 
 .menu__close-bar {
     position: absolute;
@@ -869,7 +925,8 @@
     background-color: var(--soft);
 }
 
-.menu__mission-row:last-child { margin-bottom: 0; }
+/* USS has no :last-child: the view marks the last row. */
+.menu__mission-row--last { margin-bottom: 0; }
 
 .menu__mission-row-body {
     flex-grow: 1;
@@ -913,7 +970,8 @@
     background-color: var(--white);
 }
 
-.menu__mode-card--locked { opacity: 0.85; }
+/* A mode not out yet: greyed, its sign too, and nothing on hover; only its SOON plate keeps its colour. */
+.menu__mode-card--soon { background-color: var(--track); }
 
 .menu__mode-text {
     flex-grow: 1;
@@ -927,7 +985,7 @@
     color: var(--navy);
 }
 
-.menu__mode-card--locked .menu__mode-card-name { font-size: 44px; color: var(--muted); }
+.menu__mode-card--soon .menu__mode-card-name { font-size: 48px; color: var(--muted); }
 
 .menu__mode-hint {
     margin: 4px 0 0 0;
@@ -943,11 +1001,11 @@
     height: 180px;
 }
 
-.menu__mode-lock {
+.menu__mode-sign {
     flex-shrink: 0;
-    width: 64px;
-    height: 64px;
-    margin-right: 22px;
+    width: 96px;
+    height: 96px;
+    margin-right: 26px;
 }
 
 .menu__tag {
@@ -968,6 +1026,17 @@
     right: 30px;
     margin: 0;
     background-color: var(--green);
+    color: var(--navy);
+}
+
+/* SOON on the card's top edge, tilted like NEW and the AD tag. */
+.menu__tag--soon {
+    position: absolute;
+    top: -24px;
+    right: 30px;
+    margin: 0;
+    rotate: 5deg;
+    background-color: var(--gold);
     color: var(--navy);
 }
 
@@ -1680,12 +1749,8 @@
 .menu__daily-day--big .menu__daily-amount { color: var(--white); }
 .menu__daily-day--big .menu__daily-amount { font-size: 34px; }
 
-/* Coins stacked overlapping: one on the first days, two in the middle, three at the end. */
-.menu__daily-stack { flex-direction: row; align-items: flex-end; }
-.menu__daily-coin { width: 70px; height: 70px; }
-.menu__daily-coin .coin__inner { width: 28px; height: 28px; }
-.menu__daily-coin--1 { margin-left: -30px; margin-bottom: 14px; }
-.menu__daily-coin--2 { margin-left: -30px; }
+/* A pile of coins growing day by day (MenuDaily.CoinPile, painter2D), stood on the bottom of the art. */
+.menu__daily-pile { width: 160px; height: 120px; flex-shrink: 1; }
 
 .menu__daily-gift { width: 110px; height: 110px; }
 .menu__daily-hat { width: 170px; height: 110px; }
@@ -1714,6 +1779,8 @@
 .menu__daily-day--done .menu__daily-art,
 .menu__daily-day--done .menu__daily-amount { opacity: 0.55; }
 .menu__daily-day--done .menu__daily-tick { display: flex; }
+/* The pile draws itself pale: under opacity its overlapping coins would show each other's outlines. */
+.menu__daily-day--done .menu__daily-art--pile { opacity: 1; }
 
 /* Today: cream, ringed in gold and lifted. */
 .menu__daily-day--today {
@@ -1725,7 +1792,8 @@
     scale: 1.06 1.06;
 }
 
-.menu__daily-day--today .menu__daily-caption { color: var(--navy); }
+.menu__daily-day--today .menu__daily-caption,
+.menu__daily-day--today .menu__daily-amount { color: var(--navy); }
 
 /* The hat just given: a pale face, the hat and its name at full strength. */
 .menu__daily-day--hat.menu__daily-day--big { background-color: #efe6ff; }
@@ -1743,8 +1811,9 @@
     -unity-text-align: middle-center;
 }
 
-/* CLAIM ×2 (purple, a gold AD tag at the top left) and CLAIM side by side; CLAIM alone fills the row. */
-.menu__daily-buttons { flex-direction: row; }
+/* CLAIM ×2 (purple, a gold AD tag at the top left) and CLAIM side by side; CLAIM alone fills the row. Well clear of
+   the calendar: the AD tag and the key caps on their top edges stand 26px over the buttons. */
+.menu__daily-buttons { flex-direction: row; margin-top: 58px; }
 
 .menu__daily-double,
 .menu__daily-claim {

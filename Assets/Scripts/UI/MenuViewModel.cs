@@ -274,7 +274,7 @@ namespace ToyCarArena.UI
 
         /// <summary>The menu's own popups opened: <c>menu / missions, mode, leagues, boost / interact</c>.</summary>
         public void MissionsOpened() => platform.MeasureMenuPressed("missions");
-        /// <remarks>Not sent since feature/ux-fixes: MODE is a plate while there is one mode; kept for CUP and SURVIVAL.</remarks>
+        /// <remarks>Not sent in v0.17.1, where MODE was a plate; after it MODE opens the modes again, CUP and SURVIVAL as SOON.</remarks>
         public void ModesOpened() => platform.MeasureMenuPressed("mode");
         public void LeaguesOpened() => platform.MeasureMenuPressed("leagues");
 
