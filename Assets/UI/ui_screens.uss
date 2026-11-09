@@ -16,8 +16,8 @@
      button__face, the coloured face over the darker band along its bottom; button__label is its text over the face.
    - key: a keyboard key cap (the SPACE hint).
    - pip: a little car seen from above, wheels and all (the PUSHED OFF BY badge); its pip__body takes the colour.
-   - ko-star: the knock-out star, eight gold points in a navy outline (two squares, one turned, over two bigger navy
-     ones); ko-star--big is the one on the KNOCKOUT! sticker.
+   - ko-star: the knock-out mark, a jagged gold burst in a navy outline drawn in code (HudView.DrawBurst);
+     ko-star--big is the one on the KNOCKOUT! sticker.
    - best: a small chip with the player's best (BEST #2); best--new is the gold NEW BEST! sticker.
    - car-color--N: the body colour of car N of the round (0 the player, 1..N the bots), as CarLook paints it.
 
@@ -246,58 +246,17 @@
     -unity-text-align: middle-center;
 }
 
+/* The knock-out burst (HudView.DrawBurst): its fill is this colour, its outline navy. */
 .ko-star {
     flex-shrink: 0;
     width: 56px;
     height: 56px;
-}
-
-.ko-star__back,
-.ko-star__front {
-    position: absolute;
-}
-
-.ko-star__back {
-    left: 8px;
-    top: 8px;
-    width: 40px;
-    height: 40px;
-    border-radius: 6px;
-    background-color: var(--navy);
-}
-
-.ko-star__front {
-    left: 15px;
-    top: 15px;
-    width: 26px;
-    height: 26px;
-    border-radius: 4px;
-    background-color: var(--gold);
-}
-
-.ko-star__turned {
-    rotate: 45deg;
+    color: var(--gold);
 }
 
 .ko-star--big {
     width: 124px;
     height: 124px;
-}
-
-.ko-star--big > .ko-star__back {
-    left: 18px;
-    top: 18px;
-    width: 88px;
-    height: 88px;
-    border-radius: 12px;
-}
-
-.ko-star--big > .ko-star__front {
-    left: 33px;
-    top: 33px;
-    width: 58px;
-    height: 58px;
-    border-radius: 8px;
 }
 
 /* Hidden until the view gives it best--shown. NEW BEST! springs in after the card (round-over--enter). */
@@ -405,12 +364,56 @@
     padding: 0 12px;
 }
 .lobby__arena .lobby__badge .sticker-text__text { font-size: 30px; }
-/* A special round's tag (MEGA ROUND!), tilted orange, as wide as its name. */
-.lobby__arena .lobby__badge--special {
-    padding: 0 18px;
+/* A special round's card under the arena pill: its name on a tilted orange tag over the card's top edge, the rule big
+   on the white card. */
+.lobby__special {
+    align-items: center;
+    width: 920px;
+    max-width: 100%;
+    margin: 20px 0 34px 0;
+    padding: 0 36px 26px 36px;
+    border-width: 6px;
+    border-bottom-width: 12px;
+    border-color: var(--navy);
+    border-radius: 44px;
+    background-color: var(--white);
+}
+
+.lobby__special .lobby__badge--special {
+    width: auto;
+    height: 76px;
+    margin: -40px 0 14px 0;
+    padding: 0 30px;
     background-color: var(--orange);
     rotate: -3deg;
 }
+
+.lobby__special .lobby__badge--special .sticker-text__text {
+    font-size: 42px;
+    color: var(--white);
+    -unity-text-outline-width: 5px;
+    -unity-text-outline-color: var(--navy);
+}
+
+.lobby__special-rule {
+    margin: 0;
+    padding: 0;
+    font-size: 46px;
+    color: var(--navy);
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+/* The REVENGE rival's row: tinted red, with a red plaque at its end. */
+.lobby__row.lobby__row--rival { background-color: rgba(255, 77, 77, 0.28); }
+
+.lobby__row .lobby__badge--revenge {
+    width: auto;
+    padding: 0 22px;
+    background-color: var(--red);
+}
+
+.lobby__row .lobby__badge--revenge .sticker-text__text { color: var(--white); }
 
 .lobby__rows {
     width: 920px;
@@ -703,23 +706,11 @@
 
 .hud__chip--player > .hud__chip-ring { display: flex; }
 
+/* The car from the side, drawn in code (CarColor.DrawCar); a little low so the wheels sit on the chip's middle. */
 .hud__chip-car {
-    width: 24px;
+    width: 50px;
     height: 36px;
-    border-width: 5px;
-    border-color: var(--navy);
-    border-radius: 8px;
-    background-color: var(--white);
-}
-
-.hud__chip-glass {
-    position: absolute;
-    left: 2px;
-    right: 2px;
-    top: 4px;
-    height: 7px;
-    border-radius: 2px;
-    background-color: var(--navy);
+    margin-top: 4px;
 }
 
 .hud__cars-count {
@@ -874,8 +865,8 @@
     color: var(--red);
 }
 
-.ko-pop--revenge .ko-star__front {
-    background-color: var(--orange);
+.ko-pop--revenge .ko-star {
+    color: var(--orange);
 }
 
 /* The player's knock-outs in a row: DOUBLE! in orange and bigger, TRIPLE! and RAMPAGE! bigger still, in pink. */
@@ -928,6 +919,22 @@
     align-items: center;
     padding-left: 8px;
 }
+
+/* The tail under a handle, pointing at its car; hangs below the sticker so the tag's bottom is its tip. */
+.car-name__tail {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    width: 28px;
+    height: 16px;
+    margin-left: -14px;
+    color: var(--name-backdrop);
+}
+
+.car-name { padding-bottom: 16px; }
+
+/* Before GO! the handles are faint, under the countdown. */
+.car-names--waiting .car-name__sticker { opacity: 0.45; }
 
 .car-name__level {
     min-width: 46px;
@@ -2392,6 +2399,23 @@
     -unity-text-align: middle-center;
 }
 
+/* LV N beside a nick: the prefix small and a little faded, on the number's baseline. */
+.level-badge--labelled {
+    flex-direction: row;
+    align-items: flex-end;
+    padding-bottom: 2px;
+}
+
+.level-badge__prefix {
+    margin: 0 3px 3px 0;
+    padding: 0;
+    font-size: 19px;
+    opacity: 0.7;
+    -unity-text-align: lower-left;
+}
+
+.level-badge--labelled .level-badge__value { -unity-text-align: lower-left; }
+
 .level-badge--big .level-badge__value {
     font-size: 70px;
 }
@@ -3810,6 +3834,15 @@
     margin-left: 20px;
     margin-right: 14px;
 }
+/* Wings, plates and rival horns reach past the badge box: keep them off the chip and the nick. */
+.lobby__level.level-badge--bronze,
+.lobby__level.level-badge--silver,
+.lobby__level.level-badge--gold,
+.lobby__level.level-badge--legend,
+.lobby__level.level-badge--rival {
+    margin-left: 34px;
+    margin-right: 30px;
+}
 .lobby__row .hud__chip-ring {
     width: 66px;
     height: 66px;
@@ -3938,8 +3971,6 @@
     height: 40px;
 }
 
-.scoreboard__star > .ko-star__back { left: 6px; top: 6px; width: 28px; height: 28px; border-radius: 4px; }
-.scoreboard__star > .ko-star__front { left: 11px; top: 11px; width: 18px; height: 18px; border-radius: 3px; }
 
 .scoreboard--wide .scoreboard__header {
     height: 60px;
@@ -3947,8 +3978,6 @@
 }
 
 .scoreboard--wide .scoreboard__star { width: 56px; height: 56px; }
-.scoreboard--wide .scoreboard__star > .ko-star__back { left: 8px; top: 8px; width: 40px; height: 40px; border-radius: 6px; }
-.scoreboard--wide .scoreboard__star > .ko-star__front { left: 15px; top: 15px; width: 26px; height: 26px; border-radius: 4px; }
 
 .scoreboard__rows {
     height: 0;

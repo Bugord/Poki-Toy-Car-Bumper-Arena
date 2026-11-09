@@ -43,13 +43,61 @@ namespace ToyCarArena.UI
             var ring = new VisualElement { pickingMode = PickingMode.Ignore };
             ring.AddToClassList("hud__chip-ring");
             chip.Add(ring);
+            // A toy car from the side: the top-down box it was read as a phone or a domino.
             var car = new VisualElement { pickingMode = PickingMode.Ignore };
             car.AddToClassList("hud__chip-car");
-            var glass = new VisualElement { pickingMode = PickingMode.Ignore };
-            glass.AddToClassList("hud__chip-glass");
-            car.Add(glass);
+            car.generateVisualContent += DrawCar;
             chip.Add(car);
             return chip;
+        }
+
+        // White body and cabin with a navy rim, a navy window and two navy wheels with white hubs; facing right.
+        private static void DrawCar(MeshGenerationContext context)
+        {
+            var r = context.visualElement.contentRect;
+            if (r.width <= 0f || r.height <= 0f) {
+                return;
+            }
+
+            Vector2 At(float x, float y) => new(r.x + x * r.width, r.y + y * r.height);
+            var p = context.painter2D;
+            var navy = Silhouette;
+            p.lineJoin = LineJoin.Round;
+            p.lineWidth = r.width * 0.09f;
+            p.strokeColor = navy;
+            p.fillColor = Color.white;
+            p.BeginPath();
+            p.MoveTo(At(0.06f, 0.76f));
+            p.LineTo(At(0.06f, 0.5f));
+            p.LineTo(At(0.24f, 0.44f));
+            p.LineTo(At(0.34f, 0.14f));
+            p.LineTo(At(0.68f, 0.14f));
+            p.LineTo(At(0.8f, 0.44f));
+            p.LineTo(At(0.94f, 0.5f));
+            p.LineTo(At(0.94f, 0.76f));
+            p.ClosePath();
+            p.Fill();
+            p.Stroke();
+
+            p.fillColor = navy;
+            p.BeginPath();
+            p.MoveTo(At(0.4f, 0.27f));
+            p.LineTo(At(0.62f, 0.27f));
+            p.LineTo(At(0.68f, 0.44f));
+            p.LineTo(At(0.34f, 0.44f));
+            p.ClosePath();
+            p.Fill();
+
+            foreach (var x in new[] { 0.28f, 0.72f }) {
+                p.fillColor = navy;
+                p.BeginPath();
+                p.Arc(At(x, 0.78f), r.width * 0.15f, 0f, 360f);
+                p.Fill();
+                p.fillColor = Color.white;
+                p.BeginPath();
+                p.Arc(At(x, 0.78f), r.width * 0.055f, 0f, 360f);
+                p.Fill();
+            }
         }
 
         public static void MarkPlayer(VisualElement chip, bool isPlayer) =>

@@ -213,7 +213,7 @@ namespace ToyCarArena.UI
             // The rival's badge horned, as over the REVENGE bot on the arena, which this car is next round.
             var isMarked = isRival || (index != 0 && index == model.Nemesis);
             name.parent.Insert(name.parent.IndexOf(name),
-                HudView.CreateLevelBadge(model.LevelOf(index), "podium__level", isMarked));
+                HudView.CreateLevelBadge(model.LevelOf(index), "podium__level", isMarked, true));
 
             name.EnableInClassList("podium__name--revenge", isMarked);
             text.Set(name, () => model.NameOf(index));
@@ -282,7 +282,8 @@ namespace ToyCarArena.UI
             rank.Add(place);
             row.Add(rank);
 
-            row.Add(HudView.CreateLevelBadge(model.LevelOf(index), "results__level", index != 0 && index == model.Nemesis));
+            row.Add(HudView.CreateLevelBadge(model.LevelOf(index), "results__level",
+                index != 0 && index == model.Nemesis, true));
 
             var name = new Label { pickingMode = PickingMode.Ignore };
             name.AddToClassList("results__name");
