@@ -37,7 +37,7 @@ namespace ToyCarArena.Gameplay.Round
 
         /// <summary>
         /// Read on first use rather than when the scope is built, as the other saved progress is, and kept for the
-        /// visit. A player with progress from before the count has played an unknown number of rounds and is taken
+        /// visit. A player with experience (every finished round gives some) from before the count has played an unknown number of rounds and is taken
         /// to be past every ramp.
         /// </summary>
         public int RoundsBefore
@@ -47,7 +47,7 @@ namespace ToyCarArena.Gameplay.Round
                 if (roundsBefore < 0) {
                     roundsBefore = storage == null ? 0 :
                         storage.HasKey(RoundsKey) ? Math.Max(0, storage.GetInt(RoundsKey)) :
-                        storage.HasKey(XpKey) ? PastTheRamps() : 0;
+                        storage.GetInt(XpKey) > 0 ? PastTheRamps() : 0;
                 }
 
                 return roundsBefore;

@@ -119,6 +119,10 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(progress.RoundsBefore, Is.GreaterThanOrEqualTo(tuning.Bots.EdgeAssistRounds));
             Assert.That(progress.RoundsBefore, Is.GreaterThanOrEqualTo(tuning.Controls.GhostStickRounds));
             Assert.That(new SessionProgress().RoundsBefore, Is.EqualTo(0), "nothing saved, a new player");
+
+            var fresh = new RoundOverScreenshots.MemoryStorage();
+            fresh.SetInt("xp_total", 0);
+            Assert.That(new SessionProgress(fresh, tuning).RoundsBefore, Is.EqualTo(0), "no experience, a new player");
         }
 
         [Test]
