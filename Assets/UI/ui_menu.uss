@@ -1090,7 +1090,7 @@
     -unity-text-outline-color: var(--navy);
 }
 
-/* The card's drops keep their outline: a solid navy step under the letters, as drawn for this card. */
+/* The card's drops: a solid navy step under the letters, as drawn for this card. */
 .stroke > Label.menu__event-tag-label-text.stroke__drop {
     translate: 0 5px;
     visibility: visible;
