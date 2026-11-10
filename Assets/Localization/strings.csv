@@ -93,6 +93,7 @@ car.stat_power,"Car stat label: how hard its hits push",POWER,PUISSANCE,POTENZA,
 car.stat_weight,"Car stat label: how heavy it is, so how hard it is to push off",WEIGHT,POIDS,PESO,GEWICHT,PESO,AĞIRLIK,PESO,ВЕС
 car.stat_boost,"Car stat label: how often it can boost (the BOOST button)",BOOST,TURBO,TURBO,BOOST,TURBO,TURBO,TURBO,РЫВОК
 garage.unlock_at,Locked car tooltip,UNLOCK AT LVL {0},DÉBLOQUÉE AU NIV. {0},SBLOCCO AL LIV. {0},AB LVL {0},SE DESBLOQUEA EN NIV. {0},{0}. SEVİYEDE AÇILIR,LIBERA NO NÍV. {0},ОТКРОЕТСЯ НА УР. {0}
+garage.reach,"Locked league reward: the league that gives it, {0} the league name (BRONZE, SILVER, GOLD, LEGEND); on the garage button and tooltip",REACH {0},ATTEINS {0},RAGGIUNGI {0},ERREICHE {0},ALCANZA {0},{0} LİGİNE ULAŞ,ALCANCE {0},ДОСТИГНИ: {0}
 garage.need_more,Over a too dear card: how many coins are missing; max ~16 chars,NEED {0} MORE,ENCORE {0},NE MANCANO {0},NOCH {0},FALTAN {0},{0} DAHA LAZIM,FALTAM {0},НУЖНО ЕЩЁ {0}
 settings.title,Settings popup title,SETTINGS,RÉGLAGES,IMPOSTAZIONI,EINSTELLUNGEN,AJUSTES,AYARLAR,CONFIGURAÇÕES,НАСТРОЙКИ
 settings.music,Music toggle caption,MUSIC,MUSIQUE,MUSICA,MUSIK,MÚSICA,MÜZİK,MÚSICA,МУЗЫКА
@@ -106,6 +107,10 @@ car.drag-racer.name,Car name,DRAGSTER,DRAGSTER,DRAGSTER,DRAGSTER,DRAGSTER,DRAGST
 car.truck.name,Car name,TRUCK,CAMION,CAMION,LASTER,CAMIÓN,KAMYON,CAMINHÃO,ГРУЗОВИК
 car.monster-truck.name,Car name,MONSTER,MONSTER,MONSTER,MONSTER,MONSTRUO,CANAVAR,MONSTRO,МОНСТР
 car.buggy.name,Car name,BUGGY,BUGGY,BUGGY,BUGGY,BUGGY,BUGGY,BUGGY,БАГГИ
+car.hot-rod.name,Car name,HOT ROD,HOT ROD,HOT ROD,HOT ROD,HOT ROD,HOT ROD,HOT ROD,ХОТ-РОД
+car.police.name,Car name,POLICE,POLICE,POLIZIA,POLIZEI,POLICÍA,POLİS,POLÍCIA,ПОЛИЦИЯ
+car.dozer.name,Car name,DOZER,BULLDOZER,RUSPA,BULLDOZER,BULDÓCER,DOZER,TRATOR,БУЛЬДОЗЕР
+car.comet.name,Car name,COMET,COMÈTE,COMETA,KOMET,COMETA,KOMET,COMETA,КОМЕТА
 arena.sandbox.name,Arena name,SANDBOX,BAC À SABLE,SABBIERA,SANDKASTEN,ARENERO,KUM HAVUZU,CAIXA DE AREIA,ПЕСОЧНИЦА
 arena.tabletop.name,Arena name,TABLETOP,TABLE,TAVOLO,TISCH,MESA,MASA,MESA,СТОЛ
 arena.candy.name,Arena name,CANDY,BONBONS,CARAMELLE,SÜSSES,DULCES,ŞEKER,DOCES,КОНФЕТЫ
@@ -198,8 +203,9 @@ result.doubled,Shown where the double button was once the ad paid,DOUBLED!,DOUBL
 result.boost_stamp,"Tag on the XP sticker of a round the XP boost paid for, {0} its multiplier (e.g. ×2 BOOST); short",×{0} BOOST,×{0} BOOST,×{0} BOOST,×{0} BOOST,×{0} BOOST,×{0} BOOST,×{0} BOOST,×{0} БУСТ
 special.mega.name,Special round name: every car is giant (lobby tag and over the countdown),MEGA ROUND!,MANCHE MÉGA !,ROUND MEGA!,MEGA-RUNDE!,¡RONDA MEGA!,MEGA TUR!,RODADA MEGA!,МЕГА-РАУНД!
 special.mega.hint,Special round rule in one line,EVERYONE IS HUGE!,TOUT LE MONDE EST ÉNORME !,SIETE TUTTI GIGANTI!,ALLE SIND RIESIG!,¡TODOS SON GIGANTES!,HERKES DEV GİBİ!,TODO MUNDO ESTÁ GIGANTE!,ВСЕ ОГРОМНЫЕ!
-special.hot-potato.name,Special round name: a bomb passes between cars on a bump,HOT POTATO!,PATATE CHAUDE !,PATATA BOLLENTE!,HEISSE KARTOFFEL!,¡PAPA CALIENTE!,SICAK PATATES!,BATATA QUENTE!,ГОРЯЧАЯ БОМБА!
-special.hot-potato.hint,Special round rule in one line,BUMP A CAR TO PASS THE BOMB!,TAMPONNE POUR REFILER LA BOMBE !,URTA UN'AUTO PER PASSARE LA BOMBA!,RAMM EIN AUTO UND GIB DIE BOMBE WEITER!,¡CHOCA PARA PASAR LA BOMBA!,BOMBAYI VERMEK İÇİN ÇARP!,BATA EM UM CARRO PARA PASSAR A BOMBA!,ТОЛКНИ МАШИНУ И ОТДАЙ БОМБУ!
+special.hot-potato.name,Special round name: a bomb passes between cars on a bump,HOT POTATO!,PATATE CHAUDE !,PATATA BOLLENTE!,HEISSE KARTOFFEL!,¡PAPA CALIENTE!,SICAK PATATES!,BATATA QUENTE!,ГОРЯЧАЯ КАРТОШКА!
+special.hot-potato.hint,Special round rule in one line,BUMP A CAR TO PASS THE BOMB!,TAMPONNE UNE VOITURE POUR REFILER LA BOMBE !,URTA UN'AUTO PER PASSARE LA BOMBA!,RAMM EIN AUTO UND GIB DIE BOMBE WEITER!,¡CHOCA CON UN COCHE PARA PASAR LA BOMBA!,BOMBAYI VERMEK İÇİN BİR ARABAYA ÇARP!,BATA EM UM CARRO PARA PASSAR A BOMBA!,"ВРЕЖЬСЯ В МАШИНКУ, ЧТОБЫ ОТДАТЬ БОМБУ!"
+hud.pass_it,Hot potato mode: the player holds the bomb and must bump someone,PASS IT ON!,REFILE-LA !,PASSALA!,GIB SIE WEITER!,¡PÁSALA!,PASLA!,PASSA PRA FRENTE!,ОТДАЙ БОМБУ!
 special.boss.name,Special round name: one giant bot in a crown,BOSS ROUND!,MANCHE DU BOSS !,ROUND DEL BOSS!,BOSS-RUNDE!,¡RONDA DEL JEFE!,BOSS TURU!,RODADA DO CHEFÃO!,БОСС-РАУНД!
 special.boss.hint,Special round rule in one line,KNOCK OFF THE BOSS: ×3 REWARD!,ÉJECTE LE BOSS : RÉCOMPENSE ×3 !,BUTTA GIÙ IL BOSS: PREMIO ×3!,WIRF DEN BOSS RAUS: ×3 BELOHNUNG!,¡TIRA AL JEFE: PREMIO ×3!,BOSS'U DÜŞÜR: ×3 ÖDÜL!,DERRUBE O CHEFÃO: PRÊMIO ×3!,СТОЛКНИ БОССА: НАГРАДА ×3!
 special.ice.name,Special round name: the floor is ice,ICE ROUND!,MANCHE SUR GLACE !,ROUND DI GHIACCIO!,EIS-RUNDE!,¡RONDA DE HIELO!,BUZ TURU!,RODADA NO GELO!,ЛЕДЯНОЙ РАУНД!
@@ -213,9 +219,12 @@ menu.choose_mode,Title of the popup that lists the game modes,CHOOSE MODE,CHOISI
 menu.selected,Tag on the game mode in play,SELECTED,CHOISI,SCELTA,GEWÄHLT,ELEGIDO,SEÇİLİ,ESCOLHIDO,ВЫБРАН
 menu.soon,Tag on a game mode that is not out yet; max ~6 chars,SOON,BIENTÔT,PRESTO,BALD,PRONTO,YAKINDA,EM BREVE,СКОРО
 menu.quick_match,Game mode: one round against bots,QUICK MATCH,MATCH RAPIDE,PARTITA RAPIDA,SCHNELLES SPIEL,PARTIDA RÁPIDA,HIZLI MAÇ,PARTIDA RÁPIDA,БЫСТРЫЙ МАТЧ
-menu.quick_match_hint,What the quick match is,PUSH EVERYONE OFF. THE LAST CAR WINS!,POUSSE-LES TOUS. LA DERNIÈRE VOITURE GAGNE !,BUTTALI TUTTI GIÙ. VINCE L'ULTIMA AUTO!,SCHIEB ALLE RUNTER. DAS LETZTE AUTO GEWINNT!,¡ÉCHALOS A TODOS! GANA EL ÚLTIMO COCHE.,HERKESİ DÜŞÜR. SON KALAN KAZANIR!,DERRUBE TODOS. O ÚLTIMO CARRO VENCE!,СТОЛКНИ ВСЕХ. ПОБЕЖДАЕТ ПОСЛЕДНИЙ!
+menu.quick_match_hint,What the quick match is,PUSH EVERYONE OFF. THE LAST CAR WINS!,POUSSE-LES TOUS DEHORS. LA DERNIÈRE VOITURE GAGNE !,BUTTALI TUTTI GIÙ. VINCE L'ULTIMA AUTO!,SCHIEB ALLE RUNTER. DAS LETZTE AUTO GEWINNT!,¡ÉCHALOS A TODOS! GANA EL ÚLTIMO COCHE.,HERKESİ DÜŞÜR. SON KALAN KAZANIR!,DERRUBE TODOS. O ÚLTIMO CARRO VENCE!,СТОЛКНИ ВСЕХ С АРЕНЫ. ПОСЛЕДНИЙ ПОБЕЖДАЕТ!
+menu.event,Tag on a limited game mode card; max ~7 chars,EVENT,ÉVÉNEMENT,EVENTO,EVENT,EVENTO,ETKİNLİK,EVENTO,СОБЫТИЕ
+menu.hot_potato,Event game mode: a bomb passes between cars on a bump,HOT POTATO,PATATE CHAUDE,PATATA BOLLENTE,HEISSE KARTOFFEL,PAPA CALIENTE,SICAK PATATES,BATATA QUENTE,ГОРЯЧАЯ КАРТОШКА
+menu.hot_potato_hint,What the hot potato mode is,BUMP TO PASS THE BOMB. DON'T GET CAUGHT HOLDING IT!,TAMPONNE POUR REFILER LA BOMBE. NE LA GARDE PAS QUAND ELLE SAUTE !,URTA PER PASSARE LA BOMBA. NON TENERLA QUANDO ESPLODE!,"RAMMEN GIBT DIE BOMBE WEITER. WER SIE ZULETZT HAT, FLIEGT RAUS!",CHOCA PARA PASAR LA BOMBA. ¡QUE NO TE EXPLOTE ENCIMA!,"ÇARP, BOMBAYI BAŞKASINA VER. PATLARKEN SENDE OLMASIN!",BATA PARA PASSAR A BOMBA. NÃO DEIXE ELA EXPLODIR COM VOCÊ!,ВРЕЖЬСЯ — И БОМБА У ДРУГОГО. НЕ ДЕРЖИ ЕЁ ДО ВЗРЫВА!
 menu.cup,"Game mode coming later: a cup of several rounds",CUP,COUPE,COPPA,POKAL,COPA,KUPA,COPA,КУБОК
-menu.cup_hint,What the cup mode will be,THREE ROUNDS FOR ONE CUP,TROIS MANCHES POUR UNE COUPE,TRE ROUND PER UNA COPPA,DREI RUNDEN FÜR EINEN POKAL,TRES RONDAS POR UNA COPA,BİR KUPA İÇİN ÜÇ TUR,TRÊS RODADAS POR UMA COPA,ТРИ РАУНДА ЗА КУБОК
+menu.cup_hint,What the cup mode will be,"THREE ROUNDS, ONE CUP","TROIS MANCHES, UNE COUPE","TRE ROUND, UNA COPPA","DREI RUNDEN, EIN POKAL","TRES RONDAS, UNA COPA","ÜÇ TUR, BİR KUPA","TRÊS RODADAS, UMA COPA",ТРИ РАУНДА — ОДИН КУБОК
 menu.survival,Game mode coming later: waves of bots,SURVIVAL,SURVIE,SOPRAVVIVENZA,ÜBERLEBEN,SUPERVIVENCIA,HAYATTA KAL,SOBREVIVÊNCIA,ВЫЖИВАНИЕ
 menu.survival_hint,What the survival mode will be,WAVES OF BOTS. HOW LONG CAN YOU LAST?,DES VAGUES DE BOTS. TU TIENS COMBIEN ?,ONDATE DI BOT. QUANTO RESISTI?,BOT-WELLEN. WIE LANGE HÄLTST DU DURCH?,OLEADAS DE BOTS. ¿CUÁNTO AGUANTAS?,BOT DALGALARI. NE KADAR DAYANIRSIN?,ONDAS DE BOTS. QUANTO VOCÊ AGUENTA?,ВОЛНЫ БОТОВ. СКОЛЬКО ПРОДЕРЖИШЬСЯ?
 result.home,"Round button on the result that goes back to the main menu; max ~6 chars",HOME,MENU,MENU,MENÜ,MENÚ,MENÜ,MENU,МЕНЮ
@@ -253,3 +262,7 @@ daily.ready,"Small green pill on the DAILY tile while the gift waits; max ~6 cha
 daily.time_hm,"Small pill on the DAILY tile: time to the next gift, {0} hours and {1} minutes; max ~7 chars",{0}H {1}M,{0}H {1}M,{0}H {1}M,{0}H {1}M,{0}H {1}M,{0}S {1}D,{0}H {1}M,{0}Ч {1}М
 daily.time_m,"Small pill on the DAILY tile: time to the next gift under an hour, {0} minutes; max ~7 chars",{0}M,{0}M,{0}M,{0}M,{0}M,{0}D,{0}M,{0}М
 topper.wizard-hat.name,"Topper name: a purple wizard's hat with gold stars, the daily gift's prize",WIZARD HAT,CHAPEAU DE SORCIER,CAPPELLO DA MAGO,ZAUBERHUT,SOMBRERO DE MAGO,BÜYÜCÜ ŞAPKASI,CHAPÉU DE MAGO,ШЛЯПА МАГА
+topper.ember.name,"Topper name: a copper bowl with a small flame, the bronze league's prize",EMBER,BRAISE,BRACE,GLUT,BRASA,KOR,BRASA,УГОЛЁК
+topper.silver-torch.name,"Topper name: a silver torch with a blue flame, the silver league's prize",SILVER TORCH,TORCHE D'ARGENT,TORCIA D'ARGENTO,SILBERFACKEL,ANTORCHA DE PLATA,GÜMÜŞ MEŞALE,TOCHA DE PRATA,СЕРЕБРЯНЫЙ ФАКЕЛ
+topper.fire-crown.name,"Topper name: a gold crown with a flame on each point, the gold league's prize",FIRE CROWN,COURONNE DE FEU,CORONA DI FUOCO,FEUERKRONE,CORONA DE FUEGO,ATEŞ TACI,COROA DE FOGO,ОГНЕННАЯ КОРОНА
+topper.phoenix.name,"Topper name: a fire bird with rainbow wings, the legend league's prize",PHOENIX,PHÉNIX,FENICE,PHÖNIX,FÉNIX,ANKA,FÊNIX,ФЕНИКС

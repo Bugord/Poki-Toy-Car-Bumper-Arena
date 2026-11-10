@@ -83,6 +83,17 @@ namespace ToyCarArena.UI
         public int SelectedColor => progress.SelectedColor;
         public bool IsUnlocked(string id) => progress.IsUnlocked(id);
 
+        /// <summary>
+        /// The league (its rank tier) whose reward the car is, 0 for a car no league gives. Such a car is opened by its
+        /// league, so the garage names the league instead of the level.
+        /// </summary>
+        public int LeagueOfCar(string id) => TierAt(tuning.LeagueRewards.LevelOfCar(id));
+
+        /// <summary>The league whose reward the hat is, 0 for one no league gives.</summary>
+        public int LeagueOfTopper(string id) => TierAt(tuning.LeagueRewards.LevelOfTopper(id));
+
+        private static int TierAt(int level) => level > 0 ? PlayerRank.TierOf(level) : 0;
+
         /// <summary>The car's speed, power, weight and boost for the player.</summary>
         public GameTuning.CarStatLine StatsOf(CarCatalog.Entry car) => tuning.CarStats.Of(car.Id);
 
@@ -165,13 +176,15 @@ namespace ToyCarArena.UI
 
         public int Coins => wallet.Coins;
         /// <summary>
-        /// The toppers of the HATS tab: those on sale, then the exclusive ones the player has earned (a reward gives
-        /// them, coins do not, so one not owned stays hidden).
+        /// The toppers of the HATS tab: those on sale, the leagues' (shown all along, locked until their league: the
+        /// goal is the point), then the exclusive ones the player has earned (a reward gives them, coins do not, so one
+        /// not owned stays hidden).
         /// </summary>
         public IReadOnlyList<GameTuning.TopperDefinition> Toppers
         {
             get {
                 var list = new List<GameTuning.TopperDefinition>(tuning.Toppers.All);
+                list.AddRange(tuning.Toppers.League);
                 foreach (var topper in tuning.Toppers.Exclusive) {
                     if (wallet.IsOwned(topper.Id)) {
                         list.Add(topper);

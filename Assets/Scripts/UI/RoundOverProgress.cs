@@ -121,7 +121,7 @@ namespace ToyCarArena.UI
             line.Add(barFill);
             bar.Add(line);
             barTo = BarLevel(bar);
-            levelUp = Outlined("", "xp-bar__level-up", out var levelUpLabels);
+            levelUp = StrokeText.Outlined("", "xp-bar__level-up", out var levelUpLabels);
             foreach (var label in levelUpLabels) {
                 text.Set(label, () => Strings.Get("result.level_up"));
             }
@@ -579,7 +579,8 @@ namespace ToyCarArena.UI
             league = new NewLeaguePopup(root.Q<VisualElement>("round-over") ?? root, () => Clicked?.Invoke(),
                 () => isClosed = true);
             league.Fit(isTouch ? RewardWideTouchScale : 1f);
-            league.Show(viewModel.PlayerLevel, !isTouch, viewModel.ShowCarHero(null, viewModel.WornTopper));
+            league.Show(viewModel.PlayerLevel, !isTouch, viewModel.ShowCarHero(null, viewModel.WornTopper),
+                viewModel.LeaguePrize);
             IsPopupOpen = true;
             try {
                 while (!isClosed) {
@@ -672,7 +673,7 @@ namespace ToyCarArena.UI
             var card = new VisualElement { pickingMode = PickingMode.Ignore };
             card.AddToClassList("card");
             card.AddToClassList("level-reward__card");
-            card.Add(Outlined(title, "level-reward__title", out _));
+            card.Add(StrokeText.Outlined(title, "level-reward__title", out _));
             card.Add(Text(tag, "level-reward__tag"));
             var frame = GarageView.SkyFrame(viewModel.League);
             frame.AddToClassList("level-reward__frame");
@@ -885,28 +886,11 @@ namespace ToyCarArena.UI
             return value;
         }
 
-        /// <summary>Text with the outline of the titles: the same text twice, the face over the outline.</summary>
         // A button's outlined label, shrunk to the width the button leaves it (FitText).
         private static VisualElement FitOutlined(string value, string className)
         {
-            var element = Outlined(value, className, out var labels);
+            var element = StrokeText.Outlined(value, className, out var labels);
             FitText.Fit(element, labels);
-            return element;
-        }
-
-        internal static VisualElement Outlined(string value, string className, out Label[] labels)
-        {
-            var element = new VisualElement { pickingMode = PickingMode.Ignore };
-            element.AddToClassList("stroke");
-            element.AddToClassList(className);
-            var outline = Text(value, "display");
-            outline.AddToClassList(className + "-text");
-            var face = Text(value, "display");
-            face.AddToClassList(className + "-text");
-            face.AddToClassList("stroke__face");
-            element.Add(outline);
-            element.Add(face);
-            labels = new[] { outline, face };
             return element;
         }
 

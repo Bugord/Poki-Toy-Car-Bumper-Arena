@@ -83,7 +83,7 @@ def summarise(data):
         # с v0.16.0: главное меню визитов 2+ (показ, через сколько секунд после старта движка, что нажали), HOME на результате
         "menu": i.get("menu-shown"),
         "menu_time": other(o, r"menu-ready-([0-9a-z-]+)-start-time"),
-        "menu_press": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"menu-(play|garage|missions|mode|leagues|boost|boost-no|daily|daily-no)", e))},
+        "menu_press": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"menu-(play|garage|missions|mode|leagues|boost|boost-no|daily|daily-no|mode-hot-potato|mode-quick)", e))},
         # после v0.16.0: попап NEW LEAGUE! в меню, по лиге (раз на игрока и лигу)
         "menu_league": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"menu-league-(bronze|silver|gold|legend)", e))},
         # после feature/result-popups: тот же попап на результате раунда, который поднял лигу (меню показывает его, только если результат не показал)
@@ -121,8 +121,9 @@ def summarise(data):
         "ad_daily": i.get("ad-daily"),
         "ad_daily_end": other(o, r"ad-daily-(granted|unavailable|dismissed)"),
         "levels": other(o, r"progress-level-(2|3|4|5|6|7|8|9|10|10plus)-level-up"),
-        "unlocks": other(o, r"progress-(?!map-)([a-z]+(?:-[a-z]+)*)-unlock"),
+        "unlocks": other(o, r"progress-(?!map-|hat-)([a-z]+(?:-[a-z]+)*)-unlock"),
         "map_unlocks": other(o, r"progress-map-([a-z]+)-unlock"),
+        "hat_unlocks": other(o, r"progress-hat-([a-z]+(?:-[a-z]+)*)-unlock"),
         "maps": other(o, r"result-map-([a-z]+-r(?:1|2|3|4plus))-map"),
         "variants": other(o, r"result-variant-([a-z]+-[a-z]+-r(?:1|2|3|4plus))-map-variant"),
         "equips": other(o, r"garage-(?!topper-)([a-z]+(?:-[a-z]+)*)-equip"),
@@ -246,7 +247,9 @@ def report(version, previous):
         shown = lambda s: num(s["menu"], "seen")
         out.append(line("Меню показано", lambda s: str(shown(s)) if s["menu"] else "-"))
         for key, name in (("play", "PLAY"), ("garage", "GARAGE"), ("missions", "MISSIONS"), ("mode", "MODE (до feature/ux-fixes: потом это плашка, не кнопка)"),
-                          ("leagues", "значок или шкалу опыта (лиги; после v0.16.0)")):
+                          ("leagues", "значок или шкалу опыта (лиги; после v0.16.0)"),
+                          ("mode-hot-potato", "HOT POTATO в CHOOSE MODE (режим, feature/hot-potato)"),
+                          ("mode-quick", "QUICK MATCH в CHOOSE MODE (feature/hot-potato)")):
             out.append(line(f"Нажали {name}, от показов меню",
                             lambda s, k=key: (lambda n: f"{n} ({pct(n, shown(s))})")(num(s["menu_press"].get(k), "interacted"))
                             if s["menu"] else "-"))
@@ -394,7 +397,7 @@ def report(version, previous):
         # это ушли посреди цикла этого варианта, а «раундов» это циклов.
         ("Раунды по варианту арены (после v0.5.1; визиты: старты / победы / поражения / ушли посреди; "
          "в матче по циклам пола)", "arenas", arena),
-        ("Особые раунды (после v0.15.0; визиты: старты / победы / поражения / ушли посреди)", "specials",
+        ("Особые раунды и режим HOT POTATO (после v0.15.0, hot-potato с feature/hot-potato это режим; визиты: старты / победы / поражения / ушли посреди)", "specials",
          lambda s, k: arena(s, k, "specials")),
     ):
         keys = keys_of(key)
@@ -410,6 +413,7 @@ def report(version, previous):
         ("Выбор цвета в гараже (визиты с color)", "colors"),
         ("Цвет машинки по раундам (визиты с color)", "played_colors"),
         ("Открытия арен (визиты с map unlock)", "map_unlocks"),
+        ("Шапки лиг (визиты с hat unlock, после v0.17.4)", "hat_unlocks"),
         ("Арены по раундам (визиты с map)", "maps"),
         ("Варианты арен по раундам (визиты с map-variant)", "variants"),
         ("Особые раунды по исходу (после v0.15.0; визиты с outcome)", "special_outcome"),

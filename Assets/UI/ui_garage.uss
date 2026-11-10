@@ -46,8 +46,9 @@
     padding: 0;
     font-size: 84px;
     -unity-text-outline-width: 14px;
-    text-shadow: 0 10px 0 rgb(29, 43, 79);
 }
+
+.garage__title-text.stroke__drop { translate: 0 10px; visibility: visible; }
 
 .garage__coins--short .menu__coins-fill { background-color: #ffd9d9; }
 .garage__coins--short .menu__coins-count { color: var(--red); }
@@ -93,8 +94,9 @@
     padding: 0;
     font-size: 76px;
     -unity-text-outline-width: 13px;
-    text-shadow: 0 10px 0 rgb(29, 43, 79);
 }
+
+.garage__name-text.stroke__drop { translate: 0 10px; visibility: visible; }
 
 /* The stats: one white pill, each stat's name and five pips side by side. */
 .garage-stats {
@@ -323,7 +325,6 @@
     font-size: 44px;
     color: var(--navy);
     -unity-text-outline-width: 0;
-    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
 }
 
 /* The chosen tab: white on green, the outline and its drop on the layer under the face. */
@@ -331,12 +332,12 @@
     color: var(--white);
     -unity-text-outline-width: 9px;
     -unity-text-outline-color: var(--navy);
-    text-shadow: 0 5px 0 rgb(29, 43, 79);
 }
+
+.garage__tab--on .garage__tab-label-text.stroke__drop { translate: 0 5px; visibility: visible; }
 
 .garage__tab--on .garage__tab-label-text.stroke__face {
     -unity-text-outline-width: 0;
-    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
 }
 
 .garage__tab-key {
@@ -477,7 +478,15 @@
 .garage__badge--dear { padding-left: 6px; background-color: var(--shade); }
 .garage__badge--locked { padding-left: 14px; background-color: var(--navy); }
 .garage__badge--ad { padding: 0 16px 0 8px; background-color: var(--purple); }
+/* A league's prize: the padlock and the league's emblem, which is the league's name in a picture. */
+.garage__badge--league { padding: 0 6px 0 14px; background-color: var(--navy); }
 .garage__badge--ad .garage__badge-text { color: var(--white); }
+
+.garage__badge-emblem {
+    width: 58px;
+    height: 58px;
+    margin: -6px 0 -6px 4px;
+}
 
 .garage__badge-tick,
 .garage__action-tick,
@@ -646,15 +655,21 @@
     padding: 0 40px 20px 40px;
 }
 
+.garage__action-label {
+    flex-shrink: 1;
+    min-width: 0;
+}
+
 .garage__action-label-text {
     font-size: 84px;
     color: var(--white);
     -unity-text-outline-width: 14px;
     -unity-text-outline-color: var(--navy);
-    text-shadow: 0 8px 0 rgb(29, 43, 79);
 }
 
-.garage__action-label-text.stroke__face { -unity-text-outline-width: 0; text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+.garage__action-label-text.stroke__drop { translate: 0 8px; visibility: visible; }
+
+.garage__action-label-text.stroke__face { -unity-text-outline-width: 0; }
 
 .garage__action-plain {
     font-size: 76px;
@@ -768,10 +783,11 @@
     color: var(--red);
     -unity-text-outline-width: 12px;
     -unity-text-outline-color: var(--white);
-    text-shadow: 0 8px 0 rgb(29, 43, 79);
 }
 
-.garage__toast-label-text.stroke__face { -unity-text-outline-width: 0; text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+.garage__toast-label-text.stroke__drop { translate: 0 8px; visibility: visible; }
+
+.garage__toast-label-text.stroke__face { -unity-text-outline-width: 0; }
 
 .garage__toast--gold .garage__toast-label-text { color: var(--gold); -unity-text-outline-color: var(--navy); }
 
@@ -947,10 +963,11 @@
     color: var(--white);
     -unity-text-outline-width: 16px;
     -unity-text-outline-color: var(--navy);
-    text-shadow: 0 6px 0 rgb(29, 43, 79);
 }
 
-.garage__sheet-buy-label-text.stroke__face { -unity-text-outline-width: 0; text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+.garage__sheet-buy-label-text.stroke__drop { translate: 0 6px; visibility: visible; }
+
+.garage__sheet-buy-label-text.stroke__face { -unity-text-outline-width: 0; }
 
 /* The coin between BUY and the price as big as the design's, a 30 px coin beside 34 px words. */
 .garage__sheet-buy-coin {
@@ -972,10 +989,11 @@
     color: var(--white);
     -unity-text-outline-width: 16px;
     -unity-text-outline-color: var(--navy);
-    text-shadow: 0 5px 0 rgb(29, 43, 79);
 }
 
-.garage__sheet-buy-price-text.stroke__face { -unity-text-outline-width: 0; text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+.garage__sheet-buy-price-text.stroke__drop { translate: 0 5px; visibility: visible; }
+
+.garage__sheet-buy-price-text.stroke__face { -unity-text-outline-width: 0; }
 
 .garage__sheet-key,
 .garage__sheet-watch-key,

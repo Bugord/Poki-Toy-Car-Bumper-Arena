@@ -4,9 +4,9 @@ using UnityEngine.UIElements;
 namespace ToyCarArena.UI
 {
     /// <summary>
-    /// Shrinks an outlined label (both its labels, see <see cref="RoundOverProgress.Outlined"/>) to the width its button
-    /// leaves it, never above the size the style sheet gives it: the longer words of other languages stay inside the
-    /// button. Best-fit would size the outline and the face over it apart, so one size is set on both.
+    /// Shrinks an outlined label (all its layers, see <see cref="StrokeText"/>) to the width its button leaves it,
+    /// never above the size the style sheet gives it: the longer words of other languages stay inside the button.
+    /// Best-fit would size the layers apart, so one size is set on all of them, and the drop's offset shrinks with it.
     /// </summary>
     internal static class FitText
     {
@@ -21,11 +21,16 @@ namespace ToyCarArena.UI
         public static void Fit(VisualElement stroke, Label[] labels)
         {
             var full = 0f;
+            var drop = System.Array.Find(labels, part => part.ClassListContains(StrokeText.DropClass));
+            var fullDrop = Vector3.zero;
             stroke.RegisterCallback<GeometryChangedEvent>(_ => {
                 var label = labels[0];
                 var size = label.resolvedStyle.fontSize;
                 if (full <= 0f) {
                     full = size;
+                    if (drop != null) {
+                        fullDrop = drop.resolvedStyle.translate;
+                    }
                 }
 
                 var width = stroke.contentRect.width;
@@ -49,6 +54,11 @@ namespace ToyCarArena.UI
 
                 foreach (var part in labels) {
                     part.style.fontSize = fit;
+                }
+
+                // The drop's offset is in pixels of the style sheet's size (the same in every language): it follows.
+                if (drop != null && full > 0f) {
+                    drop.style.translate = new Translate(fullDrop.x * fit / full, fullDrop.y * fit / full);
                 }
             });
         }

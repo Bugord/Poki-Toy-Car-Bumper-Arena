@@ -23,6 +23,7 @@ namespace ToyCarArena.UI
         private static readonly Color32 Pink = new(0xca, 0x77, 0xeb, 0xff);
         private static readonly Color32 Green = new(0x3f, 0xa8, 0x7a, 0xff);
         private static readonly Color32 Purple = new(0x8f, 0x5c, 0xd6, 0xff);
+        private static readonly Color32 Copper = new(0xc8, 0x77, 0x4a, 0xff);
 
         public static VisualElement Create(string id, string className)
         {
@@ -85,6 +86,24 @@ namespace ToyCarArena.UI
 
             void Rect(Color32 fill, float x0, float y0, float x1, float y1) =>
                 Shape(fill, new(x0, y0), new(x1, y0), new(x1, y1), new(x0, y1));
+
+            // A teardrop of flame on its foot (x, y) w wide and h tall, with a smaller core of the second colour.
+            void Flame(Color32 outer, Color32 core, float x, float y, float w, float h)
+            {
+                Tongue(outer, x, y, w, h);
+                Tongue(core, x, y - h * 0.04f, w * 0.55f, h * 0.55f);
+            }
+
+            void Tongue(Color32 fill, float x, float y, float w, float h)
+            {
+                painter.BeginPath();
+                painter.MoveTo(P(x, y - h));
+                painter.BezierCurveTo(P(x + w * 0.2f, y - h * 0.6f), P(x + w * 0.55f, y - h * 0.45f), P(x + w * 0.5f, y - h * 0.2f));
+                painter.BezierCurveTo(P(x + w * 0.46f, y + h * 0.02f), P(x - w * 0.46f, y + h * 0.02f), P(x - w * 0.5f, y - h * 0.2f));
+                painter.BezierCurveTo(P(x - w * 0.55f, y - h * 0.45f), P(x - w * 0.2f, y - h * 0.6f), P(x, y - h));
+                painter.ClosePath();
+                FillAndStroke(fill);
+            }
 
             switch (element.userData as string) {
                 case "top-hat":
@@ -183,6 +202,34 @@ namespace ToyCarArena.UI
                     Rect(Gold, 0.28f, 0.68f, 0.72f, 0.8f);
                     Circle(Gold, 0.7f, 0.1f, 0.07f);
                     Circle(Gold, 0.52f, 0.52f, 0.05f);
+                    break;
+                case "ember":
+                    Flame(Orange, Gold, 0.5f, 0.58f, 0.36f, 0.48f);
+                    Shape(Copper, new(0.14f, 0.54f), new(0.86f, 0.54f), new(0.7f, 0.76f), new(0.3f, 0.76f));
+                    Rect(Copper, 0.38f, 0.76f, 0.62f, 0.86f);
+                    break;
+                case "silver-torch":
+                    Flame(Blue, Sky, 0.5f, 0.42f, 0.36f, 0.4f);
+                    Shape(White, new(0.26f, 0.38f), new(0.74f, 0.38f), new(0.62f, 0.52f), new(0.38f, 0.52f));
+                    Shape(Grey, new(0.42f, 0.52f), new(0.58f, 0.52f), new(0.55f, 0.92f), new(0.45f, 0.92f));
+                    Circle(Sky, 0.74f, 0.1f, 0.04f);
+                    break;
+                case "fire-crown":
+                    Flame(Orange, Gold, 0.18f, 0.48f, 0.18f, 0.3f);
+                    Flame(Orange, Gold, 0.5f, 0.4f, 0.2f, 0.34f);
+                    Flame(Orange, Gold, 0.82f, 0.48f, 0.18f, 0.3f);
+                    Shape(Gold, new(0.12f, 0.86f), new(0.12f, 0.5f), new(0.31f, 0.64f), new(0.5f, 0.42f),
+                        new(0.69f, 0.64f), new(0.88f, 0.5f), new(0.88f, 0.86f));
+                    Circle(Red, 0.5f, 0.74f, 0.06f);
+                    break;
+                case "phoenix":
+                    Flame(Red, Orange, 0.24f, 0.78f, 0.22f, 0.4f);
+                    Shape(Pink, new(0.5f, 0.58f), new(0.06f, 0.2f), new(0.2f, 0.18f), new(0.5f, 0.46f));
+                    Shape(Sky, new(0.5f, 0.58f), new(0.94f, 0.2f), new(0.8f, 0.18f), new(0.5f, 0.46f));
+                    Circle(Red, 0.5f, 0.62f, 0.17f);
+                    Circle(Orange, 0.62f, 0.4f, 0.11f);
+                    Shape(Gold, new(0.7f, 0.37f), new(0.86f, 0.42f), new(0.7f, 0.46f));
+                    Circle(Navy, 0.64f, 0.38f, 0.025f);
                     break;
                 default:
                     painter.BeginPath();

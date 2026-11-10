@@ -307,8 +307,16 @@ namespace ToyCarArena.Gameplay.Round
                 TickComebacks();
             }
 
-            foreach (var car in cars) {
+            // By index: a car the hot potato knocks out meanwhile changes nothing in the list.
+            for (var i = 0; i < cars.Count; i++) {
+                var car = cars[i];
                 if (!car.IsOut && car.Position.y < tuning.Round.FallHeight) {
+                    // Nobody falls in the hot potato mode: a car that got past the fence after all is put back on.
+                    if (rules.IsHotPotato) {
+                        PutBack(car);
+                        continue;
+                    }
+
                     var knockedOutBy = FindKnocker(car);
                     if (car == Player && knockedOutBy == null) {
                         playerFallCause = FindFallCause(car);
@@ -320,49 +328,7 @@ namespace ToyCarArena.Gameplay.Round
                     }
 #endif
 
-                    car.TakeOut();
-                    CarsLeft--;
-                    var index = IndexOf(car);
-                    var by = knockedOutBy != null ? IndexOf(knockedOutBy) : RoundResult.Nobody;
-                    if (isMatch) {
-                        // A car that misses the floor as it drops back is no longer safe while it falls again.
-                        car.SetInvulnerable(false, cars);
-                        Score.RecordFall(index, by, elapsed);
-                        respawnTimes[index] = Time.time + tuning.Match.RespawnDelay;
-                    }
-                    else {
-                        standings.RecordOut(index, by);
-                    }
-
-                    var rival = Nemesis;
-                    CarOut?.Invoke(car);
-
-                    if (knockedOutBy != null) {
-                        if (knockedOutBy == Player) {
-                            PlayerKnockouts++;
-                            PlayerCombo = Time.time - lastPlayerKnockoutTime <= tuning.Round.ComboWindow
-                                ? PlayerCombo + 1 : 1;
-                            lastPlayerKnockoutTime = Time.time;
-                            if (car == Nemesis) {
-                                RevengeTaken = true;
-                            }
-
-                            if (car == Boss) {
-                                BossTaken = true;
-                            }
-                        }
-
-                        if (car == Player) {
-                            PlayerKnockedOutBy = knockedOutBy;
-                        }
-
-                        KnockedOut?.Invoke(car, knockedOutBy);
-                    }
-                    Eliminated?.Invoke(index, by);
-                    if (isMatch) {
-                        // After the events, so the KNOCKOUT! sticker and the feed still see the rival it was.
-                        UpdateRival(car, knockedOutBy, rival);
-                    }
+                    Out(car, knockedOutBy);
                 }
             }
 
@@ -387,6 +353,84 @@ namespace ToyCarArena.Gameplay.Round
             else if (elapsed >= tuning.Round.Duration) {
                 Finish(CarsLeft == 1 ? RoundOutcome.Won : RoundOutcome.Survived, 1);
             }
+        }
+
+        /// <summary>
+        /// Knocks <paramref name="car"/> out of the running round without a fall, to the credit of
+        /// <paramref name="knockedOutBy"/> (null for nobody): the hot potato's blast. It counts as a fall does, the
+        /// events, the standings and the knock-out included, and the round ends on the next tick as after a fall.
+        /// False, and nothing done, for a car already out or a round not running.
+        /// </summary>
+        public bool KnockOut(Car car, Car knockedOutBy)
+        {
+            if (!IsRunning || car == null || car.IsOut || IndexOf(car) < 0) {
+                return false;
+            }
+
+            Out(car, knockedOutBy == car ? null : knockedOutBy);
+            return true;
+        }
+
+        /// <summary>
+        /// The car is out: off the round's count, into the standings or the match's score, and the events in their order,
+        /// the knock-out's credit and REVENGE with them.
+        /// </summary>
+        private void Out(Car car, Car knockedOutBy)
+        {
+            car.TakeOut();
+            CarsLeft--;
+            var index = IndexOf(car);
+            var by = knockedOutBy != null ? IndexOf(knockedOutBy) : RoundResult.Nobody;
+            if (isMatch) {
+                // A car that misses the floor as it drops back is no longer safe while it falls again.
+                car.SetInvulnerable(false, cars);
+                Score.RecordFall(index, by, elapsed);
+                respawnTimes[index] = Time.time + tuning.Match.RespawnDelay;
+            }
+            else {
+                standings.RecordOut(index, by);
+            }
+
+            var rival = Nemesis;
+            CarOut?.Invoke(car);
+
+            if (knockedOutBy != null) {
+                if (knockedOutBy == Player) {
+                    PlayerKnockouts++;
+                    PlayerCombo = Time.time - lastPlayerKnockoutTime <= tuning.Round.ComboWindow
+                        ? PlayerCombo + 1 : 1;
+                    lastPlayerKnockoutTime = Time.time;
+                    if (car == Nemesis) {
+                        RevengeTaken = true;
+                    }
+
+                    if (car == Boss) {
+                        BossTaken = true;
+                    }
+                }
+
+                if (car == Player) {
+                    PlayerKnockedOutBy = knockedOutBy;
+                }
+
+                KnockedOut?.Invoke(car, knockedOutBy);
+            }
+            Eliminated?.Invoke(index, by);
+            if (isMatch) {
+                // After the events, so the KNOCKOUT! sticker and the feed still see the rival it was.
+                UpdateRival(car, knockedOutBy, rival);
+            }
+        }
+
+        /// <summary>
+        /// Drops a car that fell past the hot potato's fence back onto the floor, away from the others: in that mode
+        /// nobody falls. It keeps its bomb, if it has it.
+        /// </summary>
+        private void PutBack(Car car)
+        {
+            var spot = RespawnSpot.Find(edge, tuning.Match, cars, car);
+            var facing = spot.sqrMagnitude > 0.01f ? -spot.normalized : Vector3.forward;
+            car.Movement.Place(spot + Vector3.up * arena.SpawnHeight, Quaternion.LookRotation(facing));
         }
 
         /// <summary>

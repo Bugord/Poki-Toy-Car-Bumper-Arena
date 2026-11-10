@@ -55,7 +55,7 @@ namespace ToyCarArena.UI
             claimRow = Element("menu__daily-buttons");
             doubleButton = Button("button--purple", "menu__daily-double", pressDouble);
             doubleButton.Add(RoundOverRewards.PlaySign());
-            var doubleLabel = RoundOverProgress.Outlined(Strings.Get("daily.claim"), "menu__daily-label",
+            var doubleLabel = StrokeText.Outlined(Strings.Get("daily.claim"), "menu__daily-label",
                 out var doubleLabels);
             foreach (var label in doubleLabels) {
                 label.AddToClassList("button__label");
@@ -74,7 +74,7 @@ namespace ToyCarArena.UI
             claimRow.Add(doubleButton);
 
             claimButton = Button("button--green", "menu__daily-claim", pressClaim);
-            var claimLabel = RoundOverProgress.Outlined(Strings.Get("daily.claim"), "menu__daily-label",
+            var claimLabel = StrokeText.Outlined(Strings.Get("daily.claim"), "menu__daily-label",
                 out var claimLabels);
             foreach (var label in claimLabels) {
                 label.AddToClassList("button__label");
@@ -223,7 +223,7 @@ namespace ToyCarArena.UI
             var coin = RoundOverMeta.Coin();
             coin.AddToClassList("menu__daily-sum-coin");
             amount.Add(coin);
-            amount.Add(RoundOverProgress.Outlined("", "menu__daily-label", out labels));
+            amount.Add(StrokeText.Outlined("", "menu__daily-label", out labels));
             foreach (var label in labels) {
                 label.AddToClassList("button__label");
             }

@@ -31,6 +31,9 @@ namespace ToyCarArena.UI
         private readonly IScreenNavigator navigator;
         private readonly IGamePlatform platform;
         private readonly LevelScene levelScene;
+        private readonly SessionProgress session;
+        // The mode picked without a session (the screenshots and tests build the menu alone).
+        private EventMode mode;
         private GarageStage stage;
 
         // An ad back without its reward sooner than this had no ad to show (as CLAIM ×2 on the result reads it).
@@ -40,8 +43,9 @@ namespace ToyCarArena.UI
 
         public MenuViewModel(PlayerProgress progress, PlayerWallet wallet, MissionTracker missions, CarCatalog catalog,
             ArenaCatalog arenaCatalog, GameTuning tuning, IScreenNavigator navigator, IGamePlatform platform,
-            LevelScene levelScene, PlayerDaily daily)
+            LevelScene levelScene, PlayerDaily daily, SessionProgress session = null)
         {
+            this.session = session;
             this.Daily = new DailyGift(daily, tuning, platform);
             this.progress = progress;
             this.wallet = wallet;
@@ -81,6 +85,10 @@ namespace ToyCarArena.UI
         /// <summary>The car the player drives next, as the garage shows it: its colour and its topper.</summary>
         public CarCatalog.Entry Car => catalog.Find(progress.SelectedCar);
         public int CarColor => progress.SelectedColor;
+
+        /// <summary>What the player's league gives besides its look, for NEW LEAGUE!; null for none.</summary>
+        internal NewLeaguePopup.Prize LeaguePrize =>
+            LeagueRewards.PrizeAt(tuning, catalog, progress.Level, progress.SelectedColor, Stage);
         public string Topper => wallet.SelectedTopper;
 
         /// <summary>
@@ -277,6 +285,36 @@ namespace ToyCarArena.UI
         /// <remarks>Not sent in v0.17.1, where MODE was a plate; after it MODE opens the modes again, CUP and SURVIVAL as SOON.</remarks>
         public void ModesOpened() => platform.MeasureMenuPressed("mode");
         public void LeaguesOpened() => platform.MeasureMenuPressed("leagues");
+
+        /// <summary>
+        /// The mode PLAY starts: QUICK MATCH (<see cref="EventMode.None"/>) or HOT POTATO. Kept for the visit by the
+        /// session, so NEXT MATCH and HOME back to the menu keep it.
+        /// </summary>
+        public EventMode Mode => session?.Mode ?? mode;
+
+        /// <summary>
+        /// Whether the menu offers the HOT POTATO event: it is a round of last car standing with one rule changed, so a
+        /// build of matches has none.
+        /// </summary>
+        public bool HasEvents => !tuning.IsMatch;
+
+        /// <summary>
+        /// Makes <paramref name="next"/> the mode PLAY starts and counts the pick, <c>menu / mode-hot-potato|mode-quick
+        /// / interact</c>, a pick of the mode already in play too: it says the card was understood as a choice.
+        /// </summary>
+        public void SelectMode(EventMode next)
+        {
+            if (!HasEvents) {
+                next = EventMode.None;
+            }
+
+            if (session != null) {
+                session.Mode = next;
+            }
+
+            mode = next;
+            platform.MeasureMenuPressed(next == EventMode.HotPotato ? "mode-hot-potato" : "mode-quick");
+        }
 
         /// <summary>Whether PLAY was pressed: the menu takes no more input while the lobby comes down over it.</summary>
         public bool IsDecided { get; private set; }

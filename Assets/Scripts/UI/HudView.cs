@@ -328,6 +328,7 @@ namespace ToyCarArena.UI
         private float tapHintTime;
         private float tapHintProgress;
         private HudEndTimer endTimer;
+        private HudPotato potato;
         private VisualElement kickoff;
         private VisualElement kickoffNumber;
         private Label kickoffDigit;
@@ -358,6 +359,8 @@ namespace ToyCarArena.UI
 
         protected override void OnAttached()
         {
+            // The outlined texts of the UXML get their drop layer (StrokeText).
+            StrokeText.AddDrops(Root);
             // The HUD lies over the game: nothing on it may take a click or a touch from the controls but the boost
             // button and the settings button, which tell the controls where they are so a finger on them does not steer.
             Root.pickingMode = PickingMode.Ignore;
@@ -420,6 +423,7 @@ namespace ToyCarArena.UI
             tapHint = Root.Q<VisualElement>("tap-hint");
             BuildKickoff();
             endTimer = HudEndTimer.Create(Root, ViewModel, timePill, scoreboard?.Element, respawn, popupLayer);
+            potato = HudPotato.Create(nameLayer, Root, ViewModel);
             settingsButton = Root.Q<Button>("settings-button");
             settingsButton.RemoveFromClassList(Button.ussClassName);
             // Space is the boost: a focused button would take it as a click and open the settings mid-round.
@@ -478,6 +482,8 @@ namespace ToyCarArena.UI
             social?.Dispose();
             scoreboard?.Dispose();
             endTimer?.Dispose();
+            potato?.Dispose();
+            potato = null;
             ViewModel.PlayerKnockout -= ShowKnockout;
             ViewModel.CarOut -= OnCarOut;
             ViewModel.CarBack -= OnCarBack;
@@ -1377,20 +1383,7 @@ namespace ToyCarArena.UI
 
         private static VisualElement CreateOutlinedText(string value, string textClass)
         {
-            var text = new VisualElement { pickingMode = PickingMode.Ignore };
-            text.AddToClassList("stroke");
-            foreach (var isFace in new[] { false, true }) {
-                var label = new Label(value) { pickingMode = PickingMode.Ignore };
-                label.AddToClassList("display");
-                label.AddToClassList(textClass);
-                if (isFace) {
-                    label.AddToClassList("stroke__face");
-                }
-
-                text.Add(label);
-            }
-
-            return text;
+            return StrokeText.Create(value, null, out _, "display", textClass);
         }
 
         /// <summary>
@@ -1411,6 +1404,7 @@ namespace ToyCarArena.UI
             }
 
             ShowStreak(camera);
+            potato?.Tick(camera, contentTopInset, safeInsets.Left, safeInsets.Right);
 
             if (carNames == null || camera == null || nameLayer.panel == null) {
                 return;

@@ -87,7 +87,6 @@
     color: var(--white);
     -unity-text-outline-width: 18px;
     -unity-text-outline-color: var(--navy);
-    text-shadow: 0 18px 0 rgb(29, 43, 79);
     -unity-text-align: middle-center;
     white-space: nowrap;
 }
@@ -317,19 +316,26 @@
     height: 140px;
     margin: 0 0 48px 0;
     padding: 0;
-    font-size: 112px;
-    -unity-text-align: middle-center;
     rotate: -3deg;
-    color: var(--gold);
-    -unity-text-outline-width: 10px;
-    text-shadow: 0 10px 0 rgb(29, 43, 79);
 }
 
-.lobby__title--ready { color: var(--green); }
+.lobby__title-text {
+    flex-grow: 1;
+    margin: 0;
+    padding: 0;
+    font-size: 112px;
+    -unity-text-align: middle-center;
+    color: var(--gold);
+    -unity-text-outline-width: 10px;
+}
+
+.lobby__title-text.stroke__drop { translate: 0 10px; visibility: visible; }
+
+.lobby__title--ready .lobby__title-text { color: var(--green); }
 
 /* FINDING PLAYERS is longer than the other titles, and longer still in French or Portuguese: smaller, in a title of
    the same height, so the seats below do not jump when it turns to MATCH FOUND!. */
-.lobby__title--search { font-size: 84px; }
+.lobby__title--search .lobby__title-text { font-size: 84px; }
 
 /* The arena of the coming round, a compact pill between the title and the seven seats (about 150 px with its margins). */
 .lobby__arena {
@@ -530,10 +536,6 @@
     border-width: 0;
     background-color: rgba(0, 0, 0, 0);
 }
-
-/* The face is a child of the outline label and shares its class: it already turns with its parent, so its own -3deg
-   would turn it twice and its letters would poke out of the outline. */
-.lobby__title > .stroke__face { margin: 0; rotate: 0deg; }
 
 /* The HUD: one white bar at the top centre, 54 px from the edge: the stopwatch, a chip per car still in the round with
    their count, and from the first knock-out the player's KOs, each part split off by a short rule. On a wide screen it
@@ -866,6 +868,8 @@
     color: var(--gold);
 }
 
+.ko-pop__text.stroke__drop { translate: 0 18px; visibility: visible; }
+
 .ko-pop--revenge .ko-pop__text {
     color: var(--red);
 }
@@ -965,7 +969,6 @@
     font-size: 44px;
     color: var(--white);
     -unity-text-outline-width: 6px;
-    text-shadow: none;
 }
 
 /* A bot that joined on a win streak: the player's crown and ×N, after the name. */
@@ -982,7 +985,6 @@
     font-size: 38px;
     color: var(--gold);
     -unity-text-outline-width: 6px;
-    text-shadow: none;
 }
 
 .car-name__revenge {
@@ -999,7 +1001,6 @@
     letter-spacing: 1px;
     color: var(--orange);
     -unity-text-outline-width: 5px;
-    text-shadow: none;
 }
 
 .car-name--revenge .car-name__text {
@@ -1093,10 +1094,96 @@
     color: var(--orange);
     -unity-text-outline-width: 14px;
     -unity-text-outline-color: var(--navy);
-    text-shadow: 0 10px 0 rgb(29, 43, 79);
     -unity-text-align: middle-center;
     white-space: nowrap;
 }
+
+.hud__respawn-number.stroke__drop { translate: 0 10px; visibility: visible; }
+
+/* HOT POTATO: the fuse's seconds over the bomb (HudPotato places it), red and beating in its last seconds, and the
+   tilted PASS IT! under the bar while the player holds the bomb. */
+.hud__fuse {
+    display: none;
+    position: absolute;
+    translate: -50% -50%;
+    align-items: center;
+}
+
+.hud__fuse--shown {
+    display: flex;
+}
+
+.hud__fuse-sticker {
+    min-width: 92px;
+    height: 76px;
+    padding: 0 18px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 38px;
+    border-width: 5px 5px 11px 5px;
+    border-color: var(--navy);
+    background-color: var(--white);
+}
+
+.hud__fuse-text {
+    margin: 0;
+    padding: 0;
+    font-size: 50px;
+    color: var(--navy);
+    -unity-text-outline-width: 0;
+    -unity-text-align: middle-center;
+}
+
+.hud__fuse-text.stroke__drop { translate: 0 18px; visibility: visible; }
+
+.hud__fuse--short .hud__fuse-sticker {
+    background-color: var(--red);
+}
+
+.hud__fuse--short .hud__fuse-text {
+    color: var(--white);
+    -unity-text-outline-width: 6px;
+    -unity-text-outline-color: var(--navy);
+}
+
+.hud__pass {
+    position: absolute;
+    left: 0;
+    right: 0;
+    align-items: center;
+    scale: 0.4 0.4;
+    opacity: 0;
+    transition-property: scale, opacity;
+    transition-duration: 0.3s, 0.15s;
+    transition-timing-function: ease-out-back, linear;
+}
+
+.hud__pass--shown {
+    scale: 1 1;
+    opacity: 1;
+}
+
+.hud__pass-sticker {
+    padding: 6px 40px 10px 40px;
+    border-radius: 28px;
+    border-width: 6px 6px 14px 6px;
+    border-color: var(--navy);
+    background-color: var(--orange);
+    rotate: -4deg;
+}
+
+.hud__pass-text {
+    margin: 0;
+    padding: 0;
+    font-size: 78px;
+    color: var(--white);
+    -unity-text-outline-width: 8px;
+    -unity-text-outline-color: var(--navy);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.hud__pass-text.stroke__drop { translate: 0 18px; visibility: visible; }
 
 /* A match: SAFE over the player's car while it is safe after coming back (HudView places it over the car's marker),
    on the dark backdrop of the bots' handles, with a bar that runs down with the safe time. */
@@ -1167,6 +1254,8 @@
     -unity-text-align: middle-center;
     white-space: nowrap;
 }
+
+.hud__streak-text.stroke__drop { translate: 0 18px; visibility: visible; }
 
 .hud__shield-fill {
     width: 100%;
@@ -1943,10 +2032,11 @@
     color: var(--gold);
     -unity-text-outline-width: 14px;
     -unity-text-outline-color: var(--navy);
-    text-shadow: 0 10px 0 rgb(29, 43, 79);
     -unity-text-align: middle-center;
     white-space: nowrap;
 }
+
+.hud__start-goal-text.stroke__drop { translate: 0 10px; visibility: visible; }
 
 .hud__start-text {
     align-self: stretch;
@@ -1957,10 +2047,11 @@
     color: var(--white);
     -unity-text-outline-width: 16px;
     -unity-text-outline-color: var(--navy);
-    text-shadow: 0 14px 0 rgb(29, 43, 79);
     -unity-text-align: middle-center;
     white-space: nowrap;
 }
+
+.hud__start-text.stroke__drop { translate: 0 14px; visibility: visible; }
 
 .hud__start-hint {
     display: none;
@@ -2064,10 +2155,11 @@
     color: var(--white);
     -unity-text-outline-width: 12px;
     -unity-text-outline-color: var(--navy);
-    text-shadow: 0 8px 0 rgb(29, 43, 79);
     -unity-text-align: middle-center;
     white-space: nowrap;
 }
+
+.hud__teaching-text.stroke__drop { translate: 0 8px; visibility: visible; }
 
 .hud__tap-hint {
     position: absolute;
@@ -2230,6 +2322,8 @@
     font-size: 171px;
 }
 
+.round-over__title-text.stroke__drop { translate: 0 18px; visibility: visible; }
+
 .round-over__title--won {
     color: var(--gold);
 }
@@ -2304,7 +2398,6 @@
     padding: 0;
     font-size: 48px;
     -unity-text-outline-width: 7px;
-    text-shadow: none;
 }
 
 .round-over__by-badge {
@@ -2785,8 +2878,9 @@
     font-size: 72px;
     color: var(--gold);
     -unity-text-outline-width: 12px;
-    text-shadow: 0 10px 0 rgb(29, 43, 79);
 }
+
+.xp-bar__level-up-text.stroke__drop { translate: 0 10px; visibility: visible; }
 
 /* The second step: a level's reward over the whole result, dimmed, gold rays turning behind a white card. */
 .level-reward {
@@ -2842,6 +2936,8 @@
     color: var(--gold);
     -unity-text-auto-size: best-fit 60px 130px;
 }
+
+.level-reward__title-text.stroke__drop { translate: 0 18px; visibility: visible; }
 
 .level-reward__tag {
     margin: 0;
@@ -2932,6 +3028,8 @@
     -unity-text-outline-width: 12px;
     -unity-text-outline-color: var(--navy);
 }
+
+.level-reward__buy-label-text.stroke__drop { translate: 0 18px; visibility: visible; }
 
 .level-reward__price {
     flex-shrink: 0;
@@ -3118,10 +3216,11 @@
     color: var(--white);
     -unity-text-outline-width: 48px;
     -unity-text-outline-color: var(--navy);
-    text-shadow: 0 36px 0 rgb(29, 43, 79);
     -unity-text-align: middle-center;
     white-space: nowrap;
 }
+
+.kickoff__digit.stroke__drop { translate: 0 36px; visibility: visible; }
 
 .kickoff__go-text {
     flex-grow: 1;
@@ -3132,10 +3231,11 @@
     color: var(--green);
     -unity-text-outline-width: 46px;
     -unity-text-outline-color: var(--navy);
-    text-shadow: 0 34px 0 rgb(29, 43, 79);
     -unity-text-align: middle-center;
     white-space: nowrap;
 }
+
+.kickoff__go-text.stroke__drop { translate: 0 34px; visibility: visible; }
 
 /* A special round's name, tilted gold over the countdown numbers, and its one-line rule on a dark pill below it
    (HudView shows them for 3, 2 and 1 and hides them at GO!). */
@@ -3167,10 +3267,11 @@
     color: var(--gold);
     -unity-text-outline-width: 20px;
     -unity-text-outline-color: var(--navy);
-    text-shadow: 0 14px 0 rgb(29, 43, 79);
     -unity-text-align: middle-center;
     white-space: nowrap;
 }
+
+.kickoff__special-text.stroke__drop { translate: 0 14px; visibility: visible; }
 
 .kickoff__special-hint {
     margin: 16px 0 0 0;
@@ -3330,8 +3431,9 @@
     display: flex;
 }
 
-/* Last, so the face of a stroke wins over every rule above that gives its text an outline or a drop: the outline is
-   centred on the letters' edge, so the face over it keeps the letters their full width. */
+/* Last, so the layers of a stroke (StrokeText) win over every rule above that styles their text: all three carry the
+   same classes. The face goes over the outline without one: the outline is centred on the letters' edge, so the face
+   keeps the letters their full width. */
 .stroke > .stroke__face {
     position: absolute;
     left: 0;
@@ -3339,7 +3441,27 @@
     right: 0;
     bottom: 0;
     -unity-text-outline-width: 0;
-    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+}
+
+/* The drop under the outline: the letters again, navy and without outline, moved down by its text's own rule
+   (.x-text.stroke__drop { translate: 0 10px; visibility: visible; }, in pixels: as thick in every language). The same
+   picture as the text-shadow it replaces, which also draws the letters without their outline, so only the offset past
+   the outline shows; but UI Toolkit draws no text-shadow under the fallback font's letters (Cyrillic, the Turkish
+   ones). Hidden without a rule, so a faded stroke (opacity on it or a parent) shows no navy through its face; the bare
+   class keeps this below every text's rule. Label in the selector, so a rule colouring the text (gold, red) does not
+   colour its drop. */
+.stroke__drop {
+    visibility: hidden;
+}
+
+.stroke > Label.stroke__drop {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    color: var(--navy);
+    -unity-text-outline-width: 0;
 }
 
 /* Two aligned layers: a neutral car and its separately tinted white body. */
@@ -3554,8 +3676,9 @@
     font-size: 126px;
     color: var(--gold);
     -unity-text-outline-width: 18px;
-    text-shadow: 0 13px 0 rgb(29, 43, 79);
 }
+
+.settings__title-text.stroke__drop { translate: 0 13px; visibility: visible; }
 
 .settings__toggles {
     flex-direction: row;
@@ -4672,10 +4795,11 @@
     color: var(--gold);
     -unity-text-outline-width: 15px;
     -unity-text-outline-color: var(--navy);
-    text-shadow: 0 11px 0 rgb(29, 43, 79);
     -unity-text-align: middle-center;
     white-space: nowrap;
 }
+
+.end-note__text.stroke__drop { translate: 0 11px; visibility: visible; }
 
 /* TIME UP! at 0:00: big white words with the kick-off's navy stroke, a gold ring and gold stars bursting behind. */
 .end-stamp {
@@ -4725,10 +4849,11 @@
     color: var(--white);
     -unity-text-outline-width: 34px;
     -unity-text-outline-color: var(--navy);
-    text-shadow: 0 26px 0 rgb(29, 43, 79);
     -unity-text-align: middle-center;
     white-space: nowrap;
 }
+
+.end-stamp__text.stroke__drop { translate: 0 26px; visibility: visible; }
 
 /* Coins (RoundOverMeta, the garage): a gold disc with a navy ring and a paler disc inside, built of elements. */
 .coin {
@@ -4820,8 +4945,9 @@
     white-space: nowrap;
     -unity-text-outline-width: 10px;
     -unity-text-outline-color: var(--navy);
-    text-shadow: 0 6px 0 rgb(29, 43, 79);
 }
+
+.reward__value-text.stroke__drop { translate: 0 6px; visibility: visible; }
 
 .reward--xp .reward__value-text {
     color: var(--xp);
@@ -4846,8 +4972,9 @@
     color: var(--gold);
     -unity-text-outline-width: 9px;
     -unity-text-outline-color: var(--navy);
-    text-shadow: 0 5px 0 rgb(29, 43, 79);
 }
+
+.reward__stamp-text.stroke__drop { translate: 0 5px; visibility: visible; }
 
 /* x2 BOOST hanging on the XP sticker's bottom edge when the XP boost paid for the round: blue, as XP is. The top
    corners hold the star and name and CLAIM x2's own x2, so it keeps clear of both. */
@@ -4867,7 +4994,6 @@
 .reward__boost-label-text {
     font-size: 28px;
     -unity-text-outline-width: 7px;
-    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
 }
 
 /* CLAIM x2: the purple sticker button with a video sign and an AD tag, as rewarded ads are marked. */
@@ -4942,12 +5068,12 @@
     font-size: 50px;
     -unity-text-align: middle-center;
     -unity-text-outline-width: 6px;
-    text-shadow: 0 4px 0 rgb(29, 43, 79);
 }
+
+.double .double__label-text.stroke__drop { translate: 0 4px; visibility: visible; }
 
 .double .stroke > .stroke__face {
     -unity-text-outline-width: 0;
-    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
 }
 
 .double__key {
@@ -5328,9 +5454,10 @@
     color: var(--white);
     -unity-text-outline-width: 12px;
     -unity-text-outline-color: var(--navy);
-    text-shadow: 0 6px 0 var(--navy);
     white-space: nowrap;
 }
+
+.reward-stamp__label-text.stroke__drop { translate: 0 6px; visibility: visible; }
 
 .reward-toast {
     position: absolute;
@@ -5345,9 +5472,10 @@
     color: rgb(255, 77, 77);
     -unity-text-outline-width: 10px;
     -unity-text-outline-color: var(--navy);
-    text-shadow: 0 5px 0 var(--navy);
     white-space: nowrap;
 }
+
+.reward-toast-text.stroke__drop { translate: 0 5px; visibility: visible; }
 
 /* Without BOOST its place is free: the item button takes it, larger, at the height BOOST stood, with its timer badge
    and first hint over it. */

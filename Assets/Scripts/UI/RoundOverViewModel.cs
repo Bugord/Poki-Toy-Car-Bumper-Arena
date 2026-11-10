@@ -224,6 +224,10 @@ namespace ToyCarArena.UI
         /// <summary>The player's level now, this round's XP in.</summary>
         public int PlayerLevel => progress.Level;
 
+        /// <summary>What the player's league gives besides its look, for NEW LEAGUE!; null for none.</summary>
+        internal NewLeaguePopup.Prize LeaguePrize =>
+            LeagueRewards.PrizeAt(tuning, catalog, progress.Level, progress.SelectedColor, Stage);
+
         /// <summary>
         /// Whether the result greets the player's league with NEW LEAGUE!: it is above the last one they saw
         /// (<see cref="PlayerProgress.SeenLeague"/>). Asking marks it seen and sends <c>result / league-&lt;id&gt; /

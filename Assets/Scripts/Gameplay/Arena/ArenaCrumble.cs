@@ -85,9 +85,13 @@ namespace ToyCarArena.Gameplay.Arena
         private float time;
         private int warned;
         private int fallen;
+        private readonly bool isStill;
 
-        public ArenaCrumble(GameTuning tuning, GameTuning.ArenaSettings settings, ArenaRound round, ArenaFloor floor)
+        public ArenaCrumble(GameTuning tuning, GameTuning.ArenaSettings settings, ArenaRound round, ArenaFloor floor,
+            RoundRules rules)
         {
+            // HOT POTATO's floor is fenced and whole for the round: nothing shakes, falls or cycles.
+            this.isStill = rules.IsHotPotato;
             this.tuning = tuning;
             this.settings = settings;
             this.round = round;
@@ -117,6 +121,10 @@ namespace ToyCarArena.Gameplay.Arena
 
         public void Tick()
         {
+            if (isStill) {
+                return;
+            }
+
             if (isCycling) {
                 TickCycles();
                 return;

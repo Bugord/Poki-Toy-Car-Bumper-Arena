@@ -75,7 +75,8 @@ namespace ToyCarArena.App
     /// <item><c>progress / level-2..10, level-10plus / level-up</c> for each crossed level, and
     /// <c>progress / car-id / unlock</c> from the saved reward</item>
     /// <item><c>result / map-arena-id-rR / map</c>: the arena of the round, and <c>progress / map-arena-id / unlock</c>
-    /// for each arena a crossed level opened</item>
+    /// for each arena a crossed level opened; <c>progress / hat-topper-id / unlock</c> for each league's hat a crossed
+    /// level reached (after v0.17.4)</item>
     /// <item><c>result / car-car-id-rR / car</c>: the car played, before an unlock auto-equips the next one;
     /// catalog IDs contain no numbers, including drag-racer and monster-truck</item>
     /// <item>since v0.10: <c>mission / mission-id / complete</c> for each done mission, <c>mission / done-N-rR /
@@ -415,9 +416,12 @@ namespace ToyCarArena.App
         /// The first-round controls events (input, first move, boost input, swipes) go out only for a round that waited
         /// on the start screen, <paramref name="isStartRound"/>: the menu's first round counts down instead, and its
         /// first move would read the countdown as the player's hesitation. Null keeps the old rule, the first round.
+        /// In the HOT POTATO mode (<paramref name="isHotPotato"/>) nobody falls and the player is out only by the blast,
+        /// so the out causes (<c>round-out-cause</c>, <c>fall-cause</c>) are not sent: the mode's own are the
+        /// <c>special / hot-potato…</c> events.
         /// </remarks>
         public static void MeasureRoundEnd(this IGamePlatform platform, int round, RoundResult result, float duration,
-            PlayerDriver driver, bool hasBoost, bool? isStartRound = null)
+            PlayerDriver driver, bool hasBoost, bool? isStartRound = null, bool isHotPotato = false)
         {
             var measuresControls = isStartRound ?? round <= 1;
             if (result.IsMatch) {
@@ -448,7 +452,7 @@ namespace ToyCarArena.App
                 var revenge = result.RevengeTaken ? "got" : "missed";
                 platform.Measure(ResultCategory, $"revenge-{revenge}-{tag}", "revenge");
             }
-            if (result.Outcome == RoundOutcome.Out) {
+            if (result.Outcome == RoundOutcome.Out && !isHotPotato) {
                 var cause = result.KnockedOutBy == RoundResult.Nobody ? "fell" : "pushed";
                 platform.Measure(ResultCategory, $"{cause}-{tag}", "round-out-cause");
                 if (result.KnockedOutBy == RoundResult.Nobody) {
@@ -725,11 +729,20 @@ namespace ToyCarArena.App
             }
         }
 
-        /// <summary>The arenas the levels of this reward opened, from the tuning, as the cars are.</summary>
+        /// <summary>
+        /// The arenas the levels of this reward opened, from the tuning, as the cars are; and the leagues' hats it
+        /// reached (<c>progress / hat-id / unlock</c>; a league's car is already among the cars).
+        /// </summary>
         public static void MeasureMapUnlocks(this IGamePlatform platform, XpGain gain, GameTuning tuning)
         {
             foreach (var id in ArenaRotation.OpenedBetween(tuning, gain.Before.Level, gain.After.Level)) {
                 platform.Measure("progress", $"map-{id}", "unlock");
+            }
+
+            foreach (var league in tuning.LeagueRewards.All) {
+                if (league.Level > gain.Before.Level && league.Level <= gain.After.Level) {
+                    platform.Measure("progress", $"hat-{league.Topper}", "unlock");
+                }
             }
         }
 

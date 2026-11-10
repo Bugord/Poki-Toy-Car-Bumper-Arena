@@ -69,3 +69,31 @@ MonoBehaviour:
     bodySwatch: {x: 1, y: 1}
     portrait: {fileID: 2800000, guid: 2b74d07354f606d49917eb98b405306b, type: 3}
     bodyPortrait: {fileID: 2800000, guid: 288882b768cf2d94fb6b875fdb714ab3, type: 3}
+  - id: hot-rod
+    displayName: HOT ROD
+    unlockLevel: 10
+    model: {fileID: 919132149155446097, guid: a6b613a3e4394a5190bbf7d3863a0e6e, type: 3}
+    bodySwatch: {x: 1, y: 1}
+    portrait: {fileID: 2800000, guid: 21577be68ac275b45bb3411b0a24f5b2, type: 3}
+    bodyPortrait: {fileID: 2800000, guid: c4cdf181d640ba14594c91719e9e5683, type: 3}
+  - id: police
+    displayName: POLICE
+    unlockLevel: 25
+    model: {fileID: 919132149155446097, guid: a6183b3b29ad4c8f8867725bb571ac11, type: 3}
+    bodySwatch: {x: 1, y: 1}
+    portrait: {fileID: 2800000, guid: 3a96dfcea6a4e254ebcf1ec36d5b2018, type: 3}
+    bodyPortrait: {fileID: 2800000, guid: 0802fa727d0cdfe499389072fd3a44ef, type: 3}
+  - id: dozer
+    displayName: DOZER
+    unlockLevel: 50
+    model: {fileID: 919132149155446097, guid: 4be99ca6976f405994c75e10af5f2cfa, type: 3}
+    bodySwatch: {x: 1, y: 1}
+    portrait: {fileID: 2800000, guid: 0454a962867dc03479a7fcd904f50e92, type: 3}
+    bodyPortrait: {fileID: 2800000, guid: 1179b0935d516fb4381c77f75214470a, type: 3}
+  - id: comet
+    displayName: COMET
+    unlockLevel: 100
+    model: {fileID: 919132149155446097, guid: 7755c3cb55054cc48e3f1601a153c3d1, type: 3}
+    bodySwatch: {x: 1, y: 1}
+    portrait: {fileID: 2800000, guid: 41153697dffa2a046a3a143bb4a320cb, type: 3}
+    bodyPortrait: {fileID: 2800000, guid: 8c2888f9e56f2924e9951502da0321c0, type: 3}

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.IO;
+using System.Linq;
 using NUnit.Framework;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Round;
@@ -21,7 +22,7 @@ namespace ToyCarArena.Tests.PlayMode
         {
             var directory = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "toppers");
             Directory.CreateDirectory(directory);
-            foreach (var topper in LoadTuning().Toppers.All) {
+            foreach (var topper in LoadTuning().Toppers.All.Concat(LoadTuning().Toppers.League)) {
                 PlayerTopper = topper.Id;
                 CreateParent(new SimulationInput(), new SimulationProgress { Round = 1 }, "sandbox");
                 yield return LoadGame();

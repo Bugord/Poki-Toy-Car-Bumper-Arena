@@ -1,6 +1,7 @@
 using System;
 using Bugord.App.Localization;
 using Bugord.App.UI;
+using ToyCarArena.Gameplay.Cars;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -10,7 +11,8 @@ namespace ToyCarArena.UI
     /// NEW LEAGUE!: the popup that greets a league the player has not seen, over the main menu (<see cref="MenuLeagues"/>)
     /// or over the result of the round that reached it (<see cref="RoundOverView"/>). The player's own car turns on
     /// the new league's pedestal in a framed piece of its sky (<see cref="GarageView.SkyFrame"/>), the league's emblem
-    /// under it, the change of the badge, what the league gave (its sky, its pedestal, the badge's frame) and the next
+    /// under it, the change of the badge, what the league gave (its car and its hat, the prizes no coins buy, then its
+    /// sky, its pedestal and the badge's frame) and the next
     /// league, locked, as the goal; the menu's light turns behind it all. Styles in <c>ui_menu.uss</c>
     /// (<c>menu__league-*</c>).
     /// </summary>
@@ -55,6 +57,18 @@ namespace ToyCarArena.UI
 
         public bool IsOpen => popup.ClassListContains(OpenClass);
 
+        /// <summary>
+        /// What a league gives besides its look (<see cref="LeagueRewards"/>): its car, shown in the player's colour, and
+        /// its hat, drawn by <see cref="Stage"/> as the garage's shop draws hats (its flat icon without one).
+        /// </summary>
+        public sealed class Prize
+        {
+            public CarCatalog.Entry Car;
+            public int Color;
+            public string Topper;
+            public GarageStage Stage;
+        }
+
         /// <summary>The card, to scale to the screen: <see cref="Fit"/>.</summary>
         public VisualElement Card { get; }
 
@@ -93,7 +107,7 @@ namespace ToyCarArena.UI
         /// Opens the popup for the league <paramref name="level"/> is in. <paramref name="hero"/> is the player's 3D car
         /// on that league's pedestal (<see cref="GarageStage.ShowCar"/>); without it the flat pedestal stands in.
         /// </summary>
-        public void Show(int level, bool isDesktop, Texture hero)
+        public void Show(int level, bool isDesktop, Texture hero, Prize prize = null)
         {
             var tier = PlayerRank.TierOf(level);
             Card.Clear();
@@ -130,6 +144,10 @@ namespace ToyCarArena.UI
             var caption = Text("menu__league-caption");
             caption.text = Strings.Get("menu.you_unlocked");
             Card.Add(caption);
+            if (prize != null) {
+                Card.Add(Prizes(prize));
+            }
+
             var gets = Element("menu__league-gets");
             var swatch = Element("menu__league-swatch");
             swatch.style.backgroundImage = new StyleBackground(LeagueLook.CardSkyOf(tier));
@@ -170,15 +188,7 @@ namespace ToyCarArena.UI
             go.AddToClassList("menu__league-continue");
             go.focusable = false;
             go.Add(Element("button__face"));
-            var stroke = Element("stroke");
-            foreach (var isFace in new[] { false, true }) {
-                var text = Text("button__label");
-                text.EnableInClassList("stroke__face", isFace);
-                text.text = Strings.Get("result.continue");
-                stroke.Add(text);
-            }
-
-            go.Add(stroke);
+            go.Add(StrokeText.Create(Strings.Get("result.continue"), null, out _, "button__label"));
             if (isDesktop) {
                 var key = Element("key");
                 key.AddToClassList("menu__league-key");
@@ -207,14 +217,53 @@ namespace ToyCarArena.UI
         /// <summary>Takes the popup off the screen for good (the result builds one for each league it greets).</summary>
         public void Remove() => popup.RemoveFromHierarchy();
 
-        private static VisualElement Get(VisualElement picture, string key)
+        // The league's car and hat, first and larger than its look: they are what the climb was for.
+        private static VisualElement Prizes(Prize prize)
+        {
+            var prizes = Element("menu__league-prizes");
+            if (prize.Car != null) {
+                var car = Element("menu__league-prize-car");
+                car.AddToClassList("car-portrait");
+                new CarPortrait(car).Set(prize.Car, prize.Color);
+                prizes.Add(Tile(car, GameText.Car(prize.Car), "menu__league-prize"));
+            }
+
+            if (!string.IsNullOrEmpty(prize.Topper)) {
+                var models = prize.Stage?.ShowToppers(new[] { prize.Topper });
+                VisualElement hat;
+                if (models != null) {
+                    hat = new Image {
+                        image = models,
+                        uv = prize.Stage.CellOf(prize.Topper),
+                        scaleMode = ScaleMode.ScaleToFit,
+                        pickingMode = PickingMode.Ignore,
+                    };
+                }
+                else {
+                    hat = TopperIcon.Create(prize.Topper, "menu__league-prize-icon");
+                }
+
+                hat.AddToClassList("menu__league-prize-hat");
+                prizes.Add(Tile(hat, GameText.Topper(prize.Topper), "menu__league-prize"));
+            }
+
+            return prizes;
+        }
+
+        private static VisualElement Get(VisualElement picture, string key) => Tile(picture, Strings.Get(key), null);
+
+        private static VisualElement Tile(VisualElement picture, string text, string className)
         {
             var tile = Element("menu__league-get");
+            if (className != null) {
+                tile.AddToClassList(className);
+            }
+
             var pic = Element("menu__league-get-picture");
             pic.Add(picture);
             tile.Add(pic);
             var label = Text("menu__league-get-label");
-            label.text = Strings.Get(key);
+            label.text = text;
             tile.Add(label);
             return tile;
         }
