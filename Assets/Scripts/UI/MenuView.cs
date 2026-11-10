@@ -327,7 +327,7 @@ namespace ToyCarArena.UI
             xp.Add(track);
             // ×2 XP on the bar's top edge while the XP boost runs.
             xpBoost = Element("menu__xp-boost");
-            xpBoost.Add(RoundOverProgress.Outlined("", "menu__xp-boost-label", out xpBoostLabels));
+            xpBoost.Add(StrokeText.Outlined("", "menu__xp-boost-label", out xpBoostLabels));
             xp.Add(xpBoost);
             level.Add(xp);
             // The level badge goes over the bar's left end, which tucks under it.
@@ -378,7 +378,7 @@ namespace ToyCarArena.UI
             boostTile = Tile(DrawXpStar, () => Strings.Get("menu.xp_boost"), "B", OpenBoost);
             boostTile.AddToClassList("menu__tile--boost");
             var button = boostTile.Q<VisualElement>(className: "menu__tile-button");
-            var times = RoundOverProgress.Outlined("", "menu__boost-times", out var timesLabels);
+            var times = StrokeText.Outlined("", "menu__boost-times", out var timesLabels);
             foreach (var label in timesLabels) {
                 text.Set(label, () => $"×{ViewModel.BoostMultiplier}");
             }
@@ -508,20 +508,21 @@ namespace ToyCarArena.UI
             eventFace.Add(Element("menu__event-art"));
             var tag = Element("menu__event-tag");
             tag.Add(Icon("menu__event-bolt", DrawBolt));
-            var tagText = RoundOverProgress.Dropped("menu__event-tag-label", out var tagLabels);
+            var tagText = StrokeText.Create("", "menu__event-tag-label", out var tagLabels,
+                "menu__event-tag-label-text");
             foreach (var label in tagLabels) {
                 text.Set(label, () => Strings.Get("menu.event"));
             }
 
             tag.Add(tagText);
             eventFace.Add(tag);
-            var title = RoundOverProgress.Dropped("menu__event-title", out var titleLabels);
+            var title = StrokeText.Create("", "menu__event-title", out var titleLabels, "menu__event-title-text");
             foreach (var label in titleLabels) {
                 text.Set(label, () => Strings.Get("menu.hot_potato"));
             }
 
             title.AddToClassList("menu__event-title-box");
-            // One size for both layers, shrunk to the room left of the picture: a long name in another language fits.
+            // One size for all layers, shrunk to the room left of the picture: a long name in another language fits.
             FitText.Fit(title, titleLabels);
             eventFace.Add(title);
             var eventHint = Text("menu__mode-desc");
@@ -571,7 +572,8 @@ namespace ToyCarArena.UI
             var tick = Element("menu__mode-tick");
             tick.Add(Icon("menu__mode-tick-mark", DrawTick));
             selected.Add(tick);
-            var selectedText = RoundOverProgress.Dropped("menu__mode-selected-label", out var labels);
+            var selectedText = StrokeText.Create("", "menu__mode-selected-label", out var labels,
+                "menu__mode-selected-label-text");
             foreach (var label in labels) {
                 text.Set(label, () => Strings.Get("menu.selected"));
             }
@@ -657,7 +659,7 @@ namespace ToyCarArena.UI
             watch.focusable = false;
             watch.Add(Element("button__face"));
             watch.Add(RoundOverRewards.PlaySign());
-            var watchLabel = RoundOverProgress.Outlined("", "menu__watch-label", out var watchLabels);
+            var watchLabel = StrokeText.Outlined("", "menu__watch-label", out var watchLabels);
             foreach (var label in watchLabels) {
                 label.AddToClassList("button__label");
                 text.Set(label, () => Strings.Get("menu.watch"));
@@ -759,17 +761,7 @@ namespace ToyCarArena.UI
             sheet.AddToClassList("menu__sheet");
             sheet.pickingMode = PickingMode.Position;
             var head = Element("menu__sheet-head");
-            var stroke = Element("stroke");
-            titles = new Label[2];
-            foreach (var isFace in new[] { false, true }) {
-                var label = Text("display");
-                label.AddToClassList("menu__sheet-title");
-                label.EnableInClassList("stroke__face", isFace);
-                titles[isFace ? 1 : 0] = label;
-                stroke.Add(label);
-            }
-
-            head.Add(stroke);
+            head.Add(StrokeText.Create("", null, out titles, "display", "menu__sheet-title"));
             head.Add(CloseSticker(pressClose));
             sheet.Add(head);
             popup.Add(sheet);
@@ -798,15 +790,11 @@ namespace ToyCarArena.UI
             play.AddToClassList(className);
             play.focusable = false;
             play.Add(Element("button__face"));
-            var stroke = Element("stroke");
-            foreach (var isFace in new[] { false, true }) {
-                var label = Text("button__label");
-                label.EnableInClassList("stroke__face", isFace);
+            play.Add(StrokeText.Create("", null, out var labels, "button__label"));
+            foreach (var label in labels) {
                 text.Set(label, () => Strings.Get("menu.play"));
-                stroke.Add(label);
             }
 
-            play.Add(stroke);
             if (hasKey) {
                 var key = Element("key");
                 key.AddToClassList("menu__play-key");
@@ -840,16 +828,11 @@ namespace ToyCarArena.UI
             }
 
             tile.Add(button);
-            var stroke = Element("stroke");
-            foreach (var isFace in new[] { false, true }) {
-                var label = Text("display");
-                label.AddToClassList("menu__tile-caption");
-                label.EnableInClassList("stroke__face", isFace);
+            tile.Add(StrokeText.Create("", null, out var labels, "display", "menu__tile-caption"));
+            foreach (var label in labels) {
                 text.Set(label, caption);
-                stroke.Add(label);
             }
 
-            tile.Add(stroke);
             return tile;
         }
 

@@ -264,7 +264,7 @@ namespace ToyCarArena.UI
             var back = Sticker("garage__back", Back);
             back.Q<VisualElement>(className: "menu__face").Add(Icon("garage__back-arrow", DrawBack));
             top.Add(back);
-            var title = RoundOverProgress.Outlined("", "garage__title", out var titleLabels);
+            var title = StrokeText.Outlined("", "garage__title", out var titleLabels);
             foreach (var label in titleLabels) {
                 text.Set(label, () => Strings.Get("garage.title"));
             }
@@ -304,7 +304,7 @@ namespace ToyCarArena.UI
             show.Add(hero);
 
             caption = Element("garage__caption");
-            caption.Add(RoundOverProgress.Outlined("", "garage__name", out nameLabels));
+            caption.Add(StrokeText.Outlined("", "garage__name", out nameLabels));
             stats = GarageStats.Build("garage__stats");
             caption.Add(stats);
             show.Add(caption);
@@ -331,7 +331,7 @@ namespace ToyCarArena.UI
                 button.focusable = false;
                 // Two layers, as the titles: the navy outline under a clean face, so the white of the chosen tab stays
                 // white (one outlined label eats its own fill at this size).
-                button.Add(RoundOverProgress.Outlined("", "garage__tab-label", out var tabLabels));
+                button.Add(StrokeText.Outlined("", "garage__tab-label", out var tabLabels));
                 foreach (var label in tabLabels) {
                     text.Set(label, () => Strings.Get(key));
                 }
@@ -476,7 +476,7 @@ namespace ToyCarArena.UI
             actionPlay = RoundOverRewards.PlaySign();
             actionPlay.AddToClassList("garage__action-play");
             face.Add(actionPlay);
-            face.Add(RoundOverProgress.Outlined("", "garage__action-label", out actionLabels));
+            face.Add(StrokeText.Outlined("", "garage__action-label", out actionLabels));
             foreach (var label in actionLabels) {
                 label.AddToClassList("button__label");
             }
@@ -506,7 +506,7 @@ namespace ToyCarArena.UI
             toastCoin = RoundOverMeta.Coin();
             toastCoin.AddToClassList("garage__toast-coin");
             toast.Add(toastCoin);
-            toast.Add(RoundOverProgress.Outlined("", "garage__toast-label", out toastLabels));
+            toast.Add(StrokeText.Outlined("", "garage__toast-label", out toastLabels));
             toast.style.display = DisplayStyle.None;
             screen.Add(toast);
         }
@@ -569,7 +569,7 @@ namespace ToyCarArena.UI
             sheetBuy.AddToClassList("garage__sheet-buy");
             sheetBuy.focusable = false;
             sheetBuy.Add(Element("button__face"));
-            var buyLabel = RoundOverProgress.Outlined("", "garage__sheet-buy-label", out sheetBuyLabels);
+            var buyLabel = StrokeText.Outlined("", "garage__sheet-buy-label", out sheetBuyLabels);
             foreach (var label in sheetBuyLabels) {
                 label.AddToClassList("button__label");
                 text.Set(label, () => Strings.Get("result.buy"));
@@ -580,7 +580,7 @@ namespace ToyCarArena.UI
             sheetBuyCoin.AddToClassList("garage__sheet-buy-coin");
             sheetBuy.Add(sheetBuyCoin);
             // Two layers, as BUY beside it: one outlined label eats the fill of its own digits at this size.
-            sheetBuyPrice = RoundOverProgress.Outlined("", "garage__sheet-buy-price", out sheetBuyPriceLabels);
+            sheetBuyPrice = StrokeText.Outlined("", "garage__sheet-buy-price", out sheetBuyPriceLabels);
             sheetBuy.Add(sheetBuyPrice);
             sheetBuy.Add(KeyCap(null, "garage__sheet-key", () => Strings.Get("common.space")));
             sheet.Add(sheetBuy);
@@ -594,7 +594,7 @@ namespace ToyCarArena.UI
             sheetWatch.focusable = false;
             sheetWatch.Add(Element("button__face"));
             sheetWatch.Add(RoundOverRewards.PlaySign());
-            var watchLabel = RoundOverProgress.Outlined("", "menu__watch-label", out var watchLabels);
+            var watchLabel = StrokeText.Outlined("", "menu__watch-label", out var watchLabels);
             foreach (var label in watchLabels) {
                 label.AddToClassList("button__label");
                 text.Set(label, () => Strings.Get("garage.watch_ad"));

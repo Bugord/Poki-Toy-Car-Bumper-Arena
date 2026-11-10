@@ -98,7 +98,7 @@ namespace ToyCarArena.UI
             stamp.AddToClassList("reward-stamp");
             var pill = new VisualElement { pickingMode = PickingMode.Ignore };
             pill.AddToClassList("reward-stamp__pill");
-            pill.Add(RoundOverProgress.Outlined(text, "reward-stamp__label", out _));
+            pill.Add(StrokeText.Outlined(text, "reward-stamp__label", out _));
             stamp.Add(pill);
             pill.style.rotate = new Rotate(StampTilt);
             art.parent.Add(stamp);
@@ -183,7 +183,7 @@ namespace ToyCarArena.UI
         private static async UniTaskVoid Toast(VisualElement overlay, VisualElement over, string text,
             CancellationToken token)
         {
-            var toast = RoundOverProgress.Outlined(text, "reward-toast", out _);
+            var toast = StrokeText.Outlined(text, "reward-toast", out _);
             toast.pickingMode = PickingMode.Ignore;
             overlay.Add(toast);
             var origin = overlay.WorldToLocal(new Vector2(over.worldBound.center.x, over.worldBound.yMin));

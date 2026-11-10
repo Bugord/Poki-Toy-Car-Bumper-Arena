@@ -190,7 +190,6 @@
 .menu__xp-boost-label-text {
     font-size: 30px;
     -unity-text-outline-width: 7px;
-    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
 }
 
 .menu__xp-text {
@@ -372,10 +371,10 @@
     padding: 0;
     font-size: 36px;
     -unity-text-outline-width: 9px;
-    text-shadow: 0 7px 0 rgb(29, 43, 79);
 }
 
-.menu__tile-caption.stroke__face { text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+.menu__tile-caption.stroke__drop { translate: 0 7px; visibility: visible; }
+
 
 .menu__icon {
     width: 86px;
@@ -464,8 +463,9 @@
 .menu__boost-times-text {
     font-size: 64px;
     -unity-text-outline-width: 11px;
-    text-shadow: 0 6px 0 rgb(29, 43, 79);
 }
+
+.menu__boost-times-text.stroke__drop { translate: 0 6px; visibility: visible; }
 
 /* Running: a blue face with ×2, and the matches left on one pill across its bottom edge (nothing else on it). */
 .menu__boost-left {
@@ -586,10 +586,11 @@
 .menu__watch-label-text {
     font-size: 80px;
     -unity-text-outline-width: 12px;
-    text-shadow: 0 6px 0 rgb(29, 43, 79);
 }
 
-.menu__watch-label-text.stroke__face { -unity-text-outline-width: 0; text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+.menu__watch-label-text.stroke__drop { translate: 0 6px; visibility: visible; }
+
+.menu__watch-label-text.stroke__face { -unity-text-outline-width: 0; }
 
 .menu__watch-key {
     display: none;
@@ -947,8 +948,9 @@
     padding: 0;
     font-size: 76px;
     -unity-text-outline-width: 14px;
-    text-shadow: 0 12px 0 rgb(29, 43, 79);
 }
+
+.menu__sheet-title.stroke__drop { translate: 0 12px; visibility: visible; }
 
 .menu__close {
     width: 112px;
@@ -1088,7 +1090,12 @@
     -unity-text-outline-color: var(--navy);
 }
 
-.menu__event-tag-label-text.stroke__drop { translate: 0 14%; }
+/* The card's drops keep their outline: a solid navy step under the letters, as drawn for this card. */
+.stroke > Label.menu__event-tag-label-text.stroke__drop {
+    translate: 0 5px;
+    visibility: visible;
+    -unity-text-outline-width: 8px;
+}
 
 .menu__event-title-box {
     align-self: flex-start;
@@ -1109,8 +1116,12 @@
     -unity-text-outline-color: var(--navy);
 }
 
-/* As the popups' titles: 12 px at 76 px, a share of the size so a shrunk name keeps its drop in proportion. */
-.menu__event-title-text.stroke__drop { translate: 0 16%; }
+/* FitText shrinks this drop with a long name in another language. */
+.stroke > Label.menu__event-title-text.stroke__drop {
+    translate: 0 14px;
+    visibility: visible;
+    -unity-text-outline-width: 14px;
+}
 
 .menu__mode-card-name {
     margin: 0;
@@ -1198,7 +1209,11 @@
     -unity-text-outline-color: var(--navy);
 }
 
-.menu__mode-selected-label-text.stroke__drop { translate: 0 14%; }
+.stroke > Label.menu__mode-selected-label-text.stroke__drop {
+    translate: 0 5px;
+    visibility: visible;
+    -unity-text-outline-width: 8px;
+}
 
 /* A mode not out yet: a low grey row with a gold padlock and a white SOON pill; nothing on hover. */
 .menu__mode-soon {
@@ -1299,11 +1314,11 @@
     font-size: 116px;
     color: var(--gold);
     -unity-text-outline-width: 18px;
-    text-shadow: 0 14px 0 rgb(29, 43, 79);
     rotate: -4deg;
 }
 
-.menu__league-title-text.stroke__face { text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+.menu__league-title-text.stroke__drop { translate: 0 14px; visibility: visible; }
+
 
 /* The player's car on the new pedestal in the new sky (GarageView.SkyFrame), the emblem as a medal on its lower edge. */
 .menu__league-stage {
@@ -1341,12 +1356,12 @@
     padding: 0;
     font-size: 94px;
     -unity-text-outline-width: 16px;
-    text-shadow: 0 12px 0 rgb(29, 43, 79);
     white-space: nowrap;
     -unity-text-auto-size: best-fit 48px 94px;
 }
 
-.menu__league-name.stroke__face { text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+.menu__league-name.stroke__drop { translate: 0 12px; visibility: visible; }
+
 
 /* The level the league starts at, an arrow and the player's level in the new frame: badges wider than tall, as
    everywhere else. */
@@ -1569,10 +1584,10 @@
     padding: 0;
     font-size: 96px;
     -unity-text-outline-width: 16px;
-    text-shadow: 0 12px 0 rgb(29, 43, 79);
 }
 
-.menu__leagues-title.stroke__face { text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+.menu__leagues-title.stroke__drop { translate: 0 12px; visibility: visible; }
+
 
 .menu__leagues-key {
     margin: 0 30px 0 0;
@@ -1676,12 +1691,11 @@
     padding: 0;
     font-size: 64px;
     -unity-text-outline-width: 14px;
-    text-shadow: 0 8px 0 rgb(29, 43, 79);
     white-space: nowrap;
 }
 
-.menu__league-row-name.stroke__face,
-.menu__league-card-name.stroke__face { text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+.menu__league-row-name.stroke__drop, .menu__league-card-name.stroke__drop { translate: 0 8px; visibility: visible; }
+
 
 .menu__league-from {
     margin: 10px 0 0 0;
@@ -1891,8 +1905,9 @@
 .menu__league-card-name {
     font-size: 86px;
     -unity-text-outline-width: 16px;
-    text-shadow: 0 10px 0 rgb(29, 43, 79);
 }
+
+.menu__league-card-name.stroke__drop { translate: 0 10px; visibility: visible; }
 
 .menu__league-card-item .menu__league-from {
     margin-top: 16px;
@@ -2148,10 +2163,11 @@
 .menu__daily-label-text {
     font-size: 64px;
     -unity-text-outline-width: 11px;
-    text-shadow: 0 6px 0 rgb(29, 43, 79);
 }
 
-.menu__daily-label-text.stroke__face { -unity-text-outline-width: 0; text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+.menu__daily-label-text.stroke__drop { translate: 0 6px; visibility: visible; }
+
+.menu__daily-label-text.stroke__face { -unity-text-outline-width: 0; }
 
 .menu__daily-ad {
     position: absolute;

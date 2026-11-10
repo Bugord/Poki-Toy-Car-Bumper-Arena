@@ -42,8 +42,8 @@ namespace ToyCarArena.UI
 
         private readonly List<Seat> seats = new();
         private VisualElement lobby;
-        private Label title;
-        private Label titleFace;
+        private VisualElement title;
+        private Label[] titleLabels;
         private VisualElement arenaLine;
         private VisualElement specialCard;
         private VisualElement arenaBadge;
@@ -69,10 +69,12 @@ namespace ToyCarArena.UI
 
         protected override void OnAttached()
         {
+            // The outlined texts of the UXML get their drop layer (StrokeText).
+            StrokeText.AddDrops(Root);
             lobby = Root.Q<VisualElement>("lobby");
             DriftingChecker.AddTo(Root.Q<VisualElement>("curtain"));
-            title = Root.Q<Label>("lobby-title");
-            titleFace = Root.Q<Label>("lobby-title-face");
+            title = Root.Q<VisualElement>("lobby-title");
+            titleLabels = StrokeText.LabelsOf(title);
             arenaLine = Root.Q<VisualElement>("lobby-arena");
             barFill = Root.Q<VisualElement>("lobby-bar-fill");
             loadingText = Root.Q<Label>("lobby-loading-text");
@@ -252,12 +254,9 @@ namespace ToyCarArena.UI
             var isComplete = found >= total;
             var text = isReady ? Strings.Get("lobby.ready")
                 : isComplete ? Strings.Get("lobby.match_found") : Strings.Get("lobby.finding_players");
-            title.text = text;
-            titleFace.text = text;
+            StrokeText.SetText(titleLabels, text);
             title.EnableInClassList("lobby__title--ready", isReady);
-            titleFace.EnableInClassList("lobby__title--ready", isReady);
             title.EnableInClassList("lobby__title--search", !isComplete);
-            titleFace.EnableInClassList("lobby__title--search", !isComplete);
 
             var target = isReady ? 1f : FoundShare * (total > 0 ? found / (float)total : 1f);
             fill = Mathf.MoveTowards(fill, target, FillSpeed * Mathf.Max(0f, time - fillTime));

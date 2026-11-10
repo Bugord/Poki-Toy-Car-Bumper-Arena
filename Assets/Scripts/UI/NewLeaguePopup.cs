@@ -170,15 +170,7 @@ namespace ToyCarArena.UI
             go.AddToClassList("menu__league-continue");
             go.focusable = false;
             go.Add(Element("button__face"));
-            var stroke = Element("stroke");
-            foreach (var isFace in new[] { false, true }) {
-                var text = Text("button__label");
-                text.EnableInClassList("stroke__face", isFace);
-                text.text = Strings.Get("result.continue");
-                stroke.Add(text);
-            }
-
-            go.Add(stroke);
+            go.Add(StrokeText.Create(Strings.Get("result.continue"), null, out _, "button__label"));
             if (isDesktop) {
                 var key = Element("key");
                 key.AddToClassList("menu__league-key");
