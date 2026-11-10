@@ -82,7 +82,6 @@
                     <ui:VisualElement picking-mode="Ignore" class="level-card__gain">
                         <ui:Label name="xp-rank" text="ROOKIE" picking-mode="Ignore" class="caption level-card__rank" />
                     </ui:VisualElement>
-                    <ui:Label name="xp-total" text="0 / 100 XP" picking-mode="Ignore" class="caption level-card__total" />
                 </ui:VisualElement>
                 <ui:VisualElement name="xp-track" picking-mode="Ignore" class="track" />
             </ui:VisualElement>

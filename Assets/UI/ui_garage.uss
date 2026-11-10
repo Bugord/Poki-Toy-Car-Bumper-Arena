@@ -48,7 +48,7 @@
     -unity-text-outline-width: 14px;
 }
 
-.garage__title-text.stroke__drop { translate: 0 10px; visibility: visible; }
+.garage__title-text.stroke__drop { translate: 0 10px; display: flex; }
 
 .garage__coins--short .menu__coins-fill { background-color: #ffd9d9; }
 .garage__coins--short .menu__coins-count { color: var(--red); }
@@ -96,7 +96,7 @@
     -unity-text-outline-width: 13px;
 }
 
-.garage__name-text.stroke__drop { translate: 0 10px; visibility: visible; }
+.garage__name-text.stroke__drop { translate: 0 10px; display: flex; }
 
 /* The stats: one white pill, each stat's name and five pips side by side. */
 .garage-stats {
@@ -334,7 +334,7 @@
     -unity-text-outline-color: var(--navy);
 }
 
-.garage__tab--on .garage__tab-label-text.stroke__drop { translate: 0 5px; visibility: visible; }
+.garage__tab--on .garage__tab-label-text.stroke__drop { translate: 0 5px; display: flex; }
 
 .garage__tab--on .garage__tab-label-text.stroke__face {
     -unity-text-outline-width: 0;
@@ -667,7 +667,7 @@
     -unity-text-outline-color: var(--navy);
 }
 
-.garage__action-label-text.stroke__drop { translate: 0 8px; visibility: visible; }
+.garage__action-label-text.stroke__drop { translate: 0 8px; display: flex; }
 
 .garage__action-label-text.stroke__face { -unity-text-outline-width: 0; }
 
@@ -785,7 +785,7 @@
     -unity-text-outline-color: var(--white);
 }
 
-.garage__toast-label-text.stroke__drop { translate: 0 8px; visibility: visible; }
+.garage__toast-label-text.stroke__drop { translate: 0 8px; display: flex; }
 
 .garage__toast-label-text.stroke__face { -unity-text-outline-width: 0; }
 
@@ -965,7 +965,7 @@
     -unity-text-outline-color: var(--navy);
 }
 
-.garage__sheet-buy-label-text.stroke__drop { translate: 0 6px; visibility: visible; }
+.garage__sheet-buy-label-text.stroke__drop { translate: 0 6px; display: flex; }
 
 .garage__sheet-buy-label-text.stroke__face { -unity-text-outline-width: 0; }
 
@@ -991,7 +991,7 @@
     -unity-text-outline-color: var(--navy);
 }
 
-.garage__sheet-buy-price-text.stroke__drop { translate: 0 5px; visibility: visible; }
+.garage__sheet-buy-price-text.stroke__drop { translate: 0 5px; display: flex; }
 
 .garage__sheet-buy-price-text.stroke__face { -unity-text-outline-width: 0; }
 
