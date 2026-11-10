@@ -3444,13 +3444,13 @@
     -unity-text-outline-width: 0;
 }
 
-/* The drop under the outline: the letters again, navy and without outline, moved down by its text's own rule
-   (.x-text.stroke__drop { translate: 0 10px; visibility: visible; }, in pixels: as thick in every language). The same
-   picture as the text-shadow it replaces, which also draws the letters without their outline, so only the offset past
-   the outline shows; but UI Toolkit draws no text-shadow under the fallback font's letters (Cyrillic, the Turkish
-   ones). Hidden without a rule, so a faded stroke (opacity on it or a parent) shows no navy through its face; the bare
-   class keeps this below every text's rule. Label in the selector, so a rule colouring the text (gold, red) does not
-   colour its drop. */
+/* The drop under the outline: the letters again, all navy with their text's own outline, moved down by its text's
+   rule (.x-text.stroke__drop { translate: 0 10px; visibility: visible; }, in pixels: as thick in every language). With
+   the outline it is as wide as the outlined letters, so the whole offset shows as one solid step under them: the side
+   wall of 3D letters rather than a second text beneath. A layer and not a text-shadow, because UI Toolkit draws no
+   text-shadow under the fallback font's letters (Cyrillic, the Turkish ones). Hidden without a rule, so a faded stroke
+   (opacity on it or a parent) shows no navy through its face; the bare class keeps this below every text's rule. Label
+   in the selector, so a rule colouring the text (gold, red) or its outline does not colour its drop. */
 .stroke__drop {
     visibility: hidden;
 }
@@ -3462,7 +3462,7 @@
     right: 0;
     bottom: 0;
     color: var(--navy);
-    -unity-text-outline-width: 0;
+    -unity-text-outline-color: var(--navy);
 }
 
 /* Two aligned layers: a neutral car and its separately tinted white body. */
