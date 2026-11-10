@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using ToyCarArena.Gameplay.Round;
+using ToyCarArena.Rendering;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using VContainer;
@@ -114,6 +115,8 @@ namespace ToyCarArena.Gameplay.Arena
         private IArenaEdge edge;
         private ArenaRound round;
         private Camera view;
+        // The layers the camera draws as the scene has it; none while an opaque screen covers the arena.
+        private int drawnLayers;
         private int fittedWidth;
         private int fittedHeight;
         // The distance along the view that fits an arena of radius 1; every distance in the fit of a circle grows with
@@ -158,6 +161,7 @@ namespace ToyCarArena.Gameplay.Arena
         private void Awake()
         {
             view = GetComponent<Camera>();
+            drawnLayers = view.cullingMask;
             if (map.HasTheme) {
                 view.backgroundColor = map.Theme.Background;
             }
@@ -193,6 +197,13 @@ namespace ToyCarArena.Gameplay.Arena
 
         private void LateUpdate()
         {
+            // Under the curtain, the menu or the garage nothing of the arena shows, so the camera only clears the screen
+            // for the UI over it. It stays on: without a camera the UI is not drawn either.
+            var layers = ShownScreens.IsArenaCovered ? 0 : drawnLayers;
+            if (view.cullingMask != layers) {
+                view.cullingMask = layers;
+            }
+
             var outline = edge.Outline(true);
             float target;
             float whole;

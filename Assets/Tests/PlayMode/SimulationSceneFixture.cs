@@ -11,6 +11,7 @@ using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Input;
 using ToyCarArena.Gameplay.Round;
+using ToyCarArena.Rendering;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -58,6 +59,8 @@ namespace ToyCarArena.Tests.PlayMode
             this.originalRunInBackground = Application.runInBackground;
             this.originalRandomState = UnityEngine.Random.state;
 
+            // A screen an earlier test left shown would keep the arena undrawn.
+            ShownScreens.Clear();
             Time.timeScale = 1f;
             Time.captureDeltaTime = 1f / 60f;
             Application.targetFrameRate = -1;

@@ -3,6 +3,7 @@ using Bugord.App.Localization;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.Audio;
 using ToyCarArena.Gameplay;
+using ToyCarArena.Rendering;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -10,6 +11,8 @@ namespace ToyCarArena.UI
 {
     public sealed class HudView : FadingView<HudViewModel>
     {
+        protected override ShownScreen ScreenKind => ShownScreen.Round;
+
         // The numbers move at most once a second, so a tenth of one keeps them in step without running every frame.
         private const long RefreshInterval = 100;
 
