@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Threading;
 using Bugord.App.Localization;
 using Cysharp.Threading.Tasks;
@@ -102,7 +104,6 @@ namespace ToyCarArena.UI
         private const float WideModesScale = 1.3f;
         private const float ModesHeight = 1600f;
         // A beat between picking a mode and the popup closing, so the ring is seen on its new card.
-        private const long PickCloseMilliseconds = 280;
         private const string ModeSelectedClass = "menu__mode-holder--selected";
 
         // The XP bar sideways: this share of the top row, never shorter than upright and never into the coins and the
@@ -402,7 +403,7 @@ namespace ToyCarArena.UI
             rays.generateVisualContent += DrawLight;
             // Unscaled clock, so the ad pause (timeScale 0) does not stop the light.
             rays.schedule.Execute(() =>
-                rays.style.rotate = new Rotate(Time.unscaledTime / RaysTurnSeconds * 360f % 360f)).Every(16);
+                rays.style.rotate = new Rotate(Time.unscaledTime / RaysTurnSeconds * 360f % 360f)).Every(0);
             stage.Add(rays);
             plinth = Element("menu__plinth");
             plinth.Add(Element("menu__plinth-base"));
@@ -490,7 +491,7 @@ namespace ToyCarArena.UI
         /// CHOOSE MODE, as the board has it: the event on top on an orange card with sun rays, its EVENT tag, its name,
         /// its rule and its picture (a car with the bomb over it); QUICK MATCH on a white card with the player's own car;
         /// then the modes still to come as low grey rows with a padlock and SOON. The mode in play wears a green ring and
-        /// SELECTED; a tap on the other picks it and closes the popup a moment later. PLAY under them starts the mode.
+        /// SELECTED; a tap on the other picks it, and the popup stays open. PLAY under them starts the mode.
         /// </summary>
         private void BuildModesPopup(VisualElement menu)
         {
@@ -584,8 +585,9 @@ namespace ToyCarArena.UI
             return holder;
         }
 
-        // A tap on a mode: the ring moves to it, the card pops, the MODE plate says it, and the popup closes a beat later
-        // so the pick is seen. A tap on the mode in play only closes it.
+        // A tap on a mode: the ring fades in round it, the card swells and settles, its SELECTED tag springs in, and the
+        // MODE plate says it. The popup stays open: PLAY under the cards starts the mode, the cross or Esc goes back.
+        // A tap on the mode in play only swells its card.
         private void PickMode(EventMode mode, VisualElement card)
         {
             if (IsBusy || !modesPopup.ClassListContains(OpenClass)) {
@@ -596,18 +598,37 @@ namespace ToyCarArena.UI
             var isNew = mode != ViewModel.Mode;
             ViewModel.SelectMode(mode);
             ShowMode();
+            Swell(card);
             if (!isNew) {
-                ClosePopups();
                 return;
             }
 
-            Pop(card);
-            modesPopup.schedule.Execute(() => {
-                if (modesPopup.ClassListContains(OpenClass)) {
-                    ClosePopups();
-                }
-            }).StartingIn(PickCloseMilliseconds);
+            var ring = card.Q(className: "menu__mode-ring");
+            Animate(ring, RingFadeSeconds, t => ring.style.opacity = Mathf.SmoothStep(0f, 1f, t),
+                () => ring.style.opacity = StyleKeyword.Null);
+            var tag = card.Q(className: "menu__mode-selected");
+            Animate(tag, SpringSeconds, t => SetScale(tag, Spring(t)), () => tag.style.scale = StyleKeyword.Null);
         }
+
+        // A soft swell that overshoots back and settles: a big card answers a tap without jumping.
+        private void Swell(VisualElement card) =>
+            Animate(card, SwellSeconds,
+                t => SetScale(card, 1f + 0.05f * Mathf.Sin(t * SwellSeconds * 21f) * Mathf.Exp(-t * SwellSeconds * 8f)),
+                () => card.style.scale = StyleKeyword.Null);
+
+        // From nothing to its size with one overshoot, settling at 1 by t = 1.
+        private static float Spring(float t)
+        {
+            var seconds = t * SpringSeconds;
+            return 1f - Mathf.Exp(-seconds * 10f) * Mathf.Cos(seconds * 18f) * (1f - t);
+        }
+
+        private static void SetScale(VisualElement element, float size) =>
+            element.style.scale = new Scale(new Vector3(size, size, 1f));
+
+        private const float SwellSeconds = 0.5f;
+        private const float SpringSeconds = 0.45f;
+        private const float RingFadeSeconds = 0.15f;
 
         // The selected mode on its card and on the MODE plate; the event's card only where the build has events.
         private void ShowMode()
@@ -1665,18 +1686,42 @@ namespace ToyCarArena.UI
         }
 
         // A quick jump, as a sticker answers a press: up and back over a fifth of a second, on the unscaled clock.
-        private static void Pop(VisualElement element)
-        {
-            var started = Time.unscaledTime;
-            element.schedule.Execute(() => {
-                var t = Mathf.Clamp01((Time.unscaledTime - started) / PopSeconds);
-                var size = 1f + 0.25f * Mathf.Sin(t * Mathf.PI);
-                element.style.scale = new Scale(new Vector3(size, size, 1f));
-            }).Every(16).Until(() => Time.unscaledTime - started > PopSeconds);
-            element.schedule.Execute(() => element.style.scale = StyleKeyword.Null).StartingIn(260);
-        }
+        private void Pop(VisualElement element) =>
+            Animate(element, PopSeconds, t => SetScale(element, 1f + 0.25f * Mathf.Sin(t * Mathf.PI)),
+                () => element.style.scale = StyleKeyword.Null);
 
         private const float PopSeconds = 0.22f;
+
+        /// <summary>
+        /// Runs <paramref name="apply"/> with the share of <paramref name="seconds"/> gone, every frame on the unscaled
+        /// clock, then <paramref name="done"/>. Every frame, not every 16 ms: a frame that comes in under 16 ms (most at
+        /// 60 Hz and all above it) was skipped, and the motion stuttered. A newer run on the same element ends the older.
+        /// </summary>
+        private void Animate(VisualElement element, float seconds, Action<float> apply, Action done)
+        {
+            var ticket = ++motionTicket;
+            motions[element] = ticket;
+            var started = Time.unscaledTime;
+            bool IsOwn() => motions.TryGetValue(element, out var at) && at == ticket;
+            apply(0f);
+            element.schedule.Execute(() => {
+                if (!IsOwn()) {
+                    return;
+                }
+
+                var t = (Time.unscaledTime - started) / seconds;
+                if (t < 1f) {
+                    apply(t);
+                    return;
+                }
+
+                motions.Remove(element);
+                done();
+            }).Every(0).Until(() => !IsOwn());
+        }
+
+        private readonly Dictionary<VisualElement, int> motions = new();
+        private int motionTicket;
 
         private void ClosePopups()
         {
@@ -1708,20 +1753,11 @@ namespace ToyCarArena.UI
         }
 
         // Side to side and settling over ShakeSeconds, on the unscaled clock; a press during a shake starts it again.
-        private static void Shake(VisualElement element)
+        private void Shake(VisualElement element)
         {
-            var started = Time.unscaledTime;
-            element.userData = started;
-            bool IsOwn() => element.userData is float at && Mathf.Approximately(at, started);
-            element.schedule.Execute(() => {
-                var t = Mathf.Clamp01((Time.unscaledTime - started) / ShakeSeconds);
-                element.style.translate = new Translate(16f * Mathf.Sin(t * Mathf.PI * 6f) * (1f - t), 0f);
-            }).Every(16).Until(() => !IsOwn() || Time.unscaledTime - started > ShakeSeconds);
-            element.schedule.Execute(() => {
-                if (IsOwn()) {
-                    element.style.translate = StyleKeyword.Null;
-                }
-            }).StartingIn((long)(ShakeSeconds * 1000f) + 40);
+            Animate(element, ShakeSeconds,
+                t => element.style.translate = new Translate(16f * Mathf.Sin(t * Mathf.PI * 6f) * (1f - t), 0f),
+                () => element.style.translate = StyleKeyword.Null);
         }
 
         // -- Icons ---------------------------------------------------------------------------------------------------
