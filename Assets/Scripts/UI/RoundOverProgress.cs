@@ -549,7 +549,8 @@ namespace ToyCarArena.UI
         private async UniTask ShowGift(CancellationToken token)
         {
             var gift = viewModel.Gift;
-            if (gift == null || isGiftShown) {
+            // Not on a result that opens a car or comes after a popup: the hat stays owned and waits for a quieter one.
+            if (gift == null || isGiftShown || !viewModel.IsGiftDue) {
                 return;
             }
 
@@ -575,6 +576,7 @@ namespace ToyCarArena.UI
             }
 
             popupsShown++;
+            viewModel.PopupShown();
             var isClosed = false;
             league = new NewLeaguePopup(root.Q<VisualElement>("round-over") ?? root, () => Clicked?.Invoke(),
                 () => isClosed = true);
@@ -663,6 +665,7 @@ namespace ToyCarArena.UI
             VisualElement details = null, string hatForSale = null)
         {
             popupsShown++;
+            viewModel.PopupShown();
             var overlay = new VisualElement();
             overlay.AddToClassList("level-reward");
             var rays = new VisualElement { pickingMode = PickingMode.Ignore };
