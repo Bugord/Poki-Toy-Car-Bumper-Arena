@@ -4,12 +4,12 @@ namespace ToyCarArena.UI
 {
     /// <summary>
     /// The outlined text of the stickers, built one way everywhere: three labels with the same text and classes in a
-    /// <c>stroke</c> element. Under everything the drop (<c>stroke__drop</c>), the letters in navy without outline
-    /// moved down by its text's rule (<c>.x-text.stroke__drop { translate: 0 10px; }</c>); over it the outline, the
+    /// <c>stroke</c> element. Under everything the drop (<c>stroke__drop</c>), the letters all navy with their text's
+    /// outline, moved down by its text's rule (<c>.x-text.stroke__drop { translate: 0 10px; }</c>); over it the outline, the
     /// label that sizes the element; on top the face (<c>stroke__face</c>) without outline, so the letters keep their
-    /// full width (.stroke in ui_screens). The drop draws what a text-shadow draws, but as a layer, because UI Toolkit
-    /// draws no text-shadow under the fallback font's letters (Cyrillic, the Turkish ones): a Russian title had no
-    /// drop. Its offset is in pixels, not in % of the label, because the fallback font's lines are taller: the drop is
+    /// full width (.stroke in ui_screens). With the outline the drop shows as one solid step, the side wall of 3D letters;
+    /// it is a layer and not a text-shadow, because UI Toolkit draws no text-shadow under the fallback font's letters
+    /// (Cyrillic, the Turkish ones): a Russian title had no drop. Its offset is in pixels, not in % of the label, because the fallback font's lines are taller: the drop is
     /// as thick in every language, and <see cref="FitText"/> shrinks it with the text. Without a rule it is hidden.
     /// </summary>
     internal static class StrokeText

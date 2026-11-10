@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ToyCarArena.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
 using VContainer.Unity;
@@ -13,7 +14,8 @@ namespace ToyCarArena.Gameplay.Arena
     /// <see cref="ArenaCamera"/>, which knows the distance to the arena. Built once as the scene is; nothing is built for
     /// an arena without a theme or without a ground depth.
     /// <para>
-    /// Pure scenery like <see cref="ArenaDecor"/>: no colliders and no shadows, nothing on the arena layer, so cars fall
+    /// Pure scenery like <see cref="ArenaDecor"/>, outlined like its props (the ground disc aside: it shows no edge): no
+    /// colliders and no shadows, nothing on the arena layer, so cars fall
     /// through all of it and the steering ray never meets it. The pedestal and the pieces are placed as the camera sees the
     /// arena, like the props. Nothing here is tied to a circle: a pedestal is a list of pieces, so another floor shape only
     /// needs its own list.
@@ -111,6 +113,7 @@ namespace ToyCarArena.Gameplay.Arena
                 var extruded = CreateSolid(piece.Shape.ToString(), outline, piece.Material, root);
                 extruded.SetPositionAndRotation(position, rotation);
                 extruded.localScale = new Vector3(piece.Size.x, piece.Size.y, piece.Size.x);
+                Outline.Apply(extruded.gameObject);
                 return;
             }
 
@@ -118,6 +121,7 @@ namespace ToyCarArena.Gameplay.Arena
                 piece.Material, root);
             solid.SetPositionAndRotation(position, rotation);
             solid.localScale = piece.Size;
+            Outline.Apply(solid.gameObject);
         }
 
         private static Transform CreateSolid(string name, Mesh mesh, Material material, Transform root)
@@ -139,8 +143,9 @@ namespace ToyCarArena.Gameplay.Arena
         }
 
         /// <summary>
-        /// A cylinder of diameter 1 whose base is at the origin and whose height is 1, sides smooth, top flat. The base is
-        /// left open: it is never seen, as the camera looks down on the world.
+        /// A cylinder of diameter 1 whose base is at the origin and whose height is 1, sides smooth, top and base flat. The
+        /// base is never seen, as the camera looks down on the world, but the outline hull needs it to draw the line under
+        /// the cylinder's near edge.
         /// </summary>
         private static Mesh BuildCylinder()
         {
@@ -175,12 +180,27 @@ namespace ToyCarArena.Gameplay.Arena
                 triangles.AddRange(new[] { centre, ring + i, ring + (i + 1) % Sides });
             }
 
+            var bottom = vertices.Count;
+            vertices.Add(Vector3.zero);
+            normals.Add(Vector3.down);
+            var bottomRing = vertices.Count;
+            for (var i = 0; i < Sides; i++) {
+                var angle = i * Mathf.PI * 2f / Sides;
+                vertices.Add(new Vector3(Mathf.Cos(angle) * 0.5f, 0f, Mathf.Sin(angle) * 0.5f));
+                normals.Add(Vector3.down);
+            }
+
+            for (var i = 0; i < Sides; i++) {
+                triangles.AddRange(new[] { bottom, bottomRing + (i + 1) % Sides, bottomRing + i });
+            }
+
             return Assemble("World Cylinder", vertices, normals, triangles);
         }
 
         /// <summary>
-        /// The faces of the floor's core as a solid of height 1 whose base is at the origin: a top, and a wall along every
-        /// edge the core does not share with itself, the rim and the walls of a hole alike. The base is left open.
+        /// The faces of the floor's core as a solid of height 1 whose base is at the origin: a top and a base, and a wall
+        /// along every edge the core does not share with itself, the rim and the walls of a hole alike. The base is never
+        /// seen; the outline hull needs it, as the cylinder's.
         /// </summary>
         private static Mesh BuildOutline(ArenaShape shape)
         {
@@ -193,7 +213,10 @@ namespace ToyCarArena.Gameplay.Arena
                 var ids = shape.Face(f);
                 var a = Up(shape.Vertices[ids[0]]);
                 for (var i = 1; i + 1 < ids.Length; i++) {
-                    builder.AddTriangle(a, Up(shape.Vertices[ids[i]]), Up(shape.Vertices[ids[i + 1]]), Vector3.up);
+                    var b = Up(shape.Vertices[ids[i]]);
+                    var c = Up(shape.Vertices[ids[i + 1]]);
+                    builder.AddTriangle(a, b, c, Vector3.up);
+                    builder.AddTriangle(a + Vector3.down, b + Vector3.down, c + Vector3.down, Vector3.down);
                 }
             }
 
@@ -214,6 +237,7 @@ namespace ToyCarArena.Gameplay.Arena
 
             var mesh = builder.ToMesh("World Outline");
             mesh.RecalculateBounds();
+            Outline.BakeNormals(mesh);
             return mesh;
         }
 
@@ -273,6 +297,7 @@ namespace ToyCarArena.Gameplay.Arena
             mesh.SetNormals(normals);
             mesh.SetTriangles(triangles, 0);
             mesh.RecalculateBounds();
+            Outline.BakeNormals(mesh);
             return mesh;
         }
     }

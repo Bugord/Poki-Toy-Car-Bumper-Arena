@@ -1134,8 +1134,6 @@
     -unity-text-align: middle-center;
 }
 
-.hud__fuse-text.stroke__drop { translate: 0 18px; visibility: visible; }
-
 .hud__fuse--short .hud__fuse-sticker {
     background-color: var(--red);
 }
@@ -1145,6 +1143,9 @@
     -unity-text-outline-width: 6px;
     -unity-text-outline-color: var(--navy);
 }
+
+/* Only the white digits of the last seconds have a drop: under the navy digits on white it would only double them. */
+.hud__fuse--short .hud__fuse-text.stroke__drop { translate: 0 6px; visibility: visible; }
 
 .hud__pass {
     position: absolute;
@@ -1183,7 +1184,7 @@
     white-space: nowrap;
 }
 
-.hud__pass-text.stroke__drop { translate: 0 18px; visibility: visible; }
+.hud__pass-text.stroke__drop { translate: 0 10px; visibility: visible; }
 
 /* A match: SAFE over the player's car while it is safe after coming back (HudView places it over the car's marker),
    on the dark backdrop of the bots' handles, with a bar that runs down with the safe time. */
@@ -1255,7 +1256,7 @@
     white-space: nowrap;
 }
 
-.hud__streak-text.stroke__drop { translate: 0 18px; visibility: visible; }
+.hud__streak-text.stroke__drop { translate: 0 6px; visibility: visible; }
 
 .hud__shield-fill {
     width: 100%;
@@ -3029,7 +3030,7 @@
     -unity-text-outline-color: var(--navy);
 }
 
-.level-reward__buy-label-text.stroke__drop { translate: 0 18px; visibility: visible; }
+.level-reward__buy-label-text.stroke__drop { translate: 0 8px; visibility: visible; }
 
 .level-reward__price {
     flex-shrink: 0;
@@ -3443,13 +3444,13 @@
     -unity-text-outline-width: 0;
 }
 
-/* The drop under the outline: the letters again, navy and without outline, moved down by its text's own rule
-   (.x-text.stroke__drop { translate: 0 10px; visibility: visible; }, in pixels: as thick in every language). The same
-   picture as the text-shadow it replaces, which also draws the letters without their outline, so only the offset past
-   the outline shows; but UI Toolkit draws no text-shadow under the fallback font's letters (Cyrillic, the Turkish
-   ones). Hidden without a rule, so a faded stroke (opacity on it or a parent) shows no navy through its face; the bare
-   class keeps this below every text's rule. Label in the selector, so a rule colouring the text (gold, red) does not
-   colour its drop. */
+/* The drop under the outline: the letters again, all navy with their text's own outline, moved down by its text's
+   rule (.x-text.stroke__drop { translate: 0 10px; visibility: visible; }, in pixels: as thick in every language). With
+   the outline it is as wide as the outlined letters, so the whole offset shows as one solid step under them: the side
+   wall of 3D letters rather than a second text beneath. A layer and not a text-shadow, because UI Toolkit draws no
+   text-shadow under the fallback font's letters (Cyrillic, the Turkish ones). Hidden without a rule, so a faded stroke
+   (opacity on it or a parent) shows no navy through its face; the bare class keeps this below every text's rule. Label
+   in the selector, so a rule colouring the text (gold, red) or its outline does not colour its drop. */
 .stroke__drop {
     visibility: hidden;
 }
@@ -3461,7 +3462,7 @@
     right: 0;
     bottom: 0;
     color: var(--navy);
-    -unity-text-outline-width: 0;
+    -unity-text-outline-color: var(--navy);
 }
 
 /* Two aligned layers: a neutral car and its separately tinted white body. */

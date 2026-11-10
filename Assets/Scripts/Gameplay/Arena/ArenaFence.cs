@@ -17,7 +17,8 @@ namespace ToyCarArena.Gameplay.Arena
     /// <para>
     /// Built once, as the scene starts: the floor does not crumble in this mode, so the outline it fences stays as it
     /// is. The look is two meshes (the red and the white stripes, merged), so the fence costs two draws and their
-    /// outlines, however long it is.
+    /// outlines, however long it is. The stripes are prisms cut square across an edge and mitred at its corners, so they
+    /// meet end to end: no two of them overlap (overlapping red and white faces flicker) and no corner is left open.
     /// </para>
     /// </summary>
     public sealed class ArenaFence : IStartable, IDisposable
@@ -26,6 +27,10 @@ namespace ToyCarArena.Gameplay.Arena
         private const int CircleSides = 64;
         // Metres the stripes are long, about; each edge is cut into stripes of nearly this length.
         private const float StripeLength = 1.6f;
+        // Metres the bumper sinks below the floor's top, so no gap shows under it.
+        private const float Sink = 0.05f;
+        // The longest a mitred corner may stretch the bumper's thickness: a sharper corner is cut off at this.
+        private const float MaxMitre = 3f;
 
         private readonly GameTuning.HotPotatoSettings settings;
         private readonly ArenaMap map;
@@ -69,16 +74,15 @@ namespace ToyCarArena.Gameplay.Arena
             };
             made.Add(physics);
 
-            var red = new List<CombineInstance>();
-            var white = new List<CombineInstance>();
-            var box = ToyMeshes.Box(Vector3.one);
+            var red = new FloorMeshBuilder();
+            var white = new FloorMeshBuilder();
+            var stripe = 0;
             foreach (var (loop, isRim) in Loops()) {
-                Fence(loop, isRim, physics, box, red, white);
+                Fence(Clean(loop), isRim, physics, red, white, ref stripe);
             }
 
             Merge("Red", red, art.Get("train_red"));
             Merge("White", white, art.Get("train_white"));
-            Object.Destroy(box);
             Outline.Apply(Root.gameObject);
         }
 
@@ -111,42 +115,74 @@ namespace ToyCarArena.Gameplay.Arena
         /// One wall per edge of the loop, on the side away from the floor, and the stripes of the bumper along it. The
         /// side is told by the loop's own winding, so a loop given either way round fences the right side.
         /// </summary>
-        private void Fence(Vector2[] loop, bool isRim, PhysicsMaterial physics, Mesh box, List<CombineInstance> red,
-            List<CombineInstance> white)
+        private void Fence(Vector2[] loop, bool isRim, PhysicsMaterial physics, FloorMeshBuilder red,
+            FloorMeshBuilder white, ref int stripe)
         {
-            if (loop == null || loop.Length < 3) {
+            if (loop.Length < 3) {
                 return;
             }
 
             // Counter-clockwise, the inside is on the left: the rim's floor is inside it, a hole's floor outside.
             var isLeftFloor = Area(loop) > 0f == isRim;
             var thickness = settings.FenceThickness;
-            var stripe = red.Count + white.Count;
-            for (var i = 0; i < loop.Length; i++) {
-                var a = loop[i];
-                var b = loop[(i + 1) % loop.Length];
-                var along = b - a;
-                var length = along.magnitude;
-                if (length < 0.01f) {
-                    continue;
-                }
-
-                along /= length;
+            var count = loop.Length;
+            var away = new Vector2[count];
+            for (var i = 0; i < count; i++) {
+                var along = (loop[(i + 1) % count] - loop[i]).normalized;
                 // Right of the way along is (y, -x); away from the floor is right when the floor is on the left.
-                var away = isLeftFloor ? new Vector2(along.y, -along.x) : new Vector2(-along.y, along.x);
-                var rotation = Quaternion.LookRotation(new Vector3(away.x, 0f, away.y));
-                Wall(a, b, away, rotation, length, physics);
+                away[i] = isLeftFloor ? new Vector2(along.y, -along.x) : new Vector2(-along.y, along.x);
+            }
 
-                // The bumper: a run of stripes, a little longer than they are spaced, so the corners close.
-                var count = Mathf.Max(1, Mathf.RoundToInt(length / StripeLength));
-                var step = length / count;
-                for (var s = 0; s < count; s++) {
-                    var middle = a + along * (step * (s + 0.5f)) + away * (thickness * 0.5f);
-                    var matrix = Matrix4x4.TRS(new Vector3(middle.x, settings.FenceHeight * 0.5f - 0.05f, middle.y),
-                        rotation, new Vector3(step + thickness * 0.6f, settings.FenceHeight, thickness));
-                    (stripe++ % 2 == 0 ? red : white).Add(new CombineInstance { mesh = box, transform = matrix });
+            // The bumper's outer line: every corner pushed out along the middle of its two edges' outward sides, so far
+            // that both edges keep the bumper's thickness.
+            var outer = new Vector2[count];
+            for (var i = 0; i < count; i++) {
+                var mitre = (away[(i + count - 1) % count] + away[i]).normalized;
+                var stretch = Mathf.Min(1f / Mathf.Max(Vector2.Dot(mitre, away[i]), 0.01f), MaxMitre);
+                outer[i] = loop[i] + mitre * (thickness * stretch);
+            }
+
+            for (var i = 0; i < count; i++) {
+                var next = (i + 1) % count;
+                var a = loop[i];
+                var b = loop[next];
+                var length = Vector2.Distance(a, b);
+                var rotation = Quaternion.LookRotation(new Vector3(away[i].x, 0f, away[i].y));
+                Wall(a, b, away[i], rotation, length, physics);
+
+                var stripes = Mathf.Max(1, Mathf.RoundToInt(length / StripeLength));
+                for (var part = 0; part < stripes; part++) {
+                    var from = (float)part / stripes;
+                    var to = (float)(part + 1) / stripes;
+                    Stripe(stripe++ % 2 == 0 ? red : white, Vector2.Lerp(a, b, from), Vector2.Lerp(a, b, to),
+                        Vector2.Lerp(outer[i], outer[next], from), Vector2.Lerp(outer[i], outer[next], to), away[i]);
                 }
             }
+        }
+
+        /// <summary>
+        /// One stripe: a prism from the floor's edge (inner) to the bumper's outer line, its ends left open, as the next
+        /// stripe of the loop closes them.
+        /// </summary>
+        private void Stripe(FloorMeshBuilder builder, Vector2 innerA, Vector2 innerB, Vector2 outerA, Vector2 outerB,
+            Vector2 away)
+        {
+            var bottom = -Sink;
+            var top = settings.FenceHeight - Sink;
+            var outward = new Vector3(away.x, 0f, away.y);
+            builder.AddQuad(At(innerA, top), At(innerB, top), At(outerB, top), At(outerA, top),
+                Vector3.up, Vector3.up, Vector3.up, Vector3.up);
+            builder.AddQuad(At(innerA, bottom), At(innerB, bottom), At(outerB, bottom), At(outerA, bottom),
+                Vector3.down, Vector3.down, Vector3.down, Vector3.down);
+            builder.AddQuad(At(outerA, bottom), At(outerB, bottom), At(outerB, top), At(outerA, top),
+                outward, outward, outward, outward);
+            builder.AddQuad(At(innerA, bottom), At(innerB, bottom), At(innerB, top), At(innerA, top),
+                -outward, -outward, -outward, -outward);
+        }
+
+        private static Vector3 At(Vector2 point, float height)
+        {
+            return new Vector3(point.x, height, point.y);
         }
 
         private void Wall(Vector2 a, Vector2 b, Vector2 away, Quaternion rotation, float length, PhysicsMaterial physics)
@@ -165,14 +201,16 @@ namespace ToyCarArena.Gameplay.Arena
             walls.Add(collider);
         }
 
-        private void Merge(string name, List<CombineInstance> parts, Material material)
+        private void Merge(string name, FloorMeshBuilder builder, Material material)
         {
-            if (parts.Count == 0) {
+            var mesh = builder.ToMesh("Fence " + name);
+            if (mesh.vertexCount == 0) {
+                Object.Destroy(mesh);
                 return;
             }
 
-            var mesh = new Mesh { name = "Fence " + name, indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
-            mesh.CombineMeshes(parts.ToArray(), true, true);
+            mesh.RecalculateBounds();
+            Outline.BakeNormals(mesh);
             made.Add(mesh);
             ToyMeshes.Part(Root, name, mesh, material, Vector3.zero);
         }
@@ -196,6 +234,27 @@ namespace ToyCarArena.Gameplay.Arena
             }
 
             return array;
+        }
+
+        // The loop without points that repeat the one before them, so every edge has a direction.
+        private static Vector2[] Clean(Vector2[] loop)
+        {
+            var points = new List<Vector2>();
+            if (loop == null) {
+                return points.ToArray();
+            }
+
+            foreach (var point in loop) {
+                if (points.Count == 0 || Vector2.Distance(points[^1], point) >= 0.01f) {
+                    points.Add(point);
+                }
+            }
+
+            while (points.Count > 1 && Vector2.Distance(points[^1], points[0]) < 0.01f) {
+                points.RemoveAt(points.Count - 1);
+            }
+
+            return points.ToArray();
         }
 
         private static float Area(Vector2[] loop)

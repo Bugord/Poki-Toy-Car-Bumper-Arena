@@ -469,7 +469,7 @@ MonoBehaviour:
       material: {fileID: 2100000, guid: ca3d577219d843440be02cead177beb5, type: 2}
       size: {x: 1.03, y: 1.2, z: 1.03}
       offset: {x: 0, y: 0}
-      baseHeight: -9.75
+      baseHeight: -9.7
       yaw: 0
     - shape: 3
       model: {fileID: 0}
@@ -483,7 +483,7 @@ MonoBehaviour:
       material: {fileID: 2100000, guid: ca3d577219d843440be02cead177beb5, type: 2}
       size: {x: 1.28, y: 1.2, z: 1.28}
       offset: {x: 0, y: 0}
-      baseHeight: -17.75
+      baseHeight: -17.7
       yaw: 0
     - shape: 3
       model: {fileID: 0}
@@ -497,7 +497,7 @@ MonoBehaviour:
       material: {fileID: 2100000, guid: cedcab4799b0f2e4baf4f7e7d8b49b11, type: 2}
       size: {x: 1.58, y: 1.2, z: 1.58}
       offset: {x: 0, y: 0}
-      baseHeight: -25.75
+      baseHeight: -25.7
       yaw: 0
     - shape: 3
       model: {fileID: 0}
@@ -511,7 +511,7 @@ MonoBehaviour:
       material: {fileID: 2100000, guid: ca3d577219d843440be02cead177beb5, type: 2}
       size: {x: 1.93, y: 1.2, z: 1.93}
       offset: {x: 0, y: 0}
-      baseHeight: -33.75
+      baseHeight: -33.7
       yaw: 0
     - shape: 0
       model: {fileID: 0}
