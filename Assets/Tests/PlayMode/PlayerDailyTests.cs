@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using Bugord.App.Platform;
+using Bugord.Core.Storage;
 using Cysharp.Threading.Tasks;
 using NUnit.Framework;
 using ToyCarArena.App;
@@ -38,12 +39,14 @@ namespace ToyCarArena.Tests.PlayMode
             wallet = new PlayerWallet(storage, tuning);
             daily = new PlayerDaily(storage, tuning, wallet);
             DailyGift.ForgetOffer();
+            RoundOverViewModel.ForgetVisit();
         }
 
         [TearDown]
         public void TearDown()
         {
             DailyGift.ForgetOffer();
+            RoundOverViewModel.ForgetVisit();
             Object.DestroyImmediate(tuning);
         }
 
@@ -313,6 +316,66 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(claim.Coins, Is.EqualTo(tuning.Daily.CoinsOf(0)));
             Assert.That(result.CoinsNow, Is.EqualTo(claim.CoinsAfter));
             Assert.That(result.Daily.CanClaim, Is.False);
+        }
+
+        [Test]
+        public void TheDailyGiftWaitsForAQuietResult()
+        {
+            var car = Payload(3, 4, "speedster");
+            Assert.That(car.TakeDailyOffer(), Is.False, "a result that opens a car keeps to its popup");
+            car.PopupShown();
+            Assert.That(Payload(4, 5).TakeDailyOffer(), Is.False, "the result after a popup shows none that can wait");
+            Assert.That(Payload(9, 10).TakeDailyOffer(), Is.False, "a result that opens a league keeps to NEW LEAGUE!");
+            Assert.That(Payload(5, 6).TakeDailyOffer(), Is.True, "a quiet result after a quiet one");
+        }
+
+        [Test]
+        public void TheFreeHatComesFirstAndTakesTheResultsRoom()
+        {
+            var gift = wallet.TryGift(tuning.Toppers.GiftLevel);
+            var car = Payload(2, 3, "vintage");
+            Assert.That(car.Gift, Is.EqualTo(gift));
+            Assert.That(car.IsGiftDue, Is.False);
+            car.PopupShown();
+            Assert.That(Payload(3, 4).IsGiftDue, Is.False);
+
+            var quiet = Payload(4, 5);
+            Assert.That(quiet.IsGiftDue, Is.True, "kept owned and unseen until a quiet result");
+            Assert.That(quiet.TakeDailyOffer(), Is.False, "the hat goes before the daily gift");
+            quiet.GiftShown();
+            Assert.That(quiet.HatOffer(), Is.Null, "one waiting popup a result");
+            quiet.PopupShown();
+
+            var after = Payload(5, 6);
+            Assert.That(after.Gift, Is.Null);
+            Assert.That(after.TakeDailyOffer(), Is.False);
+            Assert.That(Payload(6, 7).TakeDailyOffer(), Is.True);
+        }
+
+        [Test]
+        public void TheHatOfferWaitsBehindTheDailyGift()
+        {
+            storage.SetInt("xp_total", 1250);
+            storage.SetInt("coins", 500);
+            storage.SetString("toppers_owned", "top-hat");
+
+            Assert.That(Payload(9, 10, "hot-rod").HatOffer(), Is.Null, "not beside a car's popup");
+            var quiet = Payload(11, 12);
+            Assert.That(quiet.HatOffer(), Is.Not.Null);
+            Assert.That(quiet.TakeDailyOffer(), Is.True);
+            quiet.DailyShown();
+            Assert.That(quiet.HatOffer(), Is.Null, "the daily gift took the result's room");
+        }
+
+        // A result whose reward climbed from one level to the next, opening the given cars.
+        private RoundOverViewModel Payload(int from, int to, params string[] cars)
+        {
+            var model = Result(new MatchTests.RecordingPlatform());
+            var result = new RoundResult(RoundOutcome.Won, 1, 4, 40f, 0, RoundResult.Nobody, FallCause.Drive, false,
+                false);
+            var xp = new XpGain(0, 0, 10, 0, 0, 0, new XpLevel(from, 0, 50), new XpLevel(to, 0, 60), cars);
+            model.SetPayload(new RoundRecord(result, 1, 2, false, false).WithXp(xp));
+            return model;
         }
 
         private RoundOverViewModel Result(IGamePlatform platform, bool withDaily = true)

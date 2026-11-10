@@ -43,6 +43,14 @@ namespace ToyCarArena.UI
         private IReadOnlyList<int> levels;
         private bool isDoubleTried;
 
+        // Whether the visit's last result showed a popup. The popups that can wait (the free hat, the daily gift, the hat
+        // offer) skip the result after one, so a new player, who levels up and opens something almost every round, is
+        // not met by a popup after every round.
+        private static bool lastResultHadPopup;
+        private bool isAfterPopup;
+        private bool opensReward;
+        private bool isWaitingShown;
+
         public RoundOverViewModel(CarCatalog catalog, ArenaCatalog arenaCatalog, GameTuning tuning,
             PlayerProgress progress, IScreenNavigator navigator, IGamePlatform platform, PlayerWallet wallet,
             LevelScene levelScene, PlayerDaily daily = null)
@@ -211,9 +219,40 @@ namespace ToyCarArena.UI
         /// <summary>The topper this round gave free (<see cref="PlayerWallet.TryGift"/>), or null.</summary>
         public string Gift { get; private set; }
 
+        /// <summary>
+        /// Whether this result has room for one popup that can wait: it opens no car and no league (their popups are
+        /// what the player must see), the visit's last result showed no popup, and none of the waiting ones has shown
+        /// here yet. Without room they wait for a later result; the daily gift, not offered, waits for the menu too.
+        /// </summary>
+        public bool HasRoomToWait => !isAfterPopup && !opensReward && !isWaitingShown;
+
+        /// <summary>The free hat's popup shows on this result: first of the waiting ones, it shows the hats there are.</summary>
+        public bool IsGiftDue => Gift != null && HasRoomToWait;
+
+        /// <summary>A popup is up over this result: the next result of the visit leaves the waiting ones for later.</summary>
+        public void PopupShown() => lastResultHadPopup = true;
+
+        /// <summary>Forgets the visit's last result (tests: each is a visit of its own).</summary>
+        public static void ForgetVisit() => lastResultHadPopup = false;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetVisit() => lastResultHadPopup = false;
+
+        // A car or a league this reward opens: each gets its popup (ShowRewards), so nothing that can wait joins it.
+        private bool OpensReward(XpGain gain)
+        {
+            if (gain.UnlockedCarIds is { Count: > 0 }) {
+                return true;
+            }
+
+            var league = PlayerRank.TierOf(gain.After.Level);
+            return gain.After.Level > 0 && league > PlayerRank.TierOf(gain.Before.Level) && league > progress.SeenLeague;
+        }
+
         /// <summary>The gift's popup is up: the wallet gives it up and <c>gift / &lt;id&gt; / visible</c> goes.</summary>
         public void GiftShown()
         {
+            isWaitingShown = true;
             wallet.TakeGift();
             platform.MeasureGiftShown(Gift);
         }
@@ -270,14 +309,16 @@ namespace ToyCarArena.UI
         /// <summary>
         /// The topper the result offers for coins once ever: the cheapest the coins pay for, to a player who already
         /// wears a hat (the free top hat of its level, or one from the garage), from
-        /// <see cref="GameTuning.TopperSettings.HatOfferLevel"/>. Null when there is none to offer.
+        /// <see cref="GameTuning.TopperSettings.HatOfferLevel"/>, on a result with room for it (<see cref="HasRoomToWait"/>)
+        /// and no free hat waiting before it. Null when there is none to offer.
         /// </summary>
         public string HatOffer() =>
-            !wallet.IsIntroduced("paid-hat") && wallet.HasAnyTopper
+            HasRoomToWait && Gift == null && !wallet.IsIntroduced("paid-hat") && wallet.HasAnyTopper
             && progress.Level >= tuning.Toppers.HatOfferLevel ? wallet.AffordableTopper() : null;
 
         public void HatOffered(string id)
         {
+            isWaitingShown = true;
             wallet.MarkIntroduced("paid-hat");
             platform.MeasureHatOfferShown(id);
         }
@@ -308,12 +349,20 @@ namespace ToyCarArena.UI
 
         /// <summary>
         /// Whether this result opens the daily gift before anything else plays: the visit's offer not made yet, with a
-        /// gift to claim, and the tuning asking for it on the result. Taking it marks the offer made.
+        /// gift to claim, the tuning asking for it on the result, and room on this result (<see cref="HasRoomToWait"/>)
+        /// with no free hat waiting before it. Taking it marks the offer made; a result without room leaves it to a
+        /// later one or to the menu.
         /// </summary>
-        public bool TakeDailyOffer() => Daily != null && tuning.Daily.IsOnResult && Daily.IsEnabled && Daily.TakeOffer();
+        public bool TakeDailyOffer() => Daily != null && tuning.Daily.IsOnResult && Daily.IsEnabled && HasRoomToWait &&
+            Gift == null && Daily.TakeOffer();
 
         /// <summary>The gift's popup is up over the result: <c>daily / offer / visible</c> and <c>offer-result</c>.</summary>
-        public void DailyShown() => Daily?.Shown(true);
+        public void DailyShown()
+        {
+            isWaitingShown = true;
+            PopupShown();
+            Daily?.Shown(true);
+        }
 
         /// <summary>The popup closed over the result with its gift still to claim: <c>result / daily-no / interact</c>.</summary>
         public void DailyDeclined() => platform.MeasureDailyResultDeclined();
@@ -508,6 +557,10 @@ namespace ToyCarArena.UI
             XpGain = payload.XpGain;
             Coins = payload.Coins;
             Missions = payload.Missions;
+            isAfterPopup = lastResultHadPopup;
+            lastResultHadPopup = false;
+            isWaitingShown = false;
+            opensReward = OpensReward(XpGain);
             // The gift stays with the wallet until its popup shows (GiftShown): a result left before it carries it to the
             // next one. Once a hat is on, the popup's EQUIP has nothing to give.
             if (wallet.UnseenGift != null && !string.IsNullOrEmpty(wallet.SelectedTopper)) {
