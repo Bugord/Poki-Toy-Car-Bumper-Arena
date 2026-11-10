@@ -40,8 +40,10 @@ namespace ToyCarArena.Gameplay.Cars
         private const int CellSize = 256;
         private const float HatPitch = 16f;
         private const float HatYaw = 200f;
-        // The share of its cell the topper fills, its widest or tallest side.
-        private const float HatFill = 0.92f;
+        // The share of its cell the topper fills, its widest or tallest side. The rest is room for its outline: 3 pixels
+        // boosted six times is about 17 of the cell's 256, and an outline crossing into the next cell showed there as a
+        // stray dark line.
+        private const float HatFill = 0.84f;
         private const float HatBoost = 6f;
 
         // The main menu stands the car on a plain 3D pedestal in the stickers' colours, turning with it: a navy drum,
@@ -59,8 +61,6 @@ namespace ToyCarArena.Gameplay.Cars
         private readonly CarLook look;
         private readonly MechanicArt art;
         private readonly Transform parent;
-        private readonly List<Mesh> heroMeshes = new();
-        private readonly List<Mesh> hatMeshes = new();
         private readonly Dictionary<string, Rect> cells = new();
         private GameObject root;
         private Transform turntable;
@@ -223,10 +223,6 @@ namespace ToyCarArena.Gameplay.Cars
                     Object.Destroy(mesh);
                 }
             }
-
-            foreach (var mesh in hatMeshes) {
-                Object.Destroy(mesh);
-            }
         }
 
         private void Build()
@@ -286,7 +282,7 @@ namespace ToyCarArena.Gameplay.Cars
             car.SetParent(turntable, false);
             var model = CarLook.BuildModel(entry, car, look.ModelRotation, look.ModelMaterial, look.Reference);
             body = CarModel.PaintBody(CarModel.FindBody(model, out _), entry.BodySwatch, look.SwatchOf(colorId));
-            CarLook.WearTopper(topper, entry.Id, car, model, look.ModelMaterial, heroMeshes, out spinner);
+            CarLook.WearTopper(topper, entry.Id, car, model, look.ModelMaterial, look.Toppers, out spinner);
 
             var bounds = CarModel.BoundsIn(car.gameObject, car.worldToLocalMatrix);
             model.transform.localPosition -= new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
@@ -367,12 +363,6 @@ namespace ToyCarArena.Gameplay.Cars
                 Object.Destroy(body);
                 body = null;
             }
-
-            foreach (var mesh in heroMeshes) {
-                Object.Destroy(mesh);
-            }
-
-            heroMeshes.Clear();
         }
 
         // The toppers in a grid on a board that faces the orthographic camera, a cell of one metre each: each turned
@@ -393,7 +383,7 @@ namespace ToyCarArena.Gameplay.Cars
                 var holder = new GameObject(ids[i]).transform;
                 holder.SetParent(board, false);
                 holder.rotation = Quaternion.Euler(0f, HatYaw, 0f);
-                var hat = CarTopper.Build(ids[i], holder, look.ModelMaterial, hatMeshes, out _);
+                var hat = CarTopper.Build(ids[i], holder, look.ModelMaterial, look.Toppers, out _);
                 if (hat == null) {
                     Object.Destroy(holder.gameObject);
                     continue;
