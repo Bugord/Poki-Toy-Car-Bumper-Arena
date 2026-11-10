@@ -95,6 +95,7 @@ namespace ToyCarArena.UI
             Dear,
             Locked,
             Ad,
+            League,
         }
 
 
@@ -476,10 +477,14 @@ namespace ToyCarArena.UI
             actionPlay = RoundOverRewards.PlaySign();
             actionPlay.AddToClassList("garage__action-play");
             face.Add(actionPlay);
-            face.Add(StrokeText.Outlined("", "garage__action-label", out actionLabels));
+            var actionLabel = StrokeText.Outlined("", "garage__action-label", out actionLabels);
             foreach (var label in actionLabels) {
                 label.AddToClassList("button__label");
             }
+
+            // REACH <LEAGUE> runs long in some languages: the label shrinks to the button rather than spill past it.
+            FitText.Fit(actionLabel, actionLabels);
+            face.Add(actionLabel);
 
             actionPlain = Text("garage__action-plain");
             actionPlain.AddToClassList("button__label");
@@ -722,27 +727,34 @@ namespace ToyCarArena.UI
                 // Without ads an ad car the player does not own has no way in: it is left out.
                 card.Button.style.display = isAd && !isOwned && !ViewModel.CanWatchAds ? DisplayStyle.None : DisplayStyle.Flex;
                 var isLocked = !isAd && !ViewModel.IsUnlocked(id);
-                portrait.Set(entry, color, isLocked);
+                var league = isLocked ? ViewModel.LeagueOfCar(id) : 0;
+                // A league's car is its prize, shown in colour to make it a goal; a level's car stays a silhouette.
+                portrait.Set(entry, color, isLocked && league == 0);
                 var badge = id == selectedCar ? Card.Badge.Selected
                     : isOwned ? Card.Badge.None
                     : isAd ? Card.Badge.Ad
+                    : league > 0 ? Card.Badge.League
                     : isLocked ? Card.Badge.Locked
                     : ViewModel.CanAffordCar(id) ? Card.Badge.Price : Card.Badge.Dear;
                 // The lock already says "level": the badge carries only its number, so it fits inside the corner.
                 card.Set(badge, badge == Card.Badge.Locked ? entry.UnlockLevel.ToString()
                     : badge == Card.Badge.Ad ? Strings.Get("result.ad")
-                    : ViewModel.PriceOf(id).ToString(), id == selectedCar, isLocked, entry == previewedCar);
-                card.Button.tooltip = isLocked ? Strings.Format("garage.unlock_at", entry.UnlockLevel) : GameText.Car(entry);
+                    : ViewModel.PriceOf(id).ToString(), id == selectedCar, isLocked, entry == previewedCar, league);
+                card.Button.tooltip = league > 0 ? Strings.Format("garage.reach", PlayerRank.NameOfTier(league))
+                    : isLocked ? Strings.Format("garage.unlock_at", entry.UnlockLevel) : GameText.Car(entry);
             }
 
             var worn = ViewModel.SelectedTopper;
             foreach (var (id, card) in hatCards) {
                 var topper = FindHat(id);
                 var isOwned = topper == null || ViewModel.IsOwned(id);
+                var league = isOwned ? 0 : ViewModel.LeagueOfTopper(id);
                 var badge = id == worn ? Card.Badge.Selected
                     : isOwned ? Card.Badge.None
+                    : league > 0 ? Card.Badge.League
                     : ViewModel.CanAfford(topper) ? Card.Badge.Price : Card.Badge.Dear;
-                card.Set(badge, topper?.Price.ToString(), id == worn, false, id == previewedHat);
+                card.Set(badge, topper?.Price.ToString(), id == worn, league > 0, id == previewedHat, league);
+                card.Button.tooltip = league > 0 ? Strings.Format("garage.reach", PlayerRank.NameOfTier(league)) : null;
             }
 
             for (var id = 0; id < paints.Length; id++) {
@@ -790,6 +802,11 @@ namespace ToyCarArena.UI
                     return (Act.Select, 0);
                 }
 
+                var hatLeague = ViewModel.LeagueOfTopper(hat);
+                if (hatLeague > 0) {
+                    return (Act.League, hatLeague);
+                }
+
                 return (ViewModel.CanAfford(topper) ? Act.Buy : Act.Dear, topper.Price);
             }
 
@@ -807,7 +824,8 @@ namespace ToyCarArena.UI
             }
 
             if (!ViewModel.IsUnlocked(car.Id)) {
-                return (Act.Locked, car.UnlockLevel);
+                var league = ViewModel.LeagueOfCar(car.Id);
+                return league > 0 ? (Act.League, league) : (Act.Locked, car.UnlockLevel);
             }
 
             var price = ViewModel.PriceOf(car.Id);
@@ -821,11 +839,13 @@ namespace ToyCarArena.UI
                 action.RemoveFromClassList($"garage__action--{kind}");
             }
 
-            action.AddToClassList($"garage__action--{act.ToString().ToLowerInvariant()}");
+            // A league's lock looks like a level's: only its words name the league.
+            action.AddToClassList($"garage__action--{(act == Act.League ? "locked" : act.ToString().ToLowerInvariant())}");
             var label = act switch {
                 Act.Selected => Strings.Get("garage.selected"),
                 Act.Select => Strings.Get("garage.select"),
                 Act.Locked => GameText.Level(value),
+                Act.League => Strings.Format("garage.reach", PlayerRank.NameOfTier(value)),
                 Act.Ad => Strings.Get("garage.unlock"),
                 _ => Strings.Get("result.buy"),
             };
@@ -838,7 +858,7 @@ namespace ToyCarArena.UI
             actionPriceCount.text = value.ToString();
             Show(actionPrice, hasPrice);
             Show(actionTick, act == Act.Selected);
-            Show(actionLock, act == Act.Locked);
+            Show(actionLock, act is Act.Locked or Act.League);
             Show(actionPlay, act == Act.Ad);
             Show(actionTag, act == Act.Ad);
             Show(actionPlain, act == Act.Selected);
@@ -965,9 +985,17 @@ namespace ToyCarArena.UI
                     BumpCoins(true);
                     break;
                 case Act.Locked:
-                    // The button already reads the level that opens it: it and the card shake, no line repeats it.
+                case Act.League:
+                    // The button already reads the level or league that opens it: it and the card shake, no line
+                    // repeats it.
                     Refuse(action);
-                    ShakeCard(ShownCar);
+                    if (tab == Tab.Hats) {
+                        ShakeHat(ShownHat);
+                    }
+                    else {
+                        ShakeCard(ShownCar);
+                    }
+
                     break;
             }
         }
@@ -1413,6 +1441,19 @@ namespace ToyCarArena.UI
             }
         }
 
+        private void ShakeHat(string id)
+        {
+            foreach (var (hat, card) in hatCards) {
+                if (hat == id) {
+                    var button = card.Button;
+                    cardTween.Play(ShakeDuration, t => {
+                        button.style.translate = new Translate(18f * Mathf.Sin(t * Mathf.PI * 6f) * (1f - t), 0f);
+                    });
+                    return;
+                }
+            }
+        }
+
         private void Bounce(VisualElement element)
         {
             var tween = element == action ? actionTween : cardTween;
@@ -1645,7 +1686,8 @@ namespace ToyCarArena.UI
         /// <summary>
         /// One card of the panel, a car or a hat, drawn as a sticker: its picture, its name, and a badge on its corner
         /// that says what it is to the player: a green tick on the chosen one, nothing on one they own, the price in
-        /// gold (grey when the coins are short), a lock and the level that opens it, or the video sign of an ad car.
+        /// gold (grey when the coins are short), a lock and the level that opens it, a lock and the emblem of the league
+        /// that gives it, or the video sign of an ad car.
         /// </summary>
         private sealed class Card
         {
@@ -1657,6 +1699,7 @@ namespace ToyCarArena.UI
                 Dear,
                 Locked,
                 Ad,
+                League,
             }
 
             public readonly Button Button;
@@ -1665,7 +1708,9 @@ namespace ToyCarArena.UI
             private readonly VisualElement coin;
             private readonly VisualElement padlock;
             private readonly VisualElement play;
+            private readonly VisualElement emblem;
             private readonly Label value;
+            private string emblemClass;
 
             public Card(string name, VisualElement art, LiveText text, Func<string> title)
             {
@@ -1691,15 +1736,18 @@ namespace ToyCarArena.UI
                 badge.Add(play);
                 value = Text("garage__badge-text");
                 badge.Add(value);
+                emblem = Element("menu__league-emblem");
+                emblem.AddToClassList("garage__badge-emblem");
+                badge.Add(emblem);
                 Button.Add(badge);
             }
 
-            public void Set(Badge kind, string label, bool isSelected, bool isLocked, bool isPreviewed)
+            public void Set(Badge kind, string label, bool isSelected, bool isLocked, bool isPreviewed, int league = 0)
             {
                 Button.EnableInClassList("garage__card--selected", isSelected);
                 Button.EnableInClassList("garage__card--locked", isLocked);
                 Button.EnableInClassList("garage__card--previewed", isPreviewed);
-                foreach (var each in new[] { "selected", "price", "dear", "locked", "ad" }) {
+                foreach (var each in new[] { "selected", "price", "dear", "locked", "ad", "league" }) {
                     badge.RemoveFromClassList($"garage__badge--{each}");
                 }
 
@@ -1710,8 +1758,22 @@ namespace ToyCarArena.UI
                 Show(badge, kind != Badge.None);
                 Show(tick, kind == Badge.Selected);
                 Show(coin, kind is Badge.Price or Badge.Dear);
-                Show(padlock, kind == Badge.Locked);
+                Show(padlock, kind is Badge.Locked or Badge.League);
                 Show(play, kind == Badge.Ad);
+                Show(emblem, kind == Badge.League);
+                var shownEmblem = kind == Badge.League ? "menu__league-emblem--" + PlayerRank.IdOfTier(league) : null;
+                if (shownEmblem != emblemClass) {
+                    if (emblemClass != null) {
+                        emblem.RemoveFromClassList(emblemClass);
+                    }
+
+                    if (shownEmblem != null) {
+                        emblem.AddToClassList(shownEmblem);
+                    }
+
+                    emblemClass = shownEmblem;
+                }
+
                 Show(value, kind is Badge.Price or Badge.Dear or Badge.Locked or Badge.Ad);
                 value.text = label ?? "";
             }

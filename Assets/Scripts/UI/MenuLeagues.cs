@@ -98,7 +98,8 @@ namespace ToyCarArena.UI
         /// Opens NEW LEAGUE! (<see cref="NewLeaguePopup"/>) for the league <paramref name="level"/> is in, the player's
         /// 3D car <paramref name="hero"/> on its pedestal.
         /// </summary>
-        public void ShowNewLeague(int level, bool isDesktop, Texture hero) => newLeague.Show(level, isDesktop, hero);
+        public void ShowNewLeague(int level, bool isDesktop, Texture hero, NewLeaguePopup.Prize prize = null) =>
+            newLeague.Show(level, isDesktop, hero, prize);
 
         /// <summary>CONTINUE, Space, Enter, Esc or a press on the dim: the menu behind, in its new colours.</summary>
         public void Continue() => newLeague.Continue();

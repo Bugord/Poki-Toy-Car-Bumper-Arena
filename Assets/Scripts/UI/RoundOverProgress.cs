@@ -579,7 +579,8 @@ namespace ToyCarArena.UI
             league = new NewLeaguePopup(root.Q<VisualElement>("round-over") ?? root, () => Clicked?.Invoke(),
                 () => isClosed = true);
             league.Fit(isTouch ? RewardWideTouchScale : 1f);
-            league.Show(viewModel.PlayerLevel, !isTouch, viewModel.ShowCarHero(null, viewModel.WornTopper));
+            league.Show(viewModel.PlayerLevel, !isTouch, viewModel.ShowCarHero(null, viewModel.WornTopper),
+                viewModel.LeaguePrize);
             IsPopupOpen = true;
             try {
                 while (!isClosed) {

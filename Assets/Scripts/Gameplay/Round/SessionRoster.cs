@@ -7,7 +7,8 @@ namespace ToyCarArena.Gameplay.Round
 {
     /// <summary>
     /// Seats visit players in coloured slots. Replacements change handles and cosmetic cars, never slot identity in
-    /// a round. Names are dealt without reuse until the deck runs out.
+    /// a round. Names are dealt without reuse until the deck runs out. A league's car and hat
+    /// (<see cref="GameTuning.LeagueRewardSettings"/>) go only to a player whose level has reached the league.
     /// </summary>
     public sealed class SessionRoster : ISessionRoster, IDisposable
     {
@@ -31,6 +32,9 @@ namespace ToyCarArena.Gameplay.Round
 
         private readonly CarCatalog catalog;
         private readonly IPlayerCar playerCar;
+        private readonly GameTuning tuning;
+        private readonly List<CarCatalog.Entry> carPool = new();
+        private readonly List<string> topperPool = new();
         private readonly int[] colors = new int[MaxBots];
         private int playerColor;
         private readonly string[] deck = (string[])BotNames.All.Clone();
@@ -39,10 +43,11 @@ namespace ToyCarArena.Gameplay.Round
         private readonly string[] left = new string[MaxBots];
         private int nextName = BotNames.All.Length;
 
-        public SessionRoster(CarCatalog catalog, IPlayerCar playerCar)
+        public SessionRoster(CarCatalog catalog, IPlayerCar playerCar, GameTuning tuning = null)
         {
             this.catalog = catalog;
             this.playerCar = playerCar;
+            this.tuning = tuning;
             this.playerColor = playerCar.SelectedColor;
             for (var slot = 0; slot < MaxBots; slot++) {
                 colors[slot] = slot < playerColor ? slot : slot + 1;
@@ -144,12 +149,46 @@ namespace ToyCarArena.Gameplay.Round
             if (nextName == deck.Length) {
                 Refill();
             }
-            var car = catalog.Cars[Random.Range(0, catalog.Cars.Count)];
-            players[slot] = new SessionPlayer(deck[nextName++], car, colors[slot], LevelNear(playerCar.Level),
-                Random.value < TopperChance ? CarTopper.Ids[Random.Range(0, CarTopper.Ids.Count)] : "",
+            // The level first: a league's car and hat go only to a player whose level has reached the league, so the
+            // pools are filtered by it. One draw from each pool, as before, so a seat takes as many random numbers.
+            var level = LevelNear(playerCar.Level);
+            FillPools(level);
+            var car = carPool[Random.Range(0, carPool.Count)];
+            players[slot] = new SessionPlayer(deck[nextName++], car, colors[slot], level,
+                Random.value < TopperChance ? topperPool[Random.Range(0, topperPool.Count)] : "",
                 Random.value < StreakChance ? Random.Range(StreakMin, StreakMax + 1) : 0);
             joined[slot] = true;
         }
+
+        // Every catalog car (also those the player has not opened yet) and every hat on sale, plus the league's car and
+        // hat of each league the level has reached. With no tuning (tests that seat players alone) every car, no league hat.
+        private void FillPools(int level)
+        {
+            carPool.Clear();
+            foreach (var car in catalog.Cars) {
+                if (Allows(car.Id, level)) {
+                    carPool.Add(car);
+                }
+            }
+
+            if (carPool.Count == 0) {
+                carPool.Add(catalog.Cars[0]);
+            }
+
+            topperPool.Clear();
+            topperPool.AddRange(CarTopper.Ids);
+            if (tuning == null) {
+                return;
+            }
+
+            foreach (var topper in tuning.Toppers.League) {
+                if (tuning.LeagueRewards.AllowsTopper(topper.Id, level)) {
+                    topperPool.Add(topper.Id);
+                }
+            }
+        }
+
+        private bool Allows(string carId, int level) => tuning == null || tuning.LeagueRewards.AllowsCar(carId, level);
 
         private static int LevelNear(int level)
         {

@@ -210,7 +210,8 @@ namespace ToyCarArena.Tests.PlayMode
                     .As(typeof(IArenaRotation));
                 builder.Register<IPlayerCar, FirstPlayerCar>(Lifetime.Singleton);
                 builder.RegisterInstance<IPlayerTopper>(new FixedTopper(PlayerTopper));
-                builder.Register<SessionRoster>(Lifetime.Singleton).As<ISessionRoster>();
+                builder.Register<SessionRoster>(Lifetime.Singleton).As<ISessionRoster>()
+                    .WithParameter(typeof(GameTuning), LoadTuning());
                 builder.RegisterInstance<IAudioService>(audio);
                 builder.RegisterInstance<IInputService>(input);
             }, "Simulation Scope");

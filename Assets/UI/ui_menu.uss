@@ -1443,6 +1443,30 @@
     width: 100%;
 }
 
+/* The league's car and hat: two larger tiles over its look, on gold. */
+.menu__league-prizes {
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 24px;
+}
+
+.menu__league-get.menu__league-prize {
+    width: 48.5%;
+    height: 280px;
+    background-color: #fff3c9;
+}
+
+.menu__league-prize-car {
+    width: 300px;
+    height: 190px;
+}
+
+.menu__league-prize-hat {
+    width: 190px;
+    height: 190px;
+}
+
 .menu__league-swatch {
     width: 112px;
     height: 112px;
@@ -1523,6 +1547,10 @@
 .menu__league-card--wide .menu__league-stage { padding-bottom: 64px; }
 .menu__league-card--wide .menu__league-medal { width: 150px; height: 150px; margin-left: -75px; bottom: -6px; }
 .menu__league-card--wide .menu__league-get { height: 170px; }
+.menu__league-card--wide .menu__league-get.menu__league-prize { height: 200px; }
+.menu__league-card--wide .menu__league-prize-car { width: 220px; height: 140px; }
+.menu__league-card--wide .menu__league-prize-hat { width: 140px; height: 140px; }
+.menu__league-card--wide .menu__league-prizes { margin-bottom: 16px; }
 .menu__league-card--wide .menu__league-get-picture { padding-top: 10px; }
 .menu__league-card--wide .menu__league-get-badge { min-width: 116px; height: 78px; padding: 0 18px; border-radius: 24px; }
 .menu__league-card--wide .menu__league-get-badge .level-badge__value { font-size: 40px; }

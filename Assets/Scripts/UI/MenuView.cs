@@ -256,7 +256,7 @@ namespace ToyCarArena.UI
             // The first menu in a new league greets it, over the league's sky and plinth already behind the dim.
             if (!ViewModel.IsDecided && ViewModel.TakeNewLeague()) {
                 ClosePopups();
-                leagues.ShowNewLeague(ViewModel.Level.Level, !isTouch, heroTexture);
+                leagues.ShowNewLeague(ViewModel.Level.Level, !isTouch, heroTexture, ViewModel.LeaguePrize);
                 return;
             }
 

@@ -36,7 +36,7 @@ namespace ToyCarArena.Gameplay.Cars
         private const float HeroBoost = 3f;
 
         private const int Columns = 6;
-        private const int Rows = 3;
+        private const int Rows = 4;
         private const int CellSize = 256;
         private const float HatPitch = 16f;
         private const float HatYaw = 200f;
@@ -142,10 +142,11 @@ namespace ToyCarArena.Gameplay.Cars
         {
             Build();
             if (cells.Count == 0) {
-                // Every topper, on sale and exclusive, whatever the first caller asks for: the texture is drawn once,
-                // and the garage, the result's gift and the menu's daily gift each crop their own from it.
+                // Every topper, on sale, exclusive and the leagues', whatever the first caller asks for: the texture is
+                // drawn once, and the garage, the result's gift and the menu's daily gift each crop their own from it.
                 var all = new List<string>(CarTopper.Ids);
                 all.AddRange(CarTopper.ExclusiveIds);
+                all.AddRange(CarTopper.LeagueIds);
                 foreach (var id in ids) {
                     if (!all.Contains(id)) {
                         all.Add(id);
