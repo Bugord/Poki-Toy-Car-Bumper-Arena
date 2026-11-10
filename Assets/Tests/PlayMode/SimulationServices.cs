@@ -15,6 +15,7 @@ namespace ToyCarArena.Tests.PlayMode
         public int LosingStreak { get; set; }
         public int WinStreak { get; set; }
         public int Nemesis => RoundResult.Nobody;
+        public ToyCarArena.Gameplay.EventMode Mode { get; set; }
     }
 
     /// <summary>

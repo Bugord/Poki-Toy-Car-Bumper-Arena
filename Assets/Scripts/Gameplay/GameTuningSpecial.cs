@@ -15,7 +15,10 @@ namespace ToyCarArena.Gameplay
         /// <summary>Every car is giant and heavy for the whole round.</summary>
         Mega,
 
-        /// <summary>A bomb sits on one car and passes on a bump; when its fuse runs out it blows its holder away.</summary>
+        /// <summary>
+        /// The HOT POTATO mode of the menu (no longer in the rotation): a bomb sits on one car and passes on a bump; when
+        /// its fuse runs out its holder is out of the round. The floor is fenced, so nobody falls.
+        /// </summary>
         HotPotato,
 
         /// <summary>One bot is a giant monster truck with a crown; knocking it off pays several knock-outs.</summary>
@@ -59,10 +62,11 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private int every = 3;
 
+            // Only low gravity is left in the rotation (after v0.17.4): the hot potato became a mode of its own in the
+            // menu (EventMode), and the user took mega, boss and ice out. Their code stays, reachable by Force.
             [Tooltip("The special rounds in the order they come, then again from the start")]
             [SerializeField]
-            private SpecialRound[] order =
-                { SpecialRound.Mega, SpecialRound.HotPotato, SpecialRound.Boss, SpecialRound.Ice, SpecialRound.LowGravity };
+            private SpecialRound[] order = { SpecialRound.LowGravity };
 
             [Header("Mega")]
             [Tooltip("How many times its own size every car is in a mega round")]
@@ -169,9 +173,10 @@ namespace ToyCarArena.Gameplay
         }
 
         /// <summary>
-        /// The hot potato: a bomb rides on one car and jumps to any car it bumps; when the fuse runs out it blows its
-        /// holder far away (a knock-out for the car that passed it, if the holder falls) and nudges the cars beside it,
-        /// and a new bomb lands on another car a moment later.
+        /// The hot potato, the HOT POTATO mode of the menu since it left the special rounds: a bomb rides on one car and
+        /// jumps to any car it bumps (never straight back to the car that passed it); when the fuse runs out its holder
+        /// is out of the round (a knock-out for the car that passed it) and the cars beside it are nudged, and a new bomb
+        /// lands on another car a moment later. The floor is fenced, so nobody falls; the last car left wins.
         /// </summary>
         [Serializable]
         public sealed class HotPotatoSettings
@@ -184,7 +189,7 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Seconds a bomb burns before it goes off, however often it passes")]
             [Min(1f)]
             [SerializeField]
-            private float fuse = 9f;
+            private float fuse = 8f;
 
             [Tooltip("Seconds from a blast to the next bomb")]
             [Min(0f)]
@@ -201,21 +206,6 @@ namespace ToyCarArena.Gameplay
             [Min(0f)]
             [SerializeField]
             private float passStrength = 1f;
-
-            [Tooltip("Metres per second the blast throws its holder outward, at most to this speed")]
-            [Min(0f)]
-            [SerializeField]
-            private float holderPush = 20f;
-
-            [Tooltip("Metres per second the blast throws its holder up")]
-            [Min(0f)]
-            [SerializeField]
-            private float holderLift = 7f;
-
-            [Tooltip("Seconds the blast knocks its holder off balance")]
-            [Min(0f)]
-            [SerializeField]
-            private float holderStagger = 1.2f;
 
             [Tooltip("Metres round the holder the blast nudges the other cars")]
             [Min(0f)]
@@ -247,20 +237,60 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float fleeRadius = 7f;
 
+            [Header("Hot potato mode")]
+            [Tooltip("Seconds the bomb cannot go back to the car that just passed it: no tag-backs")]
+            [Min(0f)]
+            [SerializeField]
+            private float passBackTime = 1.5f;
+
+            [Tooltip("Metres per second the blast throws its holder up as it leaves the round")]
+            [Min(0f)]
+            [SerializeField]
+            private float outLift = 11f;
+
+            [Tooltip("Seconds the blown-out holder flies before it is gone")]
+            [Min(0.1f)]
+            [SerializeField]
+            private float outTime = 0.9f;
+
+            [Tooltip("Metres high the red and white bumper round the floor stands")]
+            [Min(0.1f)]
+            [SerializeField]
+            private float fenceHeight = 0.55f;
+
+            [Tooltip("Metres thick the bumper and the wall on it are")]
+            [Min(0.1f)]
+            [SerializeField]
+            private float fenceThickness = 0.4f;
+
+            [Tooltip("Metres high the unseen wall on the bumper stands, so no hit lifts a car over")]
+            [Min(0.5f)]
+            [SerializeField]
+            private float wallHeight = 3f;
+
+            [Tooltip("Metres from the fence a fleeing bot starts to turn along it instead of into it")]
+            [Min(0f)]
+            [SerializeField]
+            private float fenceMargin = 3f;
+
             public float FirstDelay => firstDelay;
             public float Fuse => fuse;
             public float NextDelay => nextDelay;
             public float PassCooldown => passCooldown;
             public float PassStrength => passStrength;
-            public float HolderPush => holderPush;
-            public float HolderLift => holderLift;
-            public float HolderStagger => holderStagger;
             public float Radius => radius;
             public float Push => push;
             public float Lift => lift;
             public float Stagger => stagger;
             public float Hurry => hurry;
             public float FleeRadius => fleeRadius;
+            public float PassBackTime => passBackTime;
+            public float OutLift => outLift;
+            public float OutTime => outTime;
+            public float FenceHeight => fenceHeight;
+            public float FenceThickness => fenceThickness;
+            public float WallHeight => wallHeight;
+            public float FenceMargin => fenceMargin;
         }
     }
 }

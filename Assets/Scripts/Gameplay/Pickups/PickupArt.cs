@@ -46,6 +46,10 @@ namespace ToyCarArena.Gameplay.Pickups
         private readonly Material yellow;
         private readonly Material bowling;
         private readonly Material pink;
+        private readonly Material bombBody;
+        private readonly Material metal;
+        private readonly Material rope;
+        private readonly Material orange;
         private readonly Material boxMaterial;
         private readonly Material markerMaterial;
         private readonly Mesh box;
@@ -66,6 +70,11 @@ namespace ToyCarArena.Gameplay.Pickups
             yellow = Tinted(shine, "pickup_yellow", new Color(1f, 0.86f, 0.35f));
             bowling = Tinted(shine, "pickup_bowling", ColorOf(ItemKind.Bowling));
             pink = Tinted(shine, "pickup_pink", ColorOf(ItemKind.Balloon));
+            // Lighter than the navy outline, so the ball shows as a ball inside it and not as a dark blot.
+            bombBody = Tinted(shine, "pickup_bomb", new Color(0.25f, 0.31f, 0.5f));
+            metal = Tinted(shine, "pickup_metal", new Color(0.74f, 0.78f, 0.86f));
+            rope = Tinted(shine, "pickup_rope", new Color(0.96f, 0.8f, 0.55f));
+            orange = Tinted(shine, "pickup_orange", new Color(1f, 0.56f, 0.16f));
             boxMaterial = Tinted(shine, "pickup_box", Gold);
             markerMaterial = art.Get("mound_ring");
             box = Own(ToyMeshes.Box(Vector3.one * BoxSize));
@@ -143,24 +152,55 @@ namespace ToyCarArena.Gameplay.Pickups
         }
 
         /// <summary>
-        /// A bomb under <paramref name="parent"/>: a navy ball with a cap, a fuse and a gold spark, and a red ball over it
-        /// that <see cref="ThrownBomb.Flash"/> switches on as it blinks. Its middle is its origin.
+        /// A bomb under <paramref name="parent"/>, drawn as a cartoon bomb reads at a glance: a slate ball lighter than
+        /// its outline with a wide shine on top, a metal cap, a curled rope fuse and a spark burst at its tip
+        /// (<see cref="ThrownBomb.Spark"/>, scaled as it fizzes), and a red ball over it that <see cref="ThrownBomb.Flash"/>
+        /// switches on as it blinks. Its middle is its origin; it faces +Z.
         /// </summary>
         public void BuildBomb(Transform parent, ThrownBomb bomb)
         {
             var root = new GameObject("Bomb").transform;
             root.SetParent(parent, false);
             var r = BombRadius;
-            ToyMeshes.Part(root, "Body", sphere, navy, Vector3.zero, default, Vector3.one * r);
-            ToyMeshes.Part(root, "Shine", sphere, white, new Vector3(-0.2f, 0.2f, 0.32f) * (r / 0.5f), default,
-                Vector3.one * (r * 0.2f));
-            ToyMeshes.Part(root, "Cap", cylinder, white, new Vector3(0f, r * 0.95f, 0f), default,
-                new Vector3(r * 0.38f, r * 0.25f, r * 0.38f));
-            ToyMeshes.Part(root, "Fuse", cylinder, yellow, new Vector3(0.08f, r * 1.25f, 0f), new Vector3(0f, 0f, -25f),
-                new Vector3(0.06f, r * 0.5f, 0.06f));
+            ToyMeshes.Part(root, "Body", sphere, bombBody, Vector3.zero, default, Vector3.one * r);
+            // Mostly on top: the camera looks down on the bomb from every side it rides on.
+            var shineAt = new Vector3(-0.4f, 0.85f, -0.2f).normalized;
+            var shinePart = ToyMeshes.Part(root, "Shine", sphere, white, shineAt * (r * 0.96f), default,
+                new Vector3(r * 0.4f, r * 0.22f, r * 0.08f));
+            shinePart.localRotation = Quaternion.LookRotation(shineAt, Vector3.right) * Quaternion.Euler(0f, 0f, 20f);
+            ToyMeshes.Part(root, "Dot", sphere, white, new Vector3(-0.66f, 0.55f, -0.3f).normalized * (r * 0.98f), default,
+                Vector3.one * (r * 0.09f));
+            ToyMeshes.Part(root, "Cap", cylinder, metal, new Vector3(0f, r * 0.98f, 0f), default,
+                new Vector3(r * 0.42f, r * 0.3f, r * 0.42f));
+            // The fuse curls from the cap and out to one side, in three pieces of rope.
+            var fuse = new[]
+            {
+                new Vector3(0f, r * 1.08f, 0f), new Vector3(r * 0.08f, r * 1.42f, 0f), new Vector3(r * 0.32f, r * 1.68f, 0f),
+                new Vector3(r * 0.66f, r * 1.76f, 0f),
+            };
+            for (var i = 0; i < fuse.Length - 1; i++) {
+                var along = fuse[i + 1] - fuse[i];
+                var piece = ToyMeshes.Part(root, "Fuse", cylinder, rope, (fuse[i] + fuse[i + 1]) * 0.5f, default,
+                    new Vector3(r * 0.12f, along.magnitude + r * 0.06f, r * 0.12f));
+                piece.localRotation = Quaternion.FromToRotation(Vector3.up, along);
+            }
+
             var flash = ToyMeshes.Part(root, "Flash", sphere, red, Vector3.zero, default, Vector3.one * (r * 1.04f));
-            var spark = ToyMeshes.Part(root, "Spark", sphere, gold, new Vector3(0.2f, r * 1.55f, 0f), default,
-                Vector3.one * 0.14f);
+            // The spark is a unit burst scaled by its owner: a gold ball crossed by four spindles, long and short in
+            // turn, so it shows eight points.
+            var spark = new GameObject("Spark").transform;
+            spark.SetParent(root, false);
+            spark.localPosition = fuse[fuse.Length - 1];
+            spark.localScale = Vector3.one * 0.14f;
+            for (var i = 0; i < 4; i++) {
+                var length = i % 2 == 0 ? 2.2f : 1.6f;
+                var ray = ToyMeshes.Part(spark, "Ray", sphere, i % 2 == 0 ? orange : gold, Vector3.zero, default,
+                    new Vector3(0.34f, length, 0.34f));
+                // In a plane tipped up toward a camera looking down, so the burst shows from above.
+                ray.localRotation = Quaternion.Euler(30f, 0f, i * 45f + 10f);
+            }
+
+            ToyMeshes.Part(spark, "Core", sphere, gold, Vector3.zero, default, Vector3.one);
             ToyMeshes.Outlined(root.gameObject);
             flash.gameObject.SetActive(false);
 

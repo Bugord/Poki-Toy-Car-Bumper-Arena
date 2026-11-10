@@ -36,8 +36,9 @@ namespace ToyCarArena.Gameplay.Round
             this.AimError = Mathf.Lerp(easy.AimError, normal.AimError, level);
             this.BoostDelay = Vector2.Lerp(easy.BoostDelay, normal.BoostDelay, level);
             this.EscapeBoostChance = Mathf.Lerp(easy.EscapeBoostChance, normal.EscapeBoostChance, level);
-            this.EdgeAssist = Mathf.Lerp(easy.EdgeAssist, normal.EdgeAssist,
-                LevelFor(settings, progress, settings.EdgeAssistRounds));
+            // HOT POTATO's floor is fenced: the help at the edge would only make the car stick and slow along the fence.
+            this.EdgeAssist = RoundRules.For(tuning, progress.Round, progress.Mode) == SpecialRound.HotPotato ? 0f :
+                Mathf.Lerp(easy.EdgeAssist, normal.EdgeAssist, LevelFor(settings, progress, settings.EdgeAssistRounds));
             this.AutoBoost = Mathf.Lerp(easy.AutoBoost, normal.AutoBoost, level);
             this.PlayerBump = Mathf.Lerp(easy.PlayerBump, normal.PlayerBump, level);
             this.PlayerStaggerScale = Mathf.Lerp(easy.PlayerStaggerScale, normal.PlayerStaggerScale, level);

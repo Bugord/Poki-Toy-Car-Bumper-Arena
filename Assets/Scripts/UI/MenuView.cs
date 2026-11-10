@@ -100,7 +100,10 @@ namespace ToyCarArena.UI
         // The modes' card sideways, for the same reason. It is taller (three cards and PLAY), so it grows less, to about
         // the missions' card's height on screen.
         private const float WideModesScale = 1.3f;
-        private const float ModesHeight = 1100f;
+        private const float ModesHeight = 1600f;
+        // A beat between picking a mode and the popup closing, so the ring is seen on its new card.
+        private const long PickCloseMilliseconds = 280;
+        private const string ModeSelectedClass = "menu__mode-holder--selected";
 
         // The XP bar sideways: this share of the top row, never shorter than upright and never into the coins and the
         // gear (their width and gaps, reference pixels).
@@ -119,9 +122,12 @@ namespace ToyCarArena.UI
         // --green in ui_theme: the ticks on MISSIONS' clipboard.
         private static readonly Color Green = new Color32(0x5b, 0xd3, 0x4a, 0xff);
         // A mode not out yet keeps its sign, greyed: --shade filled, --muted outlined, its sand between.
-        private static readonly Color SoonFill = new Color32(0xc7, 0xd3, 0xea, 0xff);
-        private static readonly Color SoonLine = new Color32(0x5b, 0x6b, 0x8c, 0xff);
-        private static readonly Color SoonSand = new Color32(0x9a, 0xa8, 0xc4, 0xff);
+        private static readonly Color Orange = new Color32(0xff, 0x9f, 0x1c, 0xff);
+        private static readonly Color EventLight = new Color32(0xff, 0xc0, 0x6a, 0xff);
+        private static readonly Color EventDeep = new Color32(0xff, 0x8f, 0x1f, 0xff);
+        private static readonly Color EventRay = new(1f, 1f, 1f, 0.18f);
+        private const float RayStep = 20f;
+        private const float RayWidth = 8f;
         // The desktop key that opens the modes: M is MISSIONS, and the plate reads QUICK MATCH.
         private const KeyCode ModesKey = KeyCode.Q;
         private const float ShakeSeconds = 0.3f;
@@ -172,6 +178,9 @@ namespace ToyCarArena.UI
         private VisualElement modesPopup;
         private VisualElement modesSheet;
         private CarPortrait modePortrait;
+        private VisualElement eventCard;
+        private VisualElement quickCard;
+        private Label modeName;
         private GarageStage garageStage;
         private MenuLeagues leagues;
         private VisualElement rightRail;
@@ -458,8 +467,8 @@ namespace ToyCarArena.UI
             var modeText = Element("menu__mode-texts");
             var caption = Text("menu__mode-caption");
             text.Set(caption, () => Strings.Get("menu.mode"));
-            var modeName = Text("menu__mode-name");
-            text.Set(modeName, () => Strings.Get("menu.quick_match"));
+            modeName = Text("menu__mode-name");
+            text.Set(modeName, ModeName);
             modeText.Add(caption);
             modeText.Add(modeName);
             modeFace.Add(modeText);
@@ -477,42 +486,139 @@ namespace ToyCarArena.UI
             missionsSheet.Add(missionsList);
         }
 
+        /// <summary>
+        /// CHOOSE MODE, as the board has it: the event on top on an orange card with sun rays, its EVENT tag, its name,
+        /// its rule and its picture (a car with the bomb over it); QUICK MATCH on a white card with the player's own car;
+        /// then the modes still to come as low grey rows with a padlock and SOON. The mode in play wears a green ring and
+        /// SELECTED; a tap on the other picks it and closes the popup a moment later. PLAY under them starts the mode.
+        /// </summary>
         private void BuildModesPopup(VisualElement menu)
         {
             modesPopup = Popup(menu, () => Strings.Get("menu.choose_mode"), out modesSheet);
+            modesPopup.AddToClassList("menu__modes-popup");
             var sheet = modesSheet;
 
-            var quick = Element("menu__mode-card");
-            quick.AddToClassList("menu__mode-card--selected");
-            quick.pickingMode = PickingMode.Position;
-            quick.RegisterCallback<ClickEvent>(_ => {
-                audioService.PlayUiClick();
-                ClosePopups();
-            });
-            var quickText = Element("menu__mode-text");
+            eventCard = ModeCard(EventMode.HotPotato, out var eventFace);
+            eventFace.AddToClassList("menu__mode-card--event");
+            eventFace.style.backgroundImage = EventBack();
+            eventFace.Add(Icon("menu__event-rays", DrawEventRays));
+            // The picture under the words: a long name in another language runs over it, not under.
+            // The game's own red monster truck with the mode's bomb riding on it, drawn once from the models
+            // (ModeCardArt) into the picture the style sheet names.
+            eventFace.Add(Element("menu__event-art"));
+            var tag = Element("menu__event-tag");
+            tag.Add(Icon("menu__event-bolt", DrawBolt));
+            var tagText = RoundOverProgress.Dropped("menu__event-tag-label", out var tagLabels);
+            foreach (var label in tagLabels) {
+                text.Set(label, () => Strings.Get("menu.event"));
+            }
+
+            tag.Add(tagText);
+            eventFace.Add(tag);
+            var title = RoundOverProgress.Dropped("menu__event-title", out var titleLabels);
+            foreach (var label in titleLabels) {
+                text.Set(label, () => Strings.Get("menu.hot_potato"));
+            }
+
+            title.AddToClassList("menu__event-title-box");
+            // One size for both layers, shrunk to the room left of the picture: a long name in another language fits.
+            FitText.Fit(title, titleLabels);
+            eventFace.Add(title);
+            var eventHint = Text("menu__mode-desc");
+            eventHint.AddToClassList("menu__mode-desc--event");
+            text.Set(eventHint, () => Strings.Get("menu.hot_potato_hint"));
+            eventFace.Add(eventHint);
+            sheet.Add(eventCard);
+
+            quickCard = ModeCard(EventMode.None, out var quickFace);
             var quickName = Text("menu__mode-card-name");
             text.Set(quickName, () => Strings.Get("menu.quick_match"));
-            var quickHint = Text("menu__mode-hint");
+            // In a box of fixed width left of the SELECTED tag: a longer name in another language shrinks instead of
+            // running under it. The box, not the label, sets the room, or the label's width would follow its own size.
+            var quickNameBox = Element("menu__mode-card-name-box");
+            quickNameBox.Add(quickName);
+            quickFace.Add(quickNameBox);
+            FitText.Fit(quickNameBox, new[] { quickName });
+            var quickHint = Text("menu__mode-desc");
             text.Set(quickHint, () => Strings.Get("menu.quick_match_hint"));
-            quickText.Add(quickName);
-            quickText.Add(quickHint);
-            quick.Add(quickText);
+            quickFace.Add(quickHint);
             var portrait = Element("menu__mode-portrait");
             portrait.AddToClassList("car-portrait");
             modePortrait = new CarPortrait(portrait);
-            quick.Add(portrait);
-            var selected = Text("menu__tag");
-            selected.AddToClassList("menu__tag--selected");
-            text.Set(selected, () => Strings.Get("menu.selected"));
-            quick.Add(selected);
-            sheet.Add(quick);
+            quickFace.Add(portrait);
+            sheet.Add(quickCard);
 
-            sheet.Add(SoonMode("menu.cup", "menu.cup_hint", DrawCup));
-            sheet.Add(SoonMode("menu.survival", "menu.survival_hint", DrawHourglass));
+            sheet.Add(SoonMode("menu.cup", "menu.cup_hint"));
+            sheet.Add(SoonMode("menu.survival", "menu.survival_hint"));
 
             var play = PlayButton("menu__modes-play", false);
             sheet.Add(play);
         }
+
+        /// <summary>
+        /// A mode's card: the face (filled by the caller) inside a holder that carries the green ring, the shadow and the
+        /// SELECTED tag, which the face's clipping would cut. A tap picks the mode.
+        /// </summary>
+        private VisualElement ModeCard(EventMode mode, out VisualElement face)
+        {
+            var holder = Element("menu__mode-holder");
+            holder.pickingMode = PickingMode.Position;
+            holder.Add(Element("menu__mode-ring"));
+            holder.Add(Element("menu__mode-drop"));
+            face = Element("menu__mode-card");
+            holder.Add(face);
+            var selected = Element("menu__mode-selected");
+            var tick = Element("menu__mode-tick");
+            tick.Add(Icon("menu__mode-tick-mark", DrawTick));
+            selected.Add(tick);
+            var selectedText = RoundOverProgress.Dropped("menu__mode-selected-label", out var labels);
+            foreach (var label in labels) {
+                text.Set(label, () => Strings.Get("menu.selected"));
+            }
+
+            selected.Add(selectedText);
+            holder.Add(selected);
+            holder.RegisterCallback<ClickEvent>(_ => PickMode(mode, holder));
+            return holder;
+        }
+
+        // A tap on a mode: the ring moves to it, the card pops, the MODE plate says it, and the popup closes a beat later
+        // so the pick is seen. A tap on the mode in play only closes it.
+        private void PickMode(EventMode mode, VisualElement card)
+        {
+            if (IsBusy || !modesPopup.ClassListContains(OpenClass)) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            var isNew = mode != ViewModel.Mode;
+            ViewModel.SelectMode(mode);
+            ShowMode();
+            if (!isNew) {
+                ClosePopups();
+                return;
+            }
+
+            Pop(card);
+            modesPopup.schedule.Execute(() => {
+                if (modesPopup.ClassListContains(OpenClass)) {
+                    ClosePopups();
+                }
+            }).StartingIn(PickCloseMilliseconds);
+        }
+
+        // The selected mode on its card and on the MODE plate; the event's card only where the build has events.
+        private void ShowMode()
+        {
+            var mode = ViewModel.HasEvents ? ViewModel.Mode : EventMode.None;
+            eventCard.style.display = ViewModel.HasEvents ? DisplayStyle.Flex : DisplayStyle.None;
+            eventCard.EnableInClassList(ModeSelectedClass, mode == EventMode.HotPotato);
+            quickCard.EnableInClassList(ModeSelectedClass, mode == EventMode.None);
+            modeName.text = ModeName();
+        }
+
+        private string ModeName() =>
+            Strings.Get(ViewModel.HasEvents && ViewModel.Mode == EventMode.HotPotato ? "menu.hot_potato" : "menu.quick_match");
 
         /// <summary>
         /// The XP boost's offer: ×N XP for the next matches, a pip a match, and WATCH (the rewarded ad) or NO THANKS.
@@ -598,29 +704,27 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>
-        /// A mode that is not out yet: its sign, name and what it will be, all greyed, and a tilted SOON plate on its top
-        /// edge. A press only shakes it; it never becomes the mode in play.
+        /// A mode that is not out yet, as a low grey row: a gold padlock, its name and what it will be, and a white SOON
+        /// pill. A press only shakes it; it never becomes the mode in play.
         /// </summary>
-        private VisualElement SoonMode(string nameKey, string hintKey, System.Action<MeshGenerationContext> draw)
+        private VisualElement SoonMode(string nameKey, string hintKey)
         {
-            var card = Element("menu__mode-card");
-            card.AddToClassList("menu__mode-card--soon");
-            card.pickingMode = PickingMode.Position;
-            card.RegisterCallback<ClickEvent>(_ => Soon(card));
-            card.Add(Icon("menu__mode-sign", draw));
-            var body = Element("menu__mode-text");
-            var name = Text("menu__mode-card-name");
+            var row = Element("menu__mode-soon");
+            row.pickingMode = PickingMode.Position;
+            row.RegisterCallback<ClickEvent>(_ => Soon(row));
+            row.Add(Icon("menu__mode-lock", DrawPadlock));
+            var body = Element("menu__mode-soon-text");
+            var name = Text("menu__mode-soon-name");
             text.Set(name, () => Strings.Get(nameKey));
-            var hint = Text("menu__mode-hint");
+            var hint = Text("menu__mode-soon-hint");
             text.Set(hint, () => Strings.Get(hintKey));
             body.Add(name);
             body.Add(hint);
-            card.Add(body);
-            var soon = Text("menu__tag");
-            soon.AddToClassList("menu__tag--soon");
+            row.Add(body);
+            var soon = Text("menu__mode-soon-tag");
             text.Set(soon, () => Strings.Get("menu.soon"));
-            card.Add(soon);
-            return card;
+            row.Add(soon);
+            return row;
         }
 
         private VisualElement Popup(VisualElement menu, System.Func<string> title, out VisualElement sheet)
@@ -858,6 +962,7 @@ namespace ToyCarArena.UI
             var car = ViewModel.Car;
             carName.text = GameText.Car(car);
             modePortrait.Set(car, ViewModel.CarColor);
+            ShowMode();
             ShowCar(car);
 
             var nearest = ViewModel.NearestMission;
@@ -1794,95 +1899,112 @@ namespace ToyCarArena.UI
             p.Stroke();
         }
 
-        /// <summary>CUP's sign, greyed while it is not out: a cup with two handles on a stem and a base.</summary>
-        private static void DrawCup(MeshGenerationContext context)
+        /// <summary>A mode still to come: a gold padlock with a navy outline and shackle, as on the board.</summary>
+        private static void DrawPadlock(MeshGenerationContext context)
         {
             var r = context.visualElement.contentRect;
             var p = context.painter2D;
             float X(float x) => r.x + x * r.width;
             float Y(float y) => r.y + y * r.height;
-            p.lineJoin = LineJoin.Round;
+            p.strokeColor = Navy;
             p.lineCap = LineCap.Round;
-            p.strokeColor = SoonLine;
-            p.lineWidth = r.width * 0.08f;
+            p.lineJoin = LineJoin.Round;
+            p.lineWidth = r.width * 0.11f;
             p.BeginPath();
-            p.Arc(new Vector2(X(0.24f), Y(0.32f)), r.width * 0.13f, 90f, 270f);
+            p.MoveTo(new Vector2(X(0.33f), Y(0.46f)));
+            p.LineTo(new Vector2(X(0.33f), Y(0.33f)));
+            p.Arc(new Vector2(X(0.5f), Y(0.33f)), r.width * 0.17f, 180f, 360f);
+            p.LineTo(new Vector2(X(0.67f), Y(0.46f)));
             p.Stroke();
-            p.BeginPath();
-            p.Arc(new Vector2(X(0.76f), Y(0.32f)), r.width * 0.13f, -90f, 90f);
-            p.Stroke();
-
-            p.fillColor = SoonFill;
-            p.lineWidth = r.width * 0.07f;
-            p.BeginPath();
-            p.MoveTo(new Vector2(X(0.24f), Y(0.12f)));
-            p.LineTo(new Vector2(X(0.76f), Y(0.12f)));
-            p.LineTo(new Vector2(X(0.73f), Y(0.36f)));
-            p.Arc(new Vector2(X(0.5f), Y(0.36f)), r.width * 0.23f, 0f, 180f);
-            p.ClosePath();
+            p.fillColor = Gold;
+            p.lineWidth = r.width * 0.1f;
+            RoundBox(p, X(0.2f), Y(0.45f), X(0.8f), Y(0.9f), r.width * 0.09f);
             p.Fill();
             p.Stroke();
-            Box(p, X(0.43f), Y(0.58f), X(0.57f), Y(0.76f));
-            Box(p, X(0.27f), Y(0.76f), X(0.73f), Y(0.9f));
         }
 
-        /// <summary>SURVIVAL's sign, greyed while it is not out: an hourglass, its sand running down.</summary>
-        private static void DrawHourglass(MeshGenerationContext context)
+        /// <summary>SELECTED's tick: white, on the navy circle of its tag.</summary>
+        private static void DrawTick(MeshGenerationContext context)
+        {
+            var r = context.visualElement.contentRect;
+            var p = context.painter2D;
+            p.strokeColor = White;
+            p.lineWidth = r.width * 0.2f;
+            p.lineCap = LineCap.Round;
+            p.lineJoin = LineJoin.Round;
+            p.BeginPath();
+            p.MoveTo(new Vector2(r.x + r.width * 0.2f, r.y + r.height * 0.52f));
+            p.LineTo(new Vector2(r.x + r.width * 0.42f, r.y + r.height * 0.72f));
+            p.LineTo(new Vector2(r.x + r.width * 0.8f, r.y + r.height * 0.3f));
+            p.Stroke();
+        }
+
+        /// <summary>EVENT's lightning bolt: orange with a navy outline.</summary>
+        private static void DrawBolt(MeshGenerationContext context)
         {
             var r = context.visualElement.contentRect;
             var p = context.painter2D;
             float X(float x) => r.x + x * r.width;
             float Y(float y) => r.y + y * r.height;
+            p.fillColor = Orange;
+            p.strokeColor = Navy;
+            p.lineWidth = r.width * 0.1f;
             p.lineJoin = LineJoin.Round;
-            p.strokeColor = SoonLine;
-            p.lineWidth = r.width * 0.07f;
-            p.fillColor = White;
-            Glass();
-            p.Fill();
-            p.fillColor = SoonSand;
             p.BeginPath();
-            p.MoveTo(new Vector2(X(0.37f), Y(0.27f)));
-            p.LineTo(new Vector2(X(0.63f), Y(0.27f)));
-            p.LineTo(new Vector2(X(0.5f), Y(0.45f)));
+            p.MoveTo(new Vector2(X(0.6f), Y(0.06f)));
+            p.LineTo(new Vector2(X(0.16f), Y(0.58f)));
+            p.LineTo(new Vector2(X(0.46f), Y(0.58f)));
+            p.LineTo(new Vector2(X(0.36f), Y(0.94f)));
+            p.LineTo(new Vector2(X(0.84f), Y(0.38f)));
+            p.LineTo(new Vector2(X(0.54f), Y(0.38f)));
             p.ClosePath();
             p.Fill();
-            p.BeginPath();
-            p.MoveTo(new Vector2(X(0.33f), Y(0.82f)));
-            p.LineTo(new Vector2(X(0.5f), Y(0.6f)));
-            p.LineTo(new Vector2(X(0.67f), Y(0.82f)));
-            p.ClosePath();
-            p.Fill();
-            // The glass's outline over its sand, then the two caps.
-            Glass();
             p.Stroke();
-            p.fillColor = SoonFill;
-            Box(p, X(0.18f), Y(0.06f), X(0.82f), Y(0.17f));
-            Box(p, X(0.18f), Y(0.83f), X(0.82f), Y(0.94f));
+        }
 
-            void Glass()
-            {
+        /// <summary>The event card's sun rays: soft white wedges from low on its right, under the picture.</summary>
+        private static void DrawEventRays(MeshGenerationContext context)
+        {
+            var r = context.visualElement.contentRect;
+            var p = context.painter2D;
+            var centre = new Vector2(r.x + r.width * 0.85f, r.y + r.height * 0.7f);
+            var reach = r.width * 1.2f;
+            p.fillColor = EventRay;
+            for (var angle = 0f; angle < 360f; angle += RayStep) {
+                var from = angle * Mathf.Deg2Rad;
+                var to = (angle + RayWidth) * Mathf.Deg2Rad;
                 p.BeginPath();
-                p.MoveTo(new Vector2(X(0.27f), Y(0.16f)));
-                p.LineTo(new Vector2(X(0.73f), Y(0.16f)));
-                p.LineTo(new Vector2(X(0.55f), Y(0.5f)));
-                p.LineTo(new Vector2(X(0.73f), Y(0.84f)));
-                p.LineTo(new Vector2(X(0.27f), Y(0.84f)));
-                p.LineTo(new Vector2(X(0.45f), Y(0.5f)));
+                p.MoveTo(centre);
+                p.LineTo(centre + new Vector2(Mathf.Cos(from), Mathf.Sin(from)) * reach);
+                p.LineTo(centre + new Vector2(Mathf.Cos(to), Mathf.Sin(to)) * reach);
                 p.ClosePath();
+                p.Fill();
             }
         }
 
-        // A filled and outlined rectangle in the painter's current colours.
-        private static void Box(Painter2D p, float left, float top, float right, float bottom)
+        // The event card's orange, light at the top to deep at the bottom: USS has no gradients, so a strip is drawn
+        // once and stretched over the card.
+        private static Texture2D eventBack;
+
+        private static Background EventBack()
         {
-            p.BeginPath();
-            p.MoveTo(new Vector2(left, top));
-            p.LineTo(new Vector2(right, top));
-            p.LineTo(new Vector2(right, bottom));
-            p.LineTo(new Vector2(left, bottom));
-            p.ClosePath();
-            p.Fill();
-            p.Stroke();
+            if (eventBack == null) {
+                const int Size = 64;
+                eventBack = new Texture2D(1, Size, TextureFormat.RGBA32, false) {
+                    name = "Event Card",
+                    wrapMode = TextureWrapMode.Clamp,
+                    filterMode = FilterMode.Bilinear,
+                    hideFlags = HideFlags.DontSave,
+                };
+                for (var y = 0; y < Size; y++) {
+                    // The texture's first row is its bottom.
+                    eventBack.SetPixel(0, y, Color.Lerp(EventDeep, EventLight, y / (Size - 1f)));
+                }
+
+                eventBack.Apply(false, true);
+            }
+
+            return Background.FromTexture2D(eventBack);
         }
 
         internal static void DrawLock(MeshGenerationContext context)

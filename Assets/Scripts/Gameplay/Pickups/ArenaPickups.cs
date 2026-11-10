@@ -90,7 +90,7 @@ namespace ToyCarArena.Gameplay.Pickups
 
         public ArenaPickups(GameTuning tuning, ArenaRound round, ArenaCrumble crumble, IArenaEdge edge, ArenaHazards hazards,
             RoundDifficulty difficulty, MechanicArt mechanicArt, ArenaCamera arenaCamera, IAudioService audioService,
-            ISessionProgress progress, ArenaSurface surface, Transform parent)
+            ISessionProgress progress, ArenaSurface surface, RoundRules rules, Transform parent)
         {
             this.tuning = tuning;
             this.settings = tuning.Pickups;
@@ -106,7 +106,8 @@ namespace ToyCarArena.Gameplay.Pickups
             this.parent = parent;
             // The one place the mode is read: a match always has boxes, a round from the visit's round the tuning says.
             // A scene without them never builds an object for one.
-            this.isEnabled = settings.Enabled && (tuning.IsMatch ||
+            // HOT POTATO has no boxes: the bomb is its only item.
+            this.isEnabled = settings.Enabled && !rules.IsHotPotato && (tuning.IsMatch ||
                 (settings.FirstRound > 0 && progress.Round >= settings.FirstRound));
         }
 

@@ -415,9 +415,12 @@ namespace ToyCarArena.App
         /// The first-round controls events (input, first move, boost input, swipes) go out only for a round that waited
         /// on the start screen, <paramref name="isStartRound"/>: the menu's first round counts down instead, and its
         /// first move would read the countdown as the player's hesitation. Null keeps the old rule, the first round.
+        /// In the HOT POTATO mode (<paramref name="isHotPotato"/>) nobody falls and the player is out only by the blast,
+        /// so the out causes (<c>round-out-cause</c>, <c>fall-cause</c>) are not sent: the mode's own are the
+        /// <c>special / hot-potato…</c> events.
         /// </remarks>
         public static void MeasureRoundEnd(this IGamePlatform platform, int round, RoundResult result, float duration,
-            PlayerDriver driver, bool hasBoost, bool? isStartRound = null)
+            PlayerDriver driver, bool hasBoost, bool? isStartRound = null, bool isHotPotato = false)
         {
             var measuresControls = isStartRound ?? round <= 1;
             if (result.IsMatch) {
@@ -448,7 +451,7 @@ namespace ToyCarArena.App
                 var revenge = result.RevengeTaken ? "got" : "missed";
                 platform.Measure(ResultCategory, $"revenge-{revenge}-{tag}", "revenge");
             }
-            if (result.Outcome == RoundOutcome.Out) {
+            if (result.Outcome == RoundOutcome.Out && !isHotPotato) {
                 var cause = result.KnockedOutBy == RoundResult.Nobody ? "fell" : "pushed";
                 platform.Measure(ResultCategory, $"{cause}-{tag}", "round-out-cause");
                 if (result.KnockedOutBy == RoundResult.Nobody) {

@@ -910,6 +910,32 @@ namespace ToyCarArena.UI
             return element;
         }
 
+        /// <summary>
+        /// A big title as the stickers draw it, its drop a third layer: under the outline (<see cref="Outlined"/>) and the
+        /// face, a navy copy of the outlined text moved down (<c>stroke__drop</c>, moved by its own style). The labels
+        /// get <c>className-text</c> and no <c>display</c>, so the title's style sheet sets them whole. text-shadow is
+        /// lost on the letters of the fallback font (Cyrillic, the Turkish ones), so a title with it has no drop in
+        /// Russian; this drop is the same in every language, and as wide as the outlined letters.
+        /// The labels come drop, outline, face; <see cref="FitText"/> gives all three one size.
+        /// </summary>
+        internal static VisualElement Dropped(string className, out Label[] labels)
+        {
+            var element = new VisualElement { pickingMode = PickingMode.Ignore };
+            element.AddToClassList("stroke");
+            element.AddToClassList(className);
+            labels = new Label[3];
+            for (var i = 0; i < labels.Length; i++) {
+                var label = new Label { pickingMode = PickingMode.Ignore };
+                label.AddToClassList(className + "-text");
+                label.EnableInClassList("stroke__drop", i == 0);
+                label.EnableInClassList("stroke__face", i == 2);
+                element.Add(label);
+                labels[i] = label;
+            }
+
+            return element;
+        }
+
         private static async UniTask Shrink(VisualElement element, CancellationToken token)
         {
             for (var time = 0f; time < ShrinkDuration; time += Time.unscaledDeltaTime) {

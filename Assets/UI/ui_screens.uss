@@ -1098,6 +1098,87 @@
     white-space: nowrap;
 }
 
+/* HOT POTATO: the fuse's seconds over the bomb (HudPotato places it), red and beating in its last seconds, and the
+   tilted PASS IT! under the bar while the player holds the bomb. */
+.hud__fuse {
+    display: none;
+    position: absolute;
+    translate: -50% -50%;
+    align-items: center;
+}
+
+.hud__fuse--shown {
+    display: flex;
+}
+
+.hud__fuse-sticker {
+    min-width: 92px;
+    height: 76px;
+    padding: 0 18px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 38px;
+    border-width: 5px 5px 11px 5px;
+    border-color: var(--navy);
+    background-color: var(--white);
+}
+
+.hud__fuse-text {
+    margin: 0;
+    padding: 0;
+    font-size: 50px;
+    color: var(--navy);
+    -unity-text-outline-width: 0;
+    -unity-text-align: middle-center;
+}
+
+.hud__fuse--short .hud__fuse-sticker {
+    background-color: var(--red);
+}
+
+.hud__fuse--short .hud__fuse-text {
+    color: var(--white);
+    -unity-text-outline-width: 6px;
+    -unity-text-outline-color: var(--navy);
+}
+
+.hud__pass {
+    position: absolute;
+    left: 0;
+    right: 0;
+    align-items: center;
+    scale: 0.4 0.4;
+    opacity: 0;
+    transition-property: scale, opacity;
+    transition-duration: 0.3s, 0.15s;
+    transition-timing-function: ease-out-back, linear;
+}
+
+.hud__pass--shown {
+    scale: 1 1;
+    opacity: 1;
+}
+
+.hud__pass-sticker {
+    padding: 6px 40px 10px 40px;
+    border-radius: 28px;
+    border-width: 6px 6px 14px 6px;
+    border-color: var(--navy);
+    background-color: var(--orange);
+    rotate: -4deg;
+}
+
+.hud__pass-text {
+    margin: 0;
+    padding: 0;
+    font-size: 78px;
+    color: var(--white);
+    -unity-text-outline-width: 8px;
+    -unity-text-outline-color: var(--navy);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
 /* A match: SAFE over the player's car while it is safe after coming back (HudView places it over the car's marker),
    on the dark backdrop of the bots' handles, with a bar that runs down with the safe time. */
 .hud__shield {
@@ -3339,6 +3420,18 @@
     right: 0;
     bottom: 0;
     -unity-text-outline-width: 0;
+    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+}
+
+/* A drop drawn as a layer (RoundOverProgress.Dropped): the outlined text again in navy under the outline, moved down by
+   its own title's translate. text-shadow is lost on the fallback font's letters, this drop is not. */
+.stroke > .stroke__drop {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    color: var(--navy);
     text-shadow: 0 0 0 rgba(0, 0, 0, 0);
 }
 

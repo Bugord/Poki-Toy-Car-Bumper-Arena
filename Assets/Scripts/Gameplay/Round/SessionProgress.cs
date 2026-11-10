@@ -60,6 +60,9 @@ namespace ToyCarArena.Gameplay.Round
 
         public int WinStreak { get; private set; }
 
+        /// <summary>Set by the menu's CHOOSE MODE; QUICK MATCH until then, and every visit starts on it again.</summary>
+        public EventMode Mode { get; set; }
+
         /// <summary>
         /// Counts the round just decided: a loss (a fall, or a match placed low) adds to the losing streak, anything else
         /// ends it. A win adds to the win streak; REVENGE counts as a win and starts a streak of <paramref name=
