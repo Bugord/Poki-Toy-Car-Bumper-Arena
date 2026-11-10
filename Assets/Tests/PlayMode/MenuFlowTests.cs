@@ -44,6 +44,7 @@ namespace ToyCarArena.Tests.PlayMode
             platform = new MatchTests.RecordingPlatform();
             // The daily gift's offer is the visit's: each test is a visit of its own.
             DailyGift.ForgetOffer();
+            RoundOverViewModel.ForgetVisit();
             keptRoots = new HashSet<GameObject>(PersistentRoots());
             testScene = SceneManager.GetActiveScene();
             // A visit's first menu reports its time; each test is a visit of its own.

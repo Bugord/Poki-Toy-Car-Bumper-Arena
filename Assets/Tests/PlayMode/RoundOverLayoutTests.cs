@@ -132,6 +132,7 @@ namespace ToyCarArena.Tests.PlayMode
 
             var platform = new MatchTests.RecordingPlatform { Rewards = true };
             DailyGift.ForgetOffer();
+            RoundOverViewModel.ForgetVisit();
             var model = new RoundOverViewModel(catalog, arenas, tuning, progress, null, platform, wallet, null, null);
             model.SetPayload(record);
             var view = new RoundOverView(new SilentAudioService(library), controls);

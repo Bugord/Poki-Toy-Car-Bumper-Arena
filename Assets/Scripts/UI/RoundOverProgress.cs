@@ -67,12 +67,10 @@ namespace ToyCarArena.UI
         private readonly VisualElement levelBadge;
         private readonly Label levelLabel;
         private readonly Label rankLabel;
-        private readonly Label total;
         private readonly List<Waypoint> stops = new();
         private readonly List<Segment> segments = new();
         private readonly List<CarPortrait> trackCars = new();
         private readonly List<VisualElement> trackRows = new();
-        private readonly VisualElement head;
         private VisualElement badgeSlot;
         private readonly LiveText text = new();
         private int shownLevel;
@@ -97,17 +95,17 @@ namespace ToyCarArena.UI
             rankLabel.RemoveFromHierarchy();
             rankLabel.AddToClassList("level-card__rank--under");
             levelBadge.Add(rankLabel);
-            this.total = root.Q<Label>("xp-total");
 
             var reward = viewModel.XpGain;
             rewardsShownTo = reward.Before.Level;
             reached = reward.After;
             SetLevel(reward.Before.Level);
-            text.Set(total, () => Strings.Format("result.xp_total", reward.Before.Xp, reward.Before.Cost));
             text.Set(rankLabel, () => PlayerRank.NameOf(shownLevel));
             var track = root.Q<VisualElement>("xp-track");
-            head = root.Q<VisualElement>(className: "level-card__head");
             BuildTrack(track, reward.Before.Level);
+            // The badge and its rank have moved into the track, so nothing is left over it: no "XP / price" line
+            // either, the track itself shows how far the level is.
+            root.Q<VisualElement>(className: "level-card__head").style.display = DisplayStyle.None;
 
             // The bar of the first step lies over the track, which is still empty then: nothing in the card moves. It
             // goes between the bars and the stops, so the badge it grows out of is drawn over its end.
@@ -225,7 +223,7 @@ namespace ToyCarArena.UI
 
         /// <summary>
         /// The badge's width sets its slot under the bars, where the first bar starts, the step's bar, which grows out
-        /// of it, and the rank and XP line over the track, which starts beside it.
+        /// of it.
         /// </summary>
         private void FitToBadge()
         {
@@ -236,7 +234,6 @@ namespace ToyCarArena.UI
 
             badgeSlot.style.width = width;
             bar.style.left = TrackInset + width - BadgeTuck;
-            head.style.paddingLeft = TrackInset + width;
         }
 
         private static VisualElement Row(VisualElement track, string className)
@@ -347,7 +344,6 @@ namespace ToyCarArena.UI
             Stop();
             SetScale(levelBadge, 1f);
             SetLevel(reached.Level);
-            ShowTotal(reached);
             SetScale(levelUp, 0f);
             SetScale(bar, 0f);
             bar.style.display = DisplayStyle.None;
@@ -431,7 +427,6 @@ namespace ToyCarArena.UI
                 SetBarFill(0f);
             }
 
-            ShowTotal(to);
             await BarTo(share, (float)to.Xp / to.Cost, token);
             await UniTask.Delay(BarHold, ignoreTimeScale: true, cancellationToken: token);
         }
@@ -447,9 +442,6 @@ namespace ToyCarArena.UI
                 }
             }
         }
-
-        private void ShowTotal(XpLevel level) =>
-            text.Set(total, () => Strings.Format("result.xp_total", level.Xp, level.Cost));
 
         private static float PositionOf(XpLevel level) => level.Level + (float)level.Xp / level.Cost;
 
@@ -549,7 +541,8 @@ namespace ToyCarArena.UI
         private async UniTask ShowGift(CancellationToken token)
         {
             var gift = viewModel.Gift;
-            if (gift == null || isGiftShown) {
+            // Not on a result that opens a car or comes after a popup: the hat stays owned and waits for a quieter one.
+            if (gift == null || isGiftShown || !viewModel.IsGiftDue) {
                 return;
             }
 
@@ -575,6 +568,7 @@ namespace ToyCarArena.UI
             }
 
             popupsShown++;
+            viewModel.PopupShown();
             var isClosed = false;
             league = new NewLeaguePopup(root.Q<VisualElement>("round-over") ?? root, () => Clicked?.Invoke(),
                 () => isClosed = true);
@@ -663,6 +657,7 @@ namespace ToyCarArena.UI
             VisualElement details = null, string hatForSale = null)
         {
             popupsShown++;
+            viewModel.PopupShown();
             var overlay = new VisualElement();
             overlay.AddToClassList("level-reward");
             var rays = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -721,11 +716,10 @@ namespace ToyCarArena.UI
                     }
 
                     isTaken = true;
-                    // The coins fly from the price, so it is measured before the button gives way.
+                    // The coins fly from the price; the button stays where it was, greyed out (:disabled in ui_screens).
                     RewardCelebration.Play(overlay, card, art, Strings.Get("result.equipped"), price,
                         root.Q<VisualElement>("coin-pill"), token);
                     buy.SetEnabled(false);
-                    buy.style.visibility = Visibility.Hidden;
                     RewardTaken?.Invoke();
                     card.schedule.Execute(() => isClosed = true)
                         .StartingIn((long)(RewardCelebration.Duration * 1000f));
@@ -758,7 +752,6 @@ namespace ToyCarArena.UI
                     RewardCelebration.Play(overlay, card, art, Strings.Get("result.equipped"), hatPrice,
                         root.Q<VisualElement>("coin-pill"), token);
                     buyHat.SetEnabled(false);
-                    buyHat.style.visibility = Visibility.Hidden;
                     RewardTaken?.Invoke();
                     card.schedule.Execute(() => isClosed = true)
                         .StartingIn((long)(RewardCelebration.Duration * 1000f));
@@ -783,7 +776,6 @@ namespace ToyCarArena.UI
                     isTaken = true;
                     RewardCelebration.Play(overlay, card, art, Strings.Get("result.equipped"), null, null, token);
                     button.SetEnabled(false);
-                    button.style.visibility = Visibility.Hidden;
                     RewardTaken?.Invoke();
                     card.schedule.Execute(() => isClosed = true)
                         .StartingIn((long)(RewardCelebration.Duration * 1000f));

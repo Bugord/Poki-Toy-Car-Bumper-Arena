@@ -42,6 +42,11 @@ namespace ToyCarArena.Gameplay.Cars
             new(0, 0), // dark
         };
 
+        [Header("Toppers")]
+        [Tooltip("The model of every topper by its id")]
+        [SerializeField]
+        private TopperModels toppers;
+
         [Header("Wheels")]
         [Tooltip("Most the front wheels turn, in degrees, when the car turns at its full turn speed")]
         [Range(0f, 60f)]
@@ -110,7 +115,6 @@ namespace ToyCarArena.Gameplay.Cars
         private Transform arrow;
         private Transform viewpoint;
         private readonly System.Collections.Generic.List<Mesh> markerMeshes = new();
-        private readonly System.Collections.Generic.List<Mesh> topperMeshes = new();
         private Transform topperSpinner;
         private bool isPlayer;
         private Rigidbody carBody;
@@ -130,7 +134,7 @@ namespace ToyCarArena.Gameplay.Cars
         {
             ReplaceModel(entry);
             ownBody = CarModel.PaintBody(CarModel.FindBody(model, out _), entry.BodySwatch, SwatchOf(colorId));
-            WearTopper(topper, entry.Id, transform, model, ModelMaterial, topperMeshes, out topperSpinner);
+            WearTopper(topper, entry.Id, transform, model, ModelMaterial, toppers, out topperSpinner);
             FindWheels();
             car = GetComponent<Car>();
             carBody = GetComponent<Rigidbody>();
@@ -153,9 +157,9 @@ namespace ToyCarArena.Gameplay.Cars
         /// copies the model. Null for no topper.
         /// </summary>
         public static Transform WearTopper(string id, string carId, Transform car, GameObject model, Material material,
-            System.Collections.Generic.List<Mesh> meshes, out Transform spinner)
+            TopperModels models, out Transform spinner)
         {
-            var topper = CarTopper.Build(id, car, material, meshes, out spinner);
+            var topper = CarTopper.Build(id, car, material, models, out spinner);
             if (topper == null) {
                 return null;
             }
@@ -268,6 +272,9 @@ namespace ToyCarArena.Gameplay.Cars
         public Material ModelMaterial => body.GetComponent<MeshRenderer>().sharedMaterial;
         public Quaternion ModelRotation => body.transform.localRotation;
 
+        /// <summary>The toppers' models, for the garage and the podium that build the cars as this does.</summary>
+        public TopperModels Toppers => toppers;
+
         /// <summary>The catalog model as this car shows it, painted; null before <see cref="Apply"/>.</summary>
         public GameObject Model => model;
 
@@ -361,10 +368,6 @@ namespace ToyCarArena.Gameplay.Cars
             if (ring != null) {
                 Destroy(ring.gameObject);
                 Destroy(arrow.gameObject);
-            }
-
-            foreach (var mesh in topperMeshes) {
-                Destroy(mesh);
             }
 
             foreach (var mesh in markerMeshes) {

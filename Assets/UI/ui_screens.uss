@@ -329,7 +329,7 @@
     -unity-text-outline-width: 10px;
 }
 
-.lobby__title-text.stroke__drop { translate: 0 10px; visibility: visible; }
+.lobby__title-text.stroke__drop { translate: 0 10px; display: flex; }
 
 .lobby__title--ready .lobby__title-text { color: var(--green); }
 
@@ -868,7 +868,7 @@
     color: var(--gold);
 }
 
-.ko-pop__text.stroke__drop { translate: 0 18px; visibility: visible; }
+.ko-pop__text.stroke__drop { translate: 0 18px; display: flex; }
 
 .ko-pop--revenge .ko-pop__text {
     color: var(--red);
@@ -1098,7 +1098,7 @@
     white-space: nowrap;
 }
 
-.hud__respawn-number.stroke__drop { translate: 0 10px; visibility: visible; }
+.hud__respawn-number.stroke__drop { translate: 0 10px; display: flex; }
 
 /* HOT POTATO: the fuse's seconds over the bomb (HudPotato places it), red and beating in its last seconds, and the
    tilted PASS IT! under the bar while the player holds the bomb. */
@@ -1145,7 +1145,7 @@
 }
 
 /* Only the white digits of the last seconds have a drop: under the navy digits on white it would only double them. */
-.hud__fuse--short .hud__fuse-text.stroke__drop { translate: 0 6px; visibility: visible; }
+.hud__fuse--short .hud__fuse-text.stroke__drop { translate: 0 6px; display: flex; }
 
 .hud__pass {
     position: absolute;
@@ -1184,7 +1184,7 @@
     white-space: nowrap;
 }
 
-.hud__pass-text.stroke__drop { translate: 0 10px; visibility: visible; }
+.hud__pass-text.stroke__drop { translate: 0 10px; display: flex; }
 
 /* A match: SAFE over the player's car while it is safe after coming back (HudView places it over the car's marker),
    on the dark backdrop of the bots' handles, with a bar that runs down with the safe time. */
@@ -1256,7 +1256,7 @@
     white-space: nowrap;
 }
 
-.hud__streak-text.stroke__drop { translate: 0 6px; visibility: visible; }
+.hud__streak-text.stroke__drop { translate: 0 6px; display: flex; }
 
 .hud__shield-fill {
     width: 100%;
@@ -2037,7 +2037,7 @@
     white-space: nowrap;
 }
 
-.hud__start-goal-text.stroke__drop { translate: 0 10px; visibility: visible; }
+.hud__start-goal-text.stroke__drop { translate: 0 10px; display: flex; }
 
 .hud__start-text {
     align-self: stretch;
@@ -2052,7 +2052,7 @@
     white-space: nowrap;
 }
 
-.hud__start-text.stroke__drop { translate: 0 14px; visibility: visible; }
+.hud__start-text.stroke__drop { translate: 0 14px; display: flex; }
 
 .hud__start-hint {
     display: none;
@@ -2160,7 +2160,7 @@
     white-space: nowrap;
 }
 
-.hud__teaching-text.stroke__drop { translate: 0 8px; visibility: visible; }
+.hud__teaching-text.stroke__drop { translate: 0 8px; display: flex; }
 
 .hud__tap-hint {
     position: absolute;
@@ -2323,7 +2323,7 @@
     font-size: 171px;
 }
 
-.round-over__title-text.stroke__drop { translate: 0 18px; visibility: visible; }
+.round-over__title-text.stroke__drop { translate: 0 18px; display: flex; }
 
 .round-over__title--won {
     color: var(--gold);
@@ -2477,11 +2477,6 @@
     white-space: nowrap;
 }
 
-.level-card__total {
-    margin-left: auto;
-    font-size: 34px;
-}
-
 /* League stickers keep their layout box and hard bottom shadow: plain white rookie, bevelled bronze shield,
    winged silver, crowned gold laurels and a star crest with gemmed wings on rainbow legend (LevelBadge).
    The large silhouettes are painted outside the box; the number stays centred on the original face. */
@@ -2625,16 +2620,6 @@
 .level-badge--silver { background-color: #d7e0ee; }
 .level-badge--gold { background-color: var(--gold); }
 .level-badge--legend { background-color: var(--navy); }
-
-/* Only rectangular badges change corners; the track's rank stops keep their circular face. */
-.level-badge.level-badge--bronze { border-radius: 8px; }
-.level-badge.level-badge--silver { border-radius: 10px; }
-.level-badge.level-badge--gold { border-radius: 12px; }
-.level-badge.level-badge--legend { border-radius: 12px; }
-.level-badge--big.level-badge--bronze { border-radius: 18px; }
-.level-badge--big.level-badge--silver { border-radius: 22px; }
-.level-badge--big.level-badge--gold { border-radius: 24px; }
-.level-badge--big.level-badge--legend { border-radius: 24px; }
 
 /* Legend's rainbow, a texture LevelBadge makes at run time (USS draws no gradient), over the fill and under the
    number. The navy behind it only shows where UI Toolkit's own fill corners are squarer than the rainbow's. */
@@ -2881,7 +2866,7 @@
     -unity-text-outline-width: 12px;
 }
 
-.xp-bar__level-up-text.stroke__drop { translate: 0 10px; visibility: visible; }
+.xp-bar__level-up-text.stroke__drop { translate: 0 10px; display: flex; }
 
 /* The second step: a level's reward over the whole result, dimmed, gold rays turning behind a white card. */
 .level-reward {
@@ -2938,7 +2923,7 @@
     -unity-text-auto-size: best-fit 60px 130px;
 }
 
-.level-reward__title-text.stroke__drop { translate: 0 18px; visibility: visible; }
+.level-reward__title-text.stroke__drop { translate: 0 18px; display: flex; }
 
 .level-reward__tag {
     margin: 0;
@@ -3030,7 +3015,7 @@
     -unity-text-outline-color: var(--navy);
 }
 
-.level-reward__buy-label-text.stroke__drop { translate: 0 8px; visibility: visible; }
+.level-reward__buy-label-text.stroke__drop { translate: 0 8px; display: flex; }
 
 .level-reward__price {
     flex-shrink: 0;
@@ -3221,7 +3206,7 @@
     white-space: nowrap;
 }
 
-.kickoff__digit.stroke__drop { translate: 0 36px; visibility: visible; }
+.kickoff__digit.stroke__drop { translate: 0 36px; display: flex; }
 
 .kickoff__go-text {
     flex-grow: 1;
@@ -3236,7 +3221,7 @@
     white-space: nowrap;
 }
 
-.kickoff__go-text.stroke__drop { translate: 0 34px; visibility: visible; }
+.kickoff__go-text.stroke__drop { translate: 0 34px; display: flex; }
 
 /* A special round's name, tilted gold over the countdown numbers, and its one-line rule on a dark pill below it
    (HudView shows them for 3, 2 and 1 and hides them at GO!). */
@@ -3272,7 +3257,7 @@
     white-space: nowrap;
 }
 
-.kickoff__special-text.stroke__drop { translate: 0 14px; visibility: visible; }
+.kickoff__special-text.stroke__drop { translate: 0 14px; display: flex; }
 
 .kickoff__special-hint {
     margin: 16px 0 0 0;
@@ -3445,14 +3430,16 @@
 }
 
 /* The drop under the outline: the letters again, all navy with their text's own outline, moved down by its text's
-   rule (.x-text.stroke__drop { translate: 0 10px; visibility: visible; }, in pixels: as thick in every language). With
+   rule (.x-text.stroke__drop { translate: 0 10px; display: flex; }, in pixels: as thick in every language). With
    the outline it is as wide as the outlined letters, so the whole offset shows as one solid step under them: the side
    wall of 3D letters rather than a second text beneath. A layer and not a text-shadow, because UI Toolkit draws no
    text-shadow under the fallback font's letters (Cyrillic, the Turkish ones). Hidden without a rule, so a faded stroke
-   (opacity on it or a parent) shows no navy through its face; the bare class keeps this below every text's rule. Label
-   in the selector, so a rule colouring the text (gold, red) or its outline does not colour its drop. */
+   (opacity on it or a parent) shows no navy through its face; the bare class keeps this below every text's rule. Hidden
+   by display and not by visibility: a rule setting visibility: visible would keep the drop on screen under a parent
+   hidden with visibility (a taken EQUIP left its drop behind), while display leaves visibility inherited. Label in the
+   selector, so a rule colouring the text (gold, red) or its outline does not colour its drop. */
 .stroke__drop {
-    visibility: hidden;
+    display: none;
 }
 
 .stroke > Label.stroke__drop {
@@ -3679,7 +3666,7 @@
     -unity-text-outline-width: 18px;
 }
 
-.settings__title-text.stroke__drop { translate: 0 13px; visibility: visible; }
+.settings__title-text.stroke__drop { translate: 0 13px; display: flex; }
 
 .settings__toggles {
     flex-direction: row;
@@ -4800,7 +4787,7 @@
     white-space: nowrap;
 }
 
-.end-note__text.stroke__drop { translate: 0 11px; visibility: visible; }
+.end-note__text.stroke__drop { translate: 0 11px; display: flex; }
 
 /* TIME UP! at 0:00: big white words with the kick-off's navy stroke, a gold ring and gold stars bursting behind. */
 .end-stamp {
@@ -4854,7 +4841,7 @@
     white-space: nowrap;
 }
 
-.end-stamp__text.stroke__drop { translate: 0 26px; visibility: visible; }
+.end-stamp__text.stroke__drop { translate: 0 26px; display: flex; }
 
 /* Coins (RoundOverMeta, the garage): a gold disc with a navy ring and a paler disc inside, built of elements. */
 .coin {
@@ -4948,7 +4935,7 @@
     -unity-text-outline-color: var(--navy);
 }
 
-.reward__value-text.stroke__drop { translate: 0 6px; visibility: visible; }
+.reward__value-text.stroke__drop { translate: 0 6px; display: flex; }
 
 .reward--xp .reward__value-text {
     color: var(--xp);
@@ -4975,7 +4962,7 @@
     -unity-text-outline-color: var(--navy);
 }
 
-.reward__stamp-text.stroke__drop { translate: 0 5px; visibility: visible; }
+.reward__stamp-text.stroke__drop { translate: 0 5px; display: flex; }
 
 /* x2 BOOST hanging on the XP sticker's bottom edge when the XP boost paid for the round: blue, as XP is. The top
    corners hold the star and name and CLAIM x2's own x2, so it keeps clear of both. */
@@ -5071,7 +5058,7 @@
     -unity-text-outline-width: 6px;
 }
 
-.double .double__label-text.stroke__drop { translate: 0 4px; visibility: visible; }
+.double .double__label-text.stroke__drop { translate: 0 4px; display: flex; }
 
 .double .stroke > .stroke__face {
     -unity-text-outline-width: 0;
@@ -5412,6 +5399,23 @@
     opacity: 0.7;
 }
 
+/* A taken reward: the button stays in place, greyed out, so the card does not change shape under the stamp. By colour
+   rather than opacity (as CLAIM x2 waiting for its ad): a translucent outlined label shows its stroke inside the
+   letters, and the default theme fades disabled elements, so every layer is kept opaque. */
+.level-reward__buy:disabled,
+.level-reward__buy:disabled * {
+    opacity: 1;
+}
+
+.level-reward__buy:disabled {
+    background-color: rgb(168, 176, 196);
+    translate: 0 0;
+}
+
+.level-reward__buy:disabled .level-reward__buy-label-text { color: rgb(226, 230, 238); }
+.level-reward__buy:disabled .level-reward__buy-label-text.stroke__drop { color: var(--navy); }
+.level-reward__buy:disabled .level-reward__price { background-color: rgb(226, 230, 238); }
+
 /* The celebration of a taken reward (RewardCelebration): a white flash over the popup, coins arcing into the
    counter, the EQUIPPED! stamp over the reward and NEED N MORE floating up when the coins are short. */
 .reward-flash {
@@ -5458,7 +5462,7 @@
     white-space: nowrap;
 }
 
-.reward-stamp__label-text.stroke__drop { translate: 0 6px; visibility: visible; }
+.reward-stamp__label-text.stroke__drop { translate: 0 6px; display: flex; }
 
 .reward-toast {
     position: absolute;
@@ -5476,7 +5480,7 @@
     white-space: nowrap;
 }
 
-.reward-toast-text.stroke__drop { translate: 0 5px; visibility: visible; }
+.reward-toast-text.stroke__drop { translate: 0 5px; display: flex; }
 
 /* Without BOOST its place is free: the item button takes it, larger, at the height BOOST stood, with its timer badge
    and first hint over it. */

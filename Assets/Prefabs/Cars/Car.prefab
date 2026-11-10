@@ -586,6 +586,10 @@ MonoBehaviour:
   - {x: 3, y: 1}
   - {x: 0, y: 2}
   - {x: 0, y: 0}
+  toppers: {fileID: 11400000, guid: 0b276afce85887144a3014ececde2b42, type: 2}
+  maxSteer: 32
+  fullSteerRate: 240
+  steerSpeed: 300
   ghostMaterial: {fileID: 2100000, guid: b40dd4589aacade4c85e7831df909af0, type: 2}
   markerFill: {fileID: 2100000, guid: 67abec6b3c8fad5429dc53cdea4f25da, type: 2}
   markerOutline: {fileID: 2100000, guid: 4cea892f3909cd14d8be753c90cd7c30, type: 2}

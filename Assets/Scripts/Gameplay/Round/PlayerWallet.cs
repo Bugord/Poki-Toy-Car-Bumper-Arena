@@ -18,6 +18,7 @@ namespace ToyCarArena.Gameplay.Round
         private const string OwnedKey = "toppers_owned";
         private const string SelectedKey = "topper_selected";
         private const string GiftKey = "topper_gift";
+        private const string UnseenGiftKey = "topper_gift_unseen";
         private const string IntroKey = "intro_";
 
         public event Action Changed;
@@ -161,8 +162,18 @@ namespace ToyCarArena.Gameplay.Round
             return true;
         }
 
-        /// <summary>The topper just given, until the result's popup takes it; null when there is none.</summary>
-        public string UnseenGift { get; private set; }
+        /// <summary>
+        /// The topper just given, until the result's popup takes it; null when there is none. Saved: the popup waits for
+        /// a result with room (<c>RoundOverViewModel.HasRoomToWait</c>), and a visit can end before one comes.
+        /// </summary>
+        public string UnseenGift
+        {
+            get {
+                var id = storage.GetString(UnseenGiftKey);
+                return string.IsNullOrEmpty(id) ? null : id;
+            }
+            private set => storage.SetString(UnseenGiftKey, value ?? "");
+        }
 
         /// <summary>The gift for the result's popup, once.</summary>
         public string TakeGift()

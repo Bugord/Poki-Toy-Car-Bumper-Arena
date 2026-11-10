@@ -373,7 +373,7 @@
     -unity-text-outline-width: 9px;
 }
 
-.menu__tile-caption.stroke__drop { translate: 0 7px; visibility: visible; }
+.menu__tile-caption.stroke__drop { translate: 0 7px; display: flex; }
 
 
 .menu__icon {
@@ -465,7 +465,7 @@
     -unity-text-outline-width: 11px;
 }
 
-.menu__boost-times-text.stroke__drop { translate: 0 6px; visibility: visible; }
+.menu__boost-times-text.stroke__drop { translate: 0 6px; display: flex; }
 
 /* Running: a blue face with ×2, and the matches left on one pill across its bottom edge (nothing else on it). */
 .menu__boost-left {
@@ -588,7 +588,7 @@
     -unity-text-outline-width: 12px;
 }
 
-.menu__watch-label-text.stroke__drop { translate: 0 6px; visibility: visible; }
+.menu__watch-label-text.stroke__drop { translate: 0 6px; display: flex; }
 
 .menu__watch-label-text.stroke__face { -unity-text-outline-width: 0; }
 
@@ -950,7 +950,7 @@
     -unity-text-outline-width: 14px;
 }
 
-.menu__sheet-title.stroke__drop { translate: 0 12px; visibility: visible; }
+.menu__sheet-title.stroke__drop { translate: 0 12px; display: flex; }
 
 .menu__close {
     width: 112px;
@@ -1093,7 +1093,7 @@
 /* The card's drops: a solid navy step under the letters, as drawn for this card. */
 .stroke > Label.menu__event-tag-label-text.stroke__drop {
     translate: 0 5px;
-    visibility: visible;
+    display: flex;
     -unity-text-outline-width: 8px;
 }
 
@@ -1119,7 +1119,7 @@
 /* FitText shrinks this drop with a long name in another language. */
 .stroke > Label.menu__event-title-text.stroke__drop {
     translate: 0 14px;
-    visibility: visible;
+    display: flex;
     -unity-text-outline-width: 14px;
 }
 
@@ -1211,7 +1211,7 @@
 
 .stroke > Label.menu__mode-selected-label-text.stroke__drop {
     translate: 0 5px;
-    visibility: visible;
+    display: flex;
     -unity-text-outline-width: 8px;
 }
 
@@ -1317,7 +1317,7 @@
     rotate: -4deg;
 }
 
-.menu__league-title-text.stroke__drop { translate: 0 14px; visibility: visible; }
+.menu__league-title-text.stroke__drop { translate: 0 14px; display: flex; }
 
 
 /* The player's car on the new pedestal in the new sky (GarageView.SkyFrame), the emblem as a medal on its lower edge. */
@@ -1360,7 +1360,7 @@
     -unity-text-auto-size: best-fit 48px 94px;
 }
 
-.menu__league-name.stroke__drop { translate: 0 12px; visibility: visible; }
+.menu__league-name.stroke__drop { translate: 0 12px; display: flex; }
 
 
 /* The level the league starts at, an arrow and the player's level in the new frame: badges wider than tall, as
@@ -1614,7 +1614,7 @@
     -unity-text-outline-width: 16px;
 }
 
-.menu__leagues-title.stroke__drop { translate: 0 12px; visibility: visible; }
+.menu__leagues-title.stroke__drop { translate: 0 12px; display: flex; }
 
 
 .menu__leagues-key {
@@ -1722,7 +1722,7 @@
     white-space: nowrap;
 }
 
-.menu__league-row-name.stroke__drop, .menu__league-card-name.stroke__drop { translate: 0 8px; visibility: visible; }
+.menu__league-row-name.stroke__drop, .menu__league-card-name.stroke__drop { translate: 0 8px; display: flex; }
 
 
 .menu__league-from {
@@ -1935,7 +1935,7 @@
     -unity-text-outline-width: 16px;
 }
 
-.menu__league-card-name.stroke__drop { translate: 0 10px; visibility: visible; }
+.menu__league-card-name.stroke__drop { translate: 0 10px; display: flex; }
 
 .menu__league-card-item .menu__league-from {
     margin-top: 16px;
@@ -2193,7 +2193,7 @@
     -unity-text-outline-width: 11px;
 }
 
-.menu__daily-label-text.stroke__drop { translate: 0 6px; visibility: visible; }
+.menu__daily-label-text.stroke__drop { translate: 0 6px; display: flex; }
 
 .menu__daily-label-text.stroke__face { -unity-text-outline-width: 0; }
 

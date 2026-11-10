@@ -67,7 +67,6 @@ result.match_place,"Match result subtitle: place, then knock-outs, e.g. PLACE 3 
 result.pushed_by,Before the name of the bot that knocked the player off,PUSHED OFF BY,POUSSÉ PAR,SPINTO DA,RUNTERGESCHUBST VON,TE EMPUJÓ,SENİ İTEN,EMPURRADO POR,ТЕБЯ СТОЛКНУЛ
 result.or_press,Before the SPACE key cap under NEXT MATCH,OR PRESS,OU APPUIE SUR,O PREMI,ODER DRÜCKE,O PULSA,YA DA BAS,OU APERTE,ИЛИ НАЖМИ
 result.new_car,Unlock sticker with the car name,NEW CAR! {0},NOUVELLE VOITURE ! {0},NUOVA AUTO! {0},NEUES AUTO! {0},¡NUEVO COCHE! {0},YENİ ARABA! {0},CARRO NOVO! {0},НОВАЯ МАШИНА! {0}
-result.xp_total,XP in the level and its price,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} ОПЫТА
 result.rank_stop,"Track caption of the next rank, e.g. SILVER RANK",{0} RANK,RANG {0},GRADO {0},RANG {0},RANGO {0},{0} RÜTBESİ,RANKING {0},РАНГ {0}
 result.match_results,Header of the results table at the end of a match,MATCH RESULTS,RÉSULTATS,RISULTATI,ERGEBNISSE,RESULTADOS,MAÇ SONUCU,RESULTADOS,ИТОГИ МАТЧА
 result.winner,Gold tag under the match winner's name; max ~8 chars,WINNER,VAINQUEUR,VINCITORE,SIEGER,GANADOR,KAZANAN,VENCEDOR,ПОБЕДИТЕЛЬ
@@ -262,7 +261,7 @@ daily.ready,"Small green pill on the DAILY tile while the gift waits; max ~6 cha
 daily.time_hm,"Small pill on the DAILY tile: time to the next gift, {0} hours and {1} minutes; max ~7 chars",{0}H {1}M,{0}H {1}M,{0}H {1}M,{0}H {1}M,{0}H {1}M,{0}S {1}D,{0}H {1}M,{0}Ч {1}М
 daily.time_m,"Small pill on the DAILY tile: time to the next gift under an hour, {0} minutes; max ~7 chars",{0}M,{0}M,{0}M,{0}M,{0}M,{0}D,{0}M,{0}М
 topper.wizard-hat.name,"Topper name: a purple wizard's hat with gold stars, the daily gift's prize",WIZARD HAT,CHAPEAU DE SORCIER,CAPPELLO DA MAGO,ZAUBERHUT,SOMBRERO DE MAGO,BÜYÜCÜ ŞAPKASI,CHAPÉU DE MAGO,ШЛЯПА МАГА
-topper.ember.name,"Topper name: a copper bowl with a small flame, the bronze league's prize",EMBER,BRAISE,BRACE,GLUT,BRASA,KOR,BRASA,УГОЛЁК
-topper.silver-torch.name,"Topper name: a silver torch with a blue flame, the silver league's prize",SILVER TORCH,TORCHE D'ARGENT,TORCIA D'ARGENTO,SILBERFACKEL,ANTORCHA DE PLATA,GÜMÜŞ MEŞALE,TOCHA DE PRATA,СЕРЕБРЯНЫЙ ФАКЕЛ
-topper.fire-crown.name,"Topper name: a gold crown with a flame on each point, the gold league's prize",FIRE CROWN,COURONNE DE FEU,CORONA DI FUOCO,FEUERKRONE,CORONA DE FUEGO,ATEŞ TACI,COROA DE FOGO,ОГНЕННАЯ КОРОНА
-topper.phoenix.name,"Topper name: a fire bird with rainbow wings, the legend league's prize",PHOENIX,PHÉNIX,FENICE,PHÖNIX,FÉNIX,ANKA,FÊNIX,ФЕНИКС
+topper.ember.name,"Topper name: a Spartan's bronze helmet with a red crest, the bronze league's prize",SPARTAN HELMET,CASQUE SPARTIATE,ELMO SPARTANO,SPARTANERHELM,CASCO ESPARTANO,SPARTA MİĞFERİ,ELMO ESPARTANO,ШЛЕМ СПАРТАНЦА
+topper.silver-torch.name,"Topper name: a knight's steel great helm with a plume, the silver league's prize",KNIGHT HELMET,CASQUE DE CHEVALIER,ELMO DA CAVALIERE,RITTERHELM,YELMO DE CABALLERO,ŞÖVALYE MİĞFERİ,ELMO DE CAVALEIRO,РЫЦАРСКИЙ ШЛЕМ
+topper.fire-crown.name,"Topper name: a samurai's gold helmet with tall horns, the gold league's prize",SAMURAI HELMET,CASQUE DE SAMOURAÏ,ELMO DA SAMURAI,SAMURAIHELM,CASCO SAMURÁI,SAMURAY MİĞFERİ,ELMO SAMURAI,ШЛЕМ САМУРАЯ
+topper.phoenix.name,"Topper name: an astronaut's helmet with a rainbow visor and a ring, the legend league's prize",SPACE HELMET,CASQUE SPATIAL,CASCO SPAZIALE,WELTRAUMHELM,CASCO ESPACIAL,UZAY KASKI,CAPACETE ESPACIAL,КОСМИЧЕСКИЙ ШЛЕМ
