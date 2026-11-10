@@ -333,6 +333,7 @@ namespace ToyCarArena.Tests.PlayMode
         public void TheFreeHatComesFirstAndTakesTheResultsRoom()
         {
             var gift = wallet.TryGift(tuning.Toppers.GiftLevel);
+            Assert.That(new PlayerWallet(storage, tuning).UnseenGift, Is.EqualTo(gift), "saved for a later visit");
             var car = Payload(2, 3, "vintage");
             Assert.That(car.Gift, Is.EqualTo(gift));
             Assert.That(car.IsGiftDue, Is.False);
