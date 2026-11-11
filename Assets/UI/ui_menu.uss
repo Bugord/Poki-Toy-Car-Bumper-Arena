@@ -493,6 +493,55 @@
 /* The pill hangs under the tile: the caption keeps clear of it. */
 .menu__tile--boost-on .menu__tile-caption { margin-top: 26px; }
 
+/* HOT POTATO under the boost: the event card's orange (a texture from code) with its rays, the truck with the bomb
+   standing on the face's bottom edge and its bomb over the top, and the bolt of EVENT on a white pill in the corner. */
+.menu__tile--event .menu__fill { overflow: hidden; -unity-background-scale-mode: stretch-to-fill; }
+.menu__tile--event .menu__sticker:hover > .menu__face > .menu__fill { -unity-background-image-tint-color: #fff2e0; }
+
+.menu__event-tile-rays {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.menu__event-tile-art {
+    position: absolute;
+    left: 6px;
+    bottom: -6px;
+    width: 122px;
+    height: 172px;
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_hot_potato.png?fileID=2800000&guid=64c7f85dcef645e409866a1a16d2c310&type=3#sprite_mode_hot_potato");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.menu__event-tile-tag {
+    position: absolute;
+    top: -24px;
+    right: -30px;
+    width: 76px;
+    height: 56px;
+    align-items: center;
+    justify-content: center;
+    border-width: 6px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+}
+
+.menu__event-tile-bolt {
+    width: 40px;
+    height: 40px;
+}
+
+/* A long name goes on two lines under the tile: the rail stays about as wide as XP BOOST makes it. */
+.menu__tile-caption--wrap {
+    max-width: 240px;
+    white-space: normal;
+    -unity-text-align: upper-center;
+}
+
 /* The offer's popup: a blue tilted title, the offer on a pale blue panel ringed in blue, WATCH and NO THANKS. */
 .menu__boost-popup .menu__sheet { width: 860px; align-items: center; }
 .menu__boost-popup .menu__sheet-head { align-self: stretch; }

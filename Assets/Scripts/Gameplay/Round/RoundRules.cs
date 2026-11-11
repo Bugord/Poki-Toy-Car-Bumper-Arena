@@ -7,7 +7,7 @@ namespace ToyCarArena.Gameplay.Round
     /// here which car is the boss.
     /// <para>
     /// The menu's event mode (<see cref="ISessionProgress.Mode"/>) wins over the rotation: HOT POTATO makes every round
-    /// <see cref="SpecialRound.HotPotato"/>, which since the mode came is no longer in the rotation. Everything the mode
+    /// <see cref="SpecialRound.HotPotato"/>, which the rotation also plays now and then. Everything the mode
     /// changes reads <see cref="IsHotPotato"/>: the fence, no crumbling, no mechanics and no boxes, the bomb, the bots.
     /// </para>
     /// </summary>

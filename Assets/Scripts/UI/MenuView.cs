@@ -131,6 +131,8 @@ namespace ToyCarArena.UI
         private const float RayWidth = 8f;
         // The desktop key that opens the modes: M is MISSIONS, and the plate reads QUICK MATCH.
         private const KeyCode ModesKey = KeyCode.Q;
+        // The desktop key of the HOT POTATO tile: H for hot (HOME's key on the result, which has no tile of its own here).
+        private const KeyCode EventKey = KeyCode.H;
         private const float ShakeSeconds = 0.3f;
 
         private readonly IAudioService audioService;
@@ -186,6 +188,7 @@ namespace ToyCarArena.UI
         private MenuLeagues leagues;
         private VisualElement rightRail;
         private VisualElement boostTile;
+        private VisualElement eventTile;
         private Label boostLeft;
         private VisualElement xpBoost;
         private Label[] xpBoostLabels;
@@ -252,6 +255,10 @@ namespace ToyCarArena.UI
             Root.Focus();
             if (ViewModel.CanOfferBoost) {
                 ViewModel.BoostShown();
+            }
+
+            if (ViewModel.HasEvents) {
+                ViewModel.EventShown();
             }
 
             // The first menu in a new league greets it, over the league's sky and plinth already behind the dim.
@@ -365,7 +372,8 @@ namespace ToyCarArena.UI
         /// <summary>
         /// The rail at the right: DAILY (a gift box, a green READY pill and a red dot while today's gift waits, the time
         /// to the next on a navy pill after), then XP BOOST (a blue star with an AD tag while it is offered, blue with ×2
-        /// and the matches left while it runs).
+        /// and the matches left while it runs), then HOT POTATO (the event's orange with its picture and a bolt tag),
+        /// which starts the event at once: in CHOOSE MODE only 6 of 557 visits of v0.17.9 found it.
         /// </summary>
         private void BuildBoost(VisualElement menu)
         {
@@ -392,7 +400,36 @@ namespace ToyCarArena.UI
             boostLeft = Text("menu__boost-left");
             button.Add(boostLeft);
             rightRail.Add(boostTile);
+            rightRail.Add(BuildEventTile());
             menu.Add(rightRail);
+        }
+
+        private VisualElement BuildEventTile()
+        {
+            eventTile = Tile(null, () => Strings.Get("menu.hot_potato"), EventKey.ToString(), PlayEvent);
+            eventTile.AddToClassList("menu__tile--event");
+            var button = eventTile.Q<VisualElement>(className: "menu__tile-button");
+            var face = button.Q<VisualElement>(className: "menu__face");
+            // The event card's orange and its picture: the monster truck with the bomb, bigger than the face, over its
+            // bottom edge as on the card.
+            // The rays inside the fill, which clips them to its rounded corners; the picture on the face, so it sinks
+            // with it on a press.
+            var fill = face.Q<VisualElement>(className: "menu__fill");
+            fill.style.backgroundImage = EventBack();
+            fill.Add(Icon("menu__event-tile-rays", DrawEventRays));
+            var art = Element("menu__event-tile-art");
+            art.pickingMode = PickingMode.Ignore;
+            face.Add(art);
+            // The bolt of EVENT's tag on a white pill where the boost's AD tag sits: no word, СОБЫТИЕ would not fit.
+            var tag = Element("menu__event-tile-tag");
+            tag.Add(Icon("menu__event-tile-bolt", DrawBolt));
+            button.Add(tag);
+            // HEISSE KARTOFFEL or ГОРЯЧАЯ КАРТОШКА go on two lines under the tile rather than run off the screen.
+            foreach (var label in eventTile.Query<Label>(className: "menu__tile-caption").ToList()) {
+                label.AddToClassList("menu__tile-caption--wrap");
+            }
+
+            return eventTile;
         }
 
         private void BuildStage(VisualElement menu)
@@ -834,7 +871,10 @@ namespace ToyCarArena.UI
             var tile = Element("menu__tile");
             var button = Sticker("menu__tile-button", pressed);
             var face = button.Q<VisualElement>(className: "menu__face");
-            face.Add(Icon("menu__icon", draw));
+            if (draw != null) {
+                face.Add(Icon("menu__icon", draw));
+            }
+
             var isNew = Text("menu__new");
             text.Set(isNew, () => Strings.Get("common.new"));
             button.Add(isNew);
@@ -956,8 +996,11 @@ namespace ToyCarArena.UI
             garageTile.EnableInClassList("menu__tile--dot", ViewModel.CanShop && !ViewModel.HasNewCar);
             RefreshBoost();
             RefreshDaily();
+            eventTile.style.display = ViewModel.HasEvents ? DisplayStyle.Flex : DisplayStyle.None;
             rightRail.style.display = boostTile.style.display == DisplayStyle.Flex ||
-                dailyTile.style.display == DisplayStyle.Flex ? DisplayStyle.Flex : DisplayStyle.None;
+                dailyTile.style.display == DisplayStyle.Flex || eventTile.style.display == DisplayStyle.Flex
+                    ? DisplayStyle.Flex
+                    : DisplayStyle.None;
             // A gift just taken stays on the card as it was claimed (the hat's day would show coins once the hat is owned).
             if (IsDailyOpen && !isDailyClaimed) {
                 daily.Fill(ViewModel.Daily);
@@ -1429,6 +1472,10 @@ namespace ToyCarArena.UI
                     evt.StopPropagation();
                     OpenDaily();
                     break;
+                case EventKey:
+                    evt.StopPropagation();
+                    PlayEvent();
+                    break;
                 case KeyCode.Escape:
                     evt.StopPropagation();
                     ClosePopups();
@@ -1445,6 +1492,19 @@ namespace ToyCarArena.UI
             audioService.PlayUiClick();
             ClosePopups();
             ViewModel.Play();
+        }
+
+        // The HOT POTATO tile: the event becomes the mode in play and starts, as PLAY would.
+        private void PlayEvent()
+        {
+            if (IsBusy || !ViewModel.HasEvents) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            ClosePopups();
+            Pop(eventTile);
+            ViewModel.PlayEvent();
         }
 
         private void OpenGarage()

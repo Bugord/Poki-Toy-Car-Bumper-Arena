@@ -206,6 +206,13 @@ namespace ToyCarArena.App
             platform.MeasureInteract(MenuCategory, what);
 
         /// <summary>
+        /// Something the main menu shows, for a press of the same name to count: <c>menu / event-hot-potato / visible</c>
+        /// (after v0.17.9, the HOT POTATO tile; its press is <see cref="MeasureMenuPressed"/> with the same name).
+        /// </summary>
+        public static void MeasureMenuVisible(this IGamePlatform platform, string what) =>
+            platform.MeasureVisible(MenuCategory, what);
+
+        /// <summary>
         /// The menu greeted a new league with its popup: <c>menu / league-bronze, silver, gold, legend / visible</c>.
         /// The leagues list opening is <c>menu / leagues / interact</c> (<see cref="MeasureMenuPressed"/>).
         /// </summary>
