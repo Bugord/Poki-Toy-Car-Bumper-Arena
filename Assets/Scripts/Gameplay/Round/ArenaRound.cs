@@ -65,6 +65,12 @@ namespace ToyCarArena.Gameplay.Round
         /// </summary>
         public event Action NemesisChanged;
 
+        /// <summary>
+        /// Raised in a timed round after a car's points changed, with its index: a knock-out that scores, or an event
+        /// mode's own points (<see cref="AddPoints"/>). The HUD's score table follows it.
+        /// </summary>
+        public event Action<int> ScoreChanged;
+
         private readonly GameTuning tuning;
         private readonly IObjectResolver resolver;
         private readonly Car carPrefab;
@@ -277,7 +283,8 @@ namespace ToyCarArena.Gameplay.Round
             HadNemesis = Nemesis != null;
             CarsLeft = cars.Count;
             if (mode.IsTimed) {
-                Score = new MatchScore(cars.Count);
+                Score = new MatchScore(cars.Count, mode.PointsPerKnockout, mode.Teams);
+                Score.Changed += OnScoreChanged;
             }
 
             if (mode.Fall == FallRule.Respawn) {
@@ -359,6 +366,10 @@ namespace ToyCarArena.Gameplay.Round
             }
 
             standings.CompleteFrame();
+            if (mode.Teams > 0) {
+                TickTeams();
+                return;
+            }
 
             // Cars that fell on the same frame as the player still count as behind it; but a car out never places first,
             // not even when the last of the others fell with it.
@@ -370,6 +381,40 @@ namespace ToyCarArena.Gameplay.Round
             }
             else if (elapsed >= tuning.Round.Duration) {
                 Finish(CarsLeft == 1 ? RoundOutcome.Won : RoundOutcome.Survived, 1);
+            }
+        }
+
+        /// <summary>
+        /// The end of a round of last team standing: it goes on while the player's team has a car in, even with the
+        /// player out, and ends when only one team is left or time runs out (then the team with more cars in wins,
+        /// level is survived). The player's team placing first is a win; behind is second, as out.
+        /// </summary>
+        private void TickTeams()
+        {
+            var playerTeam = TeamOf(0);
+            var ownLeft = 0;
+            var otherLeft = 0;
+            for (var index = 0; index < cars.Count; index++) {
+                if (cars[index].IsOut) {
+                    continue;
+                }
+
+                if (TeamOf(index) == playerTeam) {
+                    ownLeft++;
+                }
+                else {
+                    otherLeft++;
+                }
+            }
+
+            if (ownLeft == 0) {
+                Finish(RoundOutcome.Out, 2);
+            }
+            else if (otherLeft == 0) {
+                Finish(RoundOutcome.Won, 1);
+            }
+            else if (elapsed >= tuning.Round.Duration) {
+                Finish(ownLeft > otherLeft ? RoundOutcome.Won : RoundOutcome.Survived, ownLeft >= otherLeft ? 1 : 2);
             }
         }
 
@@ -453,6 +498,27 @@ namespace ToyCarArena.Gameplay.Round
             var facing = spot.sqrMagnitude > 0.01f ? -spot.normalized : Vector3.forward;
             car.Movement.Place(spot + Vector3.up * arena.SpawnHeight, Quaternion.LookRotation(facing));
         }
+
+        /// <summary>
+        /// Adds <paramref name="amount"/> points to <paramref name="car"/> in a running timed round (negative takes some
+        /// away, never below 0): an event mode's own scoring, the crown's seconds, a coin, a goal. False, and nothing
+        /// done, outside a running timed round or for a car not in it.
+        /// </summary>
+        public bool AddPoints(Car car, int amount)
+        {
+            var index = IndexOf(car);
+            if (!IsRunning || Score == null || index < 0) {
+                return false;
+            }
+
+            Score.AddPoints(index, amount, elapsed);
+            return true;
+        }
+
+        /// <summary>The team of a car index, from 0 (the player's); -1 in a round without teams.</summary>
+        public int TeamOf(int index) => mode.Teams > 0 && index >= 0 ? index % mode.Teams : -1;
+
+        private void OnScoreChanged(int index) => ScoreChanged?.Invoke(index);
 
         /// <summary>
         /// The car's identity in the round: 0 for the player, 1..N for the bots; -1 for a car not in the round.
@@ -598,10 +664,18 @@ namespace ToyCarArena.Gameplay.Round
             IsRunning = false;
             IsFinished = true;
             var place = Score.PlaceOf(0);
+            var isLoss = place > mode.TopPlacesOf(cars.Count);
+            if (mode.Teams > 0) {
+                // A team round is won or lost by the team's sum: first for the team ahead, second behind, level a draw.
+                var leading = Score.LeadingTeam;
+                place = leading == TeamOf(0) ? 1 : 2;
+                isLoss = leading >= 0 && leading != TeamOf(0);
+            }
+
             Finished?.Invoke(new RoundResult(place == 1 ? RoundOutcome.Won : RoundOutcome.Survived, place, cars.Count,
                 elapsed, PlayerKnockouts, RoundResult.Nobody, FallCause.None, HadNemesis, RevengeTaken, Score.Snapshot(),
-                Colors, isMatch, Score.FallsOf(0), Score.KnockedOffOf(0), place > mode.TopPlacesOf(cars.Count), isTimed: true,
-                kind: rules.Kind, knockoutRewardCap: mode.KnockoutRewardCap));
+                Colors, isMatch, Score.FallsOf(0), Score.KnockedOffOf(0), isLoss, isTimed: true,
+                kind: rules.Kind, knockoutRewardCap: mode.KnockoutRewardCap, teams: mode.Teams));
         }
 
         private void Finish(RoundOutcome outcome, int place)
@@ -612,7 +686,7 @@ namespace ToyCarArena.Gameplay.Round
             Finished?.Invoke(new RoundResult(outcome, place, cars.Count, elapsed, PlayerKnockouts, knockedOutBy,
                 playerFallCause, HadNemesis, RevengeTaken, standings.Snapshot(), Colors, bonusKnockouts:
                 BossTaken ? tuning.SpecialRounds.BossReward - 1 : 0, kind: rules.Kind,
-                knockoutRewardCap: mode.KnockoutRewardCap));
+                knockoutRewardCap: mode.KnockoutRewardCap, teams: mode.Teams));
         }
 
         /// <summary>

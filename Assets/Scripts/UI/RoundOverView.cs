@@ -408,10 +408,20 @@ namespace ToyCarArena.UI
             };
 
             // A match always runs out its time: first place has the most knock-outs, the others hear where they ended.
+            // A timed event mode scores what it counts, not knock-outs: the subtitle gives the place alone.
             if (ViewModel.IsTimed) {
-                subtitle = ViewModel.Outcome == RoundOutcome.Won
-                    ? Strings.Get("result.match_won_subtitle")
-                    : Strings.Format("result.match_place", ViewModel.Place, ViewModel.Knockouts);
+                subtitle = ViewModel.IsEvent
+                    ? ViewModel.Outcome == RoundOutcome.Won
+                        ? Strings.Get("result.mode_won_subtitle")
+                        : Strings.Format("result.mode_place", ViewModel.Place)
+                    : ViewModel.Outcome == RoundOutcome.Won
+                        ? Strings.Get("result.match_won_subtitle")
+                        : Strings.Format("result.match_place", ViewModel.Place, ViewModel.Knockouts);
+            }
+
+            // A team round says how the player's team did, timed or not.
+            if (ViewModel.IsTeamRound) {
+                subtitle = Strings.Get(ViewModel.Outcome == RoundOutcome.Won ? "result.team_won" : "result.team_lost");
             }
 
             // The title is the same text twice (the outline under, the face over it, see .stroke in ui_screens).

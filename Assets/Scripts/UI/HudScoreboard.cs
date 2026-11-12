@@ -96,6 +96,7 @@ namespace ToyCarArena.UI
             model.Eliminated += OnEliminated;
             model.CarBack += OnCarBack;
             model.NemesisChanged += OnNemesisChanged;
+            model.ScoreChanged += OnScoreChanged;
             // The settings open over the running match, so the language can change under the board: YOU follows it.
             Strings.Changed += OnLanguageChanged;
             OnNemesisChanged();
@@ -116,6 +117,7 @@ namespace ToyCarArena.UI
             model.Eliminated -= OnEliminated;
             model.CarBack -= OnCarBack;
             model.NemesisChanged -= OnNemesisChanged;
+            model.ScoreChanged -= OnScoreChanged;
             Strings.Changed -= OnLanguageChanged;
         }
 
@@ -197,6 +199,8 @@ namespace ToyCarArena.UI
         // The score is counted before the round tells of the fall, so it is current here; a fall of its own can move a
         // car too (fewer falls rank higher).
         private void OnEliminated(int index, int by) => Order(true);
+
+        private void OnScoreChanged(int index) => Order(true);
 
         private void OnCarBack(int index)
         {

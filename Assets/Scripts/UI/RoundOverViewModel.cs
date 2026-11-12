@@ -520,6 +520,18 @@ namespace ToyCarArena.UI
 
         public int Knockouts { get; private set; }
 
+        /// <summary>The player's points in a timed round (<see cref="RoundResult.Points"/>).</summary>
+        public int Points { get; private set; }
+
+        /// <summary>The event mode played, or <see cref="SpecialRound.None"/> (the result reads its look and words).</summary>
+        public SpecialRound Kind { get; private set; }
+
+        /// <summary>Whether the round was an event mode's, not the plain round, a special round or the match.</summary>
+        public bool IsEvent => EventModes.IsEvent(Kind);
+
+        /// <summary>Whether the round was played in teams: the subtitle says how the player's team did.</summary>
+        public bool IsTeamRound { get; private set; }
+
         /// <summary>
         /// The index of the car that knocked the player out, or <see cref="RoundResult.Nobody"/>.
         /// </summary>
@@ -579,6 +591,9 @@ namespace ToyCarArena.UI
             IsTimed = result.IsTimed;
             Place = result.Place;
             Knockouts = result.Knockouts;
+            Points = result.Points;
+            Kind = result.Kind;
+            IsTeamRound = result.Teams > 0;
             KnockedOutBy = result.KnockedOutBy;
             KnockedOutByName = payload.KnockedOutByName;
             RevengeTaken = result.RevengeTaken;

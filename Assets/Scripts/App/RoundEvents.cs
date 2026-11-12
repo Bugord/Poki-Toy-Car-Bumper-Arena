@@ -96,6 +96,10 @@ namespace ToyCarArena.App
     /// <item>after v0.15.0: <c>special / mega, hot-potato, boss, ice, low-gravity / start</c> at GO! of a special round,
     /// then <c>complete</c> or <c>fail</c>, <c>special / id-won, out, survived / outcome</c> and in a boss round
     /// <c>special / boss-taken, boss-missed / boss</c></item>
+    /// <item>with the event modes: <c>special / &lt;id&gt;-place-N / place</c> for every event mode, and a timed mode
+    /// fails on a place that is a loss; a timed mode sends <c>round / N / complete</c>, colour, cars, boosts and the
+    /// first round's controls, but not the outcome, place, knock-outs, time, round time, revenge or out causes
+    /// (<see cref="MeasureTimedEnd"/>)</item>
     /// <item>after v0.17.9, once a visit (<see cref="ScreenFrameRate"/>): <c>fps / screen-touch, mouse-N / screen</c>,
     /// the frames per second of each screen (round, result, curtain, menu, garage, ad), and <c>fps / visit-touch,
     /// mouse-N / visit</c>, the median of the visit's first minute of seconds as Poki's Player Fit Test counts it; N is
@@ -465,7 +469,8 @@ namespace ToyCarArena.App
             }
 
             var id = RoundRules.IdOf(kind);
-            if (result.Outcome == RoundOutcome.Out) {
+            // A timed round never ends with the player out: it fails when its place is a loss.
+            if (result.IsTimed ? result.IsLoss : result.Outcome == RoundOutcome.Out) {
                 platform.MeasureFail(SpecialCategory, id);
             }
             else {
@@ -473,6 +478,11 @@ namespace ToyCarArena.App
             }
 
             platform.Measure(SpecialCategory, $"{id}-{GameEvent.Clean(result.Outcome.ToString())}", "outcome");
+            // An event mode's place by its own id: the round's place event is not sent for a timed mode (it means a
+            // score there, not the order the cars fell in), and one table reads every mode the same way.
+            if (EventModes.IsEvent(kind) && result.CarCount > 1) {
+                platform.Measure(SpecialCategory, $"{id}-place-{result.Place}", "place");
+            }
             if (kind == SpecialRound.Boss) {
                 platform.Measure(SpecialCategory, bossTaken ? "boss-taken" : "boss-missed", "boss");
             }
@@ -495,6 +505,11 @@ namespace ToyCarArena.App
             var measuresControls = isStartRound ?? round <= 1;
             if (result.IsMatch) {
                 MeasureMatchEnd(platform, round, result, driver, hasBoost, measuresControls);
+                return;
+            }
+
+            if (result.IsTimed) {
+                MeasureTimedEnd(platform, round, result, driver, hasBoost, measuresControls);
                 return;
             }
 
@@ -530,6 +545,26 @@ namespace ToyCarArena.App
                 }
             }
 
+            MeasureBoosts(platform, tag, driver, hasBoost);
+            if (measuresControls) {
+                MeasureControls(platform, driver, hasBoost);
+            }
+        }
+
+        /// <summary>
+        /// The end of a timed event mode's round (<see cref="ModeRules.IsTimed"/>), in a build of rounds. It keeps the
+        /// round's funnel, <c>round / N / complete</c> (it always runs its time, as the match does), and the events that
+        /// still mean the same: the colour, the cars in it, the boosts and, in the first, the controls. The outcome,
+        /// place, knock-outs, time, round time, revenge and out causes mean a score or never change there, so they are
+        /// not sent: the mode's own are <c>special / &lt;id&gt;…</c> (<see cref="MeasureSpecialEnd"/>).
+        /// </summary>
+        private static void MeasureTimedEnd(IGamePlatform platform, int round, RoundResult result, PlayerDriver driver,
+            bool hasBoost, bool measuresControls)
+        {
+            platform.MeasureComplete(RoundCategory, RoundBucket(round));
+            var tag = RoundTag(round);
+            platform.Measure(ResultCategory, $"color-{CarPaint.NameOf(result.ColorOf(0))}-{tag}", "color");
+            platform.Measure(ResultCategory, $"cars-{result.CarCount}-{tag}", "cars");
             MeasureBoosts(platform, tag, driver, hasBoost);
             if (measuresControls) {
                 MeasureControls(platform, driver, hasBoost);

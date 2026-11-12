@@ -317,9 +317,10 @@ namespace ToyCarArena.UI
             text.Set(name, () => model.NameOf(index));
             row.Add(name);
 
-            var knockouts = new Label(standing.Knockouts.ToString()) { pickingMode = PickingMode.Ignore };
+            // The column is the round's score: knock-outs in the match, the mode's points in a mode.
+            var knockouts = new Label(standing.Points.ToString()) { pickingMode = PickingMode.Ignore };
             knockouts.AddToClassList("results__ko");
-            knockouts.EnableInClassList("results__ko--zero", standing.Knockouts == 0);
+            knockouts.EnableInClassList("results__ko--zero", standing.Points == 0);
             row.Add(knockouts);
             if (isPlayer) {
                 youRow = row;

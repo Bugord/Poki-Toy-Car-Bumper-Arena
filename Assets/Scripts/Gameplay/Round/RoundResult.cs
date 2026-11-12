@@ -103,6 +103,31 @@ namespace ToyCarArena.Gameplay.Round
         /// <summary>The most knock-outs the reward pays for (<see cref="ModeRules.KnockoutRewardCap"/>); 0 for no cap.</summary>
         public readonly int KnockoutRewardCap;
 
+        /// <summary>The number of teams the round was played in (<see cref="ModeRules.Teams"/>), 0 for none.</summary>
+        public readonly int Teams;
+
+        /// <summary>
+        /// The player's points in a timed round (<see cref="RoundStanding.Points"/>): its knock-outs in the match, what
+        /// the mode counted in a mode; its knock-outs in a round of last car standing.
+        /// </summary>
+        public int Points
+        {
+            get
+            {
+                if (!IsTimed || Standings == null) {
+                    return Knockouts;
+                }
+
+                foreach (var standing in Standings) {
+                    if (standing.Index == 0) {
+                        return standing.Points;
+                    }
+                }
+
+                return Knockouts;
+            }
+        }
+
         /// <summary>
         /// Times the player fell off in a match, knocked off or not; 0 in a round, which ends at the first.
         /// </summary>
@@ -144,11 +169,13 @@ namespace ToyCarArena.Gameplay.Round
         public RoundResult(RoundOutcome outcome, int place, int carCount, float seconds, int knockouts, int knockedOutBy,
             FallCause fallCause, bool hadNemesis, bool revengeTaken, IReadOnlyList<RoundStanding> standings = null,
             IReadOnlyList<int> colors = null, bool isMatch = false, int falls = 0, int knockedOff = 0, bool? isLoss = null,
-            int bonusKnockouts = 0, bool? isTimed = null, SpecialRound kind = SpecialRound.None, int knockoutRewardCap = 0)
+            int bonusKnockouts = 0, bool? isTimed = null, SpecialRound kind = SpecialRound.None, int knockoutRewardCap = 0,
+            int teams = 0)
         {
             IsTimed = isTimed ?? isMatch;
             Kind = kind;
             KnockoutRewardCap = knockoutRewardCap;
+            Teams = teams;
             BonusKnockouts = bonusKnockouts;
             Outcome = outcome;
             Place = place;

@@ -558,8 +558,9 @@ namespace ToyCarArena.UI
                 ShowCarsLeft();
             }
 
-            // The badge stays away until the first knock-out, so the HUD starts with only the time and the cars.
-            var knockouts = ViewModel.Knockouts;
+            // The badge stays away until the first knock-out, so the HUD starts with only the time and the cars. A timed
+            // round shows the player's points from the start: knock-outs in the match, what the mode counts in a mode.
+            var knockouts = ViewModel.IsTimed ? ViewModel.PlayerScore : ViewModel.Knockouts;
             if (knockouts != shownKnockouts) {
                 shownKnockouts = knockouts;
                 knockoutLabel.text = knockouts.ToString();

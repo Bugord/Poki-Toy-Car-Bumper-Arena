@@ -83,7 +83,7 @@ def summarise(data):
         # с v0.16.0: главное меню визитов 2+ (показ, через сколько секунд после старта движка, что нажали), HOME на результате
         "menu": i.get("menu-shown"),
         "menu_time": other(o, r"menu-ready-([0-9a-z-]+)-start-time"),
-        "menu_press": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"menu-(play|garage|missions|mode|leagues|boost|boost-no|daily|daily-no|mode-hot-potato|mode-quick|event-hot-potato)", e))},
+        "menu_press": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"menu-(play|garage|missions|mode|leagues|boost|boost-no|daily|daily-no|mode-hot-potato|mode-quick|event-hot-potato|mode-crown|mode-gold-rush|mode-item-frenzy|mode-overheat|mode-team-push|mode-football|event-crown|event-gold-rush|event-item-frenzy|event-overheat|event-team-push|event-football)", e))},
         # после v0.16.0: попап NEW LEAGUE! в меню, по лиге (раз на игрока и лигу)
         "menu_league": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"menu-league-(bronze|silver|gold|legend)", e))},
         # после feature/result-popups: тот же попап на результате раунда, который поднял лигу (меню показывает его, только если результат не показал)
@@ -102,9 +102,11 @@ def summarise(data):
         "arenas": {m.group(1): row for e, row in p.items() if (m := re.fullmatch(r"arena-([a-z]+-[a-z]+)", e))},
         # после v0.15.0: особые раунды (start / complete / fail) и их исход, в раунде босса взят ли он
         "specials": {m.group(1): row for e, row in p.items()
-                     if (m := re.fullmatch(r"special-(mega|hot-potato|boss|ice|low-gravity)", e))},
-        "special_outcome": other(o, r"special-((?:mega|hot-potato|boss|ice|low-gravity)-(?:won|out|survived))-outcome"),
+                     if (m := re.fullmatch(r"special-(mega|hot-potato|boss|ice|low-gravity|crown|gold-rush|item-frenzy|overheat|team-push|football)", e))},
+        "special_outcome": other(o, r"special-((?:mega|hot-potato|boss|ice|low-gravity|crown|gold-rush|item-frenzy|overheat|team-push|football)-(?:won|out|survived))-outcome"),
         "boss": other(o, r"special-boss-(taken|missed)-boss"),
+        # после event-modes: место в режиме по id режима (одна таблица на все режимы)
+        "mode_place": other(o, r"special-((?:hot-potato|crown|gold-rush|item-frenzy|overheat|team-push|football)-place-\d+)-place"),
         "scoreboard": i.get("scoreboard-shown"),
         "ad_commercial": i.get("ad-commercial"),
         # после v0.17.9: FPS по экранам и медиана первой минуты визита (ScreenFrameRate), длина рекламы между раундами
@@ -408,7 +410,7 @@ def report(version, previous):
         # это ушли посреди цикла этого варианта, а «раундов» это циклов.
         ("Раунды по варианту арены (после v0.5.1; визиты: старты / победы / поражения / ушли посреди; "
          "в матче по циклам пола)", "arenas", arena),
-        ("Особые раунды и режим HOT POTATO (после v0.15.0, hot-potato с feature/hot-potato это режим; визиты: старты / победы / поражения / ушли посреди)", "specials",
+        ("Особые раунды и режимы (после v0.15.0, hot-potato с feature/hot-potato это режим, остальные режимы после event-modes; у режимов на время fail это место-поражение; визиты: старты / победы / поражения / ушли посреди)", "specials",
          lambda s, k: arena(s, k, "specials")),
     ):
         keys = keys_of(key)
@@ -429,6 +431,7 @@ def report(version, previous):
         ("Варианты арен по раундам (визиты с map-variant)", "variants"),
         ("Особые раунды по исходу (после v0.15.0; визиты с outcome)", "special_outcome"),
         ("Раунд босса: столкнул ли игрок босса (после v0.15.0; визиты)", "boss"),
+        ("Режимы: место по режиму (после event-modes; визиты с place)", "mode_place"),
         ("Свои рывки по раундам (после v0.7.1, после v0.14.1 только в сборке с бустами; визиты с round-boosts)", "round_boosts"),
         ("Рывки автобуста по раундам (после v0.7.1, после v0.14.1 только в сборке с бустами; визиты с auto-boosts)", "auto_boosts"),
         ("Миссии: сколько выполнено за раунд (v0.10, визиты с missions)", "missions_done"),
