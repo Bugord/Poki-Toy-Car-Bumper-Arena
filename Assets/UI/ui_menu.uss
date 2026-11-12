@@ -50,14 +50,26 @@
     border-width: 8px;
     border-color: var(--navy);
     border-radius: 40px;
-    background-color: var(--white);
+    background-color: var(--navy);
     align-items: center;
     justify-content: center;
     transition-property: translate;
     transition-duration: 0.08s;
 }
 
-.menu__sticker:hover > .menu__face { background-color: var(--soft); }
+/* The face's colour, inside its border (MenuView.Face): a face filled itself shows its colour through the soft outer
+   edge of its border, a light seam over the drop. Its radius is the face's less the border. */
+.menu__fill {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 32px;
+    background-color: var(--white);
+}
+
+.menu__sticker:hover > .menu__face > .menu__fill { background-color: var(--soft); }
 .menu__sticker:active > .menu__face { translate: 0 10px; }
 
 /* -- Top bar ------------------------------------------------------------------------------------------------------- */
@@ -128,8 +140,20 @@
 .menu__xp-track {
     border-width: 7px;
     border-color: var(--navy);
-    background-color: var(--soft);
+    background-color: var(--navy);
     overflow: hidden;
+}
+
+/* The track's colour inside its border, as a sticker's fill (MenuView.Face). */
+.menu__xp-back {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border-top-right-radius: 29px;
+    border-bottom-right-radius: 29px;
+    background-color: var(--soft);
 }
 
 .menu__xp-fill {
@@ -166,7 +190,6 @@
 .menu__xp-boost-label-text {
     font-size: 30px;
     -unity-text-outline-width: 7px;
-    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
 }
 
 .menu__xp-text {
@@ -239,6 +262,17 @@
     padding: 0 30px 0 14px;
     border-width: 7px;
     border-color: var(--navy);
+    background-color: var(--navy);
+}
+
+/* The pill's colour inside its border, as a sticker's fill (MenuView.Face). */
+.menu__coins-fill {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 29px;
     background-color: var(--white);
 }
 
@@ -249,6 +283,58 @@
     color: var(--navy);
 }
 
+/* Sideways the coins are as tall as the gear beside them, with its drop (menu and garage); on the result always. */
+.menu--wide .menu__coins,
+.garage--wide .menu__coins,
+.coin-pill.menu__coins {
+    height: 112px;
+    margin-bottom: 14px;
+}
+
+.menu--wide .menu__coins-drop,
+.garage--wide .menu__coins-drop,
+.coin-pill .menu__coins-drop {
+    top: 14px;
+    bottom: -14px;
+    border-radius: 56px;
+}
+
+.menu--wide .menu__coins-face,
+.garage--wide .menu__coins-face,
+.coin-pill .menu__coins-face {
+    height: 112px;
+    padding: 0 40px 0 20px;
+    border-width: 8px;
+    border-radius: 56px;
+}
+
+.menu--wide .menu__coins-fill,
+.garage--wide .menu__coins-fill,
+.coin-pill .menu__coins-fill { border-radius: 48px; }
+
+.menu--wide .menu__coins-count,
+.garage--wide .menu__coins-count,
+.coin-pill .menu__coins-count {
+    margin-left: 16px;
+    font-size: 62px;
+}
+
+.menu--wide .menu__coins .coin,
+.garage--wide .menu__coins .coin,
+.coin-pill .coin {
+    width: 72px;
+    height: 72px;
+    border-width: 7px;
+    border-bottom-width: 10px;
+}
+
+.menu--wide .menu__coins .coin__inner,
+.garage--wide .menu__coins .coin__inner,
+.coin-pill .coin__inner {
+    width: 28px;
+    height: 28px;
+}
+
 .menu__gear {
     width: 112px;
     height: 112px;
@@ -256,7 +342,8 @@
 }
 
 .menu__gear > .menu__drop,
-.menu__gear > .menu__face { border-radius: 999px; }
+.menu__gear > .menu__face,
+.menu__gear .menu__fill { border-radius: 999px; }
 
 /* -- Rail ---------------------------------------------------------------------------------------------------------- */
 
@@ -284,12 +371,10 @@
     padding: 0;
     font-size: 36px;
     -unity-text-outline-width: 9px;
-    text-shadow: 0 7px 0 rgb(29, 43, 79);
 }
 
-.menu__tile-caption.stroke__face { text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+.menu__tile-caption.stroke__drop { translate: 0 7px; display: flex; }
 
-.menu__tile--locked .menu__face { background-color: #dfe6f1; }
 
 .menu__icon {
     width: 86px;
@@ -328,10 +413,11 @@
 /* NEW sits in the corner the dot would take; the dot moves down under it. */
 .menu__tile--new.menu__tile--dot .menu__dot { top: 36px; right: -24px; }
 
+/* Every key in one corner, the top left (PLAY's too): NEW, the red dot and the AD tag keep the top right. */
 .menu__key {
     position: absolute;
-    right: -18px;
-    bottom: -10px;
+    left: -18px;
+    top: -18px;
     margin: 0;
     padding: 0 12px 2px 12px;
     border-width: 5px;
@@ -349,20 +435,27 @@
 .menu__rail--right { transform-origin: right top; }
 
 /* Offered: a pale blue face, the blue star and a gold AD tag in the corner. */
-.menu__tile--boost .menu__face { background-color: #d6e7ff; }
-.menu__tile--boost .menu__sticker:hover > .menu__face { background-color: #e6f0ff; }
+.menu__tile--boost .menu__fill { background-color: #d6e7ff; }
+.menu__tile--boost .menu__sticker:hover > .menu__face > .menu__fill { background-color: #e6f0ff; }
 
 .menu__ad {
     position: absolute;
     top: -24px;
     right: -30px;
-    padding: 2px 16px 4px 16px;
+    width: 76px;
+    height: 56px;
+    align-items: center;
+    justify-content: center;
     border-width: 6px;
     border-color: var(--navy);
     border-radius: 999px;
-    background-color: var(--gold);
-    font-size: 28px;
-    color: var(--navy);
+    background-color: var(--purple);
+}
+
+.menu__ad .double__play {
+    width: 38px;
+    height: 38px;
+    margin: 0;
 }
 
 .menu__boost-times { display: none; }
@@ -370,8 +463,9 @@
 .menu__boost-times-text {
     font-size: 64px;
     -unity-text-outline-width: 11px;
-    text-shadow: 0 6px 0 rgb(29, 43, 79);
 }
+
+.menu__boost-times-text.stroke__drop { translate: 0 6px; display: flex; }
 
 /* Running: a blue face with ×2, and the matches left on one pill across its bottom edge (nothing else on it). */
 .menu__boost-left {
@@ -389,8 +483,8 @@
     display: none;
 }
 
-.menu__tile--boost-on .menu__face,
-.menu__tile--boost-on .menu__sticker:hover > .menu__face { background-color: var(--xp); }
+.menu__tile--boost-on .menu__fill,
+.menu__tile--boost-on .menu__sticker:hover > .menu__face > .menu__fill { background-color: var(--xp); }
 .menu__tile--boost-on .menu__icon,
 .menu__tile--boost-on .menu__ad,
 .menu__tile--boost-on .menu__key { display: none; }
@@ -398,6 +492,55 @@
 .menu__tile--boost-on .menu__boost-left { display: flex; }
 /* The pill hangs under the tile: the caption keeps clear of it. */
 .menu__tile--boost-on .menu__tile-caption { margin-top: 26px; }
+
+/* HOT POTATO under the boost: the event card's orange (a texture from code) with its rays, the truck with the bomb
+   standing on the face's bottom edge and its bomb over the top, and the bolt of EVENT on a white pill in the corner. */
+.menu__tile--event .menu__fill { overflow: hidden; -unity-background-scale-mode: stretch-to-fill; }
+.menu__tile--event .menu__sticker:hover > .menu__face > .menu__fill { -unity-background-image-tint-color: #fff2e0; }
+
+.menu__event-tile-rays {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.menu__event-tile-art {
+    position: absolute;
+    left: 6px;
+    bottom: -6px;
+    width: 122px;
+    height: 172px;
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_hot_potato.png?fileID=2800000&guid=64c7f85dcef645e409866a1a16d2c310&type=3#sprite_mode_hot_potato");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.menu__event-tile-tag {
+    position: absolute;
+    top: -24px;
+    right: -30px;
+    width: 76px;
+    height: 56px;
+    align-items: center;
+    justify-content: center;
+    border-width: 6px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+}
+
+.menu__event-tile-bolt {
+    width: 40px;
+    height: 40px;
+}
+
+/* A long name goes on two lines under the tile: the rail stays about as wide as XP BOOST makes it. */
+.menu__tile-caption--wrap {
+    max-width: 240px;
+    white-space: normal;
+    -unity-text-align: upper-center;
+}
 
 /* The offer's popup: a blue tilted title, the offer on a pale blue panel ringed in blue, WATCH and NO THANKS. */
 .menu__boost-popup .menu__sheet { width: 860px; align-items: center; }
@@ -492,10 +635,11 @@
 .menu__watch-label-text {
     font-size: 80px;
     -unity-text-outline-width: 12px;
-    text-shadow: 0 6px 0 rgb(29, 43, 79);
 }
 
-.menu__watch-label-text.stroke__face { -unity-text-outline-width: 0; text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+.menu__watch-label-text.stroke__drop { translate: 0 6px; display: flex; }
+
+.menu__watch-label-text.stroke__face { -unity-text-outline-width: 0; }
 
 .menu__watch-key {
     display: none;
@@ -631,12 +775,45 @@
     align-items: center;
 }
 
+.menu__car-pill {
+    height: 120px;
+    padding-bottom: 14px;
+}
+
+.menu__car-pill > .menu__drop,
+.menu__car-pill > .menu__face,
+.menu__car-pill .menu__fill { border-radius: 999px; }
+
+/* The face lies in the flow here, so the pill is as wide as the name. */
+.menu__car-pill > .menu__face {
+    position: relative;
+    flex-direction: row;
+    height: 106px;
+    padding: 0 14px 0 44px;
+}
+
 .menu__car-name-text {
-    margin: 0;
+    margin: 0 20px 0 0;
     padding: 0;
-    font-size: 96px;
-    -unity-text-outline-width: 16px;
-    text-shadow: 0 14px 0 rgb(29, 43, 79);
+    font-size: 58px;
+    color: var(--navy);
+    white-space: nowrap;
+}
+
+.menu__car-garage {
+    width: 78px;
+    height: 78px;
+    align-items: center;
+    justify-content: center;
+    border-width: 6px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--green);
+}
+
+.menu__car-garage-icon {
+    width: 44px;
+    height: 44px;
 }
 
 /* -- Bottom: the nearest mission, the mode and PLAY ----------------------------------------------------------------- */
@@ -650,7 +827,7 @@
 }
 
 .menu__mission {
-    height: 150px;
+    height: 190px;
     margin-bottom: 40px;
 }
 
@@ -660,74 +837,26 @@
     justify-content: flex-start;
 }
 
-.menu__mission-icon {
-    width: 82px;
-    height: 82px;
-    flex-shrink: 0;
-}
-
 .menu__mission-body {
     flex-grow: 1;
     flex-shrink: 1;
-    margin: 0 20px;
+    min-width: 0;
+    margin: 0 10px 0 24px;
 }
 
-.menu__mission-head {
-    flex-direction: row;
-    align-items: center;
-}
-
+/* Two lines at most: a long task (Russian) wraps instead of losing its end. */
 .menu__mission-task {
-    flex-grow: 1;
-    flex-shrink: 1;
     margin: 0;
-    padding: 0;
-    font-size: 38px;
-    color: var(--navy);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.menu__mission-count {
-    flex-shrink: 0;
-    margin: 0 0 0 14px;
-    padding: 0;
-    font-size: 38px;
-    color: var(--muted);
-}
-
-.menu__bar {
-    height: 30px;
-    margin-top: 8px;
-    border-width: 5px;
-    border-color: var(--navy);
-    border-radius: 999px;
-    background-color: var(--track);
-    overflow: hidden;
-}
-
-.menu__bar-fill {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    border-radius: 999px;
-    background-color: var(--gold);
-}
-
-.menu__reward {
-    flex-shrink: 0;
-    flex-direction: row;
-    align-items: center;
-}
-
-.menu__reward-count {
-    margin: 0 0 0 8px;
     padding: 0;
     font-size: 40px;
     color: var(--navy);
+    white-space: normal;
+    max-height: 96px;
+    overflow: hidden;
+    -unity-text-align: middle-left;
 }
+
+.menu__mission-reward { margin-top: 8px; }
 
 .menu__actions {
     flex-direction: row;
@@ -735,8 +864,9 @@
     height: 210px;
 }
 
+/* Wide enough that QUICK MATCH keeps its full size with room before the chevron; PLAY grows into the rest. */
 .menu__mode {
-    width: 420px;
+    width: 460px;
     height: 196px;
     margin-right: 30px;
 }
@@ -744,7 +874,7 @@
 .menu__mode > .menu__face {
     flex-direction: row;
     justify-content: space-between;
-    padding: 0 26px 0 36px;
+    padding: 0 32px 0 36px;
 }
 
 .menu__mode-caption {
@@ -755,12 +885,13 @@
     color: var(--muted);
 }
 
-/* Shrinks with the card, so a long name (BYSTRYI MATCH) shrinks instead of running under the chevron. */
+/* Shrinks with the card, so a long name (BYSTRYI MATCH) shrinks instead of running under the chevron, and keeps a
+   clear gap before it: the chevron belongs to the plate, not to the text. */
 .menu__mode-texts {
     flex-grow: 1;
     flex-shrink: 1;
     min-width: 0;
-    margin-right: 10px;
+    margin-right: 28px;
 }
 
 .menu__mode-name {
@@ -772,10 +903,13 @@
     -unity-text-auto-size: best-fit 26px 46px;
 }
 
+/* The plate opens the modes: its chevron says so, as a select's does, at the trailing edge and centred on the whole
+   plate (both lines), as tall as the name's capitals (DrawChevron strokes 70% of the box), its stroke about theirs.
+   Its far point sits about as far in from the right as the texts from the left. */
 .menu__chevron {
     flex-shrink: 0;
-    width: 40px;
-    height: 56px;
+    width: 32px;
+    height: 46px;
 }
 
 .menu__play {
@@ -789,13 +923,24 @@
 
 .menu__play-key {
     position: absolute;
-    top: -40px;
-    right: 30px;
+    top: -30px;
+    left: -18px;
     margin: 0;
     display: none;
 }
 
 .menu--desktop .menu__play-key { display: flex; }
+
+/* The mode's key as PLAY's beside it: the rails' smaller keys are drawn for their larger scale. */
+.menu__mode-key {
+    position: absolute;
+    top: -30px;
+    left: -18px;
+    margin: 0;
+    display: none;
+}
+
+.menu--desktop .menu__mode-key { display: flex; }
 
 /* Wide: one row at the bottom, the mission at the left and the mode and PLAY at the right. */
 .menu--wide .menu__bottom {
@@ -852,8 +997,9 @@
     padding: 0;
     font-size: 76px;
     -unity-text-outline-width: 14px;
-    text-shadow: 0 12px 0 rgb(29, 43, 79);
 }
+
+.menu__sheet-title.stroke__drop { translate: 0 12px; display: flex; }
 
 .menu__close {
     width: 112px;
@@ -862,7 +1008,8 @@
 }
 
 .menu__close > .menu__drop,
-.menu__close > .menu__face { border-radius: 999px; }
+.menu__close > .menu__face,
+.menu__close .menu__fill { border-radius: 999px; }
 
 .menu__close-bar {
     position: absolute;
@@ -875,99 +1022,295 @@
 
 .menu__close-bar--turned { rotate: -45deg; }
 
-.menu__sheet .mission {
-    height: 120px;
-    padding: 0 26px;
+.menu__mission-row {
+    flex-direction: row;
+    align-items: center;
+    min-height: 150px;
+    padding: 20px 30px 20px 24px;
     margin-bottom: 18px;
-    border-radius: 36px;
+    border-radius: 40px;
     background-color: var(--soft);
 }
 
-.menu__sheet .mission__check {
-    width: 64px;
-    height: 64px;
+/* USS has no :last-child: the view marks the last row. */
+.menu__mission-row--last { margin-bottom: 0; }
+
+.menu__mission-row-body {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    margin: 0 10px 0 26px;
 }
 
-.menu__sheet .mission__task {
-    font-size: 40px;
-    white-space: normal;
-}
-
-.menu__sheet .mission__progress {
+.menu__mission-row-task {
+    margin: 0 0 8px 0;
+    padding: 0;
     font-size: 42px;
-    margin: 0 18px;
+    color: var(--navy);
+    white-space: normal;
+    -unity-text-align: middle-left;
 }
-
-.menu__sheet .menu__reward-count { font-size: 42px; }
 
 .menu__modes-play {
     height: 190px;
-    margin-top: 24px;
+    margin-top: 10px;
     padding-bottom: 36px;
 }
 
 .menu__modes-play .button__label { font-size: 96px; }
 
-.menu__mode-card {
-    flex-direction: row;
-    align-items: center;
-    min-height: 170px;
-    margin-bottom: 20px;
-    padding: 20px 26px 20px 34px;
-    border-width: 8px;
-    border-color: var(--navy);
-    border-radius: 40px;
-    background-color: var(--soft);
+/* CHOOSE MODE, as the MenuB_Modes board: the event on an orange card with sun rays, QUICK MATCH on a white one, the
+   modes to come as low grey rows. A card's face clips its picture; its holder carries the green ring of the mode in
+   play, the navy drop under the card and the SELECTED tag. */
+.menu__mode-holder {
+    margin-bottom: 44px;
 }
 
-.menu__mode-card--selected {
-    min-height: 230px;
-    border-color: var(--green-shade);
+.menu__mode-ring {
+    position: absolute;
+    left: -18px;
+    top: -18px;
+    right: -18px;
+    bottom: -30px;
+    border-radius: 62px;
+    background-color: var(--green);
+    display: none;
+}
+
+.menu__mode-holder--selected > .menu__mode-ring { display: flex; }
+
+.menu__mode-drop {
+    position: absolute;
+    left: 0;
+    top: 12px;
+    right: 0;
+    bottom: -12px;
+    border-radius: 44px;
+    background-color: var(--navy);
+}
+
+.menu__mode-card {
+    height: 290px;
+    padding: 30px 34px;
+    overflow: hidden;
+    border-width: 8px;
+    border-color: var(--navy);
+    border-radius: 44px;
     background-color: var(--white);
 }
 
-.menu__mode-card--locked { opacity: 0.85; }
+.menu__mode-card--event {
+    height: 420px;
+    -unity-background-scale-mode: stretch-to-fill;
+}
 
-.menu__mode-text {
-    flex-grow: 1;
-    flex-shrink: 1;
+.menu__event-rays {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.menu__event-tag {
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: center;
+    align-self: flex-start;
+    padding: 2px 22px 4px 10px;
+    border-width: 6px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+}
+
+.menu__event-bolt {
+    width: 38px;
+    height: 38px;
+    margin-right: 4px;
+}
+
+.menu__event-tag-label-text {
+    margin: 0;
+    padding: 0;
+    font-size: 32px;
+    color: var(--orange);
+    -unity-text-outline-width: 8px;
+    -unity-text-outline-color: var(--navy);
+}
+
+/* The card's drops: a solid navy step under the letters, as drawn for this card. */
+.stroke > Label.menu__event-tag-label-text.stroke__drop {
+    translate: 0 5px;
+    display: flex;
+    -unity-text-outline-width: 8px;
+}
+
+.menu__event-title-box {
+    align-self: flex-start;
+    flex-shrink: 0;
+    max-width: 68%;
+    margin-top: 14px;
+    margin-bottom: 16px;
+}
+
+.menu__event-title-text {
+    margin: 0;
+    padding: 0;
+    font-size: 76px;
+    color: var(--white);
+    white-space: nowrap;
+    -unity-text-align: middle-left;
+    -unity-text-outline-width: 14px;
+    -unity-text-outline-color: var(--navy);
+}
+
+/* FitText shrinks this drop with a long name in another language. */
+.stroke > Label.menu__event-title-text.stroke__drop {
+    translate: 0 14px;
+    display: flex;
+    -unity-text-outline-width: 14px;
 }
 
 .menu__mode-card-name {
     margin: 0;
     padding: 0;
-    font-size: 54px;
+    font-size: 64px;
     color: var(--navy);
+    white-space: nowrap;
 }
 
-.menu__mode-card--locked .menu__mode-card-name { font-size: 44px; color: var(--muted); }
+.menu__mode-card-name-box {
+    width: 60%;
+    overflow: hidden;
+}
 
-.menu__mode-hint {
-    margin: 4px 0 0 0;
+.menu__mode-desc {
+    width: 58%;
+    margin: 8px 0 0 0;
     padding: 0;
-    font-size: 32px;
-    color: var(--muted);
+    font-size: 34px;
+    color: var(--navy);
     white-space: normal;
 }
 
+.menu__mode-desc--event {
+    width: 52%;
+    margin-top: 6px;
+}
+
+/* As the board's picture: the toy as tall as the card, cut to its pixels, bleeding off the bottom right over the rays' middle. */
+.menu__event-art {
+    position: absolute;
+    right: -20px;
+    bottom: -48px;
+    width: 312px;
+    height: 440px;
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_hot_potato.png?fileID=2800000&guid=64c7f85dcef645e409866a1a16d2c310&type=3#sprite_mode_hot_potato");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
 .menu__mode-portrait {
-    flex-shrink: 0;
-    width: 220px;
-    height: 180px;
+    position: absolute;
+    right: -10px;
+    bottom: -40px;
+    width: 330px;
+    height: 300px;
+}
+
+.menu__mode-selected {
+    position: absolute;
+    top: 26px;
+    right: 26px;
+    flex-direction: row;
+    align-items: center;
+    padding: 4px 24px 6px 6px;
+    border-width: 6px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--green);
+    display: none;
+}
+
+.menu__mode-holder--selected > .menu__mode-selected { display: flex; }
+
+.menu__mode-tick {
+    width: 46px;
+    height: 46px;
+    margin-right: 8px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 23px;
+    background-color: var(--navy);
+}
+
+.menu__mode-tick-mark {
+    width: 30px;
+    height: 30px;
+}
+
+.menu__mode-selected-label-text {
+    margin: 0;
+    padding: 0;
+    font-size: 30px;
+    color: var(--white);
+    -unity-text-outline-width: 8px;
+    -unity-text-outline-color: var(--navy);
+}
+
+.stroke > Label.menu__mode-selected-label-text.stroke__drop {
+    translate: 0 5px;
+    display: flex;
+    -unity-text-outline-width: 8px;
+}
+
+/* A mode not out yet: a low grey row with a gold padlock and a white SOON pill; nothing on hover. */
+.menu__mode-soon {
+    flex-direction: row;
+    align-items: center;
+    height: 150px;
+    margin-bottom: 26px;
+    padding: 0 34px;
+    border-width: 8px 8px 14px 8px;
+    border-color: var(--navy);
+    border-radius: 40px;
+    background-color: var(--soft);
 }
 
 .menu__mode-lock {
     flex-shrink: 0;
-    width: 64px;
-    height: 64px;
-    margin-right: 22px;
+    width: 70px;
+    height: 70px;
 }
 
-.menu__tag {
+.menu__mode-soon-text {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    margin: 0 20px 0 26px;
+}
+
+.menu__mode-soon-name {
+    margin: 0;
+    padding: 0;
+    font-size: 44px;
+    color: var(--navy);
+    white-space: nowrap;
+}
+
+.menu__mode-soon-hint {
+    margin: 2px 0 0 0;
+    padding: 0;
+    font-size: 27px;
+    color: var(--muted);
+    white-space: normal;
+}
+
+.menu__mode-soon-tag {
     flex-shrink: 0;
-    margin: 0 0 0 16px;
-    padding: 4px 18px 6px 18px;
-    border-width: 5px;
+    margin: 0;
+    padding: 4px 22px 6px 22px;
+    border-width: 6px;
     border-color: var(--navy);
     border-radius: 999px;
     background-color: var(--white);
@@ -975,24 +1318,35 @@
     color: var(--navy);
 }
 
-.menu__tag--selected {
-    position: absolute;
-    top: -22px;
-    right: 30px;
-    margin: 0;
-    background-color: var(--green);
-    color: var(--navy);
-}
-
 /* -- Leagues: the NEW LEAGUE! popup and the leagues list (MenuLeagues) -------------------------------------------- */
 
 .menu__league-popup { background-color: rgba(29, 43, 79, 0.72); }
 
-.menu__league-card {
-    width: 940px;
-    padding: 110px 44px 50px 44px;
+/* The menu's light turning behind the card (MenuView.DrawLight). */
+.menu__league-light {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 2400px;
+    height: 2400px;
+    margin-left: -1200px;
+    margin-top: -1200px;
+}
+
+/* The card's holder: the screen's scale goes on it (NewLeaguePopup.Fit). */
+.menu__league-holder {
     align-items: center;
     transform-origin: center;
+}
+
+/* As wide as the result's reward popups and the garage's BUY window, whose sky frame it shares. */
+.menu__league-card {
+    width: 1040px;
+    padding: 110px 64px 52px 64px;
+    align-items: center;
+    border-width: 9px;
+    border-bottom-width: 26px;
+    border-radius: 82px;
 }
 
 .menu__league-title {
@@ -1009,75 +1363,93 @@
     font-size: 116px;
     color: var(--gold);
     -unity-text-outline-width: 18px;
-    text-shadow: 0 14px 0 rgb(29, 43, 79);
     rotate: -4deg;
 }
 
-.menu__league-title-text.stroke__face { text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+.menu__league-title-text.stroke__drop { translate: 0 14px; display: flex; }
 
-.menu__league-hero {
-    width: 100%;
-    height: 330px;
-    align-items: center;
-    justify-content: center;
+
+/* The player's car on the new pedestal in the new sky (GarageView.SkyFrame), the emblem as a medal on its lower edge. */
+.menu__league-stage {
+    align-self: stretch;
+    margin-top: 10px;
+    padding-bottom: 92px;
 }
 
-.menu__league-burst {
+.menu__league-card .menu__league-frame {
+    height: 440px;
+    margin-top: 0;
+}
+
+.menu__league-frame-plinth {
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 560px;
-    height: 560px;
-    translate: -50% -50%;
+    width: 420px;
+    height: 220px;
+    margin-left: -210px;
+    margin-top: -60px;
 }
 
-.menu__league-big {
-    min-width: 230px;
-    height: 230px;
-    padding: 0 40px;
-    border-width: 14px;
-    border-bottom-width: 14px;
-    border-radius: 66px;
+.menu__league-medal {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 200px;
+    height: 200px;
+    margin-left: -100px;
 }
 
-.menu__league-big .level-badge__value { font-size: 120px; }
+.menu__league-name {
+    margin: 4px 0 0 0;
+    padding: 0;
+    font-size: 94px;
+    -unity-text-outline-width: 16px;
+    white-space: nowrap;
+    -unity-text-auto-size: best-fit 48px 94px;
+}
 
+.menu__league-name.stroke__drop { translate: 0 12px; display: flex; }
+
+
+/* The level the league starts at, an arrow and the player's level in the new frame: badges wider than tall, as
+   everywhere else. */
 .menu__league-change {
     flex-direction: row;
     align-items: center;
-    margin: 30px 0 14px 0;
+    margin: 26px 0 0 0;
 }
 
 .menu__league-small {
-    min-width: 96px;
-    height: 80px;
-    padding: 0 14px;
+    min-width: 128px;
+    height: 88px;
+    padding: 0 22px;
     border-width: 6px;
     border-bottom-width: 6px;
-    border-radius: 24px;
+    border-radius: 26px;
 }
 
-.menu__league-small .level-badge__value { font-size: 40px; }
+.menu__league-small .level-badge__value { font-size: 44px; }
 
 .menu__league-arrow {
     width: 70px;
     height: 46px;
-    margin: 0 22px;
+    margin: 0 26px;
 }
 
-.menu__league-name {
-    margin: 0;
-    padding: 0;
-    font-size: 94px;
-    -unity-text-outline-width: 16px;
-    text-shadow: 0 12px 0 rgb(29, 43, 79);
-    white-space: nowrap;
+.menu__league-big {
+    min-width: 200px;
+    height: 136px;
+    padding: 0 34px;
+    border-width: 10px;
+    border-bottom-width: 10px;
+    border-radius: 40px;
 }
 
-.menu__league-name.stroke__face { text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+.menu__league-big .level-badge__value { font-size: 72px; }
 
 .menu__league-caption {
-    margin: 26px 0 20px 0;
+    margin: 34px 0 16px 0;
     padding: 0;
     font-size: 36px;
     letter-spacing: 2px;
@@ -1092,8 +1464,8 @@
 
 .menu__league-get {
     width: 31%;
-    height: 260px;
-    padding: 0 10px 22px 10px;
+    height: 220px;
+    padding: 0 10px 20px 10px;
     border-width: 8px;
     border-bottom-width: 16px;
     border-color: var(--navy);
@@ -1120,12 +1492,36 @@
     width: 100%;
 }
 
+/* The league's car and hat: two larger tiles over its look, on gold. */
+.menu__league-prizes {
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 24px;
+}
+
+.menu__league-get.menu__league-prize {
+    width: 48.5%;
+    height: 280px;
+    background-color: #fff3c9;
+}
+
+.menu__league-prize-car {
+    width: 300px;
+    height: 190px;
+}
+
+.menu__league-prize-hat {
+    width: 190px;
+    height: 190px;
+}
+
 .menu__league-swatch {
-    width: 128px;
-    height: 128px;
+    width: 112px;
+    height: 112px;
     border-width: 8px;
     border-color: var(--navy);
-    border-radius: 64px;
+    border-radius: 56px;
     background-size: cover;
 }
 
@@ -1135,31 +1531,82 @@
 }
 
 .menu__league-get-badge {
-    min-width: 128px;
-    height: 112px;
-    padding: 0 18px;
+    min-width: 150px;
+    height: 104px;
+    padding: 0 24px;
     border-width: 8px;
     border-bottom-width: 8px;
-    border-radius: 34px;
+    border-radius: 32px;
 }
 
 .menu__league-get-badge .level-badge__value { font-size: 50px; }
 
+/* The next league, locked: its emblem greyed under a lock, and when it opens. */
 .menu__league-next {
-    margin: 36px 0 40px 0;
-    padding: 0;
-    font-size: 36px;
-    letter-spacing: 1px;
-    color: var(--muted);
+    flex-direction: row;
+    align-items: center;
+    margin: 34px 0 36px 0;
+    padding: 8px 40px 8px 12px;
+    border-width: 6px;
+    border-bottom-width: 12px;
+    border-color: var(--navy);
+    border-radius: 60px;
+    background-color: var(--soft);
 }
+
+.menu__league-next--top {
+    padding: 22px 48px;
+    background-color: var(--gold);
+}
+
+.menu__league-next-emblem {
+    width: 104px;
+    height: 104px;
+    align-items: center;
+    justify-content: center;
+    -unity-background-image-tint-color: rgb(150, 160, 190);
+}
+
+.menu__league-next-lock {
+    width: 48px;
+    height: 54px;
+    margin-top: 6px;
+}
+
+.menu__league-next-name {
+    margin: 0 0 0 14px;
+    padding: 0;
+    font-size: 40px;
+    color: var(--navy);
+    white-space: nowrap;
+}
+
+.menu__league-next--top .menu__league-next-name { margin: 0; }
 
 .menu__league-continue {
     width: 100%;
-    height: 196px;
-    padding-bottom: 36px;
+    height: 184px;
+    padding-bottom: 34px;
 }
 
 .menu__league-continue .button__label { font-size: 80px; }
+
+/* On a wide screen the card is short in the hand: a lower picture and lower tiles keep it readable. */
+.menu__league-card--wide .menu__league-frame { height: 360px; }
+.menu__league-card--wide .menu__league-stage { padding-bottom: 64px; }
+.menu__league-card--wide .menu__league-medal { width: 150px; height: 150px; margin-left: -75px; bottom: -6px; }
+.menu__league-card--wide .menu__league-get { height: 170px; }
+.menu__league-card--wide .menu__league-get.menu__league-prize { height: 200px; }
+.menu__league-card--wide .menu__league-prize-car { width: 220px; height: 140px; }
+.menu__league-card--wide .menu__league-prize-hat { width: 140px; height: 140px; }
+.menu__league-card--wide .menu__league-prizes { margin-bottom: 16px; }
+.menu__league-card--wide .menu__league-get-picture { padding-top: 10px; }
+.menu__league-card--wide .menu__league-get-badge { min-width: 116px; height: 78px; padding: 0 18px; border-radius: 24px; }
+.menu__league-card--wide .menu__league-get-badge .level-badge__value { font-size: 40px; }
+.menu__league-card--wide .menu__league-swatch { width: 92px; height: 92px; }
+.menu__league-card--wide .menu__league-plinth { width: 170px; height: 88px; }
+.menu__league-card--wide .menu__league-caption { margin: 22px 0 12px 0; }
+.menu__league-card--wide .menu__league-next { margin: 24px 0 26px 0; }
 
 .menu__league-key {
     position: absolute;
@@ -1214,10 +1661,10 @@
     padding: 0;
     font-size: 96px;
     -unity-text-outline-width: 16px;
-    text-shadow: 0 12px 0 rgb(29, 43, 79);
 }
 
-.menu__leagues-title.stroke__face { text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+.menu__leagues-title.stroke__drop { translate: 0 12px; display: flex; }
+
 
 .menu__leagues-key {
     margin: 0 30px 0 0;
@@ -1321,12 +1768,11 @@
     padding: 0;
     font-size: 64px;
     -unity-text-outline-width: 14px;
-    text-shadow: 0 8px 0 rgb(29, 43, 79);
     white-space: nowrap;
 }
 
-.menu__league-row-name.stroke__face,
-.menu__league-card-name.stroke__face { text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+.menu__league-row-name.stroke__drop, .menu__league-card-name.stroke__drop { translate: 0 8px; display: flex; }
+
 
 .menu__league-from {
     margin: 10px 0 0 0;
@@ -1536,8 +1982,9 @@
 .menu__league-card-name {
     font-size: 86px;
     -unity-text-outline-width: 16px;
-    text-shadow: 0 10px 0 rgb(29, 43, 79);
 }
+
+.menu__league-card-name.stroke__drop { translate: 0 10px; display: flex; }
 
 .menu__league-card-item .menu__league-from {
     margin-top: 16px;
@@ -1606,7 +2053,6 @@
 /* The tile: a gift box, the time to the next gift on a navy pill across its bottom edge, READY on a green one and the
    red dot while today's waits. Its key goes to the top left: the pill takes the bottom. */
 .menu__tile--daily .menu__tile-caption { margin-top: 26px; }
-.menu__tile--daily .menu__key { top: -14px; bottom: auto; right: auto; left: -18px; }
 
 .menu__daily-time {
     position: absolute;
@@ -1694,12 +2140,8 @@
 .menu__daily-day--big .menu__daily-amount { color: var(--white); }
 .menu__daily-day--big .menu__daily-amount { font-size: 34px; }
 
-/* Coins stacked overlapping: one on the first days, two in the middle, three at the end. */
-.menu__daily-stack { flex-direction: row; align-items: flex-end; }
-.menu__daily-coin { width: 70px; height: 70px; }
-.menu__daily-coin .coin__inner { width: 28px; height: 28px; }
-.menu__daily-coin--1 { margin-left: -30px; margin-bottom: 14px; }
-.menu__daily-coin--2 { margin-left: -30px; }
+/* A pile of coins growing day by day (MenuDaily.CoinPile, painter2D), stood on the bottom of the art. */
+.menu__daily-pile { width: 160px; height: 120px; flex-shrink: 1; }
 
 .menu__daily-gift { width: 110px; height: 110px; }
 .menu__daily-hat { width: 170px; height: 110px; }
@@ -1728,6 +2170,8 @@
 .menu__daily-day--done .menu__daily-art,
 .menu__daily-day--done .menu__daily-amount { opacity: 0.55; }
 .menu__daily-day--done .menu__daily-tick { display: flex; }
+/* The pile draws itself pale: under opacity its overlapping coins would show each other's outlines. */
+.menu__daily-day--done .menu__daily-art--pile { opacity: 1; }
 
 /* Today: cream, ringed in gold and lifted. */
 .menu__daily-day--today {
@@ -1739,7 +2183,8 @@
     scale: 1.06 1.06;
 }
 
-.menu__daily-day--today .menu__daily-caption { color: var(--navy); }
+.menu__daily-day--today .menu__daily-caption,
+.menu__daily-day--today .menu__daily-amount { color: var(--navy); }
 
 /* The hat just given: a pale face, the hat and its name at full strength. */
 .menu__daily-day--hat.menu__daily-day--big { background-color: #efe6ff; }
@@ -1757,8 +2202,9 @@
     -unity-text-align: middle-center;
 }
 
-/* CLAIM ×2 (purple, a gold AD tag at the top left) and CLAIM side by side; CLAIM alone fills the row. */
-.menu__daily-buttons { flex-direction: row; }
+/* CLAIM ×2 (purple, a gold AD tag at the top left) and CLAIM side by side; CLAIM alone fills the row. Well clear of
+   the calendar: the AD tag and the key caps on their top edges stand 26px over the buttons. */
+.menu__daily-buttons { flex-direction: row; margin-top: 58px; }
 
 .menu__daily-double,
 .menu__daily-claim {
@@ -1769,18 +2215,36 @@
     padding: 0 24px 20px 24px;
 }
 
-.menu__daily-double { margin-right: 26px; }
+.menu__daily-double { flex-grow: 1.3; margin-right: 26px; }
 .menu__daily-double .double__play { flex-shrink: 0; width: 64px; height: 64px; margin-right: 14px; }
 
-.menu__daily-label { flex-grow: 1; flex-shrink: 1; min-width: 0; }
+.menu__daily-label { flex-grow: 0; flex-shrink: 1; min-width: 0; }
+
+/* CLAIM, then a coin and the amount it gives (CLAIM x2's already doubled), together in the middle of the button. */
+.menu__daily-double,
+.menu__daily-claim { justify-content: center; }
+
+.menu__daily-sum {
+    flex-direction: row;
+    flex-shrink: 0;
+    align-items: center;
+    margin-left: 18px;
+}
+
+.menu__daily-sum-coin {
+    width: 56px;
+    height: 56px;
+    margin-right: 10px;
+}
 
 .menu__daily-label-text {
     font-size: 64px;
     -unity-text-outline-width: 11px;
-    text-shadow: 0 6px 0 rgb(29, 43, 79);
 }
 
-.menu__daily-label-text.stroke__face { -unity-text-outline-width: 0; text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+.menu__daily-label-text.stroke__drop { translate: 0 6px; display: flex; }
+
+.menu__daily-label-text.stroke__face { -unity-text-outline-width: 0; }
 
 .menu__daily-ad {
     position: absolute;
@@ -1876,20 +2340,18 @@
     font-size: 40px;
     color: var(--navy);
     -unity-text-outline-width: 0;
-    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
 }
 
+/* The chosen tab: white on green, the outline and its drop on the layer under the face (as the garage's tabs). */
 .menu__daily-tab--on .menu__daily-tab-label-text {
     color: var(--white);
     -unity-text-outline-width: 8px;
     -unity-text-outline-color: var(--navy);
-    text-shadow: 0 5px 0 rgb(29, 43, 79);
 }
 
-.menu__daily-tab--on .menu__daily-tab-label-text.stroke__face {
-    -unity-text-outline-width: 0;
-    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
-}
+.menu__daily-tab--on .menu__daily-tab-label-text.stroke__drop { translate: 0 5px; display: flex; }
+
+.menu__daily-tab--on .menu__daily-tab-label-text.stroke__face { -unity-text-outline-width: 0; }
 
 .menu__daily-tab-dot {
     position: absolute;
@@ -1962,31 +2424,9 @@
 .menu__daily-first--done .menu__daily-tick { display: flex; }
 .menu__daily-first .menu__daily-tick { width: 64px; height: 64px; top: -24px; right: -20px; }
 
-/* The three tasks, as the missions' rows, each with its XP over its coins. */
+/* The three tasks, as the missions popup's rows; a done one on pale gold. */
 .menu__daily-tasks { margin: 0; }
 
-.menu__sheet .menu__daily-task { height: 130px; }
-
-.menu__daily-task-reward {
-    flex-shrink: 0;
-    /* One width for every row, so the progress column lines up whatever the reward. */
-    min-width: 120px;
-    align-items: flex-end;
-    justify-content: center;
-}
-
-.menu__daily-task-xp {
-    margin: 0 0 2px 0;
-    padding: 0;
-    font-size: 30px;
-    color: var(--xp-shade);
-}
-
-.menu__daily-task-reward .menu__reward-count { font-size: 38px; }
-.menu__daily-task-reward .coin { width: 44px; height: 44px; }
-.menu__daily-task-reward .coin__inner { width: 18px; height: 18px; }
-
-.menu__sheet .mission--done.menu__daily-task { background-color: #fff4c7; }
-.menu__sheet .mission--done .mission__progress { color: var(--green-shade); }
+.menu__daily-task--done { background-color: #fff4c7; }
 
 .menu__daily-page { flex-shrink: 0; }

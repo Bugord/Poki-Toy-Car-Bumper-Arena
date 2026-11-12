@@ -9,9 +9,13 @@ namespace ToyCarArena.Tests.PlayMode
     public sealed class SimulationProgress : ISessionProgress
     {
         public int Round { get; set; }
+
+        /// <summary>0, as a new player: the measured round is the player's round, as it always was.</summary>
+        public int RoundsBefore { get; set; }
         public int LosingStreak { get; set; }
         public int WinStreak { get; set; }
         public int Nemesis => RoundResult.Nobody;
+        public ToyCarArena.Gameplay.EventMode Mode { get; set; }
     }
 
     /// <summary>

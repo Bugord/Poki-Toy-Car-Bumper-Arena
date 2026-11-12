@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac1f83df4c6cac3428330d05b9533fbb, type: 3}
+  m_Name: data_topper_models
+  m_EditorClassIdentifier: ToyCarArena::ToyCarArena.Gameplay.Cars.TopperModels
+  entries:
+  - Id: top-hat
+    Model: {fileID: 919132149155446097, guid: 12302ae6b61043f5a4b876751f88dba5, type: 3}
+  - Id: party-hat
+    Model: {fileID: 919132149155446097, guid: a08557f0e9e8440ab98ed3d697914bb5, type: 3}
+  - Id: cone
+    Model: {fileID: 919132149155446097, guid: 7033dc253fd24f89950aad17bd9bf9b8, type: 3}
+  - Id: antenna
+    Model: {fileID: 919132149155446097, guid: 698273c316944797950d4ef94734b776, type: 3}
+  - Id: flag
+    Model: {fileID: 919132149155446097, guid: a826cbb7e467450ba684ecfeb14de4ac, type: 3}
+  - Id: chef-hat
+    Model: {fileID: 919132149155446097, guid: 3cbcabfedf334bbd99c7c65592be2ace, type: 3}
+  - Id: horns
+    Model: {fileID: 919132149155446097, guid: 50a2cf2cb0024370af049d93b202eaf6, type: 3}
+  - Id: cowboy-hat
+    Model: {fileID: 919132149155446097, guid: bcba34f4af9a4e4b8adf8168ba26d188, type: 3}
+  - Id: propeller
+    Model: {fileID: 919132149155446097, guid: ea5c3310f5a74b32ba34759953938509, type: 3}
+  - Id: viking-helmet
+    Model: {fileID: 919132149155446097, guid: 4b175b031c8a41e596911406f61c813d, type: 3}
+  - Id: duck
+    Model: {fileID: 919132149155446097, guid: ab56b9e1775f41588b1780a725106795, type: 3}
+  - Id: fin
+    Model: {fileID: 919132149155446097, guid: dc6451fbbd4b4e889308439dd39180a2, type: 3}
+  - Id: halo
+    Model: {fileID: 919132149155446097, guid: 27edf5e864744290bc7af01c578a2cdf, type: 3}
+  - Id: rocket
+    Model: {fileID: 919132149155446097, guid: f74317c5b1694d7193808c45c11d82e0, type: 3}
+  - Id: crown
+    Model: {fileID: 919132149155446097, guid: 04828bdd45314e37ab632c2a060122d6, type: 3}
+  - Id: wizard-hat
+    Model: {fileID: 919132149155446097, guid: c8b8933b78bb4a5384b2bb70ae075e69, type: 3}
+  - Id: ember
+    Model: {fileID: 919132149155446097, guid: be4fd09c88ba4c178d42e98c69f0ca84, type: 3}
+  - Id: silver-torch
+    Model: {fileID: 919132149155446097, guid: ccc3467948f9420cb27612fabfd46b58, type: 3}
+  - Id: fire-crown
+    Model: {fileID: 919132149155446097, guid: 84be25753aa2478392bd69c6b3308704, type: 3}
+  - Id: phoenix
+    Model: {fileID: 919132149155446097, guid: 815ef06e6481496aacf1e6c1554fbe55, type: 3}

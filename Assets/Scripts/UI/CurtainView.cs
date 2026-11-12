@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Bugord.App.Localization;
 using Bugord.App.UI;
+using ToyCarArena.Rendering;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -14,6 +15,11 @@ namespace ToyCarArena.UI
     /// </summary>
     public sealed class CurtainView : FadingView<CurtainViewModel>
     {
+        protected override ShownScreen ScreenKind => ShownScreen.Curtain;
+
+        // Opaque over the whole screen, so the arena under it is not drawn.
+        protected override bool CoversArena => true;
+
         private const float RowStep = 0.045f;
         private const float EnterDuration = 0.2f;
         private const float LeftHold = 0.12f;
@@ -42,9 +48,10 @@ namespace ToyCarArena.UI
 
         private readonly List<Seat> seats = new();
         private VisualElement lobby;
-        private Label title;
-        private Label titleFace;
+        private VisualElement title;
+        private Label[] titleLabels;
         private VisualElement arenaLine;
+        private VisualElement specialCard;
         private VisualElement arenaBadge;
         private VisualElement barFill;
         private Label loadingText;
@@ -68,10 +75,12 @@ namespace ToyCarArena.UI
 
         protected override void OnAttached()
         {
+            // The outlined texts of the UXML get their drop layer (StrokeText).
+            StrokeText.AddDrops(Root);
             lobby = Root.Q<VisualElement>("lobby");
             DriftingChecker.AddTo(Root.Q<VisualElement>("curtain"));
-            title = Root.Q<Label>("lobby-title");
-            titleFace = Root.Q<Label>("lobby-title-face");
+            title = Root.Q<VisualElement>("lobby-title");
+            titleLabels = StrokeText.LabelsOf(title);
             arenaLine = Root.Q<VisualElement>("lobby-arena");
             barFill = Root.Q<VisualElement>("lobby-bar-fill");
             loadingText = Root.Q<Label>("lobby-loading-text");
@@ -97,10 +106,11 @@ namespace ToyCarArena.UI
             BuildArenaLine();
             fill = 0f;
             fillTime = 0f;
-            // A special round's rule, the one thing to know before it starts; else the mission closest to done, while there
-            // is one; a tip otherwise.
-            Root.Q<Label>("lobby-tip").text = GameText.SpecialHint(ViewModel.Special) ?? ViewModel.Mission
-                ?? Strings.Get(Tips[Random.Range(0, Tips.Length)]);
+            // The mission closest to done, while there is one; a tip otherwise. A special round's rule has its own card
+            // under the arena, and the line gives way to it: one thing to read before the round.
+            var tip = Root.Q<Label>("lobby-tip");
+            tip.text = ViewModel.Mission ?? Strings.Get(Tips[Random.Range(0, Tips.Length)]);
+            tip.style.display = GameText.Special(ViewModel.Special) == null ? DisplayStyle.Flex : DisplayStyle.None;
             foreach (var row in ViewModel.Rows) {
                 var seat = new Seat { Slot = Element("lobby__slot") };
                 if (row.Name != null && row.Index != 0) {
@@ -153,29 +163,44 @@ namespace ToyCarArena.UI
         {
             arenaLine.Clear();
             arenaBadge = null;
+            BuildSpecialCard();
             var named = !string.IsNullOrEmpty(ViewModel.ArenaName);
             arenaLine.style.display = named ? DisplayStyle.Flex : DisplayStyle.None;
             if (!named) {
                 return;
             }
-            // A special round takes the ARENA label's room for its own tag, so the pill keeps its width in portrait.
-            var special = GameText.Special(ViewModel.Special);
-            if (special == null) {
-                arenaLine.Add(OutlinedText(Strings.Get("lobby.arena"), "lobby__arena-label"));
-            }
 
+            arenaLine.Add(OutlinedText(Strings.Get("lobby.arena"), "lobby__arena-label"));
             arenaLine.Add(OutlinedText(ViewModel.ArenaName, "lobby__arena-name"));
             if (ViewModel.ArenaIsNew) {
                 arenaBadge = OutlinedText(Strings.Get("common.new"), "lobby__badge");
                 arenaLine.Add(arenaBadge);
             }
+        }
 
-            if (special != null) {
-                var tag = OutlinedText(special, "lobby__badge");
-                tag.AddToClassList("lobby__badge--special");
-                arenaLine.Add(tag);
-                arenaBadge ??= tag;
+        /// <summary>
+        /// A special round's card under the arena: its name on a tilted orange tag over the card's top edge and its
+        /// rule big on the card. It was a small tag in the arena pill and the rule on the tip line at the bottom, where
+        /// few read it before the round changed under them.
+        /// </summary>
+        private void BuildSpecialCard()
+        {
+            specialCard?.RemoveFromHierarchy();
+            specialCard = null;
+            var special = GameText.Special(ViewModel.Special);
+            if (special == null) {
+                return;
             }
+
+            specialCard = Element("lobby__special");
+            var tag = OutlinedText(special, "lobby__badge");
+            tag.AddToClassList("lobby__badge--special");
+            specialCard.Add(tag);
+            var rule = new Label(GameText.SpecialHint(ViewModel.Special)) { pickingMode = PickingMode.Ignore };
+            rule.AddToClassList("lobby__special-rule");
+            specialCard.Add(rule);
+            arenaLine.parent.Insert(arenaLine.parent.IndexOf(arenaLine) + 1, specialCard);
+            arenaBadge = tag;
         }
 
         private void UpdateLobby()
@@ -235,12 +260,9 @@ namespace ToyCarArena.UI
             var isComplete = found >= total;
             var text = isReady ? Strings.Get("lobby.ready")
                 : isComplete ? Strings.Get("lobby.match_found") : Strings.Get("lobby.finding_players");
-            title.text = text;
-            titleFace.text = text;
+            StrokeText.SetText(titleLabels, text);
             title.EnableInClassList("lobby__title--ready", isReady);
-            titleFace.EnableInClassList("lobby__title--ready", isReady);
             title.EnableInClassList("lobby__title--search", !isComplete);
-            titleFace.EnableInClassList("lobby__title--search", !isComplete);
 
             var target = isReady ? 1f : FoundShare * (total > 0 ? found / (float)total : 1f);
             fill = Mathf.MoveTowards(fill, target, FillSpeed * Mathf.Max(0f, time - fillTime));
@@ -274,12 +296,14 @@ namespace ToyCarArena.UI
             var sticker = Element("lobby__row");
             sticker.EnableInClassList("lobby__row--left", isLeft);
             sticker.EnableInClassList("lobby__row--you", row.Index == 0);
-            var chip = CarColor.CreateChip(row.ColorId, row.Index == 0);
-            chip.EnableInClassList("lobby__you-chip", row.Index == 0);
-            sticker.Add(chip);
-            if (!isLeft && row.Level > 0) {
-                sticker.Add(HudView.CreateLevelBadge(row.Level, "lobby__level", row.IsNemesis));
-            }
+            var isRival = row.IsNemesis && !isLeft;
+            sticker.EnableInClassList("lobby__row--rival", isRival);
+            // The level opens the row (no colour chip: the lobby has no car to match it to, as the match results have
+            // none). The slot stays even without a badge (a LEFT seat), so every nick starts on the same line.
+            var level = !isLeft && row.Level > 0
+                ? HudView.CreateLevelBadge(row.Level, "lobby__level", row.IsNemesis, true)
+                : null;
+            sticker.Add(HudView.InLevelSlot(level, "lobby__level-slot"));
             var name = OutlinedText(isLeft ? row.LeftName : row.Name, "lobby__name");
             name.EnableInClassList("lobby__name--revenge", row.IsNemesis && !isLeft);
             sticker.Add(name);
@@ -290,6 +314,13 @@ namespace ToyCarArena.UI
                 badge.AddToClassList("lobby__badge--streak");
                 sticker.Add(badge);
             }
+            else if (isRival) {
+                // The rival's row says why its name is red: the plaque reads before the horns on the small badge do.
+                var badge = OutlinedText(Strings.Get("hud.revenge"), "lobby__badge");
+                badge.AddToClassList("lobby__badge--revenge");
+                sticker.Add(badge);
+            }
+
             if (isLeft) {
                 var badge = OutlinedText(Strings.Get("lobby.left"), "lobby__badge");
                 badge.AddToClassList("lobby__badge--left");

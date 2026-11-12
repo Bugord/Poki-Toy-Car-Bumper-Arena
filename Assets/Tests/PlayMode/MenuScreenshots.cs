@@ -97,9 +97,30 @@ namespace ToyCarArena.Tests.PlayMode
             typeof(Strings).GetField("table", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
         }
 
+        /// <summary>
+        /// CHOOSE MODE at every size, as it opens on QUICK MATCH and with HOT POTATO picked, and the menu after it with
+        /// the MODE plate on the event; also in Russian. <c>Logs/menu/modes*_&lt;w&gt;x&lt;h&gt;.png</c>.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator CaptureTheModes()
+        {
+            Strings.Load(new StringTable(AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Localization/strings.csv").text));
+            var directory = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "menu");
+            Directory.CreateDirectory(directory);
+            foreach (var size in Sizes) {
+                yield return Capture(directory, "modes", size, false, modes: true);
+            }
+
+            Strings.SetLanguage("ru");
+            yield return Capture(directory, "ru-modes", (1080, 1920, true), false, modes: true);
+            yield return Capture(directory, "ru-modes", (1920, 1080, false), false, modes: true);
+            Strings.SetLanguage("en");
+            typeof(Strings).GetField("table", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
+        }
+
         private static IEnumerator Capture(string directory, string name, (int Width, int Height, bool IsTouch) size,
             bool withPopups, int xp = 540, int leagueSeen = 0, bool withLeagues = false, int boost = 0,
-            int dailyStreak = 0, int tasks = 0)
+            int dailyStreak = 0, bool modes = false, int tasks = 0)
         {
             var catalog = AssetDatabase.LoadAssetAtPath<CarCatalog>("Assets/Data/Cars/data_car_catalog.asset");
             var arenas = AssetDatabase.LoadAssetAtPath<ArenaCatalog>("Assets/Data/Arenas/data_arena_catalog.asset");
@@ -177,6 +198,19 @@ namespace ToyCarArena.Tests.PlayMode
                 typeof(MenuView).GetMethod("Place", Private)?.Invoke(view, null);
                 yield return Wait(0.6f);
                 Save(target, Path.Combine(directory, $"{name}_{width}x{height}.png"));
+                if (modes) {
+                    typeof(MenuView).GetMethod("OpenModes", Private)?.Invoke(view, null);
+                    yield return Wait(0.3f);
+                    Save(target, Path.Combine(directory, $"{name}_{width}x{height}.png"));
+                    model.SelectMode(EventMode.HotPotato);
+                    typeof(MenuView).GetMethod("ShowMode", Private)?.Invoke(view, null);
+                    yield return Wait(0.3f);
+                    Save(target, Path.Combine(directory, $"{name}-potato_{width}x{height}.png"));
+                    typeof(MenuView).GetMethod("ClosePopups", Private)?.Invoke(view, null);
+                    yield return Wait(0.3f);
+                    Save(target, Path.Combine(directory, $"{name}-menu_{width}x{height}.png"));
+                }
+
                 if (withPopups) {
                     foreach (var popup in new[] { "OpenMissions", "OpenModes", "OpenBoost" }) {
                         typeof(MenuView).GetMethod(popup, Private)?.Invoke(view, null);

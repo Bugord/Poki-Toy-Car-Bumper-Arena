@@ -115,6 +115,14 @@ namespace ToyCarArena.Tests.PlayMode
                     showTab.Invoke(view, new[] { System.Enum.ToObject(tabType, tab) });
                     yield return Wait(0.8f);
                     Save(target, Path.Combine(directory, $"{save}_{name}_{frame}.png"));
+                    if (tab == 1) {
+                        // The end of the hat grid: the dearest hats and the longest names sit below the first rows.
+                        var scroll = root.Q<ScrollView>(className: "garage__scroll");
+                        scroll.scrollOffset = new Vector2(0f, scroll.contentContainer.layout.height);
+                        yield return Wait(0.3f);
+                        Save(target, Path.Combine(directory, $"{save}_{name}-end_{frame}.png"));
+                        scroll.scrollOffset = Vector2.zero;
+                    }
                 }
 
                 if (withStates) {
@@ -122,7 +130,7 @@ namespace ToyCarArena.Tests.PlayMode
                     yield return Wait(0.3f);
                     foreach (var (id, name) in new[] {
                         ("speedster", "buy"), ("suv", "dear"), ("monster-truck", "locked"), ("buggy", "ad"),
-                        ("vintage", "select"),
+                        ("vintage", "select"), ("hot-rod", "league"),
                     }) {
                         var car = catalog.Find(id);
                         pickCar.Invoke(view, new object[] { car, root.Q<Button>($"garage-car-{id}") });
@@ -135,7 +143,7 @@ namespace ToyCarArena.Tests.PlayMode
                             Save(target, Path.Combine(directory, $"{save}_{name}-confirm_{frame}.png"));
                             closeConfirm.Invoke(view, new object[] { false });
                         }
-                        else if (name is "dear" or "locked") {
+                        else if (name is "dear" or "locked" or "league") {
                             pressAction.Invoke(view, null);
                             yield return Wait(0.25f);
                             Save(target, Path.Combine(directory, $"{save}_{name}-press_{frame}.png"));
@@ -149,6 +157,10 @@ namespace ToyCarArena.Tests.PlayMode
                     pickHat.Invoke(view, new object[] { "cone", root.Q<Button>("garage-topper-cone") });
                     yield return Wait(0.6f);
                     Save(target, Path.Combine(directory, $"{save}_hat_{frame}.png"));
+                    // A league's hat: the league's emblem on its badge and REACH <LEAGUE> at the bottom.
+                    pickHat.Invoke(view, new object[] { "phoenix", root.Q<Button>("garage-topper-phoenix") });
+                    yield return Wait(0.6f);
+                    Save(target, Path.Combine(directory, $"{save}_league-hat_{frame}.png"));
                 }
             }
             finally {

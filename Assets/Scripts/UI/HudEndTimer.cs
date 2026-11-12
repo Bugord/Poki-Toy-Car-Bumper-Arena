@@ -344,21 +344,14 @@ namespace ToyCarArena.UI
             }
         }
 
-        // The gold star of the HUD's knock-out badge, big.
+        // The gold burst of the HUD's knock-out badge, big.
         private static VisualElement CreateStar()
         {
             var star = new VisualElement { pickingMode = PickingMode.Ignore };
             star.AddToClassList("ko-star");
             star.AddToClassList("ko-star--big");
             star.AddToClassList("end-stamp__star");
-            foreach (var part in new[] { "ko-star__back", "ko-star__front" }) {
-                for (var turned = 0; turned < 2; turned++) {
-                    var piece = new VisualElement { pickingMode = PickingMode.Ignore };
-                    piece.AddToClassList(part);
-                    piece.EnableInClassList("ko-star__turned", turned == 1);
-                    star.Add(piece);
-                }
-            }
+            HudView.DrawAsBurst(star);
 
             star.style.display = DisplayStyle.None;
             return star;

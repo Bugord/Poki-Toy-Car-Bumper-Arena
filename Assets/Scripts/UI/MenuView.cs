@@ -1,9 +1,13 @@
+using System;
+using System.Collections.Generic;
 using System.Threading;
 using Bugord.App.Localization;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.Audio;
+using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
+using ToyCarArena.Rendering;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -33,6 +37,11 @@ namespace ToyCarArena.UI
     /// </summary>
     public sealed class MenuView : FadingView<MenuViewModel>
     {
+        protected override ShownScreen ScreenKind => ShownScreen.Menu;
+
+        // Opaque over the whole screen, so the arena under it is not drawn.
+        protected override bool CoversArena => true;
+
         private const string WideClass = "menu--wide";
         private const string DesktopClass = "menu--desktop";
         private const string OpenClass = "menu__popup--open";
@@ -51,6 +60,9 @@ namespace ToyCarArena.UI
         private const float BadgeOrnament = 32f;
         // The wide leagues list keeps its five cards in from the sides, as the board does.
         private const float WideLeaguesSide = 200f;
+
+        // The rails with a mouse: at the reference size a tile's caption was about 16 px on a 1080p screen.
+        private const float DesktopRailScale = 1.25f;
 
         // The least distance of the groups from a side on a phone held sideways (about 48 CSS px).
         private const float TouchWideSide = 240f;
@@ -76,7 +88,7 @@ namespace ToyCarArena.UI
         // The glow's radius against the rays'.
         private const float GlowShare = 0.42f;
         private const int GlowSides = 48;
-        private const float RaysTurnSeconds = 24f;
+        internal const float RaysTurnSeconds = 24f;
         // The rays' span against the car's picture: past its sides, where their faded tips are lost in the checker.
         private const float RaysScale = 1.7f;
 
@@ -87,11 +99,24 @@ namespace ToyCarArena.UI
         private const float DailyWidth = 960f;
         private const float DailyWideWidth = 1760f;
 
+        // The missions' card sideways. The Expand panel is always 1920 reference pixels tall there, so at the sheets'
+        // usual scale the card read far smaller than upright; at this scale its text is about as large as upright on a
+        // 16:9 screen. Its height (three rows, with room for a task on two lines) keeps it inside the screen's height.
+        private const float WideMissionsScale = 1.7f;
+        private const float MissionsHeight = 800f;
+
+        // The modes' card sideways, for the same reason. It is taller (three cards and PLAY), so it grows less, to about
+        // the missions' card's height on screen.
+        private const float WideModesScale = 1.3f;
+        private const float ModesHeight = 1600f;
+        // A beat between picking a mode and the popup closing, so the ring is seen on its new card.
+        private const string ModeSelectedClass = "menu__mode-holder--selected";
+
         // The XP bar sideways: this share of the top row, never shorter than upright and never into the coins and the
         // gear (their width and gaps, reference pixels).
         private const float WideLevelShare = 0.42f;
         private const float LevelMinWidth = 640f;
-        private const float WalletWidth = 420f;
+        private const float WalletWidth = 520f;
         // The bar's text starts this far past the badge that covers the bar's left end.
         private const float XpTextGap = 22f;
 
@@ -101,6 +126,20 @@ namespace ToyCarArena.UI
         // The colour of XP across the game (--xp in ui_theme).
         private static readonly Color XpBlue = new Color32(0x3d, 0x8b, 0xff, 0xff);
         private static readonly Color White = Color.white;
+        // --green in ui_theme: the ticks on MISSIONS' clipboard.
+        private static readonly Color Green = new Color32(0x5b, 0xd3, 0x4a, 0xff);
+        // A mode not out yet keeps its sign, greyed: --shade filled, --muted outlined, its sand between.
+        private static readonly Color Orange = new Color32(0xff, 0x9f, 0x1c, 0xff);
+        private static readonly Color EventLight = new Color32(0xff, 0xc0, 0x6a, 0xff);
+        private static readonly Color EventDeep = new Color32(0xff, 0x8f, 0x1f, 0xff);
+        private static readonly Color EventRay = new(1f, 1f, 1f, 0.18f);
+        private const float RayStep = 20f;
+        private const float RayWidth = 8f;
+        // The desktop key that opens the modes: M is MISSIONS, and the plate reads QUICK MATCH.
+        private const KeyCode ModesKey = KeyCode.Q;
+        // The desktop key of the HOT POTATO tile: H for hot (HOME's key on the result, which has no tile of its own here).
+        private const KeyCode EventKey = KeyCode.H;
+        private const float ShakeSeconds = 0.3f;
 
         private readonly IAudioService audioService;
         private readonly HudControls controls;
@@ -130,24 +169,32 @@ namespace ToyCarArena.UI
         private Button hero;
         private VisualElement heroPortraitRoot;
         private CarPortrait heroPortrait;
+        // The player's 3D car on the league's pedestal the menu shows, for NEW LEAGUE! to show it too.
+        private RenderTexture heroTexture;
         private float heroAspect = 1.6f;
         private Label carName;
-        private Label carNameFace;
+        private VisualElement carPill;
         private VisualElement bottom;
         private VisualElement missionCard;
         private VisualElement actions;
         private Label missionTask;
-        private Label missionCount;
-        private VisualElement missionFill;
-        private Label missionReward;
+        private MissionLook.Icon missionIcon;
+        private MissionLook.Progress missionProgress;
+        private VisualElement missionReward;
         private VisualElement missionsPopup;
+        private VisualElement missionsSheet;
         private VisualElement missionsList;
         private VisualElement modesPopup;
+        private VisualElement modesSheet;
         private CarPortrait modePortrait;
+        private VisualElement eventCard;
+        private VisualElement quickCard;
+        private Label modeName;
         private GarageStage garageStage;
         private MenuLeagues leagues;
         private VisualElement rightRail;
         private VisualElement boostTile;
+        private VisualElement eventTile;
         private Label boostLeft;
         private VisualElement xpBoost;
         private Label[] xpBoostLabels;
@@ -218,10 +265,14 @@ namespace ToyCarArena.UI
                 ViewModel.BoostShown();
             }
 
+            if (ViewModel.HasEvents) {
+                ViewModel.EventShown();
+            }
+
             // The first menu in a new league greets it, over the league's sky and plinth already behind the dim.
             if (!ViewModel.IsDecided && ViewModel.TakeNewLeague()) {
                 ClosePopups();
-                leagues.ShowNewLeague(ViewModel.Level.Level, !isTouch);
+                leagues.ShowNewLeague(ViewModel.Level.Level, !isTouch, heroTexture, ViewModel.LeaguePrize);
                 return;
             }
 
@@ -274,7 +325,7 @@ namespace ToyCarArena.UI
             // The bar: its navy drop behind it, its left end square and under the badge, its right end round.
             xp = Element("menu__xp");
             xp.Add(Element("menu__xp-drop"));
-            var track = Element("menu__xp-track");
+            var track = Face("menu__xp-track", "menu__xp-back");
             xpFill = Element("menu__xp-fill");
             xpFill.Add(Element("menu__xp-shade"));
             track.Add(xpFill);
@@ -292,7 +343,7 @@ namespace ToyCarArena.UI
             xp.Add(track);
             // ×2 XP on the bar's top edge while the XP boost runs.
             xpBoost = Element("menu__xp-boost");
-            xpBoost.Add(RoundOverProgress.Outlined("", "menu__xp-boost-label", out xpBoostLabels));
+            xpBoost.Add(StrokeText.Outlined("", "menu__xp-boost-label", out xpBoostLabels));
             xp.Add(xpBoost);
             level.Add(xp);
             // The level badge goes over the bar's left end, which tucks under it.
@@ -302,7 +353,7 @@ namespace ToyCarArena.UI
 
             coinPill = Element("menu__coins");
             coinPill.Add(Element("menu__coins-drop"));
-            var coinFace = Element("menu__coins-face");
+            var coinFace = Face("menu__coins-face", "menu__coins-fill");
             coinFace.Add(RoundOverMeta.Coin());
             coins = Text("menu__coins-count");
             coinFace.Add(coins);
@@ -319,19 +370,18 @@ namespace ToyCarArena.UI
         {
             rail = Element("menu__rail");
             garageTile = Tile(DrawGarage, () => Strings.Get("garage.title"), "G", OpenGarage);
-            missionsTile = Tile(DrawTarget, () => Strings.Get("mission.title"), "M", OpenMissions);
-            var awards = Tile(DrawLock, () => Strings.Get("menu.awards"), null, Locked);
-            awards.AddToClassList("menu__tile--locked");
+            missionsTile = Tile(DrawMissions,() => Strings.Get("mission.title"), "M", OpenMissions);
+            // AWARDS waits until there are awards: a locked tile that explains nothing only takes the rail.
             rail.Add(garageTile);
             rail.Add(missionsTile);
-            rail.Add(awards);
             menu.Add(rail);
         }
 
         /// <summary>
         /// The rail at the right: DAILY (a gift box, a green READY pill and a red dot while today's gift waits, the time
         /// to the next on a navy pill after), then XP BOOST (a blue star with an AD tag while it is offered, blue with ×2
-        /// and the matches left while it runs).
+        /// and the matches left while it runs), then HOT POTATO (the event's orange with its picture and a bolt tag),
+        /// which starts the event at once: in CHOOSE MODE only 6 of 557 visits of v0.17.9 found it.
         /// </summary>
         private void BuildBoost(VisualElement menu)
         {
@@ -345,19 +395,49 @@ namespace ToyCarArena.UI
             boostTile = Tile(DrawXpStar, () => Strings.Get("menu.xp_boost"), "B", OpenBoost);
             boostTile.AddToClassList("menu__tile--boost");
             var button = boostTile.Q<VisualElement>(className: "menu__tile-button");
-            var times = RoundOverProgress.Outlined("", "menu__boost-times", out var timesLabels);
+            var times = StrokeText.Outlined("", "menu__boost-times", out var timesLabels);
             foreach (var label in timesLabels) {
                 text.Set(label, () => $"×{ViewModel.BoostMultiplier}");
             }
 
             button.Q<VisualElement>(className: "menu__face").Add(times);
-            var ad = Text("menu__ad");
-            text.Set(ad, () => Strings.Get("result.ad"));
+            // A video sign on a purple tag, not a word: РЕКЛАМА or ANUNCIO ran into the tile beside it.
+            var ad = Element("menu__ad");
+            ad.Add(RoundOverRewards.PlaySign());
             button.Add(ad);
             boostLeft = Text("menu__boost-left");
             button.Add(boostLeft);
             rightRail.Add(boostTile);
+            rightRail.Add(BuildEventTile());
             menu.Add(rightRail);
+        }
+
+        private VisualElement BuildEventTile()
+        {
+            eventTile = Tile(null, () => Strings.Get("menu.hot_potato"), EventKey.ToString(), PlayEvent);
+            eventTile.AddToClassList("menu__tile--event");
+            var button = eventTile.Q<VisualElement>(className: "menu__tile-button");
+            var face = button.Q<VisualElement>(className: "menu__face");
+            // The event card's orange and its picture: the monster truck with the bomb, bigger than the face, over its
+            // bottom edge as on the card.
+            // The rays inside the fill, which clips them to its rounded corners; the picture on the face, so it sinks
+            // with it on a press.
+            var fill = face.Q<VisualElement>(className: "menu__fill");
+            fill.style.backgroundImage = EventBack();
+            fill.Add(Icon("menu__event-tile-rays", DrawEventRays));
+            var art = Element("menu__event-tile-art");
+            art.pickingMode = PickingMode.Ignore;
+            face.Add(art);
+            // The bolt of EVENT's tag on a white pill where the boost's AD tag sits: no word, СОБЫТИЕ would not fit.
+            var tag = Element("menu__event-tile-tag");
+            tag.Add(Icon("menu__event-tile-bolt", DrawBolt));
+            button.Add(tag);
+            // HEISSE KARTOFFEL or ГОРЯЧАЯ КАРТОШКА go on two lines under the tile rather than run off the screen.
+            foreach (var label in eventTile.Query<Label>(className: "menu__tile-caption").ToList()) {
+                label.AddToClassList("menu__tile-caption--wrap");
+            }
+
+            return eventTile;
         }
 
         private void BuildStage(VisualElement menu)
@@ -368,7 +448,7 @@ namespace ToyCarArena.UI
             rays.generateVisualContent += DrawLight;
             // Unscaled clock, so the ad pause (timeScale 0) does not stop the light.
             rays.schedule.Execute(() =>
-                rays.style.rotate = new Rotate(Time.unscaledTime / RaysTurnSeconds * 360f % 360f)).Every(16);
+                rays.style.rotate = new Rotate(Time.unscaledTime / RaysTurnSeconds * 360f % 360f)).Every(0);
             stage.Add(rays);
             plinth = Element("menu__plinth");
             plinth.Add(Element("menu__plinth-base"));
@@ -387,18 +467,19 @@ namespace ToyCarArena.UI
             heroPortrait = new CarPortrait(heroPortraitRoot);
             stage.Add(hero);
 
+            // The car's name on a white pill with a green garage sign: smaller than PLAY, and it says the car opens
+            // the garage.
             var name = carNameBox = Element("menu__car-name");
-            var stroke = Element("stroke");
-            carName = Text("display");
+            var pill = carPill = Sticker("menu__car-pill", OpenGarage);
+            var pillFace = pill.Q<VisualElement>(className: "menu__face");
+            carName = Text("menu__car-name-text");
             // A longer or shorter name may or may not fit between the bottom cards sideways (PlaceStage).
             carName.RegisterCallback<GeometryChangedEvent>(_ => PlaceStage());
-            carName.AddToClassList("menu__car-name-text");
-            carNameFace = Text("display");
-            carNameFace.AddToClassList("menu__car-name-text");
-            carNameFace.AddToClassList("stroke__face");
-            stroke.Add(carName);
-            stroke.Add(carNameFace);
-            name.Add(stroke);
+            pillFace.Add(carName);
+            var sign = Element("menu__car-garage");
+            sign.Add(Icon("menu__car-garage-icon", DrawGarage));
+            pillFace.Add(sign);
+            name.Add(pill);
             stage.Add(name);
             stage.RegisterCallback<GeometryChangedEvent>(_ => PlaceHero());
             menu.Add(stage);
@@ -407,36 +488,33 @@ namespace ToyCarArena.UI
         private void BuildBottom(VisualElement menu)
         {
             bottom = Element("menu__bottom");
+            // The task's sign, the task (on two lines if it must: a Russian task is long) over its reward, and the count
+            // with a thin bar at the right for a mission of more than one step.
             missionCard = Sticker("menu__mission", OpenMissions);
             var face = missionCard.Q<VisualElement>(className: "menu__face");
-            face.Add(Icon("menu__mission-icon", DrawTarget));
+            missionIcon = MissionLook.IconOf(null);
+            face.Add(missionIcon);
             var body = Element("menu__mission-body");
-            var head = Element("menu__mission-head");
             missionTask = Text("menu__mission-task");
-            missionCount = Text("menu__mission-count");
-            head.Add(missionTask);
-            head.Add(missionCount);
-            body.Add(head);
-            var bar = Element("menu__bar");
-            missionFill = Element("menu__bar-fill");
-            bar.Add(missionFill);
-            body.Add(bar);
+            body.Add(missionTask);
+            missionReward = Element("menu__mission-reward");
+            body.Add(missionReward);
             face.Add(body);
-            var reward = Element("menu__reward");
-            reward.Add(RoundOverMeta.Coin());
-            missionReward = Text("menu__reward-count");
-            reward.Add(missionReward);
-            face.Add(reward);
+            missionProgress = MissionLook.ProgressOf();
+            face.Add(missionProgress);
             bottom.Add(missionCard);
 
             actions = Element("menu__actions");
+            // The mode in play, and a chevron: it opens the modes, where CUP and SURVIVAL wait as SOON. As a plate that
+            // did nothing, players tapped it and took the menu for broken.
             var mode = Sticker("menu__mode", OpenModes);
+            mode.Add(KeyCap(ModesKey.ToString(), "menu__mode-key"));
             var modeFace = mode.Q<VisualElement>(className: "menu__face");
             var modeText = Element("menu__mode-texts");
             var caption = Text("menu__mode-caption");
             text.Set(caption, () => Strings.Get("menu.mode"));
-            var modeName = Text("menu__mode-name");
-            text.Set(modeName, () => Strings.Get("menu.quick_match"));
+            modeName = Text("menu__mode-name");
+            text.Set(modeName, ModeName);
             modeText.Add(caption);
             modeText.Add(modeName);
             modeFace.Add(modeText);
@@ -449,46 +527,166 @@ namespace ToyCarArena.UI
 
         private void BuildMissionsPopup(VisualElement menu)
         {
-            missionsPopup = Popup(menu, () => Strings.Get("mission.title"), out var sheet);
+            missionsPopup = Popup(menu, () => Strings.Get("mission.title"), out missionsSheet);
             missionsList = Element(null);
-            sheet.Add(missionsList);
+            missionsSheet.Add(missionsList);
         }
 
+        /// <summary>
+        /// CHOOSE MODE, as the board has it: the event on top on an orange card with sun rays, its EVENT tag, its name,
+        /// its rule and its picture (a car with the bomb over it); QUICK MATCH on a white card with the player's own car;
+        /// then the modes still to come as low grey rows with a padlock and SOON. The mode in play wears a green ring and
+        /// SELECTED; a tap on the other picks it, and the popup stays open. PLAY under them starts the mode.
+        /// </summary>
         private void BuildModesPopup(VisualElement menu)
         {
-            modesPopup = Popup(menu, () => Strings.Get("menu.choose_mode"), out var sheet);
+            modesPopup = Popup(menu, () => Strings.Get("menu.choose_mode"), out modesSheet);
+            modesPopup.AddToClassList("menu__modes-popup");
+            var sheet = modesSheet;
 
-            var quick = Element("menu__mode-card");
-            quick.AddToClassList("menu__mode-card--selected");
-            quick.pickingMode = PickingMode.Position;
-            quick.RegisterCallback<ClickEvent>(_ => {
-                audioService.PlayUiClick();
-                ClosePopups();
-            });
-            var quickText = Element("menu__mode-text");
+            eventCard = ModeCard(EventMode.HotPotato, out var eventFace);
+            eventFace.AddToClassList("menu__mode-card--event");
+            eventFace.style.backgroundImage = EventBack();
+            eventFace.Add(Icon("menu__event-rays", DrawEventRays));
+            // The picture under the words: a long name in another language runs over it, not under.
+            // The game's own red monster truck with the mode's bomb riding on it, drawn once from the models
+            // (ModeCardArt) into the picture the style sheet names.
+            eventFace.Add(Element("menu__event-art"));
+            var tag = Element("menu__event-tag");
+            tag.Add(Icon("menu__event-bolt", DrawBolt));
+            var tagText = StrokeText.Create("", "menu__event-tag-label", out var tagLabels,
+                "menu__event-tag-label-text");
+            foreach (var label in tagLabels) {
+                text.Set(label, () => Strings.Get("menu.event"));
+            }
+
+            tag.Add(tagText);
+            eventFace.Add(tag);
+            var title = StrokeText.Create("", "menu__event-title", out var titleLabels, "menu__event-title-text");
+            foreach (var label in titleLabels) {
+                text.Set(label, () => Strings.Get("menu.hot_potato"));
+            }
+
+            title.AddToClassList("menu__event-title-box");
+            // One size for all layers, shrunk to the room left of the picture: a long name in another language fits.
+            FitText.Fit(title, titleLabels);
+            eventFace.Add(title);
+            var eventHint = Text("menu__mode-desc");
+            eventHint.AddToClassList("menu__mode-desc--event");
+            text.Set(eventHint, () => Strings.Get("menu.hot_potato_hint"));
+            eventFace.Add(eventHint);
+            sheet.Add(eventCard);
+
+            quickCard = ModeCard(EventMode.None, out var quickFace);
             var quickName = Text("menu__mode-card-name");
             text.Set(quickName, () => Strings.Get("menu.quick_match"));
-            var quickHint = Text("menu__mode-hint");
+            // In a box of fixed width left of the SELECTED tag: a longer name in another language shrinks instead of
+            // running under it. The box, not the label, sets the room, or the label's width would follow its own size.
+            var quickNameBox = Element("menu__mode-card-name-box");
+            quickNameBox.Add(quickName);
+            quickFace.Add(quickNameBox);
+            FitText.Fit(quickNameBox, new[] { quickName });
+            var quickHint = Text("menu__mode-desc");
             text.Set(quickHint, () => Strings.Get("menu.quick_match_hint"));
-            quickText.Add(quickName);
-            quickText.Add(quickHint);
-            quick.Add(quickText);
+            quickFace.Add(quickHint);
             var portrait = Element("menu__mode-portrait");
             portrait.AddToClassList("car-portrait");
             modePortrait = new CarPortrait(portrait);
-            quick.Add(portrait);
-            var selected = Text("menu__tag");
-            selected.AddToClassList("menu__tag--selected");
-            text.Set(selected, () => Strings.Get("menu.selected"));
-            quick.Add(selected);
-            sheet.Add(quick);
+            quickFace.Add(portrait);
+            sheet.Add(quickCard);
 
-            sheet.Add(LockedMode("menu.cup", "menu.cup_hint"));
-            sheet.Add(LockedMode("menu.survival", "menu.survival_hint"));
+            sheet.Add(SoonMode("menu.cup", "menu.cup_hint"));
+            sheet.Add(SoonMode("menu.survival", "menu.survival_hint"));
 
             var play = PlayButton("menu__modes-play", false);
             sheet.Add(play);
         }
+
+        /// <summary>
+        /// A mode's card: the face (filled by the caller) inside a holder that carries the green ring, the shadow and the
+        /// SELECTED tag, which the face's clipping would cut. A tap picks the mode.
+        /// </summary>
+        private VisualElement ModeCard(EventMode mode, out VisualElement face)
+        {
+            var holder = Element("menu__mode-holder");
+            holder.pickingMode = PickingMode.Position;
+            holder.Add(Element("menu__mode-ring"));
+            holder.Add(Element("menu__mode-drop"));
+            face = Element("menu__mode-card");
+            holder.Add(face);
+            var selected = Element("menu__mode-selected");
+            var tick = Element("menu__mode-tick");
+            tick.Add(Icon("menu__mode-tick-mark", DrawTick));
+            selected.Add(tick);
+            var selectedText = StrokeText.Create("", "menu__mode-selected-label", out var labels,
+                "menu__mode-selected-label-text");
+            foreach (var label in labels) {
+                text.Set(label, () => Strings.Get("menu.selected"));
+            }
+
+            selected.Add(selectedText);
+            holder.Add(selected);
+            holder.RegisterCallback<ClickEvent>(_ => PickMode(mode, holder));
+            return holder;
+        }
+
+        // A tap on a mode: the ring fades in round it, the card swells and settles, its SELECTED tag springs in, and the
+        // MODE plate says it. The popup stays open: PLAY under the cards starts the mode, the cross or Esc goes back.
+        // A tap on the mode in play only swells its card.
+        private void PickMode(EventMode mode, VisualElement card)
+        {
+            if (IsBusy || !modesPopup.ClassListContains(OpenClass)) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            var isNew = mode != ViewModel.Mode;
+            ViewModel.SelectMode(mode);
+            ShowMode();
+            Swell(card);
+            if (!isNew) {
+                return;
+            }
+
+            var ring = card.Q(className: "menu__mode-ring");
+            Animate(ring, RingFadeSeconds, t => ring.style.opacity = Mathf.SmoothStep(0f, 1f, t),
+                () => ring.style.opacity = StyleKeyword.Null);
+            var tag = card.Q(className: "menu__mode-selected");
+            Animate(tag, SpringSeconds, t => SetScale(tag, Spring(t)), () => tag.style.scale = StyleKeyword.Null);
+        }
+
+        // A soft swell that overshoots back and settles: a big card answers a tap without jumping.
+        private void Swell(VisualElement card) =>
+            Animate(card, SwellSeconds,
+                t => SetScale(card, 1f + 0.05f * Mathf.Sin(t * SwellSeconds * 21f) * Mathf.Exp(-t * SwellSeconds * 8f)),
+                () => card.style.scale = StyleKeyword.Null);
+
+        // From nothing to its size with one overshoot, settling at 1 by t = 1.
+        private static float Spring(float t)
+        {
+            var seconds = t * SpringSeconds;
+            return 1f - Mathf.Exp(-seconds * 10f) * Mathf.Cos(seconds * 18f) * (1f - t);
+        }
+
+        private static void SetScale(VisualElement element, float size) =>
+            element.style.scale = new Scale(new Vector3(size, size, 1f));
+
+        private const float SwellSeconds = 0.5f;
+        private const float SpringSeconds = 0.45f;
+        private const float RingFadeSeconds = 0.15f;
+
+        // The selected mode on its card and on the MODE plate; the event's card only where the build has events.
+        private void ShowMode()
+        {
+            var mode = ViewModel.HasEvents ? ViewModel.Mode : EventMode.None;
+            eventCard.style.display = ViewModel.HasEvents ? DisplayStyle.Flex : DisplayStyle.None;
+            eventCard.EnableInClassList(ModeSelectedClass, mode == EventMode.HotPotato);
+            quickCard.EnableInClassList(ModeSelectedClass, mode == EventMode.None);
+            modeName.text = ModeName();
+        }
+
+        private string ModeName() =>
+            Strings.Get(ViewModel.HasEvents && ViewModel.Mode == EventMode.HotPotato ? "menu.hot_potato" : "menu.quick_match");
 
         /// <summary>
         /// The XP boost's offer: ×N XP for the next matches, a pip a match, and WATCH (the rewarded ad) or NO THANKS.
@@ -527,7 +725,7 @@ namespace ToyCarArena.UI
             watch.focusable = false;
             watch.Add(Element("button__face"));
             watch.Add(RoundOverRewards.PlaySign());
-            var watchLabel = RoundOverProgress.Outlined("", "menu__watch-label", out var watchLabels);
+            var watchLabel = StrokeText.Outlined("", "menu__watch-label", out var watchLabels);
             foreach (var label in watchLabels) {
                 label.AddToClassList("button__label");
                 text.Set(label, () => Strings.Get("menu.watch"));
@@ -573,58 +771,67 @@ namespace ToyCarArena.UI
             return cap;
         }
 
-        private VisualElement LockedMode(string nameKey, string hintKey)
+        /// <summary>
+        /// A mode that is not out yet, as a low grey row: a gold padlock, its name and what it will be, and a white SOON
+        /// pill. A press only shakes it; it never becomes the mode in play.
+        /// </summary>
+        private VisualElement SoonMode(string nameKey, string hintKey)
         {
-            var card = Element("menu__mode-card");
-            card.AddToClassList("menu__mode-card--locked");
-            card.pickingMode = PickingMode.Position;
-            card.RegisterCallback<ClickEvent>(_ => Locked());
-            card.Add(Icon("menu__mode-lock", DrawLock));
-            var body = Element("menu__mode-text");
-            var name = Text("menu__mode-card-name");
+            var row = Element("menu__mode-soon");
+            row.pickingMode = PickingMode.Position;
+            row.RegisterCallback<ClickEvent>(_ => Soon(row));
+            row.Add(Icon("menu__mode-lock", DrawPadlock));
+            var body = Element("menu__mode-soon-text");
+            var name = Text("menu__mode-soon-name");
             text.Set(name, () => Strings.Get(nameKey));
-            var hint = Text("menu__mode-hint");
+            var hint = Text("menu__mode-soon-hint");
             text.Set(hint, () => Strings.Get(hintKey));
             body.Add(name);
             body.Add(hint);
-            card.Add(body);
-            var soon = Text("menu__tag");
+            row.Add(body);
+            var soon = Text("menu__mode-soon-tag");
             text.Set(soon, () => Strings.Get("menu.soon"));
-            card.Add(soon);
-            return card;
+            row.Add(soon);
+            return row;
         }
 
         private VisualElement Popup(VisualElement menu, System.Func<string> title, out VisualElement sheet)
         {
+            var popup = PopupFrame(menu, out sheet, out var titles, () => {
+                audioService.PlayUiClick();
+                ClosePopups();
+            }, ClosePopups);
+            foreach (var label in titles) {
+                text.Set(label, title);
+            }
+
+            return popup;
+        }
+
+        /// <summary>
+        /// The frame of the menu's popups, also for the daily gift over a result: a dim over the screen, which a tap
+        /// closes with <paramref name="tapOutside"/>, and a white card with the title (twice, outline and face, for the
+        /// caller to fill) and the close button at its top.
+        /// </summary>
+        internal static VisualElement PopupFrame(VisualElement parent, out VisualElement sheet, out Label[] titles,
+            System.Action pressClose, System.Action tapOutside)
+        {
             var popup = Element("menu__popup");
             popup.pickingMode = PickingMode.Position;
-            // A tap on the dim around the card closes it.
             popup.RegisterCallback<ClickEvent>(evt => {
                 if (evt.target == popup) {
-                    ClosePopups();
+                    tapOutside();
                 }
             });
             sheet = Element("card");
             sheet.AddToClassList("menu__sheet");
             sheet.pickingMode = PickingMode.Position;
             var head = Element("menu__sheet-head");
-            var stroke = Element("stroke");
-            foreach (var isFace in new[] { false, true }) {
-                var label = Text("display");
-                label.AddToClassList("menu__sheet-title");
-                label.EnableInClassList("stroke__face", isFace);
-                text.Set(label, title);
-                stroke.Add(label);
-            }
-
-            head.Add(stroke);
-            head.Add(CloseSticker(() => {
-                audioService.PlayUiClick();
-                ClosePopups();
-            }));
+            head.Add(StrokeText.Create("", null, out titles, "display", "menu__sheet-title"));
+            head.Add(CloseSticker(pressClose));
             sheet.Add(head);
             popup.Add(sheet);
-            menu.Add(popup);
+            parent.Add(popup);
             return popup;
         }
 
@@ -654,7 +861,7 @@ namespace ToyCarArena.UI
         private void ShowDailyTab(bool isTasks)
         {
             daily.SetTab(isTasks);
-            daily.Fill(ViewModel);
+            daily.Fill(ViewModel.Daily, ViewModel);
             dailyPopup.EnableInClassList("menu__daily-popup--tasks", daily.IsTasks);
             foreach (var title in dailyPopup.Query<Label>(className: "menu__sheet-title").ToList()) {
                 title.text = Strings.Get(daily.IsTasks ? "daily.tasks_title" : "daily.title");
@@ -675,15 +882,11 @@ namespace ToyCarArena.UI
             play.AddToClassList(className);
             play.focusable = false;
             play.Add(Element("button__face"));
-            var stroke = Element("stroke");
-            foreach (var isFace in new[] { false, true }) {
-                var label = Text("button__label");
-                label.EnableInClassList("stroke__face", isFace);
+            play.Add(StrokeText.Create("", null, out var labels, "button__label"));
+            foreach (var label in labels) {
                 text.Set(label, () => Strings.Get("menu.play"));
-                stroke.Add(label);
             }
 
-            play.Add(stroke);
             if (hasKey) {
                 var key = Element("key");
                 key.AddToClassList("menu__play-key");
@@ -702,7 +905,10 @@ namespace ToyCarArena.UI
             var tile = Element("menu__tile");
             var button = Sticker("menu__tile-button", pressed);
             var face = button.Q<VisualElement>(className: "menu__face");
-            face.Add(Icon("menu__icon", draw));
+            if (draw != null) {
+                face.Add(Icon("menu__icon", draw));
+            }
+
             var isNew = Text("menu__new");
             text.Set(isNew, () => Strings.Get("common.new"));
             button.Add(isNew);
@@ -717,16 +923,11 @@ namespace ToyCarArena.UI
             }
 
             tile.Add(button);
-            var stroke = Element("stroke");
-            foreach (var isFace in new[] { false, true }) {
-                var label = Text("display");
-                label.AddToClassList("menu__tile-caption");
-                label.EnableInClassList("stroke__face", isFace);
+            tile.Add(StrokeText.Create("", null, out var labels, "display", "menu__tile-caption"));
+            foreach (var label in labels) {
                 text.Set(label, caption);
-                stroke.Add(label);
             }
 
-            tile.Add(stroke);
             return tile;
         }
 
@@ -740,8 +941,19 @@ namespace ToyCarArena.UI
             button.AddToClassList(className);
             button.focusable = false;
             button.Add(Element("menu__drop"));
-            button.Add(Element("menu__face"));
+            button.Add(Face("menu__face"));
             return button;
+        }
+
+        /// <summary>A sticker's face: navy itself, its colour a layer of its own inside the border (menu__fill).</summary>
+        /// <remarks>UI Toolkit blends a face's own background into the anti-aliased outer edge of its border, which
+        /// draws a light seam where the face meets its navy drop. A navy face with the colour inside its border leaves
+        /// that edge navy on navy.</remarks>
+        internal static VisualElement Face(string className, string fillClass = "menu__fill")
+        {
+            var face = Element(className);
+            face.Add(Element(fillClass));
+            return face;
         }
 
         /// <summary>The round white close button of the menu's popups, its cross drawn by two bars.</summary>
@@ -814,29 +1026,36 @@ namespace ToyCarArena.UI
             plinthTop.style.backgroundColor = LeagueLook.PedestalOf(league);
 
             garageTile.EnableInClassList("menu__tile--new", ViewModel.HasNewCar);
-            garageTile.EnableInClassList("menu__tile--dot", ViewModel.CanShop);
+            // NEW says it already: the dot only when there is no new car to show.
+            garageTile.EnableInClassList("menu__tile--dot", ViewModel.CanShop && !ViewModel.HasNewCar);
             RefreshBoost();
             RefreshDaily();
+            eventTile.style.display = ViewModel.HasEvents ? DisplayStyle.Flex : DisplayStyle.None;
             rightRail.style.display = boostTile.style.display == DisplayStyle.Flex ||
-                dailyTile.style.display == DisplayStyle.Flex ? DisplayStyle.Flex : DisplayStyle.None;
+                dailyTile.style.display == DisplayStyle.Flex || eventTile.style.display == DisplayStyle.Flex
+                    ? DisplayStyle.Flex
+                    : DisplayStyle.None;
             // A gift just taken stays on the card as it was claimed (the hat's day would show coins once the hat is owned).
             if (IsDailyOpen && !isDailyClaimed) {
-                daily.Fill(ViewModel);
+                daily.Fill(ViewModel.Daily, ViewModel);
             }
 
             var car = ViewModel.Car;
-            carName.text = carNameFace.text = GameText.Car(car);
+            carName.text = GameText.Car(car);
             modePortrait.Set(car, ViewModel.CarColor);
+            ShowMode();
             ShowCar(car);
 
             var nearest = ViewModel.NearestMission;
             missionCard.style.display = nearest == null ? DisplayStyle.None : DisplayStyle.Flex;
             if (nearest != null) {
                 var definition = nearest.Definition;
+                missionIcon.Set(definition, false);
                 missionTask.text = ViewModel.MissionText(definition);
-                missionCount.text = $"{nearest.Progress}/{definition.Target}";
-                missionFill.style.width = Length.Percent(100f * nearest.Progress / Mathf.Max(1, definition.Target));
-                missionReward.text = ViewModel.MissionCoins(definition).ToString();
+                missionProgress.Set(nearest.Progress, definition.Target);
+                missionReward.Clear();
+                missionReward.Add(MissionLook.Reward(ViewModel.MissionXp(definition),
+                    ViewModel.MissionCoins(definition)));
             }
 
             if (missionsPopup.ClassListContains(OpenClass)) {
@@ -896,7 +1115,7 @@ namespace ToyCarArena.UI
 
                 // The tasks' NEW TASKS IN … counts down with the tile.
                 if (IsDailyOpen && daily.IsTasks && !isDailyClaimed) {
-                    daily.Fill(ViewModel);
+                    daily.Fill(ViewModel.Daily, ViewModel);
                 }
             }
         }
@@ -908,12 +1127,14 @@ namespace ToyCarArena.UI
                 // The 3D car stands on a 3D pedestal drawn with it; the flat plinth is only under a portrait.
                 var texture = garageStage.ShowCar(car, ViewModel.CarColor, ViewModel.Topper, true,
                     LeagueLook.PedestalOf(ViewModel.League));
+                heroTexture = texture;
                 heroAspect = (float)texture.width / texture.height;
                 hero.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(texture));
                 heroPortraitRoot.style.display = DisplayStyle.None;
                 plinth.style.display = DisplayStyle.None;
             }
             else {
+                heroTexture = null;
                 hero.style.backgroundImage = StyleKeyword.None;
                 heroPortraitRoot.style.display = DisplayStyle.Flex;
                 plinth.style.display = DisplayStyle.Flex;
@@ -927,24 +1148,25 @@ namespace ToyCarArena.UI
         {
             missionsList.Clear();
             foreach (var mission in ViewModel.Missions) {
+                // The task's sign, the task over its XP and coins, and the count with its bar for more than one step.
                 var definition = mission.Definition;
-                var row = Element("mission");
-                var check = Element("mission__check");
-                check.Add(Element("mission__mark"));
-                row.Add(check);
-                var task = Text("mission__task");
+                var row = Element("menu__mission-row");
+                row.Add(MissionLook.IconOf(definition));
+                var body = Element("menu__mission-row-body");
+                var task = Text("menu__mission-row-task");
                 task.text = ViewModel.MissionText(definition);
-                row.Add(task);
-                var progress = Text("mission__progress");
-                progress.text = $"{mission.Progress}/{definition.Target}";
+                body.Add(task);
+                body.Add(MissionLook.Reward(ViewModel.MissionXp(definition), ViewModel.MissionCoins(definition)));
+                row.Add(body);
+                var progress = MissionLook.ProgressOf();
+                progress.Set(mission.Progress, definition.Target);
                 row.Add(progress);
-                var reward = Element("menu__reward");
-                reward.Add(RoundOverMeta.Coin());
-                var count = Text("menu__reward-count");
-                count.text = ViewModel.MissionCoins(definition).ToString();
-                reward.Add(count);
-                row.Add(reward);
                 missionsList.Add(row);
+            }
+
+            // USS has no :last-child, so the last row drops its gap under it by a class.
+            if (missionsList.childCount > 0) {
+                missionsList[missionsList.childCount - 1].AddToClassList("menu__mission-row--last");
             }
         }
 
@@ -1003,13 +1225,15 @@ namespace ToyCarArena.UI
                 : StyleKeyword.Null;
 
             var topHeight = 130f * scale;
+            var railScale = isTouch ? scale : DesktopRailScale;
+            var railGrown = new Scale(new Vector3(railScale, railScale, 1f));
             rail.style.left = left;
             rail.style.top = topEdge + topHeight + 50f * scale;
-            rail.style.scale = grown;
+            rail.style.scale = railGrown;
             rightRail.style.left = StyleKeyword.Auto;
             rightRail.style.right = right;
             rightRail.style.top = rail.style.top;
-            rightRail.style.scale = grown;
+            rightRail.style.scale = railGrown;
 
             var low = 50f + insets.Bottom;
             bottom.style.bottom = low;
@@ -1031,13 +1255,21 @@ namespace ToyCarArena.UI
                 sheet.style.scale = new Scale(new Vector3(sheetFit, sheetFit, 1f));
             }
 
+            if (isWide) {
+                var missionsFit = Mathf.Min(WideMissionsScale, (size.y - 2f * Mathf.Max(topEdge, low)) / MissionsHeight);
+                missionsSheet.style.scale = new Scale(new Vector3(missionsFit, missionsFit, 1f));
+                var modesFit = Mathf.Min(WideModesScale, (size.y - 2f * Mathf.Max(topEdge, low)) / ModesHeight);
+                modesSheet.style.scale = new Scale(new Vector3(modesFit, modesFit, 1f));
+            }
+
             // The calendar's card is wider (one row of days sideways) and keeps inside the screen's width too.
             var dailyFit = Mathf.Min(sheetFit, (size.x - left - right) / (isWide ? DailyWideWidth : DailyWidth));
             daily.Sheet.style.scale = new Scale(new Vector3(dailyFit, dailyFit, 1f));
 
             leagues.Top = topEdge;
-            // The new league's card is taller than the menu's sheets.
-            leagues.Place(isWide, scale, Mathf.Max(0.55f, Mathf.Min(sheetFit, (size.y - 2f * Edge) / 1750f)), size,
+            // The new league's card grows as the menu's sheets and shrinks by itself to fit (NewLeaguePopup).
+            leagues.Place(isWide, scale,
+                sheetFit, size,
                 isWide ? Mathf.Max(left, WideLeaguesSide) : left, isWide ? Mathf.Max(right, WideLeaguesSide) : right,
                 Edge + insets.Bottom);
 
@@ -1082,7 +1314,9 @@ namespace ToyCarArena.UI
                 // cards, when it fits between the mission and the mode, and the car above grows into the room.
                 var missionBox = Root.WorldToLocal(missionCard.worldBound);
                 var actionsBox = Root.WorldToLocal(actions.worldBound);
-                var nameWidth = Root.WorldToLocal(carName.worldBound).width;
+                // The whole pill, its garage sign and padding with the name: the name alone let the pill run into
+                // the mode's plate on 4:3.
+                var nameWidth = Root.WorldToLocal(carPill.worldBound).width;
                 // The name stays centred under the car, and the gap need not be centred on the screen.
                 var reach = nameWidth / 2f + NameGap;
                 var middle = size.x / 2f;
@@ -1266,6 +1500,10 @@ namespace ToyCarArena.UI
                     evt.StopPropagation();
                     OpenMissions();
                     break;
+                case ModesKey:
+                    evt.StopPropagation();
+                    OpenModes();
+                    break;
                 case KeyCode.B:
                     evt.StopPropagation();
                     OpenBoost();
@@ -1273,6 +1511,10 @@ namespace ToyCarArena.UI
                 case KeyCode.D:
                     evt.StopPropagation();
                     OpenDaily();
+                    break;
+                case EventKey:
+                    evt.StopPropagation();
+                    PlayEvent();
                     break;
                 case KeyCode.Escape:
                     evt.StopPropagation();
@@ -1290,6 +1532,19 @@ namespace ToyCarArena.UI
             audioService.PlayUiClick();
             ClosePopups();
             ViewModel.Play();
+        }
+
+        // The HOT POTATO tile: the event becomes the mode in play and starts, as PLAY would.
+        private void PlayEvent()
+        {
+            if (IsBusy || !ViewModel.HasEvents) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            ClosePopups();
+            Pop(eventTile);
+            ViewModel.PlayEvent();
         }
 
         private void OpenGarage()
@@ -1498,7 +1753,7 @@ namespace ToyCarArena.UI
             Root.Focus();
             if (claim == null) {
                 // No reward: CLAIM ×2 goes, and CLAIM still takes the gift.
-                daily.Fill(ViewModel);
+                daily.Fill(ViewModel.Daily, ViewModel);
                 daily.Refuse(dailyPopup, lifetime.Token);
                 return;
             }
@@ -1512,7 +1767,8 @@ namespace ToyCarArena.UI
         private void CelebrateDaily(DailyClaim claim)
         {
             isDailyClaimed = true;
-            daily.Celebrate(dailyPopup, claim, garageStage ?? ViewModel.Stage, coinPill, lifetime.Token);
+            daily.Celebrate(dailyPopup, ViewModel.Daily, claim, garageStage ?? ViewModel.Stage, coinPill,
+                lifetime.Token);
             audioService.Play(audioService.Library.KnockoutCredit);
             audioService.PlayJingle(audioService.Library.Win);
             RefreshDaily();
@@ -1538,18 +1794,42 @@ namespace ToyCarArena.UI
         }
 
         // A quick jump, as a sticker answers a press: up and back over a fifth of a second, on the unscaled clock.
-        private static void Pop(VisualElement element)
-        {
-            var started = Time.unscaledTime;
-            element.schedule.Execute(() => {
-                var t = Mathf.Clamp01((Time.unscaledTime - started) / PopSeconds);
-                var size = 1f + 0.25f * Mathf.Sin(t * Mathf.PI);
-                element.style.scale = new Scale(new Vector3(size, size, 1f));
-            }).Every(16).Until(() => Time.unscaledTime - started > PopSeconds);
-            element.schedule.Execute(() => element.style.scale = StyleKeyword.Null).StartingIn(260);
-        }
+        private void Pop(VisualElement element) =>
+            Animate(element, PopSeconds, t => SetScale(element, 1f + 0.25f * Mathf.Sin(t * Mathf.PI)),
+                () => element.style.scale = StyleKeyword.Null);
 
         private const float PopSeconds = 0.22f;
+
+        /// <summary>
+        /// Runs <paramref name="apply"/> with the share of <paramref name="seconds"/> gone, every frame on the unscaled
+        /// clock, then <paramref name="done"/>. Every frame, not every 16 ms: a frame that comes in under 16 ms (most at
+        /// 60 Hz and all above it) was skipped, and the motion stuttered. A newer run on the same element ends the older.
+        /// </summary>
+        private void Animate(VisualElement element, float seconds, Action<float> apply, Action done)
+        {
+            var ticket = ++motionTicket;
+            motions[element] = ticket;
+            var started = Time.unscaledTime;
+            bool IsOwn() => motions.TryGetValue(element, out var at) && at == ticket;
+            apply(0f);
+            element.schedule.Execute(() => {
+                if (!IsOwn()) {
+                    return;
+                }
+
+                var t = (Time.unscaledTime - started) / seconds;
+                if (t < 1f) {
+                    apply(t);
+                    return;
+                }
+
+                motions.Remove(element);
+                done();
+            }).Every(0).Until(() => !IsOwn());
+        }
+
+        private readonly Dictionary<VisualElement, int> motions = new();
+        private int motionTicket;
 
         private void ClosePopups()
         {
@@ -1569,12 +1849,23 @@ namespace ToyCarArena.UI
             leagues?.Close();
         }
 
-        // A locked tile or mode: a click and nothing else for now.
-        private void Locked()
+        // A mode not out yet answers a press with a click and a little shake, and stays as it is.
+        private void Soon(VisualElement card)
         {
-            if (!IsBusy) {
-                audioService.PlayUiClick();
+            if (IsBusy) {
+                return;
             }
+
+            audioService.PlayUiClick();
+            Shake(card);
+        }
+
+        // Side to side and settling over ShakeSeconds, on the unscaled clock; a press during a shake starts it again.
+        private void Shake(VisualElement element)
+        {
+            Animate(element, ShakeSeconds,
+                t => element.style.translate = new Translate(16f * Mathf.Sin(t * Mathf.PI * 6f) * (1f - t), 0f),
+                () => element.style.translate = StyleKeyword.Null);
         }
 
         // -- Icons ---------------------------------------------------------------------------------------------------
@@ -1643,18 +1934,204 @@ namespace ToyCarArena.UI
             p.Fill();
         }
 
-        private static void DrawTarget(MeshGenerationContext context)
+        /// <summary>
+        /// MISSIONS' sign: a clipboard with a checklist of two green ticks. The rings of a target read as an eye at the
+        /// tile's size; a list of ticks is what games draw for tasks. Two rows, not three: the tile is about 30 CSS px
+        /// on a phone, and a third row only turns the list into noise.
+        /// </summary>
+        private static void DrawMissions(MeshGenerationContext context)
         {
             var r = context.visualElement.contentRect;
             var p = context.painter2D;
-            var centre = r.center;
-            var radius = Mathf.Min(r.width, r.height) / 2f;
-            foreach (var (share, color) in new[] { (1f, Navy), (0.8f, Red), (0.58f, White), (0.38f, Red), (0.16f, Navy) }) {
-                p.fillColor = color;
+            float X(float x) => r.x + x * r.width;
+            float Y(float y) => r.y + y * r.height;
+            var outline = r.height * 0.08f;
+            p.strokeColor = Navy;
+            p.lineJoin = LineJoin.Round;
+            p.lineCap = LineCap.Round;
+
+            // The gold board, then the white sheet on it.
+            p.lineWidth = outline;
+            p.fillColor = Gold;
+            RoundBox(p, X(0.1f), Y(0.1f), X(0.9f), Y(0.96f), r.width * 0.12f);
+            p.Fill();
+            p.Stroke();
+            p.fillColor = White;
+            RoundBox(p, X(0.21f), Y(0.23f), X(0.79f), Y(0.85f), r.width * 0.05f);
+            p.Fill();
+            p.Stroke();
+
+            // Two rows, each a tick and a navy line for the task.
+            foreach (var y in new[] { 0.42f, 0.67f }) {
+                Tick(new Vector2(X(0.29f), Y(y)), new Vector2(X(0.36f), Y(y + 0.07f)), new Vector2(X(0.48f), Y(y - 0.075f)));
+                p.strokeColor = Navy;
+                p.lineWidth = outline;
                 p.BeginPath();
-                p.Arc(centre, radius * share, 0f, 360f);
+                p.MoveTo(new Vector2(X(0.56f), Y(y)));
+                p.LineTo(new Vector2(X(0.7f), Y(y)));
+                p.Stroke();
+            }
+
+            // The clip: a navy plate over the board's top edge with a gold hole.
+            p.lineWidth = outline;
+            p.fillColor = Navy;
+            RoundBox(p, X(0.32f), Y(0.05f), X(0.68f), Y(0.22f), r.width * 0.05f);
+            p.Fill();
+            p.Stroke();
+            p.fillColor = Gold;
+            p.BeginPath();
+            p.Arc(new Vector2(X(0.5f), Y(0.12f)), r.width * 0.05f, 0f, 360f);
+            p.Fill();
+
+            // A green tick with a navy edge: the navy stroke under a narrower green one.
+            void Tick(Vector2 a, Vector2 b, Vector2 c)
+            {
+                foreach (var (color, width) in new[] { (Navy, outline * 1.6f), (Green, outline * 0.8f) }) {
+                    p.strokeColor = color;
+                    p.lineWidth = width;
+                    p.BeginPath();
+                    p.MoveTo(a);
+                    p.LineTo(b);
+                    p.LineTo(c);
+                    p.Stroke();
+                }
+            }
+        }
+
+        // A rectangle with rounded corners as the current path.
+        private static void RoundBox(Painter2D p, float left, float top, float right, float bottom, float radius)
+        {
+            p.BeginPath();
+            p.MoveTo(new Vector2(left + radius, top));
+            p.ArcTo(new Vector2(right, top), new Vector2(right, bottom), radius);
+            p.ArcTo(new Vector2(right, bottom), new Vector2(left, bottom), radius);
+            p.ArcTo(new Vector2(left, bottom), new Vector2(left, top), radius);
+            p.ArcTo(new Vector2(left, top), new Vector2(right, top), radius);
+            p.ClosePath();
+        }
+
+        /// <summary>The MODE plate's chevron: it says the plate opens the modes.</summary>
+        private static void DrawChevron(MeshGenerationContext context)
+        {
+            var r = context.visualElement.contentRect;
+            var p = context.painter2D;
+            p.strokeColor = Navy;
+            p.lineWidth = r.width * 0.3f;
+            p.lineCap = LineCap.Round;
+            p.lineJoin = LineJoin.Round;
+            p.BeginPath();
+            p.MoveTo(new Vector2(r.x + r.width * 0.2f, r.y + r.height * 0.15f));
+            p.LineTo(new Vector2(r.x + r.width * 0.75f, r.y + r.height * 0.5f));
+            p.LineTo(new Vector2(r.x + r.width * 0.2f, r.y + r.height * 0.85f));
+            p.Stroke();
+        }
+
+        /// <summary>A mode still to come: a gold padlock with a navy outline and shackle, as on the board.</summary>
+        private static void DrawPadlock(MeshGenerationContext context)
+        {
+            var r = context.visualElement.contentRect;
+            var p = context.painter2D;
+            float X(float x) => r.x + x * r.width;
+            float Y(float y) => r.y + y * r.height;
+            p.strokeColor = Navy;
+            p.lineCap = LineCap.Round;
+            p.lineJoin = LineJoin.Round;
+            p.lineWidth = r.width * 0.11f;
+            p.BeginPath();
+            p.MoveTo(new Vector2(X(0.33f), Y(0.46f)));
+            p.LineTo(new Vector2(X(0.33f), Y(0.33f)));
+            p.Arc(new Vector2(X(0.5f), Y(0.33f)), r.width * 0.17f, 180f, 360f);
+            p.LineTo(new Vector2(X(0.67f), Y(0.46f)));
+            p.Stroke();
+            p.fillColor = Gold;
+            p.lineWidth = r.width * 0.1f;
+            RoundBox(p, X(0.2f), Y(0.45f), X(0.8f), Y(0.9f), r.width * 0.09f);
+            p.Fill();
+            p.Stroke();
+        }
+
+        /// <summary>SELECTED's tick: white, on the navy circle of its tag.</summary>
+        private static void DrawTick(MeshGenerationContext context)
+        {
+            var r = context.visualElement.contentRect;
+            var p = context.painter2D;
+            p.strokeColor = White;
+            p.lineWidth = r.width * 0.2f;
+            p.lineCap = LineCap.Round;
+            p.lineJoin = LineJoin.Round;
+            p.BeginPath();
+            p.MoveTo(new Vector2(r.x + r.width * 0.2f, r.y + r.height * 0.52f));
+            p.LineTo(new Vector2(r.x + r.width * 0.42f, r.y + r.height * 0.72f));
+            p.LineTo(new Vector2(r.x + r.width * 0.8f, r.y + r.height * 0.3f));
+            p.Stroke();
+        }
+
+        /// <summary>EVENT's lightning bolt: orange with a navy outline.</summary>
+        private static void DrawBolt(MeshGenerationContext context)
+        {
+            var r = context.visualElement.contentRect;
+            var p = context.painter2D;
+            float X(float x) => r.x + x * r.width;
+            float Y(float y) => r.y + y * r.height;
+            p.fillColor = Orange;
+            p.strokeColor = Navy;
+            p.lineWidth = r.width * 0.1f;
+            p.lineJoin = LineJoin.Round;
+            p.BeginPath();
+            p.MoveTo(new Vector2(X(0.6f), Y(0.06f)));
+            p.LineTo(new Vector2(X(0.16f), Y(0.58f)));
+            p.LineTo(new Vector2(X(0.46f), Y(0.58f)));
+            p.LineTo(new Vector2(X(0.36f), Y(0.94f)));
+            p.LineTo(new Vector2(X(0.84f), Y(0.38f)));
+            p.LineTo(new Vector2(X(0.54f), Y(0.38f)));
+            p.ClosePath();
+            p.Fill();
+            p.Stroke();
+        }
+
+        /// <summary>The event card's sun rays: soft white wedges from low on its right, under the picture.</summary>
+        private static void DrawEventRays(MeshGenerationContext context)
+        {
+            var r = context.visualElement.contentRect;
+            var p = context.painter2D;
+            var centre = new Vector2(r.x + r.width * 0.85f, r.y + r.height * 0.7f);
+            var reach = r.width * 1.2f;
+            p.fillColor = EventRay;
+            for (var angle = 0f; angle < 360f; angle += RayStep) {
+                var from = angle * Mathf.Deg2Rad;
+                var to = (angle + RayWidth) * Mathf.Deg2Rad;
+                p.BeginPath();
+                p.MoveTo(centre);
+                p.LineTo(centre + new Vector2(Mathf.Cos(from), Mathf.Sin(from)) * reach);
+                p.LineTo(centre + new Vector2(Mathf.Cos(to), Mathf.Sin(to)) * reach);
+                p.ClosePath();
                 p.Fill();
             }
+        }
+
+        // The event card's orange, light at the top to deep at the bottom: USS has no gradients, so a strip is drawn
+        // once and stretched over the card.
+        private static Texture2D eventBack;
+
+        private static Background EventBack()
+        {
+            if (eventBack == null) {
+                const int Size = 64;
+                eventBack = new Texture2D(1, Size, TextureFormat.RGBA32, false) {
+                    name = "Event Card",
+                    wrapMode = TextureWrapMode.Clamp,
+                    filterMode = FilterMode.Bilinear,
+                    hideFlags = HideFlags.DontSave,
+                };
+                for (var y = 0; y < Size; y++) {
+                    // The texture's first row is its bottom.
+                    eventBack.SetPixel(0, y, Color.Lerp(EventDeep, EventLight, y / (Size - 1f)));
+                }
+
+                eventBack.Apply(false, true);
+            }
+
+            return Background.FromTexture2D(eventBack);
         }
 
         internal static void DrawLock(MeshGenerationContext context)
@@ -1711,21 +2188,6 @@ namespace ToyCarArena.UI
 
             p.ClosePath();
             p.Fill();
-            p.Stroke();
-        }
-
-        private static void DrawChevron(MeshGenerationContext context)
-        {
-            var r = context.visualElement.contentRect;
-            var p = context.painter2D;
-            p.strokeColor = Navy;
-            p.lineWidth = r.width * 0.3f;
-            p.lineCap = LineCap.Round;
-            p.lineJoin = LineJoin.Round;
-            p.BeginPath();
-            p.MoveTo(new Vector2(r.x + r.width * 0.2f, r.y + r.height * 0.15f));
-            p.LineTo(new Vector2(r.x + r.width * 0.75f, r.y + r.height * 0.5f));
-            p.LineTo(new Vector2(r.x + r.width * 0.2f, r.y + r.height * 0.85f));
             p.Stroke();
         }
     }

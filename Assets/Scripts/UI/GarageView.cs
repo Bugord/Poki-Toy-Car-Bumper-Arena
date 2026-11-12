@@ -6,6 +6,7 @@ using Cysharp.Threading.Tasks;
 using ToyCarArena.Audio;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Cars;
+using ToyCarArena.Rendering;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -29,6 +30,11 @@ namespace ToyCarArena.UI
     /// </summary>
     public sealed class GarageView : FadingView<GarageViewModel>
     {
+        protected override ShownScreen ScreenKind => ShownScreen.Garage;
+
+        // Opaque over the whole screen, so the arena under it is not drawn.
+        protected override bool CoversArena => true;
+
         private const string WideClass = "garage--wide";
         private const string DesktopClass = "garage--desktop";
 
@@ -42,9 +48,13 @@ namespace ToyCarArena.UI
         // The top bar's height and the gap under it, reference pixels.
         private const float TopHeight = 112f;
         private const float TopGap = 30f;
-        // Upright: the tabs, the gaps and the bottom button under the panel, and the least the car keeps above them.
-        private const float SideChrome = 124f + 24f + 30f + 190f;
-        private const float ShowMin = 620f;
+        // Upright: the tabs, the gaps and the bottom button under the panel.
+        private const float SideChrome = 124f + 24f + ActionRoom;
+        private const float ActionRoom = 30f + 190f;
+        // The car's name under it, and the stats pill and its gap under the name (cars only).
+        private const float NameRoom = 130f;
+        private const float StatsRoom = 170f;
+        // The panel upright: never less than a row and the start of the next (a list to scroll), never more than this.
         private const float PanelMin = 440f;
         private const float PanelMax = 980f;
         // Sideways the switcher, the panel and the button take this share of the width at the right.
@@ -56,9 +66,13 @@ namespace ToyCarArena.UI
         private const float RaysTurnSeconds = 24f;
 
         private const int Columns = 3;
-        private const int WideColumns = 4;
+        // Sideways too: four columns made the cards too small to read on a phone.
+        private const int WideColumns = 3;
         private const float CardGap = 30f;
-        private const float CardAspect = 1.18f;
+        // Squarer cards, so upright two full rows show under the car, with the next row's top peeking.
+        private const float CardAspect = 1f;
+        // Under each paint the room its name takes (garage__paint margin-bottom).
+        private const float PaintNameRoom = 64f;
 
         private const float BounceDuration = 0.3f;
         private const float ShakeDuration = 0.35f;
@@ -87,9 +101,9 @@ namespace ToyCarArena.UI
             Dear,
             Locked,
             Ad,
+            League,
         }
 
-        private static readonly string[] StatNames = { "speed", "power", "weight", "boost" };
 
         private readonly IAudioService audioService;
         private readonly HudControls controls;
@@ -257,7 +271,7 @@ namespace ToyCarArena.UI
             var back = Sticker("garage__back", Back);
             back.Q<VisualElement>(className: "menu__face").Add(Icon("garage__back-arrow", DrawBack));
             top.Add(back);
-            var title = RoundOverProgress.Outlined("", "garage__title", out var titleLabels);
+            var title = StrokeText.Outlined("", "garage__title", out var titleLabels);
             foreach (var label in titleLabels) {
                 text.Set(label, () => Strings.Get("garage.title"));
             }
@@ -267,7 +281,7 @@ namespace ToyCarArena.UI
             coinsPill = Element("menu__coins");
             coinsPill.AddToClassList("garage__coins");
             coinsPill.Add(Element("menu__coins-drop"));
-            var coinFace = Element("menu__coins-face");
+            var coinFace = MenuView.Face("menu__coins-face", "menu__coins-fill");
             coinFace.Add(RoundOverMeta.Coin());
             coins = Text("menu__coins-count");
             coinFace.Add(coins);
@@ -297,8 +311,8 @@ namespace ToyCarArena.UI
             show.Add(hero);
 
             caption = Element("garage__caption");
-            caption.Add(RoundOverProgress.Outlined("", "garage__name", out nameLabels));
-            stats = BuildStats("garage__stats");
+            caption.Add(StrokeText.Outlined("", "garage__name", out nameLabels));
+            stats = GarageStats.Build("garage__stats");
             caption.Add(stats);
             show.Add(caption);
             caption.RegisterCallback<GeometryChangedEvent>(_ => PlaceHero());
@@ -306,54 +320,12 @@ namespace ToyCarArena.UI
             body.Add(show);
         }
 
-        /// <summary>
-        /// The stats as one white pill: each stat's name beside five pips, filled to its value in the stat's colour.
-        /// </summary>
-        private static VisualElement BuildStats(string className)
-        {
-            var pill = Element("garage-stats");
-            pill.AddToClassList(className);
-            foreach (var name in StatNames) {
-                var stat = Element("garage-stats__stat");
-                stat.AddToClassList($"garage-stats__stat--{name}");
-                stat.Add(Text("garage-stats__label"));
-                var pips = Element("garage-stats__pips");
-                for (var i = 0; i < GameTuning.CarStatSettings.Max; i++) {
-                    var pip = Element("garage-stats__pip");
-                    // USS has no :first-child, so the round ends of the track are classes.
-                    pip.EnableInClassList("garage-stats__pip--first", i == 0);
-                    pip.EnableInClassList("garage-stats__pip--last", i == GameTuning.CarStatSettings.Max - 1);
-                    pips.Add(pip);
-                }
-
-                stat.Add(pips);
-                pill.Add(stat);
-            }
-
-            return pill;
-        }
-
-        private void SetStats(VisualElement pill, GameTuning.CarStatLine line)
-        {
-            var values = new[] { line.Speed, line.Power, line.Weight, line.Boost };
-            for (var i = 0; i < StatNames.Length; i++) {
-                var stat = pill[i];
-                // Without boosts in the build the boost stat would promise nothing.
-                stat.style.display = StatNames[i] != "boost" || ViewModel.HasBoost ? DisplayStyle.Flex : DisplayStyle.None;
-                stat.Q<Label>(className: "garage-stats__label").text = Strings.Get($"car.stat_{StatNames[i]}");
-                var pips = stat.Q<VisualElement>(className: "garage-stats__pips");
-                for (var pip = 0; pip < pips.childCount; pip++) {
-                    pips[pip].EnableInClassList("garage-stats__pip--on", pip < values[i]);
-                }
-            }
-        }
-
         private void BuildSide()
         {
             side = Element("garage__side");
             var switcher = Element("garage__tabs");
             switcher.Add(Element("menu__drop"));
-            var face = Element("garage__tabs-face");
+            var face = MenuView.Face("garage__tabs-face", "garage__tabs-fill");
             var keys = new[] { "garage.cars", "garage.toppers", "garage.paint" };
             for (var i = 0; i < tabs.Length; i++) {
                 var shown = (Tab)i;
@@ -366,7 +338,7 @@ namespace ToyCarArena.UI
                 button.focusable = false;
                 // Two layers, as the titles: the navy outline under a clean face, so the white of the chosen tab stays
                 // white (one outlined label eats its own fill at this size).
-                button.Add(RoundOverProgress.Outlined("", "garage__tab-label", out var tabLabels));
+                button.Add(StrokeText.Outlined("", "garage__tab-label", out var tabLabels));
                 foreach (var label in tabLabels) {
                     text.Set(label, () => Strings.Get(key));
                 }
@@ -387,7 +359,9 @@ namespace ToyCarArena.UI
             scroll = new ScrollView(ScrollViewMode.Vertical) {
                 horizontalScrollerVisibility = ScrollerVisibility.Hidden,
                 verticalScrollerVisibility = ScrollerVisibility.Hidden,
-                touchScrollBehavior = ScrollView.TouchScrollBehavior.Elastic,
+                // Clamped, not Elastic: Elastic unclamps the scrollers, so a wheel tick past either end pushes the
+                // grid out and the spring pulls it back, which jerks. A finger still drags and flicks with inertia.
+                touchScrollBehavior = ScrollView.TouchScrollBehavior.Clamped,
             };
             scroll.AddToClassList("garage__scroll");
             panel.Add(scroll);
@@ -466,11 +440,21 @@ namespace ToyCarArena.UI
                 button.focusable = false;
                 button.tooltip = CarPaint.NameOf(id).ToUpperInvariant();
                 button.Add(Element("garage__paint-drop"));
-                var dot = Element("garage__paint-dot");
-                dot.AddToClassList(CarColor.ClassOf(id));
+                var dot = MenuView.Face("garage__paint-dot", "garage__paint-fill");
+                dot.Q<VisualElement>(className: "garage__paint-fill").AddToClassList(CarColor.ClassOf(id));
+                // The dark paint on its navy rim reads as a hole: a light ring inside keeps it a paint.
+                if (CarPaint.NameOf(id) == "dark") {
+                    dot.Add(Element("garage__paint-ring"));
+                }
+
                 dot.Add(Element("garage__paint-shade"));
                 dot.Add(Element("garage__paint-check"));
                 button.Add(dot);
+                // Its name under it, so close shades (orange and yellow, purple and pink) are told apart.
+                var name = Text("garage__paint-name");
+                var key = $"paint.{CarPaint.NameOf(id)}";
+                text.Set(name, () => Strings.Get(key));
+                button.Add(name);
                 button.clicked += () => PickPaint(colorId, button);
                 paints[id] = button;
                 paintGrid.Add(button);
@@ -499,10 +483,14 @@ namespace ToyCarArena.UI
             actionPlay = RoundOverRewards.PlaySign();
             actionPlay.AddToClassList("garage__action-play");
             face.Add(actionPlay);
-            face.Add(RoundOverProgress.Outlined("", "garage__action-label", out actionLabels));
+            var actionLabel = StrokeText.Outlined("", "garage__action-label", out actionLabels);
             foreach (var label in actionLabels) {
                 label.AddToClassList("button__label");
             }
+
+            // REACH <LEAGUE> runs long in some languages: the label shrinks to the button rather than spill past it.
+            FitText.Fit(actionLabel, actionLabels);
+            face.Add(actionLabel);
 
             actionPlain = Text("garage__action-plain");
             actionPlain.AddToClassList("button__label");
@@ -529,7 +517,7 @@ namespace ToyCarArena.UI
             toastCoin = RoundOverMeta.Coin();
             toastCoin.AddToClassList("garage__toast-coin");
             toast.Add(toastCoin);
-            toast.Add(RoundOverProgress.Outlined("", "garage__toast-label", out toastLabels));
+            toast.Add(StrokeText.Outlined("", "garage__toast-label", out toastLabels));
             toast.style.display = DisplayStyle.None;
             screen.Add(toast);
         }
@@ -563,14 +551,7 @@ namespace ToyCarArena.UI
             sheet.Add(close);
 
             // The car in a framed piece of the garage's sky: the checker and the turning light behind it.
-            var frame = Element("garage__sheet-frame");
-            frame.style.backgroundImage = new StyleBackground(LeagueLook.SkyOf(ViewModel.League));
-            DriftingChecker.AddTo(frame, SheetChecker, SheetCheckerShare);
-            var light = Element("garage__sheet-light");
-            light.generateVisualContent += MenuView.DrawLight;
-            light.schedule.Execute(() =>
-                light.style.rotate = new Rotate(Time.unscaledTime / RaysTurnSeconds * 360f % 360f)).Every(16);
-            frame.Add(light);
+            var frame = SkyFrame(ViewModel.League);
             sheetArt = Element("garage__sheet-art");
             sheetPortraitRoot = Element("car-portrait");
             sheetPortraitRoot.AddToClassList("garage__sheet-portrait");
@@ -578,7 +559,7 @@ namespace ToyCarArena.UI
             sheetPortrait = new CarPortrait(sheetPortraitRoot);
             frame.Add(sheetArt);
             sheet.Add(frame);
-            sheetStats = BuildStats("garage__sheet-stats");
+            sheetStats = GarageStats.Build("garage__sheet-stats");
             sheet.Add(sheetStats);
 
             sheetCoins = Element("garage__sheet-coins");
@@ -599,7 +580,7 @@ namespace ToyCarArena.UI
             sheetBuy.AddToClassList("garage__sheet-buy");
             sheetBuy.focusable = false;
             sheetBuy.Add(Element("button__face"));
-            var buyLabel = RoundOverProgress.Outlined("", "garage__sheet-buy-label", out sheetBuyLabels);
+            var buyLabel = StrokeText.Outlined("", "garage__sheet-buy-label", out sheetBuyLabels);
             foreach (var label in sheetBuyLabels) {
                 label.AddToClassList("button__label");
                 text.Set(label, () => Strings.Get("result.buy"));
@@ -610,7 +591,7 @@ namespace ToyCarArena.UI
             sheetBuyCoin.AddToClassList("garage__sheet-buy-coin");
             sheetBuy.Add(sheetBuyCoin);
             // Two layers, as BUY beside it: one outlined label eats the fill of its own digits at this size.
-            sheetBuyPrice = RoundOverProgress.Outlined("", "garage__sheet-buy-price", out sheetBuyPriceLabels);
+            sheetBuyPrice = StrokeText.Outlined("", "garage__sheet-buy-price", out sheetBuyPriceLabels);
             sheetBuy.Add(sheetBuyPrice);
             sheetBuy.Add(KeyCap(null, "garage__sheet-key", () => Strings.Get("common.space")));
             sheet.Add(sheetBuy);
@@ -624,7 +605,7 @@ namespace ToyCarArena.UI
             sheetWatch.focusable = false;
             sheetWatch.Add(Element("button__face"));
             sheetWatch.Add(RoundOverRewards.PlaySign());
-            var watchLabel = RoundOverProgress.Outlined("", "menu__watch-label", out var watchLabels);
+            var watchLabel = StrokeText.Outlined("", "menu__watch-label", out var watchLabels);
             foreach (var label in watchLabels) {
                 label.AddToClassList("button__label");
                 text.Set(label, () => Strings.Get("garage.watch_ad"));
@@ -720,6 +701,7 @@ namespace ToyCarArena.UI
             paintGrid.style.display = shown == Tab.Paint ? DisplayStyle.Flex : DisplayStyle.None;
             scroll.scrollOffset = Vector2.zero;
             Refresh();
+            Place();
             LayoutCards();
         }
 
@@ -733,7 +715,12 @@ namespace ToyCarArena.UI
                 label.text = GameText.Car(car);
             }
 
-            SetStats(stats, ViewModel.StatsOf(car));
+            // The stats belong to the cars: on the hats and the paints their room goes to the panel.
+            Show(stats, tab == Tab.Cars);
+            GarageStats.Set(stats, ViewModel.StatsOf(car), ViewModel.HasBoost,
+                previewedCar != null && tab == Tab.Cars ? ViewModel.StatsOf(ViewModel.SelectedEntry) : null);
+            // A paint takes at once, so the paints have no bottom button.
+            Show(action, tab != Tab.Paint);
             coins.text = ViewModel.Coins.ToString();
             hatsDot.style.display = ViewModel.CanBuyTopper ? DisplayStyle.Flex : DisplayStyle.None;
             var color = ViewModel.SelectedColor;
@@ -746,25 +733,34 @@ namespace ToyCarArena.UI
                 // Without ads an ad car the player does not own has no way in: it is left out.
                 card.Button.style.display = isAd && !isOwned && !ViewModel.CanWatchAds ? DisplayStyle.None : DisplayStyle.Flex;
                 var isLocked = !isAd && !ViewModel.IsUnlocked(id);
-                portrait.Set(entry, color, isLocked);
+                var league = isLocked ? ViewModel.LeagueOfCar(id) : 0;
+                // A league's car is its prize, shown in colour to make it a goal; a level's car stays a silhouette.
+                portrait.Set(entry, color, isLocked && league == 0);
                 var badge = id == selectedCar ? Card.Badge.Selected
                     : isOwned ? Card.Badge.None
                     : isAd ? Card.Badge.Ad
+                    : league > 0 ? Card.Badge.League
                     : isLocked ? Card.Badge.Locked
                     : ViewModel.CanAffordCar(id) ? Card.Badge.Price : Card.Badge.Dear;
-                card.Set(badge, badge == Card.Badge.Locked ? GameText.Level(entry.UnlockLevel)
-                    : ViewModel.PriceOf(id).ToString(), id == selectedCar, isLocked, entry == previewedCar);
-                card.Button.tooltip = isLocked ? Strings.Format("garage.unlock_at", entry.UnlockLevel) : GameText.Car(entry);
+                // The lock already says "level": the badge carries only its number, so it fits inside the corner.
+                card.Set(badge, badge == Card.Badge.Locked ? entry.UnlockLevel.ToString()
+                    : badge == Card.Badge.Ad ? Strings.Get("result.ad")
+                    : ViewModel.PriceOf(id).ToString(), id == selectedCar, isLocked, entry == previewedCar, league);
+                card.Button.tooltip = league > 0 ? Strings.Format("garage.reach", PlayerRank.NameOfTier(league))
+                    : isLocked ? Strings.Format("garage.unlock_at", entry.UnlockLevel) : GameText.Car(entry);
             }
 
             var worn = ViewModel.SelectedTopper;
             foreach (var (id, card) in hatCards) {
                 var topper = FindHat(id);
                 var isOwned = topper == null || ViewModel.IsOwned(id);
+                var league = isOwned ? 0 : ViewModel.LeagueOfTopper(id);
                 var badge = id == worn ? Card.Badge.Selected
                     : isOwned ? Card.Badge.None
+                    : league > 0 ? Card.Badge.League
                     : ViewModel.CanAfford(topper) ? Card.Badge.Price : Card.Badge.Dear;
-                card.Set(badge, topper?.Price.ToString(), id == worn, false, id == previewedHat);
+                card.Set(badge, topper?.Price.ToString(), id == worn, league > 0, id == previewedHat, league);
+                card.Button.tooltip = league > 0 ? Strings.Format("garage.reach", PlayerRank.NameOfTier(league)) : null;
             }
 
             for (var id = 0; id < paints.Length; id++) {
@@ -812,6 +808,11 @@ namespace ToyCarArena.UI
                     return (Act.Select, 0);
                 }
 
+                var hatLeague = ViewModel.LeagueOfTopper(hat);
+                if (hatLeague > 0) {
+                    return (Act.League, hatLeague);
+                }
+
                 return (ViewModel.CanAfford(topper) ? Act.Buy : Act.Dear, topper.Price);
             }
 
@@ -829,7 +830,8 @@ namespace ToyCarArena.UI
             }
 
             if (!ViewModel.IsUnlocked(car.Id)) {
-                return (Act.Locked, car.UnlockLevel);
+                var league = ViewModel.LeagueOfCar(car.Id);
+                return league > 0 ? (Act.League, league) : (Act.Locked, car.UnlockLevel);
             }
 
             var price = ViewModel.PriceOf(car.Id);
@@ -843,11 +845,13 @@ namespace ToyCarArena.UI
                 action.RemoveFromClassList($"garage__action--{kind}");
             }
 
-            action.AddToClassList($"garage__action--{act.ToString().ToLowerInvariant()}");
+            // A league's lock looks like a level's: only its words name the league.
+            action.AddToClassList($"garage__action--{(act == Act.League ? "locked" : act.ToString().ToLowerInvariant())}");
             var label = act switch {
                 Act.Selected => Strings.Get("garage.selected"),
                 Act.Select => Strings.Get("garage.select"),
                 Act.Locked => GameText.Level(value),
+                Act.League => Strings.Format("garage.reach", PlayerRank.NameOfTier(value)),
                 Act.Ad => Strings.Get("garage.unlock"),
                 _ => Strings.Get("result.buy"),
             };
@@ -860,7 +864,7 @@ namespace ToyCarArena.UI
             actionPriceCount.text = value.ToString();
             Show(actionPrice, hasPrice);
             Show(actionTick, act == Act.Selected);
-            Show(actionLock, act == Act.Locked);
+            Show(actionLock, act is Act.Locked or Act.League);
             Show(actionPlay, act == Act.Ad);
             Show(actionTag, act == Act.Ad);
             Show(actionPlain, act == Act.Selected);
@@ -987,8 +991,17 @@ namespace ToyCarArena.UI
                     BumpCoins(true);
                     break;
                 case Act.Locked:
+                case Act.League:
+                    // The button already reads the level or league that opens it: it and the card shake, no line
+                    // repeats it.
                     Refuse(action);
-                    ShowToast(action, Strings.Format("garage.unlock_at", value), false, false);
+                    if (tab == Tab.Hats) {
+                        ShakeHat(ShownHat);
+                    }
+                    else {
+                        ShakeCard(ShownCar);
+                    }
+
                     break;
             }
         }
@@ -1023,7 +1036,7 @@ namespace ToyCarArena.UI
 
             Show(sheetStats, confirmCar != null);
             if (confirmCar != null) {
-                SetStats(sheetStats, ViewModel.StatsOf(confirmCar));
+                GarageStats.Set(sheetStats, ViewModel.StatsOf(confirmCar), ViewModel.HasBoost);
             }
 
             var price = confirmCar != null ? ViewModel.PriceOf(confirmCar.Id) : confirmHat.Price;
@@ -1207,7 +1220,14 @@ namespace ToyCarArena.UI
                 show.style.bottom = 0f;
             }
             else {
-                var panelHeight = Mathf.Clamp(height - SideChrome - ShowMin, PanelMin, PanelMax);
+                // The car first: it gets the room to be as large as the width allows (with its name, and its stats on
+                // the cars' tab), and the panel the rest, at least a row and a half. Before, the panel came first and the
+                // car on a phone was a small thing over a list of three rows. The paints have no bottom button: that
+                // room goes to the car too, the thing being painted.
+                var chrome = SideChrome - (tab == Tab.Paint ? ActionRoom : 0f);
+                var captionRoom = NameRoom + (tab == Tab.Cars ? StatsRoom : 0f);
+                var showRoom = Mathf.Min(width, HeroMaxWidth) / heroAspect + captionRoom;
+                var panelHeight = Mathf.Clamp(height - SideChrome - showRoom - 10f, PanelMin, PanelMax);
                 side.style.width = width;
                 side.style.height = StyleKeyword.Auto;
                 side.style.scale = new Scale(Vector3.one);
@@ -1219,7 +1239,7 @@ namespace ToyCarArena.UI
                 show.style.left = 0f;
                 show.style.right = 0f;
                 show.style.top = 0f;
-                show.style.bottom = panelHeight + SideChrome + 10f;
+                show.style.bottom = panelHeight + chrome + 10f;
             }
 
             var sheetFit = Mathf.Max(0.55f, Mathf.Min(isWide && isTouch ? 1.3f : 1f, (size.y - 2f * Edge) / 1750f));
@@ -1245,7 +1265,11 @@ namespace ToyCarArena.UI
 
             var columns = isWide ? WideColumns : Columns;
             var padding = 2f * 36f;
-            var cardWidth = Mathf.Floor((inner - padding - CardGap * (columns - 1)) / columns);
+            // The layout rounds every card and gap to the screen's pixels, and on a small window a pixel is several
+            // reference pixels: cards that filled the row exactly could come out wider together than the row, and the
+            // third wrapped (two a row, the rows out of line). Two pixels a card leave room for that rounding.
+            var pixel = 1f / Mathf.Max(0.01f, panel.panel?.scaledPixelsPerPoint ?? 1f);
+            var cardWidth = Mathf.Floor((inner - padding - CardGap * (columns - 1) - 2f * pixel * columns) / columns);
             var cardHeight = Mathf.Floor(cardWidth * CardAspect);
             foreach (var grid in new[] { carGrid, hatGrid }) {
                 var shown = 0;
@@ -1262,10 +1286,10 @@ namespace ToyCarArena.UI
                 }
             }
 
-            // The paints: two rows of four, as big as the panel holds.
+            // The paints: two rows of four, as big as the panel holds, each with its name under it.
             var paintBox = panel.contentRect;
             var across = (paintBox.width - 2f * 60f - 3f * 50f) / 4f;
-            var down = (paintBox.height - 2f * 50f - 70f) / 2f;
+            var down = (paintBox.height - 2f * 50f - 70f - 2f * PaintNameRoom) / 2f;
             var diameter = Mathf.Max(80f, Mathf.Min(across, down, 240f));
             foreach (var paint in paints) {
                 paint.style.width = diameter;
@@ -1410,6 +1434,32 @@ namespace ToyCarArena.UI
             });
         }
 
+        private void ShakeCard(CarCatalog.Entry car)
+        {
+            foreach (var (entry, card, _) in carCards) {
+                if (entry == car) {
+                    var button = card.Button;
+                    cardTween.Play(ShakeDuration, t => {
+                        button.style.translate = new Translate(18f * Mathf.Sin(t * Mathf.PI * 6f) * (1f - t), 0f);
+                    });
+                    return;
+                }
+            }
+        }
+
+        private void ShakeHat(string id)
+        {
+            foreach (var (hat, card) in hatCards) {
+                if (hat == id) {
+                    var button = card.Button;
+                    cardTween.Play(ShakeDuration, t => {
+                        button.style.translate = new Translate(18f * Mathf.Sin(t * Mathf.PI * 6f) * (1f - t), 0f);
+                    });
+                    return;
+                }
+            }
+        }
+
         private void Bounce(VisualElement element)
         {
             var tween = element == action ? actionTween : cardTween;
@@ -1495,7 +1545,7 @@ namespace ToyCarArena.UI
             button.AddToClassList(className);
             button.focusable = false;
             button.Add(Element("menu__drop"));
-            button.Add(Element("menu__face"));
+            button.Add(MenuView.Face("menu__face"));
             return button;
         }
 
@@ -1536,6 +1586,24 @@ namespace ToyCarArena.UI
             var icon = Element(className);
             icon.generateVisualContent += draw;
             return icon;
+        }
+
+        /// <summary>
+        /// A framed piece of the league's sky (<c>garage__sheet-frame</c>): its checker drifting and the menu's light
+        /// turning behind whatever is put in it. The BUY window frames the car in it, and so do the result's reward
+        /// popups, so a reward looks the same wherever it is offered.
+        /// </summary>
+        internal static VisualElement SkyFrame(int league)
+        {
+            var frame = Element("garage__sheet-frame");
+            frame.style.backgroundImage = new StyleBackground(LeagueLook.SkyOf(league));
+            DriftingChecker.AddTo(frame, SheetChecker, SheetCheckerShare);
+            var light = Element("garage__sheet-light");
+            light.generateVisualContent += MenuView.DrawLight;
+            light.schedule.Execute(() =>
+                light.style.rotate = new Rotate(Time.unscaledTime / RaysTurnSeconds * 360f % 360f)).Every(16);
+            frame.Add(light);
+            return frame;
         }
 
         private static VisualElement Element(string className)
@@ -1624,7 +1692,8 @@ namespace ToyCarArena.UI
         /// <summary>
         /// One card of the panel, a car or a hat, drawn as a sticker: its picture, its name, and a badge on its corner
         /// that says what it is to the player: a green tick on the chosen one, nothing on one they own, the price in
-        /// gold (grey when the coins are short), a lock and the level that opens it, or the video sign of an ad car.
+        /// gold (grey when the coins are short), a lock and the level that opens it, a lock and the emblem of the league
+        /// that gives it, or the video sign of an ad car.
         /// </summary>
         private sealed class Card
         {
@@ -1636,6 +1705,7 @@ namespace ToyCarArena.UI
                 Dear,
                 Locked,
                 Ad,
+                League,
             }
 
             public readonly Button Button;
@@ -1644,7 +1714,9 @@ namespace ToyCarArena.UI
             private readonly VisualElement coin;
             private readonly VisualElement padlock;
             private readonly VisualElement play;
+            private readonly VisualElement emblem;
             private readonly Label value;
+            private string emblemClass;
 
             public Card(string name, VisualElement art, LiveText text, Func<string> title)
             {
@@ -1670,15 +1742,18 @@ namespace ToyCarArena.UI
                 badge.Add(play);
                 value = Text("garage__badge-text");
                 badge.Add(value);
+                emblem = Element("menu__league-emblem");
+                emblem.AddToClassList("garage__badge-emblem");
+                badge.Add(emblem);
                 Button.Add(badge);
             }
 
-            public void Set(Badge kind, string label, bool isSelected, bool isLocked, bool isPreviewed)
+            public void Set(Badge kind, string label, bool isSelected, bool isLocked, bool isPreviewed, int league = 0)
             {
                 Button.EnableInClassList("garage__card--selected", isSelected);
                 Button.EnableInClassList("garage__card--locked", isLocked);
                 Button.EnableInClassList("garage__card--previewed", isPreviewed);
-                foreach (var each in new[] { "selected", "price", "dear", "locked", "ad" }) {
+                foreach (var each in new[] { "selected", "price", "dear", "locked", "ad", "league" }) {
                     badge.RemoveFromClassList($"garage__badge--{each}");
                 }
 
@@ -1689,9 +1764,23 @@ namespace ToyCarArena.UI
                 Show(badge, kind != Badge.None);
                 Show(tick, kind == Badge.Selected);
                 Show(coin, kind is Badge.Price or Badge.Dear);
-                Show(padlock, kind == Badge.Locked);
+                Show(padlock, kind is Badge.Locked or Badge.League);
                 Show(play, kind == Badge.Ad);
-                Show(value, kind is Badge.Price or Badge.Dear or Badge.Locked);
+                Show(emblem, kind == Badge.League);
+                var shownEmblem = kind == Badge.League ? "menu__league-emblem--" + PlayerRank.IdOfTier(league) : null;
+                if (shownEmblem != emblemClass) {
+                    if (emblemClass != null) {
+                        emblem.RemoveFromClassList(emblemClass);
+                    }
+
+                    if (shownEmblem != null) {
+                        emblem.AddToClassList(shownEmblem);
+                    }
+
+                    emblemClass = shownEmblem;
+                }
+
+                Show(value, kind is Badge.Price or Badge.Dear or Badge.Locked or Badge.Ad);
                 value.text = label ?? "";
             }
         }

@@ -21,7 +21,8 @@ FONTS = os.path.join(ROOT, "Assets", "UI", "Fonts")
 
 # Shown at most about 190 CSS px wide; twice that keeps it sharp on phones (both cars are drawn at one scale).
 SCALE = 0.6
-TEXT = "BONKAR0123456789%!. "
+# Every character loading.js shows (BONK, ARENA, BONK!, the percent); a missing one falls back to Arial Black.
+TEXT = "BONKARE0123456789%!. "
 FAMILY = "Bonk Loading"
 
 

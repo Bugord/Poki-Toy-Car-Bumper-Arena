@@ -2,9 +2,10 @@
     <ui:VisualElement name="curtain" class="curtain">
         <Style src="../ui_screens.uss" />
         <ui:VisualElement name="lobby" class="lobby" picking-mode="Ignore">
-            <ui:Label name="lobby-title" text="MATCH FOUND!" class="lobby__title display stroke">
-                <ui:Label name="lobby-title-face" text="MATCH FOUND!" class="lobby__title display stroke__face" />
-            </ui:Label>
+            <ui:VisualElement name="lobby-title" picking-mode="Ignore" class="stroke lobby__title">
+                <ui:Label text="MATCH FOUND!" picking-mode="Ignore" class="display lobby__title-text" />
+                <ui:Label text="MATCH FOUND!" picking-mode="Ignore" class="display lobby__title-text stroke__face" />
+            </ui:VisualElement>
             <ui:VisualElement name="lobby-arena" class="lobby__arena" picking-mode="Ignore" />
             <ui:VisualElement name="lobby-rows" class="lobby__rows" />
             <ui:VisualElement class="lobby__loading" picking-mode="Ignore">

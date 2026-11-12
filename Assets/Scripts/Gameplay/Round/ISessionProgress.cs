@@ -13,6 +13,13 @@ namespace ToyCarArena.Gameplay.Round
         int Round { get; }
 
         /// <summary>
+        /// Rounds the player had finished on this device before this visit, 0 for a new player: what the player has
+        /// learned is the player's, not the visit's, so the easy first rounds and the teaching hints count from here.
+        /// Fixed for the visit; the player's round counting every visit is this plus <see cref="Round"/>.
+        /// </summary>
+        int RoundsBefore { get; }
+
+        /// <summary>
         /// Rounds in a row the player has lost (fallen off) up to this one; 0 after a win or a round survived.
         /// </summary>
         int LosingStreak { get; }
@@ -27,5 +34,11 @@ namespace ToyCarArena.Gameplay.Round
         /// The colour index of the rival to take revenge on next round, or <see cref="RoundResult.Nobody"/>.
         /// </summary>
         int Nemesis { get; }
+
+        /// <summary>
+        /// The mode the player picked in the menu for the rounds to come: QUICK MATCH (none) or an event mode. The next
+        /// scene is built for it (<see cref="RoundRules"/>), as for the round's number.
+        /// </summary>
+        EventMode Mode { get; }
     }
 }

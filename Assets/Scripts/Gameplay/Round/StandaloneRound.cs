@@ -38,7 +38,8 @@ namespace ToyCarArena.Gameplay.Round
 
         // Lazy: Unity's random API must run on the main thread, not in a static initializer during scene loading.
         private static SessionRoster roster;
-        public static SessionRoster Roster(CarCatalog catalog) => roster ??= new SessionRoster(catalog, new FirstPlayerCar(catalog));
+        public static SessionRoster Roster(CarCatalog catalog, GameTuning tuning) =>
+            roster ??= new SessionRoster(catalog, new FirstPlayerCar(catalog), tuning);
 
         public void Start()
         {

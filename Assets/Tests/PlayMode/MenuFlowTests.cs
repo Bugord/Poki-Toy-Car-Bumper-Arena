@@ -8,8 +8,12 @@ using Bugord.App.Platform;
 using Bugord.Core.Storage;
 using NUnit.Framework;
 using ToyCarArena.App;
+using ToyCarArena.Gameplay;
+using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
+using ToyCarArena.Rendering;
+using ToyCarArena.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -40,6 +44,10 @@ namespace ToyCarArena.Tests.PlayMode
         {
             storage = new RoundOverScreenshots.MemoryStorage();
             platform = new MatchTests.RecordingPlatform();
+            // The daily gift's offer is the visit's: each test is a visit of its own.
+            DailyGift.ForgetOffer();
+            RoundOverViewModel.ForgetVisit();
+            ShownScreens.Clear();
             keptRoots = new HashSet<GameObject>(PersistentRoots());
             testScene = SceneManager.GetActiveScene();
             // A visit's first menu reports its time; each test is a visit of its own.
@@ -86,6 +94,32 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(platform.Events, Does.Contain(("controls", "start", "visible")));
             Assert.That(platform.Events.Any(e => e.Item1 == "menu"), Is.False);
             Assert.That(FindButton("menu__play"), Is.Null, "no menu on a first visit");
+
+            // A new player's first round is the easy one.
+            var tuning = Scope.Container.Resolve<GameTuning>();
+            Assert.That(Scope.Container.Resolve<ISessionProgress>().RoundsBefore, Is.EqualTo(0));
+            Assert.That(Difficulty.Level, Is.EqualTo(0f));
+            Assert.That(Round.Cars.Count, Is.EqualTo(1 + tuning.Bots.Easy.Bots));
+        }
+
+        [UnityTest]
+        public IEnumerator AReturningPlayersFirstRoundIsNotTheEasyOne()
+        {
+            ReturningPlayer();
+            storage.SetInt(SessionProgress.RoundsKey, 20);
+            yield return Boot();
+            yield return WaitFor(() => IsShown(FindButton("menu__play")), "the menu");
+            yield return Wait(0.5f);
+            Press(FindButton("menu__play"));
+            yield return WaitFor(() => State == typeof(RoundState) && Round is { HasBegun: true }, "the round");
+
+            var tuning = Scope.Container.Resolve<GameTuning>();
+            var progress = Scope.Container.Resolve<ISessionProgress>();
+            Assert.That(progress.Round, Is.EqualTo(1), "the visit's first round");
+            Assert.That(progress.RoundsBefore, Is.EqualTo(20));
+            Assert.That(Difficulty.Level, Is.EqualTo(tuning.Bots.ReturnLevel).Within(1e-4f), "a warm-up, not easy");
+            Assert.That(Round.Cars.Count, Is.EqualTo(1 + Difficulty.BotCount));
+            Assert.That(Difficulty.BotCount, Is.GreaterThan(tuning.Bots.Easy.Bots));
         }
 
         [UnityTest]
@@ -100,6 +134,7 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(platform.Events.Any(e => e.Item1 == "menu" && e.Item3 == "start-time"), Is.True);
             Assert.That(platform.Events, Has.No.Member(("controls", "start", "visible")));
             Assert.That(Scope.Container.Resolve<LevelScene>().IsLoaded, Is.True, "the first arena loads behind the menu");
+            Assert.That(ArenaLayers, Is.Zero, "the menu covers the arena, so it is not drawn");
         }
 
         [UnityTest]
@@ -117,6 +152,7 @@ namespace ToyCarArena.Tests.PlayMode
             // No TAP TO START: the round counts down and begins by itself.
             yield return WaitFor(() => Round is { HasBegun: true }, "the countdown");
             Assert.That(platform.Events, Has.No.Member(("controls", "start", "visible")));
+            Assert.That(ArenaLayers, Is.Not.Zero, "the round draws the arena again");
         }
 
         [UnityTest]
@@ -135,6 +171,7 @@ namespace ToyCarArena.Tests.PlayMode
             // The result measures its buttons once its screen has opened, which may be after they first show.
             yield return Wait(1f);
             Assert.That(platform.Events, Does.Contain(("result", "home", "visible")));
+            Assert.That(ArenaLayers, Is.Not.Zero, "the result lies over the arena it ended on");
             Press(FindButton("home-button"));
 
             yield return WaitFor(() => State == typeof(MenuState) && IsShown(FindButton("menu__play")), "the menu again");
@@ -144,6 +181,9 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(platform.Events.Count(e => e.Item1 == "menu" && e.Item3 == "start-time"), Is.EqualTo(1),
                 "only the visit's first menu reports its time");
         }
+
+        // The layers the arena's camera draws now.
+        private static int ArenaLayers => Object.FindAnyObjectByType<ArenaCamera>().Camera.cullingMask;
 
         // A player back for a second visit: one visit counted, some XP and the cars of the first levels.
         private void ReturningPlayer()
@@ -171,6 +211,8 @@ namespace ToyCarArena.Tests.PlayMode
 
         private static GameScope Scope => Object.FindAnyObjectByType<GameScope>();
         private static Type State => Scope?.Container?.Resolve<AppStateTracker>().CurrentState;
+
+        private static RoundDifficulty Difficulty => Scope.Container.Resolve<LevelScene>().Resolve<RoundDifficulty>();
 
         private static ArenaRound Round
         {

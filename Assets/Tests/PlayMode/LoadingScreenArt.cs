@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
 using ToyCarArena.Gameplay.Cars;
@@ -58,10 +57,9 @@ namespace ToyCarArena.Tests.PlayMode
             root.transform.position = Stage;
             var car = new GameObject("Car").transform;
             car.SetParent(root.transform, false);
-            var meshes = new List<Mesh>();
             var model = CarLook.BuildModel(entry, car, look.ModelRotation, look.ModelMaterial, look.Reference);
             var body = CarModel.PaintBody(CarModel.FindBody(model, out _), entry.BodySwatch, look.SwatchOf(colorId));
-            CarLook.WearTopper(topper, entry.Id, car, model, look.ModelMaterial, meshes, out _);
+            CarLook.WearTopper(topper, entry.Id, car, model, look.ModelMaterial, look.Toppers, out _);
             var bounds = CarModel.BoundsIn(car.gameObject, car.worldToLocalMatrix);
             model.transform.localPosition -= new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
             car.localRotation = Quaternion.Euler(0f, yaw, 0f);
@@ -101,9 +99,6 @@ namespace ToyCarArena.Tests.PlayMode
             Object.Destroy(texture);
             Object.Destroy(root);
             Object.Destroy(body);
-            foreach (var mesh in meshes) {
-                Object.Destroy(mesh);
-            }
         }
 
         private static Car LoadCarPrefab()

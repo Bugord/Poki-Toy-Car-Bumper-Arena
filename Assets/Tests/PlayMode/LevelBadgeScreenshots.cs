@@ -77,7 +77,7 @@ namespace ToyCarArena.Tests.PlayMode
                     var sticker = Element("car-name__sticker");
                     sticker.style.marginRight = 30;
                     var line = Element("car-name__line");
-                    line.Add(Badge(level, "car-name__level", isRival));
+                    line.Add(Badge(level, "car-name__level", isRival, true));
                     var name = new Label("RUSTY");
                     name.AddToClassList("display");
                     name.AddToClassList("car-name__text");
@@ -102,7 +102,7 @@ namespace ToyCarArena.Tests.PlayMode
                     slot.style.height = 122;
                     slot.style.marginRight = 24;
                     slot.style.marginBottom = 20;
-                    var row = new LobbyRow(index, index % 8, "BLITZ", level, null, isRival);
+                    var row = new LobbyRow(index, "BLITZ", level, null, isRival);
                     slot.Add((VisualElement)createRow!.Invoke(null, new object[] { row, false, 0 }));
                     lobby.Add(slot);
                     index++;
@@ -116,7 +116,7 @@ namespace ToyCarArena.Tests.PlayMode
                     var row = Element("results__row");
                     row.style.width = 220;
                     row.style.marginRight = 20;
-                    row.Add(Badge(level, "results__level", isRival));
+                    row.Add(InSlot(Badge(level, "results__level", isRival, true), "results__level-slot"));
                     table.Add(row);
                 }
             }
@@ -124,7 +124,7 @@ namespace ToyCarArena.Tests.PlayMode
             var podium = Section(root, "PODIUM", Color.white, 110);
             foreach (var isRival in new[] { false, true }) {
                 foreach (var level in Levels) {
-                    var badge = Badge(level, "podium__level", isRival);
+                    var badge = Badge(level, "podium__level", isRival, true);
                     badge.style.marginRight = 60;
                     podium.Add(badge);
                 }
@@ -172,10 +172,16 @@ namespace ToyCarArena.Tests.PlayMode
         private static string RankOf(int level) =>
             level >= 100 ? "legend" : level >= 50 ? "gold" : level >= 25 ? "silver" : level >= 10 ? "bronze" : "rookie";
 
-        private static VisualElement Badge(int level, string className, bool isRival)
+        private static VisualElement Badge(int level, string className, bool isRival, bool isLabelled = false)
         {
             var create = typeof(HudView).GetMethod("CreateLevelBadge", BindingFlags.Static | BindingFlags.NonPublic);
-            return (VisualElement)create!.Invoke(null, new object[] { level, className, isRival });
+            return (VisualElement)create!.Invoke(null, new object[] { level, className, isRival, isLabelled });
+        }
+
+        private static VisualElement InSlot(VisualElement badge, string slotClass)
+        {
+            var wrap = typeof(HudView).GetMethod("InLevelSlot", BindingFlags.Static | BindingFlags.NonPublic);
+            return (VisualElement)wrap!.Invoke(null, new object[] { badge, slotClass });
         }
 
         private static VisualElement Section(VisualElement root, string title, Color color, float height)

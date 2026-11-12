@@ -3,6 +3,7 @@ using Bugord.App.Localization;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.Audio;
 using ToyCarArena.Gameplay;
+using ToyCarArena.Rendering;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -10,6 +11,8 @@ namespace ToyCarArena.UI
 {
     public sealed class HudView : FadingView<HudViewModel>
     {
+        protected override ShownScreen ScreenKind => ShownScreen.Round;
+
         // The numbers move at most once a second, so a tenth of one keeps them in step without running every frame.
         private const long RefreshInterval = 100;
 
@@ -61,6 +64,7 @@ namespace ToyCarArena.UI
         private const string ShieldShownClass = "hud__shield--shown";
         private const string StreakShownClass = "hud__streak--shown";
         private const string RevengeClass = "car-name--revenge";
+        private const string NamesWaitingClass = "car-names--waiting";
         private const string PowerShownClass = "hud__power--shown";
         private const string ItemShownClass = "hud__item--shown";
         private const string ItemEmptyClass = "hud__item--empty";
@@ -118,7 +122,8 @@ namespace ToyCarArena.UI
         private const float ShieldHeight = 4.2f;
 
         // Names sit above the body in panel pixels; a rival springs in, pulses twice, then stays quiet.
-        private const float NameLift = 76f;
+        // Close over the car, as the tail points at it.
+        private const float NameLift = 58f;
         private const float NameMargin = 24f;
         private const float NameGap = 8f;
         private const float NameMaxLiftHeights = 3f;
@@ -326,6 +331,7 @@ namespace ToyCarArena.UI
         private float tapHintTime;
         private float tapHintProgress;
         private HudEndTimer endTimer;
+        private HudPotato potato;
         private VisualElement kickoff;
         private VisualElement kickoffNumber;
         private Label kickoffDigit;
@@ -356,6 +362,8 @@ namespace ToyCarArena.UI
 
         protected override void OnAttached()
         {
+            // The outlined texts of the UXML get their drop layer (StrokeText).
+            StrokeText.AddDrops(Root);
             // The HUD lies over the game: nothing on it may take a click or a touch from the controls but the boost
             // button and the settings button, which tell the controls where they are so a finger on them does not steer.
             Root.pickingMode = PickingMode.Ignore;
@@ -371,6 +379,7 @@ namespace ToyCarArena.UI
             boostSlot = Root.Q<VisualElement>("boost-slot");
             boostCharge = Root.Q<VisualElement>("boost-charge");
             knockoutBadge = Root.Q<VisualElement>("ko-badge");
+            DrawAsBurst(knockoutBadge.Q<VisualElement>(className: "ko-star"));
             knockoutLabel = Root.Q<Label>("ko");
             respawn = Root.Q<VisualElement>("respawn");
             respawnCount = Root.Q<Label>("respawn-count");
@@ -402,9 +411,10 @@ namespace ToyCarArena.UI
             stickBase = Root.Q<VisualElement>("stick-base");
             stickKnob = Root.Q<VisualElement>("stick-knob");
             ghost = Root.Q<VisualElement>("ghost");
-            Root.Q<VisualElement>("ghost-stick").style.opacity = ViewModel.IsFirstRound ? GhostOpacity : GhostLaterOpacity;
+            // The player's very first round teaches with the full ghost and its caption; the next few keep a faint one.
+            Root.Q<VisualElement>("ghost-stick").style.opacity = ViewModel.IsTutorial ? GhostOpacity : GhostLaterOpacity;
             Root.Q<VisualElement>(className: "hud__ghost-caption").style.display =
-                ViewModel.IsFirstRound ? DisplayStyle.Flex : DisplayStyle.None;
+                ViewModel.IsTutorial ? DisplayStyle.Flex : DisplayStyle.None;
             // The side the player plays on carries over from the round before, without the button moving at the start.
             isBoostOnLeft = controls.IsBoostOnLeft;
             boostSlot.EnableInClassList(BoostLeftClass, isBoostOnLeft);
@@ -416,6 +426,7 @@ namespace ToyCarArena.UI
             tapHint = Root.Q<VisualElement>("tap-hint");
             BuildKickoff();
             endTimer = HudEndTimer.Create(Root, ViewModel, timePill, scoreboard?.Element, respawn, popupLayer);
+            potato = HudPotato.Create(nameLayer, Root, ViewModel);
             settingsButton = Root.Q<Button>("settings-button");
             settingsButton.RemoveFromClassList(Button.ussClassName);
             // Space is the boost: a focused button would take it as a click and open the settings mid-round.
@@ -475,6 +486,8 @@ namespace ToyCarArena.UI
             social?.Dispose();
             scoreboard?.Dispose();
             endTimer?.Dispose();
+            potato?.Dispose();
+            potato = null;
             ViewModel.PlayerKnockout -= ShowKnockout;
             ViewModel.CarOut -= OnCarOut;
             ViewModel.CarBack -= OnCarBack;
@@ -1231,14 +1244,14 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>
-        /// TAP TO USE, or RIGHT CLICK with the E key cap on a desktop, over the slot the first time in a visit an item
-        /// lands in it, the button pulsing with it, for a moment; the visit's controls remember it was shown.
+        /// TAP TO USE, or RIGHT CLICK with the E key cap on a desktop, over the slot the first time an item lands in it,
+        /// the button pulsing with it, for a moment; the controls remember it was shown, for good.
         /// </summary>
         private void RefreshItemHint(bool isTouch)
         {
             var now = Time.unscaledTime;
             if (!isItemHintShown) {
-                if (controls.HasShownItemHint || !ViewModel.IsItemReady || isItemShownRolling) {
+                if (!ViewModel.IsItemReady || isItemShownRolling || controls.HasShownItemHint) {
                     return;
                 }
 
@@ -1289,7 +1302,8 @@ namespace ToyCarArena.UI
         /// (<paramref name="isRival"/>) is framed red with two red horns: the frame reads before the name does, in the
         /// HUD, the lobby and on the result alike. Under a crown the horns stand further out, so both read.
         /// </summary>
-        internal static VisualElement CreateLevelBadge(int level, string className, bool isRival = false)
+        internal static VisualElement CreateLevelBadge(int level, string className, bool isRival = false,
+            bool isLabelled = false)
         {
             var badge = new VisualElement { pickingMode = PickingMode.Ignore };
             badge.AddToClassList("level-badge");
@@ -1298,6 +1312,14 @@ namespace ToyCarArena.UI
             var value = new Label(level.ToString()) { pickingMode = PickingMode.Ignore };
             value.AddToClassList("level-badge__value");
             badge.Add(value);
+            // Beside a nick a bare number reads as a place: a tiny LV tag on the badge's edge says it is the level,
+            // without widening the badge (LV inline made a three-digit badge twice as wide as the number).
+            if (isLabelled) {
+                badge.AddToClassList("level-badge--labelled");
+                var prefix = new Label(Strings.Get("common.lv")) { pickingMode = PickingMode.Ignore };
+                prefix.AddToClassList("level-badge__prefix");
+                badge.Add(prefix);
+            }
             if (isRival) {
                 badge.AddToClassList("level-badge--rival");
                 var isCrowned = LevelBadge.IsCrowned(level);
@@ -1316,6 +1338,22 @@ namespace ToyCarArena.UI
             return badge;
         }
 
+        /// <summary>
+        /// A level badge in a fixed-width slot of a list row, centred, so the nicks after it start on one line whatever
+        /// the number's digits, the rank's wings or the rival's horns.
+        /// </summary>
+        internal static VisualElement InLevelSlot(VisualElement badge, string slotClass)
+        {
+            var slot = new VisualElement { pickingMode = PickingMode.Ignore };
+            slot.AddToClassList("level-slot");
+            slot.AddToClassList(slotClass);
+            if (badge != null) {
+                slot.Add(badge);
+            }
+
+            return slot;
+        }
+
         private static void DrawLeftHorn(MeshGenerationContext context) => DrawHorn(context, false);
         private static void DrawRightHorn(MeshGenerationContext context) => DrawHorn(context, true);
 
@@ -1323,10 +1361,16 @@ namespace ToyCarArena.UI
         private static void DrawHorn(MeshGenerationContext context, bool isMirrored)
         {
             var rect = context.visualElement.contentRect;
-            var w = rect.width;
-            var h = rect.height;
-            Vector2 At(float x, float y) => new(isMirrored ? (1f - x) * w : x * w, y * h);
-            var painter = context.painter2D;
+            PaintHorn(context.painter2D, new Rect(0f, 0f, rect.width, rect.height), isMirrored,
+                Mathf.Max(3f, rect.width * 0.14f));
+        }
+
+        /// <summary>The rival's horn in a box: the REVENGE mark on a level badge and a revenge mission's sign.</summary>
+        internal static void PaintHorn(Painter2D painter, Rect box, bool isMirrored, float lineWidth)
+        {
+            var w = box.width;
+            var h = box.height;
+            Vector2 At(float x, float y) => new(box.x + (isMirrored ? (1f - x) * w : x * w), box.y + y * h);
             painter.BeginPath();
             painter.MoveTo(At(0.3f, 1f));
             painter.LineTo(At(0.2f, 0.7f));
@@ -1339,27 +1383,14 @@ namespace ToyCarArena.UI
             painter.fillColor = new Color32(0xff, 0x4d, 0x4d, 0xff);
             painter.Fill();
             painter.strokeColor = new Color32(0x1d, 0x2b, 0x4f, 0xff);
-            painter.lineWidth = Mathf.Max(3f, w * 0.14f);
+            painter.lineWidth = lineWidth;
             painter.lineJoin = LineJoin.Round;
             painter.Stroke();
         }
 
         private static VisualElement CreateOutlinedText(string value, string textClass)
         {
-            var text = new VisualElement { pickingMode = PickingMode.Ignore };
-            text.AddToClassList("stroke");
-            foreach (var isFace in new[] { false, true }) {
-                var label = new Label(value) { pickingMode = PickingMode.Ignore };
-                label.AddToClassList("display");
-                label.AddToClassList(textClass);
-                if (isFace) {
-                    label.AddToClassList("stroke__face");
-                }
-
-                text.Add(label);
-            }
-
-            return text;
+            return StrokeText.Create(value, null, out _, "display", textClass);
         }
 
         /// <summary>
@@ -1380,11 +1411,14 @@ namespace ToyCarArena.UI
             }
 
             ShowStreak(camera);
+            potato?.Tick(camera, contentTopInset, safeInsets.Left, safeInsets.Right);
 
             if (carNames == null || camera == null || nameLayer.panel == null) {
                 return;
             }
 
+            // Until GO! the handles stay faint: the countdown is the thing to watch.
+            nameLayer.EnableInClassList(NamesWaitingClass, ViewModel.IsBeforeStart);
             var size = nameLayer.layout.size;
             if (size.x <= 0f || size.y <= 0f) {
                 return;
@@ -1590,7 +1624,7 @@ namespace ToyCarArena.UI
             // The bot's level on a small badge in its rank's colour, before the handle, as a player's would be.
             var line = new VisualElement { pickingMode = PickingMode.Ignore };
             line.AddToClassList("car-name__line");
-            line.Add(CreateLevelBadge(ViewModel.LevelOf(index), "car-name__level", isRival));
+            line.Add(CreateLevelBadge(ViewModel.LevelOf(index), "car-name__level", isRival, true));
             line.Add(CreateOutlinedText(ViewModel.NameOf(index), "car-name__text"));
             // A bot that joined on a win streak wears the player's crown and ×N after its name.
             var streakOf = ViewModel.StreakOf(index);
@@ -1603,9 +1637,14 @@ namespace ToyCarArena.UI
             }
 
             sticker.Add(line);
-            // The visit's first round shows no handles: a new player has the cars, the floor and the edge to read.
-            // The tag stays, empty, so what follows it (the bots' quips) still knows where the car is.
-            if (ViewModel.IsFirstRound) {
+            // A tail under the sticker points at its car, so the handle is read as that car's in a crowd.
+            var tail = new VisualElement { pickingMode = PickingMode.Ignore };
+            tail.AddToClassList("car-name__tail");
+            tail.generateVisualContent += DrawNameTail;
+            sticker.Add(tail);
+            // The player's very first round shows no handles: a new player has the cars, the floor and the edge to
+            // read. The tag stays, empty, so what follows it (the bots' quips) still knows where the car is.
+            if (ViewModel.IsTutorial) {
                 sticker.style.display = DisplayStyle.None;
             }
             nameLayer.Add(tag);
@@ -1695,26 +1734,81 @@ namespace ToyCarArena.UI
             }
         }
 
-        // The knock-out star, eight points, built from two navy squares under two gold ones, each pair a plain one and
-        // one turned by 45 degrees (ko-star in ui_screens), so the build carries no image for it.
+        // The knock-out mark: a jagged gold impact burst in a navy outline, drawn in code (DrawBurst). It was an
+        // eight-point star of two turned squares, which on the HUD bar read as a gear; the five-point star is XP's.
         internal static VisualElement CreateStar(string sizeClass)
         {
             var star = new VisualElement { pickingMode = PickingMode.Ignore };
             star.AddToClassList("ko-star");
             star.AddToClassList(sizeClass);
-            foreach (var layer in new[] { "ko-star__back", "ko-star__front" }) {
-                foreach (var isTurned in new[] { false, true }) {
-                    var square = new VisualElement { pickingMode = PickingMode.Ignore };
-                    square.AddToClassList(layer);
-                    if (isTurned) {
-                        square.AddToClassList("ko-star__turned");
-                    }
+            DrawAsBurst(star);
+            return star;
+        }
 
-                    star.Add(square);
+        /// <summary>Draws the knock-out burst on an element (one from UXML, too), in its <c>color</c>.</summary>
+        internal static void DrawAsBurst(VisualElement star)
+        {
+            if (star == null) {
+                return;
+            }
+
+            star.Clear();
+            star.generateVisualContent -= DrawBurst;
+            star.generateVisualContent += DrawBurst;
+        }
+
+        // The handle's tail: a small triangle pointing down at the car, in the sticker's backdrop (its color).
+        private static void DrawNameTail(MeshGenerationContext context)
+        {
+            var r = context.visualElement.contentRect;
+            var p = context.painter2D;
+            p.fillColor = context.visualElement.resolvedStyle.color;
+            p.BeginPath();
+            p.MoveTo(new Vector2(r.x, r.y));
+            p.LineTo(new Vector2(r.xMax, r.y));
+            p.LineTo(new Vector2(r.center.x, r.yMax));
+            p.ClosePath();
+            p.Fill();
+        }
+
+        // Eleven spikes of uneven length round a centre, as a comic "bonk"; the fill is the element's colour.
+        private static readonly float[] BurstReach = { 1f, 0.86f, 0.97f, 0.8f, 1f, 0.9f, 0.82f, 1f, 0.88f, 0.95f, 0.84f };
+
+        private static void DrawBurst(MeshGenerationContext context)
+        {
+            var element = context.visualElement;
+            var r = element.contentRect;
+            if (r.width <= 0f || r.height <= 0f) {
+                return;
+            }
+
+            PaintBurst(context.painter2D, r.center, Mathf.Min(r.width, r.height) * 0.46f, element.resolvedStyle.color);
+        }
+
+        /// <summary>The knock-out burst's path, filled and outlined navy: the HUD's KO mark and a knock-out mission's sign.</summary>
+        internal static void PaintBurst(Painter2D p, Vector2 centre, float outer, Color fill)
+        {
+            p.lineWidth = outer * 0.17f;
+            p.lineJoin = LineJoin.Round;
+            p.strokeColor = CarColor.Silhouette;
+            p.fillColor = fill;
+            p.BeginPath();
+            var spikes = BurstReach.Length;
+            for (var i = 0; i < spikes * 2; i++) {
+                var angle = (i * 180f / spikes - 90f + 8f) * Mathf.Deg2Rad;
+                var reach = i % 2 == 0 ? outer * BurstReach[i / 2] : outer * 0.55f;
+                var point = centre + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * reach;
+                if (i == 0) {
+                    p.MoveTo(point);
+                }
+                else {
+                    p.LineTo(point);
                 }
             }
 
-            return star;
+            p.ClosePath();
+            p.Fill();
+            p.Stroke();
         }
 
         /// <summary>
@@ -1845,10 +1939,11 @@ namespace ToyCarArena.UI
             var elapsed = Mathf.Max(0f, now - teachingTime);
             teachingTime = now;
             var isTouch = IsShown && controls.CheckTouchScreen();
-            var enabled = isTouch && ViewModel.IsFirstRound;
-            // The visit's first rounds keep the ghost wherever no finger steers: it yields to a touch and comes back
+            // The demonstration and the idle reminders teach the player's very first round, not every visit's.
+            var enabled = isTouch && ViewModel.IsTutorial;
+            // The player's first rounds keep the ghost wherever no finger steers: it yields to a touch and comes back
             // once the finger lifts.
-            var keepsGhost = isTouch && ViewModel.RoundNumber <= ViewModel.Controls.GhostStickRounds &&
+            var keepsGhost = isTouch && ViewModel.KeepsGhostStick &&
                 (ViewModel.IsRunning || ViewModel.IsBeforeStart);
 
             if (ViewModel.LastTouchTime > seenTouchTime) {
@@ -1886,7 +1981,7 @@ namespace ToyCarArena.UI
             }
 
             // The desktop gets the same first-round nudge over its gauge, in its own words; no finger to hint beside.
-            var canHintBoost = IsShown && ViewModel.IsFirstRound && ViewModel.CanHintBoost;
+            var canHintBoost = IsShown && ViewModel.CanHintBoost;
             boostHint.EnableInClassList(BoostHintDesktopClass, !isTouch);
             if (!canHintBoost || now - boostHintTime >= BoostHintDuration) {
                 isBoostHintShown = false;
@@ -1923,7 +2018,7 @@ namespace ToyCarArena.UI
             // Keep the demonstration still as cars drive past; find a clear place again only on show or resize.
             if (size != ghostPanelSize) {
                 ghostPanelSize = size;
-                ghostCenter = controls.HasJoystickPlace && !ViewModel.IsFirstRound ? PlaceGhostAtThumb(size, radius) :
+                ghostCenter = controls.HasJoystickPlace && !ViewModel.IsTutorial ? PlaceGhostAtThumb(size, radius) :
                     size.x >= size.y ? PlaceWideGhost(size, radius) :
                     new Vector2(size.x * 0.5f, size.y * GhostPortraitY);
                 if (!safeInsets.Equals(default(SafeInsets))) {

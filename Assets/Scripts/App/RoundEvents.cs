@@ -2,6 +2,7 @@ using Bugord.App.Platform;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
+using ToyCarArena.Rendering;
 using UnityEngine;
 
 namespace ToyCarArena.App
@@ -75,7 +76,8 @@ namespace ToyCarArena.App
     /// <item><c>progress / level-2..10, level-10plus / level-up</c> for each crossed level, and
     /// <c>progress / car-id / unlock</c> from the saved reward</item>
     /// <item><c>result / map-arena-id-rR / map</c>: the arena of the round, and <c>progress / map-arena-id / unlock</c>
-    /// for each arena a crossed level opened</item>
+    /// for each arena a crossed level opened; <c>progress / hat-topper-id / unlock</c> for each league's hat a crossed
+    /// level reached (after v0.17.4)</item>
     /// <item><c>result / car-car-id-rR / car</c>: the car played, before an unlock auto-equips the next one;
     /// catalog IDs contain no numbers, including drag-racer and monster-truck</item>
     /// <item>since v0.10: <c>mission / mission-id / complete</c> for each done mission, <c>mission / done-N-rR /
@@ -94,6 +96,11 @@ namespace ToyCarArena.App
     /// <item>after v0.15.0: <c>special / mega, hot-potato, boss, ice, low-gravity / start</c> at GO! of a special round,
     /// then <c>complete</c> or <c>fail</c>, <c>special / id-won, out, survived / outcome</c> and in a boss round
     /// <c>special / boss-taken, boss-missed / boss</c></item>
+    /// <item>after v0.17.9, once a visit (<see cref="ScreenFrameRate"/>): <c>fps / screen-touch, mouse-N / screen</c>,
+    /// the frames per second of each screen (round, result, curtain, menu, garage, ad), and <c>fps / visit-touch,
+    /// mouse-N / visit</c>, the median of the visit's first minute of seconds as Poki's Player Fit Test counts it; N is
+    /// rounded to 5, 0 to 65 or 70plus. And <c>ad / commercial-none, short, mid, long / length</c> after each commercial
+    /// break: back under 2 seconds (no ad shown), under 10, under 25, longer</item>
     /// </list>
     /// Removed after v0.14.1, as they only repeated others or no longer told anything: <c>result / pushed, fell /
     /// out-cause</c> (the same as <c>round-out-cause</c> without the round), <c>result / boosts-0, 1-2, 3plus /
@@ -138,6 +145,7 @@ namespace ToyCarArena.App
         public const float SlowLobbySeconds = 4f;
 
         private const string AdCategory = "ad";
+        private const string FpsCategory = "fps";
         private const string DoubleReward = "double";
         private const string XpBoost = "boost";
         private const string DailyCategory = "daily";
@@ -205,11 +213,26 @@ namespace ToyCarArena.App
             platform.MeasureInteract(MenuCategory, what);
 
         /// <summary>
+        /// Something the main menu shows, for a press of the same name to count: <c>menu / event-hot-potato / visible</c>
+        /// (after v0.17.9, the HOT POTATO tile; its press is <see cref="MeasureMenuPressed"/> with the same name).
+        /// </summary>
+        public static void MeasureMenuVisible(this IGamePlatform platform, string what) =>
+            platform.MeasureVisible(MenuCategory, what);
+
+        /// <summary>
         /// The menu greeted a new league with its popup: <c>menu / league-bronze, silver, gold, legend / visible</c>.
         /// The leagues list opening is <c>menu / leagues / interact</c> (<see cref="MeasureMenuPressed"/>).
         /// </summary>
         public static void MeasureLeagueShown(this IGamePlatform platform, string league) =>
             platform.MeasureVisible(MenuCategory, "league-" + league);
+
+        /// <summary>
+        /// <c>result / league-&lt;id&gt; / visible</c>: NEW LEAGUE! over the result of the round that reached the league
+        /// (after the branch feature/result-popups). The menu's <c>menu / league-&lt;id&gt;</c> then stays for a league
+        /// the result did not greet.
+        /// </summary>
+        public static void MeasureResultLeagueShown(this IGamePlatform platform, string league) =>
+            platform.MeasureVisible(ResultCategory, "league-" + league);
 
         /// <summary><c>result / home / visible</c> on every result, <c>interact</c> when HOME is pressed.</summary>
         public static void MeasureHomeShown(this IGamePlatform platform) => platform.MeasureVisible(ResultCategory, "home");
@@ -223,6 +246,61 @@ namespace ToyCarArena.App
         /// <summary>A commercial break is asked for under the curtain after NEXT MATCH (Poki may still show none).</summary>
         public static void MeasureCommercialBreak(this IGamePlatform platform) =>
             platform.MeasureVisible(AdCategory, "commercial");
+
+        /// <summary>
+        /// How long a commercial break held the game, in real seconds: <c>ad / commercial-none, short, mid, long /
+        /// length</c>, none for one back too soon to have played (as a rewarded one's unavailable), then under 10, under
+        /// 25 and longer. Sent after the break, so nothing goes out while it plays.
+        /// </summary>
+        public static void MeasureCommercialLength(this IGamePlatform platform, float seconds) =>
+            platform.Measure(AdCategory, seconds < 2f ? "commercial-none" : seconds < 10f ? "commercial-short"
+                : seconds < 25f ? "commercial-mid" : "commercial-long", "length");
+
+        /// <summary>
+        /// A screen's frames per second over its sample (<see cref="ScreenFrameRate"/>): <c>fps / round-touch-55 /
+        /// screen</c>, one number.
+        /// </summary>
+        public static void MeasureScreenFps(this IGamePlatform platform, ShownScreen screen, bool isTouch, float fps) =>
+            platform.Measure(FpsCategory, $"{ScreenName(screen)}-{Device(isTouch)}-{FpsBucket(fps)}", "screen");
+
+        /// <summary>
+        /// The median of the frames counted in each of the visit's first minute of seconds, as Poki's Player Fit Test
+        /// counts its own: <c>fps / visit-mouse-60 / visit</c>.
+        /// </summary>
+        public static void MeasureVisitFps(this IGamePlatform platform, bool isTouch, float fps) =>
+            platform.Measure(FpsCategory, $"visit-{Device(isTouch)}-{FpsBucket(fps)}", "visit");
+
+        /// <summary>
+        /// Frames per second rounded to 5, so 58 to 62 read 60, and 70plus above: a screen refreshed faster than 60
+        /// times a second counts more frames, as Poki's own counter does.
+        /// </summary>
+        public static string FpsBucket(float fps)
+        {
+            var bucket = Mathf.Clamp(Mathf.RoundToInt(fps / 5f) * 5, 0, 70);
+            return bucket >= 70 ? "70plus" : bucket.ToString();
+        }
+
+        private static string Device(bool isTouch) => isTouch ? "touch" : "mouse";
+
+        private static string ScreenName(ShownScreen screen)
+        {
+            switch (screen) {
+                case ShownScreen.Round:
+                    return "round";
+                case ShownScreen.Result:
+                    return "result";
+                case ShownScreen.Curtain:
+                    return "curtain";
+                case ShownScreen.Menu:
+                    return "menu";
+                case ShownScreen.Garage:
+                    return "garage";
+                case ShownScreen.Ad:
+                    return "ad";
+                default:
+                    return "none";
+            }
+        }
 
         /// <summary>The result offers CLAIM ×2, once per result.</summary>
         public static void MeasureDoubleShown(this IGamePlatform platform) =>
@@ -258,10 +336,18 @@ namespace ToyCarArena.App
         /// claim (by itself on the menu or from the DAILY tile, which is <c>menu / daily / interact</c>), then on the
         /// claim <c>daily / day-N / claim</c>, N the calendar day 1..7 (one number), with <c>daily / reset / claim</c>
         /// beside it when a missed day started the calendar again and <c>daily / hat / claim</c> when the last day gave the
-        /// hat. Closing it without claiming is <c>menu / daily-no / interact</c>.
+        /// hat. Closing it without claiming is <c>menu / daily-no / interact</c>. Over a visit's first result (no menu
+        /// offered it) the popup also sends <c>daily / offer-result / visible</c>, and closing it there unclaimed is
+        /// <c>result / daily-no / interact</c>.
         /// </summary>
         public static void MeasureDailyShown(this IGamePlatform platform) =>
             platform.MeasureVisible(DailyCategory, "offer");
+
+        public static void MeasureDailyResultShown(this IGamePlatform platform) =>
+            platform.MeasureVisible(DailyCategory, "offer-result");
+
+        public static void MeasureDailyResultDeclined(this IGamePlatform platform) =>
+            platform.MeasureInteract(ResultCategory, "daily-no");
 
         public static void MeasureDailyClaimed(this IGamePlatform platform, DailyClaim claim)
         {
@@ -399,9 +485,12 @@ namespace ToyCarArena.App
         /// The first-round controls events (input, first move, boost input, swipes) go out only for a round that waited
         /// on the start screen, <paramref name="isStartRound"/>: the menu's first round counts down instead, and its
         /// first move would read the countdown as the player's hesitation. Null keeps the old rule, the first round.
+        /// In the HOT POTATO mode (<paramref name="isHotPotato"/>) nobody falls and the player is out only by the blast,
+        /// so the out causes (<c>round-out-cause</c>, <c>fall-cause</c>) are not sent: the mode's own are the
+        /// <c>special / hot-potato…</c> events.
         /// </remarks>
         public static void MeasureRoundEnd(this IGamePlatform platform, int round, RoundResult result, float duration,
-            PlayerDriver driver, bool hasBoost, bool? isStartRound = null)
+            PlayerDriver driver, bool hasBoost, bool? isStartRound = null, bool isHotPotato = false)
         {
             var measuresControls = isStartRound ?? round <= 1;
             if (result.IsMatch) {
@@ -432,7 +521,7 @@ namespace ToyCarArena.App
                 var revenge = result.RevengeTaken ? "got" : "missed";
                 platform.Measure(ResultCategory, $"revenge-{revenge}-{tag}", "revenge");
             }
-            if (result.Outcome == RoundOutcome.Out) {
+            if (result.Outcome == RoundOutcome.Out && !isHotPotato) {
                 var cause = result.KnockedOutBy == RoundResult.Nobody ? "fell" : "pushed";
                 platform.Measure(ResultCategory, $"{cause}-{tag}", "round-out-cause");
                 if (result.KnockedOutBy == RoundResult.Nobody) {
@@ -737,11 +826,20 @@ namespace ToyCarArena.App
             }
         }
 
-        /// <summary>The arenas the levels of this reward opened, from the tuning, as the cars are.</summary>
+        /// <summary>
+        /// The arenas the levels of this reward opened, from the tuning, as the cars are; and the leagues' hats it
+        /// reached (<c>progress / hat-id / unlock</c>; a league's car is already among the cars).
+        /// </summary>
         public static void MeasureMapUnlocks(this IGamePlatform platform, XpGain gain, GameTuning tuning)
         {
             foreach (var id in ArenaRotation.OpenedBetween(tuning, gain.Before.Level, gain.After.Level)) {
                 platform.Measure("progress", $"map-{id}", "unlock");
+            }
+
+            foreach (var league in tuning.LeagueRewards.All) {
+                if (league.Level > gain.Before.Level && league.Level <= gain.After.Level) {
+                    platform.Measure("progress", $"hat-{league.Topper}", "unlock");
+                }
             }
         }
 

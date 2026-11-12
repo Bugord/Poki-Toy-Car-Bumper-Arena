@@ -33,7 +33,8 @@ namespace ToyCarArena.Gameplay.Arena
         // The floor the kept part takes as the last returning wave lands; null when nothing waits.
         private Material pendingFloor;
 
-        public ArenaVariants(GameTuning tuning, ArenaMap map, ArenaRound round, ArenaCrumble crumble, ArenaFloor floor)
+        public ArenaVariants(GameTuning tuning, ArenaMap map, ArenaRound round, ArenaCrumble crumble, ArenaFloor floor,
+            RoundRules rules)
         {
             this.map = map;
             this.round = round;
@@ -49,7 +50,8 @@ namespace ToyCarArena.Gameplay.Arena
 
             this.start = Mathf.Max(0, variants.FindIndex(variant => variant.Id == map.Variant));
             Variant = map.Variant;
-            Mechanic = map.Mechanic;
+            // HOT POTATO has one rule, the bomb: no mechanic of the variant builds or acts, only its floor shows.
+            Mechanic = rules.IsHotPotato ? GameTuning.ArenaMechanic.None : map.Mechanic;
             // Only a match turns the variants, and only through a floor that cycles: a round, even one cycling its
             // floor for a test, keeps its variant.
             this.isRotating = tuning.IsMatch && crumble.IsCycling && variants.Count > 1;

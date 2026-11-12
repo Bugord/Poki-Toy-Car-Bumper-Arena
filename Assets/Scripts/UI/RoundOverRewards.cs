@@ -36,13 +36,16 @@ namespace ToyCarArena.UI
             this.viewModel = viewModel;
             var row = new VisualElement { name = "rewards", pickingMode = PickingMode.Ignore };
             row.AddToClassList("rewards");
-            xp = Sticker("reward--xp", HudView.CreateStar("ko-star"), "result.reward_xp", viewModel.RoundXp, 0,
-                out xpValue);
+            // XP has one sign everywhere, the blue five-pointed star of the menu and the missions; the eight-pointed
+            // star is the knock-out's.
+            var star = new VisualElement { pickingMode = PickingMode.Ignore };
+            star.generateVisualContent += MenuView.DrawXpStar;
+            xp = Sticker("reward--xp", star, "result.reward_xp", viewModel.RoundXp, 0, out xpValue);
             // The XP boost bought in the menu paid for this round: its XP already counts it.
             if (viewModel.XpGain.BoostXp > 0) {
                 var boost = new VisualElement { pickingMode = PickingMode.Ignore };
                 boost.AddToClassList("reward__boost");
-                var boostLabel = RoundOverProgress.Outlined("", "reward__boost-label", out var boostLabels);
+                var boostLabel = StrokeText.Outlined("", "reward__boost-label", out var boostLabels);
                 foreach (var part in boostLabels) {
                     text.Set(part, () => Strings.Format("result.boost_stamp", viewModel.BoostMultiplier));
                 }
@@ -62,7 +65,7 @@ namespace ToyCarArena.UI
                 var firstWin = new VisualElement { pickingMode = PickingMode.Ignore };
                 firstWin.AddToClassList("reward__boost");
                 firstWin.AddToClassList("reward__first-win");
-                var firstWinLabel = RoundOverProgress.Outlined("", "reward__boost-label", out var firstWinLabels);
+                var firstWinLabel = StrokeText.Outlined("", "reward__boost-label", out var firstWinLabels);
                 foreach (var part in firstWinLabels) {
                     text.Set(part, () => Strings.Format("result.first_win_stamp", viewModel.FirstWinMultiplier));
                 }
@@ -87,7 +90,7 @@ namespace ToyCarArena.UI
             face.AddToClassList("button__face");
             Claim.Add(face);
             Claim.Add(PlaySign());
-            var label = RoundOverProgress.Outlined("", "double__label", out var labels);
+            var label = StrokeText.Outlined("", "double__label", out var labels);
             foreach (var part in labels) {
                 part.AddToClassList("button__label");
                 text.Set(part, () => Strings.Get("result.claim_x2"));
@@ -246,9 +249,9 @@ namespace ToyCarArena.UI
             text.Set(name, () => Strings.Get(nameKey));
             what.Add(name);
             sticker.Add(what);
-            sticker.Add(RoundOverProgress.Outlined($"+{value}", "reward__value", out valueLabels));
+            sticker.Add(StrokeText.Outlined($"+{value}", "reward__value", out valueLabels));
 
-            var stamp = RoundOverProgress.Outlined("×2", "reward__stamp", out _);
+            var stamp = StrokeText.Outlined("×2", "reward__stamp", out _);
             stamp.style.display = DisplayStyle.None;
             sticker.Add(stamp);
             stamps[index] = stamp;

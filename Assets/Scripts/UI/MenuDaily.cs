@@ -9,17 +9,18 @@ using UnityEngine.UIElements;
 namespace ToyCarArena.UI
 {
     /// <summary>
-    /// The daily gift's popup in the main menu (macket MenuB_Daily): a tilted gold DAILY GIFT!, the days in a row on an
+    /// The daily gift's popup (macket MenuB_Daily), in the main menu and over a visit's first result: a tilted gold DAILY GIFT!, the days in a row on an
     /// orange tag, the calendar of seven days (coins rising day by day, the last one twice as wide with the mystery hat),
     /// what tomorrow brings, and CLAIM with CLAIM ×2 for a rewarded ad beside it. Upright the calendar is two rows of four
     /// cells, the last two wide; sideways it is one row (<c>menu--wide</c> in ui_menu). Days already taken this week are
     /// pale with a green tick, today's is gold-ringed and lifted. Once claimed it shows the claim and celebrates
-    /// it (<see cref="RewardCelebration"/>), and the menu turns to the tasks after; opened again the same day it shows the
-    /// tasks with CONTINUE. <see cref="MenuView"/> owns the frame, the keys and when it opens and closes.
+    /// it (<see cref="RewardCelebration"/>); the menu then turns to the tasks, the result closes it. Opened again the
+    /// same day the menu shows the tasks with CONTINUE. The screen it is on (<see cref="MenuView"/>,
+    /// <see cref="ResultDaily"/>) owns the frame, the keys and when it opens and closes.
     /// <para>
-    /// A GIFT | TASKS switch at the top (as the garage's) turns to the day's tasks: the first win of the day, which pays
-    /// twice, and the three daily tasks (<see cref="DailyTasks"/>) with their progress and reward, under them when the
-    /// next ones come.
+    /// In the menu a GIFT | TASKS switch at the top (as the garage's) turns to the day's tasks: the first win of the
+    /// day, which pays twice, and the three daily tasks (<see cref="DailyTasks"/>) with their progress and reward, under
+    /// them when the next ones come. Over the result the popup is the gift alone, without the switch.
     /// </para>
     /// </summary>
     internal sealed class MenuDaily
@@ -28,6 +29,7 @@ namespace ToyCarArena.UI
         private const string TodayClass = "menu__daily-day--today";
         private const string BigClass = "menu__daily-day--big";
         private const string HatClass = "menu__daily-day--hat";
+        private const string PileArtClass = "menu__daily-art--pile";
 
         private static readonly Color Navy = new Color32(0x1d, 0x2b, 0x4f, 0xff);
         private static readonly Color Gold = new Color32(0xff, 0xc9, 0x3c, 0xff);
@@ -58,7 +60,7 @@ namespace ToyCarArena.UI
         private Cell[] cells = Array.Empty<Cell>();
 
         public MenuDaily(VisualElement sheet, Action pressDouble, Action pressClaim, Action pressContinue,
-            Action<bool> pressTab)
+            Action<bool> pressTab = null)
         {
             this.sheet = sheet;
             sheet.AddToClassList("menu__daily-sheet");
@@ -67,10 +69,10 @@ namespace ToyCarArena.UI
             tabs = Element("menu__daily-tabs");
             tabs.Add(Element("menu__drop"));
             var tabsFace = Element("menu__daily-tabs-face");
-            giftTab = Tab(() => pressTab(false), false, out giftTabLabels);
+            giftTab = Tab(() => pressTab?.Invoke(false), false, out giftTabLabels);
             giftDot = Element("menu__daily-tab-dot");
             giftTab.Add(giftDot);
-            tasksTab = Tab(() => pressTab(true), true, out tasksTabLabels);
+            tasksTab = Tab(() => pressTab?.Invoke(true), true, out tasksTabLabels);
             tabsFace.Add(giftTab);
             tabsFace.Add(tasksTab);
             tabs.Add(tabsFace);
@@ -109,7 +111,7 @@ namespace ToyCarArena.UI
             claimRow = Element("menu__daily-buttons");
             doubleButton = Button("button--purple", "menu__daily-double", pressDouble);
             doubleButton.Add(RoundOverRewards.PlaySign());
-            var doubleLabel = RoundOverProgress.Outlined(Strings.Get("result.claim_x2"), "menu__daily-label",
+            var doubleLabel = StrokeText.Outlined(Strings.Get("daily.claim"), "menu__daily-label",
                 out var doubleLabels);
             foreach (var label in doubleLabels) {
                 label.AddToClassList("button__label");
@@ -118,6 +120,8 @@ namespace ToyCarArena.UI
             FitText.Fit(doubleLabel, doubleLabels);
             doubleButton.Add(doubleLabel);
             DoubleLabels = doubleLabels;
+            DoubleAmount = Amount(doubleButton, out var doubleAmounts);
+            DoubleAmounts = doubleAmounts;
             var ad = Text("menu__daily-ad");
             ad.text = Strings.Get("result.ad");
             AdTag = ad;
@@ -126,7 +130,7 @@ namespace ToyCarArena.UI
             claimRow.Add(doubleButton);
 
             claimButton = Button("button--green", "menu__daily-claim", pressClaim);
-            var claimLabel = RoundOverProgress.Outlined(Strings.Get("daily.claim"), "menu__daily-label",
+            var claimLabel = StrokeText.Outlined(Strings.Get("daily.claim"), "menu__daily-label",
                 out var claimLabels);
             foreach (var label in claimLabels) {
                 label.AddToClassList("button__label");
@@ -135,6 +139,8 @@ namespace ToyCarArena.UI
             FitText.Fit(claimLabel, claimLabels);
             claimButton.Add(claimLabel);
             ClaimLabels = claimLabels;
+            ClaimAmount = Amount(claimButton, out var claimAmounts);
+            ClaimAmounts = claimAmounts;
             SpaceKey = KeyCap(Strings.Get("common.space"), "menu__daily-key");
             claimButton.Add(SpaceKey);
             claimRow.Add(claimButton);
@@ -150,6 +156,10 @@ namespace ToyCarArena.UI
 
         private Label[] DoubleLabels { get; }
         private Label[] ClaimLabels { get; }
+        private VisualElement DoubleAmount { get; }
+        private Label[] DoubleAmounts { get; }
+        private VisualElement ClaimAmount { get; }
+        private Label[] ClaimAmounts { get; }
         private Label AdTag { get; }
         private VisualElement SpaceKey { get; }
         private Label ContinueLabel { get; }
@@ -167,40 +177,42 @@ namespace ToyCarArena.UI
         public VisualElement DoubleButton => doubleButton;
 
         /// <summary>
-        /// Shows the calendar as <paramref name="model"/> has it now: the days taken, today's, what is to come, and the
-        /// buttons a gift still to claim or a taken one leaves. Also redraws the words in the language shown.
+        /// Shows the half chosen as it is now: the calendar as <paramref name="gift"/> has it (the days taken, today's,
+        /// what is to come, and the buttons a gift still to claim or a taken one leaves), or the day's tasks from
+        /// <paramref name="menu"/>. Without <paramref name="menu"/> (over the result) it is the calendar alone. Also
+        /// redraws the words in the language shown.
         /// </summary>
-        public void Fill(MenuViewModel model)
+        public void Fill(DailyGift gift, MenuViewModel menu = null)
         {
-            // A build with only one half shows it without the switch.
-            IsTasks = model.HasDailyGift ? IsTasks && model.HasDailyTasks : model.HasDailyTasks;
-            tabs.style.display = model.HasDailyGift && model.HasDailyTasks ? DisplayStyle.Flex : DisplayStyle.None;
+            // A popup with only one half shows it without the switch.
+            var hasTasks = menu is { HasDailyTasks: true };
+            var hasGift = gift.IsEnabled;
+            IsTasks = hasGift ? IsTasks && hasTasks : hasTasks;
+            tabs.style.display = hasGift && hasTasks ? DisplayStyle.Flex : DisplayStyle.None;
             giftTab.EnableInClassList(TabOnClass, !IsTasks);
             tasksTab.EnableInClassList(TabOnClass, IsTasks);
-            giftDot.style.display = model.CanClaimDaily ? DisplayStyle.Flex : DisplayStyle.None;
-            foreach (var label in giftTabLabels) {
-                label.text = Strings.Get("daily.tab_gift");
-            }
-
-            foreach (var label in tasksTabLabels) {
-                label.text = Strings.Format("daily.tab_tasks", model.DailyTasksDone, model.TodaysTasks.Count);
+            giftDot.style.display = gift.CanClaim ? DisplayStyle.Flex : DisplayStyle.None;
+            StrokeText.SetText(giftTabLabels, Strings.Get("daily.tab_gift"));
+            if (hasTasks) {
+                StrokeText.SetText(tasksTabLabels,
+                    Strings.Format("daily.tab_tasks", menu.DailyTasksDone, menu.TodaysTasks.Count));
             }
 
             giftPage.style.display = IsTasks ? DisplayStyle.None : DisplayStyle.Flex;
             tasksPage.style.display = IsTasks ? DisplayStyle.Flex : DisplayStyle.None;
             ContinueLabel.text = Strings.Get("result.continue");
             if (IsTasks) {
-                FillTasks(model);
+                FillTasks(menu);
                 continueButton.style.display = DisplayStyle.Flex;
                 return;
             }
 
-            var canClaim = model.CanClaimDaily;
-            var today = model.DailySlot;
-            streak.text = Strings.Format("daily.streak", model.DailyStreak);
-            if (cells.Length != model.DailyDays) {
+            var canClaim = gift.CanClaim;
+            var today = gift.Slot;
+            streak.text = Strings.Format("daily.streak", gift.Streak);
+            if (cells.Length != gift.Days) {
                 days.Clear();
-                cells = new Cell[model.DailyDays];
+                cells = new Cell[gift.Days];
                 for (var i = 0; i < cells.Length; i++) {
                     cells[i] = new Cell(i == cells.Length - 1);
                     days.Add(cells[i].Root);
@@ -214,30 +226,33 @@ namespace ToyCarArena.UI
                 cell.Root.EnableInClassList(TodayClass, isToday);
                 cell.Root.EnableInClassList(DoneClass, isDone);
                 cell.Caption.text = isToday ? Strings.Get("daily.today") : Strings.Format("daily.day", i + 1);
-                var hat = model.DailyHatOf(i);
+                var hat = gift.HatOf(i);
                 if (hat != null) {
                     cell.ShowGift(Strings.Get("daily.mystery"));
                 }
                 else {
-                    cell.ShowCoins(model.DailyCoinsOf(i), CoinsIn(i, cells.Length));
+                    cell.ShowCoins(gift.CoinsOf(i), PileOf(i, cells.Length));
                 }
             }
 
-            var next = model.NextDailySlot;
-            hint.text = model.DailyHatOf(next) != null
-                ? Strings.Get("daily.tomorrow_hat")
-                : Strings.Format("daily.tomorrow", model.DailyCoinsOf(next));
+            ShowTomorrow(gift, !canClaim);
 
             claimRow.style.display = canClaim ? DisplayStyle.Flex : DisplayStyle.None;
-            doubleButton.style.display = model.CanDoubleDaily ? DisplayStyle.Flex : DisplayStyle.None;
+            doubleButton.style.display = gift.CanDouble ? DisplayStyle.Flex : DisplayStyle.None;
             continueButton.style.display = canClaim ? DisplayStyle.None : DisplayStyle.Flex;
             foreach (var label in DoubleLabels) {
-                label.text = Strings.Get("result.claim_x2");
+                label.text = Strings.Get("daily.claim");
             }
 
             foreach (var label in ClaimLabels) {
                 label.text = Strings.Get("daily.claim");
             }
+
+            // The amounts on the buttons, CLAIM ×2's already doubled: what the ad is worth is plain before it plays.
+            // A hat has no amount.
+            var coins = gift.HatOf(today) == null ? gift.CoinsOf(today) : 0;
+            SetAmount(ClaimAmount, ClaimAmounts, coins);
+            SetAmount(DoubleAmount, DoubleAmounts, coins * gift.AdMultiplier);
 
             AdTag.text = Strings.Get("result.ad");
             SpaceKey.Q<Label>().text = Strings.Get("common.space");
@@ -257,31 +272,30 @@ namespace ToyCarArena.UI
 
             taskList.Clear();
             foreach (var task in model.TodaysTasks) {
+                // As the missions popup's rows: the task's sign (gold with a tick once done), the task over its XP and
+                // coins, and the count with its bar.
                 var definition = task.Definition;
-                var row = Element("mission");
+                var row = Element("menu__mission-row");
                 row.AddToClassList("menu__daily-task");
-                row.EnableInClassList("mission--done", task.IsDone);
-                var check = Element("mission__check");
-                check.Add(Element("mission__mark"));
-                row.Add(check);
-                var text = Text("mission__task");
+                row.EnableInClassList("menu__daily-task--done", task.IsDone);
+                var icon = MissionLook.IconOf(definition);
+                icon.Set(definition, task.IsDone);
+                row.Add(icon);
+                var body = Element("menu__mission-row-body");
+                var text = Text("menu__mission-row-task");
                 text.text = model.MissionText(definition);
-                row.Add(text);
-                var progress = Text("mission__progress");
-                progress.text = task.IsDone ? Strings.Get("daily.task_done") : $"{task.Progress}/{task.Target}";
+                body.Add(text);
+                body.Add(MissionLook.Reward(model.DailyTaskXp(definition), model.DailyTaskCoins(definition)));
+                row.Add(body);
+                var progress = MissionLook.ProgressOf();
+                progress.Set(task.IsDone ? task.Target : task.Progress, task.Target);
                 row.Add(progress);
-                var reward = Element("menu__daily-task-reward");
-                var xp = Text("menu__daily-task-xp");
-                xp.text = $"+{model.DailyTaskXp(definition)} XP";
-                reward.Add(xp);
-                var coins = Element("menu__reward");
-                coins.Add(RoundOverMeta.Coin());
-                var count = Text("menu__reward-count");
-                count.text = model.DailyTaskCoins(definition).ToString();
-                coins.Add(count);
-                reward.Add(coins);
-                row.Add(reward);
                 taskList.Add(row);
+            }
+
+            // USS has no :last-child, so the last row drops its gap under it by a class.
+            if (taskList.childCount > 0) {
+                taskList[taskList.childCount - 1].AddToClassList("menu__mission-row--last");
             }
 
             tasksHint.text = Strings.Format("daily.tasks_next", TimeText(model.DailyTasksTimeLeft));
@@ -305,8 +319,8 @@ namespace ToyCarArena.UI
             // A navy line between the halves (USS has no :first-child).
             button.EnableInClassList("menu__daily-tab--split", isSplit);
             button.focusable = false;
-            // Two layers, as the garage's tabs: the navy outline under a clean face.
-            button.Add(RoundOverProgress.Outlined("", "menu__daily-tab-label", out labels));
+            // As the garage's tabs: the face over its outline and drop (StrokeText).
+            button.Add(StrokeText.Outlined("", "menu__daily-tab-label", out labels));
             return button;
         }
 
@@ -315,8 +329,8 @@ namespace ToyCarArena.UI
         /// and the celebration plays over the popup's dim with the stamp over the cell and, for coins,
         /// the coins flying from it into <paramref name="coinCounter"/>.
         /// </summary>
-        public void Celebrate(VisualElement overlay, DailyClaim claim, GarageStage stage, VisualElement coinCounter,
-            CancellationToken token)
+        public void Celebrate(VisualElement overlay, DailyGift gift, DailyClaim claim, GarageStage stage,
+            VisualElement coinCounter, CancellationToken token)
         {
             if (claim.Slot < 0 || claim.Slot >= cells.Length) {
                 return;
@@ -328,11 +342,13 @@ namespace ToyCarArena.UI
                 cell.ShowHat(claim.Hat, stage, GameText.Topper(claim.Hat));
             }
             else {
-                cell.ShowCoins(claim.Coins, CoinsIn(claim.Slot, cells.Length));
+                cell.ShowCoins(claim.Coins, PileOf(claim.Slot, cells.Length));
             }
 
-            // The buttons go; the menu closes the card once the celebration is over.
+            // The buttons go, and the line under the calendar says what tomorrow brings; the menu closes the card once
+            // the celebration is over.
             claimRow.style.display = DisplayStyle.None;
+            ShowTomorrow(gift, true);
             // The stamp goes over the whole calendar: a cell is too narrow for it.
             var stamp = Strings.Get(claim.Hat != null ? "result.equipped" : "daily.claimed");
             RewardCelebration.Play(overlay, sheet, days, stamp, claim.Hat == null ? cell.Art : null,
@@ -343,8 +359,54 @@ namespace ToyCarArena.UI
         public void Refuse(VisualElement overlay, CancellationToken token) =>
             RewardCelebration.Refuse(overlay, sheet, doubleButton, Strings.Get("garage.no_ad"), token);
 
-        // One coin on the first days, two in the middle, three at the end, as the macket stacks them.
-        private static int CoinsIn(int slot, int count) => slot < 2 ? 1 : slot < Math.Min(4, count - 1) ? 2 : 3;
+        private void ShowTomorrow(DailyGift gift, bool isShown)
+        {
+            hint.style.display = isShown ? DisplayStyle.Flex : DisplayStyle.None;
+            var next = gift.NextSlot;
+            hint.text = gift.HatOf(next) != null
+                ? Strings.Get("daily.tomorrow_hat")
+                : Strings.Format("daily.tomorrow", gift.CoinsOf(next));
+        }
+
+        // A coin and an outlined amount after a button's CLAIM.
+        private static VisualElement Amount(VisualElement button, out Label[] labels)
+        {
+            var amount = Element("menu__daily-sum");
+            var coin = RoundOverMeta.Coin();
+            coin.AddToClassList("menu__daily-sum-coin");
+            amount.Add(coin);
+            amount.Add(StrokeText.Outlined("", "menu__daily-label", out labels));
+            foreach (var label in labels) {
+                label.AddToClassList("button__label");
+            }
+
+            button.Add(amount);
+            return amount;
+        }
+
+        private static void SetAmount(VisualElement amount, Label[] labels, int coins)
+        {
+            amount.style.display = coins > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+            foreach (var label in labels) {
+                label.text = coins.ToString();
+            }
+        }
+
+        // The pile a day's coins are drawn as (1 to 4, see CoinPile): the first day the smallest, the last coin days
+        // (and a seventh day paid in coins) the biggest heap, the days between two sizes in between.
+        private static int PileOf(int slot, int count)
+        {
+            if (slot <= 0) {
+                return 1;
+            }
+
+            if (slot >= count - 2) {
+                return 4;
+            }
+
+            var between = Math.Max(1, count - 3);
+            return 2 + Math.Min(1, (slot - 1) * 2 / between);
+        }
 
         private static Button Button(string colour, string className, Action pressed)
         {
@@ -440,6 +502,7 @@ namespace ToyCarArena.UI
             public readonly Label Caption;
             public readonly VisualElement Art;
             private readonly Label amount;
+            private CoinPile pile;
 
             public Cell(bool isBig)
             {
@@ -456,26 +519,27 @@ namespace ToyCarArena.UI
                 Root.Add(tick);
             }
 
-            public void ShowCoins(int coins, int count)
+            public void ShowCoins(int coins, int size)
             {
                 Root.RemoveFromClassList(HatClass);
-                Art.Clear();
-                var stack = Element("menu__daily-stack");
-                stack.AddToClassList($"menu__daily-stack--{count}");
-                for (var i = 0; i < count; i++) {
-                    var coin = RoundOverMeta.Coin();
-                    coin.AddToClassList("menu__daily-coin");
-                    coin.AddToClassList($"menu__daily-coin--{i}");
-                    stack.Add(coin);
+                // The pile draws itself pale on a day taken (CoinPile), not through the art's opacity: overlapping
+                // coins under opacity would show each other's outlines through.
+                Art.AddToClassList(PileArtClass);
+                if (pile == null || pile.Element.parent != Art) {
+                    Art.Clear();
+                    pile = new CoinPile(Root);
+                    Art.Add(pile.Element);
                 }
 
-                Art.Add(stack);
+                pile.Show(size);
                 amount.text = coins.ToString();
             }
 
             public void ShowGift(string text)
             {
                 Root.RemoveFromClassList(HatClass);
+                Art.RemoveFromClassList(PileArtClass);
+                pile = null;
                 Art.Clear();
                 var gift = Element("menu__daily-gift");
                 gift.generateVisualContent += DrawGift;
@@ -487,6 +551,8 @@ namespace ToyCarArena.UI
             {
                 // A pale face and the hat at full strength: the purple hat would be lost on the purple day.
                 Root.AddToClassList(HatClass);
+                Art.RemoveFromClassList(PileArtClass);
+                pile = null;
                 Art.Clear();
                 VisualElement hat;
                 var texture = stage?.ShowToppers(CarTopper.ExclusiveIds);
@@ -505,6 +571,158 @@ namespace ToyCarArena.UI
 
                 Art.Add(hat);
                 amount.text = name;
+            }
+        }
+
+        /// <summary>
+        /// A day's coins as a pile that grows with the amount: a short stack and a coin beside it on the first day,
+        /// then two and three stacks, and a heap of stacks with a coin standing in front on the last coin days. Each
+        /// coin lies flat, seen from above at an angle: a gold top with a pale disc, a darker gold edge, a navy
+        /// outline, as the coins of <see cref="RoundOverMeta.Coin"/>. Every size is drawn at the same scale, so a
+        /// bigger pile is bigger on screen. On a day taken it is drawn pale towards the cell's face.
+        /// </summary>
+        private sealed class CoinPile
+        {
+            // The design box the piles are laid out in, scaled to fit the element and stood on its bottom.
+            private const float BoxWidth = 160f;
+            private const float BoxHeight = 120f;
+            private const float CoinX = 25f;
+            private const float CoinY = 11f;
+            private const float Thickness = 9f;
+            private const float Line = 5f;
+            private const float Kappa = 0.5523f;
+            private const float PaleShare = 0.55f;
+
+            private static readonly Color Face = new Color32(0xff, 0xc9, 0x3c, 0xff);
+            private static readonly Color Light = new Color32(0xff, 0xe3, 0x9a, 0xff);
+            private static readonly Color Edge = new Color32(0xe5, 0x9a, 0x12, 0xff);
+
+            // Each pile's stacks back to front: centre x, the bottom of the lowest coin, how many coins.
+            private static readonly Vector3[][] Stacks = {
+                new[] { new Vector3(66f, 110f, 2f), new Vector3(100f, 117f, 1f) },
+                new[] { new Vector3(58f, 106f, 3f), new Vector3(102f, 108f, 2f), new Vector3(80f, 118f, 1f) },
+                new[] {
+                    new Vector3(80f, 100f, 5f), new Vector3(46f, 109f, 3f), new Vector3(114f, 109f, 4f),
+                    new Vector3(80f, 118f, 2f),
+                },
+                new[] {
+                    new Vector3(102f, 96f, 7f), new Vector3(62f, 98f, 6f), new Vector3(34f, 108f, 3f),
+                    new Vector3(128f, 107f, 4f), new Vector3(80f, 118f, 3f),
+                },
+            };
+
+            // A coin standing up in front of the biggest piles: centre and radius (0 for none).
+            private static readonly Vector3[] Standing = {
+                Vector3.zero, Vector3.zero, Vector3.zero, new Vector3(126f, 96f, 20f),
+            };
+
+            private readonly VisualElement cell;
+            private int size = 1;
+
+            public CoinPile(VisualElement cell)
+            {
+                this.cell = cell;
+                Element = new VisualElement { pickingMode = PickingMode.Ignore };
+                Element.AddToClassList("menu__daily-pile");
+                Element.generateVisualContent += Draw;
+            }
+
+            public VisualElement Element { get; }
+
+            public void Show(int pileSize)
+            {
+                size = Mathf.Clamp(pileSize, 1, Stacks.Length);
+                Element.MarkDirtyRepaint();
+            }
+
+            private void Draw(MeshGenerationContext context)
+            {
+                var r = Element.contentRect;
+                var scale = Mathf.Min(r.width / BoxWidth, r.height / BoxHeight);
+                if (scale <= 0f) {
+                    return;
+                }
+
+                var origin = new Vector2(r.x + (r.width - BoxWidth * scale) * 0.5f, r.yMax - BoxHeight * scale);
+                var isPale = cell.ClassListContains(DoneClass);
+                var behind = cell.resolvedStyle.backgroundColor;
+                Color Tint(Color colour) => isPale ? Color.Lerp(behind, colour, PaleShare) : colour;
+                var navy = Tint(Navy);
+                var face = Tint(Face);
+                var light = Tint(Light);
+                var edge = Tint(Edge);
+
+                var p = context.painter2D;
+                p.lineWidth = Line * scale;
+                p.lineJoin = LineJoin.Round;
+                p.strokeColor = navy;
+                Vector2 At(float x, float y) => origin + new Vector2(x, y) * scale;
+
+                foreach (var stack in Stacks[size - 1]) {
+                    var count = (int)stack.z;
+                    // The lowest coin's top sits a coin's edge and half its top above the stack's bottom.
+                    var top = stack.y - Thickness - CoinY;
+                    for (var i = 0; i < count; i++) {
+                        Coin(stack.x, top - i * Thickness, i == count - 1);
+                    }
+                }
+
+                var standing = Standing[size - 1];
+                if (standing.z > 0f) {
+                    Upright(standing.x, standing.y, standing.z);
+                }
+
+                // A coin lying flat with its top at (x, y): its silhouette in the edge's colour, then its top face
+                // if no coin lies on it.
+                void Coin(float x, float y, bool hasFace)
+                {
+                    p.fillColor = edge;
+                    p.BeginPath();
+                    p.MoveTo(At(x - CoinX, y));
+                    p.LineTo(At(x - CoinX, y + Thickness));
+                    p.BezierCurveTo(At(x - CoinX, y + Thickness + Kappa * CoinY),
+                        At(x - Kappa * CoinX, y + Thickness + CoinY), At(x, y + Thickness + CoinY));
+                    p.BezierCurveTo(At(x + Kappa * CoinX, y + Thickness + CoinY),
+                        At(x + CoinX, y + Thickness + Kappa * CoinY), At(x + CoinX, y + Thickness));
+                    p.LineTo(At(x + CoinX, y));
+                    p.BezierCurveTo(At(x + CoinX, y - Kappa * CoinY), At(x + Kappa * CoinX, y - CoinY),
+                        At(x, y - CoinY));
+                    p.BezierCurveTo(At(x - Kappa * CoinX, y - CoinY), At(x - CoinX, y - Kappa * CoinY),
+                        At(x - CoinX, y));
+                    p.ClosePath();
+                    p.Fill();
+                    p.Stroke();
+                    if (!hasFace) {
+                        return;
+                    }
+
+                    Ellipse(x, y, CoinX, CoinY, face, true);
+                    Ellipse(x, y, CoinX * 0.55f, CoinY * 0.5f, light, false);
+                }
+
+                // A coin standing up, facing the camera: a navy drop under it, the gold disc and its pale middle.
+                void Upright(float x, float y, float radius)
+                {
+                    Ellipse(x, y + 3f, radius, radius, navy, true);
+                    Ellipse(x, y, radius, radius, face, true);
+                    Ellipse(x, y, radius * 0.42f, radius * 0.42f, light, false);
+                }
+
+                void Ellipse(float x, float y, float rx, float ry, Color fill, bool isOutlined)
+                {
+                    p.fillColor = fill;
+                    p.BeginPath();
+                    p.MoveTo(At(x + rx, y));
+                    p.BezierCurveTo(At(x + rx, y + Kappa * ry), At(x + Kappa * rx, y + ry), At(x, y + ry));
+                    p.BezierCurveTo(At(x - Kappa * rx, y + ry), At(x - rx, y + Kappa * ry), At(x - rx, y));
+                    p.BezierCurveTo(At(x - rx, y - Kappa * ry), At(x - Kappa * rx, y - ry), At(x, y - ry));
+                    p.BezierCurveTo(At(x + Kappa * rx, y - ry), At(x + rx, y - Kappa * ry), At(x + rx, y));
+                    p.ClosePath();
+                    p.Fill();
+                    if (isOutlined) {
+                        p.Stroke();
+                    }
+                }
             }
         }
     }

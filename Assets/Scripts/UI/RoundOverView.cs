@@ -3,6 +3,7 @@ using Bugord.App.Localization;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.Audio;
 using ToyCarArena.Gameplay.Round;
+using ToyCarArena.Rendering;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -15,11 +16,14 @@ namespace ToyCarArena.UI
     /// </summary>
     public sealed class RoundOverView : FadingView<RoundOverViewModel>
     {
+        protected override ShownScreen ScreenKind => ShownScreen.Result;
+
         // How long after the screen shows its parts start to move in: long enough for them to be laid out where they
         // start, or their transitions would have nothing to move from.
         private const long EnterDelay = 80;
 
         private const string WonClass = "round-over__title--won";
+        private const string GiftClass = "round-over--gift";
         private const string OutClass = "round-over__title--out";
         private const string EnterClass = "round-over--enter";
         // The title's spring in (round-over__title in ui_screens) before the confetti bursts out of it, in milliseconds.
@@ -54,6 +58,8 @@ namespace ToyCarArena.UI
         private RoundOverProgress xpProgress;
         private RoundOverMeta meta;
         private RoundOverRewards rewards;
+        private ResultDaily daily;
+        private CancellationTokenSource rewardRun;
         private bool isTouch;
         private bool isColumns;
         private SafeInsets safeInsets;
@@ -69,6 +75,8 @@ namespace ToyCarArena.UI
 
         protected override void OnAttached()
         {
+            // The outlined texts of the UXML get their drop layer (StrokeText).
+            StrokeText.AddDrops(Root);
             // The navigator focuses the screen, which hands the focus to the button, so Space and Enter reach us.
             Root.focusable = true;
             Root.delegatesFocus = true;
@@ -97,15 +105,20 @@ namespace ToyCarArena.UI
             screen = Root.Q<VisualElement>("round-over");
             bottom = Root.Q<VisualElement>(className: "round-over__bottom");
             missions = Root.Q<VisualElement>("missions");
+            // The daily gift over the visit's first result, above the coin corner it pays into.
+            daily = new ResultDaily(screen ?? Root, ViewModel, audioService, meta.CoinPill, isTouch);
+            daily.Claimed += OnDailyClaimed;
             bottom.RegisterCallback<GeometryChangedEvent>(OnColumnGeometry);
             missions?.RegisterCallback<GeometryChangedEvent>(OnColumnGeometry);
             SafeArea.Watch(Root, insets => {
                 safeInsets = insets;
                 settingsButton.style.top = 40f + insets.Top;
                 settingsButton.style.right = 40f + insets.Right;
-                meta.CoinPill.style.top = 52f + insets.Top;
-                meta.CoinPill.style.right = 184f + insets.Right;
+                // Level with the gear (both 112 tall over the same drop), a gap to its left.
+                meta.CoinPill.style.top = 40f + insets.Top;
+                meta.CoinPill.style.right = 176f + insets.Right;
                 PlaceColumns();
+                daily.Place(Root.layout.size, insets);
             });
             garagePortrait = new CarPortrait(Root.Q<VisualElement>("garage-portrait"));
             RefreshGarage();
@@ -126,6 +139,7 @@ namespace ToyCarArena.UI
             xpProgress = new RoundOverProgress(Root, ViewModel, isTouch);
             xpProgress.RewardTaken += OnRewardTaken;
             xpProgress.RewardRefused += OnRewardRefused;
+            xpProgress.Clicked += audioService.PlayUiClick;
             rewards = new RoundOverRewards(Root, ViewModel, isTouch);
             rewards.Claim.clicked += ClaimDouble;
             match = RoundOverMatch.Create(Root, ViewModel);
@@ -141,14 +155,46 @@ namespace ToyCarArena.UI
             }
             match?.Play();
             await base.ShowAsync(token);
-            // The reward runs beside input; no part of it delays NEXT MATCH, Space or Enter.
+            PlayReward(token).Forget();
+        }
+
+        /// <summary>
+        /// The daily gift first, if this result offers it (a visit's first, with no menu before it), then the reward:
+        /// nothing of the reward runs under the gift's ad, and nothing plays unseen under its dim. The reward runs
+        /// beside input; no part of it delays NEXT MATCH, Space or Enter.
+        /// </summary>
+        private async UniTaskVoid PlayReward(CancellationToken token)
+        {
+            rewardRun?.Cancel();
+            rewardRun?.Dispose();
+            rewardRun = CancellationTokenSource.CreateLinkedTokenSource(token, lifetime.Token);
+            // The cards wait out of sight under the gift: still empty, they looked like a broken stub under its card.
+            Root.AddToClassList(GiftClass);
+            var isCancelled = await daily.Run(rewardRun.Token).SuppressCancellationThrow();
+            Root.RemoveFromClassList(GiftClass);
+            if (isCancelled || rewardRun.IsCancellationRequested) {
+                return;
+            }
+
             xpProgress.Play(token);
             meta.Play(token);
             rewards.Play(token);
         }
 
+        // Today's gift taken over the result: its coins count into the corner, and CAR's dot follows what they buy.
+        private void OnDailyClaimed(DailyClaim claim)
+        {
+            if (claim.Coins > 0) {
+                meta.CountGift(claim.Coins, lifetime.Token);
+            }
+
+            ShowNewCar(ViewModel.HasNewCar, ViewModel.CanShop);
+        }
+
         public override async UniTask HideAsync(CancellationToken token)
         {
+            rewardRun?.Cancel();
+            daily.Stop();
             xpProgress.Stop();
             meta.Stop();
             rewards.Stop();
@@ -168,11 +214,18 @@ namespace ToyCarArena.UI
                 ViewModel.CarEquipped -= RefreshGarage;
             }
 
+            rewardRun?.Cancel();
+            rewardRun?.Dispose();
+            if (daily != null) {
+                daily.Claimed -= OnDailyClaimed;
+            }
+
             lifetime?.Cancel();
             lifetime?.Dispose();
             if (xpProgress != null) {
                 xpProgress.RewardTaken -= OnRewardTaken;
                 xpProgress.RewardRefused -= OnRewardRefused;
+                xpProgress.Clicked -= audioService.PlayUiClick;
                 xpProgress.Dispose();
             }
 
@@ -208,6 +261,7 @@ namespace ToyCarArena.UI
             Root.EnableInClassList(ColumnsClass, isColumns);
             match?.SetWide(isLandscape);
             PlaceColumns();
+            daily.Place(evt.newRect.size, safeInsets);
         }
 
         private void OnColumnGeometry(GeometryChangedEvent evt) => PlaceColumns();
@@ -217,6 +271,9 @@ namespace ToyCarArena.UI
         /// podium the rest of the width. The column grows by its scale, not its layout, so the cards keep the
         /// proportions they have upright.
         /// </summary>
+        // The height the column leaves free above and below it, as last placed.
+        private float columnsSpare;
+
         private void PlaceColumns()
         {
             if (bottom == null) {
@@ -255,12 +312,26 @@ namespace ToyCarArena.UI
             var scale = Mathf.Min(ColumnsMaxScale, size.x * ColumnsShare / width,
                 (size.y - top - low) / Mathf.Max(1f, missionsHeight + bottom.layout.height));
             var grown = new Scale(new Vector3(scale, scale, 1f));
+            // A screen wider than the column needs (a 16:9 desktop) left a hole between the missions and the cards
+            // under them: the column keeps together, in the middle of the height it has.
+            // Kept until it moves by more than snapping can: layout snaps each edge of the moved cards to the device's
+            // pixels, so moving them changes their heights by a device pixel, which moved them back, and again (the
+            // layout failed to stabilize and froze the game on a 1289x725 window, where a device pixel is 2.65
+            // reference pixels). The two heights each change by a pixel, scaled with the column and halved.
+            var spare = Mathf.Round(Mathf.Max(0f,
+                size.y - top - low - (missionsHeight + bottom.layout.height) * scale) * 0.5f);
+            var pixel = 1f / Mathf.Max(0.01f, screen.panel?.scaledPixelsPerPoint ?? 1f);
+            if (Mathf.Abs(spare - columnsSpare) <= pixel * ColumnsMaxScale + 1.5f) {
+                spare = columnsSpare;
+            }
+
+            columnsSpare = spare;
             bottom.style.right = side;
-            bottom.style.bottom = low;
+            bottom.style.bottom = low + spare;
             bottom.style.scale = grown;
             if (missions != null) {
                 missions.style.right = side;
-                missions.style.top = top;
+                missions.style.top = top + spare;
                 missions.style.scale = grown;
             }
 
@@ -383,6 +454,23 @@ namespace ToyCarArena.UI
 
         private void OnKeyDown(KeyDownEvent evt)
         {
+            // The daily gift takes every key while it is up: Space claims it there, not NEXT MATCH.
+            if (daily.HandleKey(evt.keyCode)) {
+                evt.StopPropagation();
+                return;
+            }
+
+            // NEW LEAGUE! takes every key while it is up; Space, Enter and Esc close it.
+            if (xpProgress.IsLeagueOpen) {
+                evt.StopPropagation();
+                if (evt.keyCode is KeyCode.Space or KeyCode.Return or KeyCode.KeypadEnter or KeyCode.Escape) {
+                    audioService.PlayUiClick();
+                    xpProgress.CloseLeague();
+                }
+
+                return;
+            }
+
             if (evt.keyCode is KeyCode.Space or KeyCode.Return or KeyCode.KeypadEnter) {
                 evt.StopPropagation();
                 PlayAgain();
@@ -404,9 +492,10 @@ namespace ToyCarArena.UI
             }
         }
 
-        // Before it is up, after NEXT MATCH, over a popup screen, or while an ad plays, the screen takes no presses.
+        // Before it is up, after NEXT MATCH, over a popup screen, under the daily gift (and in the frame it closed in,
+        // whose key must not reach a button under it), or while an ad plays, the screen takes no presses.
         private bool IsBusy => !IsShown || isPlayAgainPressed || ViewModel.IsGarageOpen || ViewModel.IsSettingsOpen ||
-            ViewModel.IsAdPlaying;
+            ViewModel.IsAdPlaying || daily.IsOpen || daily.ClosedFrame == Time.frameCount;
 
         private void ClaimDouble()
         {

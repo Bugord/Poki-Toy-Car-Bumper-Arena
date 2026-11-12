@@ -111,6 +111,7 @@ namespace ToyCarArena.App
             builder.Register<PersonalBests>(Lifetime.Singleton);
             builder.Register<AdBreaks>(Lifetime.Singleton);
             builder.RegisterEntryPoint<SessionTime>().AsSelf();
+            builder.RegisterEntryPoint<ScreenFrameRate>().AsSelf();
             builder.RegisterEntryPoint<Visits>().AsSelf();
             // The 3D scene's render scale follows the screen; the UI is drawn on top at full resolution.
             builder.RegisterEntryPoint<RenderScaler>().AsSelf()

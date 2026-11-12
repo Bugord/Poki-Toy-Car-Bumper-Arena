@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
 using Bugord.Core.Storage;
+using ToyCarArena.Gameplay.Cars;
 
 namespace ToyCarArena.Gameplay.Round
 {
     /// <summary>
     /// The player's coins and the toppers they bought, in the kit's storage, so a returning player keeps both. A round
     /// pays in <see cref="Record"/>; the garage spends in <see cref="Buy"/>. Lives in the app scope beside
-    /// <see cref="PlayerProgress"/>, and like it saves at once, so leaving the result screen early loses nothing.
+    /// <see cref="PlayerProgress"/>, and like it saves at once, so leaving the result screen early loses nothing. A league's
+    /// hat (<see cref="GameTuning.TopperSettings.League"/>) is not stored: the player's level owns it, so it reads the
+    /// level of <see cref="IPlayerCar"/> (none in tests that build a wallet alone: no league reached).
     /// </summary>
     public sealed class PlayerWallet : IPlayerTopper
     {
@@ -15,27 +18,38 @@ namespace ToyCarArena.Gameplay.Round
         private const string OwnedKey = "toppers_owned";
         private const string SelectedKey = "topper_selected";
         private const string GiftKey = "topper_gift";
+        private const string UnseenGiftKey = "topper_gift_unseen";
         private const string IntroKey = "intro_";
 
         public event Action Changed;
 
         private readonly IKeyValueStorage storage;
         private readonly GameTuning tuning;
+        private readonly IPlayerCar player;
 
-        public PlayerWallet(IKeyValueStorage storage, GameTuning tuning)
+        public PlayerWallet(IKeyValueStorage storage, GameTuning tuning, IPlayerCar player = null)
         {
             this.storage = storage;
             this.tuning = tuning;
+            this.player = player;
         }
+
+        private int Level => player?.Level ?? 1;
 
         public int Coins => Math.Max(0, storage.GetInt(CoinsKey));
 
-        /// <summary>Whether the player owns any topper: one bought, or the gift.</summary>
+        /// <summary>Whether the player owns any topper: one bought, the gift, or a league's.</summary>
         public bool HasAnyTopper
         {
             get {
                 foreach (var _ in Owned()) {
                     return true;
+                }
+
+                foreach (var topper in tuning.Toppers.League) {
+                    if (IsOwned(topper.Id)) {
+                        return true;
+                    }
                 }
 
                 return false;
@@ -77,6 +91,11 @@ namespace ToyCarArena.Gameplay.Round
         {
             if (string.IsNullOrEmpty(id) || tuning.Toppers.Find(id) == null) {
                 return false;
+            }
+
+            if (tuning.Toppers.IsLeague(id)) {
+                var league = tuning.LeagueRewards.LevelOfTopper(id);
+                return league > 0 && Level >= league;
             }
 
             foreach (var owned in Owned()) {
@@ -128,11 +147,11 @@ namespace ToyCarArena.Gameplay.Round
 
         /// <summary>
         /// Gives a topper as a reward, not for coins (the daily gift's exclusive hat), and wears it. False, with
-        /// nothing changed, for an unknown one or one owned already.
+        /// nothing changed, for an unknown one, one owned already or a league's (the level owns that).
         /// </summary>
         public bool Give(string id)
         {
-            if (tuning.Toppers.Find(id) == null || IsOwned(id)) {
+            if (tuning.Toppers.Find(id) == null || tuning.Toppers.IsLeague(id) || IsOwned(id)) {
                 return false;
             }
 
@@ -143,8 +162,18 @@ namespace ToyCarArena.Gameplay.Round
             return true;
         }
 
-        /// <summary>The topper just given, until the result's popup takes it; null when there is none.</summary>
-        public string UnseenGift { get; private set; }
+        /// <summary>
+        /// The topper just given, until the result's popup takes it; null when there is none. Saved: the popup waits for
+        /// a result with room (<c>RoundOverViewModel.HasRoomToWait</c>), and a visit can end before one comes.
+        /// </summary>
+        public string UnseenGift
+        {
+            get {
+                var id = storage.GetString(UnseenGiftKey);
+                return string.IsNullOrEmpty(id) ? null : id;
+            }
+            private set => storage.SetString(UnseenGiftKey, value ?? "");
+        }
 
         /// <summary>The gift for the result's popup, once.</summary>
         public string TakeGift()

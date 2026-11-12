@@ -1,6 +1,7 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
 using System.Collections.Generic;
+using Bugord.Core.Storage;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Rendering;
 using UnityEngine;
@@ -17,7 +18,8 @@ namespace ToyCarArena.App
 {
     /// <summary>
     /// Performance tools of development builds and the editor, none of it in a release build: the <see cref="PerfOverlay"/>
-    /// readout and, with Super Console, WATCHES rows (pin <c>perf.fps</c> to see it with the console closed) and
+    /// readout (off by default, since it covers the menu; <c>perf_overlay 1</c> or the <c>perf.overlay</c> watch turns it on
+    /// and the choice is saved, so a tester keeps it across reloads) and, with Super Console, WATCHES rows (pin <c>perf.fps</c> to see it with the console closed) and
     /// <c>perf_*</c> commands that switch one rendering cost at a time, so a phone can show where its frame time goes.
     /// The settings these touch live in shared assets that outlive Play mode, so their original values are put back on
     /// dispose.
@@ -30,10 +32,14 @@ namespace ToyCarArena.App
         // How often the sampled watches read, and how much of the past the frame readouts average.
         private const float WatchInterval = 0.5f;
 
+        // Saved, so a tester who turns the overlay on keeps it on the next time the page loads.
+        private const string OverlayKey = "perf.overlay";
+
         private static readonly string[] WorldRoots = { "World", "Decor" };
         private static readonly string[] MechanicRoots = { "Candy Patches", "Carousel", "ArenaBall" };
 
         private readonly RenderScaler scaler;
+        private readonly IKeyValueStorage storage;
         private readonly FrameStats stats = new();
         private readonly Dictionary<OutlineFeature, bool> originalOutline = new();
         private readonly List<GameObject> worldObjects = new();
@@ -47,13 +53,15 @@ namespace ToyCarArena.App
 
         private OutlineFeature[] outlineFeatures;
         private GameObject overlay;
+        private PerfOverlay overlayView;
         private bool isWorldShown = true;
         private bool isMechanicShown = true;
         private float sinceReapply;
 
-        public PerfDevTools(RenderScaler scaler, GameTuning tuning)
+        public PerfDevTools(RenderScaler scaler, GameTuning tuning, IKeyValueStorage storage)
         {
             this.scaler = scaler;
+            this.storage = storage;
             originalMsaa = asset != null ? asset.msaaSampleCount : 1;
 #if !UNITY_EDITOR
             this.tuning = tuning;
@@ -64,7 +72,10 @@ namespace ToyCarArena.App
         {
             overlay = new GameObject("PerfOverlay");
             UnityEngine.Object.DontDestroyOnLoad(overlay);
-            overlay.AddComponent<PerfOverlay>().Bind(stats, scaler);
+            overlayView = overlay.AddComponent<PerfOverlay>();
+            overlayView.Bind(stats, scaler);
+            // A disabled component gets neither Update nor OnGUI, so a hidden overlay costs nothing per frame.
+            overlayView.enabled = storage.GetBool(OverlayKey);
 
 #if BUGORD_SUPERCONSOLE
             RegisterWatches();
@@ -125,6 +136,7 @@ namespace ToyCarArena.App
             handles.Add(DevConsole.Watch("perf.resolution", Resolution, null, null, WatchInterval));
 
             // Settings, edited in place (Pro).
+            handles.Add(DevConsole.Watch("perf.overlay", IsOverlayOn, null, value => SetOverlay(value), WatchInterval));
             handles.Add(DevConsole.Watch("perf.render_scale", () => scaler.Override, "x (0 = auto)",
                 value => scaler.Override = value, WatchInterval));
             handles.Add(DevConsole.Watch("perf.msaa", () => asset != null ? asset.msaaSampleCount : 1, null,
@@ -147,6 +159,11 @@ namespace ToyCarArena.App
 
         private void RegisterCommands()
         {
+            handles.Add(CommandRegistry.Register("perf_overlay", "Show or hide the frame readout in the corner (saved): 0 hide, 1 show",
+                (Func<int, string>)(on => {
+                    SetOverlay(on != 0);
+                    return $"perf overlay {(IsOverlayOn() ? "shown" : "hidden")} (saved)";
+                })));
             handles.Add(CommandRegistry.Register("perf_scale", "Override the 3D render scale (0 = back to automatic)",
                 (Func<float, string>)(scale => {
                     scaler.Override = scale;
@@ -195,6 +212,20 @@ namespace ToyCarArena.App
         {
             var size = scaler.RenderSize;
             return $"{size.x}x{size.y}";
+        }
+
+        private bool IsOverlayOn()
+        {
+            return overlayView != null && overlayView.enabled;
+        }
+
+        private void SetOverlay(bool shown)
+        {
+            if (overlayView != null) {
+                overlayView.enabled = shown;
+            }
+
+            storage.SetBool(OverlayKey, shown);
         }
 
         private int SetMsaa(int samples)

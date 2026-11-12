@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Bugord.App.Localization;
 using Cysharp.Threading.Tasks;
+using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -23,6 +24,8 @@ namespace ToyCarArena.UI
         private const int SwapDelay = 1500;
         private const int CoinsDelay = 450;
         private const float CountDuration = 0.8f;
+        // The daily gift's coins land in the corner about this long after its claim.
+        private const int GiftDelay = 600;
 
         private const string RowEnterClass = "mission--enter";
         private const string RowDoneClass = "mission--done";
@@ -42,14 +45,21 @@ namespace ToyCarArena.UI
         {
             this.viewModel = viewModel;
 
-            // The player's coins in the corner, left of the gear: what the garage's toppers are bought with.
+            // The player's coins in the corner, left of the gear: what the garage's toppers are bought with. The menu's
+            // pill (its drop a layer of its own, its colour inside the border), as tall as the gear beside it.
             CoinPill = new VisualElement { name = "coin-pill", pickingMode = PickingMode.Ignore };
-            CoinPill.AddToClassList("pill");
             CoinPill.AddToClassList("coin-pill");
-            CoinPill.Add(Coin());
-            coinCount = Text(viewModel.Coins.Before.ToString(), "coin-pill__count");
+            CoinPill.AddToClassList("menu__coins");
+            CoinPill.Add(new VisualElement { pickingMode = PickingMode.Ignore });
+            CoinPill[0].AddToClassList("menu__coins-drop");
+            var face = MenuView.Face("menu__coins-face", "menu__coins-fill");
+            face.pickingMode = PickingMode.Ignore;
+            face[0].pickingMode = PickingMode.Ignore;
+            face.Add(Coin());
+            coinCount = Text(viewModel.Coins.Before.ToString(), "menu__coins-count");
             viewModel.CarBought += OnCarBought;
-            CoinPill.Add(coinCount);
+            face.Add(coinCount);
+            CoinPill.Add(face);
             // Inside the screen's own element, which carries the style sheet.
             (root.Q<VisualElement>("round-over") ?? root).Add(CoinPill);
 
@@ -59,7 +69,9 @@ namespace ToyCarArena.UI
             streak.AddToClassList("round-over__streak");
             var change = viewModel.Streak;
             // REVENGE! has its own sticker there and starts a streak by itself: one sticker under the title is enough.
-            var isShown = !viewModel.RevengeTaken && (change.IsStreak || change.IsLost);
+            // After a knock-out the podium already says REVENGE NEXT ROUND, which is what a lost streak leads to.
+            var isShown = !viewModel.RevengeTaken &&
+                (change.IsStreak || change.IsLost && !(viewModel.IsPodiumRival && viewModel.Podium != null));
             streak.EnableInClassList("best--shown", isShown);
             streak.EnableInClassList("best--new", isShown && !change.IsLost);
             streak.EnableInClassList("round-over__streak--lost", change.IsLost);
@@ -125,6 +137,18 @@ namespace ToyCarArena.UI
             CountCoins(0, recount.Token).Forget();
         }
 
+        /// <summary>
+        /// The daily gift's coins, flown into the corner before the round's count: it counts them up once they land and
+        /// the round's count goes on from there.
+        /// </summary>
+        public void CountGift(int coins, CancellationToken token)
+        {
+            recount?.Cancel();
+            recount?.Dispose();
+            recount = CancellationTokenSource.CreateLinkedTokenSource(token);
+            CountCoins(GiftDelay, recount.Token, shownCoins + coins).Forget();
+        }
+
         public void Dispose()
         {
             Stop();
@@ -166,7 +190,7 @@ namespace ToyCarArena.UI
             CoinPill.schedule.Execute(() => CoinPill.RemoveFromClassList("coin-pill--bump")).StartingIn(150);
         }
 
-        private async UniTaskVoid CountCoins(int delay, CancellationToken token)
+        private async UniTaskVoid CountCoins(int delay, CancellationToken token, int target = -1)
         {
             if (await UniTask.Delay(delay, ignoreTimeScale: true, cancellationToken: token)
                     .SuppressCancellationThrow()) {
@@ -178,7 +202,7 @@ namespace ToyCarArena.UI
             while (!token.IsCancellationRequested) {
                 var share = Mathf.Clamp01((Time.unscaledTime - start) / CountDuration);
                 // Towards the coins now: a car bought from a level's popup meanwhile is already taken off.
-                shownCoins = Mathf.RoundToInt(Mathf.Lerp(from, viewModel.CoinsNow, share));
+                shownCoins = Mathf.RoundToInt(Mathf.Lerp(from, target < 0 ? viewModel.CoinsNow : target, share));
                 coinCount.text = shownCoins.ToString();
                 if (share >= 1f) {
                     CoinPill.AddToClassList("coin-pill--bump");
@@ -210,13 +234,18 @@ namespace ToyCarArena.UI
             return label;
         }
 
-        /// <summary>One slot: the check, the task and its progress, or once done the reward and then the next task.</summary>
+        /// <summary>
+        /// One slot: the task's sign, the task, its count with a thin bar (more than one step), and the coins it pays;
+        /// once done the sign turns into a gold tick, the XP joins the coins, and then the next task takes the row.
+        /// </summary>
         private sealed class Row
         {
             private readonly RoundOverMeta owner;
             private readonly MissionLine line;
+            private readonly MissionLook.Icon icon;
             private readonly Label task;
-            private readonly Label progress;
+            private readonly MissionLook.Progress progress;
+            private readonly VisualElement reward;
 
             public Row(RoundOverMeta owner, MissionLine line)
             {
@@ -225,21 +254,21 @@ namespace ToyCarArena.UI
                 Root = new VisualElement { pickingMode = PickingMode.Ignore };
                 Root.AddToClassList("mission");
                 Root.AddToClassList(RowEnterClass);
-                var check = new VisualElement { pickingMode = PickingMode.Ignore };
-                check.AddToClassList("mission__check");
-                var mark = new VisualElement { pickingMode = PickingMode.Ignore };
-                mark.AddToClassList("mission__mark");
-                check.Add(mark);
-                Root.Add(check);
+                var definition = line.Definition;
+                icon = MissionLook.IconOf(definition);
+                Root.Add(icon);
                 task = Text("", "mission__task");
                 Root.Add(task);
-                progress = Text("", "mission__progress");
+                progress = MissionLook.ProgressOf();
                 Root.Add(progress);
+                reward = new VisualElement { pickingMode = PickingMode.Ignore };
+                reward.AddToClassList("mission__reward");
+                Root.Add(reward);
                 owner.missions.Add(Root);
-                var definition = line.Definition;
                 owner.text.Set(task, () => owner.viewModel.MissionText(definition));
                 // The progress as it was before this round; Tick moves it to after.
-                progress.text = $"{line.Before}/{definition.Target}";
+                progress.Set(line.Before, definition.Target);
+                ShowReward(definition, false);
             }
 
             public VisualElement Root { get; }
@@ -247,12 +276,22 @@ namespace ToyCarArena.UI
             public void Tick()
             {
                 if (!line.IsDone) {
-                    progress.text = $"{line.After}/{line.Definition.Target}";
+                    progress.Set(line.After, line.Definition.Target);
                     return;
                 }
 
                 Root.AddToClassList(RowDoneClass);
-                progress.text = $"+{owner.viewModel.MissionXp(line.Definition)} XP";
+                icon.Set(line.Definition, true);
+                progress.style.display = DisplayStyle.None;
+                ShowReward(line.Definition, true);
+            }
+
+            // The coins a mission pays, and once it is done the XP it paid beside them.
+            private void ShowReward(GameTuning.MissionDefinition definition, bool isDone)
+            {
+                reward.Clear();
+                reward.Add(MissionLook.Reward(owner.viewModel.MissionXp(definition),
+                    owner.viewModel.MissionCoins(definition), isDone));
             }
 
             /// <summary>A done mission gives way to the one that replaces it.</summary>
@@ -269,7 +308,9 @@ namespace ToyCarArena.UI
 
                 var next = line.Next.Definition;
                 owner.text.Set(task, () => owner.viewModel.MissionText(next));
-                progress.text = $"{line.Next.Progress}/{next.Target}";
+                icon.Set(next, false);
+                progress.Set(line.Next.Progress, next.Target);
+                ShowReward(next, false);
                 Root.RemoveFromClassList(RowDoneClass);
                 Root.RemoveFromClassList(RowSwapClass);
             }

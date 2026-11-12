@@ -18,11 +18,12 @@ namespace ToyCarArena.Gameplay
         public DailySettings Daily => daily;
 
         /// <summary>
-        /// One gift a calendar day, claimed in the main menu. Days in a row climb the calendar; a missed day starts it
-        /// again from the first. The last day gives <see cref="Hat"/>, one of the exclusive toppers, and once the player
-        /// owns it, <see cref="HatCoins"/> instead; the week after the last day starts again from the first. The first win
-        /// of a calendar day pays twice (<see cref="FirstWinMultiplier"/>), and each day draws three tasks of its own
-        /// (<see cref="Tasks"/>), apart from the missions.
+        /// One gift a calendar day, claimed in the main menu (or over a visit's first result, <see cref="IsOnResult"/>).
+        /// Days in a row climb the calendar; a missed day starts it again from the first. The last day gives
+        /// <see cref="Hat"/>, one of the exclusive toppers, and once the player owns it, <see cref="HatCoins"/> instead;
+        /// the week after the last day starts again from the first. The first win of a calendar day pays twice
+        /// (<see cref="FirstWinMultiplier"/>), and each day draws three tasks of its own (<see cref="Tasks"/>), apart
+        /// from the missions.
         /// </summary>
         [Serializable]
         public sealed class DailySettings
@@ -31,10 +32,10 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private bool enabled = true;
 
-            [Tooltip("Coins on each day in a row but the last, from the first: a little under a round's at first, " +
+            [Tooltip("Coins on each day in a row but the last, from the first: about a round's at first, " +
                 "rising so a week in a row is worth coming back for")]
             [SerializeField]
-            private int[] dayCoins = { 20, 30, 40, 50, 60, 80 };
+            private int[] dayCoins = { 40, 60, 80, 100, 120, 160 };
 
             [Tooltip("The exclusive topper the last day gives (TopperSettings' exclusive list)")]
             [SerializeField]
@@ -43,12 +44,17 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Coins the last day gives once the player owns the hat")]
             [Min(0)]
             [SerializeField]
-            private int hatCoins = 150;
+            private int hatCoins = 300;
 
             [Tooltip("What CLAIM ×2 multiplies a day's coins by, for a rewarded ad; not on the hat's day")]
             [Min(1)]
             [SerializeField]
             private int adMultiplier = 2;
+
+            [Tooltip("Whether the first result of a visit offers today's gift too, when no menu has: a first visit " +
+                "goes straight to its round, so without it a new player would not hear of the calendar")]
+            [SerializeField]
+            private bool onResult = true;
 
             [Header("First win of the day")]
             [Tooltip("What the first round or match the player wins on a calendar day multiplies its own XP and coins " +
@@ -118,6 +124,7 @@ namespace ToyCarArena.Gameplay
             public string Hat => hat;
             public int HatCoins => hatCoins;
             public int AdMultiplier => Math.Max(1, adMultiplier);
+            public bool IsOnResult => onResult;
 
             /// <summary>The calendar slot (0 for the first day) of the <paramref name="streak"/>-th day in a row, from 1.</summary>
             public int SlotOf(int streak) => (Math.Max(1, streak) - 1) % Days;

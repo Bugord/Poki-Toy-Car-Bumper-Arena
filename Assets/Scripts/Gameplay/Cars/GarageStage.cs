@@ -35,13 +35,15 @@ namespace ToyCarArena.Gameplay.Cars
         private const float StartYaw = 215f;
         private const float HeroBoost = 3f;
 
-        private const int Columns = 5;
-        private const int Rows = 2;
+        private const int Columns = 6;
+        private const int Rows = 4;
         private const int CellSize = 256;
         private const float HatPitch = 16f;
         private const float HatYaw = 200f;
-        // The share of its cell the topper fills, its widest or tallest side.
-        private const float HatFill = 0.92f;
+        // The share of its cell the topper fills, its widest or tallest side. The rest is room for its outline: 3 pixels
+        // boosted six times is about 17 of the cell's 256, and an outline crossing into the next cell showed there as a
+        // stray dark line.
+        private const float HatFill = 0.84f;
         private const float HatBoost = 6f;
 
         // The main menu stands the car on a plain 3D pedestal in the stickers' colours, turning with it: a navy drum,
@@ -59,8 +61,6 @@ namespace ToyCarArena.Gameplay.Cars
         private readonly CarLook look;
         private readonly MechanicArt art;
         private readonly Transform parent;
-        private readonly List<Mesh> heroMeshes = new();
-        private readonly List<Mesh> hatMeshes = new();
         private readonly Dictionary<string, Rect> cells = new();
         private GameObject root;
         private Transform turntable;
@@ -79,6 +79,10 @@ namespace ToyCarArena.Gameplay.Cars
         private RenderTexture hatTexture;
         private string shownKey;
         private float shownAt;
+        // Seconds the turntable had turned when it was last hidden: the next ShowCar turns on from there, so the car
+        // keeps its turn from the garage back to the menu as it does from the menu into the garage (which finds the
+        // camera still on).
+        private float turned;
         private int hatFrame = -1;
 
         public GarageStage(Car carPrefab, MechanicArt art, Transform parent)
@@ -95,9 +99,13 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public Vector2 HeroGround { get; private set; } = new(0.5f, 0.5f);
 
+        /// <summary>The turntable's turn in degrees about the vertical, as last drawn.</summary>
+        public float Yaw => turntable != null ? turntable.localEulerAngles.y : StartYaw;
+
         /// <summary>
         /// Puts <paramref name="entry"/> on the turntable in the colour and the topper given (none for an empty id) and
-        /// starts drawing it; the same car again keeps turning as it was. With <paramref name="onPedestal"/> it stands
+        /// starts drawing it. The turntable turns on from where it was, even after <see cref="Hide"/> and for another
+        /// car, colour or topper: the menu and the garage hand the car to each other mid-turn. With <paramref name="onPedestal"/> it stands
         /// on a 3D pedestal framed with it (the main menu); without, on nothing (the garage has a plinth of its own). The
         /// texture is the stage's to release. <paramref name="pedestalTopColor"/> tints the pedestal's top (the menu's
         /// league); without it the top is the white of the stickers.
@@ -117,7 +125,7 @@ namespace ToyCarArena.Gameplay.Cars
             }
 
             if (!heroCamera.enabled) {
-                shownAt = Time.unscaledTime;
+                shownAt = Time.unscaledTime - turned;
                 heroCamera.enabled = true;
                 OutlineBoost.Set(heroCamera, HeroBoost);
             }
@@ -134,10 +142,11 @@ namespace ToyCarArena.Gameplay.Cars
         {
             Build();
             if (cells.Count == 0) {
-                // Every topper, on sale and exclusive, whatever the first caller asks for: the texture is drawn once,
-                // and the garage, the result's gift and the menu's daily gift each crop their own from it.
+                // Every topper, on sale, exclusive and the leagues', whatever the first caller asks for: the texture is
+                // drawn once, and the garage, the result's gift and the menu's daily gift each crop their own from it.
                 var all = new List<string>(CarTopper.Ids);
                 all.AddRange(CarTopper.ExclusiveIds);
+                all.AddRange(CarTopper.LeagueIds);
                 foreach (var id in ids) {
                     if (!all.Contains(id)) {
                         all.Add(id);
@@ -161,6 +170,10 @@ namespace ToyCarArena.Gameplay.Cars
         public void Hide()
         {
             if (heroCamera != null) {
+                if (heroCamera.enabled) {
+                    turned = Time.unscaledTime - shownAt;
+                }
+
                 heroCamera.enabled = false;
                 OutlineBoost.Clear(heroCamera);
                 hatCamera.enabled = false;
@@ -209,10 +222,6 @@ namespace ToyCarArena.Gameplay.Cars
                 foreach (var mesh in pedestalMeshes) {
                     Object.Destroy(mesh);
                 }
-            }
-
-            foreach (var mesh in hatMeshes) {
-                Object.Destroy(mesh);
             }
         }
 
@@ -273,7 +282,7 @@ namespace ToyCarArena.Gameplay.Cars
             car.SetParent(turntable, false);
             var model = CarLook.BuildModel(entry, car, look.ModelRotation, look.ModelMaterial, look.Reference);
             body = CarModel.PaintBody(CarModel.FindBody(model, out _), entry.BodySwatch, look.SwatchOf(colorId));
-            CarLook.WearTopper(topper, entry.Id, car, model, look.ModelMaterial, heroMeshes, out spinner);
+            CarLook.WearTopper(topper, entry.Id, car, model, look.ModelMaterial, look.Toppers, out spinner);
 
             var bounds = CarModel.BoundsIn(car.gameObject, car.worldToLocalMatrix);
             model.transform.localPosition -= new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
@@ -354,12 +363,6 @@ namespace ToyCarArena.Gameplay.Cars
                 Object.Destroy(body);
                 body = null;
             }
-
-            foreach (var mesh in heroMeshes) {
-                Object.Destroy(mesh);
-            }
-
-            heroMeshes.Clear();
         }
 
         // The toppers in a grid on a board that faces the orthographic camera, a cell of one metre each: each turned
@@ -380,7 +383,7 @@ namespace ToyCarArena.Gameplay.Cars
                 var holder = new GameObject(ids[i]).transform;
                 holder.SetParent(board, false);
                 holder.rotation = Quaternion.Euler(0f, HatYaw, 0f);
-                var hat = CarTopper.Build(ids[i], holder, look.ModelMaterial, hatMeshes, out _);
+                var hat = CarTopper.Build(ids[i], holder, look.ModelMaterial, look.Toppers, out _);
                 if (hat == null) {
                     Object.Destroy(holder.gameObject);
                     continue;

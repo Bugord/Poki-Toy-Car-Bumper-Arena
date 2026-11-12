@@ -214,9 +214,11 @@ namespace ToyCarArena.App
                 pickupCar.ItemUsed += OnItemUsed;
                 pickups.Collected += OnCollected;
 
+                // The teaching follows the player's rounds on this device; waiting for the first input, the visit's.
                 var hudRound = new HudRound(round, driver, tuning.Controls, waitsForPlayer, roundNumber,
                     playerProgress.TotalXp == 0,
-                    progress.WinStreak >= tuning.Streaks.Start ? progress.WinStreak : 0, special);
+                    progress.WinStreak >= tuning.Streaks.Start ? progress.WinStreak : 0, special,
+                    progress.RoundsBefore + roundNumber, levelScene.Resolve<HotPotato>());
                 hud = await navigator.OpenAsync<HudViewModel, HudRound>(hudRound, token);
                 await curtain.Hide();
                 // The page's loading screen stays up until the first round can be seen, past Poki's own loader.
@@ -269,7 +271,7 @@ namespace ToyCarArena.App
                 levelScene.Resolve<ISessionRoster>().NextRound(result.CarCount - 1,
                     RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis, tuning.Players);
                 platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, driver, tuning.Boost.IsEnabled,
-                    waitsForPlayer);
+                    waitsForPlayer, special == SpecialRound.HotPotato);
                 if (pickups.IsEnabled) {
                     platform.MeasureMatchPickups(roundNumber, pickupCount, result.IsMatch);
                 }

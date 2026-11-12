@@ -43,10 +43,19 @@ namespace ToyCarArena.UI
         private IReadOnlyList<int> levels;
         private bool isDoubleTried;
 
+        // Whether the visit's last result showed a popup. The popups that can wait (the free hat, the daily gift, the hat
+        // offer) skip the result after one, so a new player, who levels up and opens something almost every round, is
+        // not met by a popup after every round.
+        private static bool lastResultHadPopup;
+        private bool isAfterPopup;
+        private bool opensReward;
+        private bool isWaitingShown;
+
         public RoundOverViewModel(CarCatalog catalog, ArenaCatalog arenaCatalog, GameTuning tuning,
             PlayerProgress progress, IScreenNavigator navigator, IGamePlatform platform, PlayerWallet wallet,
-            LevelScene levelScene)
+            LevelScene levelScene, PlayerDaily daily = null)
         {
+            this.Daily = daily != null ? new DailyGift(daily, tuning, platform) : null;
             this.wallet = wallet;
             this.levelScene = levelScene;
             this.catalog = catalog;
@@ -68,6 +77,8 @@ namespace ToyCarArena.UI
         public StreakChange Streak { get; private set; }
 
         public int MissionXp(GameTuning.MissionDefinition mission) => tuning.Missions.XpOf(mission.Tier);
+
+        public int MissionCoins(GameTuning.MissionDefinition mission) => tuning.Missions.CoinsOf(mission.Tier);
 
         /// <summary>A mission's task in the language shown, its arena named.</summary>
         public string MissionText(GameTuning.MissionDefinition mission) =>
@@ -99,8 +110,10 @@ namespace ToyCarArena.UI
         public bool CanDouble => tuning.Ads.DoubleReward && !platform.IsAdBlocked && !isDoubleTried &&
             (RoundXp > 0 || RoundCoins > 0);
 
-        /// <summary>The rewarded ad of CLAIM ×2 is playing: the screen takes no presses meanwhile.</summary>
-        public bool IsAdPlaying { get; private set; }
+        /// <summary>A rewarded ad (CLAIM ×2's or the daily gift's) is playing: the screen takes no presses meanwhile.</summary>
+        public bool IsAdPlaying => isDoublePlaying || Daily is { IsAdPlaying: true };
+
+        private bool isDoublePlaying;
 
         public bool IsDoubled { get; private set; }
 
@@ -125,12 +138,12 @@ namespace ToyCarArena.UI
             platform.MeasureDoublePressed();
             var started = Time.realtimeSinceStartup;
             bool isRewarded;
-            IsAdPlaying = true;
+            isDoublePlaying = true;
             try {
                 isRewarded = await AdPause.Run(() => platform.RewardedBreak(token));
             }
             finally {
-                IsAdPlaying = false;
+                isDoublePlaying = false;
             }
 
             if (!isRewarded) {
@@ -212,29 +225,80 @@ namespace ToyCarArena.UI
         public string Gift { get; private set; }
 
         /// <summary>
-        /// The gift's 3D model as the garage's cards show it, drawn by the garage's stage (<see cref="GarageStage"/>) in
-        /// the arena's scene: the toppers' texture and the gift's part of it (<paramref name="cell"/>, in UV); null
-        /// where there is no stage (tests).
+        /// Whether this result has room for one popup that can wait: it opens no car and no league (their popups are
+        /// what the player must see), the visit's last result showed no popup, and none of the waiting ones has shown
+        /// here yet. Without room they wait for a later result; the daily gift, not offered, waits for the menu too.
         /// </summary>
-        public RenderTexture ShowGiftHat(out Rect cell)
-        {
-            wallet.TakeGift();
-            platform.MeasureGiftShown(Gift);
-            return ShowHat(Gift, out cell);
-        }
+        public bool HasRoomToWait => !isAfterPopup && !opensReward && !isWaitingShown;
 
-        /// <summary>A topper's 3D model as the garage's cards show it (see <see cref="ShowGiftHat"/>).</summary>
-        public RenderTexture ShowHat(string id, out Rect cell)
+        /// <summary>The free hat's popup shows on this result: first of the waiting ones, it shows the hats there are.</summary>
+        public bool IsGiftDue => Gift != null && HasRoomToWait;
+
+        /// <summary>A popup is up over this result: the next result of the visit leaves the waiting ones for later.</summary>
+        public void PopupShown() => lastResultHadPopup = true;
+
+        /// <summary>Forgets the visit's last result (tests: each is a visit of its own).</summary>
+        public static void ForgetVisit() => lastResultHadPopup = false;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetVisit() => lastResultHadPopup = false;
+
+        // A car or a league this reward opens: each gets its popup (ShowRewards), so nothing that can wait joins it.
+        private bool OpensReward(XpGain gain)
         {
-            cell = default;
-            if (Stage == null) {
-                return null;
+            if (gain.UnlockedCarIds is { Count: > 0 }) {
+                return true;
             }
 
-            var texture = Stage.ShowToppers(CarTopper.Ids);
-            cell = Stage.CellOf(id);
-            return texture;
+            var league = PlayerRank.TierOf(gain.After.Level);
+            return gain.After.Level > 0 && league > PlayerRank.TierOf(gain.Before.Level) && league > progress.SeenLeague;
         }
+
+        /// <summary>The gift's popup is up: the wallet gives it up and <c>gift / &lt;id&gt; / visible</c> goes.</summary>
+        public void GiftShown()
+        {
+            isWaitingShown = true;
+            wallet.TakeGift();
+            platform.MeasureGiftShown(Gift);
+        }
+
+        /// <summary>The player's league now (<see cref="PlayerRank.TierOf"/>): its sky and pedestal frame the rewards.</summary>
+        public int League => PlayerRank.TierOf(progress.Level);
+
+        /// <summary>The player's level now, this round's XP in.</summary>
+        public int PlayerLevel => progress.Level;
+
+        /// <summary>What the player's league gives besides its look, for NEW LEAGUE!; null for none.</summary>
+        internal NewLeaguePopup.Prize LeaguePrize =>
+            LeagueRewards.PrizeAt(tuning, catalog, progress.Level, progress.SelectedColor, Stage);
+
+        /// <summary>
+        /// Whether the result greets the player's league with NEW LEAGUE!: it is above the last one they saw
+        /// (<see cref="PlayerProgress.SeenLeague"/>). Asking marks it seen and sends <c>result / league-&lt;id&gt; /
+        /// visible</c>, so the menu does not greet it again; a result left before the popup leaves it to the menu.
+        /// </summary>
+        public bool TakeNewLeague()
+        {
+            var league = League;
+            if (league <= 0 || league <= progress.SeenLeague) {
+                return false;
+            }
+
+            progress.MarkLeagueSeen(league);
+            platform.MeasureResultLeagueShown(LeagueLook.IdOf(league));
+            return true;
+        }
+
+        /// <summary>The topper the player wears now, or empty.</summary>
+        public string WornTopper => wallet.SelectedTopper;
+
+        /// <summary>
+        /// <paramref name="car"/> (null: the player's own) in the player's colour, wearing <paramref name="topper"/>, on
+        /// the league's pedestal and turning, as the garage's hero shows it (<see cref="GarageStage.ShowCar"/>); null
+        /// where there is no stage (tests). <see cref="HideHero"/> stops it.
+        /// </summary>
+        public RenderTexture ShowCarHero(CarCatalog.Entry car, string topper) =>
+            Stage?.ShowCar(car ?? SelectedCar, progress.SelectedColor, topper, true, LeagueLook.PedestalOf(League));
 
         /// <summary>
         /// Whether a car this result opened gets its popup: every one does, each on a level of its own, so the player
@@ -250,14 +314,16 @@ namespace ToyCarArena.UI
         /// <summary>
         /// The topper the result offers for coins once ever: the cheapest the coins pay for, to a player who already
         /// wears a hat (the free top hat of its level, or one from the garage), from
-        /// <see cref="GameTuning.TopperSettings.HatOfferLevel"/>. Null when there is none to offer.
+        /// <see cref="GameTuning.TopperSettings.HatOfferLevel"/>, on a result with room for it (<see cref="HasRoomToWait"/>)
+        /// and no free hat waiting before it. Null when there is none to offer.
         /// </summary>
         public string HatOffer() =>
-            !wallet.IsIntroduced("paid-hat") && wallet.HasAnyTopper
+            HasRoomToWait && Gift == null && !wallet.IsIntroduced("paid-hat") && wallet.HasAnyTopper
             && progress.Level >= tuning.Toppers.HatOfferLevel ? wallet.AffordableTopper() : null;
 
         public void HatOffered(string id)
         {
+            isWaitingShown = true;
             wallet.MarkIntroduced("paid-hat");
             platform.MeasureHatOfferShown(id);
         }
@@ -277,7 +343,34 @@ namespace ToyCarArena.UI
             return true;
         }
 
-        public void HideGiftHat() => Stage?.Hide();
+        /// <summary>Stops the reward popups' 3D car (<see cref="ShowCarHero"/>).</summary>
+        public void HideHero() => Stage?.Hide();
+
+        /// <summary>
+        /// Today's daily gift (<see cref="DailyGift"/>), which a visit's first result offers when no menu has (a first
+        /// visit goes straight to its round); null where nothing keeps it (tests).
+        /// </summary>
+        public DailyGift Daily { get; }
+
+        /// <summary>
+        /// Whether this result opens the daily gift before anything else plays: the visit's offer not made yet, with a
+        /// gift to claim, the tuning asking for it on the result, and room on this result (<see cref="HasRoomToWait"/>)
+        /// with no free hat waiting before it. Taking it marks the offer made; a result without room leaves it to a
+        /// later one or to the menu.
+        /// </summary>
+        public bool TakeDailyOffer() => Daily != null && tuning.Daily.IsOnResult && Daily.IsEnabled && HasRoomToWait &&
+            Gift == null && Daily.TakeOffer();
+
+        /// <summary>The gift's popup is up over the result: <c>daily / offer / visible</c> and <c>offer-result</c>.</summary>
+        public void DailyShown()
+        {
+            isWaitingShown = true;
+            PopupShown();
+            Daily?.Shown(true);
+        }
+
+        /// <summary>The popup closed over the result with its gift still to claim: <c>result / daily-no / interact</c>.</summary>
+        public void DailyDeclined() => platform.MeasureDailyResultDeclined();
 
         /// <summary>The garage's stage in the arena scene under the result (or the one a test gives); null without one.</summary>
         public GarageStage Stage
@@ -469,7 +562,11 @@ namespace ToyCarArena.UI
             XpGain = payload.XpGain;
             Coins = payload.Coins;
             Missions = payload.Missions;
-            // The gift stays with the wallet until its popup shows (ShowGiftHat): a result left before it carries it to the
+            isAfterPopup = lastResultHadPopup;
+            lastResultHadPopup = false;
+            isWaitingShown = false;
+            opensReward = OpensReward(XpGain);
+            // The gift stays with the wallet until its popup shows (GiftShown): a result left before it carries it to the
             // next one. Once a hat is on, the popup's EQUIP has nothing to give.
             if (wallet.UnseenGift != null && !string.IsNullOrEmpty(wallet.SelectedTopper)) {
                 wallet.TakeGift();

@@ -4,6 +4,7 @@ common.back,Back button,BACK,RETOUR,INDIETRO,ZURÜCK,ATRÁS,GERİ,VOLTAR,НАЗ�
 common.next_match,Big green button that starts the next round,NEXT MATCH,SUIVANT,AVANTI,WEITER,SIGUIENTE,DEVAM,PRÓXIMA,ДАЛЬШЕ
 common.new,Small gold badge: a new player or arena; max ~5 chars,NEW,NEUF,NUOVO,NEU,NUEVO,YENİ,NOVO,НОВЫЙ
 common.level_short,"Level caption with its number, e.g. LVL 5; short",LVL {0},NIV. {0},LIV. {0},LVL {0},NIV. {0},SV. {0},NÍV. {0},УР. {0}
+common.lv,"Tiny prefix before a level number beside a nick, so it is not read as a place; max 3 chars",LV,NIV,LIV,LV,NV,SV,NV,УР
 common.space,Space bar key cap,SPACE,ESPACE,SPAZIO,LEERTASTE,ESPACIO,BOŞLUK,ESPAÇO,ПРОБЕЛ
 hud.tap_to_start,Start prompt on a touch screen,TAP TO START,TOUCHE POUR JOUER,TOCCA PER INIZIARE,TIPPEN ZUM START,TOCA PARA EMPEZAR,BAŞLAMAK İÇİN DOKUN,TOQUE PARA COMEÇAR,"НАЖМИ, ЧТОБЫ НАЧАТЬ"
 hud.click_to_start,Start prompt with a mouse,CLICK TO START,CLIQUE POUR JOUER,CLICCA PER INIZIARE,KLICKEN ZUM START,HAZ CLIC PARA EMPEZAR,BAŞLAMAK İÇİN TIKLA,CLIQUE PARA COMEÇAR,"КЛИКНИ, ЧТОБЫ НАЧАТЬ"
@@ -65,10 +66,7 @@ result.match_won_subtitle,Match result subtitle for first place,MOST KNOCKOUTS!,
 result.match_place,"Match result subtitle: place, then knock-outs, e.g. PLACE 3 · 5 KO","PLACE {0} · {1} KO","PLACE {0} · {1} K.-O.","{0}° POSTO · {1} K.O.","PLATZ {0} · {1} K.O.","PUESTO {0} · {1} K.O.","{0}. SIRA · {1} NAKAVT","{0}º LUGAR · {1} NOCAUTES","{0} МЕСТО · НОКАУТОВ: {1}"
 result.pushed_by,Before the name of the bot that knocked the player off,PUSHED OFF BY,POUSSÉ PAR,SPINTO DA,RUNTERGESCHUBST VON,TE EMPUJÓ,SENİ İTEN,EMPURRADO POR,ТЕБЯ СТОЛКНУЛ
 result.or_press,Before the SPACE key cap under NEXT MATCH,OR PRESS,OU APPUIE SUR,O PREMI,ODER DRÜCKE,O PULSA,YA DA BAS,OU APERTE,ИЛИ НАЖМИ
-result.car,Round garage button caption; max ~6 chars,CAR,AUTO,AUTO,AUTO,COCHE,ARABA,CARRO,АВТО
 result.new_car,Unlock sticker with the car name,NEW CAR! {0},NOUVELLE VOITURE ! {0},NUOVA AUTO! {0},NEUES AUTO! {0},¡NUEVO COCHE! {0},YENİ ARABA! {0},CARRO NOVO! {0},НОВАЯ МАШИНА! {0}
-result.xp_total,XP in the level and its price,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} XP,{0} / {1} ОПЫТА
-result.rank_level,"Rank name and level, e.g. BRONZE · LEVEL 12",{0} · LEVEL {1},{0} · NIVEAU {1},{0} · LIVELLO {1},{0} · LEVEL {1},{0} · NIVEL {1},{0} · SEVİYE {1},{0} · NÍVEL {1},{0} · УРОВЕНЬ {1}
 result.rank_stop,"Track caption of the next rank, e.g. SILVER RANK",{0} RANK,RANG {0},GRADO {0},RANG {0},RANGO {0},{0} RÜTBESİ,RANKING {0},РАНГ {0}
 result.match_results,Header of the results table at the end of a match,MATCH RESULTS,RÉSULTATS,RISULTATI,ERGEBNISSE,RESULTADOS,MAÇ SONUCU,RESULTADOS,ИТОГИ МАТЧА
 result.winner,Gold tag under the match winner's name; max ~8 chars,WINNER,VAINQUEUR,VINCITORE,SIEGER,GANADOR,KAZANAN,VENCEDOR,ПОБЕДИТЕЛЬ
@@ -94,6 +92,7 @@ car.stat_power,"Car stat label: how hard its hits push",POWER,PUISSANCE,POTENZA,
 car.stat_weight,"Car stat label: how heavy it is, so how hard it is to push off",WEIGHT,POIDS,PESO,GEWICHT,PESO,AĞIRLIK,PESO,ВЕС
 car.stat_boost,"Car stat label: how often it can boost (the BOOST button)",BOOST,TURBO,TURBO,BOOST,TURBO,TURBO,TURBO,РЫВОК
 garage.unlock_at,Locked car tooltip,UNLOCK AT LVL {0},DÉBLOQUÉE AU NIV. {0},SBLOCCO AL LIV. {0},AB LVL {0},SE DESBLOQUEA EN NIV. {0},{0}. SEVİYEDE AÇILIR,LIBERA NO NÍV. {0},ОТКРОЕТСЯ НА УР. {0}
+garage.reach,"Locked league reward: the league that gives it, {0} the league name (BRONZE, SILVER, GOLD, LEGEND); on the garage button and tooltip",REACH {0},ATTEINS {0},RAGGIUNGI {0},ERREICHE {0},ALCANZA {0},{0} LİGİNE ULAŞ,ALCANCE {0},ДОСТИГНИ: {0}
 garage.need_more,Over a too dear card: how many coins are missing; max ~16 chars,NEED {0} MORE,ENCORE {0},NE MANCANO {0},NOCH {0},FALTAN {0},{0} DAHA LAZIM,FALTAM {0},НУЖНО ЕЩЁ {0}
 settings.title,Settings popup title,SETTINGS,RÉGLAGES,IMPOSTAZIONI,EINSTELLUNGEN,AJUSTES,AYARLAR,CONFIGURAÇÕES,НАСТРОЙКИ
 settings.music,Music toggle caption,MUSIC,MUSIQUE,MUSICA,MUSIK,MÚSICA,MÜZİK,MÚSICA,МУЗЫКА
@@ -107,6 +106,10 @@ car.drag-racer.name,Car name,DRAGSTER,DRAGSTER,DRAGSTER,DRAGSTER,DRAGSTER,DRAGST
 car.truck.name,Car name,TRUCK,CAMION,CAMION,LASTER,CAMIÓN,KAMYON,CAMINHÃO,ГРУЗОВИК
 car.monster-truck.name,Car name,MONSTER,MONSTER,MONSTER,MONSTER,MONSTRUO,CANAVAR,MONSTRO,МОНСТР
 car.buggy.name,Car name,BUGGY,BUGGY,BUGGY,BUGGY,BUGGY,BUGGY,BUGGY,БАГГИ
+car.hot-rod.name,Car name,HOT ROD,HOT ROD,HOT ROD,HOT ROD,HOT ROD,HOT ROD,HOT ROD,ХОТ-РОД
+car.police.name,Car name,POLICE,POLICE,POLIZIA,POLIZEI,POLICÍA,POLİS,POLÍCIA,ПОЛИЦИЯ
+car.dozer.name,Car name,DOZER,BULLDOZER,RUSPA,BULLDOZER,BULDÓCER,DOZER,TRATOR,БУЛЬДОЗЕР
+car.comet.name,Car name,COMET,COMÈTE,COMETA,KOMET,COMETA,KOMET,COMETA,КОМЕТА
 arena.sandbox.name,Arena name,SANDBOX,BAC À SABLE,SABBIERA,SANDKASTEN,ARENERO,KUM HAVUZU,CAIXA DE AREIA,ПЕСОЧНИЦА
 arena.tabletop.name,Arena name,TABLETOP,TABLE,TAVOLO,TISCH,MESA,MASA,MESA,СТОЛ
 arena.candy.name,Arena name,CANDY,BONBONS,CARAMELLE,SÜSSES,DULCES,ŞEKER,DOCES,КОНФЕТЫ
@@ -128,20 +131,20 @@ hud.tap_to_use,"Match: first-time hint over the touch item button; max ~14 chars
 hud.press_e,"Match: first-time hint over the item button on a desktop: the E key uses the item; keep the letter E",PRESS E,APPUIE SUR E,PREMI E,DRÜCKE E,PULSA E,E TUŞUNA BAS,APERTE E,НАЖМИ E
 hud.right_click,"Match: first-time hint over the item button on a desktop: the right mouse button uses the item (the E key cap shows beside it); max ~12 chars",RIGHT CLICK,CLIC DROIT,CLIC DESTRO,RECHTSKLICK,CLIC DERECHO,SAĞ TIK,BOTÃO DIREITO,ПРАВЫЙ КЛИК
 mission.title,Header over the three missions on the result and the lobby,MISSIONS,MISSIONS,MISSIONI,MISSIONEN,MISIONES,GÖREVLER,MISSÕES,МИССИИ
-mission.final_two,Mission: end a round among the last two cars,MAKE THE FINAL TWO,FINIS DANS LES 2 DERNIERS,ARRIVA TRA GLI ULTIMI 2,KOMM UNTER DIE LETZTEN 2,LLEGA A LOS 2 ÚLTIMOS,SON İKİYE KAL,CHEGUE AOS 2 ÚLTIMOS,ДОЖИВИ ДО ПОСЛЕДНЕЙ ДВОЙКИ
-mission.round_boosts,Mission: boost {0} times in one round,BOOST {0} TIMES IN A ROUND,FAIS {0} TURBOS EN 1 MANCHE,USA {0} TURBO IN UN ROUND,BOOSTE {0}× IN EINER RUNDE,USA {0} TURBOS EN UNA RONDA,BİR TURDA {0} KEZ HIZLAN,USE {0} TURBOS NUMA RODADA,УСКОРЬСЯ {0} РАЗ ЗА РАУНД
-mission.boosts,Mission: boost {0} times in total,BOOST {0} TIMES,FAIS {0} TURBOS,USA {0} TURBO,BOOSTE {0}×,USA {0} TURBOS,{0} KEZ HIZLAN,USE {0} TURBOS,УСКОРЬСЯ {0} РАЗ
-mission.round_knockouts,Mission: knock {0} cars off in one round,KNOCK OUT {0} CARS IN A ROUND,ÉJECTE {0} VOITURES EN 1 MANCHE,BUTTA FUORI {0} AUTO IN UN ROUND,WIRF {0} AUTOS IN EINER RUNDE RAUS,ECHA {0} COCHES EN UNA RONDA,BİR TURDA {0} ARABA DÜŞÜR,DERRUBE {0} CARROS NUMA RODADA,ВЫБЕЙ {0} МАШИНКИ ЗА РАУНД
-mission.knockouts,Mission: knock {0} cars off in total,KNOCK OUT {0} CARS,ÉJECTE {0} VOITURES,BUTTA FUORI {0} AUTO,WIRF {0} AUTOS RAUS,ECHA {0} COCHES,{0} ARABA DÜŞÜR,DERRUBE {0} CARROS,ВЫБЕЙ {0} МАШИНОК
-mission.win_one,Mission: win one round,WIN A ROUND,GAGNE UNE MANCHE,VINCI UN ROUND,GEWINNE EINE RUNDE,GANA UNA RONDA,BİR TUR KAZAN,VENÇA UMA RODADA,ВЫИГРАЙ РАУНД
-mission.wins,Mission: win {0} rounds in total,WIN {0} ROUNDS,GAGNE {0} MANCHES,VINCI {0} ROUND,GEWINNE {0} RUNDEN,GANA {0} RONDAS,{0} TUR KAZAN,VENÇA {0} RODADAS,ВЫИГРАЙ {0} РАУНДА
-mission.rounds_one,"Mission: finish one round, the very first mission",PLAY A ROUND,JOUE UNE MANCHE,GIOCA UN ROUND,SPIELE EINE RUNDE,JUEGA UNA RONDA,BİR TUR OYNA,JOGUE UMA RODADA,СЫГРАЙ РАУНД
-mission.rounds,Mission: finish {0} rounds,PLAY {0} ROUNDS,JOUE {0} MANCHES,GIOCA {0} ROUND,SPIELE {0} RUNDEN,JUEGA {0} RONDAS,{0} TUR OYNA,JOGUE {0} RODADAS,СЫГРАЙ {0} РАУНДА
-mission.arena_rounds,Mission: finish {0} rounds on the arena named {1},PLAY {0} ROUNDS ON {1},JOUE {0} MANCHES SUR {1},GIOCA {0} ROUND SU {1},SPIELE {0} RUNDEN AUF {1},JUEGA {0} RONDAS EN {1},{1} ARENASINDA {0} TUR OYNA,JOGUE {0} RODADAS EM {1},СЫГРАЙ {0} РАУНДА НА {1}
-mission.revenge,Mission: knock off the bot marked REVENGE,TAKE REVENGE,PRENDS TA REVANCHE,PRENDITI LA RIVINCITA,HOL DIR DIE REVANCHE,CONSIGUE TU VENGANZA,RÖVANŞINI AL,DÊ O TROCO,ОТОМСТИ
-mission.items_used,Mission: use {0} items from the boxes,USE {0} ITEMS,UTILISE {0} OBJETS,USA {0} OGGETTI,NUTZE {0} ITEMS,USA {0} OBJETOS,{0} EŞYA KULLAN,USE {0} ITENS,ПРИМЕНИ {0} ПРЕДМЕТА
-mission.boxes,Mission: break {0} mystery boxes,BREAK {0} BOXES,CASSE {0} BOÎTES,ROMPI {0} SCATOLE,KNACK {0} KISTEN,ROMPE {0} CAJAS,{0} KUTU KIR,QUEBRE {0} CAIXAS,РАЗБЕЙ {0} КОРОБКИ
-mission.item_knockouts,Mission: knock a car off with an item,KNOCK OUT A CAR WITH AN ITEM,ÉJECTE UNE VOITURE AVEC UN OBJET,BUTTA FUORI UN'AUTO CON UN OGGETTO,WIRF EIN AUTO MIT EINEM ITEM RAUS,ECHA UN COCHE CON UN OBJETO,EŞYAYLA BİR ARABA DÜŞÜR,DERRUBE UM CARRO COM UM ITEM,ВЫБЕЙ МАШИНКУ ПРЕДМЕТОМ
+mission.final_two,Mission: end a round among the last two cars (place 1 or 2),FINISH IN THE TOP 2,FINIS DANS LE TOP 2,ARRIVA NEI PRIMI 2,LANDE IN DEN TOP 2,QUEDA ENTRE LOS 2 PRIMEROS,İLK 2'YE GİR,FIQUE ENTRE OS 2 PRIMEIROS,ПОПАДИ В ТОП-2
+mission.round_boosts,Mission: boost {0} times in one match; ru form fits {0} = 2-4,BOOST {0} TIMES IN ONE MATCH,FAIS {0} TURBOS EN UN MATCH,USA IL TURBO {0} VOLTE IN UNA PARTITA,BOOSTE {0}-MAL IN EINEM MATCH,USA EL TURBO {0} VECES EN UNA PARTIDA,TEK MAÇTA {0} KEZ HIZLAN,USE O TURBO {0} VEZES EM UMA PARTIDA,УСКОРЬСЯ {0} РАЗА ЗА МАТЧ
+mission.boosts,Mission: boost {0} times in total; ru form fits {0} = 5-20,BOOST {0} TIMES,FAIS {0} TURBOS,USA IL TURBO {0} VOLTE,BOOSTE {0}-MAL,USA EL TURBO {0} VECES,{0} KEZ HIZLAN,USE O TURBO {0} VEZES,УСКОРЬСЯ {0} РАЗ
+mission.round_knockouts,Mission: push {0} cars off in one match; ru form fits {0} = 2-4,PUSH {0} CARS OFF IN ONE MATCH,ÉJECTE {0} VOITURES EN UN MATCH,BUTTA GIÙ {0} AUTO IN UNA PARTITA,SCHIEB {0} AUTOS IN EINEM MATCH RUNTER,ECHA {0} COCHES FUERA EN UNA PARTIDA,TEK MAÇTA {0} ARABA DÜŞÜR,DERRUBE {0} CARROS EM UMA PARTIDA,СТОЛКНИ {0} МАШИНКИ ЗА МАТЧ
+mission.knockouts,Mission: push {0} cars off in total; ru form fits {0} = 5-20,PUSH {0} CARS OFF,ÉJECTE {0} VOITURES,BUTTA GIÙ {0} AUTO,SCHIEB {0} AUTOS RUNTER,ECHA {0} COCHES FUERA,{0} ARABA DÜŞÜR,DERRUBE {0} CARROS,СТОЛКНИ {0} МАШИНОК
+mission.win_one,Mission: win one match,WIN A MATCH,GAGNE UN MATCH,VINCI UNA PARTITA,GEWINNE EIN MATCH,GANA UNA PARTIDA,BİR MAÇ KAZAN,VENÇA UMA PARTIDA,ВЫИГРАЙ МАТЧ
+mission.wins,Mission: win {0} matches in total; ru form fits {0} = 2-4,WIN {0} MATCHES,GAGNE {0} MATCHS,VINCI {0} PARTITE,GEWINNE {0} MATCHES,GANA {0} PARTIDAS,{0} MAÇ KAZAN,VENÇA {0} PARTIDAS,ВЫИГРАЙ {0} МАТЧА
+mission.rounds_one,"Mission: finish one match, the very first mission of a new player",PLAY YOUR FIRST MATCH,JOUE TON PREMIER MATCH,GIOCA LA TUA PRIMA PARTITA,SPIELE DEIN ERSTES MATCH,JUEGA TU PRIMERA PARTIDA,İLK MAÇINI OYNA,JOGUE SUA PRIMEIRA PARTIDA,СЫГРАЙ ПЕРВЫЙ МАТЧ
+mission.rounds,Mission: finish {0} matches; ru form fits {0} = 2-4,PLAY {0} MATCHES,JOUE {0} MATCHS,GIOCA {0} PARTITE,SPIELE {0} MATCHES,JUEGA {0} PARTIDAS,{0} MAÇ OYNA,JOGUE {0} PARTIDAS,СЫГРАЙ {0} МАТЧА
+mission.arena_rounds,Mission: finish {0} matches on the arena named {1} (arena.*.name); ru form fits {0} = 2-4,PLAY {0} MATCHES ON THE {1} ARENA,JOUE {0} MATCHS SUR L'ARÈNE {1},FAI {0} PARTITE NELL'ARENA {1},SPIELE {0} MATCHES IN DER ARENA {1},JUEGA {0} PARTIDAS EN LA ARENA {1},{1} ARENASINDA {0} MAÇ OYNA,JOGUE {0} PARTIDAS NA ARENA {1},СЫГРАЙ {0} МАТЧА НА АРЕНЕ {1}
+mission.revenge,"Mission: push off the bot marked REVENGE, the one who pushed the player off; same word as hud.revenge",GET REVENGE ON YOUR RIVAL,VENGE-TOI DE TON RIVAL,VENDICATI DEL TUO RIVALE,RÄCH DICH AN DEINEM RIVALEN,VÉNGATE DE TU RIVAL,RAKİBİNDEN İNTİKAM AL,VINGUE-SE DO SEU RIVAL,ОТОМСТИ ОБИДЧИКУ
+mission.items_used,Mission: use {0} items from the boxes; ru form fits {0} = 2-4,USE {0} ITEMS,UTILISE {0} OBJETS,USA {0} OGGETTI,NUTZE {0} ITEMS,USA {0} OBJETOS,{0} EŞYA KULLAN,USE {0} ITENS,ПРИМЕНИ {0} ПРЕДМЕТА
+mission.boxes,Mission: break {0} mystery boxes; ru form fits {0} = 2-4,SMASH {0} MYSTERY BOXES,CASSE {0} BOÎTES MYSTÈRE,ROMPI {0} SCATOLE A SORPRESA,KNACK {0} KISTEN,ROMPE {0} CAJAS SORPRESA,{0} SÜRPRİZ KUTUSU KIR,QUEBRE {0} CAIXAS SURPRESA,РАЗБЕЙ {0} КОРОБКИ
+mission.item_knockouts,Mission: push a car off with an item,PUSH A CAR OFF WITH AN ITEM,ÉJECTE UNE VOITURE AVEC UN OBJET,BUTTA GIÙ UN'AUTO CON UN OGGETTO,SCHIEB EIN AUTO MIT EINEM ITEM RUNTER,ECHA UN COCHE FUERA CON UN OBJETO,EŞYAYLA BİR ARABA DÜŞÜR,DERRUBE UM CARRO COM UM ITEM,СТОЛКНИ МАШИНКУ ПРЕДМЕТОМ
 result.streak,"Gold tag: the player's win streak, next round pays x1.5; {0} is its length",STREAK ×{0},SÉRIE ×{0},SERIE ×{0},SERIE ×{0},RACHA ×{0},SERİ ×{0},SEQUÊNCIA ×{0},СЕРИЯ ×{0}
 result.streak_lost,Grey tag: the player's win streak ended,STREAK LOST,SÉRIE PERDUE,SERIE PERSA,SERIE VORBEI,RACHA PERDIDA,SERİ BİTTİ,SEQUÊNCIA PERDIDA,СЕРИЯ ПРЕРВАНА
 result.streak_bonus,Under the streak in the lobby: the round's XP and coins are multiplied,BONUS ×1.5,"BONUS ×1,5","BONUS ×1,5","BONUS ×1,5","BONO ×1,5","BONUS ×1,5","BÔNUS ×1,5","БОНУС ×1,5"
@@ -161,6 +164,14 @@ garage.free,"Pill in the ad window: the car costs no coins",FREE,GRATUIT,GRATIS,
 garage.watch_ad,"Button in the ad window that plays the rewarded ad; short",WATCH AD,VOIR LA PUB,GUARDA AD,WERBUNG SEHEN,VER ANUNCIO,REKLAM İZLE,VER ANÚNCIO,СМОТРЕТЬ
 garage.cancel,"Button that closes the buy or ad window without doing anything",CANCEL,ANNULER,ANNULLA,ABBRECHEN,CANCELAR,İPTAL,CANCELAR,ОТМЕНА
 garage.no_ad,"Over WATCH AD when the ad did not play or was closed early; max ~16 chars",NO AD RIGHT NOW,PAS DE PUB,NESSUN AD ORA,KEINE WERBUNG,SIN ANUNCIO,REKLAM YOK,SEM ANÚNCIO,РЕКЛАМЫ НЕТ
+paint.green,Garage paint name under its swatch; max ~10 chars,GREEN,VERT,VERDE,GRÜN,VERDE,YEŞİL,VERDE,ЗЕЛЁНЫЙ
+paint.red,Garage paint name under its swatch; max ~10 chars,RED,ROUGE,ROSSO,ROT,ROJO,KIRMIZI,VERMELHO,КРАСНЫЙ
+paint.blue,Garage paint name under its swatch; max ~10 chars,BLUE,BLEU,BLU,BLAU,AZUL,MAVİ,AZUL,СИНИЙ
+paint.yellow,Garage paint name under its swatch; max ~10 chars,YELLOW,JAUNE,GIALLO,GELB,AMARILLO,SARI,AMARELO,ЖЁЛТЫЙ
+paint.purple,Garage paint name under its swatch; max ~10 chars,PURPLE,VIOLET,VIOLA,LILA,MORADO,MOR,ROXO,ФИОЛЕТОВЫЙ
+paint.orange,Garage paint name under its swatch; max ~10 chars,ORANGE,ORANGE,ARANCIONE,ORANGE,NARANJA,TURUNCU,LARANJA,ОРАНЖЕВЫЙ
+paint.pink,Garage paint name under its swatch; max ~10 chars,PINK,ROSE,ROSA,ROSA,ROSA,PEMBE,ROSA,РОЗОВЫЙ
+paint.dark,Garage paint name under its swatch; max ~10 chars,DARK,NOIR,NERO,SCHWARZ,NEGRO,SİYAH,PRETO,ЧЁРНЫЙ
 topper.top-hat.name,Topper name: a tall black top hat,TOP HAT,HAUT-DE-FORME,CILINDRO,ZYLINDER,CHISTERA,SİLİNDİR ŞAPKA,CARTOLA,ЦИЛИНДР
 topper.party-hat.name,Topper name,PARTY HAT,CHAPEAU DE FÊTE,CAPPELLO PARTY,PARTYHUT,GORRO DE FIESTA,PARTİ ŞAPKASI,CHAPÉU DE FESTA,КОЛПАК
 topper.cone.name,Topper name: a traffic cone,CONE,CÔNE,CONO,PYLONE,CONO,KONİ,CONE,КОНУС
@@ -170,6 +181,12 @@ topper.horns.name,Topper name,HORNS,CORNES,CORNA,HÖRNER,CUERNOS,BOYNUZLAR,CHIFR
 topper.propeller.name,Topper name: a propeller hat,PROPELLER,HÉLICE,ELICA,PROPELLER,HÉLICE,PERVANE,HÉLICE,ПРОПЕЛЛЕР
 topper.fin.name,Topper name: a shark fin,FIN,AILERON,PINNA,FLOSSE,ALETA,YÜZGEÇ,BARBATANA,ПЛАВНИК
 topper.crown.name,Topper name,CROWN,COURONNE,CORONA,KRONE,CORONA,TAÇ,COROA,КОРОНА
+topper.chef-hat.name,Topper name: a white chef's toque,CHEF HAT,TOQUE,CAPPELLO DA CHEF,KOCHMÜTZE,GORRO DE CHEF,AŞÇI ŞAPKASI,CHAPÉU DE CHEF,КОЛПАК ПОВАРА
+topper.cowboy-hat.name,Topper name,COWBOY HAT,CHAPEAU DE COWBOY,CAPPELLO DA COWBOY,COWBOYHUT,SOMBRERO VAQUERO,KOVBOY ŞAPKASI,CHAPÉU DE COWBOY,КОВБОЙСКАЯ ШЛЯПА
+topper.viking-helmet.name,Topper name: a horned viking helmet,VIKING HELMET,CASQUE VIKING,ELMO VICHINGO,WIKINGERHELM,CASCO VIKINGO,VİKİNG MİĞFERİ,CAPACETE VIKING,ШЛЕМ ВИКИНГА
+topper.duck.name,Topper name: a rubber duck riding on the roof,RUBBER DUCK,CANARD,PAPERELLA,QUIETSCHEENTE,PATITO,LASTİK ÖRDEK,PATINHO,УТОЧКА
+topper.halo.name,Topper name: an angel's halo with little wings,HALO,AURÉOLE,AUREOLA,HEILIGENSCHEIN,AUREOLA,HALE,AURÉOLA,НИМБ
+topper.rocket.name,Topper name: a toy rocket,ROCKET,FUSÉE,RAZZO,RAKETE,COHETE,ROKET,FOGUETE,РАКЕТА
 lobby.mission,"Lobby line under the seats instead of a tip: the mission closest to done; {0} is the task, {1} its progress like 5/6",MISSION: {0} {1},MISSION : {0} {1},MISSIONE: {0} {1},MISSION: {0} {1},MISIÓN: {0} {1},GÖREV: {0} {1},MISSÃO: {0} {1},МИССИЯ: {0} {1}
 result.hat_offer_title,Title of the popup that offers a hat for coins once; short,NEW LOOK!,NOUVEAU LOOK !,NUOVO LOOK!,NEUER LOOK!,¡NUEVO LOOK!,YENİ TARZ!,VISUAL NOVO!,НОВЫЙ ОБРАЗ!
 result.new_hat_tag,Tag on the popup that offers a hat for coins; short,HAT SHOP,BOUTIQUE,NEGOZIO,HUTLADEN,TIENDA,ŞAPKACI,LOJA,МАГАЗИН
@@ -187,8 +204,9 @@ result.boost_stamp,"Tag on the XP sticker of a round the XP boost paid for, {0} 
 result.first_win_stamp,"Stamp under the round's XP and COINS stickers when it was the day's first win, {0} the multiplier; short",FIRST WIN ×{0},1RE VICTOIRE ×{0},1ª VITTORIA ×{0},1. SIEG ×{0},1ª VICTORIA ×{0},İLK ZAFER ×{0},1ª VITÓRIA ×{0},ПЕРВАЯ ПОБЕДА ×{0}
 special.mega.name,Special round name: every car is giant (lobby tag and over the countdown),MEGA ROUND!,MANCHE MÉGA !,ROUND MEGA!,MEGA-RUNDE!,¡RONDA MEGA!,MEGA TUR!,RODADA MEGA!,МЕГА-РАУНД!
 special.mega.hint,Special round rule in one line,EVERYONE IS HUGE!,TOUT LE MONDE EST ÉNORME !,SIETE TUTTI GIGANTI!,ALLE SIND RIESIG!,¡TODOS SON GIGANTES!,HERKES DEV GİBİ!,TODO MUNDO ESTÁ GIGANTE!,ВСЕ ОГРОМНЫЕ!
-special.hot-potato.name,Special round name: a bomb passes between cars on a bump,HOT POTATO!,PATATE CHAUDE !,PATATA BOLLENTE!,HEISSE KARTOFFEL!,¡PAPA CALIENTE!,SICAK PATATES!,BATATA QUENTE!,ГОРЯЧАЯ БОМБА!
-special.hot-potato.hint,Special round rule in one line,BUMP A CAR TO PASS THE BOMB!,TAMPONNE POUR REFILER LA BOMBE !,URTA UN'AUTO PER PASSARE LA BOMBA!,RAMM EIN AUTO UND GIB DIE BOMBE WEITER!,¡CHOCA PARA PASAR LA BOMBA!,BOMBAYI VERMEK İÇİN ÇARP!,BATA EM UM CARRO PARA PASSAR A BOMBA!,ТОЛКНИ МАШИНУ И ОТДАЙ БОМБУ!
+special.hot-potato.name,Special round name: a bomb passes between cars on a bump,HOT POTATO!,PATATE CHAUDE !,PATATA BOLLENTE!,HEISSE KARTOFFEL!,¡PAPA CALIENTE!,SICAK PATATES!,BATATA QUENTE!,ГОРЯЧАЯ КАРТОШКА!
+special.hot-potato.hint,Special round rule in one line,BUMP A CAR TO PASS THE BOMB!,TAMPONNE UNE VOITURE POUR REFILER LA BOMBE !,URTA UN'AUTO PER PASSARE LA BOMBA!,RAMM EIN AUTO UND GIB DIE BOMBE WEITER!,¡CHOCA CON UN COCHE PARA PASAR LA BOMBA!,BOMBAYI VERMEK İÇİN BİR ARABAYA ÇARP!,BATA EM UM CARRO PARA PASSAR A BOMBA!,"ВРЕЖЬСЯ В МАШИНКУ, ЧТОБЫ ОТДАТЬ БОМБУ!"
+hud.pass_it,Hot potato mode: the player holds the bomb and must bump someone,PASS IT ON!,REFILE-LA !,PASSALA!,GIB SIE WEITER!,¡PÁSALA!,PASLA!,PASSA PRA FRENTE!,ОТДАЙ БОМБУ!
 special.boss.name,Special round name: one giant bot in a crown,BOSS ROUND!,MANCHE DU BOSS !,ROUND DEL BOSS!,BOSS-RUNDE!,¡RONDA DEL JEFE!,BOSS TURU!,RODADA DO CHEFÃO!,БОСС-РАУНД!
 special.boss.hint,Special round rule in one line,KNOCK OFF THE BOSS: ×3 REWARD!,ÉJECTE LE BOSS : RÉCOMPENSE ×3 !,BUTTA GIÙ IL BOSS: PREMIO ×3!,WIRF DEN BOSS RAUS: ×3 BELOHNUNG!,¡TIRA AL JEFE: PREMIO ×3!,BOSS'U DÜŞÜR: ×3 ÖDÜL!,DERRUBE O CHEFÃO: PRÊMIO ×3!,СТОЛКНИ БОССА: НАГРАДА ×3!
 special.ice.name,Special round name: the floor is ice,ICE ROUND!,MANCHE SUR GLACE !,ROUND DI GHIACCIO!,EIS-RUNDE!,¡RONDA DE HIELO!,BUZ TURU!,RODADA NO GELO!,ЛЕДЯНОЙ РАУНД!
@@ -202,9 +220,12 @@ menu.choose_mode,Title of the popup that lists the game modes,CHOOSE MODE,CHOISI
 menu.selected,Tag on the game mode in play,SELECTED,CHOISI,SCELTA,GEWÄHLT,ELEGIDO,SEÇİLİ,ESCOLHIDO,ВЫБРАН
 menu.soon,Tag on a game mode that is not out yet; max ~6 chars,SOON,BIENTÔT,PRESTO,BALD,PRONTO,YAKINDA,EM BREVE,СКОРО
 menu.quick_match,Game mode: one round against bots,QUICK MATCH,MATCH RAPIDE,PARTITA RAPIDA,SCHNELLES SPIEL,PARTIDA RÁPIDA,HIZLI MAÇ,PARTIDA RÁPIDA,БЫСТРЫЙ МАТЧ
-menu.quick_match_hint,What the quick match is,PUSH EVERYONE OFF. THE LAST CAR WINS!,POUSSE-LES TOUS. LA DERNIÈRE VOITURE GAGNE !,BUTTALI TUTTI GIÙ. VINCE L'ULTIMA AUTO!,SCHIEB ALLE RUNTER. DAS LETZTE AUTO GEWINNT!,¡ÉCHALOS A TODOS! GANA EL ÚLTIMO COCHE.,HERKESİ DÜŞÜR. SON KALAN KAZANIR!,DERRUBE TODOS. O ÚLTIMO CARRO VENCE!,СТОЛКНИ ВСЕХ. ПОБЕЖДАЕТ ПОСЛЕДНИЙ!
+menu.quick_match_hint,What the quick match is,PUSH EVERYONE OFF. THE LAST CAR WINS!,POUSSE-LES TOUS DEHORS. LA DERNIÈRE VOITURE GAGNE !,BUTTALI TUTTI GIÙ. VINCE L'ULTIMA AUTO!,SCHIEB ALLE RUNTER. DAS LETZTE AUTO GEWINNT!,¡ÉCHALOS A TODOS! GANA EL ÚLTIMO COCHE.,HERKESİ DÜŞÜR. SON KALAN KAZANIR!,DERRUBE TODOS. O ÚLTIMO CARRO VENCE!,СТОЛКНИ ВСЕХ С АРЕНЫ. ПОСЛЕДНИЙ ПОБЕЖДАЕТ!
+menu.event,Tag on a limited game mode card; max ~7 chars,EVENT,ÉVÉNEMENT,EVENTO,EVENT,EVENTO,ETKİNLİK,EVENTO,СОБЫТИЕ
+menu.hot_potato,Event game mode: a bomb passes between cars on a bump,HOT POTATO,PATATE CHAUDE,PATATA BOLLENTE,HEISSE KARTOFFEL,PAPA CALIENTE,SICAK PATATES,BATATA QUENTE,ГОРЯЧАЯ КАРТОШКА
+menu.hot_potato_hint,What the hot potato mode is,BUMP TO PASS THE BOMB. DON'T GET CAUGHT HOLDING IT!,TAMPONNE POUR REFILER LA BOMBE. NE LA GARDE PAS QUAND ELLE SAUTE !,URTA PER PASSARE LA BOMBA. NON TENERLA QUANDO ESPLODE!,"RAMMEN GIBT DIE BOMBE WEITER. WER SIE ZULETZT HAT, FLIEGT RAUS!",CHOCA PARA PASAR LA BOMBA. ¡QUE NO TE EXPLOTE ENCIMA!,"ÇARP, BOMBAYI BAŞKASINA VER. PATLARKEN SENDE OLMASIN!",BATA PARA PASSAR A BOMBA. NÃO DEIXE ELA EXPLODIR COM VOCÊ!,ВРЕЖЬСЯ — И БОМБА У ДРУГОГО. НЕ ДЕРЖИ ЕЁ ДО ВЗРЫВА!
 menu.cup,"Game mode coming later: a cup of several rounds",CUP,COUPE,COPPA,POKAL,COPA,KUPA,COPA,КУБОК
-menu.cup_hint,What the cup mode will be,THREE ROUNDS FOR ONE CUP,TROIS MANCHES POUR UNE COUPE,TRE ROUND PER UNA COPPA,DREI RUNDEN FÜR EINEN POKAL,TRES RONDAS POR UNA COPA,BİR KUPA İÇİN ÜÇ TUR,TRÊS RODADAS POR UMA COPA,ТРИ РАУНДА ЗА КУБОК
+menu.cup_hint,What the cup mode will be,"THREE ROUNDS, ONE CUP","TROIS MANCHES, UNE COUPE","TRE ROUND, UNA COPPA","DREI RUNDEN, EIN POKAL","TRES RONDAS, UNA COPA","ÜÇ TUR, BİR KUPA","TRÊS RODADAS, UMA COPA",ТРИ РАУНДА — ОДИН КУБОК
 menu.survival,Game mode coming later: waves of bots,SURVIVAL,SURVIE,SOPRAVVIVENZA,ÜBERLEBEN,SUPERVIVENCIA,HAYATTA KAL,SOBREVIVÊNCIA,ВЫЖИВАНИЕ
 menu.survival_hint,What the survival mode will be,WAVES OF BOTS. HOW LONG CAN YOU LAST?,DES VAGUES DE BOTS. TU TIENS COMBIEN ?,ONDATE DI BOT. QUANTO RESISTI?,BOT-WELLEN. WIE LANGE HÄLTST DU DURCH?,OLEADAS DE BOTS. ¿CUÁNTO AGUANTAS?,BOT DALGALARI. NE KADAR DAYANIRSIN?,ONDAS DE BOTS. QUANTO VOCÊ AGUENTA?,ВОЛНЫ БОТОВ. СКОЛЬКО ПРОДЕРЖИШЬСЯ?
 result.home,"Round button on the result that goes back to the main menu; max ~6 chars",HOME,MENU,MENU,MENÜ,MENÚ,MENÜ,MENU,МЕНЮ
@@ -250,3 +271,7 @@ daily.first_win_done,Under the first win card once it was taken today,DONE TODAY
 daily.task_done,"Progress of a done daily task; short",DONE!,FAIT !,FATTO!,ERLEDIGT!,¡HECHO!,TAMAM!,FEITO!,ГОТОВО!
 daily.tasks_next,"Under the daily tasks: the time to the next ones, {0} like 5H 12M",NEW TASKS IN {0},NOUVELLES TÂCHES DANS {0},NUOVI COMPITI TRA {0},NEUE AUFGABEN IN {0},NUEVAS TAREAS EN {0},YENİ GÖREVLER: {0},NOVAS TAREFAS EM {0},НОВЫЕ ЗАДАНИЯ ЧЕРЕЗ {0}
 topper.wizard-hat.name,"Topper name: a purple wizard's hat with gold stars, the daily gift's prize",WIZARD HAT,CHAPEAU DE SORCIER,CAPPELLO DA MAGO,ZAUBERHUT,SOMBRERO DE MAGO,BÜYÜCÜ ŞAPKASI,CHAPÉU DE MAGO,ШЛЯПА МАГА
+topper.ember.name,"Topper name: a Spartan's bronze helmet with a red crest, the bronze league's prize",SPARTAN HELMET,CASQUE SPARTIATE,ELMO SPARTANO,SPARTANERHELM,CASCO ESPARTANO,SPARTA MİĞFERİ,ELMO ESPARTANO,ШЛЕМ СПАРТАНЦА
+topper.silver-torch.name,"Topper name: a knight's steel great helm with a plume, the silver league's prize",KNIGHT HELMET,CASQUE DE CHEVALIER,ELMO DA CAVALIERE,RITTERHELM,YELMO DE CABALLERO,ŞÖVALYE MİĞFERİ,ELMO DE CAVALEIRO,РЫЦАРСКИЙ ШЛЕМ
+topper.fire-crown.name,"Topper name: a samurai's gold helmet with tall horns, the gold league's prize",SAMURAI HELMET,CASQUE DE SAMOURAÏ,ELMO DA SAMURAI,SAMURAIHELM,CASCO SAMURÁI,SAMURAY MİĞFERİ,ELMO SAMURAI,ШЛЕМ САМУРАЯ
+topper.phoenix.name,"Topper name: an astronaut's helmet with a rainbow visor and a ring, the legend league's prize",SPACE HELMET,CASQUE SPATIAL,CASCO SPAZIALE,WELTRAUMHELM,CASCO ESPACIAL,UZAY KASKI,CAPACETE ESPACIAL,КОСМИЧЕСКИЙ ШЛЕМ

@@ -7,6 +7,7 @@ using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Round;
 using ToyCarArena.UI;
+using UnityEngine;
 
 namespace ToyCarArena.App
 {
@@ -66,14 +67,17 @@ namespace ToyCarArena.App
                 // event goes out while the ad plays.
                 if (adBreaks.IsDue(tuning.Ads.FreePlaySeconds)) {
                     platform.MeasureCommercialBreak();
+                    // Real time: the game's clock stands still under the ad.
+                    var started = Time.realtimeSinceStartup;
                     await AdPause.Run(() => platform.CommercialBreak(token));
+                    platform.MeasureCommercialLength(Time.realtimeSinceStartup - started);
                 }
 
                 var arena = arenaCatalog.Find(mapId);
                 curtain.ShowLobby(roster, RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis,
                     GameText.Arena(arena), arena != null && arenaRotation.IsNew(arena.Id),
                     progress.WinStreak >= tuning.Streaks.Start ? progress.WinStreak : 0, NearestMission(),
-                    RoundRules.For(tuning, progress.Round));
+                    RoundRules.For(tuning, progress.Round, progress.Mode));
             }
             catch {
                 await closeScreen();

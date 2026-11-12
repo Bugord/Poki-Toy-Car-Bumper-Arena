@@ -23,6 +23,7 @@ namespace ToyCarArena.UI
         private static readonly Color32 Pink = new(0xca, 0x77, 0xeb, 0xff);
         private static readonly Color32 Green = new(0x3f, 0xa8, 0x7a, 0xff);
         private static readonly Color32 Purple = new(0x8f, 0x5c, 0xd6, 0xff);
+        private static readonly Color32 Copper = new(0xc8, 0x77, 0x4a, 0xff);
 
         public static VisualElement Create(string id, string className)
         {
@@ -135,12 +136,94 @@ namespace ToyCarArena.UI
                     Circle(Blue, 0.27f, 0.7f, 0.05f);
                     Circle(Green, 0.73f, 0.7f, 0.05f);
                     break;
+                case "chef-hat":
+                    Shape(White, new(0.3f, 0.88f), new(0.7f, 0.88f), new(0.72f, 0.6f), new(0.28f, 0.6f));
+                    Circle(White, 0.32f, 0.46f, 0.18f);
+                    Circle(White, 0.68f, 0.46f, 0.18f);
+                    Circle(White, 0.5f, 0.32f, 0.22f);
+                    break;
+                case "cowboy-hat":
+                    Shape(Cream, new(0.06f, 0.58f), new(0.24f, 0.72f), new(0.76f, 0.72f), new(0.94f, 0.58f),
+                        new(0.86f, 0.82f), new(0.14f, 0.82f));
+                    Shape(Cream, new(0.28f, 0.72f), new(0.32f, 0.26f), new(0.5f, 0.34f), new(0.68f, 0.26f),
+                        new(0.72f, 0.72f));
+                    Rect(Red, 0.29f, 0.6f, 0.71f, 0.7f);
+                    break;
+                case "viking-helmet":
+                    Shape(Cream, new(0.24f, 0.62f), new(0.06f, 0.42f), new(0.08f, 0.12f), new(0.3f, 0.46f));
+                    Shape(Cream, new(0.76f, 0.62f), new(0.94f, 0.42f), new(0.92f, 0.12f), new(0.7f, 0.46f));
+                    Shape(Grey, new(0.22f, 0.78f), new(0.26f, 0.48f), new(0.5f, 0.3f), new(0.74f, 0.48f),
+                        new(0.78f, 0.78f));
+                    Rect(Gold, 0.2f, 0.74f, 0.8f, 0.86f);
+                    Rect(Gold, 0.46f, 0.32f, 0.54f, 0.74f);
+                    break;
+                case "duck":
+                    Shape(Gold, new(0.1f, 0.6f), new(0.18f, 0.44f), new(0.84f, 0.56f), new(0.8f, 0.82f),
+                        new(0.2f, 0.84f));
+                    Circle(Gold, 0.6f, 0.34f, 0.18f);
+                    Shape(Orange, new(0.74f, 0.32f), new(0.94f, 0.36f), new(0.76f, 0.44f));
+                    Circle(Navy, 0.64f, 0.29f, 0.04f);
+                    break;
+                case "halo":
+                    Shape(White, new(0.46f, 0.82f), new(0.08f, 0.62f), new(0.12f, 0.46f), new(0.46f, 0.62f));
+                    Shape(White, new(0.54f, 0.82f), new(0.92f, 0.62f), new(0.88f, 0.46f), new(0.54f, 0.62f));
+                    Shape(Gold, new(0.18f, 0.28f), new(0.5f, 0.14f), new(0.82f, 0.28f), new(0.5f, 0.42f));
+                    Shape(Sky, new(0.32f, 0.28f), new(0.5f, 0.21f), new(0.68f, 0.28f), new(0.5f, 0.35f));
+                    break;
+                case "rocket":
+                    Shape(Orange, new(0.42f, 0.8f), new(0.58f, 0.8f), new(0.5f, 0.94f));
+                    Shape(Red, new(0.34f, 0.8f), new(0.2f, 0.84f), new(0.22f, 0.64f), new(0.36f, 0.56f));
+                    Shape(Red, new(0.66f, 0.8f), new(0.8f, 0.84f), new(0.78f, 0.64f), new(0.64f, 0.56f));
+                    Rect(White, 0.36f, 0.36f, 0.64f, 0.8f);
+                    Shape(Red, new(0.36f, 0.36f), new(0.5f, 0.08f), new(0.64f, 0.36f));
+                    Circle(Sky, 0.5f, 0.52f, 0.07f);
+                    break;
                 case "wizard-hat":
                     Rect(Purple, 0.08f, 0.8f, 0.92f, 0.9f);
                     Shape(Purple, new(0.28f, 0.8f), new(0.46f, 0.3f), new(0.7f, 0.08f), new(0.6f, 0.36f), new(0.72f, 0.8f));
                     Rect(Gold, 0.28f, 0.68f, 0.72f, 0.8f);
                     Circle(Gold, 0.7f, 0.1f, 0.07f);
                     Circle(Gold, 0.52f, 0.52f, 0.05f);
+                    break;
+                case "ember":
+                    // A Spartan's bronze helmet under its red crest.
+                    Shape(Red, new(0.26f, 0.4f), new(0.32f, 0.16f), new(0.5f, 0.06f), new(0.7f, 0.12f),
+                        new(0.8f, 0.36f), new(0.64f, 0.28f), new(0.44f, 0.28f));
+                    Shape(Copper, new(0.2f, 0.84f), new(0.2f, 0.5f), new(0.28f, 0.36f), new(0.5f, 0.28f),
+                        new(0.72f, 0.36f), new(0.8f, 0.5f), new(0.8f, 0.84f));
+                    Rect(Dark, 0.32f, 0.5f, 0.68f, 0.58f);
+                    Rect(Dark, 0.45f, 0.5f, 0.55f, 0.84f);
+                    Rect(Gold, 0.18f, 0.8f, 0.82f, 0.9f);
+                    break;
+                case "silver-torch":
+                    // A knight's steel great helm with an eye slit, a gold cross and a plume.
+                    Shape(Blue, new(0.5f, 0.3f), new(0.22f, 0.16f), new(0.3f, 0.08f));
+                    Shape(White, new(0.5f, 0.3f), new(0.38f, 0.04f), new(0.52f, 0.04f));
+                    Shape(Sky, new(0.5f, 0.3f), new(0.64f, 0.06f), new(0.74f, 0.14f));
+                    Shape(Grey, new(0.24f, 0.86f), new(0.24f, 0.42f), new(0.32f, 0.3f), new(0.5f, 0.26f),
+                        new(0.68f, 0.3f), new(0.76f, 0.42f), new(0.76f, 0.86f));
+                    Rect(Dark, 0.3f, 0.5f, 0.7f, 0.56f);
+                    Rect(Gold, 0.47f, 0.32f, 0.53f, 0.82f);
+                    Rect(Gold, 0.36f, 0.62f, 0.64f, 0.67f);
+                    Rect(Gold, 0.22f, 0.8f, 0.78f, 0.88f);
+                    break;
+                case "fire-crown":
+                    // A samurai's gold kabuto: a red neck guard, tall gold horns and a red sun.
+                    Shape(Red, new(0.08f, 0.88f), new(0.2f, 0.6f), new(0.8f, 0.6f), new(0.92f, 0.88f));
+                    Rect(Gold, 0.12f, 0.76f, 0.88f, 0.8f);
+                    Shape(Gold, new(0.24f, 0.64f), new(0.3f, 0.44f), new(0.5f, 0.36f), new(0.7f, 0.44f), new(0.76f, 0.64f));
+                    Shape(Gold, new(0.44f, 0.54f), new(0.18f, 0.12f), new(0.26f, 0.08f), new(0.5f, 0.48f));
+                    Shape(Gold, new(0.56f, 0.54f), new(0.82f, 0.12f), new(0.74f, 0.08f), new(0.5f, 0.48f));
+                    Circle(Red, 0.5f, 0.54f, 0.07f);
+                    break;
+                case "phoenix":
+                    // An astronaut's helmet with a rainbow visor and a gold ring round it.
+                    Rect(Gold, 0.3f, 0.8f, 0.7f, 0.9f);
+                    Circle(White, 0.5f, 0.5f, 0.3f);
+                    Circle(Purple, 0.53f, 0.55f, 0.17f);
+                    Circle(Pink, 0.49f, 0.5f, 0.08f);
+                    Shape(Gold, new(0.04f, 0.66f), new(0.96f, 0.44f), new(0.96f, 0.5f), new(0.04f, 0.72f));
+                    Circle(Gold, 0.82f, 0.16f, 0.05f);
                     break;
                 default:
                     painter.BeginPath();
