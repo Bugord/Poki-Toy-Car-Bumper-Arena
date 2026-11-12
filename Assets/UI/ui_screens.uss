@@ -5753,12 +5753,14 @@
 
 /* ---- A round in teams (HudTeams, the lobby's teams, the result's team table) ---- */
 
-/* The team score under the bar: BLUE N : M RED, the player's team at the left with YOU under its name. */
+/* The team score under the bar: BLUE N : M RED, the player's team at the left with YOU under its name. Its padding
+   holds the YOU tab, so the end timer's note under the score (HudEndTimer.NoteTop) clears it. */
 .team-score {
     position: absolute;
     left: 0;
     right: 0;
     align-items: center;
+    padding-bottom: 30px;
     opacity: 0;
     scale: 0.6 0.6;
     transition-property: opacity, scale;

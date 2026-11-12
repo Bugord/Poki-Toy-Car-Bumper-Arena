@@ -24,10 +24,10 @@ namespace ToyCarArena.UI
         private const float Top = 176f;
 
         /// <summary>
-        /// How far down the feed moves in portrait, where it sits left under the bar: past the score and its +N stickers
-        /// (in landscape the feed is in the top left corner, clear of them).
+        /// How far down the feed moves in portrait, where it sits left under the bar: past the score, its +N stickers
+        /// and the end timer's note under them (in landscape the feed is in the top left corner, clear of them).
         /// </summary>
-        public const float FeedDrop = 170f;
+        public const float FeedDrop = 240f;
 
         // A changed number: up to this scale, easing back over the seconds.
         private const float PopScale = 1.45f;
@@ -54,6 +54,10 @@ namespace ToyCarArena.UI
         private readonly Sticker[] stickers = new Sticker[Stickers];
         private readonly IVisualElementScheduledItem tick;
         private readonly Action onLanguage;
+        // The HUD's top bar, which the end timer grows from its top centre in the last seconds: the score moves down
+        // with its bottom edge, or the grown bar would cover it.
+        private readonly VisualElement hudBar;
+        private float barShift;
         private int nextSticker;
 
         /// <summary>The team HUD for a round in teams, null otherwise.</summary>
@@ -84,6 +88,7 @@ namespace ToyCarArena.UI
             }
 
             parent.Add(root);
+            hudBar = parent.Q<VisualElement>(className: "hud__bar");
             model.TeamScoreChanged += OnTeamScoreChanged;
             onLanguage = () => {
                 foreach (var side in sides) {
@@ -157,6 +162,7 @@ namespace ToyCarArena.UI
         private void Tick()
         {
             root.EnableInClassList(ShownClass, model.HasBegun);
+            FollowBar();
             var now = Time.unscaledTime;
             foreach (var side in sides) {
                 var since = now - side.PopAt;
@@ -166,6 +172,20 @@ namespace ToyCarArena.UI
 
             foreach (var sticker in stickers) {
                 sticker.Tick(now, root);
+            }
+        }
+
+        private void FollowBar()
+        {
+            if (hudBar == null) {
+                return;
+            }
+
+            var height = hudBar.layout.height;
+            var shift = float.IsNaN(height) ? 0f : height * Mathf.Max(0f, hudBar.resolvedStyle.scale.value.y - 1f);
+            if (Mathf.Abs(shift - barShift) > 0.25f) {
+                barShift = shift;
+                root.style.translate = new Translate(0f, shift);
             }
         }
 
