@@ -60,7 +60,7 @@ namespace ToyCarArena.Gameplay.Modes
         public SpecialRound Kind => SpecialRound.ItemFrenzy;
 
         /// <summary>A car with a mystery box riding on its roof, the box the round is full of.</summary>
-        public ModeCard Card { get; } = new("buggy", 2, "Hover", 0.62f);
+        public ModeCard Card { get; } = new("vintage", 2, "Hover", 0.62f);
 
         public bool IsActive { get; }
 

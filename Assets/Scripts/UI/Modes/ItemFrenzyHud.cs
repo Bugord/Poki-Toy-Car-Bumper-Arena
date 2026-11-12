@@ -24,6 +24,11 @@ namespace ToyCarArena.UI
         private const float EmptyOpacity = 0.45f;
         private const float PulsePeriod = 0.65f;
         private const long PulseDuration = 120;
+        // The widest the hint's words may be, in reference pixels: the hint is 400 wide less the pill's padding, and on a
+        // desktop the E key cap beside them; longer words (Russian) shrink, down to half, instead of leaving the screen.
+        private const float TouchTextWidth = 330f;
+        private const float DesktopTextWidth = 270f;
+        private const float MinTextShare = 0.5f;
 
         private const string HintShownClass = "hud__item-hint--shown";
         private const string HintPulseClass = "hud__item--hint-pulse";
@@ -38,6 +43,7 @@ namespace ToyCarArena.UI
         private readonly Label[] hintLabels;
         private bool isHintShown;
         private bool isPale;
+        private bool isFitDue;
         private float nextPulse;
 
         /// <summary>The mode's HUD, made by its look (<see cref="ItemFrenzyLook"/>) in an item frenzy round only.</summary>
@@ -79,6 +85,7 @@ namespace ToyCarArena.UI
             model.ItemUsed -= OnItemUsed;
             SetPale(false);
             HideHint();
+            SetHintSize(StyleKeyword.Null);
         }
 
         private void RefreshSlot()
@@ -110,14 +117,43 @@ namespace ToyCarArena.UI
                 isHintShown = true;
                 var isDesktop = hint.ClassListContains("hud__item-hint--desktop");
                 StrokeText.SetText(hintLabels, Strings.Get(isDesktop ? "hud.right_click" : "hud.tap_to_use"));
+                SetHintSize(StyleKeyword.Null);
+                isFitDue = true;
                 hint.AddToClassList(HintShownClass);
                 nextPulse = now;
+            }
+            else if (isFitDue) {
+                // A frame on, the labels have the style sheet's size for this screen; the hint is still popping in.
+                isFitDue = false;
+                FitHint(hint.ClassListContains("hud__item-hint--desktop") ? DesktopTextWidth : TouchTextWidth);
             }
 
             if (now >= nextPulse) {
                 nextPulse = now + PulsePeriod;
                 button.AddToClassList(HintPulseClass);
                 button.schedule.Execute(() => button.RemoveFromClassList(HintPulseClass)).StartingIn(PulseDuration);
+            }
+        }
+
+        private void FitHint(float room)
+        {
+            if (hintLabels.Length == 0) {
+                return;
+            }
+
+            var label = hintLabels[0];
+            var size = label.resolvedStyle.fontSize;
+            var width = label.MeasureTextSize(label.text, 0f, VisualElement.MeasureMode.Undefined, 0f,
+                VisualElement.MeasureMode.Undefined).x;
+            if (size > 0f && width > room) {
+                SetHintSize(Mathf.Max(size * room / width, size * MinTextShare));
+            }
+        }
+
+        private void SetHintSize(StyleLength size)
+        {
+            foreach (var label in hintLabels) {
+                label.style.fontSize = size;
             }
         }
 
