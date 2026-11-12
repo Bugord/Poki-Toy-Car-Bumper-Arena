@@ -78,11 +78,15 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [Test]
-        public void OnlyTheHotPotatoIsOnAndOnlyInABuildOfRounds()
+        public void OnlyTheFinishedModesAreOnAndOnlyInABuildOfRounds()
         {
             var tuning = LoadTuning();
-            Assert.That(tuning.IsModeEnabled(EventMode.HotPotato), Is.EqualTo(tuning.HasEvents));
-            foreach (var mode in EventModes.Circle.Where(mode => mode != EventMode.HotPotato)) {
+            var finished = new[] { EventMode.HotPotato, EventMode.ItemFrenzy };
+            foreach (var mode in finished) {
+                Assert.That(tuning.IsModeEnabled(mode), Is.EqualTo(tuning.HasEvents), mode + " is finished.");
+            }
+
+            foreach (var mode in EventModes.Circle.Where(mode => !finished.Contains(mode))) {
                 Assert.That(tuning.IsModeEnabled(mode), Is.False, mode + " is a stub and must stay off.");
             }
 

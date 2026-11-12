@@ -227,8 +227,9 @@ namespace ToyCarArena.Tests.PlayMode
                     Is.EqualTo(new[] { MissionTier.Medium, MissionTier.Hard }));
             }
 
-            // The task follows the mode of the day: the build's HOT POTATO, or another one played that day.
-            Assert.That(TodaysEvent(Monday), Is.EqualTo("hot-potato"));
+            // The task follows the mode of the day: one of the build's (HOT POTATO, ITEM FRENZY), or another one played
+            // that day.
+            Assert.That(TodaysEvent(Monday), Is.EqualTo("hot-potato").Or.EqualTo("item-frenzy"));
             EventSchedule.Forced = EventMode.Crown;
             tasks.Reset(Monday);
             Assert.That(tasks.Today(Monday)[0].Definition.Mode, Is.EqualTo("crown"));
@@ -269,6 +270,9 @@ namespace ToyCarArena.Tests.PlayMode
             var hotPotato = tuning.SpecialRounds.HotPotato;
             var enabled = hotPotato.GetType().GetField("enabled", BindingFlags.Instance | BindingFlags.NonPublic);
             enabled.SetValue(hotPotato, false);
+            // Every other finished mode off too, for good in this test: HOT POTATO alone stands for the build's events.
+            var frenzy = tuning.ItemFrenzy;
+            frenzy.GetType().GetField("enabled", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(frenzy, false);
             for (var day = 0; day < 20; day++) {
                 Assert.That(tasks.Today(Monday.AddDays(day)).Select(task => task.Definition.Id),
                     Has.No.Member(DailyTasks.EventTaskId), $"day {day}");
