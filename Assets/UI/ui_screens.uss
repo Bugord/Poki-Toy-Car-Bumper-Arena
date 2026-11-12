@@ -5992,11 +5992,13 @@
 .results--teams .results__team-points-text { font-size: 38px; -unity-text-outline-width: 5px; }
 .results--teams .results__team-tag { font-size: 20px; }
 .results--wide.results--teams { align-self: center; padding-top: 12px; padding-bottom: 18px; }
-.results--wide.results--teams .results__row { height: 80px; margin-top: 6px; }
-.results--wide.results--teams .results__rank { width: 62px; height: 62px; }
-.results--wide.results--teams .results__name, .results--wide.results--teams .results__ko { font-size: 44px; }
+/* Rows a little lower than the match's: the podium stands under the table (RoundOverMatch.PlaceTeamPodium) and gets
+   the height they leave. */
+.results--wide.results--teams .results__row { height: 66px; margin-top: 6px; }
+.results--wide.results--teams .results__rank { width: 56px; height: 56px; }
+.results--wide.results--teams .results__name, .results--wide.results--teams .results__ko { font-size: 40px; }
 .results--wide.results--teams .results__team-tag { font-size: 24px; }
-.results--wide .results__team { height: 76px; margin-top: 12px; border-radius: 38px; }
+.results--wide .results__team { height: 68px; margin-top: 10px; border-radius: 34px; }
 .results--wide.results--teams .results__header { display: flex; }
 .results--wide .results__team-name-text { font-size: 40px; -unity-text-outline-width: 5px; }
 .results--wide .results__team-points-text { font-size: 52px; -unity-text-outline-width: 6px; }
