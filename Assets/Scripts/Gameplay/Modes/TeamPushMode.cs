@@ -38,8 +38,9 @@ namespace ToyCarArena.Gameplay.Modes
 
         public SpecialRound Kind => SpecialRound.TeamPush;
 
-        /// <summary>The card's picture: a blue police car head-on against a red one.</summary>
-        public ModeCard Card { get; } = new("police", RoundTeams.PaintOf(RoundTeams.Blue));
+        /// <summary>The card's picture: a blue SUV head-on against a red one.</summary>
+        public ModeCard Card { get; } = new("suv", RoundTeams.PaintOf(RoundTeams.Blue), rivalCarId: "suv",
+            rivalColor: RoundTeams.PaintOf(RoundTeams.Red));
 
         public bool IsActive { get; }
 
