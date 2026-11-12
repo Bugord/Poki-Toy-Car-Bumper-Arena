@@ -16,8 +16,8 @@ namespace ToyCarArena.Gameplay
         Mega,
 
         /// <summary>
-        /// The HOT POTATO mode of the menu (no longer in the rotation): a bomb sits on one car and passes on a bump; when
-        /// its fuse runs out its holder is out of the round. The floor is fenced, so nobody falls.
+        /// The HOT POTATO mode of the menu, and a round of the rotation too: a bomb sits on one car and passes on a bump;
+        /// when its fuse runs out its holder is out of the round. The floor is fenced, so nobody falls.
         /// </summary>
         HotPotato,
 
@@ -62,11 +62,13 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private int every = 3;
 
-            // Only low gravity is left in the rotation (after v0.17.4): the hot potato became a mode of its own in the
-            // menu (EventMode), and the user took mega, boss and ice out. Their code stays, reachable by Force.
+            // Low gravity and the hot potato (after v0.17.9): the hot potato became a mode of the menu (EventMode) after
+            // v0.17.4, but on v0.17.9 only 6 of 557 visits found it there (the first visit has no menu), so it is back in
+            // the rotation as well, after low gravity: round 4 stays as v0.17.9 had it, round 7 is the hot potato. The
+            // user took mega, boss and ice out; their code stays, reachable by Force.
             [Tooltip("The special rounds in the order they come, then again from the start")]
             [SerializeField]
-            private SpecialRound[] order = { SpecialRound.LowGravity };
+            private SpecialRound[] order = { SpecialRound.LowGravity, SpecialRound.HotPotato };
 
             [Header("Mega")]
             [Tooltip("How many times its own size every car is in a mega round")]

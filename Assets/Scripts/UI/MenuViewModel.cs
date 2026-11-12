@@ -316,6 +316,34 @@ namespace ToyCarArena.UI
             platform.MeasureMenuPressed(next == EventMode.HotPotato ? "mode-hot-potato" : "mode-quick");
         }
 
+        /// <summary>
+        /// <c>menu / event-hot-potato / visible</c>: the menu shows the HOT POTATO tile under XP BOOST. Its press is the
+        /// same name's <c>interact</c> (<see cref="PlayEvent"/>): Poki drops an interact without a visible of its name,
+        /// which is why v0.17.9 has no <c>mode-hot-potato</c> at all.
+        /// </summary>
+        public void EventShown() => platform.MeasureMenuVisible(EventHotPotato);
+
+        /// <summary>
+        /// The HOT POTATO tile: makes the event the mode in play for the visit, as its card in CHOOSE MODE does, and
+        /// starts it at once, <c>menu / event-hot-potato / interact</c> before PLAY's own <c>menu / play</c>.
+        /// </summary>
+        public void PlayEvent()
+        {
+            if (IsDecided || !HasEvents) {
+                return;
+            }
+
+            if (session != null) {
+                session.Mode = EventMode.HotPotato;
+            }
+
+            mode = EventMode.HotPotato;
+            platform.MeasureMenuPressed(EventHotPotato);
+            Play();
+        }
+
+        private const string EventHotPotato = "event-hot-potato";
+
         /// <summary>Whether PLAY was pressed: the menu takes no more input while the lobby comes down over it.</summary>
         public bool IsDecided { get; private set; }
 
