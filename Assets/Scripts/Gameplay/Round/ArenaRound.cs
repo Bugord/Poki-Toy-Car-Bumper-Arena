@@ -71,6 +71,12 @@ namespace ToyCarArena.Gameplay.Round
         /// </summary>
         public event Action<int> ScoreChanged;
 
+        /// <summary>
+        /// Raised in a timed team round after a team's points changed, with the team and by how much: a point of one of
+        /// its cars or one of its own (<see cref="AddTeamPoints"/>). The team HUD follows it.
+        /// </summary>
+        public event Action<int, int> TeamScoreChanged;
+
         private readonly GameTuning tuning;
         private readonly IObjectResolver resolver;
         private readonly Car carPrefab;
@@ -268,6 +274,11 @@ namespace ToyCarArena.Gameplay.Round
                 colors[index] = players[index - 1].ColorId;
                 levels[index] = players[index - 1].Level;
             }
+            // A round in teams paints every car in its team's colour for the round; the visit's colours stay as they are.
+            for (var index = 0; mode.Teams > 0 && index < colors.Length; index++) {
+                colors[index] = RoundTeams.PaintOf(TeamOf(index));
+            }
+
             Names = Array.AsReadOnly(names);
             Levels = Array.AsReadOnly(levels);
             Colors = Array.AsReadOnly(colors);
@@ -285,6 +296,7 @@ namespace ToyCarArena.Gameplay.Round
             if (mode.IsTimed) {
                 Score = new MatchScore(cars.Count, mode.PointsPerKnockout, mode.Teams);
                 Score.Changed += OnScoreChanged;
+                Score.TeamChanged += OnTeamScoreChanged;
             }
 
             if (mode.Fall == FallRule.Respawn) {
@@ -516,9 +528,29 @@ namespace ToyCarArena.Gameplay.Round
         }
 
         /// <summary>The team of a car index, from 0 (the player's); -1 in a round without teams.</summary>
-        public int TeamOf(int index) => mode.Teams > 0 && index >= 0 ? index % mode.Teams : -1;
+        public int TeamOf(int index) => RoundTeams.TeamOf(index, mode.Teams);
+
+        /// <summary>The team of a car of the round, <see cref="RoundTeams.None"/> without teams or for a car not in it.</summary>
+        public int TeamOf(Car car) => TeamOf(IndexOf(car));
+
+        /// <summary>
+        /// Adds <paramref name="amount"/> points to a team as a whole in a running timed team round, credited to none of
+        /// its cars: a fall of the other team that no car of this one gets the credit for, an own goal. False, and nothing
+        /// done, outside a running timed team round or for no team.
+        /// </summary>
+        public bool AddTeamPoints(int team, int amount)
+        {
+            if (!IsRunning || Score == null || mode.Teams <= 0 || team < 0 || team >= mode.Teams) {
+                return false;
+            }
+
+            Score.AddTeamPoints(team, amount);
+            return true;
+        }
 
         private void OnScoreChanged(int index) => ScoreChanged?.Invoke(index);
+
+        private void OnTeamScoreChanged(int team, int change) => TeamScoreChanged?.Invoke(team, change);
 
         /// <summary>
         /// The car's identity in the round: 0 for the player, 1..N for the bots; -1 for a car not in the round.
@@ -666,16 +698,19 @@ namespace ToyCarArena.Gameplay.Round
             var place = Score.PlaceOf(0);
             var isLoss = place > mode.TopPlacesOf(cars.Count);
             if (mode.Teams > 0) {
-                // A team round is won or lost by the team's sum: first for the team ahead, second behind, level a draw.
+                // A team round is won or lost by the team's sum. The place is what the reward, the missions and the
+                // bests read: first for the team ahead, the middle of the cars for a draw, last behind, so a lost team
+                // round pays no place and is never a FINAL TWO.
                 var leading = Score.LeadingTeam;
-                place = leading == TeamOf(0) ? 1 : 2;
+                place = leading == TeamOf(0) ? 1 : leading < 0 ? Mathf.Max(1, cars.Count / 2) : cars.Count;
                 isLoss = leading >= 0 && leading != TeamOf(0);
             }
 
             Finished?.Invoke(new RoundResult(place == 1 ? RoundOutcome.Won : RoundOutcome.Survived, place, cars.Count,
                 elapsed, PlayerKnockouts, RoundResult.Nobody, FallCause.None, HadNemesis, RevengeTaken, Score.Snapshot(),
                 Colors, isMatch, Score.FallsOf(0), Score.KnockedOffOf(0), isLoss, isTimed: true,
-                kind: rules.Kind, knockoutRewardCap: mode.KnockoutRewardCap, teams: mode.Teams));
+                kind: rules.Kind, knockoutRewardCap: mode.KnockoutRewardCap, teams: mode.Teams,
+                teamPoints: mode.Teams > 0 ? Array.AsReadOnly(Score.TeamScores()) : null));
         }
 
         private void Finish(RoundOutcome outcome, int place)
@@ -724,7 +759,7 @@ namespace ToyCarArena.Gameplay.Round
         private Car FindKnocker(Car car)
         {
             var hitBy = car.LastHitBy;
-            if (hitBy == null || hitBy == car) {
+            if (hitBy == null || hitBy == car || car.IsTeammateOf(hitBy)) {
                 return null;
             }
 
@@ -744,13 +779,15 @@ namespace ToyCarArena.Gameplay.Round
             for (var i = 0; i < count; i++) {
                 Vector3 position;
                 Vector3 facing;
-                if (edge.TryGetSpawn(i, count, out var spot)) {
+                // In teams a team's cars start side by side, the other team across the floor.
+                var slot = RoundTeams.SpawnSlotOf(i, count, mode.Teams);
+                if (edge.TryGetSpawn(slot, count, out var spot)) {
                     // A floor that is not round has a contour of its own, clear of its pits.
                     position = spot + Vector3.up * height;
                     facing = spot.sqrMagnitude > 0.0001f ? -spot.normalized : Vector3.forward;
                 }
                 else {
-                    var angle = -Mathf.PI * 0.5f + i * Mathf.PI * 2f / count;
+                    var angle = -Mathf.PI * 0.5f + slot * Mathf.PI * 2f / count;
                     var outward = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
                     // At the very middle (a radius of 0) a car faces away from the camera.
                     facing = radius > 0f ? -outward : Vector3.forward;
@@ -764,6 +801,7 @@ namespace ToyCarArena.Gameplay.Round
                 car.Movement.Place(position, rotation);
                 car.name = NameOf(i);
                 car.IsPlayer = i == 0;
+                car.Team = TeamOf(i);
                 var entry = i == 0 ? catalog.Find(playerCar.SelectedCar) : players[i - 1].Car;
                 var topper = i == 0 ? playerTopper.SelectedTopper : players[i - 1].Topper;
                 if (i == rules.BossIndex) {
