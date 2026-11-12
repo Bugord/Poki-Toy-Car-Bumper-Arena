@@ -191,6 +191,9 @@ namespace ToyCarArena.UI
         private VisualElement eventArt;
         private Label[] eventTitle;
         private Label eventHint;
+
+        // The smallest share of its size an event's rule goes down to on its card.
+        private const float MinHintShare = 0.6f;
         private Label eventTimer;
         private VisualElement eventTileFill;
         private VisualElement eventTileArt;
@@ -594,6 +597,8 @@ namespace ToyCarArena.UI
             eventHint.AddToClassList("menu__mode-desc--event");
             text.Set(eventHint, EventHint);
             eventFace.Add(eventHint);
+            // Every mode has its own rule, some long in another language (CROWN's ran off the card in Russian).
+            FitToHeight(eventHint, eventFace);
             sheet.Add(eventCard);
 
             quickCard = ModeCard(() => EventMode.None, out var quickFace);
@@ -2145,6 +2150,56 @@ namespace ToyCarArena.UI
 
         /// <summary>EVENT's lightning bolt: orange with a navy outline.</summary>
         // A white clock face with its two hands: the time until the event of the day changes.
+        /// <summary>
+        /// Shrinks wrapped <paramref name="label"/> until it ends inside <paramref name="box"/>, never below
+        /// <see cref="MinHintShare"/> of the style sheet's size, and lets it grow back for a shorter text. The label
+        /// measures only at its present size; wrapped text grows with both its lines and their height, so the size goes
+        /// by the square root of the overflow and settles over a layout or two.
+        /// </summary>
+        private static void FitToHeight(Label label, VisualElement box)
+        {
+            var full = 0f;
+
+            void Fit()
+            {
+                var size = label.resolvedStyle.fontSize;
+                if (full <= 0f) {
+                    full = size;
+                }
+
+                var width = label.contentRect.width;
+                var room = box.contentRect.yMax - label.layout.y;
+                if (full <= 0f || float.IsNaN(width) || width <= 0f || float.IsNaN(room) || room <= 0f ||
+                    string.IsNullOrEmpty(label.text)) {
+                    return;
+                }
+
+                var height = label.MeasureTextSize(label.text, width, VisualElement.MeasureMode.Exactly, 0f,
+                    VisualElement.MeasureMode.Undefined).y;
+                if (height <= 0f) {
+                    return;
+                }
+
+                // Down while it runs over; up only when even its own size would leave some room, so it does not swing.
+                float fit;
+                if (height > room) {
+                    fit = size * Mathf.Sqrt(room / height) * 0.97f;
+                } else if (size < full && height * (full / size) * (full / size) < room * 0.9f) {
+                    fit = full;
+                } else {
+                    return;
+                }
+
+                fit = Mathf.Clamp(fit, full * MinHintShare, full);
+                if (Mathf.Abs(fit - size) >= 0.5f) {
+                    label.style.fontSize = fit;
+                }
+            }
+
+            label.RegisterCallback<GeometryChangedEvent>(_ => Fit());
+            box.RegisterCallback<GeometryChangedEvent>(_ => Fit());
+        }
+
         private static void DrawClock(MeshGenerationContext context)
         {
             var r = context.visualElement.contentRect;

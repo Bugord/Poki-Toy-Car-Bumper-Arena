@@ -257,9 +257,7 @@ def report(version, previous):
         shown = lambda s: num(s["menu"], "seen")
         out.append(line("Меню показано", lambda s: str(shown(s)) if s["menu"] else "-"))
         for key, name in (("play", "PLAY"), ("garage", "GARAGE"), ("missions", "MISSIONS"), ("mode", "MODE (до feature/ux-fixes: потом это плашка, не кнопка)"),
-                          ("leagues", "значок или шкалу опыта (лиги; после v0.16.0)"),
-                          ("mode-hot-potato", "HOT POTATO в CHOOSE MODE (режим, feature/hot-potato)"),
-                          ("mode-quick", "QUICK MATCH в CHOOSE MODE (feature/hot-potato)")):
+                          ("leagues", "значок или шкалу опыта (лиги; после v0.16.0)")):
             out.append(line(f"Нажали {name}, от показов меню",
                             lambda s, k=key: (lambda n: f"{n} ({pct(n, shown(s))})")(num(s["menu_press"].get(k), "interacted"))
                             if s["menu"] else "-"))
@@ -273,9 +271,19 @@ def report(version, previous):
         for league in ("bronze", "silver", "gold", "legend"):
             out.append(line(f"Попап NEW LEAGUE! {league.upper()} на результате (после feature/result-popups)",
                             lambda s, l=league: str(num(s["result_league"].get(l), "seen")) if s["result_league"] else "-"))
-        out.append(line("Плитка HOT POTATO: показана / нажата (после v0.17.9)",
-                        lambda s: (lambda r: f"{num(r, 'seen')} / {num(r, 'interacted')} ({pct(num(r, 'interacted'), num(r, 'seen'))})")(s["menu_press"].get("event-hot-potato"))
-                        if s["menu_press"].get("event-hot-potato") else "-"))
+        # Event modes by id (the mode of the day, claude/event-modes): the tile, then CHOOSE MODE. Until that branch only
+        # HOT POTATO, and its picks came without a visible (Poki dropped them); since, opening CHOOSE MODE sends a
+        # visible for QUICK MATCH and the day's mode, so a pick reads against the times it was offered.
+        seen_and_pressed = lambda r: f"{num(r, 'seen')} / {num(r, 'interacted')} ({pct(num(r, 'interacted'), num(r, 'seen'))})"
+        modes = ("hot-potato", "crown", "gold-rush", "item-frenzy", "overheat", "team-push", "football")
+        for mode in modes:
+            if any(s and s["menu_press"].get(f"event-{mode}") for s in (cur, old)):
+                out.append(line(f"Плитка события {mode}: показана / нажата (после v0.17.9)",
+                                lambda s, k=f"event-{mode}": seen_and_pressed(s["menu_press"][k]) if s["menu_press"].get(k) else "-"))
+        for mode in ("quick",) + modes:
+            if any(s and s["menu_press"].get(f"mode-{mode}") for s in (cur, old)):
+                out.append(line(f"CHOOSE MODE: {mode} предложен / выбран (до claude/event-modes только выбран)",
+                                lambda s, k=f"mode-{mode}": seen_and_pressed(s["menu_press"][k]) if s["menu_press"].get(k) else "-"))
         out.append(line("HOME на результате: показан / нажат",
                         lambda s: f"{num(s['home'], 'seen')} / {num(s['home'], 'interacted')} ({pct(num(s['home'], 'interacted'), num(s['home'], 'seen'))})" if s["home"] else "-"))
 

@@ -121,8 +121,9 @@ namespace ToyCarArena.Tests.PlayMode
 
         /// <summary>
         /// The menu and CHOOSE MODE with other modes of the day (stubs, forced as the dev console's event_day does):
-        /// their colours, card pictures, names, rules and NEW IN on the card and the tile, in English and Russian.
-        /// <c>Logs/menu/event-&lt;id&gt;*_&lt;w&gt;x&lt;h&gt;.png</c> and <c>ru-event-&lt;id&gt;*</c>.
+        /// their colours, card pictures, names, rules (GOLD RUSH's the longest) and the clock on the card and the tile, in
+        /// English, Russian and French. <c>Logs/menu/event-&lt;id&gt;*_&lt;w&gt;x&lt;h&gt;.png</c>, <c>ru-event-&lt;id&gt;*</c>
+        /// and <c>fr-event-&lt;id&gt;*</c>.
         /// </summary>
         [UnityTest]
         public IEnumerator CaptureTheEventsOfTheDay()
@@ -131,10 +132,10 @@ namespace ToyCarArena.Tests.PlayMode
             var directory = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "menu");
             Directory.CreateDirectory(directory);
             try {
-                foreach (var mode in new[] { EventMode.Crown, EventMode.Football }) {
+                foreach (var mode in new[] { EventMode.Crown, EventMode.GoldRush, EventMode.Football }) {
                     EventSchedule.Forced = mode;
                     var id = EventModes.IdOf(mode);
-                    foreach (var language in new[] { "en", "ru" }) {
+                    foreach (var language in new[] { "en", "ru", "fr" }) {
                         Strings.SetLanguage(language);
                         var prefix = language == "en" ? "" : language + "-";
                         yield return Capture(directory, $"{prefix}event-{id}", (1080, 1920, true), false, modes: true);
