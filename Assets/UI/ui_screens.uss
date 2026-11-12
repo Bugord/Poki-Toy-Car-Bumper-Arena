@@ -1958,6 +1958,13 @@
     color: rgb(91, 214, 77);
 }
 
+/* A daily task done during the round: DAILY TASK! in the daily gift's orange. */
+.ko-pop--daily .ko-pop__text {
+    margin-left: 0;
+    font-size: 88px;
+    color: var(--orange);
+}
+
 /* The start prompt of a visit's first round, while the cars wait for the player's first steer or boost (HudView shows
    it): TAP TO START or CLICK TO START, outlined, and under it a dark plate: an orange dot and TAP TO BOOST on a touch
    screen (the full joystick demonstration sits separately in the thumb area), a mouse, HOLD TO DRIVE,
@@ -4977,6 +4984,16 @@
     border-radius: 999px;
     background-color: var(--xp);
     rotate: -4deg;
+}
+
+/* The day's first win: the same stamp in orange, across the XP and COINS stickers (its left is set in code). */
+.reward__first-win {
+    background-color: var(--orange);
+    rotate: 3deg;
+}
+
+.rewards > .reward__first-win {
+    bottom: -28px;
 }
 
 .reward__boost-label-text {

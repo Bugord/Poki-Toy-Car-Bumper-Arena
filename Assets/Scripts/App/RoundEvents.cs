@@ -704,6 +704,34 @@ namespace ToyCarArena.App
             }
         }
 
+        /// <summary>
+        /// What a decided round did for the day: <c>daily / first-win-rR / win</c> when it was the day's first win and
+        /// paid twice (R the round of the visit, one number), <c>daily / &lt;task-id&gt; / complete</c> for each daily task
+        /// it completed and then <c>daily / tasks-N / done</c>, N the day's tasks done by then (1..3, one number): how many
+        /// players reach one, two and all three tasks a day.
+        /// </summary>
+        public static void MeasureDailyRound(this IGamePlatform platform, int round, bool isFirstWin,
+            DailyTaskRound tasks)
+        {
+            if (isFirstWin) {
+                platform.Measure(DailyCategory, $"first-win-{RoundTag(round)}", "win");
+            }
+
+            if (tasks.Completed.Count == 0) {
+                return;
+            }
+
+            foreach (var task in tasks.Completed) {
+                platform.Measure(DailyCategory, $"task-{task.Id}", "complete");
+            }
+
+            platform.Measure(DailyCategory, $"tasks-{tasks.DoneToday}", "done");
+        }
+
+        /// <summary>The daily popup's TASKS tab shown: <c>daily / tasks / visible</c>.</summary>
+        public static void MeasureDailyTasksShown(this IGamePlatform platform) =>
+            platform.MeasureVisible(DailyCategory, "tasks");
+
         public static void MeasureMissionsShown(this IGamePlatform platform) =>
             platform.Measure(MissionCategory, "shown", "visible");
 

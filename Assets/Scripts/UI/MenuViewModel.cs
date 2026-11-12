@@ -18,7 +18,8 @@ namespace ToyCarArena.UI
     /// its plinth, the missions, the mode and PLAY. The result is set once, by PLAY (in the menu or the garage's NEXT
     /// MATCH); the garage, the settings, the missions and the modes open over the menu and come back to it. XP BOOST
     /// plays a rewarded ad for double XP over the next matches. DAILY holds the daily gift (<see cref="PlayerDaily"/>): the
-    /// first menu of a visit with a gift to claim opens it by itself.
+    /// first menu of a visit with a gift to claim opens it by itself. Its TASKS tab shows the day's three tasks
+    /// (<see cref="DailyTasks"/>) and the day's first win.
     /// </summary>
     public sealed class MenuViewModel : ResultViewModel<bool>
     {
@@ -31,6 +32,8 @@ namespace ToyCarArena.UI
         private readonly IScreenNavigator navigator;
         private readonly IGamePlatform platform;
         private readonly LevelScene levelScene;
+        private readonly PlayerDaily daily;
+        private readonly DailyTasks dailyTasks;
         private readonly SessionProgress session;
         // The mode picked without a session (the screenshots and tests build the menu alone).
         private EventMode mode;
@@ -43,8 +46,10 @@ namespace ToyCarArena.UI
 
         public MenuViewModel(PlayerProgress progress, PlayerWallet wallet, MissionTracker missions, CarCatalog catalog,
             ArenaCatalog arenaCatalog, GameTuning tuning, IScreenNavigator navigator, IGamePlatform platform,
-            LevelScene levelScene, PlayerDaily daily, SessionProgress session = null)
+            LevelScene levelScene, PlayerDaily daily, DailyTasks dailyTasks, SessionProgress session = null)
         {
+            this.daily = daily;
+            this.dailyTasks = dailyTasks;
             this.session = session;
             this.Daily = new DailyGift(daily, tuning, platform);
             this.progress = progress;
@@ -190,8 +195,38 @@ namespace ToyCarArena.UI
             set => Daily.Clock = value;
         }
 
-        /// <summary>Whether the menu has the daily gift at all.</summary>
-        public bool HasDaily => Daily.IsEnabled;
+        // The daily gift's clock, which the tasks and the first win read too.
+        private DateTime Now => Clock();
+
+        /// <summary>The calendar day on the clock: the menu redraws when it changes (new tasks, a new first win).</summary>
+        public int Today => CalendarDay.Of(Now);
+
+        /// <summary>Whether the menu has the DAILY tile at all: the gift, or the tasks and the first win.</summary>
+        public bool HasDaily => daily.IsEnabled || HasDailyTasks;
+
+        /// <summary>Whether the popup has its TASKS tab: the day's tasks or the day's first win.</summary>
+        public bool HasDailyTasks => dailyTasks.IsEnabled || tuning.Daily.HasFirstWin;
+
+        /// <summary>Whether the popup has its GIFT tab, the calendar.</summary>
+        public bool HasDailyGift => daily.IsEnabled;
+
+        /// <summary>Today's three tasks and how far the player got; drawn on the first look of the day.</summary>
+        public IReadOnlyList<DailyTask> TodaysTasks => dailyTasks.Today(Now);
+
+        public int DailyTasksDone => dailyTasks.DoneCount(Now);
+        public int DailyTaskXp(GameTuning.MissionDefinition task) => dailyTasks.XpOf(task);
+        public int DailyTaskCoins(GameTuning.MissionDefinition task) => dailyTasks.CoinsOf(task);
+
+        /// <summary>The time left until the next tasks and the next first win: to midnight on the player's clock.</summary>
+        public TimeSpan DailyTasksTimeLeft => DailyTasks.TimeToNext(Now);
+
+        /// <summary>Whether today's first win, which pays twice, is still to come; false without one in the build.</summary>
+        public bool HasFirstWin => daily.HasFirstWin(Now);
+        public bool IsFirstWinOn => tuning.Daily.HasFirstWin;
+        public int FirstWinMultiplier => daily.FirstWinMultiplier;
+
+        /// <summary>The TASKS tab shown: <c>daily / tasks / visible</c>.</summary>
+        public void DailyTasksShown() => platform.MeasureDailyTasksShown();
 
         /// <summary>Today's gift waits: DAILY reads READY and its popup offers CLAIM.</summary>
         public bool CanClaimDaily => Daily.CanClaim;

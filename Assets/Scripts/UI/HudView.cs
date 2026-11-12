@@ -448,6 +448,7 @@ namespace ToyCarArena.UI
             ViewModel.ItemUsed += OnItemUsed;
             ViewModel.AutoBoosted += OnAutoBoosted;
             ViewModel.MissionDone += OnMissionDone;
+            ViewModel.DailyTaskDone += OnDailyTaskDone;
             ViewModel.ItemHit += OnItemHit;
 
             // On the press, not the release: a boost is all about the moment.
@@ -495,6 +496,7 @@ namespace ToyCarArena.UI
             ViewModel.ItemUsed -= OnItemUsed;
             ViewModel.AutoBoosted -= OnAutoBoosted;
             ViewModel.MissionDone -= OnMissionDone;
+            ViewModel.DailyTaskDone -= OnDailyTaskDone;
             ViewModel.ItemHit -= OnItemHit;
 
             if (boostButton != null) {
@@ -1022,6 +1024,8 @@ namespace ToyCarArena.UI
 
         /// <summary>MISSION! over the player's car when the round completes one of the result's missions.</summary>
         private void OnMissionDone() => ShowPopup(ViewModel.PlayerPosition, false, ItemKind.None, "mission");
+
+        private void OnDailyTaskDone() => ShowPopup(ViewModel.PlayerPosition, false, ItemKind.None, "daily");
 
         /// <summary>
         /// A comic word where the player's item lands: POW! where the glove punches a car, STRIKE! on each car the

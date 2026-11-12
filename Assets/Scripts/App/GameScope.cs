@@ -121,8 +121,10 @@ namespace ToyCarArena.App
             // Coins, toppers and missions are saved and outlive the arena scene, as XP does.
             builder.Register<PlayerWallet>(Lifetime.Singleton).AsSelf().As<IPlayerTopper>();
             builder.Register<MissionTracker>(Lifetime.Singleton);
-            // The daily gift of the menu pays into the wallet and counts days across visits.
+            // The daily gift of the menu pays into the wallet and counts days across visits; the daily tasks pay with
+            // the round that does them, as the missions do.
             builder.Register<PlayerDaily>(Lifetime.Singleton);
+            builder.Register<DailyTasks>(Lifetime.Singleton);
             // NEXT MATCH on the result and PLAY in the menu share one way into the next round.
             builder.Register<MatchLobby>(Lifetime.Singleton);
 #if BUGORD_SUPERCONSOLE

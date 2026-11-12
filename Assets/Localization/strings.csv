@@ -149,6 +149,7 @@ result.streak,"Gold tag: the player's win streak, next round pays x1.5; {0} is i
 result.streak_lost,Grey tag: the player's win streak ended,STREAK LOST,SÉRIE PERDUE,SERIE PERSA,SERIE VORBEI,RACHA PERDIDA,SERİ BİTTİ,SEQUÊNCIA PERDIDA,СЕРИЯ ПРЕРВАНА
 result.streak_bonus,Under the streak in the lobby: the round's XP and coins are multiplied,BONUS ×1.5,"BONUS ×1,5","BONUS ×1,5","BONUS ×1,5","BONO ×1,5","BONUS ×1,5","BÔNUS ×1,5","БОНУС ×1,5"
 hud.mission,Sticker over the player's car when a mission is done; max ~9 chars,MISSION!,MISSION !,MISSIONE!,MISSION!,¡MISIÓN!,GÖREV!,MISSÃO!,МИССИЯ!
+hud.daily,"Sticker over the player's car when a daily task is done; max ~11 chars",DAILY TASK!,TÂCHE !,COMPITO!,AUFGABE!,¡TAREA!,GÜNLÜK!,TAREFA!,ЗАДАНИЕ!
 hud.space_or_click,Desktop arrow sticker over the boost indicator,SPACE OR CLICK!,ESPACE OU CLIC !,SPAZIO O CLIC!,LEERTASTE ODER KLICK!,¡ESPACIO O CLIC!,BOŞLUK YA DA TIKLA!,ESPAÇO OU CLIQUE!,ПРОБЕЛ ИЛИ КЛИК!
 garage.cars,Garage tab with the cars; max ~10 chars,CARS,VOITURES,AUTO,AUTOS,COCHES,ARABALAR,CARROS,МАШИНКИ
 garage.toppers,Garage tab with the roof hats bought for coins; max ~10 chars,HATS,CHAPEAUX,CAPPELLI,HÜTE,GORROS,ŞAPKALAR,CHAPÉUS,ШАПКИ
@@ -200,6 +201,7 @@ result.claim_x2,Button that watches a rewarded ad to double the round's XP and c
 result.ad,Small tag on the button that plays an ad,AD,PUB,AD,WERBUNG,ANUNCIO,REKLAM,ANÚNCIO,РЕКЛАМА
 result.doubled,Shown where the double button was once the ad paid,DOUBLED!,DOUBLÉ !,RADDOPPIATO!,VERDOPPELT!,¡DUPLICADO!,İKİ KATI!,DOBRADO!,УДВОЕНО!
 result.boost_stamp,"Tag on the XP sticker of a round the XP boost paid for, {0} its multiplier (e.g. ×2 BOOST); short",×{0} BOOST,×{0} BOOST,×{0} BOOST,×{0} BOOST,×{0} BOOST,×{0} BOOST,×{0} BOOST,×{0} БУСТ
+result.first_win_stamp,"Stamp under the round's XP and COINS stickers when it was the day's first win, {0} the multiplier; short",FIRST WIN ×{0},1RE VICTOIRE ×{0},1ª VITTORIA ×{0},1. SIEG ×{0},1ª VICTORIA ×{0},İLK ZAFER ×{0},1ª VITÓRIA ×{0},ПЕРВАЯ ПОБЕДА ×{0}
 special.mega.name,Special round name: every car is giant (lobby tag and over the countdown),MEGA ROUND!,MANCHE MÉGA !,ROUND MEGA!,MEGA-RUNDE!,¡RONDA MEGA!,MEGA TUR!,RODADA MEGA!,МЕГА-РАУНД!
 special.mega.hint,Special round rule in one line,EVERYONE IS HUGE!,TOUT LE MONDE EST ÉNORME !,SIETE TUTTI GIGANTI!,ALLE SIND RIESIG!,¡TODOS SON GIGANTES!,HERKES DEV GİBİ!,TODO MUNDO ESTÁ GIGANTE!,ВСЕ ОГРОМНЫЕ!
 special.hot-potato.name,Special round name: a bomb passes between cars on a bump,HOT POTATO!,PATATE CHAUDE !,PATATA BOLLENTE!,HEISSE KARTOFFEL!,¡PAPA CALIENTE!,SICAK PATATES!,BATATA QUENTE!,ГОРЯЧАЯ КАРТОШКА!
@@ -260,6 +262,14 @@ daily.claimed,Stamp slammed over the daily gift once taken,CLAIMED!,RÉCUPÉRÉ 
 daily.ready,"Small green pill on the DAILY tile while the gift waits; max ~6 chars",READY,PRÊT,PRONTO,BEREIT,LISTO,HAZIR,PRONTO,ЖДЁТ
 daily.time_hm,"Small pill on the DAILY tile: time to the next gift, {0} hours and {1} minutes; max ~7 chars",{0}H {1}M,{0}H {1}M,{0}H {1}M,{0}H {1}M,{0}H {1}M,{0}S {1}D,{0}H {1}M,{0}Ч {1}М
 daily.time_m,"Small pill on the DAILY tile: time to the next gift under an hour, {0} minutes; max ~7 chars",{0}M,{0}M,{0}M,{0}M,{0}M,{0}D,{0}M,{0}М
+daily.tasks_title,Title of the daily popup on its tasks half,DAILY TASKS!,TÂCHES DU JOUR !,COMPITI DEL GIORNO!,TAGESAUFGABEN!,¡TAREAS DIARIAS!,GÜNLÜK GÖREVLER!,TAREFAS DIÁRIAS!,ЗАДАНИЯ ДНЯ!
+daily.tab_gift,"Half of the GIFT | TASKS switch at the top of the daily popup: the gift calendar; max ~8 chars",GIFT,CADEAU,REGALO,GESCHENK,REGALO,HEDİYE,PRESENTE,ПОДАРОК
+daily.tab_tasks,"The other half of the switch: the daily tasks, {0} done of {1}; max ~12 chars",TASKS {0}/{1},TÂCHES {0}/{1},COMPITI {0}/{1},AUFGABEN {0}/{1},TAREAS {0}/{1},GÖREVLER {0}/{1},TAREFAS {0}/{1},ЗАДАНИЯ {0}/{1}
+daily.first_win,Card on the daily tasks: the first round won each day pays double,FIRST WIN OF THE DAY,PREMIÈRE VICTOIRE DU JOUR,PRIMA VITTORIA DEL GIORNO,ERSTER SIEG DES TAGES,PRIMERA VICTORIA DEL DÍA,GÜNÜN İLK ZAFERİ,PRIMEIRA VITÓRIA DO DIA,ПЕРВАЯ ПОБЕДА ДНЯ
+daily.first_win_hint,"Under the first win card while it is still to come, {0} the multiplier",WIN A ROUND FOR ×{0} XP AND COINS,GAGNE UNE MANCHE : ×{0} XP ET PIÈCES,VINCI UN ROUND: ×{0} XP E MONETE,GEWINNE EINE RUNDE: ×{0} XP UND MÜNZEN,GANA UNA RONDA: ×{0} XP Y MONEDAS,BİR TUR KAZAN: ×{0} XP VE ALTIN,VENÇA UMA RODADA: ×{0} XP E MOEDAS,ВЫИГРАЙ РАУНД: ×{0} ОПЫТА И МОНЕТ
+daily.first_win_done,Under the first win card once it was taken today,DONE TODAY! BACK TOMORROW,FAIT ! REVIENS DEMAIN,FATTO! TORNA DOMANI,GESCHAFFT! MORGEN WIEDER,¡HECHO! VUELVE MAÑANA,TAMAM! YARIN TEKRAR,FEITO! VOLTE AMANHÃ,ГОТОВО! ЖДЁМ ЗАВТРА
+daily.task_done,"Progress of a done daily task; short",DONE!,FAIT !,FATTO!,ERLEDIGT!,¡HECHO!,TAMAM!,FEITO!,ГОТОВО!
+daily.tasks_next,"Under the daily tasks: the time to the next ones, {0} like 5H 12M",NEW TASKS IN {0},NOUVELLES TÂCHES DANS {0},NUOVI COMPITI TRA {0},NEUE AUFGABEN IN {0},NUEVAS TAREAS EN {0},YENİ GÖREVLER: {0},NOVAS TAREFAS EM {0},НОВЫЕ ЗАДАНИЯ ЧЕРЕЗ {0}
 topper.wizard-hat.name,"Topper name: a purple wizard's hat with gold stars, the daily gift's prize",WIZARD HAT,CHAPEAU DE SORCIER,CAPPELLO DA MAGO,ZAUBERHUT,SOMBRERO DE MAGO,BÜYÜCÜ ŞAPKASI,CHAPÉU DE MAGO,ШЛЯПА МАГА
 topper.ember.name,"Topper name: a Spartan's bronze helmet with a red crest, the bronze league's prize",SPARTAN HELMET,CASQUE SPARTIATE,ELMO SPARTANO,SPARTANERHELM,CASCO ESPARTANO,SPARTA MİĞFERİ,ELMO ESPARTANO,ШЛЕМ СПАРТАНЦА
 topper.silver-torch.name,"Topper name: a knight's steel great helm with a plume, the silver league's prize",KNIGHT HELMET,CASQUE DE CHEVALIER,ELMO DA CAVALIERE,RITTERHELM,YELMO DE CABALLERO,ŞÖVALYE MİĞFERİ,ELMO DE CAVALEIRO,РЫЦАРСКИЙ ШЛЕМ
