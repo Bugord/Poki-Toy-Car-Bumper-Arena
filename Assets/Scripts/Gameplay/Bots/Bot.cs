@@ -641,7 +641,11 @@ namespace ToyCarArena.Gameplay.Bots
                     var drive = Flat(spared.Movement.Velocity).magnitude * (items.Bomb.FlightTime + items.Bomb.Fuse);
                     return (Flat(spared.Position) - landing).magnitude <= items.Bomb.Radius + SpareMargin + drive;
                 case ItemKind.Bowling:
-                    return IsOnLine(offset, forward, items.Bowling.Range, items.Bowling.Radius + items.Bowling.HitReach + SpareMargin);
+                    // The ball reaches the spared car a roll later: wider by as far as it can drive across by then.
+                    var roll = Flat(spared.Movement.Velocity).magnitude * Mathf.Max(0f, Vector3.Dot(offset, forward))
+                        / items.Bowling.Speed;
+                    return IsOnLine(offset, forward, items.Bowling.Range,
+                        items.Bowling.Radius + items.Bowling.HitReach + SpareMargin + roll);
                 case ItemKind.Glove:
                     return IsOnLine(offset, forward, items.Glove.Reach + SpareMargin, items.Glove.HitRadius + SpareMargin);
                 case ItemKind.Oil:
