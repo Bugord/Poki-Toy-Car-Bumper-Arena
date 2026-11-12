@@ -38,7 +38,7 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Whether the build plays the mode: the menu, the mode of the day and the rotation offer only modes " +
                 "that are on")]
             [SerializeField]
-            private bool enabled;
+            private bool enabled = true;
 
             [Tooltip("How many times as often boxes come as in a usual round")]
             [Min(1f)]
