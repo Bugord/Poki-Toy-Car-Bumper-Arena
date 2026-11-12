@@ -620,7 +620,8 @@ namespace ToyCarArena.Gameplay.Round
         /// </summary>
         private void UpdateRival(Car car, Car knockedOutBy, Car rival)
         {
-            if (knockedOutBy == null) {
+            // A teammate is never the rival, not even through a knock-out given by hand.
+            if (knockedOutBy == null || car.IsTeammateOf(knockedOutBy)) {
                 return;
             }
 
