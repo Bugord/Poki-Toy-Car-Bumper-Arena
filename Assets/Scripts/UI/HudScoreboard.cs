@@ -1,5 +1,6 @@
 using System;
 using Bugord.App.Localization;
+using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -79,7 +80,10 @@ namespace ToyCarArena.UI
             // One star over the knock-out column says what the numbers count, as the star by the player's own on the bar.
             var header = new VisualElement { pickingMode = PickingMode.Ignore };
             header.AddToClassList("scoreboard__header");
-            header.Add(HudView.CreateStar("scoreboard__star"));
+            // Over the column of points: the mode's own icon, the burst for knock-outs.
+            var pointsIcon = HudView.CreateStar("scoreboard__star");
+            ModeLooks.DrawPoints(pointsIcon, model.Mode?.Kind ?? SpecialRound.None);
+            header.Add(pointsIcon);
             container.Add(header);
 
             rowLayer = new VisualElement { pickingMode = PickingMode.Ignore };

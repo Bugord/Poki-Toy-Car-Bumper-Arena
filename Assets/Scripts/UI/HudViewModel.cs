@@ -3,6 +3,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Cars;
+using ToyCarArena.Gameplay.Modes;
 using ToyCarArena.Gameplay.Pickups;
 using ToyCarArena.Gameplay.Round;
 using UIKit.Runtime.Abstractions;
@@ -87,7 +88,7 @@ namespace ToyCarArena.UI
         private Car player;
         private readonly HudControls controls;
         private ArenaRound round;
-        private HotPotato potato;
+        private IRoundMode mode;
         private PlayerDriver driver;
 
         public HudViewModel(IScreenNavigator navigator, HudControls controls)
@@ -271,23 +272,13 @@ namespace ToyCarArena.UI
 
         public Vector3 PlayerPosition => round?.Player != null ? round.Player.Position : Vector3.zero;
 
-        /// <summary>Whether this round is the HOT POTATO mode, with its fuse and PASS IT! on the HUD.</summary>
-        public bool IsPotato => potato != null && potato.IsActive;
+        /// <summary>
+        /// The event mode the round plays (its own HUD reads it, <see cref="ModeLooks"/>), null for a round of no mode.
+        /// </summary>
+        public IRoundMode Mode => mode;
 
-        /// <summary>Whether a car in play holds the hot potato's bomb now.</summary>
-        public bool HasBomb => IsPotato && potato.Holder != null && !potato.Holder.IsOut;
-
-        /// <summary>Whether the bomb is on the player's car.</summary>
-        public bool IsPlayerHoldingBomb => HasBomb && potato.Holder == round.Player;
-
-        /// <summary>Seconds left on the bomb's fuse.</summary>
-        public float FuseLeft => IsPotato ? potato.FuseLeft : 0f;
-
-        /// <summary>Whether the fuse is in its last seconds, when the bomb blinks faster.</summary>
-        public bool IsFuseShort => HasBomb && potato.IsHurried;
-
-        /// <summary>Where the bomb rides over its holder.</summary>
-        public Vector3 BombPosition => HasBomb ? potato.BombPosition : Vector3.zero;
+        /// <summary>The player's car in the round, for a mode's HUD; null without a round.</summary>
+        public Car PlayerCar => round?.Player;
 
         /// <summary>
         /// How many cars started the round, so their indices run from 0 to one less.
@@ -396,7 +387,7 @@ namespace ToyCarArena.UI
         {
             Unsubscribe();
             round = payload.Round;
-            potato = payload.Potato;
+            mode = payload.Mode;
             driver = payload.Driver;
             if (driver != null) {
                 driver.AutoBoosted += OnAutoBoosted;
@@ -506,14 +497,15 @@ namespace ToyCarArena.UI
         public bool IsNewPlayer { get; }
         public int Streak { get; }
         public SpecialRound Special { get; }
-        public HotPotato Potato { get; }
+        /// <summary>The event mode the round plays, null for none.</summary>
+        public IRoundMode Mode { get; }
 
         public HudRound(ArenaRound round, PlayerDriver driver, GameTuning.ControlSettings controls, bool isFirstRound,
             int roundNumber, bool isNewPlayer, int streak = 0, SpecialRound special = SpecialRound.None,
-            int playerRound = 0, HotPotato potato = null)
+            int playerRound = 0, IRoundMode mode = null)
         {
             PlayerRound = playerRound > 0 ? playerRound : roundNumber;
-            Potato = potato;
+            Mode = mode;
             IsNewPlayer = isNewPlayer;
             Streak = streak;
             Special = special;

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Cars;
+using ToyCarArena.Gameplay.Modes;
 using ToyCarArena.Gameplay.Pickups;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
@@ -42,7 +43,7 @@ namespace ToyCarArena.Gameplay.Bots
         private readonly BallLane ballLane;
         private readonly ArenaHazards hazards;
         private readonly ArenaPickups pickups;
-        private readonly HotPotato potato;
+        private readonly RoundModes modes;
         private readonly List<Bot> bots = new();
 
         private int seed;
@@ -56,10 +57,10 @@ namespace ToyCarArena.Gameplay.Bots
         private Bot playerGrudge;
 
         public BotDriver(GameTuning tuning, ArenaRound round, RoundDifficulty difficulty, BallLane ballLane,
-            ArenaHazards hazards, ArenaPickups pickups, HotPotato potato)
+            ArenaHazards hazards, ArenaPickups pickups, RoundModes modes)
         {
             this.pickups = pickups;
-            this.potato = potato;
+            this.modes = modes;
             this.tuning = tuning;
             this.round = round;
             this.difficulty = difficulty;
@@ -107,6 +108,7 @@ namespace ToyCarArena.Gameplay.Bots
             var isDuel = round.IsDuel;
             // A new pickup is worth a look at once, not at the next pick.
             var hasNewPickup = pickups.IsEnabled && pickups.Version != seenPickups;
+            var steering = modes.BotSteering;
             seenPickups = pickups.Version;
             foreach (var bot in bots) {
                 if (bot.Car.IsOut) {
@@ -117,18 +119,8 @@ namespace ToyCarArena.Gameplay.Bots
                     bot.Reconsider();
                 }
 
-                // The HOT POTATO mode: nobody falls, so the bomb is all a bot plays for. With it the bot goes for the
-                // car it is best passed to; without it, it runs from the holder.
-                if (potato.IsActive) {
-                    if (potato.Holder == bot.Car) {
-                        var victim = ChooseVictim(bot.Car);
-                        if (victim != bot.Target || bot.WantsTarget) {
-                            bot.SetTarget(victim);
-                        }
-                    }
-
-                    bot.SetPickup(null);
-                    bot.SteerPotato(edge, potato, deltaTime);
+                // An event mode that plays its bots its own way (the hot potato's chase and flight) steers them here.
+                if (steering != null && steering.SteerBot(bot, edge, deltaTime)) {
                     continue;
                 }
 
@@ -186,51 +178,6 @@ namespace ToyCarArena.Gameplay.Bots
                     bot.Reconsider();
                 }
             }
-        }
-
-        /// <summary>
-        /// The car the holder of the hot potato drives at: the nearest one in play, but never the car that just passed
-        /// the bomb (it cannot take it back, <see cref="HotPotato.IsPassBack"/>), and never the player in the first
-        /// seconds of the round (<see cref="RoundDifficulty.PlayerGrace"/>). The player counts as a little farther than
-        /// it is, more so on Easy, so the bots pass it the bomb less often than to each other. With no other choice the
-        /// passer and the player are taken after all; null when there is no car to pass to.
-        /// </summary>
-        private Car ChooseVictim(Car self)
-        {
-            var playerScale = Mathf.Lerp(1.4f, 1.1f, difficulty.Level);
-            var isPlayerSpared = round.Elapsed < difficulty.PlayerGrace;
-            Car best = null;
-            Car fallback = null;
-            var bestDistance = float.PositiveInfinity;
-            var fallbackDistance = float.PositiveInfinity;
-            var cars = round.Cars;
-            for (var i = 0; i < cars.Count; i++) {
-                var car = cars[i];
-                if (car == self || !car.IsTargetable) {
-                    continue;
-                }
-
-                var distance = (car.Position - self.Position).magnitude;
-                if (distance < fallbackDistance) {
-                    fallbackDistance = distance;
-                    fallback = car;
-                }
-
-                if (potato.IsPassBack(car) || car == round.Player && isPlayerSpared) {
-                    continue;
-                }
-
-                if (car == round.Player) {
-                    distance *= playerScale;
-                }
-
-                if (distance < bestDistance) {
-                    bestDistance = distance;
-                    best = car;
-                }
-            }
-
-            return best ?? fallback;
         }
 
         /// <summary>

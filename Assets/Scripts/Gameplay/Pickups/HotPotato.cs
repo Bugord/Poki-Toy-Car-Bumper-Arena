@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using ToyCarArena.Audio;
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Cars;
+using ToyCarArena.Gameplay.Bots;
 using ToyCarArena.Gameplay.Effects;
+using ToyCarArena.Gameplay.Modes;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
 using VContainer.Unity;
@@ -21,7 +23,7 @@ namespace ToyCarArena.Gameplay.Pickups
     /// The bots chase with it and run from it (<see cref="Bots.Bot.SteerPotato"/>). In any other round it builds nothing.
     /// The look is the item bomb's, the nudge the items' (<see cref="ItemBlow"/>).
     /// </summary>
-    public sealed class HotPotato : ITickable, IArenaHazard, IDisposable
+    public sealed class HotPotato : ITickable, IArenaHazard, IRoundMode, IBotSteering, IDisposable
     {
         // Metres above the car's middle the bomb rides, at the car's own size, and how much it bobs.
         private const float RideHeight = 1.7f;
@@ -83,8 +85,74 @@ namespace ToyCarArena.Gameplay.Pickups
             this.isActive = rules.Kind == SpecialRound.HotPotato;
         }
 
+        public SpecialRound Kind => SpecialRound.HotPotato;
+
         /// <summary>Whether this scene's round is a hot potato round.</summary>
         public bool IsActive => isActive;
+
+        /// <summary>
+        /// Nobody falls, so the bomb is all a bot plays for: with it the bot goes for the car it is best passed to,
+        /// without it, it runs from the holder (<see cref="Bot.SteerPotato"/>). Boxes are off, so it never picks one.
+        /// </summary>
+        public bool SteerBot(Bot bot, IArenaEdge floor, float deltaTime)
+        {
+            if (Holder == bot.Car) {
+                var victim = ChooseVictim(bot.Car);
+                if (victim != bot.Target || bot.WantsTarget) {
+                    bot.SetTarget(victim);
+                }
+            }
+
+            bot.SetPickup(null);
+            bot.SteerPotato(floor, this, deltaTime);
+            return true;
+        }
+
+        /// <summary>
+        /// The car the holder of the hot potato drives at: the nearest one in play, but never the car that just passed
+        /// the bomb (it cannot take it back, <see cref="HotPotato.IsPassBack"/>), and never the player in the first
+        /// seconds of the round (<see cref="RoundDifficulty.PlayerGrace"/>). The player counts as a little farther than
+        /// it is, more so on Easy, so the bots pass it the bomb less often than to each other. With no other choice the
+        /// passer and the player are taken after all; null when there is no car to pass to.
+        /// </summary>
+        private Car ChooseVictim(Car self)
+        {
+            var playerScale = Mathf.Lerp(1.4f, 1.1f, difficulty.Level);
+            var isPlayerSpared = round.Elapsed < difficulty.PlayerGrace;
+            Car best = null;
+            Car fallback = null;
+            var bestDistance = float.PositiveInfinity;
+            var fallbackDistance = float.PositiveInfinity;
+            var cars = round.Cars;
+            for (var i = 0; i < cars.Count; i++) {
+                var car = cars[i];
+                if (car == self || !car.IsTargetable) {
+                    continue;
+                }
+
+                var distance = (car.Position - self.Position).magnitude;
+                if (distance < fallbackDistance) {
+                    fallbackDistance = distance;
+                    fallback = car;
+                }
+
+                if (IsPassBack(car) || car == round.Player && isPlayerSpared) {
+                    continue;
+                }
+
+                if (car == round.Player) {
+                    distance *= playerScale;
+                }
+
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    best = car;
+                }
+            }
+
+            return best ?? fallback;
+        }
+
 
         /// <summary>The car the bomb rides on now, null between bombs.</summary>
         public Car Holder { get; private set; }

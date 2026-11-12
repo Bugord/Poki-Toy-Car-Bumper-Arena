@@ -305,3 +305,4 @@ result.mode_won_subtitle,Result subtitle for first place in a timed event mode,T
 result.mode_place,"Result subtitle in a timed event mode: the place, e.g. PLACE 3",PLACE {0},PLACE {0},{0}° POSTO,PLATZ {0},PUESTO {0},{0}. SIRA,{0}º LUGAR,{0} МЕСТО
 result.team_won,Result subtitle: the player's team won,YOUR TEAM WINS!,TON ÉQUIPE GAGNE !,LA TUA SQUADRA VINCE!,DEIN TEAM GEWINNT!,¡TU EQUIPO GANA!,TAKIMIN KAZANDI!,SEU TIME VENCEU!,ТВОЯ КОМАНДА ПОБЕДИЛА!
 result.team_lost,Result subtitle: the player's team lost,YOUR TEAM LOST,TON ÉQUIPE A PERDU,LA TUA SQUADRA HA PERSO,DEIN TEAM HAT VERLOREN,TU EQUIPO PERDIÓ,TAKIMIN KAYBETTİ,SEU TIME PERDEU,ТВОЯ КОМАНДА ПРОИГРАЛА
+result.points_short,"Header of the points column of the results table in an event mode, short",PTS,PTS,PUNTI,PKT,PTS,PUAN,PTS,ОЧКИ

@@ -1,4 +1,5 @@
 using System;
+using Bugord.App.Localization;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
@@ -93,6 +94,11 @@ namespace ToyCarArena.UI
             crown.generateVisualContent += DrawCrown;
             table = root.Q<VisualElement>("results");
             rows = root.Q<VisualElement>("results-rows");
+            // An event mode counts points of its own, not knock-outs: the column says so.
+            var pointsHead = root.Q<Label>(className: "results__title--ko");
+            if (model.IsEvent && pointsHead != null) {
+                text.Set(pointsHead, () => Strings.Get("result.points_short"));
+            }
             podium.parent.RegisterCallback<GeometryChangedEvent>(OnPictureGeometry);
             podium.RegisterCallback<GeometryChangedEvent>(OnPictureGeometry);
             car.RegisterCallback<GeometryChangedEvent>(OnPictureGeometry);

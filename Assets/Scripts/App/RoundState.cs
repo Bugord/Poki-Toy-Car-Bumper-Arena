@@ -5,6 +5,7 @@ using Cysharp.Threading.Tasks;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Cars;
+using ToyCarArena.Gameplay.Modes;
 using ToyCarArena.Gameplay.Pickups;
 using ToyCarArena.Gameplay.Round;
 using ToyCarArena.UI;
@@ -218,7 +219,7 @@ namespace ToyCarArena.App
                 var hudRound = new HudRound(round, driver, tuning.Controls, waitsForPlayer, roundNumber,
                     playerProgress.TotalXp == 0,
                     progress.WinStreak >= tuning.Streaks.Start ? progress.WinStreak : 0, special,
-                    progress.RoundsBefore + roundNumber, levelScene.Resolve<HotPotato>());
+                    progress.RoundsBefore + roundNumber, levelScene.Resolve<RoundModes>().Active);
                 hud = await navigator.OpenAsync<HudViewModel, HudRound>(hudRound, token);
                 await curtain.Hide();
                 // The page's loading screen stays up until the first round can be seen, past Poki's own loader.

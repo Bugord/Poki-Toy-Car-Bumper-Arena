@@ -331,7 +331,8 @@ namespace ToyCarArena.UI
         private float tapHintTime;
         private float tapHintProgress;
         private HudEndTimer endTimer;
-        private HudPotato potato;
+        // The event mode's own HUD (the hot potato's fuse), null in a round of no mode or a mode without one.
+        private IModeHud modeHud;
         private VisualElement kickoff;
         private VisualElement kickoffNumber;
         private Label kickoffDigit;
@@ -380,6 +381,11 @@ namespace ToyCarArena.UI
             boostCharge = Root.Q<VisualElement>("boost-charge");
             knockoutBadge = Root.Q<VisualElement>("ko-badge");
             DrawAsBurst(knockoutBadge.Q<VisualElement>(className: "ko-star"));
+            if (ViewModel.IsTimed) {
+                // A timed round's badge counts its points: the mode's own icon, the burst for knock-outs.
+                ModeLooks.DrawPoints(knockoutBadge.Q<VisualElement>(className: "ko-star"),
+                    ViewModel.Mode?.Kind ?? SpecialRound.None);
+            }
             knockoutLabel = Root.Q<Label>("ko");
             respawn = Root.Q<VisualElement>("respawn");
             respawnCount = Root.Q<Label>("respawn-count");
@@ -426,7 +432,7 @@ namespace ToyCarArena.UI
             tapHint = Root.Q<VisualElement>("tap-hint");
             BuildKickoff();
             endTimer = HudEndTimer.Create(Root, ViewModel, timePill, scoreboard?.Element, respawn, popupLayer);
-            potato = HudPotato.Create(nameLayer, Root, ViewModel);
+            modeHud = ModeLooks.Of(ViewModel.Mode)?.CreateHud(nameLayer, Root, ViewModel);
             settingsButton = Root.Q<Button>("settings-button");
             settingsButton.RemoveFromClassList(Button.ussClassName);
             // Space is the boost: a focused button would take it as a click and open the settings mid-round.
@@ -486,8 +492,8 @@ namespace ToyCarArena.UI
             social?.Dispose();
             scoreboard?.Dispose();
             endTimer?.Dispose();
-            potato?.Dispose();
-            potato = null;
+            modeHud?.Dispose();
+            modeHud = null;
             ViewModel.PlayerKnockout -= ShowKnockout;
             ViewModel.CarOut -= OnCarOut;
             ViewModel.CarBack -= OnCarBack;
@@ -1412,7 +1418,7 @@ namespace ToyCarArena.UI
             }
 
             ShowStreak(camera);
-            potato?.Tick(camera, contentTopInset, safeInsets.Left, safeInsets.Right);
+            modeHud?.Tick(camera, contentTopInset, safeInsets.Left, safeInsets.Right);
 
             if (carNames == null || camera == null || nameLayer.panel == null) {
                 return;
