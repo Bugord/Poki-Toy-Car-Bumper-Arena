@@ -227,8 +227,9 @@ namespace ToyCarArena.Tests.PlayMode
                     Is.EqualTo(new[] { MissionTier.Medium, MissionTier.Hard }));
             }
 
-            // The task follows the mode of the day: the build's HOT POTATO, or another one played that day.
-            Assert.That(TodaysEvent(Monday), Is.EqualTo("hot-potato"));
+            // The task follows the mode of the day: one of the build's modes (HOT POTATO and TEAM PUSH by the day), or
+            // another one played that day.
+            Assert.That(TodaysEvent(Monday), Is.EqualTo("hot-potato").Or.EqualTo("team-push"));
             EventSchedule.Forced = EventMode.Crown;
             tasks.Reset(Monday);
             Assert.That(tasks.Today(Monday)[0].Definition.Mode, Is.EqualTo("crown"));
@@ -266,24 +267,30 @@ namespace ToyCarArena.Tests.PlayMode
         [Test]
         public void NoEventNoTaskOfIt()
         {
-            var hotPotato = tuning.SpecialRounds.HotPotato;
-            var enabled = hotPotato.GetType().GetField("enabled", BindingFlags.Instance | BindingFlags.NonPublic);
-            enabled.SetValue(hotPotato, false);
+            // Every mode of the build on or off together.
+            void Events(bool on)
+            {
+                foreach (var settings in new object[] { tuning.SpecialRounds.HotPotato, tuning.TeamPush }) {
+                    settings.GetType().GetField("enabled", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(settings, on);
+                }
+            }
+
+            Events(false);
             for (var day = 0; day < 20; day++) {
                 Assert.That(tasks.Today(Monday.AddDays(day)).Select(task => task.Definition.Id),
                     Has.No.Member(DailyTasks.EventTaskId), $"day {day}");
             }
 
             // A set saved with the task while the build had events is drawn again.
-            enabled.SetValue(hotPotato, true);
+            Events(true);
             tasks.Reset(Monday);
             Assert.That(tasks.Today(Monday)[0].Definition.Id, Is.EqualTo(DailyTasks.EventTaskId));
-            enabled.SetValue(hotPotato, false);
+            Events(false);
             Assert.That(new DailyTasks(storage, tuning, progress).Today(Monday).Select(task => task.Definition.Id),
                 Has.No.Member(DailyTasks.EventTaskId));
 
             // The match build has no events.
-            enabled.SetValue(hotPotato, true);
+            Events(true);
             typeof(GameTuning).GetField("mode", BindingFlags.Instance | BindingFlags.NonPublic)
                 .SetValue(tuning, GameTuning.GameMode.Match);
             tasks.Reset(Monday);

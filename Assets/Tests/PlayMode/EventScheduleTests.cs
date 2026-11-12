@@ -126,8 +126,8 @@ namespace ToyCarArena.Tests.PlayMode
             }
 
             Assert.That(slot, Is.GreaterThan(0), "The rotation has no event slot.");
-            Assert.That(RoundRules.For(tuning, slot, EventMode.None), Is.EqualTo(SpecialRound.HotPotato),
-                "The build as it ships plays HOT POTATO there.");
+            Assert.That(RoundRules.For(tuning, slot, EventMode.None),
+                Is.EqualTo(EventModes.KindOf(EventSchedule.Today(tuning))), "The build as it ships plays the mode of the day there.");
 
             EventSchedule.Forced = EventMode.Crown;
             Assert.That(RoundRules.For(tuning, slot, EventMode.None), Is.EqualTo(SpecialRound.Crown));
