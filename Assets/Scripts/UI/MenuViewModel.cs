@@ -318,23 +318,54 @@ namespace ToyCarArena.UI
         /// <summary>The menu's own popups opened: <c>menu / missions, mode, leagues, boost / interact</c>.</summary>
         public void MissionsOpened() => platform.MeasureMenuPressed("missions");
         /// <remarks>Not sent in v0.17.1, where MODE was a plate; after it MODE opens the modes again, CUP and SURVIVAL as SOON.</remarks>
-        public void ModesOpened() => platform.MeasureMenuPressed("mode");
         public void LeaguesOpened() => platform.MeasureMenuPressed("leagues");
 
         /// <summary>
-        /// The mode PLAY starts: QUICK MATCH (<see cref="EventMode.None"/>) or HOT POTATO. Kept for the visit by the
-        /// session, so NEXT MATCH and HOME back to the menu keep it.
+        /// The mode PLAY starts: QUICK MATCH (<see cref="EventMode.None"/>) or the event of the day. Kept for the visit by
+        /// the session, so NEXT MATCH and HOME back to the menu keep it; an event picked before midnight reads as the new
+        /// day's event, the one the menu now offers.
         /// </summary>
-        public EventMode Mode => session?.Mode ?? mode;
+        public EventMode Mode
+        {
+            get {
+                var picked = session?.Mode ?? mode;
+                return picked == EventMode.None ? EventMode.None : TodayEvent;
+            }
+        }
 
         /// <summary>
-        /// Whether the menu offers the HOT POTATO event: it is a round of last car standing with one rule changed, so a
-        /// build of matches has none.
+        /// The event of the day on the menu's clock (<see cref="EventSchedule"/>): the card on top of CHOOSE MODE and the
+        /// tile under XP BOOST. None in a build of matches or with every mode off.
         /// </summary>
-        public bool HasEvents => !tuning.IsMatch;
+        public EventMode TodayEvent => EventSchedule.Of(tuning, Today);
+
+        /// <summary>The id of the event of the day, for its strings, art and analytics.</summary>
+        public string TodayEventId => EventModes.IdOf(TodayEvent);
+
+        /// <summary>How long until the event of the day changes: the card's NEW IN, at the player's midnight.</summary>
+        public TimeSpan EventTimeLeft => EventSchedule.LeftToday(Now);
 
         /// <summary>
-        /// Makes <paramref name="next"/> the mode PLAY starts and counts the pick, <c>menu / mode-hot-potato|mode-quick
+        /// Whether the menu offers an event: there is one today, and it is a round of last car standing with its rules
+        /// changed, so a build of matches has none.
+        /// </summary>
+        public bool HasEvents => tuning.HasEvents && TodayEvent != EventMode.None;
+
+        /// <summary>
+        /// The CHOOSE MODE popup opened, <c>menu / mode / interact</c>, and shows its two choices:
+        /// <c>menu / mode-&lt;id&gt;|mode-quick / visible</c>, so their picks' interacts are kept.
+        /// </summary>
+        public void ModesOpened()
+        {
+            platform.MeasureMenuPressed("mode");
+            platform.MeasureMenuVisible(ModePick(EventMode.None));
+            if (HasEvents) {
+                platform.MeasureMenuVisible(ModePick(TodayEvent));
+            }
+        }
+
+        /// <summary>
+        /// Makes <paramref name="next"/> the mode PLAY starts and counts the pick, <c>menu / mode-&lt;id&gt;|mode-quick
         /// / interact</c>, a pick of the mode already in play too: it says the card was understood as a choice.
         /// </summary>
         public void SelectMode(EventMode next)
@@ -348,19 +379,24 @@ namespace ToyCarArena.UI
             }
 
             mode = next;
-            platform.MeasureMenuPressed(next == EventMode.HotPotato ? "mode-hot-potato" : "mode-quick");
+            platform.MeasureMenuPressed(ModePick(next));
         }
 
         /// <summary>
-        /// <c>menu / event-hot-potato / visible</c>: the menu shows the HOT POTATO tile under XP BOOST. Its press is the
-        /// same name's <c>interact</c> (<see cref="PlayEvent"/>): Poki drops an interact without a visible of its name,
-        /// which is why v0.17.9 has no <c>mode-hot-potato</c> at all.
+        /// <c>menu / event-&lt;id&gt; / visible</c>: the menu shows the tile of the event of the day under XP BOOST. Its
+        /// press is the same name's <c>interact</c> (<see cref="PlayEvent"/>): Poki drops an interact without a visible of
+        /// its name, which is why v0.17.9 has no <c>mode-hot-potato</c> at all.
         /// </summary>
-        public void EventShown() => platform.MeasureMenuVisible(EventHotPotato);
+        public void EventShown()
+        {
+            if (HasEvents) {
+                platform.MeasureMenuVisible(EventTile);
+            }
+        }
 
         /// <summary>
-        /// The HOT POTATO tile: makes the event the mode in play for the visit, as its card in CHOOSE MODE does, and
-        /// starts it at once, <c>menu / event-hot-potato / interact</c> before PLAY's own <c>menu / play</c>.
+        /// The event tile: makes the event of the day the mode in play for the visit, as its card in CHOOSE MODE does,
+        /// and starts it at once, <c>menu / event-&lt;id&gt; / interact</c> before PLAY's own <c>menu / play</c>.
         /// </summary>
         public void PlayEvent()
         {
@@ -368,16 +404,20 @@ namespace ToyCarArena.UI
                 return;
             }
 
+            var today = TodayEvent;
             if (session != null) {
-                session.Mode = EventMode.HotPotato;
+                session.Mode = today;
             }
 
-            mode = EventMode.HotPotato;
-            platform.MeasureMenuPressed(EventHotPotato);
+            mode = today;
+            platform.MeasureMenuPressed(EventTile);
             Play();
         }
 
-        private const string EventHotPotato = "event-hot-potato";
+        private string EventTile => "event-" + TodayEventId;
+
+        private static string ModePick(EventMode pick) =>
+            pick == EventMode.None ? "mode-quick" : "mode-" + EventModes.IdOf(pick);
 
         /// <summary>Whether PLAY was pressed: the menu takes no more input while the lobby comes down over it.</summary>
         public bool IsDecided { get; private set; }
@@ -389,6 +429,11 @@ namespace ToyCarArena.UI
             }
 
             IsDecided = true;
+            // The round plays what the menu shows: an event picked yesterday is today's now.
+            if (session != null) {
+                session.Mode = Mode;
+            }
+
             platform.MeasureMenuPressed("play");
             SetResult(true);
         }

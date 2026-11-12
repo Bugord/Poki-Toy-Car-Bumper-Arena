@@ -179,6 +179,9 @@ namespace ToyCarArena.Gameplay
             /// </summary>
             public void Force(SpecialRound? kind) => forced = kind;
 
+            /// <summary>Whether a test has forced every round's kind (<see cref="Force"/>).</summary>
+            public bool IsForced => forced.HasValue;
+
             /// <summary>The special round of the visit's round <paramref name="round"/> (from 1).</summary>
             public SpecialRound For(int round)
             {

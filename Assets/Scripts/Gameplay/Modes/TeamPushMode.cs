@@ -29,6 +29,9 @@ namespace ToyCarArena.Gameplay.Modes
 
         public SpecialRound Kind => SpecialRound.TeamPush;
 
+        /// <summary>A placeholder card: the car alone, until the mode has a prop of its own to ride on it.</summary>
+        public ModeCard Card { get; } = new("police", 2);
+
         public bool IsActive { get; }
 
         /// <summary>The mode's numbers.</summary>

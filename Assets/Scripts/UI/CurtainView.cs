@@ -195,6 +195,12 @@ namespace ToyCarArena.UI
             specialCard = Element("lobby__special");
             var tag = OutlinedText(special, "lobby__badge");
             tag.AddToClassList("lobby__badge--special");
+            // An event mode's tag in its own colour, as its menu card; the rotation's rounds keep the orange.
+            var look = ModeLooks.Of(ViewModel.Special);
+            if (look != null) {
+                tag.style.backgroundColor = look.Deep;
+            }
+
             specialCard.Add(tag);
             var rule = new Label(GameText.SpecialHint(ViewModel.Special)) { pickingMode = PickingMode.Ignore };
             rule.AddToClassList("lobby__special-rule");

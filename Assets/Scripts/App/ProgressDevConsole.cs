@@ -1,6 +1,7 @@
 #if BUGORD_SUPERCONSOLE
 using System;
 using Bugord.SuperConsole.Commands;
+using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Round;
 using VContainer.Unity;
 
@@ -67,6 +68,23 @@ namespace ToyCarArena.App
                     daily.SetFirstWin(now, isTaken != 0);
                     return daily.HasFirstWin(now) ? "First win of the day: still to come" : "First win of the day: taken";
                 }));
+            CommandRegistry.Register("event_day", "Make every day's event mode the one of this id (hot-potato, crown, "
+                + "gold-rush, item-frenzy, overheat, team-push, football; a stub plays though its build has it off), or "
+                + "auto for the schedule; the menu shows it when it opens next",
+                (Func<string, string>)(id => {
+                    if (id == "auto") {
+                        EventSchedule.Forced = null;
+                        return "Event of the day: the schedule";
+                    }
+
+                    var mode = EventModes.Parse(id);
+                    if (mode == EventMode.None) {
+                        return $"No event mode {id}";
+                    }
+
+                    EventSchedule.Forced = mode;
+                    return $"Event of the day: {EventModes.IdOf(mode)}";
+                }));
         }
 
         public void Dispose()
@@ -78,6 +96,7 @@ namespace ToyCarArena.App
             CommandRegistry.Unregister("daily");
             CommandRegistry.Unregister("daily_tasks");
             CommandRegistry.Unregister("first_win");
+            CommandRegistry.Unregister("event_day");
         }
 
         private string Describe() => $"{progress.TotalXp} XP, LVL {progress.Level}";

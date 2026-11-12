@@ -17,6 +17,9 @@ namespace ToyCarArena.Gameplay.Modes
 
         /// <summary>Whether this scene's round is the mode's: fixed when the scene is built.</summary>
         bool IsActive { get; }
+
+        /// <summary>What the picture on the mode's menu card shows (<see cref="ModeCard"/>).</summary>
+        ModeCard Card { get; }
     }
 
     /// <summary>

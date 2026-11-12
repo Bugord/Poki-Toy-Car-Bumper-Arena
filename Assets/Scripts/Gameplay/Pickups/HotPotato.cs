@@ -87,6 +87,9 @@ namespace ToyCarArena.Gameplay.Pickups
 
         public SpecialRound Kind => SpecialRound.HotPotato;
 
+        /// <summary>The board's red monster truck with the bomb, lit, riding on its roof.</summary>
+        public ModeCard Card { get; } = new("monster-truck", 1, "Bomb", 0.5f);
+
         /// <summary>Whether this scene's round is a hot potato round.</summary>
         public bool IsActive => isActive;
 

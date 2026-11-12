@@ -299,7 +299,6 @@ menu.football,Event game mode: two teams push a ball into each other's goal,FOOT
 menu.football_hint,What the football mode is,PUSH THE BALL INTO THEIR GOAL!,POUSSE LE BALLON DANS LEUR BUT !,SPINGI LA PALLA NELLA LORO PORTA!,SCHIEB DEN BALL INS GEGNERISCHE TOR!,¡EMPUJA EL BALÓN A SU PORTERÍA!,TOPU ONLARIN KALESİNE İT!,EMPURRE A BOLA PARA O GOL DELES!,ЗАКАТИ МЯЧ В ЧУЖИЕ ВОРОТА!
 special.football.name,Event round name: football (lobby tag and over the countdown),FOOTBALL!,FOOTBALL !,CALCIO!,FUSSBALL!,¡FÚTBOL!,FUTBOL!,FUTEBOL!,ФУТБОЛ!
 special.football.hint,Event round rule in one line,SCORE MORE GOALS!,MARQUE PLUS DE BUTS !,SEGNA PIÙ GOL!,SCHIESS MEHR TORE!,¡MARCA MÁS GOLES!,DAHA ÇOK GOL AT!,FAÇA MAIS GOLS!,ЗАБЕЙ БОЛЬШЕ ГОЛОВ!
-menu.event_next,"Small pill on the event card: time to the next event of the day, {0} is daily.time_hm or daily.time_m; max ~14 chars",NEW IN {0},NOUVEAU : {0},NUOVO TRA {0},NEU IN {0},NUEVO EN {0},YENİSİ {0},NOVO EM {0},НОВЫЙ ЧЕРЕЗ {0}
 mission.play_event,"Daily task: finish a round of today's event mode, {0} is its name (menu.*)",PLAY {0},JOUE EN MODE {0},GIOCA A {0},SPIELE {0},JUEGA A {0},{0} MODUNU OYNA,JOGUE {0},СЫГРАЙ В РЕЖИМЕ «{0}»
 result.mode_won_subtitle,Result subtitle for first place in a timed event mode,TOP SCORE!,MEILLEUR SCORE !,PUNTEGGIO MIGLIORE!,BESTE PUNKTZAHL!,¡MEJOR PUNTUACIÓN!,EN YÜKSEK SKOR!,MAIOR PONTUAÇÃO!,ЛУЧШИЙ СЧЁТ!
 result.mode_place,"Result subtitle in a timed event mode: the place, e.g. PLACE 3",PLACE {0},PLACE {0},{0}° POSTO,PLATZ {0},PUESTO {0},{0}. SIRA,{0}º LUGAR,{0} МЕСТО

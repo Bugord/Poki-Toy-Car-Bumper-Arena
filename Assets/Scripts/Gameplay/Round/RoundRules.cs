@@ -48,7 +48,8 @@ namespace ToyCarArena.Gameplay.Round
 
         /// <summary>
         /// The special round of the visit's round <paramref name="round"/> in this build, in the menu's
-        /// <paramref name="mode"/>: none in a match, the mode's own for an event mode, else the rotation's.
+        /// <paramref name="mode"/>: none in a match, the mode's own for an event mode, else the rotation's, whose event
+        /// slot is the mode of the day (<see cref="EventSchedule"/>).
         /// </summary>
         public static SpecialRound For(GameTuning tuning, int round, EventMode mode)
         {
@@ -56,7 +57,18 @@ namespace ToyCarArena.Gameplay.Round
                 return SpecialRound.None;
             }
 
-            return mode != EventMode.None ? EventModes.KindOf(mode) : tuning.SpecialRounds.For(round);
+            if (mode != EventMode.None) {
+                return EventModes.KindOf(mode);
+            }
+
+            var kind = tuning.SpecialRounds.For(round);
+            // The rotation's event slot (HOT POTATO's in the order) plays the mode of the day, so a player of QUICK
+            // MATCH meets every mode in turn; with every mode off it is a plain round. A test's forced kind stays.
+            if (EventModes.IsEvent(kind) && !tuning.SpecialRounds.IsForced) {
+                kind = EventModes.KindOf(EventSchedule.Today(tuning));
+            }
+
+            return kind;
         }
 
         /// <summary>The kind of the session's next round, as the scene built for it will read it.</summary>

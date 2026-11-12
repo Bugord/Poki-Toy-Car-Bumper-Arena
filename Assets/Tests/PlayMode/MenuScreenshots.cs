@@ -98,8 +98,9 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         /// <summary>
-        /// CHOOSE MODE at every size, as it opens on QUICK MATCH and with HOT POTATO picked, and the menu after it with
-        /// the MODE plate on the event; also in Russian. <c>Logs/menu/modes*_&lt;w&gt;x&lt;h&gt;.png</c>.
+        /// CHOOSE MODE at every size, as it opens on QUICK MATCH and with the event of the day (HOT POTATO, as the build
+        /// ships) picked, and the menu after it with the MODE plate on the event; also in Russian.
+        /// <c>Logs/menu/modes*_&lt;w&gt;x&lt;h&gt;.png</c>.
         /// </summary>
         [UnityTest]
         public IEnumerator CaptureTheModes()
@@ -116,6 +117,36 @@ namespace ToyCarArena.Tests.PlayMode
             yield return Capture(directory, "ru-modes", (1920, 1080, false), false, modes: true);
             Strings.SetLanguage("en");
             typeof(Strings).GetField("table", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
+        }
+
+        /// <summary>
+        /// The menu and CHOOSE MODE with other modes of the day (stubs, forced as the dev console's event_day does):
+        /// their colours, card pictures, names, rules and NEW IN on the card and the tile, in English and Russian.
+        /// <c>Logs/menu/event-&lt;id&gt;*_&lt;w&gt;x&lt;h&gt;.png</c> and <c>ru-event-&lt;id&gt;*</c>.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator CaptureTheEventsOfTheDay()
+        {
+            Strings.Load(new StringTable(AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Localization/strings.csv").text));
+            var directory = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "menu");
+            Directory.CreateDirectory(directory);
+            try {
+                foreach (var mode in new[] { EventMode.Crown, EventMode.Football }) {
+                    EventSchedule.Forced = mode;
+                    var id = EventModes.IdOf(mode);
+                    foreach (var language in new[] { "en", "ru" }) {
+                        Strings.SetLanguage(language);
+                        var prefix = language == "en" ? "" : language + "-";
+                        yield return Capture(directory, $"{prefix}event-{id}", (1080, 1920, true), false, modes: true);
+                        yield return Capture(directory, $"{prefix}event-{id}", (1920, 1080, false), false, modes: true);
+                    }
+                }
+            }
+            finally {
+                EventSchedule.Forced = null;
+                Strings.SetLanguage("en");
+                typeof(Strings).GetField("table", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
+            }
         }
 
         private static IEnumerator Capture(string directory, string name, (int Width, int Height, bool IsTouch) size,
@@ -202,10 +233,10 @@ namespace ToyCarArena.Tests.PlayMode
                     typeof(MenuView).GetMethod("OpenModes", Private)?.Invoke(view, null);
                     yield return Wait(0.3f);
                     Save(target, Path.Combine(directory, $"{name}_{width}x{height}.png"));
-                    model.SelectMode(EventMode.HotPotato);
+                    model.SelectMode(model.TodayEvent);
                     typeof(MenuView).GetMethod("ShowMode", Private)?.Invoke(view, null);
                     yield return Wait(0.3f);
-                    Save(target, Path.Combine(directory, $"{name}-potato_{width}x{height}.png"));
+                    Save(target, Path.Combine(directory, $"{name}-event_{width}x{height}.png"));
                     typeof(MenuView).GetMethod("ClosePopups", Private)?.Invoke(view, null);
                     yield return Wait(0.3f);
                     Save(target, Path.Combine(directory, $"{name}-menu_{width}x{height}.png"));

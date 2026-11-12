@@ -29,6 +29,9 @@ namespace ToyCarArena.Gameplay.Modes
 
         public SpecialRound Kind => SpecialRound.Football;
 
+        /// <summary>A placeholder card: the car alone, until the mode has a prop of its own to ride on it.</summary>
+        public ModeCard Card { get; } = new("suv", 0);
+
         public bool IsActive { get; }
 
         /// <summary>The mode's numbers.</summary>
