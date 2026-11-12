@@ -486,6 +486,8 @@ namespace ToyCarArena.App
             if (kind == SpecialRound.Boss) {
                 platform.Measure(SpecialCategory, bossTaken ? "boss-taken" : "boss-missed", "boss");
             }
+
+            platform.MeasureTeamEnd(kind, result);
         }
 
         /// <summary>

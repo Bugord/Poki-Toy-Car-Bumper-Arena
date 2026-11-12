@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
+using Bugord.App.Platform;
 using NUnit.Framework;
+using ToyCarArena.App;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
@@ -116,6 +118,37 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(plain.IsDraw, Is.False);
             Assert.That(plain.WinningTeam, Is.EqualTo(RoundTeams.None));
             Assert.That(plain.TeamPoints, Is.Empty);
+        }
+
+        [Test]
+        public void ATeamRoundSendsHowTheTeamEndedWithinPokisNumberLimit()
+        {
+            var platform = new MatchTests.RecordingPlatform();
+            var standings = new[] { new RoundStanding(0, 1, 12, 0, 12, RoundTeams.Blue) };
+            platform.MeasureSpecialEnd(SpecialRound.TeamPush, new RoundResult(RoundOutcome.Survived, 6, 6, 60f, 12,
+                RoundResult.Nobody, FallCause.None, false, false, standings, isTimed: true, kind: SpecialRound.TeamPush,
+                isLoss: true, teams: 2, teamPoints: new[] { 9, 13 }), false);
+            platform.MeasureSpecialEnd(SpecialRound.TeamPush, new RoundResult(RoundOutcome.Survived, 3, 6, 60f, 2,
+                RoundResult.Nobody, FallCause.None, false, false, standings, isTimed: true, kind: SpecialRound.TeamPush,
+                isLoss: false, teams: 2, teamPoints: new[] { 7, 7 }), false);
+            platform.MeasureSpecialEnd(SpecialRound.TeamPush, new RoundResult(RoundOutcome.Won, 1, 6, 60f, 0,
+                RoundResult.Nobody, FallCause.None, false, false, standings, isTimed: true, kind: SpecialRound.TeamPush,
+                isLoss: false, teams: 2, teamPoints: new[] { 15, 3 }), false);
+            // A round without teams sends no team event.
+            platform.MeasureSpecialEnd(SpecialRound.Crown, new RoundResult(RoundOutcome.Won, 1, 6, 60f, 0,
+                RoundResult.Nobody, FallCause.None, false, false, standings, isTimed: true, kind: SpecialRound.Crown), false);
+
+            var names = platform.Events.Select(e => $"{e.Item1} / {e.Item2} / {e.Item3}").ToList();
+            Assert.That(names, Does.Contain("special / team-push-team-lost-clear / team"));
+            Assert.That(names, Does.Contain("special / team-push-ko-10plus / team-knockouts"));
+            Assert.That(names, Does.Contain("special / team-push-team-draw-close / team"));
+            Assert.That(names, Does.Contain("special / team-push-ko-2 / team-knockouts"));
+            Assert.That(names, Does.Contain("special / team-push-team-won-big / team"));
+            Assert.That(names.Count(name => name.EndsWith("/ team")), Is.EqualTo(3));
+            foreach (var (category, what, action) in platform.Events) {
+                Assert.That(GameEvent.CountNumbers(category, what, action), Is.LessThanOrEqualTo(GameEvent.MaxNumbers),
+                    $"{category} / {what} / {action}");
+            }
         }
 
         // How far round the circle a team's slots spread: the gap left by the biggest jump between them.
