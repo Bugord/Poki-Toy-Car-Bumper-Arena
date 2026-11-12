@@ -216,8 +216,11 @@ namespace ToyCarArena.Gameplay.Modes
                 case ItemKind.Bowling:
                     var along = Vector3.Dot(toSpared, forward);
                     var side = (toSpared - forward * along).magnitude;
+                    // As far wider as the spared car can drive across before the ball rolls to it (as in Bot).
+                    var roll = spared != null ? Flat(spared.Movement.Velocity).magnitude * Mathf.Max(0f, along)
+                        / items.Bowling.Speed : 0f;
                     return spared == null || along < 0f
-                        || side > items.Bowling.Radius + items.Bowling.HitReach + SpareMargin;
+                        || side > items.Bowling.Radius + items.Bowling.HitReach + SpareMargin + roll;
                 case ItemKind.Oil:
                     return spared == null || toSpared.magnitude > items.Oil.TargetRange + SpareMargin;
                 default:
