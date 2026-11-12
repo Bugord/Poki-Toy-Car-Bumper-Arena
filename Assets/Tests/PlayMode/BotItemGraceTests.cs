@@ -68,8 +68,9 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         /// <summary>
-        /// A bowling ball takes a moment to roll to the spared car, so a car beside the line but driving onto it is in its
-        /// reach; the same car standing there is not, and the bot bowls at another car on the line.
+        /// A bowling ball takes a moment to roll to the spared car, so a car beside the line but able to drive onto it by
+        /// then (at its top speed, whatever it does now) is in its reach; a car farther out, which the ball would pass
+        /// before it got there, is not, and the bot bowls at another car on the line.
         /// </summary>
         [UnityTest]
         public IEnumerator ABotHoldsItsBowlingBallWhileTheSparedCarDrivesOntoItsLine()
@@ -115,9 +116,9 @@ namespace ToyCarArena.Tests.PlayMode
                     "the bot bowled at a line the spared car is driving onto");
             }
 
-            // Standing there, the spared car is out of the ball's way.
+            // Far out beside the ball's start, the spared car could not reach the line before the ball rolls past.
             player.Movement.Drive(Vector3.zero, 0f);
-            player.Movement.Place(beside, Quaternion.LookRotation(Vector3.left));
+            player.Movement.Place(from + Vector3.forward * 2f + Vector3.right * 9f, Quaternion.LookRotation(Vector3.left));
             for (var frame = 0; frame < 20; frame++) {
                 yield return new WaitForFixedUpdate();
             }
@@ -127,7 +128,7 @@ namespace ToyCarArena.Tests.PlayMode
                 used = bot.WantsToUseItem(Edge, Round.Cars, dt, player);
             }
 
-            Assert.That(used, Is.True, "the bot bowls past a spared car standing beside its line");
+            Assert.That(used, Is.True, "the bot bowls past a spared car too far out to reach its line");
         }
     }
 }

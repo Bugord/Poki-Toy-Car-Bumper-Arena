@@ -616,6 +616,8 @@ namespace ToyCarArena.Gameplay.Bots
 
         // Metres past an item's own reach a spared car is still kept clear of: it moves while the item flies.
         private const float SpareMargin = 1.5f;
+        // The spared car's top speed against the tuned one: its speed stat makes it a few percent faster.
+        private const float SpareTopSpeed = 1.1f;
 
         /// <summary>
         /// Whether using <paramref name="item"/> now would hit (or be aimed at) the <paramref name="spared"/> car: within
@@ -638,12 +640,11 @@ namespace ToyCarArena.Gameplay.Bots
                 case ItemKind.Bomb:
                     // The bomb goes off a flight and a fuse later: as far again as the spared car can drive by then.
                     var landing = position + forward * items.Bomb.ThrowDistance;
-                    var drive = Flat(spared.Movement.Velocity).magnitude * (items.Bomb.FlightTime + items.Bomb.Fuse);
+                    var drive = ReachSpeed(spared) * (items.Bomb.FlightTime + items.Bomb.Fuse);
                     return (Flat(spared.Position) - landing).magnitude <= items.Bomb.Radius + SpareMargin + drive;
                 case ItemKind.Bowling:
                     // The ball reaches the spared car a roll later: wider by as far as it can drive across by then.
-                    var roll = Flat(spared.Movement.Velocity).magnitude * Mathf.Max(0f, Vector3.Dot(offset, forward))
-                        / items.Bowling.Speed;
+                    var roll = ReachSpeed(spared) * Mathf.Max(0f, Vector3.Dot(offset, forward)) / items.Bowling.Speed;
                     return IsOnLine(offset, forward, items.Bowling.Range,
                         items.Bowling.Radius + items.Bowling.HitReach + SpareMargin + roll);
                 case ItemKind.Glove:
@@ -654,6 +655,14 @@ namespace ToyCarArena.Gameplay.Bots
                     return false;
             }
         }
+
+        /// <summary>
+        /// How fast the spared car may drive while an item is on its way: its top speed, or faster if it goes faster now.
+        /// Not its speed now: a car starting off reaches the top in a fraction of a second, and drove into a bomb thrown
+        /// when it was slow.
+        /// </summary>
+        private float ReachSpeed(Car spared) =>
+            Mathf.Max(Flat(spared.Movement.Velocity).magnitude, tuning.Car.MaxSpeed * SpareTopSpeed);
 
         /// <summary>Whether a point <paramref name="offset"/> from the bot lies on a line from its nose, as long and as wide as given.</summary>
         private static bool IsOnLine(Vector3 offset, Vector3 forward, float length, float halfWidth)
