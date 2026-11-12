@@ -85,6 +85,12 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float botHoldMax = 2.5f;
 
+            [Tooltip("Below this level of the round's difficulty (0 Easy, 1 Normal) an item a bot lets go without its " +
+                "moment never catches the player, not only in the first seconds")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float spareBelow = 0.5f;
+
             public bool Enabled => enabled;
             public float PickupPace => pickupPace;
             public int PickupMax => pickupMax;
@@ -94,6 +100,7 @@ namespace ToyCarArena.Gameplay
             public float BotBoxRange => botBoxRange;
             public float BotBoxNearer => botBoxNearer;
             public float BotHoldMax => botHoldMax;
+            public float SpareBelow => spareBelow;
 
             /// <summary>What the mode changes in the shared round (<see cref="ModeRules"/>).</summary>
             public ModeRules Rules => ModeRules.Plain.With(mechanics: false, pickups: PickupRule.Always,

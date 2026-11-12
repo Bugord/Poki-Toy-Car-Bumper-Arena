@@ -179,14 +179,18 @@ namespace ToyCarArena.Gameplay.Modes
         /// <summary>
         /// Whether a bot may let its item go now with no aim: the mega off the edge's band (it makes the bot heavy and
         /// big there), the balloon any time, the shockwave with a car to push, the bomb onto floor ahead, the bowling
-        /// ball, the oil; never while the car the grace spares (the player in the round's first seconds) is in the item's
-        /// reach.
+        /// ball, the oil; never while the player is in the item's reach in the round's first seconds
+        /// (<see cref="RoundDifficulty.PlayerGrace"/>), nor in a round easier than
+        /// <see cref="GameTuning.ItemFrenzySettings.SpareBelow"/>: the bots aim their items at the player as in any round
+        /// with boxes, but the frenzy's extra items do not rain on a new player.
         /// </summary>
         private bool CanLetGo(Car car, ItemKind kind, IArenaEdge edge)
         {
             var position = Flat(car.Position);
             var forward = Flat(car.transform.forward).normalized;
-            var spared = round.Elapsed < difficulty.PlayerGrace && round.Player.IsTargetable ? round.Player : null;
+            // An aimless item never catches the player in the grace, nor at all in a round on the easy side.
+            var isSpared = round.Elapsed < difficulty.PlayerGrace || difficulty.Level < settings.SpareBelow;
+            var spared = isSpared && round.Player.IsTargetable ? round.Player : null;
             var toSpared = spared != null ? Flat(spared.Position) - position : Vector3.zero;
             var items = tuning.Pickups;
             switch (kind) {

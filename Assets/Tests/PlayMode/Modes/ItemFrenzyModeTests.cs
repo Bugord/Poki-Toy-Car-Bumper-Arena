@@ -1,7 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Bugord.App.Platform;
 using NUnit.Framework;
+using ToyCarArena.App;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Bots;
@@ -182,6 +184,30 @@ namespace ToyCarArena.Tests.PlayMode
                 $"{hits} of them hit the player");
             Assert.That(grace, Is.GreaterThan(1f));
             Assert.That(hits, Is.Zero, "a bot's item hit the player in the grace");
+        }
+
+        [Test]
+        public void TheRoundEndSaysHowManyItemsThePlayerUsed()
+        {
+            var platform = new MatchTests.RecordingPlatform();
+            var result = new RoundResult(RoundOutcome.Won, 1, 7, 40f, 2, RoundResult.Nobody, FallCause.None, false, false,
+                kind: SpecialRound.ItemFrenzy);
+            foreach (var used in new[] { 0, 2, 5, 14 }) {
+                platform.MeasureSpecialEnd(SpecialRound.ItemFrenzy, result, false, used);
+            }
+
+            // A round without boxes, or a special round of the rotation, says nothing of items.
+            platform.MeasureSpecialEnd(SpecialRound.HotPotato, result, false);
+            platform.MeasureSpecialEnd(SpecialRound.LowGravity, result, false, 3);
+            var names = platform.Events.Select(e => $"{e.Item1} / {e.Item2} / {e.Item3}").ToList();
+            foreach (var bucket in new[] { "none", "few", "some", "many" }) {
+                Assert.That(names, Does.Contain($"special / item-frenzy-items-{bucket} / items"));
+            }
+
+            Assert.That(names.Count(name => name.EndsWith("/ items")), Is.EqualTo(4));
+            foreach (var (category, what, action) in platform.Events) {
+                Assert.That(GameEvent.CountNumbers(category, what, action), Is.LessThanOrEqualTo(GameEvent.MaxNumbers));
+            }
         }
 
         // --- Helpers ---
