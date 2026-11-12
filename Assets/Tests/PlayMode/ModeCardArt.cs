@@ -41,8 +41,8 @@ namespace ToyCarArena.Tests.PlayMode
         private const float PropWait = 12f;
         // Two cars head-on (a mode of two sides): each turned this far from facing the other towards the camera, so
         // both fronts show, nose to nose this many metres apart.
-        private const float RivalYaw = 115f;
-        private const float RivalGap = 0.15f;
+        private const float RivalYaw = 140f;
+        private const float RivalGap = 0.3f;
 
         [UnityTest]
         public IEnumerator DrawTheCard([Values("hot-potato", "crown", "gold-rush", "item-frenzy", "overheat",
