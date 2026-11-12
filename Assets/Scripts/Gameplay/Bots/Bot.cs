@@ -94,6 +94,12 @@ namespace ToyCarArena.Gameplay.Bots
         public Car Car { get; }
 
         /// <summary>
+        /// Times the throttle the bot attacks at, 1 by default: a round in teams softens one team's bots with it on the
+        /// easiest rounds (<see cref="GameTuning.TeamSettings"/>). The way back from the edge is never slowed.
+        /// </summary>
+        public float Pace { get; set; } = 1f;
+
+        /// <summary>
         /// The personality's multipliers.
         /// </summary>
         public GameTuning.PersonalitySettings Traits { get; }
@@ -225,7 +231,7 @@ namespace ToyCarArena.Gameplay.Bots
             }
 
             var playerPace = isDuel ? difficulty.DuelPace : difficulty.PlayerPace;
-            Car.Movement.Drive(heading, Target == player ? playerPace : 1f);
+            Car.Movement.Drive(heading, (Target == player ? playerPace : 1f) * Pace);
 
             if (isPushing) {
                 Push(edge, position, heading, margin, deltaTime);
