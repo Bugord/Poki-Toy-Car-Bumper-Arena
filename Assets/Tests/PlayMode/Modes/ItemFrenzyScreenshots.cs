@@ -100,6 +100,7 @@ namespace ToyCarArena.Tests.PlayMode
                     yield return null;
                 }
 
+                var starts = round.Cars.ToDictionary(car => car, car => (car.Position, car.transform.rotation));
                 var hint = hud.Q<VisualElement>("item-hint");
                 var touchSeen = typeof(HudControls).GetField("isTouchSeen", BindingFlags.Instance | BindingFlags.NonPublic);
                 var clearItem = typeof(Car).GetMethod("ClearItem", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -111,15 +112,26 @@ namespace ToyCarArena.Tests.PlayMode
                         controls.BeginTouchSteering(Vector2.zero);
                     }
 
-                    // Fresh boxes for this screen: one in front of each bot, as they lie for the start, and a couple more.
-                    removeAll.Invoke(pickups, null);
-                    foreach (var car in round.Cars.Where(car => car != round.Player)) {
-                        var toMiddle = -new Vector3(car.Position.x, 0f, car.Position.z).normalized;
-                        pickups.Spawn(new Vector3(car.Position.x, 0f, car.Position.z) + toMiddle * 3.5f);
-                    }
+                    // The boxes where the mode laid them as the round started, one in front of each car: as laid for the
+                    // first screen, laid again for the next where a slot is free (a box takes its slot with it until it has
+                    // shrunk away, and the round lays its own meanwhile).
+                    Assert.That(mode.Opening.Count, Is.GreaterThanOrEqualTo(round.Cars.Count - 1));
+                    if (width != Sizes[0].Width) {
+                        removeAll.Invoke(pickups, null);
+                        var freed = Time.realtimeSinceStartup + 1.5f;
+                        while (Time.realtimeSinceStartup < freed) {
+                            // Every car back where it started the round, at rest.
+                            foreach (var car in round.Cars) {
+                                car.Movement.Place(starts[car].Position, starts[car].rotation);
+                                car.Movement.Drive(Vector3.zero, 0f);
+                            }
 
-                    foreach (var spot in new[] { new Vector3(-4f, 0f, -3f), new Vector3(4.5f, 0f, 2.5f) }) {
-                        pickups.Spawn(spot);
+                            yield return null;
+                        }
+
+                        foreach (var spot in mode.Opening) {
+                            pickups.Spawn(spot);
+                        }
                     }
 
                     foreach (var state in new[] { "empty", "item" }) {
