@@ -33,6 +33,8 @@ namespace ToyCarArena.Gameplay.Modes
         private const int OpeningTries = 6;
         // Metres more than an item's reach a car spared by the grace is kept from it, as in Bot.WantsToUseItem.
         private const float SpareMargin = 1.5f;
+        // The spared car's top speed against the tuned one, as in Bot.
+        private const float SpareTopSpeed = 1.1f;
 
         private readonly GameTuning.ItemFrenzySettings settings;
         private readonly GameTuning tuning;
@@ -211,14 +213,13 @@ namespace ToyCarArena.Gameplay.Modes
                         return true;
                     }
 
-                    var drive = Flat(spared.Movement.Velocity).magnitude * (items.Bomb.FlightTime + items.Bomb.Fuse);
+                    var drive = ReachSpeed(spared) * (items.Bomb.FlightTime + items.Bomb.Fuse);
                     return (Flat(spared.Position) - landing).magnitude > items.Bomb.Radius + SpareMargin + drive;
                 case ItemKind.Bowling:
                     var along = Vector3.Dot(toSpared, forward);
                     var side = (toSpared - forward * along).magnitude;
                     // As far wider as the spared car can drive across before the ball rolls to it (as in Bot).
-                    var roll = spared != null ? Flat(spared.Movement.Velocity).magnitude * Mathf.Max(0f, along)
-                        / items.Bowling.Speed : 0f;
+                    var roll = spared != null ? ReachSpeed(spared) * Mathf.Max(0f, along) / items.Bowling.Speed : 0f;
                     return spared == null || along < 0f
                         || side > items.Bowling.Radius + items.Bowling.HitReach + SpareMargin + roll;
                 case ItemKind.Oil:
@@ -227,6 +228,11 @@ namespace ToyCarArena.Gameplay.Modes
                     return false;
             }
         }
+
+        // How fast the spared car may drive while an item is on its way, as in Bot: its top speed, or faster if it goes
+        // faster now; a car starting off is at the top at once.
+        private float ReachSpeed(Car spared) =>
+            Mathf.Max(Flat(spared.Movement.Velocity).magnitude, tuning.Car.MaxSpeed * SpareTopSpeed);
 
         private bool HasCarWithin(Car self, Vector3 position, float radius)
         {

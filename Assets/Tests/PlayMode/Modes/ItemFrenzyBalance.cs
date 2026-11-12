@@ -21,8 +21,9 @@ namespace ToyCarArena.Tests.PlayMode
     /// <summary>
     /// Measures ITEM FRENZY against the plain round with the novice model (<see cref="NoviceDriver"/>), who also uses an
     /// item a moment after it lands (a novice does not wait for a good one): the same seeds in both, at the visit rounds
-    /// FRENZY_LEVELS (1,7), FRENZY_ROUNDS (30) each, on the sandbox's first variant. Writes
-    /// <c>Logs/item-frenzy-balance.md</c>: wins, places, round length, items used and how the player went out. Numbers
+    /// FRENZY_LEVELS (1,7), FRENZY_ROUNDS (30) each, on the sandbox's first variant; FRENZY_BEFORE (0) is the rounds the
+    /// player finished in earlier visits (20 plays a returning player's warm-up, the round the mode is entered from the
+    /// menu). Writes <c>Logs/item-frenzy-balance.md</c>: wins, places, round length, items used and how the player went out. Numbers
     /// to read, no thresholds.
     /// </summary>
     [Explicit("A balance simulation, minutes long")]
@@ -41,25 +42,26 @@ namespace ToyCarArena.Tests.PlayMode
             var runs = int.Parse(Environment.GetEnvironmentVariable("FRENZY_ROUNDS") ?? "30");
             var levels = (Environment.GetEnvironmentVariable("FRENZY_LEVELS") ?? "1,7").Split(',')
                 .Select(value => int.Parse(value.Trim())).ToArray();
+            var before = int.Parse(Environment.GetEnvironmentVariable("FRENZY_BEFORE") ?? "0");
             var rows = new List<Row>();
             foreach (var level in levels) {
                 foreach (var kind in new[] { SpecialRound.None, SpecialRound.ItemFrenzy }) {
                     var row = new Row { Level = level, Kind = kind };
                     rows.Add(row);
                     for (var run = 0; run < runs; run++) {
-                        yield return PlayOne(kind, level, 1 + run, row);
+                        yield return PlayOne(kind, level, before, 1 + run, row);
                         Debug.Log($"Frenzy balance: round {level}, {kind}, {run + 1}/{runs}.");
                     }
                 }
             }
 
-            var markdown = Report(rows, runs);
+            var markdown = Report(rows, runs, before);
             Directory.CreateDirectory("Logs");
             File.WriteAllText("Logs/item-frenzy-balance.md", markdown);
             Debug.Log(markdown);
         }
 
-        private IEnumerator PlayOne(SpecialRound kind, int level, int seed, Row row)
+        private IEnumerator PlayOne(SpecialRound kind, int level, int before, int seed, Row row)
         {
             if (parentScope != null) {
                 UnityEngine.Object.DestroyImmediate(parentScope.gameObject);
@@ -69,7 +71,7 @@ namespace ToyCarArena.Tests.PlayMode
             UseSpecial(kind);
             UnityEngine.Random.InitState(seed);
             var input = new SimulationInput();
-            CreateParent(input, new SimulationProgress { Round = level }, "sandbox", "rake");
+            CreateParent(input, new SimulationProgress { Round = level, RoundsBefore = before }, "sandbox", "rake");
             yield return LoadGame();
             var container = GameScope().Container;
             var round = container.Resolve<ArenaRound>();
@@ -164,12 +166,13 @@ namespace ToyCarArena.Tests.PlayMode
             yield return UnloadGame();
         }
 
-        private static string Report(List<Row> rows, int runs)
+        private static string Report(List<Row> rows, int runs, int before)
         {
             var text = new StringBuilder();
             text.AppendLine("# ITEM FRENZY balance");
             text.AppendLine();
-            text.AppendLine($"Novice model with item use, {runs} rounds per row, seeds 1..{runs} in both kinds, sandbox / rake.");
+            text.AppendLine($"Novice model with item use, {runs} rounds per row, seeds 1..{runs} in both kinds, sandbox / rake, " +
+                $"{before} rounds played before the visit.");
             text.AppendLine();
             text.AppendLine("| visit round | kind | wins | survived | avg place | avg seconds | player KO | " +
                 "player boxes | player items | bot items | out: pushed | out: item | out: fell | out < 10 s |");
