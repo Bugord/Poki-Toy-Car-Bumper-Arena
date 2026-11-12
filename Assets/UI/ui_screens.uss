@@ -6001,3 +6001,8 @@
 .results--wide .results__team-name-text { font-size: 40px; -unity-text-outline-width: 5px; }
 .results--wide .results__team-points-text { font-size: 52px; -unity-text-outline-width: 6px; }
 .results--wide .results__mvp { font-size: 28px; }
+
+/* After the sizes above, which set the outline on all three layers of a team's name and points: its face has none
+   (.stroke > .stroke__face), or the outline, centred on the letters' edge, eats them and leaves them hollow. */
+.stroke > Label.results__team-name-text.stroke__face,
+.stroke > Label.results__team-points-text.stroke__face { -unity-text-outline-width: 0; }
