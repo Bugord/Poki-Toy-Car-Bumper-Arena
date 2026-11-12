@@ -269,6 +269,13 @@ namespace ToyCarArena.UI
             table.EnableInClassList("results--wide", wide);
             rows.Clear();
             youRow = null;
+            // A round in teams: each team under its header with its points, every car of it, its best with MVP.
+            if (model.TeamPoints.Count == 2) {
+                table.AddToClassList("results--teams");
+                LayoutTeams();
+                return;
+            }
+
             var standings = model.Standings;
             var playerAt = 0;
             for (var i = 0; i < standings.Count; i++) {
@@ -293,7 +300,58 @@ namespace ToyCarArena.UI
             }
         }
 
-        private VisualElement CreateRow(RoundStanding standing)
+        // The player's team first, then the other; within a team in place order, so its best car leads it.
+        private void LayoutTeams()
+        {
+            var playerTeam = RoundTeams.Blue;
+            foreach (var standing in model.Standings) {
+                if (standing.Index == 0) {
+                    playerTeam = standing.Team;
+                }
+            }
+
+            for (var pass = 0; pass < 2; pass++) {
+                var team = pass == 0 ? playerTeam : 1 - playerTeam;
+                rows.Add(CreateTeamHeader(team));
+                var rank = 0;
+                foreach (var standing in model.Standings) {
+                    if (standing.Team != team) {
+                        continue;
+                    }
+
+                    rank++;
+                    rows.Add(CreateRow(standing, team, rank, rank == 1 && standing.Points > 0));
+                }
+            }
+        }
+
+        private VisualElement CreateTeamHeader(int team)
+        {
+            var header = new VisualElement { pickingMode = PickingMode.Ignore };
+            header.AddToClassList("results__team");
+            header.AddToClassList(team == RoundTeams.Red ? "results__team--red" : "results__team--blue");
+            header.EnableInClassList(RowEnterClass, !isPlayed);
+            var name = new Label { pickingMode = PickingMode.Ignore };
+            name.AddToClassList("results__team-name");
+            text.Set(name, () => Strings.Get(team == RoundTeams.Red ? "hud.team_red" : "hud.team_blue"));
+            header.Add(name);
+            var points = model.TeamPoints[team];
+            var other = model.TeamPoints[1 - team];
+            if (points > other) {
+                var tag = new Label { pickingMode = PickingMode.Ignore };
+                tag.AddToClassList("results__team-tag");
+                text.Set(tag, () => Strings.Get("result.winner"));
+                header.Add(tag);
+            }
+
+            var score = new Label(points.ToString()) { pickingMode = PickingMode.Ignore };
+            score.AddToClassList("results__team-points");
+            header.Add(score);
+            return header;
+        }
+
+        private VisualElement CreateRow(RoundStanding standing, int team = RoundTeams.None, int teamRank = 0,
+            bool isBest = false)
         {
             var index = standing.Index;
             var isPlayer = index == 0;
@@ -310,7 +368,14 @@ namespace ToyCarArena.UI
                 rank.AddToClassList($"results__rank--{standing.Place}");
             }
 
-            var place = new Label(standing.Place.ToString()) { pickingMode = PickingMode.Ignore };
+            // In teams the circle is the team's colour with the car's rank within its team.
+            if (team != RoundTeams.None) {
+                rank.RemoveFromClassList($"results__rank--{standing.Place}");
+                rank.AddToClassList(team == RoundTeams.Red ? "results__rank--red" : "results__rank--blue");
+            }
+
+            var place = new Label((team != RoundTeams.None ? teamRank : standing.Place).ToString())
+                { pickingMode = PickingMode.Ignore };
             place.AddToClassList("results__rank-text");
             rank.Add(place);
             row.Add(rank);
@@ -322,6 +387,13 @@ namespace ToyCarArena.UI
             name.AddToClassList("results__name");
             text.Set(name, () => model.NameOf(index));
             row.Add(name);
+            // The team's best contributor, the most points on it.
+            if (isBest) {
+                var mvp = new Label { pickingMode = PickingMode.Ignore };
+                mvp.AddToClassList("results__mvp");
+                text.Set(mvp, () => Strings.Get("result.mvp"));
+                row.Add(mvp);
+            }
 
             // The column is the round's score: knock-outs in the match, the mode's points in a mode.
             var knockouts = new Label(standing.Points.ToString()) { pickingMode = PickingMode.Ignore };

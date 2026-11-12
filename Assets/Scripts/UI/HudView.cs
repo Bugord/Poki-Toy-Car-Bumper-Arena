@@ -333,6 +333,9 @@ namespace ToyCarArena.UI
         private HudEndTimer endTimer;
         // The event mode's own HUD (the hot potato's fuse), null in a round of no mode or a mode without one.
         private IModeHud modeHud;
+
+        // A round in teams: the team score under the bar, in place of the scoreboard.
+        private HudTeams teams;
         private VisualElement kickoff;
         private VisualElement kickoffNumber;
         private Label kickoffDigit;
@@ -431,7 +434,9 @@ namespace ToyCarArena.UI
             boostHint = Root.Q<VisualElement>("boost-hint");
             tapHint = Root.Q<VisualElement>("tap-hint");
             BuildKickoff();
-            endTimer = HudEndTimer.Create(Root, ViewModel, timePill, scoreboard?.Element, respawn, popupLayer);
+            teams = HudTeams.Create(Root, ViewModel);
+            endTimer = HudEndTimer.Create(Root, ViewModel, timePill, scoreboard?.Element ?? teams?.Element, respawn,
+                popupLayer);
             modeHud = ModeLooks.Of(ViewModel.Mode)?.CreateHud(nameLayer, Root, ViewModel);
             settingsButton = Root.Q<Button>("settings-button");
             settingsButton.RemoveFromClassList(Button.ussClassName);
@@ -492,6 +497,8 @@ namespace ToyCarArena.UI
             social?.Dispose();
             scoreboard?.Dispose();
             endTimer?.Dispose();
+            teams?.Dispose();
+            teams = null;
             modeHud?.Dispose();
             modeHud = null;
             ViewModel.PlayerKnockout -= ShowKnockout;
@@ -968,6 +975,7 @@ namespace ToyCarArena.UI
                 scoreboard.Element.style.right = (wide ? 48f : 24f) + safeInsets.Right;
             }
 
+            teams?.Place(hudTopInset);
             social.Place(safeInsets, feedTopInset);
             PlaceBoost();
             PlaceStart();
@@ -1633,6 +1641,8 @@ namespace ToyCarArena.UI
             line.AddToClassList("car-name__line");
             line.Add(CreateLevelBadge(ViewModel.LevelOf(index), "car-name__level", isRival, true));
             line.Add(CreateOutlinedText(ViewModel.NameOf(index), "car-name__text"));
+            // In teams a teammate's tag has a shield, an enemy's none: told apart by more than the colour.
+            HudTeams.MarkName(tag, line, ViewModel, index);
             // A bot that joined on a win streak wears the player's crown and ×N after its name.
             var streakOf = ViewModel.StreakOf(index);
             if (streakOf > 0) {
