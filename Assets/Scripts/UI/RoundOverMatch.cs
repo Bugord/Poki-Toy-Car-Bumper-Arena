@@ -110,6 +110,14 @@ namespace ToyCarArena.UI
             }
 
             BuildWinner();
+            // In teams the podium shows the winning team's best car (the player's team's on a draw): MVP, not WINNER,
+            // which a draw has none of.
+            var winnerTag = root.Q<Label>("podium-winner-tag");
+            if (model.TeamPoints.Count == 2 && winnerTag != null) {
+                winnerTag.ClearBinding("text");
+                text.Set(winnerTag, () => Strings.Get("result.mvp"));
+            }
+
             Layout(false);
 
             table.AddToClassList(EnterClass);
@@ -272,7 +280,7 @@ namespace ToyCarArena.UI
             // A round in teams: each team under its header with its points, every car of it, its best with MVP.
             if (model.TeamPoints.Count == 2) {
                 table.AddToClassList("results--teams");
-                LayoutTeams();
+                LayoutTeams(wide);
                 return;
             }
 
@@ -300,8 +308,10 @@ namespace ToyCarArena.UI
             }
         }
 
-        // The player's team first, then the other; within a team in place order, so its best car leads it.
-        private void LayoutTeams()
+        // The player's team first, then the other; within a team in place order, so its best car leads it. The compact
+        // form (a phone held upright, where every car of both teams would not fit over the cards) keeps each team's
+        // header and its best car, and the player when not its team's best.
+        private void LayoutTeams(bool wide)
         {
             var playerTeam = RoundTeams.Blue;
             foreach (var standing in model.Standings) {
@@ -320,6 +330,10 @@ namespace ToyCarArena.UI
                     }
 
                     rank++;
+                    if (!wide && rank > 1 && standing.Index != 0) {
+                        continue;
+                    }
+
                     rows.Add(CreateRow(standing, team, rank, rank == 1 && standing.Points > 0));
                 }
             }
@@ -331,9 +345,13 @@ namespace ToyCarArena.UI
             header.AddToClassList("results__team");
             header.AddToClassList(team == RoundTeams.Red ? "results__team--red" : "results__team--blue");
             header.EnableInClassList(RowEnterClass, !isPlayed);
-            var name = new Label { pickingMode = PickingMode.Ignore };
-            name.AddToClassList("results__team-name");
-            text.Set(name, () => Strings.Get(team == RoundTeams.Red ? "hud.team_red" : "hud.team_blue"));
+            // The team's name and points outlined as every title is (a stroke, not a USS outline, which smears small).
+            var name = StrokeText.Create(string.Empty, "results__team-name", out var names, "display",
+                "results__team-name-text");
+            foreach (var label in names) {
+                text.Set(label, () => Strings.Get(team == RoundTeams.Red ? "hud.team_red" : "hud.team_blue"));
+            }
+
             header.Add(name);
             var points = model.TeamPoints[team];
             var other = model.TeamPoints[1 - team];
@@ -344,8 +362,8 @@ namespace ToyCarArena.UI
                 header.Add(tag);
             }
 
-            var score = new Label(points.ToString()) { pickingMode = PickingMode.Ignore };
-            score.AddToClassList("results__team-points");
+            var score = StrokeText.Create(points.ToString(), "results__team-points", out _, "display",
+                "results__team-points-text");
             header.Add(score);
             return header;
         }

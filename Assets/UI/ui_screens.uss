@@ -5909,15 +5909,18 @@
     color: var(--white);
 }
 
-.lobby__row--blue { border-left-width: 22px; border-left-color: var(--car-blue); }
-.lobby__row--red { border-left-width: 22px; border-left-color: var(--car-red); }
+/* A seat is tinted its team's colour (its outline stays navy: PillShape draws a sticker's outline in one colour); the
+   player's stays pale gold. */
+.lobby__row--blue { background-color: rgb(218, 230, 255); }
+.lobby__row--red { background-color: rgb(255, 224, 218); }
+.lobby__row--you.lobby__row--blue, .lobby__row--you.lobby__row--red { background-color: rgb(255, 236, 168); }
 
 /* The result's team table: a header per team with its points, the team's cars under it, its best with MVP. */
 .results__team {
     flex-direction: row;
     align-items: center;
-    height: 64px;
-    margin-top: 12px;
+    height: 50px;
+    margin-top: 8px;
     padding: 0 26px 0 22px;
     border-width: 5px 5px 10px 5px;
     border-color: var(--navy);
@@ -5929,13 +5932,19 @@
 
 .results__team-name {
     flex-grow: 1;
+    align-items: flex-start;
+}
+
+.results__team-name-text {
     margin: 0;
     padding: 0;
     font-size: 34px;
-    color: var(--white);
     -unity-text-outline-width: 5px;
-    -unity-text-outline-color: var(--navy);
+    /* The stroke grows to push the points right: its layers, as wide as it, keep the name at its left. */
+    -unity-text-align: middle-left;
 }
+
+.results__team-name-text.stroke__drop { translate: 0 3px; display: flex; }
 
 .results__team-tag {
     margin: 0 14px 0 0;
@@ -5946,14 +5955,14 @@
     color: var(--navy);
 }
 
-.results__team-points {
+.results__team-points-text {
     margin: 0;
     padding: 0;
     font-size: 44px;
-    color: var(--white);
     -unity-text-outline-width: 6px;
-    -unity-text-outline-color: var(--navy);
 }
+
+.results__team-points-text.stroke__drop { translate: 0 4px; display: flex; }
 
 .results__rank--blue { background-color: var(--car-blue); }
 .results__rank--red { background-color: var(--car-red); }
@@ -5972,8 +5981,23 @@
     color: var(--navy);
 }
 
-.results--teams .results__row { margin-top: 6px; }
-.results--wide .results__team { height: 76px; border-radius: 38px; }
-.results--wide .results__team-name { font-size: 40px; }
-.results--wide .results__team-points { font-size: 52px; }
+/* On a phone held upright the team table is compact and starts under the subtitle (centred, it would cover it): low
+   rows, so the two headers, each team's best car and the player fit over the cards. */
+.results--teams { align-self: flex-start; padding-top: 8px; padding-bottom: 12px; }
+.results--teams .results__row { height: 50px; margin-top: 4px; }
+.results--teams .results__header { display: none; }
+.results--teams .results__rank { width: 42px; height: 42px; }
+.results--teams .results__name, .results--teams .results__ko { font-size: 32px; }
+.results--teams .results__team-name-text { font-size: 30px; -unity-text-outline-width: 4px; }
+.results--teams .results__team-points-text { font-size: 38px; -unity-text-outline-width: 5px; }
+.results--teams .results__team-tag { font-size: 20px; }
+.results--wide.results--teams { align-self: center; padding-top: 12px; padding-bottom: 18px; }
+.results--wide.results--teams .results__row { height: 80px; margin-top: 6px; }
+.results--wide.results--teams .results__rank { width: 62px; height: 62px; }
+.results--wide.results--teams .results__name, .results--wide.results--teams .results__ko { font-size: 44px; }
+.results--wide.results--teams .results__team-tag { font-size: 24px; }
+.results--wide .results__team { height: 76px; margin-top: 12px; border-radius: 38px; }
+.results--wide.results--teams .results__header { display: flex; }
+.results--wide .results__team-name-text { font-size: 40px; -unity-text-outline-width: 5px; }
+.results--wide .results__team-points-text { font-size: 52px; -unity-text-outline-width: 6px; }
 .results--wide .results__mvp { font-size: 28px; }

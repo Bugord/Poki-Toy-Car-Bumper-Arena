@@ -23,6 +23,12 @@ namespace ToyCarArena.UI
         // Reference pixels under the safe top the score sits at: just under the bar.
         private const float Top = 176f;
 
+        /// <summary>
+        /// How far down the feed moves in portrait, where it sits left under the bar: past the score and its +N stickers
+        /// (in landscape the feed is in the top left corner, clear of them).
+        /// </summary>
+        public const float FeedDrop = 170f;
+
         // A changed number: up to this scale, easing back over the seconds.
         private const float PopScale = 1.45f;
         private const float PopSeconds = 0.35f;

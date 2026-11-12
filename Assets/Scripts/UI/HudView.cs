@@ -976,7 +976,7 @@ namespace ToyCarArena.UI
             }
 
             teams?.Place(hudTopInset);
-            social.Place(safeInsets, feedTopInset);
+            social.Place(safeInsets, feedTopInset + (teams != null && size.x < size.y ? HudTeams.FeedDrop : 0f));
             PlaceBoost();
             PlaceStart();
             // Find room for the ghost again even if only the browser chrome changed, with no canvas resize.
