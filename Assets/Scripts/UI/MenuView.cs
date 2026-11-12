@@ -7,6 +7,7 @@ using ToyCarArena.Audio;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
+using ToyCarArena.Rendering;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -36,6 +37,11 @@ namespace ToyCarArena.UI
     /// </summary>
     public sealed class MenuView : FadingView<MenuViewModel>
     {
+        protected override ShownScreen ScreenKind => ShownScreen.Menu;
+
+        // Opaque over the whole screen, so the arena under it is not drawn.
+        protected override bool CoversArena => true;
+
         private const string WideClass = "menu--wide";
         private const string DesktopClass = "menu--desktop";
         private const string OpenClass = "menu__popup--open";

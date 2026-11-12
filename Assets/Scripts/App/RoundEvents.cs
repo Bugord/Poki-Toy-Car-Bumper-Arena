@@ -2,6 +2,7 @@ using Bugord.App.Platform;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
+using ToyCarArena.Rendering;
 using UnityEngine;
 
 namespace ToyCarArena.App
@@ -95,6 +96,11 @@ namespace ToyCarArena.App
     /// <item>after v0.15.0: <c>special / mega, hot-potato, boss, ice, low-gravity / start</c> at GO! of a special round,
     /// then <c>complete</c> or <c>fail</c>, <c>special / id-won, out, survived / outcome</c> and in a boss round
     /// <c>special / boss-taken, boss-missed / boss</c></item>
+    /// <item>after v0.17.9, once a visit (<see cref="ScreenFrameRate"/>): <c>fps / screen-touch, mouse-N / screen</c>,
+    /// the frames per second of each screen (round, result, curtain, menu, garage, ad), and <c>fps / visit-touch,
+    /// mouse-N / visit</c>, the median of the visit's first minute of seconds as Poki's Player Fit Test counts it; N is
+    /// rounded to 5, 0 to 65 or 70plus. And <c>ad / commercial-none, short, mid, long / length</c> after each commercial
+    /// break: back under 2 seconds (no ad shown), under 10, under 25, longer</item>
     /// </list>
     /// Removed after v0.14.1, as they only repeated others or no longer told anything: <c>result / pushed, fell /
     /// out-cause</c> (the same as <c>round-out-cause</c> without the round), <c>result / boosts-0, 1-2, 3plus /
@@ -139,6 +145,7 @@ namespace ToyCarArena.App
         public const float SlowLobbySeconds = 4f;
 
         private const string AdCategory = "ad";
+        private const string FpsCategory = "fps";
         private const string DoubleReward = "double";
         private const string XpBoost = "boost";
         private const string DailyCategory = "daily";
@@ -232,6 +239,61 @@ namespace ToyCarArena.App
         /// <summary>A commercial break is asked for under the curtain after NEXT MATCH (Poki may still show none).</summary>
         public static void MeasureCommercialBreak(this IGamePlatform platform) =>
             platform.MeasureVisible(AdCategory, "commercial");
+
+        /// <summary>
+        /// How long a commercial break held the game, in real seconds: <c>ad / commercial-none, short, mid, long /
+        /// length</c>, none for one back too soon to have played (as a rewarded one's unavailable), then under 10, under
+        /// 25 and longer. Sent after the break, so nothing goes out while it plays.
+        /// </summary>
+        public static void MeasureCommercialLength(this IGamePlatform platform, float seconds) =>
+            platform.Measure(AdCategory, seconds < 2f ? "commercial-none" : seconds < 10f ? "commercial-short"
+                : seconds < 25f ? "commercial-mid" : "commercial-long", "length");
+
+        /// <summary>
+        /// A screen's frames per second over its sample (<see cref="ScreenFrameRate"/>): <c>fps / round-touch-55 /
+        /// screen</c>, one number.
+        /// </summary>
+        public static void MeasureScreenFps(this IGamePlatform platform, ShownScreen screen, bool isTouch, float fps) =>
+            platform.Measure(FpsCategory, $"{ScreenName(screen)}-{Device(isTouch)}-{FpsBucket(fps)}", "screen");
+
+        /// <summary>
+        /// The median of the frames counted in each of the visit's first minute of seconds, as Poki's Player Fit Test
+        /// counts its own: <c>fps / visit-mouse-60 / visit</c>.
+        /// </summary>
+        public static void MeasureVisitFps(this IGamePlatform platform, bool isTouch, float fps) =>
+            platform.Measure(FpsCategory, $"visit-{Device(isTouch)}-{FpsBucket(fps)}", "visit");
+
+        /// <summary>
+        /// Frames per second rounded to 5, so 58 to 62 read 60, and 70plus above: a screen refreshed faster than 60
+        /// times a second counts more frames, as Poki's own counter does.
+        /// </summary>
+        public static string FpsBucket(float fps)
+        {
+            var bucket = Mathf.Clamp(Mathf.RoundToInt(fps / 5f) * 5, 0, 70);
+            return bucket >= 70 ? "70plus" : bucket.ToString();
+        }
+
+        private static string Device(bool isTouch) => isTouch ? "touch" : "mouse";
+
+        private static string ScreenName(ShownScreen screen)
+        {
+            switch (screen) {
+                case ShownScreen.Round:
+                    return "round";
+                case ShownScreen.Result:
+                    return "result";
+                case ShownScreen.Curtain:
+                    return "curtain";
+                case ShownScreen.Menu:
+                    return "menu";
+                case ShownScreen.Garage:
+                    return "garage";
+                case ShownScreen.Ad:
+                    return "ad";
+                default:
+                    return "none";
+            }
+        }
 
         /// <summary>The result offers CLAIM ×2, once per result.</summary>
         public static void MeasureDoubleShown(this IGamePlatform platform) =>

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Bugord.App.Localization;
 using Bugord.App.UI;
+using ToyCarArena.Rendering;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -14,6 +15,11 @@ namespace ToyCarArena.UI
     /// </summary>
     public sealed class CurtainView : FadingView<CurtainViewModel>
     {
+        protected override ShownScreen ScreenKind => ShownScreen.Curtain;
+
+        // Opaque over the whole screen, so the arena under it is not drawn.
+        protected override bool CoversArena => true;
+
         private const float RowStep = 0.045f;
         private const float EnterDuration = 0.2f;
         private const float LeftHold = 0.12f;

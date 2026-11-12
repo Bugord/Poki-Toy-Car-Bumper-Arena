@@ -3,6 +3,7 @@ using Bugord.App.Localization;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.Audio;
 using ToyCarArena.Gameplay.Round;
+using ToyCarArena.Rendering;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -15,6 +16,8 @@ namespace ToyCarArena.UI
     /// </summary>
     public sealed class RoundOverView : FadingView<RoundOverViewModel>
     {
+        protected override ShownScreen ScreenKind => ShownScreen.Result;
+
         // How long after the screen shows its parts start to move in: long enough for them to be laid out where they
         // start, or their transitions would have nothing to move from.
         private const long EnterDelay = 80;

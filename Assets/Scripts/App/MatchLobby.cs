@@ -7,6 +7,7 @@ using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Round;
 using ToyCarArena.UI;
+using UnityEngine;
 
 namespace ToyCarArena.App
 {
@@ -66,7 +67,10 @@ namespace ToyCarArena.App
                 // event goes out while the ad plays.
                 if (adBreaks.IsDue(tuning.Ads.FreePlaySeconds)) {
                     platform.MeasureCommercialBreak();
+                    // Real time: the game's clock stands still under the ad.
+                    var started = Time.realtimeSinceStartup;
                     await AdPause.Run(() => platform.CommercialBreak(token));
+                    platform.MeasureCommercialLength(Time.realtimeSinceStartup - started);
                 }
 
                 var arena = arenaCatalog.Find(mapId);

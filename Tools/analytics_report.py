@@ -107,6 +107,10 @@ def summarise(data):
         "boss": other(o, r"special-boss-(taken|missed)-boss"),
         "scoreboard": i.get("scoreboard-shown"),
         "ad_commercial": i.get("ad-commercial"),
+        # после v0.17.9: FPS по экранам и медиана первой минуты визита (ScreenFrameRate), длина рекламы между раундами
+        "fps_screen": other(o, r"fps-((?:round|result|curtain|menu|garage|ad)-(?:touch|mouse)-(?:\d+|70plus))-screen"),
+        "fps_visit": other(o, r"fps-(visit-(?:touch|mouse)-(?:\d+|70plus))-visit"),
+        "ad_length": other(o, r"ad-commercial-(none|short|mid|long)-length"),
         "ad_double": i.get("ad-double"),
         "ad_double_end": other(o, r"ad-double-(granted|unavailable|dismissed)"),
         # после v0.16.0: XP BOOST в меню (плитка с предложением показана, WATCH, чем кончилась реклама) и раунды под бустом
@@ -449,6 +453,40 @@ def report(version, previous):
     out.append(line("CLAIM x2 (нажали / показано)", lambda s: f"{num(s['ad_double'], 'interacted')} / {num(s['ad_double'], 'seen')} ({pct(num(s['ad_double'], 'interacted'), num(s['ad_double'], 'seen'))})"))
     for how in ("granted", "unavailable", "dismissed"):
         out.append(line(f"CLAIM x2: {how} (визиты)", lambda s, how=how: str(s["ad_double_end"].get(how, 0))))
+
+    # The game's own frame rate, once a visit per screen and for the visit's first minute (median of per-second counts,
+    # as Poki's Player Fit Test counts its own); buckets of 5, 70 meaning 70 and more.
+    if any(s and (s["fps_screen"] or s["fps_visit"]) for s in (cur, old)):
+        out += ["", "## FPS (после v0.17.9; визиты: медиана, доля ниже 50, сколько визитов)", "", head, sep]
+
+        def fps(s, prefix):
+            counts = {}
+            for key, n in {**s["fps_screen"], **s["fps_visit"]}.items():
+                if key.startswith(prefix + "-"):
+                    bucket = key[len(prefix) + 1:]
+                    value = 70 if bucket == "70plus" else int(bucket)
+                    counts[value] = counts.get(value, 0) + n
+            total = sum(counts.values())
+            if not total:
+                return "-"
+            seen, median = 0, 0
+            for value in sorted(counts):
+                seen += counts[value]
+                if seen * 2 >= total:
+                    median = value
+                    break
+            low = sum(n for value, n in counts.items() if value < 50)
+            return f"{'70+' if median == 70 else median}, {pct(low, total)}, {total}"
+
+        for device in ("touch", "mouse"):
+            out.append(line(f"Визит, первая минута ({device}), как считает Poki", lambda s, d=device: fps(s, f"visit-{d}")))
+            for screen, name in (("round", "раунд"), ("result", "результат"), ("curtain", "шторка и лобби"),
+                                 ("menu", "меню"), ("garage", "гараж"), ("ad", "реклама")):
+                out.append(line(f"{name} ({device})", lambda s, k=f"{screen}-{device}": fps(s, k)))
+        lengths = lambda s: sum(s["ad_length"].values())
+        for key, name in (("none", "меньше 2 с: рекламы не было"), ("short", "2–10 с"), ("mid", "10–25 с"), ("long", "25 с и дольше")):
+            out.append(line(f"Реклама между раундами: {name}",
+                            lambda s, k=key: f"{s['ad_length'].get(k, 0)} ({pct(s['ad_length'].get(k, 0), lengths(s))})" if s["ad_length"] else "-"))
 
     # XP BOOST: the tile's offer counts per menu shown with it; the popup and NO THANKS are menu presses.
     if any(s and s["ad_boost"] for s in (cur, old)):

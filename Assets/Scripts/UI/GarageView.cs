@@ -6,6 +6,7 @@ using Cysharp.Threading.Tasks;
 using ToyCarArena.Audio;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Cars;
+using ToyCarArena.Rendering;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -29,6 +30,11 @@ namespace ToyCarArena.UI
     /// </summary>
     public sealed class GarageView : FadingView<GarageViewModel>
     {
+        protected override ShownScreen ScreenKind => ShownScreen.Garage;
+
+        // Opaque over the whole screen, so the arena under it is not drawn.
+        protected override bool CoversArena => true;
+
         private const string WideClass = "garage--wide";
         private const string DesktopClass = "garage--desktop";
 
