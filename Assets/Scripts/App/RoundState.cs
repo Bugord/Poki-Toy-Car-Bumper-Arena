@@ -271,7 +271,7 @@ namespace ToyCarArena.App
                 levelScene.Resolve<ISessionRoster>().NextRound(result.CarCount - 1,
                     RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis, tuning.Players);
                 platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, driver, tuning.Boost.IsEnabled,
-                    waitsForPlayer, special == SpecialRound.HotPotato);
+                    waitsForPlayer, round.Mode.IsKnockOutFinal);
                 if (pickups.IsEnabled) {
                     platform.MeasureMatchPickups(roundNumber, pickupCount, result.IsMatch);
                 }
@@ -287,7 +287,7 @@ namespace ToyCarArena.App
                 platform.MeasureMeta(roundNumber, record, missions.DoneThisVisit);
                 platform.MeasureDailyRound(roundNumber, firstWin > 1, taskRound);
 
-                var delay = result.IsMatch ? tuning.Match.ResultDelay :
+                var delay = result.IsTimed ? tuning.Match.ResultDelay :
                     result.Outcome == RoundOutcome.Out ? tuning.Round.OutResultDelay : tuning.Round.ResultDelay;
                 // Real time: the buzzer's hit-stop at the end of a match must not stretch the wait.
                 await UniTask.Delay(TimeSpan.FromSeconds(delay), true, cancellationToken: token);

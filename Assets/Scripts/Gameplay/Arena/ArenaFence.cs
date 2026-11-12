@@ -9,7 +9,7 @@ using Object = UnityEngine.Object;
 namespace ToyCarArena.Gameplay.Arena
 {
     /// <summary>
-    /// The fence of the HOT POTATO mode (<see cref="RoundRules.IsHotPotato"/>): nobody falls off there, so a low red and
+    /// The fence of the HOT POTATO mode (<see cref="ModeRules.HasFence"/>): nobody falls off there, so a low red and
     /// white bumper runs round the rim of the floor and round every hole and pit in it (the candy arena's hole, the
     /// playroom's pits), and a tall, unseen wall stands on it, so no hit or blast lifts a car over. The walls sit just off
     /// the floor, on the default layer: the steering ray looks for the floor on the arena's layer and never sees them.
@@ -44,7 +44,7 @@ namespace ToyCarArena.Gameplay.Arena
             this.map = map;
             this.art = art;
             this.parent = parent;
-            this.isActive = rules.IsHotPotato;
+            this.isActive = rules.Mode.HasFence;
         }
 
         /// <summary>The fence's root, null in a round without one.</summary>

@@ -203,6 +203,12 @@ namespace ToyCarArena.UI
         public bool IsMatch => round != null && round.IsMatch;
 
         /// <summary>
+        /// Whether the round is timed and decided by its score (the long match, a mode that scores points): the HUD
+        /// shows the score table, the end of the clock and the player's score instead of the cars left.
+        /// </summary>
+        public bool IsTimed => round != null && round.IsTimed;
+
+        /// <summary>
         /// The knock-outs a car has scored in the match.
         /// </summary>
         public int ScoreOf(int index) => round?.Score?.KnockoutsOf(index) ?? 0;

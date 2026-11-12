@@ -408,7 +408,7 @@ namespace ToyCarArena.UI
             };
 
             // A match always runs out its time: first place has the most knock-outs, the others hear where they ended.
-            if (ViewModel.IsMatch) {
+            if (ViewModel.IsTimed) {
                 subtitle = ViewModel.Outcome == RoundOutcome.Won
                     ? Strings.Get("result.match_won_subtitle")
                     : Strings.Format("result.match_place", ViewModel.Place, ViewModel.Knockouts);
@@ -433,7 +433,7 @@ namespace ToyCarArena.UI
             // A round's podium tells the rest: the title says how it ended, the car under it is the player's own or the
             // one that pushed them off (named on the podium), so the subtitle would only repeat them. A match keeps its
             // place and knock-outs there.
-            var isRoundPodium = !ViewModel.IsMatch && ViewModel.Podium != null;
+            var isRoundPodium = !ViewModel.IsTimed && ViewModel.Podium != null;
             var subtitleLabel = Root.Q<Label>("subtitle");
             subtitleLabel.text = subtitle;
             subtitleLabel.style.display = isKnockedByCar || isRoundPodium ? DisplayStyle.None : DisplayStyle.Flex;

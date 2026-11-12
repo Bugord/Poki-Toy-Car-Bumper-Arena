@@ -79,7 +79,7 @@ namespace ToyCarArena.UI
         {
             this.root = root;
             this.model = model;
-            root.AddToClassList(model.IsMatch ? MatchClass : PodiumClass);
+            root.AddToClassList(model.IsTimed ? MatchClass : PodiumClass);
             podium = root.Q<VisualElement>("podium");
             rays = root.Q<VisualElement>("podium-rays");
             rays.generateVisualContent += MenuView.DrawLight;
@@ -248,7 +248,7 @@ namespace ToyCarArena.UI
             podium.EnableInClassList("podium--rival", isRival);
             // A round's own car needs no name over it, and so no crown: the title already says it is the player's, and
             // the WINNER ribbon under it says they won.
-            if (!model.IsMatch && !isRival) {
+            if (!model.IsTimed && !isRival) {
                 winner.style.display = DisplayStyle.None;
             }
 

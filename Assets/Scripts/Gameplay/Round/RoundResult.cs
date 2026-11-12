@@ -84,11 +84,24 @@ namespace ToyCarArena.Gameplay.Round
         public readonly bool RevengeTaken;
 
         /// <summary>
-        /// A long match rather than a last-car-standing round: the place is by knock-outs, <see cref="Outcome"/> is
-        /// <see cref="RoundOutcome.Won"/> for first place and <see cref="RoundOutcome.Survived"/> otherwise, and the
-        /// player is never out at the end, so <see cref="KnockedOutBy"/> is <see cref="Nobody"/>.
+        /// The build's long match (<see cref="GameTuning.IsMatch"/>) rather than a round: the analytics name its events
+        /// by it. A match is also timed (<see cref="IsTimed"/>).
         /// </summary>
         public readonly bool IsMatch;
+
+        /// <summary>
+        /// A timed round decided by its score rather than a last-car-standing round, the long match and a mode that
+        /// scores points alike: the place is by the score, <see cref="Outcome"/> is <see cref="RoundOutcome.Won"/> for
+        /// first place and <see cref="RoundOutcome.Survived"/> otherwise, <see cref="Standings"/> holds the score, and
+        /// the player is not out at the end, so <see cref="KnockedOutBy"/> is <see cref="Nobody"/>.
+        /// </summary>
+        public readonly bool IsTimed;
+
+        /// <summary>The kind of round played (<see cref="RoundRules.Kind"/>): a special round's, an event mode's or none.</summary>
+        public readonly SpecialRound Kind;
+
+        /// <summary>The most knock-outs the reward pays for (<see cref="ModeRules.KnockoutRewardCap"/>); 0 for no cap.</summary>
+        public readonly int KnockoutRewardCap;
 
         /// <summary>
         /// Times the player fell off in a match, knocked off or not; 0 in a round, which ends at the first.
@@ -113,7 +126,9 @@ namespace ToyCarArena.Gameplay.Round
         public readonly int BonusKnockouts;
 
         /// <summary>The knock-outs the round's XP and coins pay for.</summary>
-        public int RewardKnockouts => Knockouts + BonusKnockouts;
+        public int RewardKnockouts => KnockoutRewardCap > 0
+            ? Math.Min(KnockoutRewardCap, Knockouts + BonusKnockouts)
+            : Knockouts + BonusKnockouts;
 
         public IReadOnlyList<RoundStanding> Standings { get; }
 
@@ -121,7 +136,7 @@ namespace ToyCarArena.Gameplay.Round
         /// The car the result shows on its podium: a match's winner; after a round the player's own car on a win, the
         /// car that knocked the player off on a loss to one, and the player's own car otherwise.
         /// </summary>
-        public int PodiumCar => IsMatch ? Standings.Count > 0 ? Standings[0].Index : Nobody
+        public int PodiumCar => IsTimed ? Standings.Count > 0 ? Standings[0].Index : Nobody
             : Outcome == RoundOutcome.Out && KnockedOutBy != Nobody ? KnockedOutBy : 0;
         public IReadOnlyList<int> Colors { get; }
         public int ColorOf(int index) => Colors[index];
@@ -129,8 +144,11 @@ namespace ToyCarArena.Gameplay.Round
         public RoundResult(RoundOutcome outcome, int place, int carCount, float seconds, int knockouts, int knockedOutBy,
             FallCause fallCause, bool hadNemesis, bool revengeTaken, IReadOnlyList<RoundStanding> standings = null,
             IReadOnlyList<int> colors = null, bool isMatch = false, int falls = 0, int knockedOff = 0, bool? isLoss = null,
-            int bonusKnockouts = 0)
+            int bonusKnockouts = 0, bool? isTimed = null, SpecialRound kind = SpecialRound.None, int knockoutRewardCap = 0)
         {
+            IsTimed = isTimed ?? isMatch;
+            Kind = kind;
+            KnockoutRewardCap = knockoutRewardCap;
             BonusKnockouts = bonusKnockouts;
             Outcome = outcome;
             Place = place;

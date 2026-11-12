@@ -401,8 +401,8 @@ namespace ToyCarArena.UI
             itemButton.AddToClassList(ItemEmptyClass);
             // In a match the player's score is always there, 0 included: it is the point of the match. The scoreboard
             // shows the leader and everyone else, so the bar keeps only the time and the player's own knock-outs.
-            knockoutBadge.EnableInClassList(KnockoutShownClass, ViewModel.IsMatch);
-            carsPill.style.display = ViewModel.IsMatch ? DisplayStyle.None : DisplayStyle.Flex;
+            knockoutBadge.EnableInClassList(KnockoutShownClass, ViewModel.IsTimed);
+            carsPill.style.display = ViewModel.IsTimed ? DisplayStyle.None : DisplayStyle.Flex;
             scoreboard = HudScoreboard.Create(Root.Q<VisualElement>("scoreboard"), ViewModel);
             popupLayer = Root.Q<VisualElement>("ko-layer");
             nameLayer = Root.Q<VisualElement>("name-layer");
@@ -545,7 +545,7 @@ namespace ToyCarArena.UI
                 }
             }
 
-            if (ViewModel.IsMatch) {
+            if (ViewModel.IsTimed) {
                 scoreboard?.RefreshCountdowns();
                 ShowRespawn();
             }
@@ -563,7 +563,7 @@ namespace ToyCarArena.UI
             if (knockouts != shownKnockouts) {
                 shownKnockouts = knockouts;
                 knockoutLabel.text = knockouts.ToString();
-                knockoutBadge.EnableInClassList(KnockoutShownClass, knockouts > 0 || ViewModel.IsMatch);
+                knockoutBadge.EnableInClassList(KnockoutShownClass, knockouts > 0 || ViewModel.IsTimed);
                 Pulse(knockoutBadge, KnockoutPopClass);
             }
         }
@@ -950,7 +950,7 @@ namespace ToyCarArena.UI
             Root.style.paddingTop = BarTop + hudTopInset;
             Root.style.paddingLeft = safeInsets.Left;
             Root.style.paddingRight = safeInsets.Right;
-            var isUnder = !ViewModel.IsMatch && size.x < size.y;
+            var isUnder = !ViewModel.IsTimed && size.x < size.y;
             settingsButton.EnableInClassList(SettingsUnderClass, isUnder);
             settingsButton.style.top = (isUnder ? SettingsUnderTop : SettingsTop) + hudTopInset;
             settingsButton.style.right = SettingsTop + safeInsets.Right;
@@ -1405,7 +1405,7 @@ namespace ToyCarArena.UI
             }
 
             var camera = Camera.main;
-            if (ViewModel.IsMatch) {
+            if (ViewModel.IsTimed) {
                 ShowScoreboard();
                 ShowShield(camera);
             }
@@ -2213,7 +2213,7 @@ namespace ToyCarArena.UI
             }
 
             // A match keeps the leader in the cars pill, not the cars still in.
-            if (ViewModel.IsMatch) {
+            if (ViewModel.IsTimed) {
                 return;
             }
 

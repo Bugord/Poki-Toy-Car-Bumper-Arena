@@ -326,7 +326,7 @@ namespace ToyCarArena.Gameplay.Effects
             }
 
             var isCrossing = shownSeconds >= 0;
-            var isWarning = isCrossing && round.IsMatch && seconds == warningSeconds && shownSeconds > warningSeconds;
+            var isWarning = isCrossing && round.IsTimed && seconds == warningSeconds && shownSeconds > warningSeconds;
             var isTick = isCrossing && seconds > 0 && seconds <= countdownSeconds;
             shownSeconds = seconds;
             if (isWarning) {
@@ -334,7 +334,7 @@ namespace ToyCarArena.Gameplay.Effects
             }
 
             if (isTick) {
-                var isFinal = round.IsMatch && seconds <= finalSeconds;
+                var isFinal = round.IsTimed && seconds <= finalSeconds;
                 audioService.Play(audioService.Library.CountdownTick, isFinal ? finalTickVolume : 1f);
             }
         }
@@ -447,7 +447,7 @@ namespace ToyCarArena.Gameplay.Effects
         private void OnFinished(RoundResult result)
         {
             var library = audioService.Library;
-            if (result.IsMatch) {
+            if (result.IsTimed) {
                 // The buzzer: the whistle, and every car frozen a moment under the HUD's TIME UP! stamp.
                 audioService.Play(library.TimeUp);
                 hitStop.Hold(timeUpStop, timeUpTimeScale);

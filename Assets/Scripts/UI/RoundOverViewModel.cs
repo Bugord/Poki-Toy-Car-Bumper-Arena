@@ -511,9 +511,10 @@ namespace ToyCarArena.UI
         public RoundOutcome Outcome { get; private set; }
 
         /// <summary>
-        /// Whether the result is a long match's: the subtitle gives its place and knock-outs.
+        /// Whether the result is a timed round's, decided by its score (the long match, a mode that scores points): the
+        /// subtitle gives its place and score, the table its standings and the podium its winner.
         /// </summary>
-        public bool IsMatch { get; private set; }
+        public bool IsTimed { get; private set; }
 
         public int Place { get; private set; }
 
@@ -537,10 +538,10 @@ namespace ToyCarArena.UI
         public int PodiumCar { get; private set; }
 
         /// <summary>Whether the podium crowns a winner: a match's first place, or the player's own win of a round.</summary>
-        public bool IsPodiumWinner => IsMatch || Outcome == RoundOutcome.Won;
+        public bool IsPodiumWinner => IsTimed || Outcome == RoundOutcome.Won;
 
         /// <summary>Whether the podium shows the car that knocked the player off a round: the one to get back at.</summary>
-        public bool IsPodiumRival => !IsMatch && Outcome == RoundOutcome.Out && KnockedOutBy != RoundResult.Nobody;
+        public bool IsPodiumRival => !IsTimed && Outcome == RoundOutcome.Out && KnockedOutBy != RoundResult.Nobody;
 
         public string NameOf(int index) =>
             index == 0 ? Strings.Get("common.you") : index < names.Count ? names[index] : string.Empty;
@@ -558,7 +559,7 @@ namespace ToyCarArena.UI
             Nemesis = payload.Nemesis;
             Podium = payload.Podium;
             PodiumCar = result.PodiumCar;
-            Standings = result.IsMatch ? result.Standings : System.Array.Empty<RoundStanding>();
+            Standings = result.IsTimed ? result.Standings : System.Array.Empty<RoundStanding>();
             XpGain = payload.XpGain;
             Coins = payload.Coins;
             Missions = payload.Missions;
@@ -575,7 +576,7 @@ namespace ToyCarArena.UI
             Gift = wallet.UnseenGift;
             Streak = payload.Streak;
             Outcome = result.Outcome;
-            IsMatch = result.IsMatch;
+            IsTimed = result.IsTimed;
             Place = result.Place;
             Knockouts = result.Knockouts;
             KnockedOutBy = result.KnockedOutBy;
