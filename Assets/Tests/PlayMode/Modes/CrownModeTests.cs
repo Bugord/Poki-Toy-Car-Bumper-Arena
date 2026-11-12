@@ -178,7 +178,8 @@ namespace ToyCarArena.Tests.PlayMode
         public IEnumerator TheRoundEndsOnTimeAndTheCarWithTheMostSecondsWins()
         {
             originalDuration = Tuning0().Duration;
-            DurationField().SetValue(Tuning0(), 11f);
+            // Long enough that the player, who steals it a few seconds in, holds it far longer than the bot did.
+            DurationField().SetValue(Tuning0(), 30f);
             yield return OpenMode(SpecialRound.Crown);
             var crown = Container.Resolve<CrownMode>();
             RoundResult? result = null;
@@ -192,7 +193,7 @@ namespace ToyCarArena.Tests.PlayMode
             yield return Ram(Round.Player, bot, () => crown.Holder == bot, 2f);
             Assert.That(crown.Holder, Is.SameAs(Round.Player), "The player did not steal the crown.");
 
-            var until = Time.time + 12f;
+            var until = Time.time + 32f;
             while (!result.HasValue && Time.time < until) {
                 yield return Step();
             }
@@ -200,7 +201,7 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(result.HasValue, Is.True, "The round did not end on time.");
             Assert.That(result.Value.IsTimed, Is.True);
             Assert.That(result.Value.Kind, Is.EqualTo(SpecialRound.Crown));
-            Assert.That(Round.Elapsed, Is.EqualTo(11f).Within(0.2f));
+            Assert.That(Round.Elapsed, Is.EqualTo(30f).Within(0.2f));
             var playerHeld = crown.HeldOf(Round.Player);
             var botHeld = crown.HeldOf(bot);
             Assert.That(playerHeld, Is.GreaterThan(botHeld), "The test meant the player to hold it longest.");

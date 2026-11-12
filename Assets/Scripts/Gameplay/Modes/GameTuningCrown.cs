@@ -68,17 +68,28 @@ namespace ToyCarArena.Gameplay
                 "frame and the thief gets a start")]
             [Min(0f)]
             [SerializeField]
-            private float stealCooldown = 1.2f;
+            private float stealCooldown = 1.5f;
+
+            [Tooltip("Seconds the player keeps the crown it took whatever hits it, Easy to Normal: longer than a bot's " +
+                "moment, so the player sees it has it and can turn away")]
+            [SerializeField]
+            private Vector2 playerKeep = new(3f, 2.2f);
 
             [Tooltip("Seconds the car the crown was just stolen from cannot steal it straight back")]
             [Min(0f)]
             [SerializeField]
-            private float stealBackTime = 2.5f;
+            private float stealBackTime = 3f;
+
+            [Tooltip("Seconds the player cannot steal the crown straight back after a bot took it: shorter than a bot's, " +
+                "so losing it is the start of a chase")]
+            [Min(0f)]
+            [SerializeField]
+            private float playerStealBack = 1.5f;
 
             [Tooltip("Metres per second the car robbed of the crown is knocked away from the thief, so the two part")]
             [Min(0f)]
             [SerializeField]
-            private float stealPush = 4f;
+            private float stealPush = 6f;
 
             [Tooltip("Seconds the car robbed of the crown is off balance: the thief's head start")]
             [Min(0f)]
@@ -90,7 +101,7 @@ namespace ToyCarArena.Gameplay
                 "catch it and the crown changes hands several times a round")]
             [Range(0.5f, 1f)]
             [SerializeField]
-            private float holderSpeed = 0.85f;
+            private float holderSpeed = 0.9f;
 
             [Range(0.5f, 1f)]
             [SerializeField]
@@ -105,7 +116,12 @@ namespace ToyCarArena.Gameplay
             [Tooltip("How many bots hunt the player while it holds the crown, Easy to Normal; the others shadow it from " +
                 "a few metres off")]
             [SerializeField]
-            private Vector2Int playerHunters = new(1, 3);
+            private Vector2Int playerHunters = new(1, 2);
+
+            [Tooltip("How many bots hunt a bot that holds the crown, Easy to Normal; the others shadow it, so the " +
+                "crown does not change hands every second in a swarm")]
+            [SerializeField]
+            private Vector2Int botHunters = new(3, 4);
 
             [Tooltip("Seconds ahead of the holder a bot that chases it aims, and one that cuts it off aims; the bots " +
                 "take turns at the two, so they do not all drive at one point")]
@@ -137,12 +153,15 @@ namespace ToyCarArena.Gameplay
             public float StealStrength => stealStrength;
             public float StealCooldown => stealCooldown;
             public float StealBackTime => stealBackTime;
+            public Vector2 PlayerKeep => playerKeep;
+            public float PlayerStealBack => playerStealBack;
             public float StealPush => stealPush;
             public float StealStagger => stealStagger;
             public float HolderSpeed => holderSpeed;
             public float HolderAcceleration => holderAcceleration;
             public float HolderPush => holderPush;
             public Vector2Int PlayerHunters => playerHunters;
+            public Vector2Int BotHunters => botHunters;
             public Vector2 Lead => lead;
             public float ShadowDistance => shadowDistance;
             public float FleeRadius => fleeRadius;

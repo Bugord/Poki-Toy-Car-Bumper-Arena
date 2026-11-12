@@ -46,8 +46,8 @@ namespace ToyCarArena.Tests.PlayMode
             report.AppendLine();
             report.AppendLine($"{runs} rounds per round of the visit, seed {seed}. Seconds are with the crown.");
             report.AppendLine();
-            report.AppendLine("| Round | Cars | Wins | Avg place | Loss (bottom half) | Player s | Best bot s | Player share | Changes | Steals | Player takes |");
-            report.AppendLine("|---|---|---|---|---|---|---|---|---|---|---|");
+            report.AppendLine("| Round | Cars | Wins | Avg place | Loss (bottom half) | Player s | Best bot s | Player share | Changes | Steals (press) | Player takes | Player s per take |");
+            report.AppendLine("|---|---|---|---|---|---|---|---|---|---|---|---|");
             foreach (var level in levels) {
                 progress.Round = level;
                 progress.LosingStreak = 0;
@@ -89,6 +89,7 @@ namespace ToyCarArena.Tests.PlayMode
                         BestBot = best,
                         Changes = crown.Changes,
                         Steals = crown.Steals,
+                        PressSteals = crown.PressSteals,
                         PlayerTakes = crown.TakesOf(round.Player),
                         Total = round.Cars.Sum(car => crown.HeldOf(car)),
                     });
@@ -101,7 +102,9 @@ namespace ToyCarArena.Tests.PlayMode
                     $"({100f * rows.Count(r => r.Won) / rows.Count:0}%) | {rows.Average(r => r.Place):0.00} | " +
                     $"{100f * rows.Count(r => r.IsLoss) / rows.Count:0}% | {rows.Average(r => r.Player):0.0} | " +
                     $"{rows.Average(r => r.BestBot):0.0} | {100f * rows.Sum(r => r.Player) / Mathf.Max(1f, rows.Sum(r => r.Total)):0}% | " +
-                    $"{rows.Average(r => r.Changes):0.0} | {rows.Average(r => r.Steals):0.0} | {rows.Average(r => r.PlayerTakes):0.0} |");
+                    $"{rows.Average(r => r.Changes):0.0} | {rows.Average(r => r.Steals):0.0} ({rows.Average(r => r.PressSteals):0.0}) | " +
+                    $"{rows.Average(r => r.PlayerTakes):0.0} | " +
+                    $"{rows.Sum(r => r.Player) / Mathf.Max(1, rows.Sum(r => r.PlayerTakes)):0.0} |");
             }
 
             Directory.CreateDirectory("Logs");
@@ -120,6 +123,7 @@ namespace ToyCarArena.Tests.PlayMode
             public float BestBot;
             public int Changes;
             public int Steals;
+            public int PressSteals;
             public int PlayerTakes;
             public float Total;
         }

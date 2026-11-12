@@ -140,6 +140,9 @@ namespace ToyCarArena.Gameplay.Modes
         /// <summary>Times the crown was stolen from one car by another.</summary>
         public int Steals { get; private set; }
 
+        /// <summary>Of <see cref="Steals"/>, those by a push held on the holder rather than a bump.</summary>
+        public int PressSteals { get; private set; }
+
         /// <summary>Grows on every change of the crown, for the bots and the HUD to notice it.</summary>
         public int Version { get; private set; }
 
@@ -353,8 +356,10 @@ namespace ToyCarArena.Gameplay.Modes
                 round.AddPoints(holder, after - before);
             }
 
+            // The press counts only once the holder can lose the crown, or a car glued to it would steal it the moment
+            // the holder's first moment is over.
             var by = holder.LastHitBy;
-            if (by == null || holder.LastHitByItem || Time.time - holder.LastHitTime > PressGap
+            if (IsProtected || by == null || holder.LastHitByItem || Time.time - holder.LastHitTime > PressGap
                 || Flat(by.Position - holder.Position).magnitude > PressReach) {
                 pressCar = null;
                 return;
@@ -367,6 +372,7 @@ namespace ToyCarArena.Gameplay.Modes
             }
 
             if (Time.time - pressSince >= PressTime && CanSteal(by)) {
+                PressSteals++;
                 Steal(by, holder, (by.Position + holder.Position) * 0.5f);
             }
         }
@@ -396,7 +402,8 @@ namespace ToyCarArena.Gameplay.Modes
             from.Movement.Stagger(settings.StealStagger);
             Steals++;
             Robbed = from;
-            stealBackUntil = Time.time + settings.StealBackTime;
+            // The player may go after the crown again sooner than a bot: losing it should feel like a chase, not a wait.
+            stealBackUntil = Time.time + (from.IsPlayer ? settings.PlayerStealBack : settings.StealBackTime);
             if (effects != null) {
                 effects.PlayHit(point, away, 1f, true, false);
             }
@@ -412,7 +419,10 @@ namespace ToyCarArena.Gameplay.Modes
 
             Holder = car;
             Phase = CrownPhase.Held;
-            protectedUntil = Time.time + settings.StealCooldown;
+            // The player's crown is safe a moment longer, longer on Easy: time to see it and turn away.
+            protectedUntil = Time.time + (car.IsPlayer
+                ? Mathf.Lerp(settings.PlayerKeep.x, settings.PlayerKeep.y, difficulty.Level)
+                : settings.StealCooldown);
             pressCar = null;
             Changes++;
             Version++;
@@ -443,7 +453,7 @@ namespace ToyCarArena.Gameplay.Modes
         /// <summary>
         /// A bot without the crown after its holder. While the player holds it, only the difficulty's few hunters go
         /// for it, after its first seconds, at the difficulty's pace; the others shadow it a few metres off, so the
-        /// player sees the threat. A bot's holder is chased by them all: the nearest straight at it, the others at where
+        /// player sees the threat. A bot's holder is chased by three or four, the rest shadowing it: the nearest straight at it, the others at where
         /// it is going, every other one further ahead, so they close in from more than one side.
         /// </summary>
         private void Chase(Bot bot, BotPlay play, IArenaEdge floor, Vector3 position)
@@ -456,7 +466,8 @@ namespace ToyCarArena.Gameplay.Modes
                 ? round.Elapsed < difficulty.PlayerGrace
                     ? 0
                     : Mathf.RoundToInt(Mathf.Lerp(settings.PlayerHunters.x, settings.PlayerHunters.y, difficulty.Level))
-                : chasers;
+                : Mathf.Min(chasers,
+                    Mathf.RoundToInt(Mathf.Lerp(settings.BotHunters.x, settings.BotHunters.y, difficulty.Level)));
             if (IsStealBack(bot.Car) || rank >= hunters) {
                 // The robbed car and the ones not hunting keep a few metres off, on their own side.
                 var side = position - holderPosition;
