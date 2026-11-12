@@ -39,6 +39,12 @@ namespace ToyCarArena.UI
         /// </summary>
         public static string Mission(GameTuning.MissionDefinition mission, string arena)
         {
+            if (mission.Counter == MissionCounter.EventRounds) {
+                // PLAY CROWN: the mode of the day by its menu name.
+                var look = ModeLooks.Of(EventModes.Parse(mission.Mode));
+                return Strings.Format("mission.play_event", look != null ? Strings.Get(look.NameKey) : "");
+            }
+
             var target = mission.Target;
             var key = mission.Counter switch {
                 MissionCounter.Rounds => target == 1 ? "mission.rounds_one" : "mission.rounds",

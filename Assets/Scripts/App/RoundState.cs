@@ -113,6 +113,8 @@ namespace ToyCarArena.App
             var variants = levelScene.Resolve<ArenaVariants>();
             var currentVariant = playedVariant;
             var special = levelScene.Resolve<RoundRules>().Kind;
+            // The event mode the round plays, for the daily task of the mode of the day.
+            var playedEvent = EventModes.IsEvent(special) ? RoundRules.IdOf(special) : "";
             // Only a visit's first round straight from the boot waits on the start screen; the menu's PLAY came through
             // the lobby and counts down like any later round.
             var waitsForPlayer = roundNumber == 1 && !lobby.HasLed;
@@ -152,7 +154,7 @@ namespace ToyCarArena.App
             // Missions the round completes while it is played (knock-outs, boosts, revenge, items, boxes) pop MISSION!
             // on the HUD at once; the ones only a decided round counts show on the result.
             MissionStats LiveStats() => new(false, RoundOutcome.Survived, 0, round.PlayerKnockouts, driver.Boosts,
-                round.RevengeTaken, driver.ItemsUsed, pickupCount, itemKnockouts, playedMap);
+                round.RevengeTaken, driver.ItemsUsed, pickupCount, itemKnockouts, playedMap, playedEvent);
 
             // The daily tasks done this round pop too, as DAILY TASK!. Both pop over the player's car, and one knock-out
             // can finish a mission and a task with the same counter: the task's pop then waits for the mission's to
@@ -254,9 +256,17 @@ namespace ToyCarArena.App
                 // same bar. One clock for the round's whole day: a round over midnight counts for the new day.
                 var now = DateTime.Now;
                 var stats = new MissionStats(true, result.Outcome, result.Place, result.Knockouts, driver.Boosts,
-                    result.RevengeTaken, driver.ItemsUsed, pickupCount, itemKnockouts, playedMap);
+                    result.RevengeTaken, driver.ItemsUsed, pickupCount, itemKnockouts, playedMap, playedEvent);
                 var missionRound = missions.Record(stats, playerProgress.Level, progress.Round);
                 var taskRound = dailyTasks.Record(stats, now);
+                // The task of the mode of the day is done only by a round played to the end: it pops DAILY TASK! now,
+                // over the round's last moment, where the ones done in play popped as they came.
+                foreach (var task in taskRound.Completed) {
+                    if (task.Counter == MissionCounter.EventRounds) {
+                        hud.ViewModel.ShowDailyTaskDone();
+                        break;
+                    }
+                }
                 // The day's first win doubles the round's own reward, taken (and saved) before it pays.
                 var firstWin = daily.TakeFirstWin(now, result);
                 var xpGain = playerProgress.Record(result, isStreakRound ? streaks : null,

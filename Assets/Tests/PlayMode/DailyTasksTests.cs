@@ -43,7 +43,11 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [TearDown]
-        public void TearDown() => Object.DestroyImmediate(tuning);
+        public void TearDown()
+        {
+            EventSchedule.Forced = null;
+            Object.DestroyImmediate(tuning);
+        }
 
         [Test]
         public void TheDaySetIsThreeTasksOfEachTierAndStaysAllDay()
@@ -108,7 +112,8 @@ namespace ToyCarArena.Tests.PlayMode
             var paidCoins = 0;
             var completed = new List<string>();
             for (var round = 0; round < 30 && tasks.DoneCount(Monday) < DailyTasks.Count; round++) {
-                var stats = Stats(RoundOutcome.Won, 5);
+                // Rounds of the mode of the day, for its task.
+                var stats = Stats(RoundOutcome.Won, 5, TodaysEvent(Monday));
                 // The HUD's live count agrees with what the round then pays.
                 var live = tasks.CountDone(stats, Monday);
                 var record = tasks.Record(stats, Monday);
@@ -207,9 +212,92 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(both.Total, Is.EqualTo(own * tuning.Ads.BoostMultiplier * 2));
         }
 
-        private static MissionStats Stats(RoundOutcome outcome, int knockouts) =>
+        [Test]
+        public void TheEasyTaskIsAlwaysToPlayTheModeOfTheDay()
+        {
+            for (var day = 0; day < 30; day++) {
+                var now = Monday.AddDays(day);
+                var easy = tasks.Today(now)[0].Definition;
+                Assert.That(easy.Id, Is.EqualTo(DailyTasks.EventTaskId), $"day {day}");
+                Assert.That(easy.Counter, Is.EqualTo(MissionCounter.EventRounds));
+                Assert.That(easy.Tier, Is.EqualTo(MissionTier.Easy));
+                Assert.That(easy.Target, Is.EqualTo(1));
+                Assert.That(easy.Mode, Is.EqualTo(TodaysEvent(now)));
+                Assert.That(tasks.Today(now).Skip(1).Select(task => task.Definition.Tier),
+                    Is.EqualTo(new[] { MissionTier.Medium, MissionTier.Hard }));
+            }
+
+            // The task follows the mode of the day: the build's HOT POTATO, or another one played that day.
+            Assert.That(TodaysEvent(Monday), Is.EqualTo("hot-potato"));
+            EventSchedule.Forced = EventMode.Crown;
+            tasks.Reset(Monday);
+            Assert.That(tasks.Today(Monday)[0].Definition.Mode, Is.EqualTo("crown"));
+        }
+
+        [Test]
+        public void OnlyARoundOfTheModeOfTheDayPlayedToTheEndCountsIt()
+        {
+            var mode = TodaysEvent(Monday);
+            Assert.That(Played(tasks.Record(Stats(RoundOutcome.Out, 0), Monday)), Is.False, "A plain round.");
+            Assert.That(Played(tasks.Record(Stats(RoundOutcome.Out, 0, "crown"), Monday)), Is.False, "Another mode.");
+            var left = new MissionStats(false, RoundOutcome.Out, 3, 0, 0, false, 0, 0, 0, "sandbox", mode);
+            Assert.That(tasks.CountDone(left, Monday), Is.Zero, "A round left in the middle.");
+            Assert.That(tasks.Today(Monday)[0].IsDone, Is.False);
+
+            var stats = Stats(RoundOutcome.Out, 0, mode);
+            Assert.That(tasks.CountDone(stats, Monday), Is.GreaterThanOrEqualTo(1), "The HUD's DAILY TASK! count.");
+            var record = tasks.Record(stats, Monday);
+            Assert.That(Played(record), Is.True);
+            Assert.That(record.Xp, Is.EqualTo(record.Completed.Sum(tasks.XpOf)));
+            Assert.That(record.Coins, Is.EqualTo(record.Completed.Sum(tasks.CoinsOf)));
+            Assert.That(tasks.XpOf(tasks.Today(Monday)[0].Definition), Is.EqualTo(tuning.Daily.TaskXpOf(MissionTier.Easy)));
+            Assert.That(tasks.CoinsOf(tasks.Today(Monday)[0].Definition),
+                Is.EqualTo(tuning.Daily.TaskCoinsOf(MissionTier.Easy)));
+
+            // Saved under its constant id, and the next visit of the day reads it done and pays it no more.
+            Assert.That(storage.GetString("daily_tasks"), Does.Contain($"|{DailyTasks.EventTaskId}:1|"));
+            var visit = new DailyTasks(storage, tuning, progress);
+            Assert.That(visit.Today(Monday)[0].Definition.Id, Is.EqualTo(DailyTasks.EventTaskId));
+            Assert.That(visit.Today(Monday)[0].Definition.Mode, Is.EqualTo(mode));
+            Assert.That(visit.Today(Monday)[0].IsDone, Is.True);
+            Assert.That(Played(visit.Record(stats, Monday)), Is.False);
+        }
+
+        [Test]
+        public void NoEventNoTaskOfIt()
+        {
+            var hotPotato = tuning.SpecialRounds.HotPotato;
+            var enabled = hotPotato.GetType().GetField("enabled", BindingFlags.Instance | BindingFlags.NonPublic);
+            enabled.SetValue(hotPotato, false);
+            for (var day = 0; day < 20; day++) {
+                Assert.That(tasks.Today(Monday.AddDays(day)).Select(task => task.Definition.Id),
+                    Has.No.Member(DailyTasks.EventTaskId), $"day {day}");
+            }
+
+            // A set saved with the task while the build had events is drawn again.
+            enabled.SetValue(hotPotato, true);
+            tasks.Reset(Monday);
+            Assert.That(tasks.Today(Monday)[0].Definition.Id, Is.EqualTo(DailyTasks.EventTaskId));
+            enabled.SetValue(hotPotato, false);
+            Assert.That(new DailyTasks(storage, tuning, progress).Today(Monday).Select(task => task.Definition.Id),
+                Has.No.Member(DailyTasks.EventTaskId));
+
+            // The match build has no events.
+            enabled.SetValue(hotPotato, true);
+            typeof(GameTuning).GetField("mode", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(tuning, GameTuning.GameMode.Match);
+            tasks.Reset(Monday);
+            Assert.That(tasks.Today(Monday).Select(task => task.Definition.Id), Has.No.Member(DailyTasks.EventTaskId));
+        }
+
+        private static bool Played(DailyTaskRound record) =>
+            record.Completed.Any(task => task.Id == DailyTasks.EventTaskId);
+
+        private string TodaysEvent(DateTime now) => EventModes.IdOf(EventSchedule.Of(tuning, CalendarDay.Of(now)));
+
+        private static MissionStats Stats(RoundOutcome outcome, int knockouts, string eventMode = "") =>
             new(true, outcome, outcome == RoundOutcome.Won ? 1 : 3, knockouts, 4, outcome == RoundOutcome.Won, 2, 2,
-                1, "sandbox");
+                1, "sandbox", eventMode);
 
         private static RoundResult Result(RoundOutcome outcome) =>
             new(outcome, outcome == RoundOutcome.Won ? 1 : 3, 4, 40f, 2, RoundResult.Nobody, FallCause.None, false,

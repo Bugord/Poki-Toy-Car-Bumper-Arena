@@ -70,12 +70,14 @@ namespace ToyCarArena.UI
             private readonly VisualElement sign;
             private MissionCounter? counter;
             private string map = "";
+            private string mode = "";
             private bool isDone;
 
             public Icon(GameTuning.MissionDefinition definition)
             {
                 counter = definition?.Counter;
                 map = definition?.Map ?? "";
+                mode = definition?.Mode ?? "";
                 pickingMode = PickingMode.Ignore;
                 AddToClassList("mission-icon");
                 sign = Element("mission-icon__sign");
@@ -87,12 +89,14 @@ namespace ToyCarArena.UI
             {
                 var value = definition?.Counter;
                 var valueMap = definition?.Map ?? "";
-                if (counter == value && map == valueMap && isDone == done) {
+                var valueMode = definition?.Mode ?? "";
+                if (counter == value && map == valueMap && mode == valueMode && isDone == done) {
                     return;
                 }
 
                 counter = value;
                 map = valueMap;
+                mode = valueMode;
                 isDone = done;
                 EnableInClassList("mission-icon--done", done);
                 sign.MarkDirtyRepaint();
@@ -145,6 +149,9 @@ namespace ToyCarArena.UI
                         break;
                     case MissionCounter.ArenaRounds:
                         DrawArena(p, r, ColourOf(map));
+                        break;
+                    case MissionCounter.EventRounds:
+                        DrawEvent(p, r, (ModeLooks.Of(EventModes.Parse(mode)) ?? HotPotatoLook.Look).Deep);
                         break;
                     default:
                         DrawFlag(p, r);
@@ -340,6 +347,31 @@ namespace ToyCarArena.UI
                 p.LineTo(At(r, 0.7f, 0.02f));
                 p.ClosePath();
                 p.Fill();
+                p.Stroke();
+            }
+
+            // The mode of the day: a disc in the mode's colour with EVENT's white bolt, as its tag in the menu.
+            private static void DrawEvent(Painter2D p, Rect r, Color colour)
+            {
+                p.lineWidth = r.width * 0.085f;
+                p.fillColor = colour;
+                p.BeginPath();
+                p.Arc(At(r, 0.5f, 0.5f), r.width * 0.44f, 0f, 360f);
+                p.ClosePath();
+                p.Fill();
+                p.Stroke();
+                p.fillColor = Color.white;
+                p.BeginPath();
+                p.MoveTo(At(r, 0.58f, 0.18f));
+                p.LineTo(At(r, 0.3f, 0.56f));
+                p.LineTo(At(r, 0.48f, 0.56f));
+                p.LineTo(At(r, 0.42f, 0.82f));
+                p.LineTo(At(r, 0.72f, 0.44f));
+                p.LineTo(At(r, 0.54f, 0.44f));
+                p.LineTo(At(r, 0.62f, 0.18f));
+                p.ClosePath();
+                p.Fill();
+                p.lineWidth = r.width * 0.06f;
                 p.Stroke();
             }
 
