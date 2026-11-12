@@ -636,8 +636,10 @@ namespace ToyCarArena.Gameplay.Bots
                 case ItemKind.Shockwave:
                     return offset.magnitude <= items.Shockwave.Radius + SpareMargin;
                 case ItemKind.Bomb:
+                    // The bomb goes off a flight and a fuse later: as far again as the spared car can drive by then.
                     var landing = position + forward * items.Bomb.ThrowDistance;
-                    return (Flat(spared.Position) - landing).magnitude <= items.Bomb.Radius + SpareMargin;
+                    var drive = Flat(spared.Movement.Velocity).magnitude * (items.Bomb.FlightTime + items.Bomb.Fuse);
+                    return (Flat(spared.Position) - landing).magnitude <= items.Bomb.Radius + SpareMargin + drive;
                 case ItemKind.Bowling:
                     return IsOnLine(offset, forward, items.Bowling.Range, items.Bowling.Radius + items.Bowling.HitReach + SpareMargin);
                 case ItemKind.Glove:
