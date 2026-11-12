@@ -48,6 +48,12 @@ namespace ToyCarArena.Tests.PlayMode
 
         private static readonly PropertyInfo LastHitByProperty = typeof(Car).GetProperty(nameof(Car.LastHitBy));
         private static readonly PropertyInfo LastHitTimeProperty = typeof(Car).GetProperty(nameof(Car.LastHitTime));
+        private static readonly FieldInfo ElapsedField =
+            typeof(ArenaRound).GetField("elapsed", BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly PropertyInfo KickoffTimeProperty =
+            typeof(HudViewModel).GetProperty(nameof(HudViewModel.KickoffStepTime));
+        // The clock's note springs in for 0.35 s and holds for 1.4 s: caught while it holds.
+        private const float NoteMoment = 0.7f;
 
         private static readonly string[] Names = { "YOU", "ZOOMER", "BONKY", "SKID", "TURBO TOM", "DRIFTA" };
         private static readonly int[] Levels = { 8, 7, 10, 6, 9, 11 };
@@ -132,6 +138,113 @@ namespace ToyCarArena.Tests.PlayMode
                                 "The player's knock-out gave blue no point.");
                             yield return RealSeconds(StickerMoment);
                             Shoot(camera, scene, overlay, $"{Prefix(language)}point_{width}x{height}.png");
+
+                            // A point for red: a blue car falls (red's sticker drops under the red side).
+                            var blue = round.Cars[shot % 2 == 0 ? 2 : 4];
+                            yield return WaitIn(blue);
+                            var redBefore = round.Score.TeamPointsOf(RoundTeams.Red);
+                            yield return KnockOff(blue, round.Cars.FirstOrDefault(car =>
+                                car.Team == RoundTeams.Red && !car.IsOut));
+                            Assert.That(round.Score.TeamPointsOf(RoundTeams.Red), Is.GreaterThan(redBefore),
+                                "A blue car's fall gave red no point.");
+                            yield return RealSeconds(StickerMoment);
+                            Shoot(camera, scene, overlay, $"{Prefix(language)}point-red_{width}x{height}.png");
+
+                            // The clock's stages under the team score: 30 SECONDS LEFT, then FINAL 10 with the bar
+                            // grown and the red frame. The clock is set just over each stage and crosses it itself.
+                            foreach (var seconds in new[] { 30, 10 }) {
+                                ElapsedField.SetValue(round, round.Duration - seconds - 0.6f);
+                                yield return RealSeconds(0.6f + NoteMoment);
+                                Shoot(camera, scene, overlay,
+                                    $"{Prefix(language)}clock-{seconds}_{width}x{height}.png");
+                            }
+
+                            ElapsedField.SetValue(round, 5f);
+                            yield return RealSeconds(0.5f);
+                        }
+                    }
+                    finally {
+                        camera.targetTexture = null;
+                        view.Dispose();
+                        foreach (var texture in textures) {
+                            if (texture != null) {
+                                Object.DestroyImmediate(texture);
+                            }
+                        }
+                    }
+                }
+            }
+            finally {
+                PlayModeWindow.SetCustomRenderingResolution((uint)screenWidth, (uint)screenHeight, "Team push screenshot");
+                Strings.SetLanguage("en");
+                typeof(Strings).GetField("table", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
+            }
+        }
+
+        /// <summary>The mode's card over the countdown's 3, before the round begins.</summary>
+        [UnityTest]
+        [Timeout(600000)]
+        public IEnumerator CaptureTheKickoff()
+        {
+            Directory.CreateDirectory(Directory_);
+            UseSpecial(SpecialRound.TeamPush);
+            var tuning = LoadTuning();
+            CreateParent(new SimulationInput(), new SimulationProgress { Round = 7 }, "sandbox");
+            yield return LoadGame();
+            var container = GameScope().Container;
+            var round = container.Resolve<ArenaRound>();
+            var modes = container.Resolve<RoundModes>();
+            Strings.Load(new StringTable(AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Localization/strings.csv").text));
+            round.Place();
+
+            var camera = Camera.main;
+            var screenWidth = Screen.width;
+            var screenHeight = Screen.height;
+            try {
+                foreach (var language in Languages) {
+                    Strings.SetLanguage(language);
+                    var panelSettings = Object.Instantiate(
+                        AssetDatabase.LoadAssetAtPath<PanelSettings>("Assets/UI/ui_panel_settings.asset"));
+                    panelSettings.clearColor = true;
+                    panelSettings.colorClearValue = Color.clear;
+                    var host = new GameObject("Screenshot HUD");
+                    var document = host.AddComponent<UIDocument>();
+                    document.panelSettings = panelSettings;
+                    var controls = new HudControls();
+                    var model = new HudViewModel(null, controls);
+                    model.SetPayload(new HudRound(round, null, tuning.Controls, false, 7, false, 0,
+                        SpecialRound.TeamPush, 7, modes.Active));
+                    var view = new HudView(controls, container.Resolve<IAudioService>());
+                    view.Bind(model);
+                    var hud = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/Screens/Hud.uxml").Instantiate();
+                    Stretch(hud);
+                    var textures = new List<Object> { panelSettings, host };
+                    try {
+                        document.rootVisualElement.Add(hud);
+                        view.Attach(hud.hierarchy[0]);
+                        view.ShowAsync(CancellationToken.None).Forget();
+                        foreach (var (width, height, touch) in Sizes) {
+                            if (touch) {
+                                controls.BeginTouchSteering(Vector2.zero);
+                            }
+
+                            var scene = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
+                            var overlay = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
+                            textures.Add(scene);
+                            textures.Add(overlay);
+                            PlayModeWindow.SetCustomRenderingResolution((uint)width, (uint)height, "Team push screenshot");
+                            camera.targetTexture = scene;
+                            panelSettings.targetTexture = overlay;
+                            yield return RealSeconds(SettleSeconds);
+                            model.ShowKickoff(3, tuning.Round.KickoffStep);
+                            // Held at the number's settled moment over a few frames: frames take long here.
+                            for (var frame = 0; frame < 4; frame++) {
+                                KickoffTimeProperty.SetValue(model, Time.unscaledTime - 0.32f);
+                                yield return null;
+                            }
+
+                            Shoot(camera, scene, overlay, $"{Prefix(language)}kickoff_{width}x{height}.png");
+                            model.ShowKickoff(HudViewModel.NoKickoff, 0f);
                         }
                     }
                     finally {
@@ -170,7 +283,9 @@ namespace ToyCarArena.Tests.PlayMode
             sun.type = LightType.Directional;
             sun.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
             var podium = new WinnerPodium(null, art, podiumHost.transform);
-            var sizes = new[] { (1080, 1920, true), (1920, 1080, false) };
+            // Upright and sideways, and the two other shapes of the columns: a phone on its side (the column scaled) and
+            // a 4:3 window.
+            var sizes = new[] { (1080, 1920, true), (1920, 1080, false), (2340, 1080, true), (2048, 1536, false) };
             try {
                 foreach (var language in Languages) {
                     Strings.SetLanguage(language);
