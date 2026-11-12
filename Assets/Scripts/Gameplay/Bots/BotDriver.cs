@@ -110,6 +110,8 @@ namespace ToyCarArena.Gameplay.Bots
             var hasNewPickup = pickups.IsEnabled && pickups.Version != seenPickups;
             var steering = modes.BotSteering;
             seenPickups = pickups.Version;
+            // The grace that spares the player as a target spares them the bots' items too.
+            var spared = round.Elapsed < difficulty.PlayerGrace ? round.Player : null;
             foreach (var bot in bots) {
                 if (bot.Car.IsOut) {
                     continue;
@@ -130,7 +132,7 @@ namespace ToyCarArena.Gameplay.Bots
                 }
 
                 bot.Steer(edge, deltaTime, isDuel);
-                if (pickups.IsEnabled && round.IsRunning && bot.WantsToUseItem(edge, round.Cars, deltaTime)) {
+                if (pickups.IsEnabled && round.IsRunning && bot.WantsToUseItem(edge, round.Cars, deltaTime, spared)) {
                     pickups.Use(bot.Car);
                 }
             }
