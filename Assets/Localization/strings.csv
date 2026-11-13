@@ -309,3 +309,5 @@ result.team_draw,Result subtitle: the teams ended level,IT'S A DRAW!,MATCH NUL !
 hud.team_blue,Team name in a round in teams: the blue team (score bar; lobby and result headers),BLUE,BLEUS,BLU,BLAU,AZULES,MAVİ,AZUL,СИНИЕ
 hud.team_red,Team name in a round in teams: the red team (score bar; lobby and result headers),RED,ROUGES,ROSSI,ROT,ROJOS,KIRMIZI,VERMELHO,КРАСНЫЕ
 result.mvp,Tag on the best player of a team in the result table; max ~4 chars,MVP,MVP,MVP,MVP,MVP,MVP,MVP,MVP
+hud.heat_hot,"Overheat mode: sticker over a car whose heat just reached red-hot; short",RED HOT!,BRÛLANT !,ROVENTE!,GLÜHEND!,¡AL ROJO!,KIZGIN!,EM BRASA!,РАСКАЛЁН!
+hud.meltdown,"Overheat mode: banner when the player knocks off a red-hot car; short",MELTDOWN!,FUSION !,FUSIONE!,KERNSCHMELZE!,¡FUNDIDO!,ERİDİ!,DERRETEU!,РАСПЛАВИЛ!
