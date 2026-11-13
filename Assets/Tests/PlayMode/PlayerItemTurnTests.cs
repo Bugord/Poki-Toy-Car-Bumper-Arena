@@ -14,16 +14,17 @@ using VContainer;
 namespace ToyCarArena.Tests.PlayMode
 {
     /// <summary>
-    /// One bot's item at the player at a time (<see cref="PlayerItemTurn"/>): of two bots ready to bomb the player, one
-    /// throws and the other waits out the gap before it may; a third, aimed at another car well away from the player, is
-    /// not held back meanwhile.
+    /// One bot's item at the player at a time (<see cref="PlayerItemTurn"/>): until a gap past the round's grace no bot's
+    /// item goes at the player; then, of two bots ready to bomb the player, one throws and the other waits out the gap
+    /// before it may; a third, aimed at another car well away from the player, is not held back meanwhile.
     /// </summary>
     public sealed class PlayerItemTurnTests : ObjectsBFixture
     {
         [UnityTest]
         public IEnumerator TwoBotsReadyOnThePlayerTakeTurns()
         {
-            yield return Open("sandbox", "rake");
+            // A round on the normal side: the grace is short.
+            yield return Open("sandbox", "rake", round: 7);
             var pickups = Container.Resolve<ArenaPickups>();
             var turn = Container.Resolve<PlayerItemTurn>();
             var gap = Tuning.Pickups.Bots.PlayerItemGap;
@@ -75,7 +76,9 @@ namespace ToyCarArena.Tests.PlayMode
             var used = new Dictionary<Car, float>();
             var taken = 0;
             turn.Taken += (_, _, _) => taken++;
-            var until = Round.Elapsed + gap + 2f;
+            var grace = Container.Resolve<RoundDifficulty>().PlayerGrace;
+            Assert.That(turn.IsFree, Is.False, "the grace ends as if an item had just gone at the player");
+            var until = Round.Elapsed + grace + 2f * gap + 2f;
             while (Round.Elapsed < until && used.Count < 3) {
                 Stand();
                 foreach (var pair in bots) {
@@ -88,6 +91,8 @@ namespace ToyCarArena.Tests.PlayMode
             }
 
             Assert.That(used.Count, Is.EqualTo(3), "every bot threw its bomb in the end");
+            Assert.That(Mathf.Min(used[first], used[second]), Is.GreaterThanOrEqualTo(grace + gap - 0.05f),
+                "no item goes at the player until a gap past the grace");
             var early = Mathf.Min(used[first], used[second]);
             var late = Mathf.Max(used[first], used[second]);
             Assert.That(late - early, Is.GreaterThanOrEqualTo(gap - 0.05f), "the second bomb at the player waits its turn");

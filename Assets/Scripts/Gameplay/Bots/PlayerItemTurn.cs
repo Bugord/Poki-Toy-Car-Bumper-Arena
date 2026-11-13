@@ -10,7 +10,8 @@ namespace ToyCarArena.Gameplay.Bots
     /// One bot's item at the player at a time: once an item goes at the player (<see cref="Bot.Threatens(Car)"/>), no other
     /// bot's may for <see cref="GameTuning.PickupBotSettings.PlayerItemGap"/> seconds of the round; the others use theirs on
     /// other cars meanwhile, or wait their turn. Without it the bots that held their items through the round's grace
-    /// (<see cref="RoundDifficulty.PlayerGrace"/>) let them all go at the player the moment it ended. The bots' own
+    /// (<see cref="RoundDifficulty.PlayerGrace"/>) let them all go at the player the moment it ended; so the grace ends as if
+    /// an item had just gone at the player, and the first may go a gap after it. The bots' own
     /// steering and the event modes that let items go (ITEM FRENZY) both ask it; nothing is drawn from any dice here.
     /// </summary>
     public sealed class PlayerItemTurn
@@ -18,10 +19,11 @@ namespace ToyCarArena.Gameplay.Bots
         private readonly GameTuning tuning;
         private readonly ArenaRound round;
         private readonly ArenaPickups pickups;
-        private float freeAt = float.NegativeInfinity;
+        private float freeAt;
 
-        public PlayerItemTurn(GameTuning tuning, ArenaRound round, ArenaPickups pickups)
+        public PlayerItemTurn(GameTuning tuning, ArenaRound round, ArenaPickups pickups, RoundDifficulty difficulty)
         {
+            this.freeAt = difficulty.PlayerGrace + tuning.Pickups.Bots.PlayerItemGap;
             this.tuning = tuning;
             this.round = round;
             this.pickups = pickups;

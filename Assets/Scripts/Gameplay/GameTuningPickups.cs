@@ -784,7 +784,7 @@ namespace ToyCarArena.Gameplay
                 "next one does not land on a player still staggered by the last")]
             [Min(0f)]
             [SerializeField]
-            private float playerItemGap = 2.5f;
+            private float playerItemGap = 4f;
 
             public float Weight => weight;
             public float TrailingBonus => trailingBonus;
