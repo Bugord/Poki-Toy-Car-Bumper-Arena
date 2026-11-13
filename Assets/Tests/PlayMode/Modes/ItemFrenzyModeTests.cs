@@ -259,8 +259,8 @@ namespace ToyCarArena.Tests.PlayMode
         {
             DropParent();
             UseSpecial(kind);
-            // The round's cars, names and bots draw on Unity's random numbers too: seeded, a run is the same whatever ran
-            // before it.
+            // The round's cars, names and bots draw on Unity's random numbers too: seeded, a run does not hang on what ran
+            // before it (the frames still step by their own time, so two runs are alike, not the same).
             UnityEngine.Random.InitState(seed);
             var input = new SimulationInput();
             CreateParent(input, new SimulationProgress { Round = visitRound }, "sandbox", "rake");
