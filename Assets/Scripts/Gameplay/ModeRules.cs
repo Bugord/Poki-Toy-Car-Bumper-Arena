@@ -133,6 +133,12 @@ namespace ToyCarArena.Gameplay
         /// </summary>
         public GameTuning.MapSettings Arena { get; private set; }
 
+        /// <summary>
+        /// Whether each point of the player's pays XP and coins as a knock-out does, under <see cref="KnockoutRewardCap"/>:
+        /// a mode scored by something other than knock-outs (FOOTBALL's goals).
+        /// </summary>
+        public bool PointsPayAsKnockouts { get; private set; }
+
         /// <summary>The car falls and stays out; a car that is put back or comes back is never out for good.</summary>
         public bool IsKnockOutFinal => Fall == FallRule.Out;
 
@@ -168,7 +174,8 @@ namespace ToyCarArena.Gameplay
         public ModeRules With(FallRule? fall = null, bool? fence = null, FloorRule? floor = null, bool? mechanics = null,
             PickupRule? pickups = null, float? pickupPace = null, int? pickupMax = null, float? duration = null,
             int? pointsPerKnockout = null, int? teams = null, int? bots = null, bool? edgeAssist = null,
-            int? knockoutRewardCap = null, int? topPlaces = null, GameTuning.MapSettings arena = null)
+            int? knockoutRewardCap = null, int? topPlaces = null, GameTuning.MapSettings arena = null,
+            bool? pointsPayAsKnockouts = null)
         {
             return new ModeRules {
                 Fall = fall ?? Fall,
@@ -186,6 +193,7 @@ namespace ToyCarArena.Gameplay
                 KnockoutRewardCap = knockoutRewardCap ?? KnockoutRewardCap,
                 TopPlaces = topPlaces ?? TopPlaces,
                 Arena = arena ?? Arena,
+                PointsPayAsKnockouts = pointsPayAsKnockouts ?? PointsPayAsKnockouts,
             };
         }
     }
