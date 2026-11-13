@@ -680,10 +680,13 @@ namespace ToyCarArena.UI
         /// On a win streak a gold crown with ×N floats over the player's car: the round pays more, and the bots go for
         /// it a little more. It makes way for SAFE, and goes with the car when it falls.
         /// </summary>
+        /// <summary>The round's mode keeps the win streak's crowns off it (<see cref="ModeLook.HidesStreakCrowns"/>).</summary>
+        private bool HidesStreakCrowns => ModeLooks.Of(ViewModel.Mode)?.HidesStreakCrowns == true;
+
         private void ShowStreak(Camera camera)
         {
             var isShown = ViewModel.Streak > 0 && camera != null && streak.panel != null && ViewModel.IsCarIn(0)
-                && !shield.ClassListContains(ShieldShownClass);
+                && !shield.ClassListContains(ShieldShownClass) && !HidesStreakCrowns;
             streak.EnableInClassList(StreakShownClass, isShown);
             if (!isShown) {
                 return;
@@ -1643,8 +1646,9 @@ namespace ToyCarArena.UI
             line.Add(CreateOutlinedText(ViewModel.NameOf(index), "car-name__text"));
             // In teams a teammate's tag has a shield, an enemy's none: told apart by more than the colour.
             HudTeams.MarkName(tag, line, ViewModel, index);
-            // A bot that joined on a win streak wears the player's crown and ×N after its name.
-            var streakOf = ViewModel.StreakOf(index);
+            // A bot that joined on a win streak wears the player's crown and ×N after its name, unless the mode's own
+            // thing is a crown.
+            var streakOf = HidesStreakCrowns ? 0 : ViewModel.StreakOf(index);
             if (streakOf > 0) {
                 var crown = new VisualElement { pickingMode = PickingMode.Ignore };
                 crown.AddToClassList("car-name__crown");
