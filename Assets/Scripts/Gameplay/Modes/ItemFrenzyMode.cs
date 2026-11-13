@@ -41,6 +41,7 @@ namespace ToyCarArena.Gameplay.Modes
         private readonly RoundDifficulty difficulty;
         private readonly ArenaRound round;
         private readonly ArenaPickups pickups;
+        private readonly PlayerItemTurn itemTurn;
         private readonly Dictionary<Car, FloorPickup> chasing = new();
         private readonly Dictionary<Car, float> readySince = new();
         private readonly List<Vector3> opening = new();
@@ -49,9 +50,10 @@ namespace ToyCarArena.Gameplay.Modes
         private bool isCounting;
 
         public ItemFrenzyMode(GameTuning tuning, RoundRules rules, RoundDifficulty difficulty, ArenaRound round,
-            ArenaPickups pickups)
+            ArenaPickups pickups, PlayerItemTurn itemTurn)
         {
             this.settings = tuning.ItemFrenzy;
+            this.itemTurn = itemTurn;
             this.tuning = tuning;
             this.difficulty = difficulty;
             this.round = round;
@@ -143,7 +145,7 @@ namespace ToyCarArena.Gameplay.Modes
 
             if (car.HasItem) {
                 chasing.Remove(car);
-                LetGoOfHeldItem(car, edge);
+                LetGoOfHeldItem(bot, edge);
                 return false;
             }
 
@@ -160,8 +162,9 @@ namespace ToyCarArena.Gameplay.Modes
             return true;
         }
 
-        private void LetGoOfHeldItem(Car car, IArenaEdge edge)
+        private void LetGoOfHeldItem(Bot bot, IArenaEdge edge)
         {
+            var car = bot.Car;
             if (!car.IsItemReady) {
                 readySince.Remove(car);
                 return;
@@ -172,9 +175,11 @@ namespace ToyCarArena.Gameplay.Modes
                 return;
             }
 
-            if (round.Elapsed - since >= settings.BotHoldMax && CanLetGo(car, car.HeldItem, edge)) {
+            // Not at the player while another bot's item is on its way to them (one at a time, as an aimed one).
+            if (round.Elapsed - since >= settings.BotHoldMax && CanLetGo(car, car.HeldItem, edge)
+                && itemTurn.MayLetGo(bot)) {
                 readySince.Remove(car);
-                pickups.Use(car);
+                itemTurn.Use(bot, true);
             }
         }
 

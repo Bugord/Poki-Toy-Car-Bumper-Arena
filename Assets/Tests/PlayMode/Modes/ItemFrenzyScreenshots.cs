@@ -40,8 +40,12 @@ namespace ToyCarArena.Tests.PlayMode
         private const float SettleSeconds = 0.6f;
         private const BindingFlags Hidden = BindingFlags.Static | BindingFlags.NonPublic;
 
-        private static readonly (int Width, int Height, bool Touch)[] Sizes = { (1920, 1080, false), (1080, 1920, true) };
+        private static readonly (int Width, int Height, bool Touch)[] Sizes = {
+            (1920, 1080, false), (1080, 1920, true), (2340, 1080, true),
+        };
         private static readonly string[] Languages = { "en", "ru" };
+        // The HUD's hint also in the languages with the longest words for it.
+        private static readonly string[] HudLanguages = { "en", "ru", "fr", "de", "tr" };
 
         [UnityTest]
         public IEnumerator CaptureTheHud()
@@ -140,7 +144,7 @@ namespace ToyCarArena.Tests.PlayMode
                             Assert.That(pickups.Give(round.Player, ItemKind.Bomb), Is.True);
                         }
 
-                        foreach (var language in Languages) {
+                        foreach (var language in HudLanguages) {
                             Strings.SetLanguage(language);
                             // Put the hint up afresh, in this language and for this screen.
                             hint.RemoveFromClassList("hud__item-hint--shown");

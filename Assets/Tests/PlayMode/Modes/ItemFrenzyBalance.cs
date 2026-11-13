@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Globalization;
+using System.Reflection;
 using System.Text;
 using NUnit.Framework;
 using ToyCarArena.Gameplay;
@@ -11,6 +13,7 @@ using ToyCarArena.Gameplay.Bots;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Pickups;
 using ToyCarArena.Gameplay.Round;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
 using VContainer;
@@ -23,8 +26,9 @@ namespace ToyCarArena.Tests.PlayMode
     /// item a moment after it lands (a novice does not wait for a good one): the same seeds in both, at the visit rounds
     /// FRENZY_LEVELS (1,7), FRENZY_ROUNDS (30) each, on the sandbox's first variant; FRENZY_BEFORE (0) is the rounds the
     /// player finished in earlier visits (20 plays a returning player's warm-up, the round the mode is entered from the
-    /// menu). Writes <c>Logs/item-frenzy-balance.md</c>: wins, places, round length, items used and how the player went out. Numbers
-    /// to read, no thresholds.
+    /// menu). FRENZY_GAP sets the seconds between bots' items at the player (<see cref="PlayerItemTurn"/>; 0 lets them all
+    /// go at once, as before the turn). Writes <c>Logs/item-frenzy-balance.md</c>: wins, places, round length, items used,
+    /// how the player went out and when the bots' items went at them. Numbers to read, no thresholds.
     /// </summary>
     [Explicit("A balance simulation, minutes long")]
     public sealed class ItemFrenzyBalance : ModeFixture
@@ -34,6 +38,9 @@ namespace ToyCarArena.Tests.PlayMode
         private const float UseMax = 2.2f;
         // An item hit on the player counts as what sent them off within this many seconds of the fall.
         private const float ItemCredit = 3f;
+        // The report's seconds of the round the bots' items at the player are counted by; the last takes the rest.
+        private const int ReportSeconds = 13;
+        private const string TuningPath = "Assets/Data/Gameplay/data_game_tuning.asset";
 
         [UnityTest]
         [Timeout(int.MaxValue)]
@@ -43,7 +50,18 @@ namespace ToyCarArena.Tests.PlayMode
             var levels = (Environment.GetEnvironmentVariable("FRENZY_LEVELS") ?? "1,7").Split(',')
                 .Select(value => int.Parse(value.Trim())).ToArray();
             var before = int.Parse(Environment.GetEnvironmentVariable("FRENZY_BEFORE") ?? "0");
+            var gapText = Environment.GetEnvironmentVariable("FRENZY_GAP");
+            var bots = AssetDatabase.LoadAssetAtPath<GameTuning>(TuningPath).Pickups.Bots;
+            var gapField = typeof(GameTuning.PickupBotSettings).GetField("playerItemGap",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            var tunedGap = bots.PlayerItemGap;
+            if (gapText != null) {
+                gapField.SetValue(bots, float.Parse(gapText, CultureInfo.InvariantCulture));
+            }
+
+            var gap = bots.PlayerItemGap;
             var rows = new List<Row>();
+            try {
             foreach (var level in levels) {
                 foreach (var kind in new[] { SpecialRound.None, SpecialRound.ItemFrenzy }) {
                     var row = new Row { Level = level, Kind = kind };
@@ -55,7 +73,12 @@ namespace ToyCarArena.Tests.PlayMode
                 }
             }
 
-            var markdown = Report(rows, runs, before);
+            }
+            finally {
+                gapField.SetValue(bots, tunedGap);
+            }
+
+            var markdown = Report(rows, runs, before, gap);
             Directory.CreateDirectory("Logs");
             File.WriteAllText("Logs/item-frenzy-balance.md", markdown);
             Debug.Log(markdown);
@@ -77,6 +100,10 @@ namespace ToyCarArena.Tests.PlayMode
             var round = container.Resolve<ArenaRound>();
             var pickups = container.Resolve<ArenaPickups>();
             container.Resolve<IEnumerable<ITickable>>().OfType<BotDriver>().Single().Seed = seed;
+            container.Resolve<PlayerItemTurn>().Taken += (_, _, isLetGo) => {
+                var second = Mathf.Min(ReportSeconds - 1, Mathf.FloorToInt(round.Elapsed));
+                (isLetGo ? row.LetGoAt : row.AimedAt)[second]++;
+            };
             var novice = new NoviceDriver(seed, round, container.Resolve<ArenaCamera>(), input);
             var random = new System.Random(seed * 31 + 7);
             var limit = container.Resolve<GameTuning>().PlayDuration + 10f;
@@ -157,6 +184,12 @@ namespace ToyCarArena.Tests.PlayMode
 
                     if (value.Seconds < 10f) {
                         row.OutEarly++;
+                        if (value.Seconds - lastItemHit <= ItemCredit) {
+                            row.OutEarlyItem++;
+                        }
+                        else if (value.KnockedOutBy != RoundResult.Nobody) {
+                            row.OutEarlyPushed++;
+                        }
                     }
 
                     break;
@@ -166,24 +199,37 @@ namespace ToyCarArena.Tests.PlayMode
             yield return UnloadGame();
         }
 
-        private static string Report(List<Row> rows, int runs, int before)
+        private static string Report(List<Row> rows, int runs, int before, float gap)
         {
             var text = new StringBuilder();
             text.AppendLine("# ITEM FRENZY balance");
             text.AppendLine();
             text.AppendLine($"Novice model with item use, {runs} rounds per row, seeds 1..{runs} in both kinds, sandbox / rake, " +
-                $"{before} rounds played before the visit.");
+                $"{before} rounds played before the visit, {gap:0.##} s between bots' items at the player.");
             text.AppendLine();
             text.AppendLine("| visit round | kind | wins | survived | avg place | avg seconds | player KO | " +
-                "player boxes | player items | bot items | out: pushed | out: item | out: fell | out < 10 s |");
-            text.AppendLine("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
+                "player boxes | player items | bot items | out: pushed | out: item | out: fell | out < 10 s | " +
+                "< 10 s: pushed | < 10 s: item |");
+            text.AppendLine("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
             foreach (var row in rows) {
                 var n = Math.Max(1, row.Rounds);
                 text.AppendLine($"| {row.Level} | {(row.Kind == SpecialRound.None ? "plain" : "frenzy")} | " +
                     $"{100f * row.Wins / n:0}% | {100f * row.Survived / n:0}% | {(float)row.Places / n:0.00} | " +
                     $"{row.Seconds / n:0.0} | {(float)row.Knockouts / n:0.00} | {(float)row.PlayerBoxes / n:0.0} | " +
                     $"{(float)row.PlayerItems / n:0.0} | {(float)row.BotItems / n:0.0} | {row.OutPushed} | " +
-                    $"{row.OutByItem} | {row.OutFell} | {row.OutEarly} |");
+                    $"{row.OutByItem} | {row.OutFell} | {row.OutEarly} | {row.OutEarlyPushed} | {row.OutEarlyItem} |");
+            }
+
+            text.AppendLine();
+            text.AppendLine("Bots' items that went at the player, by second of the round (aimed / let go), over all rounds:");
+            text.AppendLine();
+            text.AppendLine("| visit round | kind | " + string.Join(" | ", Enumerable.Range(0, ReportSeconds)
+                .Select(second => second == ReportSeconds - 1 ? $"{second}+ s" : $"{second} s")) + " |");
+            text.AppendLine("|---|---|" + string.Concat(Enumerable.Repeat("---|", ReportSeconds)));
+            foreach (var row in rows) {
+                text.AppendLine($"| {row.Level} | {(row.Kind == SpecialRound.None ? "plain" : "frenzy")} | " +
+                    string.Join(" | ", Enumerable.Range(0, ReportSeconds).Select(second =>
+                        $"{row.AimedAt[second]}/{row.LetGoAt[second]}")) + " |");
             }
 
             text.AppendLine();
@@ -209,6 +255,10 @@ namespace ToyCarArena.Tests.PlayMode
             public int OutByItem;
             public int OutFell;
             public int OutEarly;
+            public int OutEarlyPushed;
+            public int OutEarlyItem;
+            public readonly int[] AimedAt = new int[ReportSeconds];
+            public readonly int[] LetGoAt = new int[ReportSeconds];
         }
     }
 }
