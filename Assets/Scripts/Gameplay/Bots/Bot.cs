@@ -535,8 +535,14 @@ namespace ToyCarArena.Gameplay.Bots
         /// is neither aimed at nor caught: no moment comes while it is in the item's reach, so the grace that keeps the
         /// bots off the player keeps their items off too.
         /// </para>
+        /// <para>
+        /// A <paramref name="waiting"/> car (the player while another bot's item is on its way to them,
+        /// <see cref="PlayerItemTurn"/>) is not aimed at either, by the item's own reach (<see cref="Threatens(Car)"/>): the
+        /// bot waits for its turn at that car, or uses the item on another car meanwhile.
+        /// </para>
         /// </summary>
-        public bool WantsToUseItem(IArenaEdge edge, IReadOnlyList<Car> cars, float deltaTime, Car spared = null)
+        public bool WantsToUseItem(IArenaEdge edge, IReadOnlyList<Car> cars, float deltaTime, Car spared = null,
+            Car waiting = null)
         {
             if (!Car.IsItemReady || Car.IsOut) {
                 heldItem = ItemKind.None;
@@ -550,7 +556,7 @@ namespace ToyCarArena.Gameplay.Bots
                 useMoment = 0f;
             }
 
-            if (!IsMoment(heldItem, edge, cars, use) || Endangers(heldItem, spared)) {
+            if (!IsMoment(heldItem, edge, cars, use) || Endangers(heldItem, spared) || Threatens(heldItem, waiting)) {
                 useMoment = 0f;
                 return false;
             }
@@ -653,6 +659,42 @@ namespace ToyCarArena.Gameplay.Bots
                     var roll = ReachSpeed(spared) * Mathf.Max(0f, Vector3.Dot(offset, forward)) / items.Bowling.Speed;
                     return IsOnLine(offset, forward, items.Bowling.Range,
                         items.Bowling.Radius + items.Bowling.HitReach + SpareMargin + roll);
+                case ItemKind.Glove:
+                    return IsOnLine(offset, forward, items.Glove.Reach + SpareMargin, items.Glove.HitRadius + SpareMargin);
+                case ItemKind.Oil:
+                    return offset.magnitude <= items.Oil.TargetRange + SpareMargin;
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// Whether the item the bot holds, used now, would go at <paramref name="car"/>: within the shockwave's ring, round
+        /// where the bomb lands, on the bowling ball's or the glove's line, within the oil's reach. By the item's own reach,
+        /// not the grace's wider one (<see cref="Endangers"/>, which also counts where the car can drive to), so a car
+        /// whose turn is taken keeps only the items that would really go at it off. A car of the bot's own team never.
+        /// </summary>
+        public bool Threatens(Car car) => Threatens(Car.HeldItem, car);
+
+        private bool Threatens(ItemKind item, Car car)
+        {
+            if (car == null || car == Car || !car.IsTargetable || Car.IsTeammateOf(car)) {
+                return false;
+            }
+
+            var position = Flat(Car.Position);
+            var forward = Flat(Car.transform.forward).normalized;
+            var offset = Flat(car.Position) - position;
+            var items = tuning.Pickups;
+            switch (item) {
+                case ItemKind.Shockwave:
+                    return offset.magnitude <= items.Shockwave.Radius + SpareMargin;
+                case ItemKind.Bomb:
+                    var landing = position + forward * items.Bomb.ThrowDistance;
+                    return (Flat(car.Position) - landing).magnitude <= items.Bomb.Radius + SpareMargin;
+                case ItemKind.Bowling:
+                    return IsOnLine(offset, forward, items.Bowling.Range,
+                        items.Bowling.Radius + items.Bowling.HitReach + SpareMargin);
                 case ItemKind.Glove:
                     return IsOnLine(offset, forward, items.Glove.Reach + SpareMargin, items.Glove.HitRadius + SpareMargin);
                 case ItemKind.Oil:

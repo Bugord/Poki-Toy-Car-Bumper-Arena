@@ -44,6 +44,7 @@ namespace ToyCarArena.Gameplay.Bots
         private readonly ArenaHazards hazards;
         private readonly ArenaPickups pickups;
         private readonly RoundModes modes;
+        private readonly PlayerItemTurn itemTurn;
         private readonly List<Bot> bots = new();
 
         private int seed;
@@ -57,9 +58,10 @@ namespace ToyCarArena.Gameplay.Bots
         private Bot playerGrudge;
 
         public BotDriver(GameTuning tuning, ArenaRound round, RoundDifficulty difficulty, BallLane ballLane,
-            ArenaHazards hazards, ArenaPickups pickups, RoundModes modes)
+            ArenaHazards hazards, ArenaPickups pickups, RoundModes modes, PlayerItemTurn itemTurn)
         {
             this.pickups = pickups;
+            this.itemTurn = itemTurn;
             this.modes = modes;
             this.tuning = tuning;
             this.round = round;
@@ -132,8 +134,9 @@ namespace ToyCarArena.Gameplay.Bots
                 }
 
                 bot.Steer(edge, deltaTime, isDuel);
-                if (pickups.IsEnabled && round.IsRunning && bot.WantsToUseItem(edge, round.Cars, deltaTime, spared)) {
-                    pickups.Use(bot.Car);
+                // One bot's item at the player at a time: the turn is taken at the use, before the next bot looks.
+                if (pickups.IsEnabled && round.IsRunning) {
+                    itemTurn.TryUse(bot, edge, deltaTime, spared);
                 }
             }
         }

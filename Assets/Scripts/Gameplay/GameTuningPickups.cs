@@ -779,6 +779,13 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float shieldThreatSpeed = 4f;
 
+            [Tooltip("Seconds after a bot's item went at the player before another bot's may: one at a time, so the items " +
+                "that waited out the round's grace do not all go off at once. Longer than a bomb's flight and fuse, so the " +
+                "next one does not land on a player still staggered by the last")]
+            [Min(0f)]
+            [SerializeField]
+            private float playerItemGap = 2.5f;
+
             public float Weight => weight;
             public float TrailingBonus => trailingBonus;
             public float CrowdPenalty => crowdPenalty;
@@ -794,6 +801,7 @@ namespace ToyCarArena.Gameplay
             public int ShockwaveCars => shockwaveCars;
             public float ShieldThreat => shieldThreat;
             public float ShieldThreatSpeed => shieldThreatSpeed;
+            public float PlayerItemGap => playerItemGap;
         }
     }
 }
