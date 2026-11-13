@@ -89,10 +89,7 @@ namespace ToyCarArena.Tests.PlayMode
             var model = new HudViewModel(null, controls);
             model.SetPayload(new HudRound(round, null, tuning.Controls, false, 7, false, special: SpecialRound.Crown,
                 mode: crown));
-            var view = new HudView(controls, container.Resolve<IAudioService>());
-            view.Bind(model);
-            var hud = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/Screens/Hud.uxml").Instantiate();
-            Fill(hud);
+            var template = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/Screens/Hud.uxml");
             var camera = Camera.main;
             var directory = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "crown", map == "sandbox" ? "" : map);
             Directory.CreateDirectory(directory);
@@ -101,17 +98,41 @@ namespace ToyCarArena.Tests.PlayMode
             var screenHeight = Screen.height;
             RoundResult? result = null;
             round.Finished += value => result = value;
+
+            // The countdown's first number with the mode's name and rule over it. The card takes its text when the
+            // HUD opens, after the game has chosen its language, so each language gets a HUD of its own.
+            foreach (var language in new[] { "en", "ru", "de" }) {
+                Strings.SetLanguage(language);
+                var kickoffView = new HudView(controls, container.Resolve<IAudioService>());
+                kickoffView.Bind(model);
+                var kickoffHud = template.Instantiate();
+                Fill(kickoffHud);
+                try {
+                    document.rootVisualElement.Add(kickoffHud);
+                    kickoffView.Attach(kickoffHud.hierarchy[0]);
+                    kickoffView.ShowAsync(CancellationToken.None).Forget();
+                    yield return Frames(10);
+                    model.ShowKickoff(3, 6f);
+                    yield return Shoot("kickoff", camera, panelSettings, controls, directory, owned,
+                        () => model.ShowKickoff(3, 6f), new[] { language });
+                    model.ShowKickoff(HudViewModel.NoKickoff, 0f);
+                }
+                finally {
+                    kickoffView.Dispose();
+                    kickoffHud.RemoveFromHierarchy();
+                }
+            }
+
+            Strings.SetLanguage("en");
+            var view = new HudView(controls, container.Resolve<IAudioService>());
+            view.Bind(model);
+            var hud = template.Instantiate();
+            Fill(hud);
             try {
                 document.rootVisualElement.Add(hud);
                 view.Attach(hud.hierarchy[0]);
                 view.ShowAsync(CancellationToken.None).Forget();
                 yield return Frames(10);
-
-                // The countdown's first number with the mode's name and rule over it.
-                model.ShowKickoff(3, 6f);
-                yield return Shoot("kickoff", camera, panelSettings, controls, directory, owned,
-                    () => model.ShowKickoff(3, 6f), new[] { "en", "ru", "de" });
-                model.ShowKickoff(HudViewModel.NoKickoff, 0f);
                 round.Begin();
 
                 yield return Seconds(tuning.Crown.FirstDelay * 0.6f);
@@ -126,6 +147,9 @@ namespace ToyCarArena.Tests.PlayMode
                 yield return Until(() => crown.Holder == bot, 1f);
                 yield return Seconds(3.2f);
                 yield return Shoot("bot", camera, panelSettings, controls, directory, owned);
+                // The fight for it: the hunters close in on the bot's crown, the others wait round it.
+                yield return Seconds(2.5f);
+                yield return Shoot("fight", camera, panelSettings, controls, directory, owned);
 
                 // The player on the near side, the holder in the far corner beyond the frame: the pointer shows the way.
                 Park(round.Player, Corner(round.Edge, -camera.transform.right - camera.transform.forward), Vector3.forward);
