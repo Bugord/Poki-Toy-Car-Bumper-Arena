@@ -107,6 +107,8 @@ def summarise(data):
         "boss": other(o, r"special-boss-(taken|missed)-boss"),
         # после event-modes: место в режиме по id режима (одна таблица на все режимы)
         "mode_place": other(o, r"special-((?:hot-potato|crown|gold-rush|item-frenzy|overheat|team-push|football)-place-\d+)-place"),
+        # после event-modes: сколько предметов игрок применил в раунде режима с коробками (none 0, few 1–3, some 4–9, many 10+)
+        "mode_items": other(o, r"special-((?:hot-potato|crown|gold-rush|item-frenzy|overheat|team-push|football)-items-(?:none|few|some|many))-items"),
         # после team-push: как кончился раунд команд (выиграла, ничья, проиграла команда игрока; разрыв close <= 2,
         # clear 3-5, big 6+) и KO игрока в нём, по id режима (TEAM PUSH, позже FOOTBALL)
         "team_end": other(o, r"special-((?:team-push|football)-team-(?:won|draw|lost)-(?:close|clear|big))-team"),
@@ -444,6 +446,7 @@ def report(version, previous):
         ("Особые раунды по исходу (после v0.15.0; визиты с outcome)", "special_outcome"),
         ("Раунд босса: столкнул ли игрок босса (после v0.15.0; визиты)", "boss"),
         ("Режимы: место по режиму (после event-modes; визиты с place)", "mode_place"),
+        ("Режимы: сколько предметов применил игрок за раунд режима с коробками (после item-frenzy; none 0, few 1–3, some 4–9, many 10+; визиты с items)", "mode_items"),
         ("Команды: исход раунда команды игрока и разрыв (после team-push; визиты с team)", "team_end"),
         ("Команды: KO игрока за раунд команд (после team-push; визиты с team-knockouts)", "team_ko"),
         ("Свои рывки по раундам (после v0.7.1, после v0.14.1 только в сборке с бустами; визиты с round-boosts)", "round_boosts"),

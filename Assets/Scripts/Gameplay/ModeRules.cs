@@ -89,6 +89,12 @@ namespace ToyCarArena.Gameplay
         public int PickupMax { get; private set; }
 
         /// <summary>
+        /// Seconds a broken box's slot spins before it lands on its item; 0 for the usual
+        /// (<see cref="GameTuning.PickupSettings.RollTime"/>). A frenzy of boxes rolls quicker.
+        /// </summary>
+        public float PickupRollTime { get; private set; }
+
+        /// <summary>
         /// Seconds the round lasts when it is timed (<see cref="IsTimed"/>): it ends only when time runs out and is
         /// decided by the score. 0 for a round of last car standing, which ends when the player is out, is the last car
         /// left or the round's time runs out.
@@ -161,7 +167,7 @@ namespace ToyCarArena.Gameplay
         public ModeRules With(FallRule? fall = null, bool? fence = null, FloorRule? floor = null, bool? mechanics = null,
             PickupRule? pickups = null, float? pickupPace = null, int? pickupMax = null, float? duration = null,
             int? pointsPerKnockout = null, int? teams = null, int? bots = null, bool? edgeAssist = null,
-            int? knockoutRewardCap = null, int? topPlaces = null)
+            int? knockoutRewardCap = null, int? topPlaces = null, float? pickupRollTime = null)
         {
             return new ModeRules {
                 Fall = fall ?? Fall,
@@ -178,6 +184,7 @@ namespace ToyCarArena.Gameplay
                 HasEdgeAssist = edgeAssist ?? HasEdgeAssist,
                 KnockoutRewardCap = knockoutRewardCap ?? KnockoutRewardCap,
                 TopPlaces = topPlaces ?? TopPlaces,
+                PickupRollTime = pickupRollTime ?? PickupRollTime,
             };
         }
     }

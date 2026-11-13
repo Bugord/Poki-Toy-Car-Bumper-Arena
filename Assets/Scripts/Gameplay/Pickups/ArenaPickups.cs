@@ -71,6 +71,7 @@ namespace ToyCarArena.Gameplay.Pickups
         private readonly bool isEnabled;
         private readonly float pace;
         private readonly int maxCount;
+        private readonly float rollTime;
         private readonly List<FloorPickup> live = new();
         private readonly List<(Car car, Action handler)> shieldHandlers = new();
 
@@ -117,6 +118,7 @@ namespace ToyCarArena.Gameplay.Pickups
             // A mode may bring boxes faster and more of them at once (ITEM FRENZY).
             this.pace = Mathf.Max(0.01f, rules.Mode.PickupPace);
             this.maxCount = rules.Mode.PickupMax > 0 ? rules.Mode.PickupMax : settings.MaxCount;
+            this.rollTime = rules.Mode.PickupRollTime > 0f ? rules.Mode.PickupRollTime : settings.RollTime;
         }
 
         /// <summary>
@@ -232,6 +234,11 @@ namespace ToyCarArena.Gameplay.Pickups
             }
 
             EnsureBuilt();
+            // A glove that cannot punch yet (its last still out) stays in the slot rather than being spent for nothing.
+            if (car.HeldItem == ItemKind.Glove && !gloves.CanPunch(car)) {
+                return false;
+            }
+
             var kind = car.UseItem();
             switch (kind) {
                 case ItemKind.Mega:
@@ -404,7 +411,7 @@ namespace ToyCarArena.Gameplay.Pickups
         {
             var trailing = ItemRoll.TrailingOf(round.Score, round.IndexOf(car), settings);
             var kind = ItemRoll.Choose(random, settings, trailing);
-            car.GiveItem(kind, settings.RollTime);
+            car.GiveItem(kind, rollTime);
             if (effects != null) {
                 effects.PlayPickup(car.Position);
             }
