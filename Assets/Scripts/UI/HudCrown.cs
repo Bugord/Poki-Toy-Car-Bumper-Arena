@@ -132,7 +132,14 @@ namespace ToyCarArena.UI
             var bannerText = StrokeText.Create("", null, out bannerLabels, "display", "hud__pass-text");
             bannerSticker.Add(bannerText);
             banner.Add(bannerSticker);
-            root.Add(banner);
+            // Under the names: the banner sits mid-floor in portrait, and a bot's name over it still reads.
+            var layerIndex = layer.parent == root ? root.IndexOf(layer) : -1;
+            if (layerIndex >= 0) {
+                root.Insert(layerIndex, banner);
+            }
+            else {
+                root.Add(banner);
+            }
 
             pointer = new VisualElement { name = "crown-pointer", pickingMode = PickingMode.Ignore };
             pointer.style.position = Position.Absolute;
