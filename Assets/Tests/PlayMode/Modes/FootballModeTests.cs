@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
+using ToyCarArena.App;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Bots;
@@ -274,12 +275,14 @@ namespace ToyCarArena.Tests.PlayMode
             var mode = Container.Resolve<FootballMode>();
             RoundResult? result = null;
             Round.Finished += r => result = r;
-            while (Round.TimeLeft > 0.05f) {
+            // A quarter of a second left: the ball needs two physics steps to cross, and the round's clock runs in frames,
+            // so closer than that the test would race the clock rather than check the goal.
+            while (Round.TimeLeft > 0.25f) {
                 yield return new WaitForFixedUpdate();
             }
 
             Assert.That(result.HasValue, Is.False);
-            // Right on the line: in with the next step, in the match's last frames.
+            // Right on the line: in with the next steps, in the match's last frames.
             yield return Shoot(mode, Round.Player, RoundTeams.Red, -mode.Settings.BallRadius * 0.6f + 0.05f);
             var timeout = Time.time + 2f;
             while (!result.HasValue && Time.time < timeout) {
@@ -379,6 +382,32 @@ namespace ToyCarArena.Tests.PlayMode
         /// Puts the ball just short of the goal line of <paramref name="goal"/>'s goal, touched last by
         /// <paramref name="toucher"/>, rolling in, and waits for the goal.
         /// </summary>
+        /// <summary>
+        /// The mode's own analytics: the match's goals and the player's, one number each, beside the shared events of a
+        /// mode and of a round in teams; another mode sends none of them.
+        /// </summary>
+        [Test]
+        public void ItsAnalyticsCountTheGoals()
+        {
+            var platform = new MatchTests.RecordingPlatform();
+            RoundResult Match(int playerGoals, int blue, int red) => new(blue > red ? RoundOutcome.Won : RoundOutcome.Survived,
+                blue > red ? 1 : 6, 6, 90f, 0, RoundResult.Nobody, FallCause.None, false, false,
+                new[] { new RoundStanding(0, 1, 0, 0, playerGoals, RoundTeams.Blue) }, isTimed: true,
+                kind: SpecialRound.Football, isLoss: red > blue, bonusKnockouts: playerGoals, teams: 2,
+                teamPoints: new[] { blue, red });
+            platform.MeasureFootballEnd(SpecialRound.Football, Match(2, 4, 1));
+            platform.MeasureFootballEnd(SpecialRound.Football, Match(7, 9, 3));
+            platform.MeasureFootballEnd(SpecialRound.Football, Match(0, 0, 0));
+            platform.MeasureFootballEnd(SpecialRound.TeamPush, Match(3, 5, 2));
+
+            var names = platform.Events.Select(e => $"{e.Item1} / {e.Item2} / {e.Item3}").ToList();
+            Assert.That(names, Is.EqualTo(new[] {
+                "special / football-goals-5 / goals", "special / football-scored-2 / player-goals",
+                "special / football-goals-10plus / goals", "special / football-scored-5plus / player-goals",
+                "special / football-goals-0 / goals", "special / football-scored-0 / player-goals",
+            }));
+        }
+
         private IEnumerator Shoot(FootballMode mode, Car toucher, int goal, float shortOfLine = 0.5f)
         {
             var body = mode.Ball.Body;

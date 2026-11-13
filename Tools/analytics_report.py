@@ -111,6 +111,9 @@ def summarise(data):
         # clear 3-5, big 6+) и KO игрока в нём, по id режима (TEAM PUSH, позже FOOTBALL)
         "team_end": other(o, r"special-((?:team-push|football)-team-(?:won|draw|lost)-(?:close|clear|big))-team"),
         "team_ko": other(o, r"special-((?:team-push|football)-ko-(?:\d+|10plus))-team-knockouts"),
+        # после football: голы обеих команд за матч и голы игрока (FootballEvents)
+        "football_goals": other(o, r"special-(football-goals-(?:\d+|10plus))-goals"),
+        "football_scored": other(o, r"special-(football-scored-(?:\d+|5plus))-player-goals"),
         "scoreboard": i.get("scoreboard-shown"),
         "ad_commercial": i.get("ad-commercial"),
         # после v0.17.9: FPS по экранам и медиана первой минуты визита (ScreenFrameRate), длина рекламы между раундами
@@ -446,6 +449,8 @@ def report(version, previous):
         ("Режимы: место по режиму (после event-modes; визиты с place)", "mode_place"),
         ("Команды: исход раунда команды игрока и разрыв (после team-push; визиты с team)", "team_end"),
         ("Команды: KO игрока за раунд команд (после team-push; визиты с team-knockouts)", "team_ko"),
+        ("FOOTBALL: голы за матч, обе команды (после football; визиты с goals)", "football_goals"),
+        ("FOOTBALL: голы игрока за матч (после football; визиты с player-goals)", "football_scored"),
         ("Свои рывки по раундам (после v0.7.1, после v0.14.1 только в сборке с бустами; визиты с round-boosts)", "round_boosts"),
         ("Рывки автобуста по раундам (после v0.7.1, после v0.14.1 только в сборке с бустами; визиты с auto-boosts)", "auto_boosts"),
         ("Миссии: сколько выполнено за раунд (v0.10, визиты с missions)", "missions_done"),
