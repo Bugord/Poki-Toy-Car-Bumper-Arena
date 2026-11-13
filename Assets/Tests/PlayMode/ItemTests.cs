@@ -732,6 +732,24 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(pows, Is.EqualTo(1), "a punch the shield took is no hit");
         }
 
+        [UnityTest]
+        public IEnumerator AGloveIsKeptWhileTheLastOneIsStillOut()
+        {
+            tuning = UseMode(GameTuning.GameMode.Match, 60f);
+            yield return Load(true, 7);
+            var player = round.Player;
+            yield return StandOnTheMiddle(player);
+            UseNow(player, ItemKind.Glove);
+            Assert.That(pickups.IsPunching(player), Is.True);
+            Assert.That(pickups.Give(player, ItemKind.Glove), Is.True);
+            Assert.That(pickups.Use(player), Is.False, "a glove cannot punch while the last is still out");
+            Assert.That(player.HeldItem, Is.EqualTo(ItemKind.Glove), "the refused glove stays in the slot");
+            yield return Until(() => !pickups.IsPunching(player), tuning.Pickups.Glove.Length + 1f,
+                "the first glove never came back");
+            Assert.That(pickups.Use(player), Is.True, "once it is back, the kept glove punches");
+            Assert.That(player.HasItem, Is.False);
+        }
+
         // --- Who can break one ---
 
         [UnityTest]

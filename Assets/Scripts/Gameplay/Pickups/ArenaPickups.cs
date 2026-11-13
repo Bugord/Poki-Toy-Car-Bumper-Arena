@@ -234,6 +234,11 @@ namespace ToyCarArena.Gameplay.Pickups
             }
 
             EnsureBuilt();
+            // A glove that cannot punch yet (its last still out) stays in the slot rather than being spent for nothing.
+            if (car.HeldItem == ItemKind.Glove && !gloves.CanPunch(car)) {
+                return false;
+            }
+
             var kind = car.UseItem();
             switch (kind) {
                 case ItemKind.Mega:
