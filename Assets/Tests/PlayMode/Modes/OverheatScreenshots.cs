@@ -359,7 +359,7 @@ namespace ToyCarArena.Tests.PlayMode
             var catalog = AssetDatabase.LoadAssetAtPath<CarCatalog>("Assets/Data/Cars/data_car_catalog.asset");
             var tuning = AssetDatabase.LoadAssetAtPath<GameTuning>("Assets/Data/Gameplay/data_game_tuning.asset");
             var rules = tuning.RulesOf(SpecialRound.Overheat);
-            var bots = rules.BotCountFor(rules.Bots, 6);
+            var bots = rules.BotCountFor(6, 6);
             var roster = new SessionRoster(catalog, new PlayerCar(catalog));
             roster.ForRound(bots);
             try {

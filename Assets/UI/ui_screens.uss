@@ -6017,9 +6017,9 @@
 .car-heat {
     flex-direction: row;
     align-items: center;
-    height: 40px;
+    height: 48px;
     margin: 0 10px 0 -4px;
-    padding: 0 10px 0 6px;
+    padding: 0 12px 0 6px;
     border-width: 4px 4px 7px 4px;
     border-radius: 12px;
     border-color: var(--navy);
@@ -6027,8 +6027,8 @@
 }
 
 .car-heat__flame {
-    width: 24px;
-    height: 30px;
+    width: 28px;
+    height: 36px;
     margin-right: 2px;
     color: rgb(255, 170, 80);
 }
@@ -6036,7 +6036,7 @@
 .car-heat__text {
     margin: 0;
     padding: 0 0 2px 0;
-    font-size: 28px;
+    font-size: 36px;
     color: var(--navy);
     -unity-text-outline-width: 0;
     white-space: nowrap;
@@ -6053,6 +6053,12 @@
     -unity-text-outline-width: 5px;
     -unity-text-outline-color: var(--navy);
 }
+
+/* The face has no outline of its own: with one, the navy ate the white letters. */
+.car-heat--warm .car-heat__text.stroke__face,
+.car-heat--hot .car-heat__text.stroke__face,
+.car-heat--warm .hud__heat-text.stroke__face,
+.car-heat--hot .hud__heat-text.stroke__face { -unity-text-outline-width: 0; }
 
 .hud__heat {
     display: none;

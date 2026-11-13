@@ -23,6 +23,8 @@ namespace ToyCarArena.UI
         private const float Margin = 20f;
         // Reference pixels over a car RED HOT! springs at: over its handle.
         private const float HotLift = 190f;
+        // How far under the car RED HOT! sits when there is no room above it.
+        private const float HotDrop = 120f;
         private const float HotSpring = 0.28f;
         private const float HotHold = 1.1f;
         private const float HotLeave = 0.3f;
@@ -58,6 +60,10 @@ namespace ToyCarArena.UI
         private readonly HudViewModel model;
         private readonly OverheatMode mode;
         private readonly VisualElement layer;
+        // The HUD's top bar: a pop over a car on the far edge stays under it rather than behind the clock.
+        private readonly VisualElement bar;
+        // The score table: in portrait it hangs under the bar's right end, over the far edge's cars.
+        private readonly VisualElement scoreboard;
         private Chip[] chips;
         private readonly Chip player;
         private readonly VisualElement playerRoot;
@@ -83,6 +89,8 @@ namespace ToyCarArena.UI
             this.model = model;
             this.mode = mode;
             this.layer = layer;
+            bar = root?.Q("hud-bar");
+            scoreboard = root?.Q("scoreboard");
             chips = new Chip[Mathf.Max(1, model.CarCount)];
 
             playerRoot = new VisualElement { name = "player-heat", pickingMode = PickingMode.Ignore };
@@ -218,9 +226,18 @@ namespace ToyCarArena.UI
                 }
 
                 pop.Sticker.style.scale = new Scale(new Vector3(Mathf.Max(0f, scale), Mathf.Max(0f, scale), 1f));
-                var point = Project(camera, model.PositionOf(pop.Index));
+                var car = Project(camera, model.PositionOf(pop.Index));
+                var point = car;
                 point.y -= HotLift + rise;
-                Clamp(ref point, pop.Sticker, top, left, right);
+                // Over a car on the far edge there is no room above it under the HUD bar, and pushed down the
+                // sticker would sit on the car's own name: it goes under the car instead.
+                var popTop = BelowBar(top);
+                var half = new Vector2(pop.Sticker.layout.width, pop.Sticker.layout.height) * 0.5f;
+                if (point.y - half.y - Margin < popTop || Covers(scoreboard, new Rect(point - half, half * 2f))) {
+                    point.y = car.y + HotDrop - rise;
+                }
+
+                Clamp(ref point, pop.Sticker, popTop, left, right);
                 pop.Root.style.left = point.x;
                 pop.Root.style.top = point.y;
             }
@@ -250,6 +267,8 @@ namespace ToyCarArena.UI
             nextPop = (nextPop + 1) % pops.Length;
             pop.Index = index;
             pop.Start = Time.unscaledTime;
+            // Over the names in the layer: they are built after the pops, and a new handle would cover the sticker.
+            pop.Root.BringToFront();
         }
 
         private void OnMeltdown(int index)
@@ -261,6 +280,30 @@ namespace ToyCarArena.UI
         {
             var panelPoint = RuntimePanelUtils.CameraTransformWorldToPanel(layer.panel, world, camera);
             return layer.WorldToLocal(panelPoint);
+        }
+
+        /// <summary>Where the space under the HUD's top bar starts, in the layer, or <paramref name="top"/> without one.</summary>
+        private float BelowBar(float top)
+        {
+            if (bar == null || bar.panel == null || bar.resolvedStyle.display == DisplayStyle.None) {
+                return top;
+            }
+
+            return Mathf.Max(top, layer.WorldToLocal(new Vector2(0f, bar.worldBound.yMax)).y);
+        }
+
+        /// <summary>Whether a shown <paramref name="element"/> lies over <paramref name="rect"/> of the layer.</summary>
+        private bool Covers(VisualElement element, Rect rect)
+        {
+            if (element == null || element.panel == null || element.resolvedStyle.display == DisplayStyle.None
+                || element.resolvedStyle.opacity <= 0f) {
+                return false;
+            }
+
+            var bound = element.worldBound;
+            var min = layer.WorldToLocal(bound.min);
+            var max = layer.WorldToLocal(bound.max);
+            return Rect.MinMaxRect(min.x, min.y, max.x, max.y).Overlaps(rect);
         }
 
         private void Clamp(ref Vector2 point, VisualElement element, float top, float left, float right)

@@ -23,6 +23,8 @@ namespace ToyCarArena.Gameplay.Modes
         private const float MinFlameSpeed = 2f;
         private const float GlowHeight = 0.02f;
         private const float RoofGap = 0.18f;
+        // The crown seen from the arena's camera, high and looking down: big enough to read as flames on a phone.
+        private const float FlameSize = 1.7f;
 
         private static readonly int ColorId = Shader.PropertyToID("_BaseColor");
         private static readonly Color Glow = new(1f, 0.23f, 0.19f, 1f);
@@ -69,9 +71,12 @@ namespace ToyCarArena.Gameplay.Modes
             }
 
             Outline.Apply(root.gameObject);
-            // The glow is a flat sticker under the car: no outline of its own.
+            // The glow is a flat sticker under the car, and steam is soft: no outline of their own.
             foreach (var slot in slots) {
                 slot.Glow.renderingLayerMask &= ~Outline.Layer;
+                foreach (var steam in slot.Steam.GetComponentsInChildren<Renderer>(true)) {
+                    steam.renderingLayerMask &= ~Outline.Layer;
+                }
             }
         }
 
@@ -117,7 +122,8 @@ namespace ToyCarArena.Gameplay.Modes
 
         private void ShowSteam(Slot slot, Car car, float heat)
         {
-            var isWarm = heat >= settings.Warm;
+            // A red-hot car wears its flames instead: the puffs would hide them.
+            var isWarm = heat >= settings.Warm && heat < settings.Hot;
             if (slot.Steam.gameObject.activeSelf != isWarm) {
                 slot.Steam.gameObject.SetActive(isWarm);
             }
@@ -131,7 +137,7 @@ namespace ToyCarArena.Gameplay.Modes
             slot.Steam.position = car.Position + Vector3.up * (slot.Roof * growth);
             // Faster and bigger as it heats: lazy wisps when warm, a boil near red-hot.
             var cycle = PuffCycle * Mathf.Lerp(1f, 0.6f, share);
-            var size = Mathf.Lerp(0.8f, 1.5f, share) * growth;
+            var size = Mathf.Lerp(0.6f, 1.1f, share) * growth;
             for (var p = 0; p < slot.Puffs.Length; p++) {
                 var t = Mathf.Repeat((time + slot.Phase) / cycle + (float)p / slot.Puffs.Length, 1f);
                 var drift = Mathf.Sin((p * 2.1f + slot.Phase) * 3f) * 0.35f;
@@ -149,7 +155,8 @@ namespace ToyCarArena.Gameplay.Modes
                 var lean = Mathf.Sin(time * 9f + slot.Phase) * 6f;
                 slot.Flame.SetPositionAndRotation(car.Position + Vector3.up * (slot.Roof * growth),
                     Quaternion.Euler(0f, 0f, lean));
-                slot.Flame.localScale = new Vector3(growth, flicker * growth, growth);
+                var size = FlameSize * growth;
+                slot.Flame.localScale = new Vector3(size, flicker * size, size);
             }
             else if (slot.Flame.localScale != Vector3.zero) {
                 // Scaled away rather than switched off: the card art finds the crown by its name.
