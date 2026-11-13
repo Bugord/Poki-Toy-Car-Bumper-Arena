@@ -34,6 +34,9 @@ namespace ToyCarArena.Gameplay.Modes
         /// <summary>Metres from the centre spot within which a slow ball is never stuck: it is just waiting.</summary>
         private const float MiddleRadius = 4f;
 
+        /// <summary>Seconds of play after a kick-off the HUD still points the way to the goal.</summary>
+        private const float KickoffHint = 3f;
+
         /// <summary>Seconds between the bots' new mistakes of aim.</summary>
         private const float AimHold = 2f;
 
@@ -75,6 +78,7 @@ namespace ToyCarArena.Gameplay.Modes
         private EffectPlayer effects;
         private float phaseLeft;
         private float stuckTime;
+        private float playSince = float.NegativeInfinity;
 
         public FootballMode(GameTuning tuning, RoundRules rules, ArenaRound round, GameTuning.ArenaSettings arenaSettings,
             RoundDifficulty difficulty, MechanicArt art, ArenaCamera arenaCamera, IAudioService audioService,
@@ -93,8 +97,8 @@ namespace ToyCarArena.Gameplay.Modes
 
         public SpecialRound Kind => SpecialRound.Football;
 
-        /// <summary>A blue SUV with the ball on its roof.</summary>
-        public ModeCard Card { get; } = new("suv", 2, FootballPitch.BallLookName, 1.05f);
+        /// <summary>An orange SUV with the ball on its roof: no team's colour, warm on the card's sky blue.</summary>
+        public ModeCard Card { get; } = new("suv", 5, FootballPitch.BallLookName, 1.05f);
 
         public bool IsActive { get; }
 
@@ -111,11 +115,20 @@ namespace ToyCarArena.Gameplay.Modes
 
         public Phase State { get; private set; } = Phase.Waiting;
 
+        /// <summary>
+        /// A kick-off: before the round begins, after a goal and for the first seconds of play, when the HUD points the
+        /// way to the goal to attack.
+        /// </summary>
+        public bool IsKickingOff => State is Phase.Waiting or Phase.Kickoff || State == Phase.Play && Time.time - playSince < KickoffHint;
+
         /// <summary>Goals scored this round, by both teams.</summary>
         public int Goals { get; private set; }
 
         /// <summary>Goals the player scored this round.</summary>
         public int PlayerGoals { get; private set; }
+
+        /// <summary>The car's index in the round: its nick and its colour.</summary>
+        public int IndexOf(Car car) => round.IndexOf(car);
 
         /// <summary>The middle of the goal line <paramref name="team"/> attacks.</summary>
         public Vector3 TargetOf(int team) => new(0f, 0f, -FootballPitch.EndOf(team) * settings.GoalLine);
@@ -138,8 +151,7 @@ namespace ToyCarArena.Gameplay.Modes
             switch (State) {
                 case Phase.Waiting:
                     if (round.HasBegun) {
-                        pitch.Release();
-                        State = Phase.Play;
+                        Play();
                     }
 
                     break;
@@ -153,8 +165,7 @@ namespace ToyCarArena.Gameplay.Modes
                 case Phase.Kickoff:
                     phaseLeft -= Time.deltaTime;
                     if (phaseLeft <= 0f) {
-                        pitch.Release();
-                        State = Phase.Play;
+                        Play();
                     }
 
                     break;
@@ -237,6 +248,13 @@ namespace ToyCarArena.Gameplay.Modes
             supportSpot = Clamp(supportSpot, 2f);
             Arrive(car, supportSpot, pace);
             return true;
+        }
+
+        private void Play()
+        {
+            pitch.Release();
+            State = Phase.Play;
+            playSince = Time.time;
         }
 
         private void Build()
