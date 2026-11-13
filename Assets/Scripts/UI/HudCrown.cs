@@ -25,6 +25,9 @@ namespace ToyCarArena.UI
         // Reference pixels under the top of the safe area the banner sits at: under the HUD bar and the kill feed's
         // three rows at its left in portrait, as the hot potato's.
         private const float BannerTop = 480f;
+        // The banner comes on each change and goes: held longer, it covered the middle of the floor, where the crown
+        // and its holder are, in portrait. The pointer and the seconds sticker stay.
+        private const float BannerHold = 2.5f;
         private const float BannerPulse = 0.06f;
         private const float BannerRate = 6f;
         private const float ChangePop = 0.25f;
@@ -78,6 +81,7 @@ namespace ToyCarArena.UI
         private readonly VisualElement secondsSticker;
         private readonly Label[] secondsLabels;
         private readonly VisualElement pointer;
+        private readonly VisualElement scoreboard;
         private readonly VisualElement arrow;
         private readonly Pop gotPop;
         private readonly Pop stolenPop;
@@ -103,6 +107,7 @@ namespace ToyCarArena.UI
             this.crown = crown;
             this.layer = layer;
             this.root = root;
+            scoreboard = root.Q<VisualElement>("scoreboard");
 
             seconds = new VisualElement { name = "crown-seconds", pickingMode = PickingMode.Ignore };
             seconds.AddToClassList("hud__fuse");
@@ -186,8 +191,9 @@ namespace ToyCarArena.UI
             ShowBanner(say, time, top);
 
             var size = layer.layout.size;
-            ShowSeconds(isLive && holder != null, holder, camera, top, left, right, size, time);
-            ShowPointer(isLive && !isPlayerHolding, camera, top, left, right, size);
+            // The holder's seconds only while it is on the screen: off it, the pointer stands for it.
+            var isPointing = ShowPointer(isLive && !isPlayerHolding, camera, top, left, right, size);
+            ShowSeconds(isLive && holder != null && !isPointing, holder, camera, top, left, right, size, time);
             gotPop.Tick(time, camera, layer, player, top);
             stolenPop.Tick(time, camera, layer, player, top);
         }
@@ -241,14 +247,15 @@ namespace ToyCarArena.UI
                 }
             }
 
-            banner.EnableInClassList("hud__pass--shown", say != Say.None);
+            var since = time - saidAt;
+            var isShown = say != Say.None && since < BannerHold;
+            banner.EnableInClassList("hud__pass--shown", isShown);
             banner.style.top = top + BannerTop;
-            if (say == Say.None) {
+            if (!isShown) {
                 return;
             }
 
-            // A pop on each change, then the player's RUN! keeps pulsing; the others stay still.
-            var since = time - saidAt;
+            // A pop on each change, the player's RUN! pulsing while it is up; the others stay still.
             var pop = since < ChangePop ? Mathf.Sin(since / ChangePop * Mathf.PI) * (ChangeScale - 1f) : 0f;
             var pulse = say == Say.Run ? BannerPulse * (0.5f + 0.5f * Mathf.Sin(time * BannerRate)) : 0f;
             var scale = 1f + pop + pulse;
@@ -301,11 +308,11 @@ namespace ToyCarArena.UI
         /// While the crown (or its holder) is off the screen, a gold disc with a crown on the screen's edge, on the line
         /// from the middle of the screen to it, its arrow pointing the way.
         /// </summary>
-        private void ShowPointer(bool isWanted, Camera camera, float top, float left, float right, Vector2 size)
+        private bool ShowPointer(bool isWanted, Camera camera, float top, float left, float right, Vector2 size)
         {
             if (!isWanted) {
                 pointer.style.display = DisplayStyle.None;
-                return;
+                return false;
             }
 
             var target = crown.Holder != null ? crown.Holder.Position : crown.CrownPosition;
@@ -317,7 +324,7 @@ namespace ToyCarArena.UI
             var isOnScreen = point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY;
             pointer.style.display = isOnScreen ? DisplayStyle.None : DisplayStyle.Flex;
             if (isOnScreen) {
-                return;
+                return false;
             }
 
             // Onto the edge of the inset frame along the line from its middle.
@@ -334,10 +341,24 @@ namespace ToyCarArena.UI
                 Mathf.Abs(toward.x) > 0.001f ? half.x / Mathf.Abs(toward.x) : float.PositiveInfinity,
                 Mathf.Abs(toward.y) > 0.001f ? half.y / Mathf.Abs(toward.y) : float.PositiveInfinity);
             var at = middle + toward * Mathf.Min(1f, reach);
+
+            // Not under the scoreboard on the right of a portrait screen: just below it, still pointing at the crown.
+            if (scoreboard != null && scoreboard.resolvedStyle.display != DisplayStyle.None
+                && scoreboard.resolvedStyle.opacity > 0.01f) {
+                var board = layer.WorldToLocal(scoreboard.worldBound);
+                var clear = PointerSize * 0.6f;
+                if (at.x > board.xMin - clear && at.x < board.xMax + clear
+                    && at.y > board.yMin - clear && at.y < board.yMax + clear) {
+                    at.y = Mathf.Min(board.yMax + clear, frameMax.y);
+                    toward = point - at;
+                }
+            }
+
             pointer.style.left = at.x;
             pointer.style.top = at.y;
             var angle = Mathf.Atan2(toward.y, toward.x) * Mathf.Rad2Deg;
             arrow.style.rotate = new Rotate(angle);
+            return true;
         }
 
         // The arrow out of the pointer's disc, pointing to +x: the arrow element turns with the line to the target.
