@@ -111,6 +111,8 @@ def summarise(data):
         # clear 3-5, big 6+) и KO игрока в нём, по id режима (TEAM PUSH, позже FOOTBALL)
         "team_end": other(o, r"special-((?:team-push|football)-team-(?:won|draw|lost)-(?:close|clear|big))-team"),
         "team_ko": other(o, r"special-((?:team-push|football)-ko-(?:\d+|10plus))-team-knockouts"),
+        # после crown: сколько секунд игрок держал корону (none, 1: 1-9 с, 10: 10-19 с, 20plus) и сколько раз взял
+        "crown": other(o, r"special-(crown-held-(?:none|1|10|20plus)-takes-(?:\d+|10plus))-crown"),
         "scoreboard": i.get("scoreboard-shown"),
         "ad_commercial": i.get("ad-commercial"),
         # после v0.17.9: FPS по экранам и медиана первой минуты визита (ScreenFrameRate), длина рекламы между раундами
@@ -446,6 +448,7 @@ def report(version, previous):
         ("Режимы: место по режиму (после event-modes; визиты с place)", "mode_place"),
         ("Команды: исход раунда команды игрока и разрыв (после team-push; визиты с team)", "team_end"),
         ("Команды: KO игрока за раунд команд (после team-push; визиты с team-knockouts)", "team_ko"),
+        ("CROWN: секунды игрока с короной (none, 1 = 1-9 с, 10 = 10-19 с, 20plus) и сколько раз взял (после crown; визиты с crown)", "crown"),
         ("Свои рывки по раундам (после v0.7.1, после v0.14.1 только в сборке с бустами; визиты с round-boosts)", "round_boosts"),
         ("Рывки автобуста по раундам (после v0.7.1, после v0.14.1 только в сборке с бустами; визиты с auto-boosts)", "auto_boosts"),
         ("Миссии: сколько выполнено за раунд (v0.10, визиты с missions)", "missions_done"),
