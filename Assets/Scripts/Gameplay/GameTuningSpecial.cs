@@ -29,6 +29,27 @@ namespace ToyCarArena.Gameplay
 
         /// <summary>Gravity is weak: hits throw cars high and far.</summary>
         LowGravity,
+
+        // The event modes after hot potato (EventMode, one to one): only as a mode of the menu, the mode of the day
+        // or the rotation's mode slot, never in the order of special rounds by themselves.
+
+        /// <summary>CROWN: the car that holds the crown longest wins; a bump steals it.</summary>
+        Crown,
+
+        /// <summary>GOLD RUSH: the most coins wins; a bump shakes a rival's coins out.</summary>
+        GoldRush,
+
+        /// <summary>ITEM FRENZY: boxes everywhere; the last car standing wins.</summary>
+        ItemFrenzy,
+
+        /// <summary>OVERHEAT: every hit heats a car up; the hotter it is, the farther it flies.</summary>
+        Overheat,
+
+        /// <summary>TEAM PUSH: blue against red; the team that pushes the other off wins.</summary>
+        TeamPush,
+
+        /// <summary>FOOTBALL: two teams push a ball into each other's goal.</summary>
+        Football,
     }
 
     /// <summary>
@@ -158,6 +179,9 @@ namespace ToyCarArena.Gameplay
             /// </summary>
             public void Force(SpecialRound? kind) => forced = kind;
 
+            /// <summary>Whether a test has forced every round's kind (<see cref="Force"/>).</summary>
+            public bool IsForced => forced.HasValue;
+
             /// <summary>The special round of the visit's round <paramref name="round"/> (from 1).</summary>
             public SpecialRound For(int round)
             {
@@ -183,6 +207,11 @@ namespace ToyCarArena.Gameplay
         [Serializable]
         public sealed class HotPotatoSettings
         {
+            [Tooltip("Whether the build plays the mode: the menu, the mode of the day and the rotation offer only modes " +
+                "that are on")]
+            [SerializeField]
+            private bool enabled = true;
+
             [Tooltip("Seconds from the round's start to the first bomb")]
             [Min(0f)]
             [SerializeField]
@@ -275,6 +304,7 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float fenceMargin = 3f;
 
+            public bool Enabled => enabled;
             public float FirstDelay => firstDelay;
             public float Fuse => fuse;
             public float NextDelay => nextDelay;
@@ -293,6 +323,14 @@ namespace ToyCarArena.Gameplay
             public float FenceThickness => fenceThickness;
             public float WallHeight => wallHeight;
             public float FenceMargin => fenceMargin;
+
+            /// <summary>
+            /// What the mode changes in the shared round: nobody falls (a fence, and a car past it is put back), the
+            /// floor stands still without mechanics or boxes, and the edge assist does not hold the player back from the
+            /// fence.
+            /// </summary>
+            public ModeRules Rules => ModeRules.Plain.With(fall: FallRule.PutBack, fence: true, floor: FloorRule.Still,
+                mechanics: false, pickups: PickupRule.None, edgeAssist: false);
         }
     }
 }

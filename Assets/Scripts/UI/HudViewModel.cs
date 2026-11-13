@@ -3,6 +3,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Cars;
+using ToyCarArena.Gameplay.Modes;
 using ToyCarArena.Gameplay.Pickups;
 using ToyCarArena.Gameplay.Round;
 using UIKit.Runtime.Abstractions;
@@ -51,6 +52,18 @@ namespace ToyCarArena.UI
         public event Action NemesisChanged;
 
         /// <summary>
+        /// Raised in a timed round when a car's points change by something else than a fall (a mode adds them), with
+        /// its index: the score table orders itself again.
+        /// </summary>
+        public event Action<int> ScoreChanged;
+
+        /// <summary>
+        /// Raised in a timed team round after a team's points changed, with the team and by how much: the team score
+        /// pops its number and shows the point.
+        /// </summary>
+        public event Action<int, int> TeamScoreChanged;
+
+        /// <summary>
         /// Raised in a match when the player's car breaks a box and its slot starts to spin, with the item it will land
         /// on (the HUD spins anyway and lands on it).
         /// </summary>
@@ -81,7 +94,7 @@ namespace ToyCarArena.UI
         private Car player;
         private readonly HudControls controls;
         private ArenaRound round;
-        private HotPotato potato;
+        private IRoundMode mode;
         private PlayerDriver driver;
 
         public HudViewModel(IScreenNavigator navigator, HudControls controls)
@@ -203,9 +216,30 @@ namespace ToyCarArena.UI
         public bool IsMatch => round != null && round.IsMatch;
 
         /// <summary>
-        /// The knock-outs a car has scored in the match.
+        /// Whether the round is timed and decided by its score (the long match, a mode that scores points): the HUD
+        /// shows the score table, the end of the clock and the player's score instead of the cars left.
         /// </summary>
-        public int ScoreOf(int index) => round?.Score?.KnockoutsOf(index) ?? 0;
+        public bool IsTimed => round != null && round.IsTimed;
+
+        /// <summary>
+        /// The points a car has scored in the timed round: its knock-outs in the match, what the mode counts in a mode.
+        /// </summary>
+        public int ScoreOf(int index) => round?.Score?.PointsOf(index) ?? 0;
+
+        /// <summary>The points the player has scored in the timed round.</summary>
+        public int PlayerScore => ScoreOf(PlayerIndex);
+
+        /// <summary>The number of teams of the round, 0 without teams.</summary>
+        public int Teams => round?.Mode.Teams ?? 0;
+
+        /// <summary>The team of car <paramref name="index"/>, <see cref="RoundTeams.None"/> without teams.</summary>
+        public int TeamOf(int index) => round?.TeamOf(index) ?? RoundTeams.None;
+
+        /// <summary>The player's team, <see cref="RoundTeams.None"/> without teams.</summary>
+        public int PlayerTeam => TeamOf(PlayerIndex);
+
+        /// <summary>A team's points in a timed team round: its cars' and its own.</summary>
+        public int TeamPointsOf(int team) => round?.Score?.TeamPointsOf(team) ?? 0;
 
         /// <summary>
         /// The car at a place of the match's ranking, from 0 for the leader (knock-outs, then fewer falls, then who
@@ -256,23 +290,13 @@ namespace ToyCarArena.UI
 
         public Vector3 PlayerPosition => round?.Player != null ? round.Player.Position : Vector3.zero;
 
-        /// <summary>Whether this round is the HOT POTATO mode, with its fuse and PASS IT! on the HUD.</summary>
-        public bool IsPotato => potato != null && potato.IsActive;
+        /// <summary>
+        /// The event mode the round plays (its own HUD reads it, <see cref="ModeLooks"/>), null for a round of no mode.
+        /// </summary>
+        public IRoundMode Mode => mode;
 
-        /// <summary>Whether a car in play holds the hot potato's bomb now.</summary>
-        public bool HasBomb => IsPotato && potato.Holder != null && !potato.Holder.IsOut;
-
-        /// <summary>Whether the bomb is on the player's car.</summary>
-        public bool IsPlayerHoldingBomb => HasBomb && potato.Holder == round.Player;
-
-        /// <summary>Seconds left on the bomb's fuse.</summary>
-        public float FuseLeft => IsPotato ? potato.FuseLeft : 0f;
-
-        /// <summary>Whether the fuse is in its last seconds, when the bomb blinks faster.</summary>
-        public bool IsFuseShort => HasBomb && potato.IsHurried;
-
-        /// <summary>Where the bomb rides over its holder.</summary>
-        public Vector3 BombPosition => HasBomb ? potato.BombPosition : Vector3.zero;
+        /// <summary>The player's car in the round, for a mode's HUD; null without a round.</summary>
+        public Car PlayerCar => round?.Player;
 
         /// <summary>
         /// How many cars started the round, so their indices run from 0 to one less.
@@ -381,7 +405,7 @@ namespace ToyCarArena.UI
         {
             Unsubscribe();
             round = payload.Round;
-            potato = payload.Potato;
+            mode = payload.Mode;
             driver = payload.Driver;
             if (driver != null) {
                 driver.AutoBoosted += OnAutoBoosted;
@@ -403,6 +427,8 @@ namespace ToyCarArena.UI
                 round.Eliminated += OnEliminated;
                 round.Respawned += OnRespawned;
                 round.NemesisChanged += OnNemesisChanged;
+                round.ScoreChanged += OnScoreChanged;
+                round.TeamScoreChanged += OnTeamScoreChanged;
                 player = round.Player;
                 if (player != null) {
                     player.ItemRolled += OnItemRolled;
@@ -430,6 +456,8 @@ namespace ToyCarArena.UI
                 round.Eliminated -= OnEliminated;
                 round.Respawned -= OnRespawned;
                 round.NemesisChanged -= OnNemesisChanged;
+                round.ScoreChanged -= OnScoreChanged;
+                round.TeamScoreChanged -= OnTeamScoreChanged;
             }
 
             if (player != null) {
@@ -448,6 +476,10 @@ namespace ToyCarArena.UI
         private void OnRespawned(Car car) => CarBack?.Invoke(round.IndexOf(car));
 
         private void OnNemesisChanged() => NemesisChanged?.Invoke();
+
+        private void OnScoreChanged(int index) => ScoreChanged?.Invoke(index);
+
+        private void OnTeamScoreChanged(int team, int change) => TeamScoreChanged?.Invoke(team, change);
 
         private void OnCarOut(Car car)
         {
@@ -487,14 +519,15 @@ namespace ToyCarArena.UI
         public bool IsNewPlayer { get; }
         public int Streak { get; }
         public SpecialRound Special { get; }
-        public HotPotato Potato { get; }
+        /// <summary>The event mode the round plays, null for none.</summary>
+        public IRoundMode Mode { get; }
 
         public HudRound(ArenaRound round, PlayerDriver driver, GameTuning.ControlSettings controls, bool isFirstRound,
             int roundNumber, bool isNewPlayer, int streak = 0, SpecialRound special = SpecialRound.None,
-            int playerRound = 0, HotPotato potato = null)
+            int playerRound = 0, IRoundMode mode = null)
         {
             PlayerRound = playerRound > 0 ? playerRound : roundNumber;
-            Potato = potato;
+            Mode = mode;
             IsNewPlayer = isNewPlayer;
             Streak = streak;
             Special = special;

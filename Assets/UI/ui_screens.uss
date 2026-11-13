@@ -5750,3 +5750,263 @@
 .round-over--gift .missions {
     opacity: 0;
 }
+
+/* ---- A round in teams (HudTeams, the lobby's teams, the result's team table) ---- */
+
+/* The team score under the bar: BLUE N : M RED, the player's team at the left with YOU under its name. Its padding
+   holds the YOU tab, so the end timer's note under the score (HudEndTimer.NoteTop) clears it. */
+.team-score {
+    position: absolute;
+    left: 0;
+    right: 0;
+    align-items: center;
+    padding-bottom: 30px;
+    opacity: 0;
+    scale: 0.6 0.6;
+    transition-property: opacity, scale;
+    transition-duration: 0.2s, 0.3s;
+    transition-timing-function: linear, ease-out-back;
+}
+
+.team-score--shown {
+    opacity: 1;
+    scale: 1 1;
+}
+
+.team-score__bar {
+    flex-direction: row;
+    align-items: center;
+    height: 104px;
+    padding: 0 8px;
+    border-width: 6px 6px 12px 6px;
+    border-color: var(--navy);
+    border-radius: 52px;
+    background-color: var(--white);
+}
+
+.team-score__side {
+    flex-direction: row;
+    align-items: center;
+    height: 78px;
+    padding: 0 22px;
+    border-radius: 39px;
+}
+
+.team-score__side--blue { background-color: var(--car-blue); }
+.team-score__side--red { background-color: var(--car-red); }
+
+.team-score__name-text {
+    margin: 0;
+    padding: 0;
+    font-size: 34px;
+    color: var(--white);
+    -unity-text-outline-width: 5px;
+    -unity-text-outline-color: var(--navy);
+}
+
+.team-score__name-text.stroke__drop { translate: 0 4px; display: flex; }
+
+.team-score__number {
+    min-width: 64px;
+    margin: 0 10px;
+    align-items: center;
+}
+
+.team-score__number-text {
+    margin: 0;
+    padding: 0;
+    font-size: 64px;
+    color: var(--white);
+    -unity-text-outline-width: 7px;
+    -unity-text-outline-color: var(--navy);
+    -unity-text-align: middle-center;
+}
+
+.team-score__number-text.stroke__drop { translate: 0 7px; display: flex; }
+
+/* The team ahead: its number gold. */
+.team-score__side--lead .team-score__number-text.stroke__face { color: var(--gold); }
+
+.team-score__colon { margin: 0 10px; }
+
+.team-score__colon-text {
+    margin: 0;
+    padding: 0;
+    font-size: 56px;
+    color: var(--navy);
+    -unity-text-outline-width: 0;
+}
+
+/* YOU under the player's team, on a small navy tab over the bar's lower edge. */
+.team-score__you {
+    position: absolute;
+    left: 50%;
+    bottom: -40px;
+    translate: -50% 0;
+    margin: 0;
+    padding: 2px 14px 4px 14px;
+    border-radius: 16px;
+    background-color: var(--navy);
+    font-size: 24px;
+    color: var(--white);
+    -unity-text-align: middle-center;
+}
+
+/* The +N of a point, springing up under its side and flying into the number. */
+.team-score__point {
+    position: absolute;
+    top: 120px;
+    translate: -50% 0;
+    padding: 4px 26px 8px 26px;
+    border-width: 6px 6px 12px 6px;
+    border-color: var(--navy);
+    border-radius: 36px;
+}
+
+.team-score__point--blue { background-color: var(--car-blue); }
+.team-score__point--red { background-color: var(--car-red); }
+
+.team-score__point-text {
+    margin: 0;
+    padding: 0;
+    font-size: 58px;
+    color: var(--white);
+    -unity-text-outline-width: 7px;
+    -unity-text-outline-color: var(--navy);
+}
+
+.team-score__point-text.stroke__drop { translate: 0 7px; display: flex; }
+
+/* The name tags: a teammate's on a blue pill with a shield before its level, an enemy's on a red one. */
+.car-name--ally .car-name__sticker { background-color: rgba(52, 78, 170, 0.86); }
+.car-name--ally .car-name__tail { color: rgba(52, 78, 170, 0.86); }
+.car-name--enemy .car-name__sticker { background-color: rgba(176, 52, 40, 0.86); }
+.car-name--enemy .car-name__tail { color: rgba(176, 52, 40, 0.86); }
+
+.car-name__ally {
+    flex-shrink: 0;
+    width: 38px;
+    height: 44px;
+    margin-right: 8px;
+}
+
+/* The lobby: a header pill for each team, its seats edged in its colour. */
+.lobby__team {
+    flex-direction: row;
+    align-self: flex-start;
+    height: 64px;
+    margin: 6px 0 10px 18px;
+    padding: 0 30px;
+    align-items: center;
+    border-width: 5px 5px 10px 5px;
+    border-color: var(--navy);
+    border-radius: 32px;
+}
+
+.lobby__team--blue { background-color: var(--car-blue); }
+.lobby__team--red { background-color: var(--car-red); }
+
+.lobby__team-name .sticker-text__text {
+    font-size: 36px;
+    color: var(--white);
+}
+
+/* A seat is tinted its team's colour (its outline stays navy: PillShape draws a sticker's outline in one colour); the
+   player's stays pale gold. */
+.lobby__row--blue { background-color: rgb(218, 230, 255); }
+.lobby__row--red { background-color: rgb(255, 224, 218); }
+.lobby__row--you.lobby__row--blue, .lobby__row--you.lobby__row--red { background-color: rgb(255, 236, 168); }
+
+/* The result's team table: a header per team with its points, the team's cars under it, its best with MVP. */
+.results__team {
+    flex-direction: row;
+    align-items: center;
+    height: 50px;
+    margin-top: 8px;
+    padding: 0 26px 0 22px;
+    border-width: 5px 5px 10px 5px;
+    border-color: var(--navy);
+    border-radius: 32px;
+}
+
+.results__team--blue { background-color: var(--car-blue); }
+.results__team--red { background-color: var(--car-red); }
+
+.results__team-name {
+    flex-grow: 1;
+    align-items: flex-start;
+}
+
+.results__team-name-text {
+    margin: 0;
+    padding: 0;
+    font-size: 34px;
+    -unity-text-outline-width: 5px;
+    /* The stroke grows to push the points right: its layers, as wide as it, keep the name at its left. */
+    -unity-text-align: middle-left;
+}
+
+.results__team-name-text.stroke__drop { translate: 0 3px; display: flex; }
+
+.results__team-tag {
+    margin: 0 14px 0 0;
+    padding: 2px 14px 4px 14px;
+    border-radius: 16px;
+    background-color: var(--gold);
+    font-size: 24px;
+    color: var(--navy);
+}
+
+.results__team-points-text {
+    margin: 0;
+    padding: 0;
+    font-size: 44px;
+    -unity-text-outline-width: 6px;
+}
+
+.results__team-points-text.stroke__drop { translate: 0 4px; display: flex; }
+
+.results__rank--blue { background-color: var(--car-blue); }
+.results__rank--red { background-color: var(--car-red); }
+.results__rank--blue .results__rank-text,
+.results__rank--red .results__rank-text { color: var(--white); }
+
+.results__mvp {
+    flex-shrink: 0;
+    margin: 0 12px 0 8px;
+    padding: 2px 12px 4px 12px;
+    border-width: 3px;
+    border-color: var(--navy);
+    border-radius: 14px;
+    background-color: var(--gold);
+    font-size: 22px;
+    color: var(--navy);
+}
+
+/* On a phone held upright the team table is compact and starts under the subtitle (centred, it would cover it): low
+   rows, so the two headers, each team's best car and the player fit over the cards. */
+.results--teams { align-self: flex-start; padding-top: 8px; padding-bottom: 12px; }
+.results--teams .results__row { height: 50px; margin-top: 4px; }
+.results--teams .results__header { display: none; }
+.results--teams .results__rank { width: 42px; height: 42px; }
+.results--teams .results__name, .results--teams .results__ko { font-size: 32px; }
+.results--teams .results__team-name-text { font-size: 30px; -unity-text-outline-width: 4px; }
+.results--teams .results__team-points-text { font-size: 38px; -unity-text-outline-width: 5px; }
+.results--teams .results__team-tag { font-size: 20px; }
+.results--wide.results--teams { align-self: center; padding-top: 12px; padding-bottom: 18px; }
+/* Rows a little lower than the match's: the podium stands under the table (RoundOverMatch.PlaceTeamPodium) and gets
+   the height they leave. */
+.results--wide.results--teams .results__row { height: 66px; margin-top: 6px; }
+.results--wide.results--teams .results__rank { width: 56px; height: 56px; }
+.results--wide.results--teams .results__name, .results--wide.results--teams .results__ko { font-size: 40px; }
+.results--wide.results--teams .results__team-tag { font-size: 24px; }
+.results--wide .results__team { height: 68px; margin-top: 10px; border-radius: 34px; }
+.results--wide.results--teams .results__header { display: flex; }
+.results--wide .results__team-name-text { font-size: 40px; -unity-text-outline-width: 5px; }
+.results--wide .results__team-points-text { font-size: 52px; -unity-text-outline-width: 6px; }
+.results--wide .results__mvp { font-size: 28px; }
+
+/* After the sizes above, which set the outline on all three layers of a team's name and points: its face has none
+   (.stroke > .stroke__face), or the outline, centred on the letters' edge, eats them and leaves them hollow. */
+.stroke > Label.results__team-name-text.stroke__face,
+.stroke > Label.results__team-points-text.stroke__face { -unity-text-outline-width: 0; }

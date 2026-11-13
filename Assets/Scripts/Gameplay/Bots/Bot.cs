@@ -94,6 +94,12 @@ namespace ToyCarArena.Gameplay.Bots
         public Car Car { get; }
 
         /// <summary>
+        /// Times the throttle the bot attacks at, 1 by default: a round in teams softens one team's bots with it on the
+        /// easiest rounds (<see cref="GameTuning.TeamSettings"/>). The way back from the edge is never slowed.
+        /// </summary>
+        public float Pace { get; set; } = 1f;
+
+        /// <summary>
         /// The personality's multipliers.
         /// </summary>
         public GameTuning.PersonalitySettings Traits { get; }
@@ -225,7 +231,7 @@ namespace ToyCarArena.Gameplay.Bots
             }
 
             var playerPace = isDuel ? difficulty.DuelPace : difficulty.PlayerPace;
-            Car.Movement.Drive(heading, Target == player ? playerPace : 1f);
+            Car.Movement.Drive(heading, (Target == player ? playerPace : 1f) * Pace);
 
             if (isPushing) {
                 Push(edge, position, heading, margin, deltaTime);
@@ -524,8 +530,19 @@ namespace ToyCarArena.Gameplay.Bots
         /// front of the nose, the bowling ball at a car dead ahead down the floor, the oil at a car chasing it. The moment has to last a delay drawn once for each item (<see cref="GameTuning.PickupBotSettings.UseDelay"/>),
         /// so a bot is not frame-perfect; no item is used that would carry the bot over the edge. Nothing is drawn from
         /// the bot's dice while it holds nothing, so rounds without items replay as before.
+        /// <para>
+        /// A <paramref name="spared"/> car (the player in the round's first seconds, <see cref="RoundDifficulty.PlayerGrace"/>)
+        /// is neither aimed at nor caught: no moment comes while it is in the item's reach, so the grace that keeps the
+        /// bots off the player keeps their items off too.
+        /// </para>
+        /// <para>
+        /// A <paramref name="waiting"/> car (the player while another bot's item is on its way to them,
+        /// <see cref="PlayerItemTurn"/>) is not aimed at either, by the item's own reach (<see cref="Threatens(Car)"/>): the
+        /// bot waits for its turn at that car, or uses the item on another car meanwhile.
+        /// </para>
         /// </summary>
-        public bool WantsToUseItem(IArenaEdge edge, IReadOnlyList<Car> cars, float deltaTime)
+        public bool WantsToUseItem(IArenaEdge edge, IReadOnlyList<Car> cars, float deltaTime, Car spared = null,
+            Car waiting = null)
         {
             if (!Car.IsItemReady || Car.IsOut) {
                 heldItem = ItemKind.None;
@@ -539,7 +556,7 @@ namespace ToyCarArena.Gameplay.Bots
                 useMoment = 0f;
             }
 
-            if (!IsMoment(heldItem, edge, cars, use)) {
+            if (!IsMoment(heldItem, edge, cars, use) || Endangers(heldItem, spared) || Threatens(heldItem, waiting)) {
                 useMoment = 0f;
                 return false;
             }
@@ -607,6 +624,100 @@ namespace ToyCarArena.Gameplay.Bots
                 default:
                     return false;
             }
+        }
+
+        // Metres past an item's own reach a spared car is still kept clear of: it moves while the item flies.
+        private const float SpareMargin = 1.5f;
+        // The spared car's top speed against the tuned one: its speed stat makes it a few percent faster.
+        private const float SpareTopSpeed = 1.1f;
+
+        /// <summary>
+        /// Whether using <paramref name="item"/> now would hit (or be aimed at) the <paramref name="spared"/> car: within
+        /// the shockwave's ring, round where the bomb lands, on the bowling ball's or the glove's line, within the oil's
+        /// reach. Mega, shield, turbo and balloon act on the bot itself and spare everyone.
+        /// </summary>
+        private bool Endangers(ItemKind item, Car spared)
+        {
+            if (spared == null || spared == Car || !spared.IsTargetable) {
+                return false;
+            }
+
+            var position = Flat(Car.Position);
+            var forward = Flat(Car.transform.forward).normalized;
+            var offset = Flat(spared.Position) - position;
+            var items = tuning.Pickups;
+            switch (item) {
+                case ItemKind.Shockwave:
+                    return offset.magnitude <= items.Shockwave.Radius + SpareMargin;
+                case ItemKind.Bomb:
+                    // The bomb goes off a flight and a fuse later: as far again as the spared car can drive by then.
+                    var landing = position + forward * items.Bomb.ThrowDistance;
+                    var drive = ReachSpeed(spared) * (items.Bomb.FlightTime + items.Bomb.Fuse);
+                    return (Flat(spared.Position) - landing).magnitude <= items.Bomb.Radius + SpareMargin + drive;
+                case ItemKind.Bowling:
+                    // The ball reaches the spared car a roll later: wider by as far as it can drive across by then.
+                    var roll = ReachSpeed(spared) * Mathf.Max(0f, Vector3.Dot(offset, forward)) / items.Bowling.Speed;
+                    return IsOnLine(offset, forward, items.Bowling.Range,
+                        items.Bowling.Radius + items.Bowling.HitReach + SpareMargin + roll);
+                case ItemKind.Glove:
+                    return IsOnLine(offset, forward, items.Glove.Reach + SpareMargin, items.Glove.HitRadius + SpareMargin);
+                case ItemKind.Oil:
+                    return offset.magnitude <= items.Oil.TargetRange + SpareMargin;
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// Whether the item the bot holds, used now, would go at <paramref name="car"/>: within the shockwave's ring, round
+        /// where the bomb lands, on the bowling ball's or the glove's line, within the oil's reach. By the item's own reach,
+        /// not the grace's wider one (<see cref="Endangers"/>, which also counts where the car can drive to), so a car
+        /// whose turn is taken keeps only the items that would really go at it off. A car of the bot's own team never.
+        /// </summary>
+        public bool Threatens(Car car) => Threatens(Car.HeldItem, car);
+
+        private bool Threatens(ItemKind item, Car car)
+        {
+            if (car == null || car == Car || !car.IsTargetable || Car.IsTeammateOf(car)) {
+                return false;
+            }
+
+            var position = Flat(Car.Position);
+            var forward = Flat(Car.transform.forward).normalized;
+            var offset = Flat(car.Position) - position;
+            var items = tuning.Pickups;
+            switch (item) {
+                case ItemKind.Shockwave:
+                    return offset.magnitude <= items.Shockwave.Radius + SpareMargin;
+                case ItemKind.Bomb:
+                    var landing = position + forward * items.Bomb.ThrowDistance;
+                    return (Flat(car.Position) - landing).magnitude <= items.Bomb.Radius + SpareMargin;
+                case ItemKind.Bowling:
+                    return IsOnLine(offset, forward, items.Bowling.Range,
+                        items.Bowling.Radius + items.Bowling.HitReach + SpareMargin);
+                case ItemKind.Glove:
+                    return IsOnLine(offset, forward, items.Glove.Reach + SpareMargin, items.Glove.HitRadius + SpareMargin);
+                case ItemKind.Oil:
+                    return offset.magnitude <= items.Oil.TargetRange + SpareMargin;
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// How fast the spared car may drive while an item is on its way: its top speed, or faster if it goes faster now.
+        /// Not its speed now: a car starting off reaches the top in a fraction of a second, and drove into a bomb thrown
+        /// when it was slow.
+        /// </summary>
+        private float ReachSpeed(Car spared) =>
+            Mathf.Max(Flat(spared.Movement.Velocity).magnitude, tuning.Car.MaxSpeed * SpareTopSpeed);
+
+        /// <summary>Whether a point <paramref name="offset"/> from the bot lies on a line from its nose, as long and as wide as given.</summary>
+        private static bool IsOnLine(Vector3 offset, Vector3 forward, float length, float halfWidth)
+        {
+            var along = Vector3.Dot(offset, forward);
+            var side = (offset - forward * along).magnitude;
+            return along > -halfWidth && along < length && side < halfWidth;
         }
 
         private static bool IsAhead(Car car, Vector3 position, Vector3 forward, float near, float far, float angle)

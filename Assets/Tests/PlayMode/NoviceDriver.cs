@@ -80,7 +80,8 @@ namespace ToyCarArena.Tests.PlayMode
             Car nearest = null;
             var distance = float.PositiveInfinity;
             foreach (var car in round.Cars) {
-                if (car == player || !car.IsTargetable) {
+                // A novice tells the teams apart by colour and goes for the other team.
+                if (car == player || !car.IsTargetable || player.IsTeammateOf(car)) {
                     continue;
                 }
 

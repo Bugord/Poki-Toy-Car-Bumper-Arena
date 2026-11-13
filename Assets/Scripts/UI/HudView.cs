@@ -331,7 +331,11 @@ namespace ToyCarArena.UI
         private float tapHintTime;
         private float tapHintProgress;
         private HudEndTimer endTimer;
-        private HudPotato potato;
+        // The event mode's own HUD (the hot potato's fuse), null in a round of no mode or a mode without one.
+        private IModeHud modeHud;
+
+        // A round in teams: the team score under the bar, in place of the scoreboard.
+        private HudTeams teams;
         private VisualElement kickoff;
         private VisualElement kickoffNumber;
         private Label kickoffDigit;
@@ -380,6 +384,11 @@ namespace ToyCarArena.UI
             boostCharge = Root.Q<VisualElement>("boost-charge");
             knockoutBadge = Root.Q<VisualElement>("ko-badge");
             DrawAsBurst(knockoutBadge.Q<VisualElement>(className: "ko-star"));
+            if (ViewModel.IsTimed) {
+                // A timed round's badge counts its points: the mode's own icon, the burst for knock-outs.
+                ModeLooks.DrawPoints(knockoutBadge.Q<VisualElement>(className: "ko-star"),
+                    ViewModel.Mode?.Kind ?? SpecialRound.None);
+            }
             knockoutLabel = Root.Q<Label>("ko");
             respawn = Root.Q<VisualElement>("respawn");
             respawnCount = Root.Q<Label>("respawn-count");
@@ -401,8 +410,8 @@ namespace ToyCarArena.UI
             itemButton.AddToClassList(ItemEmptyClass);
             // In a match the player's score is always there, 0 included: it is the point of the match. The scoreboard
             // shows the leader and everyone else, so the bar keeps only the time and the player's own knock-outs.
-            knockoutBadge.EnableInClassList(KnockoutShownClass, ViewModel.IsMatch);
-            carsPill.style.display = ViewModel.IsMatch ? DisplayStyle.None : DisplayStyle.Flex;
+            knockoutBadge.EnableInClassList(KnockoutShownClass, ViewModel.IsTimed);
+            carsPill.style.display = ViewModel.IsTimed ? DisplayStyle.None : DisplayStyle.Flex;
             scoreboard = HudScoreboard.Create(Root.Q<VisualElement>("scoreboard"), ViewModel);
             popupLayer = Root.Q<VisualElement>("ko-layer");
             nameLayer = Root.Q<VisualElement>("name-layer");
@@ -425,8 +434,10 @@ namespace ToyCarArena.UI
             boostHint = Root.Q<VisualElement>("boost-hint");
             tapHint = Root.Q<VisualElement>("tap-hint");
             BuildKickoff();
-            endTimer = HudEndTimer.Create(Root, ViewModel, timePill, scoreboard?.Element, respawn, popupLayer);
-            potato = HudPotato.Create(nameLayer, Root, ViewModel);
+            teams = HudTeams.Create(Root, ViewModel);
+            endTimer = HudEndTimer.Create(Root, ViewModel, timePill, scoreboard?.Element ?? teams?.Element, respawn,
+                popupLayer);
+            modeHud = ModeLooks.Of(ViewModel.Mode)?.CreateHud(nameLayer, Root, ViewModel);
             settingsButton = Root.Q<Button>("settings-button");
             settingsButton.RemoveFromClassList(Button.ussClassName);
             // Space is the boost: a focused button would take it as a click and open the settings mid-round.
@@ -486,8 +497,10 @@ namespace ToyCarArena.UI
             social?.Dispose();
             scoreboard?.Dispose();
             endTimer?.Dispose();
-            potato?.Dispose();
-            potato = null;
+            teams?.Dispose();
+            teams = null;
+            modeHud?.Dispose();
+            modeHud = null;
             ViewModel.PlayerKnockout -= ShowKnockout;
             ViewModel.CarOut -= OnCarOut;
             ViewModel.CarBack -= OnCarBack;
@@ -545,7 +558,7 @@ namespace ToyCarArena.UI
                 }
             }
 
-            if (ViewModel.IsMatch) {
+            if (ViewModel.IsTimed) {
                 scoreboard?.RefreshCountdowns();
                 ShowRespawn();
             }
@@ -558,12 +571,13 @@ namespace ToyCarArena.UI
                 ShowCarsLeft();
             }
 
-            // The badge stays away until the first knock-out, so the HUD starts with only the time and the cars.
-            var knockouts = ViewModel.Knockouts;
+            // The badge stays away until the first knock-out, so the HUD starts with only the time and the cars. A timed
+            // round shows the player's points from the start: knock-outs in the match, what the mode counts in a mode.
+            var knockouts = ViewModel.IsTimed ? ViewModel.PlayerScore : ViewModel.Knockouts;
             if (knockouts != shownKnockouts) {
                 shownKnockouts = knockouts;
                 knockoutLabel.text = knockouts.ToString();
-                knockoutBadge.EnableInClassList(KnockoutShownClass, knockouts > 0 || ViewModel.IsMatch);
+                knockoutBadge.EnableInClassList(KnockoutShownClass, knockouts > 0 || ViewModel.IsTimed);
                 Pulse(knockoutBadge, KnockoutPopClass);
             }
         }
@@ -950,7 +964,7 @@ namespace ToyCarArena.UI
             Root.style.paddingTop = BarTop + hudTopInset;
             Root.style.paddingLeft = safeInsets.Left;
             Root.style.paddingRight = safeInsets.Right;
-            var isUnder = !ViewModel.IsMatch && size.x < size.y;
+            var isUnder = !ViewModel.IsTimed && size.x < size.y;
             settingsButton.EnableInClassList(SettingsUnderClass, isUnder);
             settingsButton.style.top = (isUnder ? SettingsUnderTop : SettingsTop) + hudTopInset;
             settingsButton.style.right = SettingsTop + safeInsets.Right;
@@ -961,7 +975,8 @@ namespace ToyCarArena.UI
                 scoreboard.Element.style.right = (wide ? 48f : 24f) + safeInsets.Right;
             }
 
-            social.Place(safeInsets, feedTopInset);
+            teams?.Place(hudTopInset);
+            social.Place(safeInsets, feedTopInset + (teams != null && size.x < size.y ? HudTeams.FeedDrop : 0f));
             PlaceBoost();
             PlaceStart();
             // Find room for the ghost again even if only the browser chrome changed, with no canvas resize.
@@ -1249,6 +1264,12 @@ namespace ToyCarArena.UI
         /// </summary>
         private void RefreshItemHint(bool isTouch)
         {
+            // A mode that shows the hint its own way (ITEM FRENZY) has it: shown here first, it would come down at this
+            // hint's moment and pop in again under the mode's.
+            if (modeHud is { OwnsItemHint: true }) {
+                return;
+            }
+
             var now = Time.unscaledTime;
             if (!isItemHintShown) {
                 if (!ViewModel.IsItemReady || isItemShownRolling || controls.HasShownItemHint) {
@@ -1405,13 +1426,13 @@ namespace ToyCarArena.UI
             }
 
             var camera = Camera.main;
-            if (ViewModel.IsMatch) {
+            if (ViewModel.IsTimed) {
                 ShowScoreboard();
                 ShowShield(camera);
             }
 
             ShowStreak(camera);
-            potato?.Tick(camera, contentTopInset, safeInsets.Left, safeInsets.Right);
+            modeHud?.Tick(camera, contentTopInset, safeInsets.Left, safeInsets.Right);
 
             if (carNames == null || camera == null || nameLayer.panel == null) {
                 return;
@@ -1626,6 +1647,8 @@ namespace ToyCarArena.UI
             line.AddToClassList("car-name__line");
             line.Add(CreateLevelBadge(ViewModel.LevelOf(index), "car-name__level", isRival, true));
             line.Add(CreateOutlinedText(ViewModel.NameOf(index), "car-name__text"));
+            // In teams a teammate's tag has a shield, an enemy's none: told apart by more than the colour.
+            HudTeams.MarkName(tag, line, ViewModel, index);
             // A bot that joined on a win streak wears the player's crown and ×N after its name.
             var streakOf = ViewModel.StreakOf(index);
             if (streakOf > 0) {
@@ -2213,7 +2236,7 @@ namespace ToyCarArena.UI
             }
 
             // A match keeps the leader in the cars pill, not the cars still in.
-            if (ViewModel.IsMatch) {
+            if (ViewModel.IsTimed) {
                 return;
             }
 

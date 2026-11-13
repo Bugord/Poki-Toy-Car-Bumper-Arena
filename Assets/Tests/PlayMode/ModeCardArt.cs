@@ -1,10 +1,9 @@
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Cars;
-using ToyCarArena.Gameplay.Pickups;
+using ToyCarArena.Gameplay.Modes;
 using ToyCarArena.Rendering;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -16,17 +15,17 @@ using UnityEditor;
 namespace ToyCarArena.Tests.PlayMode
 {
     /// <summary>
-    /// The picture on the menu's HOT POTATO card, made from the game's own models: the red monster truck in three
-    /// quarters from the front and above, as the catalog's portraits show the cars (the QUICK MATCH card's), with the
-    /// mode's bomb riding on its roof, its fuse lit, all in the
-    /// arena's outline and the Game scene's sun, transparent around them. Written to
-    /// <c>Assets/Art/Sprites/UI/sprite_mode_hot_potato.png</c> at half the size it is drawn, so its edges are smooth.
-    /// Explicit: it is for making the picture, and needs graphics.
+    /// The picture on an event mode's menu card (CHOOSE MODE's event card, the tile under XP BOOST), made from the game's
+    /// own models as the mode describes it (<see cref="ModeCard"/>): its car in three quarters from the front and above,
+    /// as the catalog's portraits show the cars (the QUICK MATCH card's), with the mode's prop riding on its roof (the
+    /// hot potato's lit bomb), all in the arena's outline and the Game scene's sun, transparent around them. Written to
+    /// <c>Assets/Art/Sprites/UI/sprite_mode_&lt;id with underscores&gt;.png</c> at half the size it is drawn, so its
+    /// edges are smooth. Explicit: it is for making the pictures, and needs graphics. A new mode adds its id to the
+    /// cases and draws again after its card changes.
     /// </summary>
-    [Explicit("Draws the HOT POTATO card's picture; run it by name.")]
+    [Explicit("Draws the event cards' pictures; run it by name.")]
     public sealed class ModeCardArt : ObjectsBFixture
     {
-        private const string Output = "Assets/Art/Sprites/UI/sprite_mode_hot_potato.png";
         private static readonly Vector3 Stage = new(0f, 4000f, 0f);
 
         // Drawn at twice the size it is kept, then halved; as tall for its width as the board's picture.
@@ -35,51 +34,79 @@ namespace ToyCarArena.Tests.PlayMode
         // CarCatalogUpdater's portrait camera, seen from (4, 3, 5): 25 degrees down, 38.7 degrees round.
         private const float Pitch = 25f;
         private const float Yaw = -218.66f;
-        private const float BombScale = 1f;
-        private const float BombGap = 0.02f;
+        private const float PropGap = 0.02f;
         private const float Margin = 1.06f;
         private const float Boost = 4f;
-        // CarPaint's red, as the board's truck: apart from the slate bomb on it.
-        private const int TruckColor = 1;
+        // How long the mode's round may take to show its prop (the hot potato's first bomb comes after its delay).
+        private const float PropWait = 12f;
+        // Two cars head-on (a mode of two sides): each turned this far from facing the other towards the camera, so
+        // both fronts show, nose to nose this many metres apart.
+        private const float RivalYaw = 140f;
+        private const float RivalGap = 0.3f;
 
         [UnityTest]
-        public IEnumerator DrawTheHotPotatoCard()
+        public IEnumerator DrawTheCard([Values("hot-potato", "crown", "gold-rush", "item-frenzy", "overheat",
+            "team-push", "football")] string id)
         {
-            UseSpecial(SpecialRound.HotPotato);
+            var kind = EventModes.KindOf(EventModes.Parse(id));
+            Assert.That(kind, Is.Not.EqualTo(SpecialRound.None), $"No mode {id}.");
+            UseSpecial(kind);
             yield return Open("sandbox", "rake");
-            var potato = Container.Resolve<HotPotato>();
-            var timeout = Time.time + Tuning.SpecialRounds.HotPotato.FirstDelay + 2f;
-            while (potato.Holder == null && Time.time < timeout) {
-                yield return Step();
+            var mode = Container.Resolve<RoundModes>().Active;
+            Assert.That(mode, Is.Not.Null, $"The round of {id} has no active mode.");
+            var card = mode.Card;
+
+            GameObject sceneProp = null;
+            if (card.Prop != null) {
+                var timeout = Time.time + PropWait;
+                while ((sceneProp = GameObject.Find(card.Prop)) == null && Time.time < timeout) {
+                    yield return Step();
+                }
+
+                Assert.That(sceneProp, Is.Not.Null, $"No {card.Prop} came to copy.");
             }
 
-            Assert.That(potato.Holder, Is.Not.Null, "No bomb came to copy.");
-            var sceneBomb = GameObject.Find("Bomb");
-            Assert.That(sceneBomb, Is.Not.Null);
-
             var look = LoadCarPrefab().GetComponent<CarLook>();
-            var entry = LoadCarCatalog().Find("monster-truck");
+            var entry = LoadCarCatalog().Find(card.CarId);
+            Assert.That(entry, Is.Not.Null, $"No car {card.CarId}.");
             var root = new GameObject("Mode Card Art");
             root.transform.position = Stage;
             var car = new GameObject("Car").transform;
             car.SetParent(root.transform, false);
-            var meshes = new List<Mesh>();
             var model = CarLook.BuildModel(entry, car, look.ModelRotation, look.ModelMaterial, look.Reference);
-            var body = CarModel.PaintBody(CarModel.FindBody(model, out _), entry.BodySwatch, look.SwatchOf(TruckColor));
+            var body = CarModel.PaintBody(CarModel.FindBody(model, out _), entry.BodySwatch, look.SwatchOf(card.Color));
             var bounds = CarModel.BoundsIn(car.gameObject, car.worldToLocalMatrix);
             model.transform.localPosition -= new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
             car.localRotation = Quaternion.Euler(0f, Yaw, 0f);
+            Mesh rivalBody = null;
+            if (card.RivalCarId != null) {
+                // The two sides nose to nose: the card's car from the left, the rival from the right.
+                var rivalEntry = LoadCarCatalog().Find(card.RivalCarId);
+                Assert.That(rivalEntry, Is.Not.Null, $"No car {card.RivalCarId}.");
+                var rival = new GameObject("Rival").transform;
+                rival.SetParent(root.transform, false);
+                var rivalModel = CarLook.BuildModel(rivalEntry, rival, look.ModelRotation, look.ModelMaterial,
+                    look.Reference);
+                rivalBody = CarModel.PaintBody(CarModel.FindBody(rivalModel, out _), rivalEntry.BodySwatch,
+                    look.SwatchOf(card.RivalColor));
+                var rivalBounds = CarModel.BoundsIn(rival.gameObject, rival.worldToLocalMatrix);
+                rivalModel.transform.localPosition -= new Vector3(rivalBounds.center.x, rivalBounds.min.y,
+                    rivalBounds.center.z);
+                Face(car, RivalYaw, bounds.size.z);
+                Face(rival, -RivalYaw, rivalBounds.size.z);
+            }
 
-            // The bomb as it rides in the round: lit, its spark up, a little bigger so it reads at the card's size.
-            var bomb = Object.Instantiate(sceneBomb, root.transform, false).transform;
-            bomb.gameObject.SetActive(true);
-            bomb.localScale = Vector3.one * BombScale;
-            bomb.localRotation = Quaternion.Euler(0f, -10f, 8f);
-            var radius = PickupArtRadius * BombScale;
-            bomb.localPosition = Vector3.up * (bounds.size.y + BombGap + radius);
-            var flash = bomb.Find("Flash");
-            if (flash != null) {
-                flash.gameObject.SetActive(false);
+            if (sceneProp != null) {
+                // The prop as it rides in the round (the bomb lit, its spark up), its flash off.
+                var prop = Object.Instantiate(sceneProp, root.transform, false).transform;
+                prop.gameObject.SetActive(true);
+                prop.localScale = Vector3.one;
+                prop.localRotation = Quaternion.Euler(0f, -10f, 8f);
+                prop.localPosition = Vector3.up * (bounds.size.y + PropGap + card.PropRadius);
+                var flash = prop.Find("Flash");
+                if (flash != null) {
+                    flash.gameObject.SetActive(false);
+                }
             }
 
             var texture = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32) { antiAliasing = 1 };
@@ -111,9 +138,10 @@ namespace ToyCarArena.Tests.PlayMode
             RenderTexture.active = previous;
             // Cut to what was drawn, as the board's picture is: the card places the toy, not empty margins.
             var cropped = Crop(picture);
-            File.WriteAllBytes(Path.Combine(Directory.GetCurrentDirectory(), Output), cropped.EncodeToPNG());
-            Debug.Log($"Mode card art: {cropped.width}x{cropped.height}");
-            Import();
+            var output = $"Assets/Art/Sprites/UI/sprite_mode_{id.Replace('-', '_')}.png";
+            File.WriteAllBytes(Path.Combine(Directory.GetCurrentDirectory(), output), cropped.EncodeToPNG());
+            Debug.Log($"Mode card art {id}: {cropped.width}x{cropped.height}");
+            Import(output);
 
             OutlineBoost.Clear(camera);
             Object.Destroy(picture);
@@ -125,13 +153,17 @@ namespace ToyCarArena.Tests.PlayMode
             Object.Destroy(half);
             Object.Destroy(root);
             Object.Destroy(body);
-            foreach (var mesh in meshes) {
-                Object.Destroy(mesh);
+            if (rivalBody != null) {
+                Object.Destroy(rivalBody);
             }
         }
 
-        // PickupArt.BombRadius, which the tests cannot see.
-        private const float PickupArtRadius = 0.5f;
+        // Turns a car to a yaw and backs it off the middle along its nose, so its nose stops half the gap short of it.
+        private static void Face(Transform car, float yaw, float length)
+        {
+            car.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            car.localPosition = -(car.localRotation * Vector3.forward) * (length * 0.5f + RivalGap * 0.5f);
+        }
 
         // An orthographic camera looking down at Pitch, sized so every renderer under the root fits with a margin.
         private static void Frame(Camera camera, Transform root)
@@ -195,11 +227,11 @@ namespace ToyCarArena.Tests.PlayMode
             return cropped;
         }
 
-        private static void Import()
+        private static void Import(string output)
         {
 #if UNITY_EDITOR
-            AssetDatabase.ImportAsset(Output, ImportAssetOptions.ForceSynchronousImport);
-            var importer = (TextureImporter)AssetImporter.GetAtPath(Output);
+            AssetDatabase.ImportAsset(output, ImportAssetOptions.ForceSynchronousImport);
+            var importer = (TextureImporter)AssetImporter.GetAtPath(output);
             importer.textureType = TextureImporterType.Default;
             importer.alphaIsTransparency = true;
             importer.mipmapEnabled = false;

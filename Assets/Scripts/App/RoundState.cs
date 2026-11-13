@@ -5,6 +5,7 @@ using Cysharp.Threading.Tasks;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Cars;
+using ToyCarArena.Gameplay.Modes;
 using ToyCarArena.Gameplay.Pickups;
 using ToyCarArena.Gameplay.Round;
 using ToyCarArena.UI;
@@ -112,6 +113,8 @@ namespace ToyCarArena.App
             var variants = levelScene.Resolve<ArenaVariants>();
             var currentVariant = playedVariant;
             var special = levelScene.Resolve<RoundRules>().Kind;
+            // The event mode the round plays, for the daily task of the mode of the day.
+            var playedEvent = EventModes.IsEvent(special) ? RoundRules.IdOf(special) : "";
             // Only a visit's first round straight from the boot waits on the start screen; the menu's PLAY came through
             // the lobby and counts down like any later round.
             var waitsForPlayer = roundNumber == 1 && !lobby.HasLed;
@@ -151,7 +154,7 @@ namespace ToyCarArena.App
             // Missions the round completes while it is played (knock-outs, boosts, revenge, items, boxes) pop MISSION!
             // on the HUD at once; the ones only a decided round counts show on the result.
             MissionStats LiveStats() => new(false, RoundOutcome.Survived, 0, round.PlayerKnockouts, driver.Boosts,
-                round.RevengeTaken, driver.ItemsUsed, pickupCount, itemKnockouts, playedMap);
+                round.RevengeTaken, driver.ItemsUsed, pickupCount, itemKnockouts, playedMap, playedEvent);
 
             // The daily tasks done this round pop too, as DAILY TASK!. Both pop over the player's car, and one knock-out
             // can finish a mission and a task with the same counter: the task's pop then waits for the mission's to
@@ -218,7 +221,7 @@ namespace ToyCarArena.App
                 var hudRound = new HudRound(round, driver, tuning.Controls, waitsForPlayer, roundNumber,
                     playerProgress.TotalXp == 0,
                     progress.WinStreak >= tuning.Streaks.Start ? progress.WinStreak : 0, special,
-                    progress.RoundsBefore + roundNumber, levelScene.Resolve<HotPotato>());
+                    progress.RoundsBefore + roundNumber, levelScene.Resolve<RoundModes>().Active);
                 hud = await navigator.OpenAsync<HudViewModel, HudRound>(hudRound, token);
                 await curtain.Hide();
                 // The page's loading screen stays up until the first round can be seen, past Poki's own loader.
@@ -253,9 +256,17 @@ namespace ToyCarArena.App
                 // same bar. One clock for the round's whole day: a round over midnight counts for the new day.
                 var now = DateTime.Now;
                 var stats = new MissionStats(true, result.Outcome, result.Place, result.Knockouts, driver.Boosts,
-                    result.RevengeTaken, driver.ItemsUsed, pickupCount, itemKnockouts, playedMap);
+                    result.RevengeTaken, driver.ItemsUsed, pickupCount, itemKnockouts, playedMap, playedEvent);
                 var missionRound = missions.Record(stats, playerProgress.Level, progress.Round);
                 var taskRound = dailyTasks.Record(stats, now);
+                // The task of the mode of the day is done only by a round played to the end: it pops DAILY TASK! now,
+                // over the round's last moment, where the ones done in play popped as they came.
+                foreach (var task in taskRound.Completed) {
+                    if (task.Counter == MissionCounter.EventRounds) {
+                        hud.ViewModel.ShowDailyTaskDone();
+                        break;
+                    }
+                }
                 // The day's first win doubles the round's own reward, taken (and saved) before it pays.
                 var firstWin = daily.TakeFirstWin(now, result);
                 var xpGain = playerProgress.Record(result, isStreakRound ? streaks : null,
@@ -271,14 +282,14 @@ namespace ToyCarArena.App
                 levelScene.Resolve<ISessionRoster>().NextRound(result.CarCount - 1,
                     RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis, tuning.Players);
                 platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, driver, tuning.Boost.IsEnabled,
-                    waitsForPlayer, special == SpecialRound.HotPotato);
+                    waitsForPlayer, round.Mode.IsKnockOutFinal);
                 if (pickups.IsEnabled) {
                     platform.MeasureMatchPickups(roundNumber, pickupCount, result.IsMatch);
                 }
 
                 // The variant playing as it ended: the rotation's own in a round, the last cycle's in a match.
                 platform.MeasureVariantEnd(playedMap, currentVariant, result.Outcome);
-                platform.MeasureSpecialEnd(special, result, round.BossTaken);
+                platform.MeasureSpecialEnd(special, result, round.BossTaken, pickups.IsEnabled ? driver.ItemsUsed : -1);
                 platform.MeasureRoundCar(roundNumber, playedCar);
                 platform.MeasureProgress(record.XpGain);
                 platform.MeasureRoundMap(roundNumber, playedMap);
@@ -287,7 +298,7 @@ namespace ToyCarArena.App
                 platform.MeasureMeta(roundNumber, record, missions.DoneThisVisit);
                 platform.MeasureDailyRound(roundNumber, firstWin > 1, taskRound);
 
-                var delay = result.IsMatch ? tuning.Match.ResultDelay :
+                var delay = result.IsTimed ? tuning.Match.ResultDelay :
                     result.Outcome == RoundOutcome.Out ? tuning.Round.OutResultDelay : tuning.Round.ResultDelay;
                 // Real time: the buzzer's hit-stop at the end of a match must not stretch the wait.
                 await UniTask.Delay(TimeSpan.FromSeconds(delay), true, cancellationToken: token);

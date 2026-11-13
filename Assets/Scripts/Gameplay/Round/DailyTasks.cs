@@ -23,6 +23,12 @@ namespace ToyCarArena.Gameplay.Round
     {
         public const int Count = 3;
 
+        /// <summary>
+        /// The id of the task of the mode of the day, as saved under <c>daily_tasks</c> and measured: constant, whichever
+        /// mode the day has.
+        /// </summary>
+        public const string EventTaskId = "play-event";
+
         private const string TasksKey = "daily_tasks";
 
         private readonly IKeyValueStorage storage;
@@ -30,6 +36,8 @@ namespace ToyCarArena.Gameplay.Round
         private readonly IPlayerCar player;
         private readonly DailyTask[] tasks = new DailyTask[Count];
         private int day = int.MinValue;
+        private GameTuning.MissionDefinition eventTask;
+        private int eventTaskDay = int.MinValue;
 
         public DailyTasks(IKeyValueStorage storage, GameTuning tuning, IPlayerCar player)
         {
@@ -207,12 +215,20 @@ namespace ToyCarArena.Gameplay.Round
         }
 
         // One task of each tier, easiest first, from a seed of the day: a tier with nothing the player can do lends
-        // its place to the others.
+        // its place to the others. While the build has an event of the day, the easy one is always to play it.
         private void Draw(int today)
         {
             var random = new Random(unchecked(today * 7919 + 0x5DA1));
             var taken = new List<GameTuning.MissionDefinition>();
-            for (var index = 0; index < Count; index++) {
+            var first = 0;
+            var played = EventTaskOf(today);
+            if (played != null) {
+                taken.Add(played);
+                tasks[0] = new DailyTask(played, 0);
+                first = 1;
+            }
+
+            for (var index = first; index < Count; index++) {
                 var tier = (MissionTier)Math.Min(index, (int)MissionTier.Hard);
                 var definition = Pick(random, taken, tier) ?? Pick(random, taken, null);
                 if (definition == null) {
@@ -279,8 +295,33 @@ namespace ToyCarArena.Gameplay.Round
             return false;
         }
 
+        /// <summary>
+        /// The task of the day's event mode: finish one round of it (the menu's event, or the rotation's event slot that
+        /// plays it), an easy one; null when the build has no event that day.
+        /// </summary>
+        private GameTuning.MissionDefinition EventTaskOf(int today)
+        {
+            var mode = EventSchedule.Of(tuning, today);
+            if (mode == EventMode.None) {
+                return null;
+            }
+
+            var id = EventModes.IdOf(mode);
+            if (eventTask == null || eventTaskDay != today || eventTask.Mode != id) {
+                eventTask = new GameTuning.MissionDefinition(EventTaskId, MissionSlot.Total, MissionCounter.EventRounds,
+                    1, MissionTier.Easy, mode: id);
+                eventTaskDay = today;
+            }
+
+            return eventTask;
+        }
+
         private GameTuning.MissionDefinition Find(string id)
         {
+            if (id == EventTaskId) {
+                return EventTaskOf(day);
+            }
+
             foreach (var definition in Settings.Tasks) {
                 if (definition.Id == id) {
                     return definition;

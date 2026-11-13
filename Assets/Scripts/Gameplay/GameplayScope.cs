@@ -4,6 +4,7 @@ using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Bots;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Input;
+using ToyCarArena.Gameplay.Modes;
 using ToyCarArena.Gameplay.Pickups;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
@@ -153,6 +154,8 @@ namespace ToyCarArena.Gameplay
             builder.Register<BallLane>(Lifetime.Singleton);
             builder.Register<ArenaHazards>(Lifetime.Singleton);
             builder.RegisterInstance(mechanicArt, typeof(MechanicArt));
+            // One bot's item at the player at a time, for the bots and for a mode that lets their items go.
+            builder.Register<PlayerItemTurn>(Lifetime.Singleton);
             builder.RegisterEntryPoint<BotDriver>();
             builder.RegisterEntryPoint<ArenaCrumble>().AsSelf();
             // The variant playing now: the scene's own in a round, turning with the floor's cycles in a match.
@@ -161,6 +164,15 @@ namespace ToyCarArena.Gameplay
             builder.RegisterEntryPoint<ArenaPickups>().AsSelf().WithParameter(transform);
             // The bomb of a hot potato round; in any other round it builds nothing.
             builder.RegisterEntryPoint<HotPotato>().AsSelf().WithParameter(transform);
+            // The other event modes: each active only in a round of its kind, silent in any other.
+            builder.RegisterEntryPoint<CrownMode>().AsSelf();
+            builder.RegisterEntryPoint<GoldRushMode>().AsSelf();
+            builder.RegisterEntryPoint<ItemFrenzyMode>().AsSelf();
+            builder.RegisterEntryPoint<OverheatMode>().AsSelf();
+            builder.RegisterEntryPoint<TeamPushMode>().AsSelf();
+            builder.RegisterEntryPoint<FootballMode>().AsSelf();
+            // Every mode of the scene and the active one, for the bots and the HUD.
+            builder.Register<RoundModes>(Lifetime.Singleton);
             // The fence of the hot potato mode, round the rim and every hole; in any other round it builds nothing.
             builder.RegisterEntryPoint<ArenaFence>().AsSelf().WithParameter(transform);
             // The objects of the sandbox and tabletop variants: each does nothing unless its variant names it.

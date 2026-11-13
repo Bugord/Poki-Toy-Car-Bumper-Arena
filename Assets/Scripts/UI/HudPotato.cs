@@ -1,5 +1,6 @@
 using System;
 using Bugord.App.Localization;
+using ToyCarArena.Gameplay.Pickups;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -15,7 +16,7 @@ namespace ToyCarArena.UI
     /// time, and nothing here catches input.
     /// </para>
     /// </summary>
-    internal sealed class HudPotato : IDisposable
+    internal sealed class HudPotato : IModeHud
     {
         // Reference pixels right of the bomb's middle the fuse sticker's middle sits: beside the bomb, clear of the
         // holder's name pill over it.
@@ -37,6 +38,7 @@ namespace ToyCarArena.UI
         private const string PassShownClass = "hud__pass--shown";
 
         private readonly HudViewModel model;
+        private readonly HotPotato potato;
         private readonly VisualElement layer;
         private readonly VisualElement fuse;
         private readonly VisualElement fuseSticker;
@@ -46,14 +48,18 @@ namespace ToyCarArena.UI
         private readonly Action onLanguage;
         private int shownSeconds = -1;
 
+        /// <summary>The mode's HUD, made by its look (<see cref="HotPotatoLook"/>) in a hot potato round only.</summary>
         public static HudPotato Create(VisualElement layer, VisualElement root, HudViewModel model)
         {
-            return model.IsPotato && layer != null ? new HudPotato(layer, root, model) : null;
+            return model.Mode is HotPotato { IsActive: true } potato && layer != null
+                ? new HudPotato(layer, root, model, potato)
+                : null;
         }
 
-        private HudPotato(VisualElement layer, VisualElement root, HudViewModel model)
+        private HudPotato(VisualElement layer, VisualElement root, HudViewModel model, HotPotato potato)
         {
             this.model = model;
+            this.potato = potato;
             this.layer = layer;
 
             fuse = new VisualElement { name = "fuse", pickingMode = PickingMode.Ignore };
@@ -83,14 +89,17 @@ namespace ToyCarArena.UI
         public void Tick(Camera camera, float top, float left, float right)
         {
             var time = Time.unscaledTime;
-            var isHeld = model.HasBomb && camera != null && fuse.panel != null && !model.IsFinished;
+            var holder = potato.Holder;
+            var hasBomb = holder != null && !holder.IsOut;
+            var isFuseShort = hasBomb && potato.IsHurried;
+            var isHeld = hasBomb && camera != null && fuse.panel != null && !model.IsFinished;
             fuse.EnableInClassList(FuseShownClass, isHeld);
-            var isPlayerHolding = isHeld && model.IsPlayerHoldingBomb;
+            var isPlayerHolding = isHeld && holder == model.PlayerCar;
             pass.EnableInClassList(PassShownClass, isPlayerHolding);
             pass.style.top = top + PassTop;
 
             if (isPlayerHolding) {
-                var rate = model.IsFuseShort ? PassHurryRate : PassRate;
+                var rate = isFuseShort ? PassHurryRate : PassRate;
                 var pulse = 1f + PassPulse * (0.5f + 0.5f * Mathf.Sin(time * rate));
                 passSticker.style.scale = new Scale(new Vector3(pulse, pulse, 1f));
             }
@@ -100,7 +109,7 @@ namespace ToyCarArena.UI
                 return;
             }
 
-            var fuseLeft = model.FuseLeft;
+            var fuseLeft = potato.FuseLeft;
             var seconds = Mathf.Max(0, Mathf.CeilToInt(fuseLeft));
             if (seconds != shownSeconds) {
                 shownSeconds = seconds;
@@ -109,7 +118,7 @@ namespace ToyCarArena.UI
                 }
             }
 
-            var isShort = model.IsFuseShort;
+            var isShort = isFuseShort;
             fuse.EnableInClassList(FuseShortClass, isShort);
             var scale = 1f;
             if (isShort) {
@@ -121,7 +130,7 @@ namespace ToyCarArena.UI
 
             fuseSticker.style.scale = new Scale(new Vector3(scale, scale, 1f));
 
-            var panelPoint = RuntimePanelUtils.CameraTransformWorldToPanel(fuse.panel, model.BombPosition, camera);
+            var panelPoint = RuntimePanelUtils.CameraTransformWorldToPanel(fuse.panel, potato.BombPosition, camera);
             var point = layer.WorldToLocal(panelPoint);
             point.x += FuseSide;
             var size = layer.layout.size;

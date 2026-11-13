@@ -6,9 +6,11 @@ namespace ToyCarArena.Gameplay.Round
     /// of last-car-standing rounds has them. <see cref="SpecialRoundPlay"/> puts the rule on the arena; the round asks
     /// here which car is the boss.
     /// <para>
-    /// The menu's event mode (<see cref="ISessionProgress.Mode"/>) wins over the rotation: HOT POTATO makes every round
-    /// <see cref="SpecialRound.HotPotato"/>, which the rotation also plays now and then. Everything the mode
-    /// changes reads <see cref="IsHotPotato"/>: the fence, no crumbling, no mechanics and no boxes, the bomb, the bots.
+    /// The menu's event mode (<see cref="ISessionProgress.Mode"/>) wins over the rotation: an event mode makes every
+    /// round its own kind (<see cref="EventModes.KindOf"/>), and the rotation plays one now and then. What the round's
+    /// kind changes in the shared round it states in <see cref="Mode"/> (<see cref="GameTuning.RulesOf"/>): how cars
+    /// fall, the fence, the floor, mechanics and boxes, how the round ends and is scored, teams, the number of cars and
+    /// the edge assist. A mode's own logic checks <see cref="Kind"/> itself.
     /// </para>
     /// </summary>
     public sealed class RoundRules
@@ -16,6 +18,7 @@ namespace ToyCarArena.Gameplay.Round
         public RoundRules(GameTuning tuning, ISessionProgress progress)
         {
             this.Kind = For(tuning, progress.Round, progress.Mode);
+            this.Mode = tuning.RulesOf(Kind);
             // The boss starts across the floor from the player, who is first, nearest the camera.
             this.BossIndex = Kind == SpecialRound.Boss ? 1 + RoundDifficulty.BotCountFor(tuning, progress) / 2 : -1;
             // A fall takes 1 / sqrt(g) as long, so a push off the rim under low gravity still counts as a knock-out.
@@ -31,15 +34,22 @@ namespace ToyCarArena.Gameplay.Round
 
         public bool IsSpecial => Kind != SpecialRound.None;
 
-        /// <summary>Whether this round is the HOT POTATO mode's: a fenced floor, the bomb, and nothing else.</summary>
-        public bool IsHotPotato => Kind == SpecialRound.HotPotato;
+        /// <summary>
+        /// The rules this round plays (<see cref="ModeRules"/>): the plain round's, the build's long match's or an event
+        /// mode's.
+        /// </summary>
+        public ModeRules Mode { get; }
+
+        /// <summary>Whether this round is an event mode's rather than a plain or special round.</summary>
+        public bool IsEvent => EventModes.IsEvent(Kind);
 
         /// <summary>The boss's car index in a boss round (1..N), -1 in any other.</summary>
         public int BossIndex { get; }
 
         /// <summary>
         /// The special round of the visit's round <paramref name="round"/> in this build, in the menu's
-        /// <paramref name="mode"/>: none in a match, the mode's own for an event mode, else the rotation's.
+        /// <paramref name="mode"/>: none in a match, the mode's own for an event mode, else the rotation's, whose event
+        /// slot is the mode of the day (<see cref="EventSchedule"/>).
         /// </summary>
         public static SpecialRound For(GameTuning tuning, int round, EventMode mode)
         {
@@ -47,8 +57,30 @@ namespace ToyCarArena.Gameplay.Round
                 return SpecialRound.None;
             }
 
-            return mode == EventMode.HotPotato ? SpecialRound.HotPotato : tuning.SpecialRounds.For(round);
+            if (mode != EventMode.None) {
+                return EventModes.KindOf(mode);
+            }
+
+            var kind = tuning.SpecialRounds.For(round);
+            // The rotation's event slot (HOT POTATO's in the order) plays the mode of the day, so a player of QUICK
+            // MATCH meets every mode in turn; with every mode off it is a plain round. A test's forced kind stays.
+            if (EventModes.IsEvent(kind) && !tuning.SpecialRounds.IsForced) {
+                kind = EventModes.KindOf(EventSchedule.Today(tuning));
+            }
+
+            return kind;
         }
+
+        /// <summary>The kind of the session's next round, as the scene built for it will read it.</summary>
+        public static SpecialRound KindFor(GameTuning tuning, ISessionProgress progress) =>
+            For(tuning, progress.Round, progress.Mode);
+
+        /// <summary>
+        /// The rules of the session's next round, before its scene is built: the lobby, the roster and the difficulty
+        /// read the same ones as the round.
+        /// </summary>
+        public static ModeRules RulesFor(GameTuning tuning, ISessionProgress progress) =>
+            tuning.RulesOf(KindFor(tuning, progress));
 
         /// <summary>The id of a special round for analytics and the string table: no numbers, never changed.</summary>
         public static string IdOf(SpecialRound kind) => kind switch {
@@ -57,6 +89,12 @@ namespace ToyCarArena.Gameplay.Round
             SpecialRound.Boss => "boss",
             SpecialRound.Ice => "ice",
             SpecialRound.LowGravity => "low-gravity",
+            SpecialRound.Crown => "crown",
+            SpecialRound.GoldRush => "gold-rush",
+            SpecialRound.ItemFrenzy => "item-frenzy",
+            SpecialRound.Overheat => "overheat",
+            SpecialRound.TeamPush => "team-push",
+            SpecialRound.Football => "football",
             _ => "none",
         };
     }

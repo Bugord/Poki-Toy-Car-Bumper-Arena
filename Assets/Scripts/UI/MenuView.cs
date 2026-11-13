@@ -130,8 +130,6 @@ namespace ToyCarArena.UI
         private static readonly Color Green = new Color32(0x5b, 0xd3, 0x4a, 0xff);
         // A mode not out yet keeps its sign, greyed: --shade filled, --muted outlined, its sand between.
         private static readonly Color Orange = new Color32(0xff, 0x9f, 0x1c, 0xff);
-        private static readonly Color EventLight = new Color32(0xff, 0xc0, 0x6a, 0xff);
-        private static readonly Color EventDeep = new Color32(0xff, 0x8f, 0x1f, 0xff);
         private static readonly Color EventRay = new(1f, 1f, 1f, 0.18f);
         private const float RayStep = 20f;
         private const float RayWidth = 8f;
@@ -188,6 +186,20 @@ namespace ToyCarArena.UI
         private VisualElement modesSheet;
         private CarPortrait modePortrait;
         private VisualElement eventCard;
+        // The parts of the event card and tile that change with the mode of the day (ShowEvent).
+        private VisualElement eventFace;
+        private VisualElement eventArt;
+        private Label[] eventTitle;
+        private Label eventHint;
+
+        // The smallest share of its size an event's rule goes down to on its card.
+        private const float MinHintShare = 0.6f;
+        private Label eventTimer;
+        private VisualElement eventTileFill;
+        private VisualElement eventTileArt;
+        private Label[] eventTileCaption;
+        private string eventArtClass;
+        private EventMode shownEvent = (EventMode)(-1);
         private VisualElement quickCard;
         private Label modeName;
         private GarageStage garageStage;
@@ -414,26 +426,26 @@ namespace ToyCarArena.UI
 
         private VisualElement BuildEventTile()
         {
-            eventTile = Tile(null, () => Strings.Get("menu.hot_potato"), EventKey.ToString(), PlayEvent);
+            eventTile = Tile(null, EventName, EventKey.ToString(), PlayEvent);
             eventTile.AddToClassList("menu__tile--event");
             var button = eventTile.Q<VisualElement>(className: "menu__tile-button");
             var face = button.Q<VisualElement>(className: "menu__face");
-            // The event card's orange and its picture: the monster truck with the bomb, bigger than the face, over its
-            // bottom edge as on the card.
+            // The event card's colours and its picture (the mode of the day's, ShowEvent): the toy bigger than the
+            // face, over its bottom edge as on the card.
             // The rays inside the fill, which clips them to its rounded corners; the picture on the face, so it sinks
             // with it on a press.
-            var fill = face.Q<VisualElement>(className: "menu__fill");
-            fill.style.backgroundImage = EventBack();
-            fill.Add(Icon("menu__event-tile-rays", DrawEventRays));
-            var art = Element("menu__event-tile-art");
-            art.pickingMode = PickingMode.Ignore;
-            face.Add(art);
+            eventTileFill = face.Q<VisualElement>(className: "menu__fill");
+            eventTileFill.Add(Icon("menu__event-tile-rays", DrawEventRays));
+            eventTileArt = Element("menu__event-tile-art");
+            eventTileArt.pickingMode = PickingMode.Ignore;
+            face.Add(eventTileArt);
             // The bolt of EVENT's tag on a white pill where the boost's AD tag sits: no word, СОБЫТИЕ would not fit.
             var tag = Element("menu__event-tile-tag");
             tag.Add(Icon("menu__event-tile-bolt", DrawBolt));
             button.Add(tag);
             // HEISSE KARTOFFEL or ГОРЯЧАЯ КАРТОШКА go on two lines under the tile rather than run off the screen.
-            foreach (var label in eventTile.Query<Label>(className: "menu__tile-caption").ToList()) {
+            eventTileCaption = eventTile.Query<Label>(className: "menu__tile-caption").ToList().ToArray();
+            foreach (var label in eventTileCaption) {
                 label.AddToClassList("menu__tile-caption--wrap");
             }
 
@@ -544,14 +556,15 @@ namespace ToyCarArena.UI
             modesPopup.AddToClassList("menu__modes-popup");
             var sheet = modesSheet;
 
-            eventCard = ModeCard(EventMode.HotPotato, out var eventFace);
+            eventCard = ModeCard(() => ViewModel.TodayEvent, out eventFace);
             eventFace.AddToClassList("menu__mode-card--event");
-            eventFace.style.backgroundImage = EventBack();
             eventFace.Add(Icon("menu__event-rays", DrawEventRays));
             // The picture under the words: a long name in another language runs over it, not under.
-            // The game's own red monster truck with the mode's bomb riding on it, drawn once from the models
-            // (ModeCardArt) into the picture the style sheet names.
-            eventFace.Add(Element("menu__event-art"));
+            // The game's own car of the mode with its prop riding on it (the red monster truck and the bomb), drawn
+            // once from the models (ModeCardArt) into the picture the style sheet names for the mode's id.
+            eventArt = Element("menu__event-art");
+            eventFace.Add(eventArt);
+            var head = Element("menu__event-head");
             var tag = Element("menu__event-tag");
             tag.Add(Icon("menu__event-bolt", DrawBolt));
             var tagText = StrokeText.Create("", "menu__event-tag-label", out var tagLabels,
@@ -561,23 +574,34 @@ namespace ToyCarArena.UI
             }
 
             tag.Add(tagText);
-            eventFace.Add(tag);
+            head.Add(tag);
+            // A clock and 5H 12M: the event changes at midnight, as DAILY's gift does. No words, as on DAILY's tile:
+            // НОВЫЙ ЧЕРЕЗ ran into SELECTED on the card.
+            var timer = Element("menu__event-timer");
+            timer.Add(Icon("menu__event-clock", DrawClock));
+            eventTimer = Text("menu__event-timer-text");
+            timer.Add(eventTimer);
+            head.Add(timer);
+            eventFace.Add(head);
             var title = StrokeText.Create("", "menu__event-title", out var titleLabels, "menu__event-title-text");
+            eventTitle = titleLabels;
             foreach (var label in titleLabels) {
-                text.Set(label, () => Strings.Get("menu.hot_potato"));
+                text.Set(label, EventName);
             }
 
             title.AddToClassList("menu__event-title-box");
             // One size for all layers, shrunk to the room left of the picture: a long name in another language fits.
             FitText.Fit(title, titleLabels);
             eventFace.Add(title);
-            var eventHint = Text("menu__mode-desc");
+            eventHint = Text("menu__mode-desc");
             eventHint.AddToClassList("menu__mode-desc--event");
-            text.Set(eventHint, () => Strings.Get("menu.hot_potato_hint"));
+            text.Set(eventHint, EventHint);
             eventFace.Add(eventHint);
+            // Every mode has its own rule, some long in another language (CROWN's ran off the card in Russian).
+            FitToHeight(eventHint, eventFace);
             sheet.Add(eventCard);
 
-            quickCard = ModeCard(EventMode.None, out var quickFace);
+            quickCard = ModeCard(() => EventMode.None, out var quickFace);
             var quickName = Text("menu__mode-card-name");
             text.Set(quickName, () => Strings.Get("menu.quick_match"));
             // In a box of fixed width left of the SELECTED tag: a longer name in another language shrinks instead of
@@ -606,7 +630,7 @@ namespace ToyCarArena.UI
         /// A mode's card: the face (filled by the caller) inside a holder that carries the green ring, the shadow and the
         /// SELECTED tag, which the face's clipping would cut. A tap picks the mode.
         /// </summary>
-        private VisualElement ModeCard(EventMode mode, out VisualElement face)
+        private VisualElement ModeCard(System.Func<EventMode> mode, out VisualElement face)
         {
             var holder = Element("menu__mode-holder");
             holder.pickingMode = PickingMode.Position;
@@ -626,7 +650,7 @@ namespace ToyCarArena.UI
 
             selected.Add(selectedText);
             holder.Add(selected);
-            holder.RegisterCallback<ClickEvent>(_ => PickMode(mode, holder));
+            holder.RegisterCallback<ClickEvent>(_ => PickMode(mode(), holder));
             return holder;
         }
 
@@ -678,15 +702,59 @@ namespace ToyCarArena.UI
         // The selected mode on its card and on the MODE plate; the event's card only where the build has events.
         private void ShowMode()
         {
+            ShowEvent();
             var mode = ViewModel.HasEvents ? ViewModel.Mode : EventMode.None;
             eventCard.style.display = ViewModel.HasEvents ? DisplayStyle.Flex : DisplayStyle.None;
-            eventCard.EnableInClassList(ModeSelectedClass, mode == EventMode.HotPotato);
+            eventCard.EnableInClassList(ModeSelectedClass, mode != EventMode.None);
             quickCard.EnableInClassList(ModeSelectedClass, mode == EventMode.None);
             modeName.text = ModeName();
         }
 
         private string ModeName() =>
-            Strings.Get(ViewModel.HasEvents && ViewModel.Mode == EventMode.HotPotato ? "menu.hot_potato" : "menu.quick_match");
+            ViewModel.HasEvents && ViewModel.Mode != EventMode.None ? EventName() : Strings.Get("menu.quick_match");
+
+        // The look of the mode of the day, HOT POTATO's when there is none (its card is hidden then).
+        private ModeLook EventLook => ModeLooks.Of(ViewModel.TodayEvent) ?? HotPotatoLook.Look;
+
+        private string EventName() => Strings.Get(EventLook.NameKey);
+
+        private string EventHint() => Strings.Get(EventLook.HintKey);
+
+        /// <summary>
+        /// Dresses the event card and tile as the mode of the day: its colours, its picture, its name and rule, and the
+        /// time until it changes. Built for one mode at a time, so the shared screens name none.
+        /// </summary>
+        private void ShowEvent()
+        {
+            eventTimer.text = MenuDaily.TimeText(ViewModel.EventTimeLeft);
+            var today = ViewModel.TodayEvent;
+            if (today == shownEvent) {
+                return;
+            }
+
+            shownEvent = today;
+            var look = EventLook;
+            var back = EventBack(look);
+            eventFace.style.backgroundImage = back;
+            eventTileFill.style.backgroundImage = back;
+            if (eventArtClass != null) {
+                eventArt.RemoveFromClassList(eventArtClass);
+                eventTileArt.RemoveFromClassList(eventArtClass);
+            }
+
+            eventArtClass = look.ArtClass;
+            eventArt.AddToClassList(eventArtClass);
+            eventTileArt.AddToClassList(eventArtClass);
+            foreach (var label in eventTitle) {
+                text.Set(label, EventName);
+            }
+
+            foreach (var label in eventTileCaption) {
+                text.Set(label, EventName);
+            }
+
+            text.Set(eventHint, EventHint);
+        }
 
         /// <summary>
         /// The XP boost's offer: ×N XP for the next matches, a pip a match, and WATCH (the rewarded ad) or NO THANKS.
@@ -1101,7 +1169,21 @@ namespace ToyCarArena.UI
         private void TickDaily()
         {
             // Hidden or past PLAY, the menu waits: a whole refresh would wake the garage stage's camera.
-            if (Root?.panel == null || !IsShown || ViewModel.IsDecided || !ViewModel.HasDaily) {
+            if (Root?.panel == null || !IsShown || ViewModel.IsDecided) {
+                return;
+            }
+
+            // The event of the day: its NEW IN counts down, and midnight brings the next mode.
+            if (ViewModel.TodayEvent != shownEvent) {
+                Refresh();
+                return;
+            }
+
+            if (ViewModel.HasEvents && modesPopup.ClassListContains(OpenClass)) {
+                ShowEvent();
+            }
+
+            if (!ViewModel.HasDaily) {
                 return;
             }
 
@@ -2067,6 +2149,80 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>EVENT's lightning bolt: orange with a navy outline.</summary>
+        // A white clock face with its two hands: the time until the event of the day changes.
+        /// <summary>
+        /// Shrinks wrapped <paramref name="label"/> until it ends inside <paramref name="box"/>, never below
+        /// <see cref="MinHintShare"/> of the style sheet's size, and lets it grow back for a shorter text. The label
+        /// measures only at its present size; wrapped text grows with both its lines and their height, so the size goes
+        /// by the square root of the overflow and settles over a layout or two.
+        /// </summary>
+        private static void FitToHeight(Label label, VisualElement box)
+        {
+            var full = 0f;
+
+            void Fit()
+            {
+                var size = label.resolvedStyle.fontSize;
+                if (full <= 0f) {
+                    full = size;
+                }
+
+                var width = label.contentRect.width;
+                var room = box.contentRect.yMax - label.layout.y;
+                if (full <= 0f || float.IsNaN(width) || width <= 0f || float.IsNaN(room) || room <= 0f ||
+                    string.IsNullOrEmpty(label.text)) {
+                    return;
+                }
+
+                var height = label.MeasureTextSize(label.text, width, VisualElement.MeasureMode.Exactly, 0f,
+                    VisualElement.MeasureMode.Undefined).y;
+                if (height <= 0f) {
+                    return;
+                }
+
+                // Down while it runs over; up only when even its own size would leave some room, so it does not swing.
+                float fit;
+                if (height > room) {
+                    fit = size * Mathf.Sqrt(room / height) * 0.97f;
+                } else if (size < full && height * (full / size) * (full / size) < room * 0.9f) {
+                    fit = full;
+                } else {
+                    return;
+                }
+
+                fit = Mathf.Clamp(fit, full * MinHintShare, full);
+                if (Mathf.Abs(fit - size) >= 0.5f) {
+                    label.style.fontSize = fit;
+                }
+            }
+
+            label.RegisterCallback<GeometryChangedEvent>(_ => Fit());
+            box.RegisterCallback<GeometryChangedEvent>(_ => Fit());
+        }
+
+        private static void DrawClock(MeshGenerationContext context)
+        {
+            var r = context.visualElement.contentRect;
+            if (float.IsNaN(r.width) || r.width <= 0f) {
+                return;
+            }
+
+            var p = context.painter2D;
+            var middle = r.center;
+            var radius = Mathf.Min(r.width, r.height) * 0.42f;
+            p.strokeColor = Color.white;
+            p.lineWidth = r.width * 0.12f;
+            p.lineCap = LineCap.Round;
+            p.BeginPath();
+            p.Arc(middle, radius, 0f, 360f);
+            p.Stroke();
+            p.BeginPath();
+            p.MoveTo(middle + new Vector2(0f, -radius * 0.62f));
+            p.LineTo(middle);
+            p.LineTo(middle + new Vector2(radius * 0.48f, 0f));
+            p.Stroke();
+        }
+
         private static void DrawBolt(MeshGenerationContext context)
         {
             var r = context.visualElement.contentRect;
@@ -2109,29 +2265,30 @@ namespace ToyCarArena.UI
             }
         }
 
-        // The event card's orange, light at the top to deep at the bottom: USS has no gradients, so a strip is drawn
-        // once and stretched over the card.
-        private static Texture2D eventBack;
+        // An event card's colours, light at the top to deep at the bottom: USS has no gradients, so a strip is drawn
+        // once a mode and stretched over the card and the tile.
+        private static readonly Dictionary<SpecialRound, Texture2D> eventBacks = new();
 
-        private static Background EventBack()
+        private static Background EventBack(ModeLook look)
         {
-            if (eventBack == null) {
+            if (!eventBacks.TryGetValue(look.Kind, out var back) || back == null) {
                 const int Size = 64;
-                eventBack = new Texture2D(1, Size, TextureFormat.RGBA32, false) {
-                    name = "Event Card",
+                back = new Texture2D(1, Size, TextureFormat.RGBA32, false) {
+                    name = "Event Card " + look.Id,
                     wrapMode = TextureWrapMode.Clamp,
                     filterMode = FilterMode.Bilinear,
                     hideFlags = HideFlags.DontSave,
                 };
                 for (var y = 0; y < Size; y++) {
                     // The texture's first row is its bottom.
-                    eventBack.SetPixel(0, y, Color.Lerp(EventDeep, EventLight, y / (Size - 1f)));
+                    back.SetPixel(0, y, Color.Lerp(look.Deep, look.Light, y / (Size - 1f)));
                 }
 
-                eventBack.Apply(false, true);
+                back.Apply(false, true);
+                eventBacks[look.Kind] = back;
             }
 
-            return Background.FromTexture2D(eventBack);
+            return Background.FromTexture2D(back);
         }
 
         internal static void DrawLock(MeshGenerationContext context)

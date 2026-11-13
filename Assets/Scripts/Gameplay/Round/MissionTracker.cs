@@ -138,6 +138,9 @@ namespace ToyCarArena.Gameplay.Round
             MissionCounter.Boxes => stats.Boxes,
             MissionCounter.ItemKnockouts => stats.ItemKnockouts,
             MissionCounter.ArenaRounds => stats.IsFinished && stats.Map == definition.Map ? 1 : 0,
+            MissionCounter.EventRounds => stats.IsFinished && stats.Event.Length > 0 && stats.Event == definition.Mode
+                ? 1
+                : 0,
             _ => 0,
         };
 
@@ -357,9 +360,13 @@ namespace ToyCarArena.Gameplay.Round
         public readonly int ItemKnockouts;
         public readonly string Map;
 
+        /// <summary>The id of the round's event mode (<see cref="RoundRules.IdOf"/>), empty for a round of none.</summary>
+        public readonly string Event;
+
         public MissionStats(bool isFinished, RoundOutcome outcome, int place, int knockouts, int boosts,
-            bool revengeTaken, int itemsUsed, int boxes, int itemKnockouts, string map)
+            bool revengeTaken, int itemsUsed, int boxes, int itemKnockouts, string map, string eventMode = "")
         {
+            this.Event = eventMode ?? "";
             this.IsFinished = isFinished;
             this.Outcome = outcome;
             this.Place = place;

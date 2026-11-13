@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Bugord.App.Localization;
 using Bugord.App.UI;
+using ToyCarArena.Gameplay.Round;
 using ToyCarArena.Rendering;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -111,7 +112,15 @@ namespace ToyCarArena.UI
             var tip = Root.Q<Label>("lobby-tip");
             tip.text = ViewModel.Mission ?? Strings.Get(Tips[Random.Range(0, Tips.Length)]);
             tip.style.display = GameText.Special(ViewModel.Special) == null ? DisplayStyle.Flex : DisplayStyle.None;
+            var shownTeam = RoundTeams.None;
             foreach (var row in ViewModel.Rows) {
+                // In teams each team's seats come under its own header: BLUE (with YOU) first, then RED.
+                var team = RoundTeams.TeamOf(row.Index, ViewModel.Teams);
+                if (team != shownTeam) {
+                    shownTeam = team;
+                    container.Add(CreateTeamHeader(team));
+                }
+
                 var seat = new Seat { Slot = Element("lobby__slot") };
                 if (row.Name != null && row.Index != 0) {
                     seat.Searching = CreateSearching(out seat.Spinner, out seat.SearchingText);
@@ -195,6 +204,12 @@ namespace ToyCarArena.UI
             specialCard = Element("lobby__special");
             var tag = OutlinedText(special, "lobby__badge");
             tag.AddToClassList("lobby__badge--special");
+            // An event mode's tag in its own colour, as its menu card; the rotation's rounds keep the orange.
+            var look = ModeLooks.Of(ViewModel.Special);
+            if (look != null) {
+                tag.style.backgroundColor = look.Deep;
+            }
+
             specialCard.Add(tag);
             var rule = new Label(GameText.SpecialHint(ViewModel.Special)) { pickingMode = PickingMode.Ignore };
             rule.AddToClassList("lobby__special-rule");
@@ -291,9 +306,22 @@ namespace ToyCarArena.UI
             return sticker;
         }
 
-        private static VisualElement CreateRow(LobbyRow row, bool isLeft, int streak)
+        /// <summary>A team's header in the lobby: a pill of its colour with its name.</summary>
+        private static VisualElement CreateTeamHeader(int team)
+        {
+            var header = Element("lobby__team");
+            header.AddToClassList(team == RoundTeams.Red ? "lobby__team--red" : "lobby__team--blue");
+            header.Add(OutlinedText(Strings.Get(team == RoundTeams.Red ? "hud.team_red" : "hud.team_blue"),
+                "lobby__team-name"));
+            return header;
+        }
+
+        private VisualElement CreateRow(LobbyRow row, bool isLeft, int streak)
         {
             var sticker = Element("lobby__row");
+            var team = isLeft ? RoundTeams.None : RoundTeams.TeamOf(row.Index, ViewModel.Teams);
+            sticker.EnableInClassList("lobby__row--blue", team == RoundTeams.Blue);
+            sticker.EnableInClassList("lobby__row--red", team == RoundTeams.Red);
             sticker.EnableInClassList("lobby__row--left", isLeft);
             sticker.EnableInClassList("lobby__row--you", row.Index == 0);
             var isRival = row.IsNemesis && !isLeft;
