@@ -111,7 +111,7 @@ namespace ToyCarArena.Tests.PlayMode
             text.AppendLine("# FOOTBALL simulation");
             text.AppendLine();
             text.AppendLine($"{tuning.Football.Duration:0} s matches, enemy Easy pace {tuning.Teams.EasyEnemyPace:0.00}, " +
-                $"ally pace {tuning.Football.AllyPace:0.00}, {runs} matches per round, seed {seed}, novice model chasing " +
+                $"ally pace {tuning.Football.AllyPace.x:0.00}..{tuning.Football.AllyPace.y:0.00}, {runs} matches per round, seed {seed}, novice model chasing " +
                 $"the ball ({DateTime.Now:yyyy-MM-dd HH:mm}).");
             text.AppendLine();
             text.AppendLine("| Player round | Matches | Blue wins | Draws | Losses | Blue : Red | Goals / match | " +

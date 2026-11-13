@@ -5,7 +5,7 @@ import numpy as np
 from floorlib import *
 
 HX, HZ, R = 11.0, 17.0, 4.0
-GOAL_HALF, GOAL_DEPTH = 3.5, 2.2
+GOAL_HALF, GOAL_DEPTH = 4.5, 2.2
 LINE_Z = HZ - GOAL_DEPTH          # the goal line, across the mouth
 WHITE = col(250, 252, 246)
 BLUE = col(64, 140, 255)
@@ -57,7 +57,7 @@ def pitch_top(fp, f):
     # the goal lines, across the whole pitch at the mouth
     marks = np.maximum(marks, line(np.abs(np.abs(Z) - LINE_Z), m) * sm(d - 0.6, m))
     # the penalty box and the goal area at each end
-    for half_w, depth in ((6.6, 5.4), (4.6, 2.2)):
+    for half_w, depth in ((7.4, 5.4), (5.6, 2.2)):
         inside_x = np.abs(X) <= half_w
         front = LINE_Z - depth
         box_front = line(np.abs(np.abs(Z) - front), m) * sm(half_w + 0.07 - np.abs(X), m)

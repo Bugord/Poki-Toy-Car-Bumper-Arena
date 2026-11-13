@@ -63,7 +63,7 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Half the width of a goal's mouth, in metres")]
             [Min(1f)]
             [SerializeField]
-            private float goalHalfWidth = 3.5f;
+            private float goalHalfWidth = 4.5f;
 
             [Tooltip("How deep a goal goes in from the end of the pitch, in metres: the goal line is this far in")]
             [Min(1f)]
@@ -94,12 +94,12 @@ namespace ToyCarArena.Gameplay
             [Tooltip("The ball's rolling drag: how fast a rolling ball slows down on its own")]
             [Min(0f)]
             [SerializeField]
-            private float ballDrag = 0.35f;
+            private float ballDrag = 0.25f;
 
             [Tooltip("The ball's top speed, in metres a second")]
             [Min(1f)]
             [SerializeField]
-            private float ballMaxSpeed = 21f;
+            private float ballMaxSpeed = 24f;
 
             [Tooltip("The ball's centre never goes higher than this, in metres: it stays under the fence's invisible walls")]
             [Min(1f)]
@@ -110,7 +110,7 @@ namespace ToyCarArena.Gameplay
                 "shoots it")]
             [Min(0f)]
             [SerializeField]
-            private float kick = 0.9f;
+            private float kick = 1.4f;
 
             [Tooltip("Share of a kick that lifts the ball off the floor, so a shot hops a little")]
             [Range(0f, 1f)]
@@ -136,6 +136,12 @@ namespace ToyCarArena.Gameplay
             [Min(0f)]
             [SerializeField]
             private float stuckNudge = 5f;
+
+            [Tooltip("A goal is the scoring team's last toucher's when a defender touched the ball after it at most " +
+                "this many seconds ago (a deflection), and an own goal, nobody's, otherwise")]
+            [Min(0f)]
+            [SerializeField]
+            private float deflectionTime = 1.5f;
 
             [Header("Goal and kick-off")]
             [Tooltip("Seconds of celebration after a goal before everyone goes back to kick-off: the ball in the net, " +
@@ -175,12 +181,12 @@ namespace ToyCarArena.Gameplay
             [Tooltip("The keeper of a team waits this far out in front of its goal line, in metres")]
             [Min(0f)]
             [SerializeField]
-            private float keeperOut = 3.2f;
+            private float keeperOut = 1.8f;
 
             [Tooltip("The keeper leaves its goal for a ball closer to it than this, in metres")]
             [Min(0f)]
             [SerializeField]
-            private float keeperRush = 8f;
+            private float keeperRush = 6f;
 
             [Tooltip("A bot that is not the nearest of its team to the ball keeps this far from it, in metres, so six " +
                 "cars do not pile on the ball")]
@@ -192,11 +198,21 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private Vector2 aimError = new(0.35f, 0.12f);
 
-            [Tooltip("Gas of the bots of the player's team, against the other team's: helpers that do not score " +
-                "everything for the player")]
-            [Range(0.3f, 1f)]
+            [Tooltip("Gas of the other team's keeper against its team's, on Easy (x) and on Normal (y): a slower keeper " +
+                "lets a novice's shots in")]
             [SerializeField]
-            private float allyPace = 0.85f;
+            private Vector2 enemyKeeperPace = new(0.55f, 0.95f);
+
+            [Tooltip("From this difficulty level (0 Easy, 1 Normal) the other team's support bots go up for rebounds when " +
+                "their team attacks; below it they hang back, so a novice's team concedes less")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float enemyAttackFrom = 0.5f;
+
+            [Tooltip("Gas of the bots of the player's team on Easy (x) and on Normal (y): strong helpers for a novice, " +
+                "then helpers that do not score everything for the player")]
+            [SerializeField]
+            private Vector2 allyPace = new(1f, 0.85f);
 
             public bool Enabled => enabled;
             public float Duration => duration;
@@ -229,7 +245,13 @@ namespace ToyCarArena.Gameplay
             public float KeeperRush => keeperRush;
             public float SupportDistance => supportDistance;
             public Vector2 AimError => aimError;
-            public float AllyPace => allyPace;
+            public Vector2 AllyPace => allyPace;
+
+            /// <summary>The player team's bots' gas at a difficulty level.</summary>
+            public float AllyPaceAt(float level) => Mathf.Lerp(allyPace.x, allyPace.y, level);
+            public Vector2 EnemyKeeperPace => enemyKeeperPace;
+            public float EnemyAttackFrom => enemyAttackFrom;
+            public float DeflectionTime => deflectionTime;
 
             /// <summary>The goal line's distance from the middle along Z, at each end.</summary>
             public float GoalLine => pitchHalfSize.y - goalDepth;

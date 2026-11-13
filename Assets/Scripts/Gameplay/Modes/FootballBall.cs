@@ -12,6 +12,7 @@ namespace ToyCarArena.Gameplay.Modes
     public sealed class FootballBall : MonoBehaviour
     {
         private readonly Car[] lastOfTeam = new Car[2];
+        private readonly float[] lastTimeOfTeam = { float.NegativeInfinity, float.NegativeInfinity };
         private GameTuning.FootballSettings settings;
         private Rigidbody body;
 
@@ -35,6 +36,10 @@ namespace ToyCarArena.Gameplay.Modes
         /// <summary>The car of <paramref name="team"/> that touched the ball last since the kick-off, or null.</summary>
         public Car LastOf(int team) => team >= 0 && team < lastOfTeam.Length ? lastOfTeam[team] : null;
 
+        /// <summary>When a car of <paramref name="team"/> last touched the ball (game time), or minus infinity.</summary>
+        public float LastTimeOf(int team) =>
+            team >= 0 && team < lastTimeOfTeam.Length ? lastTimeOfTeam[team] : float.NegativeInfinity;
+
         /// <summary>Forgets every touch: a kick-off starts with nobody's ball.</summary>
         public void Forget()
         {
@@ -42,6 +47,8 @@ namespace ToyCarArena.Gameplay.Modes
             LastTouchTime = float.NegativeInfinity;
             lastOfTeam[0] = null;
             lastOfTeam[1] = null;
+            lastTimeOfTeam[0] = float.NegativeInfinity;
+            lastTimeOfTeam[1] = float.NegativeInfinity;
         }
 
         private void OnCollisionEnter(Collision collision)
@@ -87,6 +94,7 @@ namespace ToyCarArena.Gameplay.Modes
             LastTouchTime = Time.time;
             if (car.Team >= 0 && car.Team < lastOfTeam.Length) {
                 lastOfTeam[car.Team] = car;
+                lastTimeOfTeam[car.Team] = Time.time;
             }
         }
 

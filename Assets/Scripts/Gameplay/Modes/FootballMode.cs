@@ -207,7 +207,7 @@ namespace ToyCarArena.Gameplay.Modes
 
             UpdateRoles();
             var team = car.Team;
-            var pace = bot.Pace * (team == round.Player?.Team ? settings.AllyPace : 1f);
+            var pace = bot.Pace * (team == round.Player?.Team ? settings.AllyPaceAt(difficulty.Level) : 1f);
             var ball = Flat(BallPosition);
             var position = Flat(car.Position);
             var own = Flat(pitch.GoalOf(team));
@@ -217,6 +217,11 @@ namespace ToyCarArena.Gameplay.Modes
             }
 
             if (car == keepers[team]) {
+                if (team != round.Player?.Team) {
+                    // The other team's keeper is slower on Easy: a novice's shots go in.
+                    pace *= Mathf.Lerp(settings.EnemyKeeperPace.x, settings.EnemyKeeperPace.y, difficulty.Level);
+                }
+
                 if (Vector3.Distance(ball, own) < settings.KeeperRush && car != chasers[team]
                     && IsCloserThanChaser(car, team, ball)) {
                     Attack(bot, team, ball, position, own, pace);
@@ -245,6 +250,15 @@ namespace ToyCarArena.Gameplay.Modes
             }
 
             var supportSpot = ball + back * (settings.SupportDistance * 0.7f) + Vector3.right * (side * settings.SupportDistance * 0.6f);
+            var goal = Flat(pitch.TargetOf(team));
+            // The other team's supports join the attack only from halfway to Normal: on Easy they hang back.
+            var joins = team == round.Player?.Team || difficulty.Level >= settings.EnemyAttackFrom;
+            if (joins && Vector3.Dot(ball, goal) > 0f) {
+                // The ball in the other half: up by the far post for the rebound, not back by its own goal.
+                supportSpot = goal - goal.normalized * settings.SupportDistance * 0.6f
+                    + Vector3.right * (side * settings.GoalHalfWidth * 1.3f);
+            }
+
             supportSpot = Clamp(supportSpot, 2f);
             Arrive(car, supportSpot, pace);
             return true;
@@ -278,8 +292,11 @@ namespace ToyCarArena.Gameplay.Modes
 
             // The far goal is red's: a ball in it is blue's goal.
             var scorer = position.z > 0f ? RoundTeams.Blue : RoundTeams.Red;
+            // The scoring team's last toucher, also when a defender only deflected its shot in; an own goal (the
+            // defenders' ball, nobody of the scoring team on it lately) is nobody's.
             var touch = pitch.Ball.LastTouch;
-            var author = touch != null && touch.Team == scorer ? touch : null;
+            var author = touch != null && touch.Team == scorer ? touch
+                : Time.time - pitch.Ball.LastTimeOf(scorer) <= settings.DeflectionTime ? pitch.Ball.LastOf(scorer) : null;
             var isScored = author != null ? round.AddPoints(author, 1) : round.AddTeamPoints(scorer, 1);
             if (!isScored) {
                 return;
@@ -406,7 +423,8 @@ namespace ToyCarArena.Gameplay.Modes
                 }
 
                 foreach (var car in round.Cars) {
-                    if (car.Team != team || car.IsOut || car == keepers[team]) {
+                    // The player is nobody's role: the team's bots play round it, one of them always on the ball.
+                    if (car.Team != team || car.IsOut || car == keepers[team] || car.IsPlayer) {
                         continue;
                     }
 
