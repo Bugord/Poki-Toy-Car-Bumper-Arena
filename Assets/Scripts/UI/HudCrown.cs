@@ -22,9 +22,12 @@ namespace ToyCarArena.UI
     /// </summary>
     internal sealed class HudCrown : IModeHud
     {
-        // Reference pixels under the top of the safe area the banner sits at: under the HUD bar and the kill feed's
-        // three rows at its left in portrait, as the hot potato's.
+        // Reference pixels under the top of the safe area the banner sits at, at the least: under the HUD bar and the
+        // kill feed's three rows at its left in portrait.
         private const float BannerTop = 480f;
+        // Share of the screen's height the banner's top sits at: under the player's car, which the camera keeps near the
+        // middle. Under the bar it lay across the band where the names of the cars ahead gather and broke them up.
+        private const float BannerShare = 0.6f;
         // The banner comes on each change and goes: held longer, it covered the middle of the floor, where the crown
         // and its holder are, in portrait. The pointer and the seconds sticker stay.
         private const float BannerHold = 2.5f;
@@ -257,7 +260,8 @@ namespace ToyCarArena.UI
             var since = time - saidAt;
             var isShown = say != Say.None && since < BannerHold;
             banner.EnableInClassList("hud__pass--shown", isShown);
-            banner.style.top = top + BannerTop;
+            var height = root.layout.height;
+            banner.style.top = float.IsNaN(height) ? top + BannerTop : Mathf.Max(top + BannerTop, height * BannerShare);
             if (!isShown) {
                 return;
             }

@@ -147,8 +147,38 @@ namespace ToyCarArena.Tests.PlayMode
                 yield return Until(() => crown.Holder == bot, 1f);
                 yield return Seconds(3.2f);
                 yield return Shoot("bot", camera, panelSettings, controls, directory, owned);
-                // The fight for it: the hunters close in on the bot's crown, the others wait round it.
-                yield return Seconds(2.5f);
+                // The fight for it, staged: the bot holds it mid-floor, two hunters close in from two sides, the others
+                // wait round it and the player comes up from the near side. The names must read in this crowd.
+                if (crown.Holder != bot) {
+                    StealFor(crown, bot, crown.Holder);
+                }
+
+                var ahead = camera.transform.forward;
+                ahead.y = 0f;
+                ahead.Normalize();
+                var side = camera.transform.right;
+                side.y = 0f;
+                side.Normalize();
+                var middle = crown.Spot;
+                middle.y = 0f;
+                Park(bot, middle, side);
+                Park(round.Player, middle - ahead * 6f, ahead);
+                var places = new[] {
+                    (middle - side * 3.4f, side), (middle + ahead * 3.2f - side * 0.6f, -ahead),
+                    (middle + side * 7.5f + ahead * 2f, -side), (middle - side * 7.5f + ahead * 4f, side),
+                    (middle + side * 5f - ahead * 4.5f, ahead),
+                };
+                var next = 0;
+                for (var index = 1; index < round.Cars.Count && next < places.Length; index++) {
+                    if (index == 2) {
+                        continue;
+                    }
+
+                    var (point, facing) = places[next++];
+                    Park(round.Cars[index], point, facing);
+                }
+
+                yield return Frames(4);
                 yield return Shoot("fight", camera, panelSettings, controls, directory, owned);
 
                 // The player on the near side, the holder in the far corner beyond the frame: the pointer shows the way.
