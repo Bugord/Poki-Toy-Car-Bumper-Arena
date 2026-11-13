@@ -64,6 +64,12 @@ namespace ToyCarArena.Tests.PlayMode
             // A visit in which the player has not used an item in the mode yet.
             typeof(HudView).Assembly.GetType("ToyCarArena.UI.ItemFrenzyHud").GetMethod("ForgetVisit", Hidden)
                 .Invoke(null, null);
+            // The floor holds for the pictures: five languages on three screens outlast the first wave, and by the last
+            // screen the cars stood over nothing. In memory only, back in the finally.
+            var arena = container.Resolve<GameTuning.ArenaSettings>();
+            var crumbleDelay = typeof(GameTuning.ArenaSettings).GetField("crumbleDelay", BindingFlags.Instance | BindingFlags.NonPublic);
+            var keptDelay = crumbleDelay.GetValue(arena);
+            crumbleDelay.SetValue(arena, 1e6f);
             round.Place();
             yield return null;
             round.Begin();
@@ -178,6 +184,7 @@ namespace ToyCarArena.Tests.PlayMode
                 }
             }
             finally {
+                crumbleDelay.SetValue(arena, keptDelay);
                 camera.targetTexture = null;
                 PlayModeWindow.SetCustomRenderingResolution((uint)screenWidth, (uint)screenHeight, "Frenzy screenshot");
                 view.Dispose();
