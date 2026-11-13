@@ -715,8 +715,10 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(first.Movement.Velocity.z,
                 Is.LessThanOrEqualTo(tuning.Car.MaxBumpSpeed * glove.MaxSpeedShare + 0.5f), "the punch is capped");
 
-            // Facing the other way, at a shielded car: the shield takes the punch.
-            yield return Frames(Mathf.CeilToInt(glove.Length * FramesPerSecond) + 5);
+            // Facing the other way, at a shielded car: the shield takes the punch. The first glove must be back first,
+            // on the game's clock: the punched car may ram the one behind it into a hit-stop (a chance roll), and a
+            // glove still out refuses the next punch.
+            yield return Until(() => !pickups.IsPunching(player), glove.Length + 1f, "the first glove never came back");
             player.Movement.Place(new Vector3(0f, 0.2f, 0f), Quaternion.LookRotation(Vector3.back));
             // Its bot may have driven off meanwhile: back in the glove's way.
             shielded.Movement.Place(new Vector3(0f, 0.2f, -4f), Quaternion.identity);
