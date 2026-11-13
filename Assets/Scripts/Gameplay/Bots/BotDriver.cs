@@ -211,6 +211,7 @@ namespace ToyCarArena.Gameplay.Bots
                 grudge = null;
             }
 
+            var targeting = modes.BotTargeting;
             Car best = null;
             var bestScore = float.NegativeInfinity;
             // By index: a foreach over the read-only list would box its enumerator on every pick.
@@ -225,10 +226,16 @@ namespace ToyCarArena.Gameplay.Bots
 
                 var carPosition = new Vector2(car.Position.x, car.Position.z);
                 var distance = Vector2.Distance(new Vector2(position.x, position.z), carPosition);
+                var hunters = CountHunters(car, bot);
                 var score = settings.EdgeWeight * traits.EdgeWeight * edge.Nearness(car.Position)
                     - settings.DistanceWeight * distance / diameter
-                    - settings.CrowdPenalty * CountHunters(car, bot)
+                    - settings.CrowdPenalty * hunters
                     + bot.Range(0f, settings.PickNoise);
+                // An event mode that makes some cars worth more (OVERHEAT's hot ones) adds to the usual score.
+                if (targeting != null) {
+                    score += targeting.TargetBonus(bot, car, hunters);
+                }
+
                 if (car == player) {
                     score += playerWeight;
                 }
