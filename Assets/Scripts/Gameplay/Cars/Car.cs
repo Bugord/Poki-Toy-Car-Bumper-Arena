@@ -92,6 +92,18 @@ namespace ToyCarArena.Gameplay.Cars
         public bool IsPlayer { get; set; }
 
         /// <summary>
+        /// The car's team in a round played in teams (<see cref="Round.RoundTeams"/>), set by the round when it places
+        /// the car; <see cref="Round.RoundTeams.None"/> (-1) otherwise.
+        /// </summary>
+        public int Team { get; set; } = -1;
+
+        /// <summary>
+        /// Whether <paramref name="other"/> is another car on this car's team: a teammate's bump, item or push is no hit
+        /// (the physics' own bounce stays), and the bots leave their teammates alone. Always false without teams.
+        /// </summary>
+        public bool IsTeammateOf(Car other) => other != null && other != this && Team >= 0 && Team == other.Team;
+
+        /// <summary>
         /// Times the push this car's hits give, from the player's car's power (<see cref="GameTuning.CarStatSettings"/>);
         /// 1 for a bot.
         /// </summary>
@@ -464,6 +476,10 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public void HitByItem(Car user, bool isItem = true)
         {
+            if (IsTeammateOf(user)) {
+                return;
+            }
+
             LastHitBy = user;
             LastHitByItem = isItem;
             LastHitTime = Time.time;
@@ -600,6 +616,12 @@ namespace ToyCarArena.Gameplay.Cars
                 return;
             }
 
+            // A teammate is no hit: the physics bounces the two apart, but there is no extra push, no loss of balance,
+            // no credit and no hit to show.
+            if (IsTeammateOf(other)) {
+                return;
+            }
+
             var hasContact = collision.contactCount > 0;
             var point = hasContact ? collision.GetContact(0).point : (Position + other.Position) * 0.5f;
 
@@ -718,7 +740,7 @@ namespace ToyCarArena.Gameplay.Cars
             }
 
             var away = Flat(Position - other.Position);
-            if (away.sqrMagnitude < 0.0001f) {
+            if (away.sqrMagnitude < 0.0001f || IsTeammateOf(other)) {
                 return;
             }
 

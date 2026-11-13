@@ -161,8 +161,70 @@ namespace ToyCarArena.Gameplay.Round
         /// The car the result shows on its podium: a match's winner; after a round the player's own car on a win, the
         /// car that knocked the player off on a loss to one, and the player's own car otherwise.
         /// </summary>
-        public int PodiumCar => IsTimed ? Standings.Count > 0 ? Standings[0].Index : Nobody
+        public int PodiumCar => Teams > 0 && IsTimed ? BestOf(WinningTeam)
+            : IsTimed ? Standings.Count > 0 ? Standings[0].Index : Nobody
             : Outcome == RoundOutcome.Out && KnockedOutBy != Nobody ? KnockedOutBy : 0;
+
+        /// <summary>
+        /// Every team's points at the end of a timed team round, by team (<see cref="RoundTeams"/>); empty otherwise.
+        /// </summary>
+        public IReadOnlyList<int> TeamPoints { get; }
+
+        public int TeamPointsOf(int team) => team >= 0 && team < TeamPoints.Count ? TeamPoints[team] : 0;
+
+        /// <summary>A timed team round that ended level: neither a win nor a loss.</summary>
+        public bool IsDraw
+        {
+            get
+            {
+                if (Teams <= 0 || TeamPoints.Count < 2) {
+                    return false;
+                }
+
+                for (var team = 1; team < TeamPoints.Count; team++) {
+                    if (TeamPoints[team] != TeamPoints[0]) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// The team ahead at the end of a timed team round; the player's on a draw, so the podium shows one of theirs.
+        /// <see cref="RoundTeams.None"/> without teams.
+        /// </summary>
+        public int WinningTeam
+        {
+            get
+            {
+                if (Teams <= 0 || TeamPoints.Count == 0) {
+                    return RoundTeams.None;
+                }
+
+                var best = RoundTeams.Blue;
+                for (var team = 1; team < TeamPoints.Count; team++) {
+                    if (TeamPoints[team] > TeamPoints[best]) {
+                        best = team;
+                    }
+                }
+
+                return best;
+            }
+        }
+
+        /// <summary>The best placed car of a team (its first in <see cref="Standings"/>), <see cref="Nobody"/> for none.</summary>
+        public int BestOf(int team)
+        {
+            foreach (var standing in Standings) {
+                if (standing.Team == team) {
+                    return standing.Index;
+                }
+            }
+
+            return Standings.Count > 0 ? Standings[0].Index : Nobody;
+        }
         public IReadOnlyList<int> Colors { get; }
         public int ColorOf(int index) => Colors[index];
 
@@ -170,8 +232,9 @@ namespace ToyCarArena.Gameplay.Round
             FallCause fallCause, bool hadNemesis, bool revengeTaken, IReadOnlyList<RoundStanding> standings = null,
             IReadOnlyList<int> colors = null, bool isMatch = false, int falls = 0, int knockedOff = 0, bool? isLoss = null,
             int bonusKnockouts = 0, bool? isTimed = null, SpecialRound kind = SpecialRound.None, int knockoutRewardCap = 0,
-            int teams = 0)
+            int teams = 0, IReadOnlyList<int> teamPoints = null)
         {
+            TeamPoints = teamPoints ?? Array.Empty<int>();
             IsTimed = isTimed ?? isMatch;
             Kind = kind;
             KnockoutRewardCap = knockoutRewardCap;

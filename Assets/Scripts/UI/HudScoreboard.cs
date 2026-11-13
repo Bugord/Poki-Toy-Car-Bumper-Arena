@@ -67,7 +67,7 @@ namespace ToyCarArena.UI
         /// The board for the match the HUD shows, or null in a round of the last car standing, which has none.
         /// </summary>
         public static HudScoreboard Create(VisualElement container, HudViewModel model) =>
-            model.IsTimed && model.CarCount > 0 ? new HudScoreboard(container, model) : null;
+            model.IsTimed && model.CarCount > 0 && model.Teams == 0 ? new HudScoreboard(container, model) : null;
 
         private HudScoreboard(VisualElement container, HudViewModel model)
         {

@@ -41,9 +41,13 @@ namespace ToyCarArena.UI
         /// <summary>The coming round's special rule, named beside the arena with its rule under the seats.</summary>
         public SpecialRound Special { get; private set; }
 
+        /// <summary>The coming round's teams, 0 without: the seats are then shown team by team.</summary>
+        public int Teams { get; private set; }
+
         public void ShowLobby(ISessionRoster roster, int botCount, int nemesis, string arenaName = null, bool arenaIsNew = false,
-            int streak = 0, string mission = null, SpecialRound special = SpecialRound.None)
+            int streak = 0, string mission = null, SpecialRound special = SpecialRound.None, int teams = 0)
         {
+            Teams = teams;
             Streak = streak;
             Mission = mission;
             Special = special;
@@ -59,6 +63,15 @@ namespace ToyCarArena.UI
                         isSeated ? roster.StreakOf(index) : 0));
                 }
             }
+            if (teams > 0) {
+                // Team by team, the player's first, in seat order within each: the round's own teams (RoundTeams).
+                // A seat only leaving has no team in the coming round: it stays with the seat it leaves.
+                rows.Sort((a, b) => {
+                    var team = RoundTeams.TeamOf(a.Index, teams).CompareTo(RoundTeams.TeamOf(b.Index, teams));
+                    return team != 0 ? team : a.Index.CompareTo(b.Index);
+                });
+            }
+
             Rows = rows.AsReadOnly();
             StartedAt = Time.realtimeSinceStartupAsDouble;
             IsReady = false;

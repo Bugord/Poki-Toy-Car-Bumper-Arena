@@ -58,6 +58,12 @@ namespace ToyCarArena.UI
         public event Action<int> ScoreChanged;
 
         /// <summary>
+        /// Raised in a timed team round after a team's points changed, with the team and by how much: the team score
+        /// pops its number and shows the point.
+        /// </summary>
+        public event Action<int, int> TeamScoreChanged;
+
+        /// <summary>
         /// Raised in a match when the player's car breaks a box and its slot starts to spin, with the item it will land
         /// on (the HUD spins anyway and lands on it).
         /// </summary>
@@ -222,6 +228,18 @@ namespace ToyCarArena.UI
 
         /// <summary>The points the player has scored in the timed round.</summary>
         public int PlayerScore => ScoreOf(PlayerIndex);
+
+        /// <summary>The number of teams of the round, 0 without teams.</summary>
+        public int Teams => round?.Mode.Teams ?? 0;
+
+        /// <summary>The team of car <paramref name="index"/>, <see cref="RoundTeams.None"/> without teams.</summary>
+        public int TeamOf(int index) => round?.TeamOf(index) ?? RoundTeams.None;
+
+        /// <summary>The player's team, <see cref="RoundTeams.None"/> without teams.</summary>
+        public int PlayerTeam => TeamOf(PlayerIndex);
+
+        /// <summary>A team's points in a timed team round: its cars' and its own.</summary>
+        public int TeamPointsOf(int team) => round?.Score?.TeamPointsOf(team) ?? 0;
 
         /// <summary>
         /// The car at a place of the match's ranking, from 0 for the leader (knock-outs, then fewer falls, then who
@@ -410,6 +428,7 @@ namespace ToyCarArena.UI
                 round.Respawned += OnRespawned;
                 round.NemesisChanged += OnNemesisChanged;
                 round.ScoreChanged += OnScoreChanged;
+                round.TeamScoreChanged += OnTeamScoreChanged;
                 player = round.Player;
                 if (player != null) {
                     player.ItemRolled += OnItemRolled;
@@ -438,6 +457,7 @@ namespace ToyCarArena.UI
                 round.Respawned -= OnRespawned;
                 round.NemesisChanged -= OnNemesisChanged;
                 round.ScoreChanged -= OnScoreChanged;
+                round.TeamScoreChanged -= OnTeamScoreChanged;
             }
 
             if (player != null) {
@@ -458,6 +478,8 @@ namespace ToyCarArena.UI
         private void OnNemesisChanged() => NemesisChanged?.Invoke();
 
         private void OnScoreChanged(int index) => ScoreChanged?.Invoke(index);
+
+        private void OnTeamScoreChanged(int team, int change) => TeamScoreChanged?.Invoke(team, change);
 
         private void OnCarOut(Car car)
         {

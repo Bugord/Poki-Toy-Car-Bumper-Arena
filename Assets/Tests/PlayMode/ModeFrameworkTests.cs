@@ -18,19 +18,17 @@ namespace ToyCarArena.Tests.PlayMode
     {
         private const float ShortRound = 10f;
 
-        // The carrier of the timed tests: GOLD RUSH, a stub mode that is timed and brings a fallen car back
-        // (CROWN, the first carrier, puts a fallen car back on the floor now).
-        private static readonly FieldInfo GoldRushDuration =
-            typeof(GameTuning.GoldRushSettings).GetField("duration", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly FieldInfo CrownDuration =
+            typeof(GameTuning.CrownSettings).GetField("duration", BindingFlags.NonPublic | BindingFlags.Instance);
 
-        private float savedGoldRushDuration = -1f;
+        private float savedCrownDuration = -1f;
 
         [TearDown]
-        public void RestoreGoldRush()
+        public void RestoreCrown()
         {
-            if (savedGoldRushDuration >= 0f) {
-                GoldRushDuration.SetValue(LoadTuning().GoldRush, savedGoldRushDuration);
-                savedGoldRushDuration = -1f;
+            if (savedCrownDuration >= 0f) {
+                CrownDuration.SetValue(LoadTuning().Crown, savedCrownDuration);
+                savedCrownDuration = -1f;
             }
         }
 
@@ -80,19 +78,17 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [Test]
-        public void OnlyTheFinishedModesAreOnAndOnlyInABuildOfRounds()
+        public void ModesAreOnOnlyInABuildOfRounds()
         {
+            // Which modes the build ships is each mode's own switch; this test holds whichever of them are on.
             var tuning = LoadTuning();
-            var finished = new[] { EventMode.HotPotato, EventMode.Crown };
-            foreach (var mode in finished) {
-                Assert.That(tuning.IsModeEnabled(mode), Is.EqualTo(tuning.HasEvents), mode + " is finished and on.");
-            }
-
-            foreach (var mode in EventModes.Circle.Where(mode => !finished.Contains(mode))) {
-                Assert.That(tuning.IsModeEnabled(mode), Is.False, mode + " is a stub and must stay off.");
-            }
-
+            Assert.That(tuning.IsModeEnabled(EventMode.HotPotato), Is.EqualTo(tuning.HasEvents));
             Assert.That(tuning.IsModeEnabled(EventMode.None), Is.False);
+
+            UseMode(GameTuning.GameMode.Match);
+            foreach (var mode in EventModes.Circle) {
+                Assert.That(tuning.IsModeEnabled(mode), Is.False, mode + " is on in a build of matches.");
+            }
         }
 
         [Test]
@@ -172,9 +168,9 @@ namespace ToyCarArena.Tests.PlayMode
         public IEnumerator ATimedModeEndsByTimeAndPlacesByPoints()
         {
             var tuning = LoadTuning();
-            savedGoldRushDuration = tuning.GoldRush.Duration;
-            GoldRushDuration.SetValue(tuning.GoldRush, ShortRound);
-            UseSpecial(SpecialRound.GoldRush);
+            savedCrownDuration = tuning.Crown.Duration;
+            CrownDuration.SetValue(tuning.Crown, ShortRound);
+            UseSpecial(SpecialRound.Crown);
             yield return Open("sandbox", "rake");
             Assert.That(Round.IsTimed, Is.True);
             Assert.That(Round.Mode.Fall, Is.EqualTo(FallRule.Respawn));
@@ -206,7 +202,7 @@ namespace ToyCarArena.Tests.PlayMode
             var end = result.Value;
             Assert.That(end.IsTimed, Is.True);
             Assert.That(end.IsMatch, Is.False, "A mode in a build of rounds is not the build's match.");
-            Assert.That(end.Kind, Is.EqualTo(SpecialRound.GoldRush));
+            Assert.That(end.Kind, Is.EqualTo(SpecialRound.Crown));
             Assert.That(end.Place, Is.EqualTo(2));
             Assert.That(end.Outcome, Is.EqualTo(RoundOutcome.Survived));
             Assert.That(end.Points, Is.EqualTo(3));
@@ -214,16 +210,16 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(end.Standings[0].Index, Is.EqualTo(2));
             Assert.That(end.Standings[0].Points, Is.EqualTo(5));
             Assert.That(end.PodiumCar, Is.EqualTo(2));
-            Assert.That(end.KnockoutRewardCap, Is.EqualTo(tuning.GoldRush.KnockoutRewardCap));
+            Assert.That(end.KnockoutRewardCap, Is.EqualTo(tuning.Crown.KnockoutRewardCap));
         }
 
         [UnityTest]
         public IEnumerator ACarThatFallsInARespawnModeComesBack()
         {
             var tuning = LoadTuning();
-            savedGoldRushDuration = tuning.GoldRush.Duration;
-            GoldRushDuration.SetValue(tuning.GoldRush, ShortRound * 3f);
-            UseSpecial(SpecialRound.GoldRush);
+            savedCrownDuration = tuning.Crown.Duration;
+            CrownDuration.SetValue(tuning.Crown, ShortRound * 3f);
+            UseSpecial(SpecialRound.Crown);
             yield return Open("sandbox", "rake");
             var car = Round.Cars[1];
             car.Movement.Place(new Vector3(0f, tuning.Round.FallHeight - 1f, 0f), Quaternion.identity);

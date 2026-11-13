@@ -532,6 +532,12 @@ namespace ToyCarArena.UI
         /// <summary>Whether the round was played in teams: the subtitle says how the player's team did.</summary>
         public bool IsTeamRound { get; private set; }
 
+        /// <summary>Whether a timed team round ended with the teams level.</summary>
+        public bool IsTeamDraw { get; private set; }
+
+        /// <summary>A team round's score by team, empty otherwise.</summary>
+        public System.Collections.Generic.IReadOnlyList<int> TeamPoints { get; private set; } = System.Array.Empty<int>();
+
         /// <summary>
         /// The index of the car that knocked the player out, or <see cref="RoundResult.Nobody"/>.
         /// </summary>
@@ -594,6 +600,8 @@ namespace ToyCarArena.UI
             Points = result.Points;
             Kind = result.Kind;
             IsTeamRound = result.Teams > 0;
+            IsTeamDraw = IsTeamRound && result.IsTimed && result.IsDraw;
+            TeamPoints = result.TeamPoints;
             KnockedOutBy = result.KnockedOutBy;
             KnockedOutByName = payload.KnockedOutByName;
             RevengeTaken = result.RevengeTaken;

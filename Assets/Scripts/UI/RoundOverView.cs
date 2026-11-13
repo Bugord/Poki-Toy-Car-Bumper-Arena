@@ -421,7 +421,8 @@ namespace ToyCarArena.UI
 
             // A team round says how the player's team did, timed or not.
             if (ViewModel.IsTeamRound) {
-                subtitle = Strings.Get(ViewModel.Outcome == RoundOutcome.Won ? "result.team_won" : "result.team_lost");
+                subtitle = Strings.Get(ViewModel.Outcome == RoundOutcome.Won ? "result.team_won"
+                    : ViewModel.IsTeamDraw ? "result.team_draw" : "result.team_lost");
             }
 
             // The title is the same text twice (the outline under, the face over it, see .stroke in ui_screens).

@@ -39,6 +39,10 @@ namespace ToyCarArena.Tests.PlayMode
         private const float Boost = 4f;
         // How long the mode's round may take to show its prop (the hot potato's first bomb comes after its delay).
         private const float PropWait = 12f;
+        // Two cars head-on (a mode of two sides): each turned this far from facing the other towards the camera, so
+        // both fronts show, nose to nose this many metres apart.
+        private const float RivalYaw = 140f;
+        private const float RivalGap = 0.3f;
 
         [UnityTest]
         public IEnumerator DrawTheCard([Values("hot-potato", "crown", "gold-rush", "item-frenzy", "overheat",
@@ -74,6 +78,23 @@ namespace ToyCarArena.Tests.PlayMode
             var bounds = CarModel.BoundsIn(car.gameObject, car.worldToLocalMatrix);
             model.transform.localPosition -= new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
             car.localRotation = Quaternion.Euler(0f, Yaw, 0f);
+            Mesh rivalBody = null;
+            if (card.RivalCarId != null) {
+                // The two sides nose to nose: the card's car from the left, the rival from the right.
+                var rivalEntry = LoadCarCatalog().Find(card.RivalCarId);
+                Assert.That(rivalEntry, Is.Not.Null, $"No car {card.RivalCarId}.");
+                var rival = new GameObject("Rival").transform;
+                rival.SetParent(root.transform, false);
+                var rivalModel = CarLook.BuildModel(rivalEntry, rival, look.ModelRotation, look.ModelMaterial,
+                    look.Reference);
+                rivalBody = CarModel.PaintBody(CarModel.FindBody(rivalModel, out _), rivalEntry.BodySwatch,
+                    look.SwatchOf(card.RivalColor));
+                var rivalBounds = CarModel.BoundsIn(rival.gameObject, rival.worldToLocalMatrix);
+                rivalModel.transform.localPosition -= new Vector3(rivalBounds.center.x, rivalBounds.min.y,
+                    rivalBounds.center.z);
+                Face(car, RivalYaw, bounds.size.z);
+                Face(rival, -RivalYaw, rivalBounds.size.z);
+            }
 
             if (sceneProp != null) {
                 // The prop as it rides in the round (the bomb lit, its spark up), its flash off.
@@ -132,6 +153,16 @@ namespace ToyCarArena.Tests.PlayMode
             Object.Destroy(half);
             Object.Destroy(root);
             Object.Destroy(body);
+            if (rivalBody != null) {
+                Object.Destroy(rivalBody);
+            }
+        }
+
+        // Turns a car to a yaw and backs it off the middle along its nose, so its nose stops half the gap short of it.
+        private static void Face(Transform car, float yaw, float length)
+        {
+            car.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            car.localPosition = -(car.localRotation * Vector3.forward) * (length * 0.5f + RivalGap * 0.5f);
         }
 
         // An orthographic camera looking down at Pitch, sized so every renderer under the root fits with a margin.

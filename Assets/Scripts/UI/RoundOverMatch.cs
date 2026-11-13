@@ -36,6 +36,16 @@ namespace ToyCarArena.UI
         private const string ColumnsClass = "round-over--columns";
         // The rival's pill sits this far over the car's roof: the REVENGE NEXT ROUND tag under it and a little air.
         private const float RivalPillGap = 76f;
+        // The wide columns' table stands this far in from the left (ui_screens: .results--wide), the podium past it.
+        private const float WideTableLeft = 80f;
+        private const float WidePodiumLeft = 900f;
+        private const float WidePodiumTop = 20f;
+        // Between the bottom of the teams' table and the podium under it: the crown over the pill reaches up into it.
+        private const float TeamPodiumGap = 40f;
+        // In teams the MVP pill stands on the car's roof too, its small tag under it; never higher than its own place
+        // (ui_screens: .podium__winner), where its crown clears the table.
+        private const float TeamPillGap = 40f;
+        private const float PillTop = 46f;
 
         // The narrow form shows this many leaders, then the player's own row when it is lower.
         private const int CompactLeaders = 3;
@@ -104,12 +114,22 @@ namespace ToyCarArena.UI
             car.RegisterCallback<GeometryChangedEvent>(OnPictureGeometry);
             car.RegisterCallback<GeometryChangedEvent>(OnRivalGeometry);
             winner.RegisterCallback<GeometryChangedEvent>(OnRivalGeometry);
+            podium.parent.RegisterCallback<GeometryChangedEvent>(PlaceTeamPodium);
+            table.RegisterCallback<GeometryChangedEvent>(PlaceTeamPodium);
 
             if (model.Podium != null) {
                 car.style.backgroundImage = Background.FromRenderTexture((RenderTexture)model.Podium);
             }
 
             BuildWinner();
+            // In teams the podium shows the winning team's best car (the player's team's on a draw): MVP, not WINNER,
+            // which a draw has none of.
+            var winnerTag = root.Q<Label>("podium-winner-tag");
+            if (model.TeamPoints.Count == 2 && winnerTag != null) {
+                winnerTag.ClearBinding("text");
+                text.Set(winnerTag, () => Strings.Get("result.mvp"));
+            }
+
             Layout(false);
 
             table.AddToClassList(EnterClass);
@@ -168,6 +188,8 @@ namespace ToyCarArena.UI
             car.UnregisterCallback<GeometryChangedEvent>(OnPictureGeometry);
             car.UnregisterCallback<GeometryChangedEvent>(OnRivalGeometry);
             winner.UnregisterCallback<GeometryChangedEvent>(OnRivalGeometry);
+            podium.parent.UnregisterCallback<GeometryChangedEvent>(PlaceTeamPodium);
+            table.UnregisterCallback<GeometryChangedEvent>(PlaceTeamPodium);
             text.Dispose();
         }
 
@@ -217,10 +239,11 @@ namespace ToyCarArena.UI
 
         // In the wide columns the podium is tall and the picture (twice as wide as high) sits in its middle, so the
         // rival's pill at the podium's top hung far over the car: it stands on the car's roof instead, which the
-        // podium's camera keeps at WinnerPodium.RoofTop of the picture's height.
+        // podium's camera keeps at WinnerPodium.RoofTop of the picture's height. So does the MVP's in teams.
         private void OnRivalGeometry(GeometryChangedEvent evt)
         {
-            if (!model.IsPodiumRival) {
+            var isTeams = model.TeamPoints.Count == 2;
+            if (!model.IsPodiumRival && !isTeams) {
                 return;
             }
 
@@ -232,9 +255,59 @@ namespace ToyCarArena.UI
             var box = car.layout;
             var height = Mathf.Min(box.height, box.width * 0.5f);
             var roof = box.y + (box.height - height) * 0.5f + height * WinnerPodium.RoofTop;
-            var top = Mathf.Round(Mathf.Max(0f, roof - winner.layout.height - RivalPillGap));
+            var top = model.IsPodiumRival
+                ? Mathf.Round(Mathf.Max(0f, roof - winner.layout.height - RivalPillGap))
+                : Mathf.Round(Mathf.Max(PillTop, roof - winner.layout.height - TeamPillGap));
             if (Mathf.Abs(winner.resolvedStyle.top - top) > 1.5f) {
                 winner.style.top = top;
+            }
+        }
+
+        // A wide screen in teams: the table of two teams is tall, and beside it the podium got a strip of the width, its
+        // car small. Under the table, whenever that fits the bigger picture (twice as wide as high), the podium takes
+        // the whole width and the height left under it, and the table moves to the middle over it. Kept until a value
+        // moves by more than snapping can, as the columns, so the layout settles.
+        private void PlaceTeamPodium(GeometryChangedEvent evt)
+        {
+            if (model.TeamPoints.Count != 2) {
+                return;
+            }
+
+            if (!isWide) {
+                table.style.left = StyleKeyword.Null;
+                podium.style.marginLeft = StyleKeyword.Null;
+                podium.style.marginTop = StyleKeyword.Null;
+                podium.style.minHeight = StyleKeyword.Null;
+                return;
+            }
+
+            var area = podium.parent.contentRect.size;
+            var box = table.layout;
+            var carTop = car.resolvedStyle.top;
+            if (float.IsNaN(area.x) || area.x <= 0f || float.IsNaN(box.height) || box.height <= 0f ||
+                float.IsNaN(carTop)) {
+                return;
+            }
+
+            var beside = Picture(area.x - WidePodiumLeft, area.y - WidePodiumTop - carTop);
+            var underTop = box.height + TeamPodiumGap;
+            var under = Picture(area.x, area.y - underTop - carTop);
+            var isUnder = under > beside;
+            Place(v => table.style.left = v, table.resolvedStyle.left,
+                isUnder ? Mathf.Round((area.x - box.width) * 0.5f) : WideTableLeft);
+            Place(v => podium.style.marginLeft = v, podium.resolvedStyle.marginLeft, isUnder ? 0f : WidePodiumLeft);
+            Place(v => podium.style.marginTop = v, podium.resolvedStyle.marginTop,
+                isUnder ? Mathf.Round(underTop) : WidePodiumTop);
+            // Its own height comes from the space left, not a minimum that could push the row taller.
+            podium.style.minHeight = 0f;
+        }
+
+        private static float Picture(float width, float height) => Mathf.Max(0f, Mathf.Min(width, height * 2f));
+
+        private static void Place(Action<StyleLength> set, float current, float value)
+        {
+            if (float.IsNaN(current) || Mathf.Abs(current - value) > 1.5f) {
+                set(value);
             }
         }
 
@@ -269,6 +342,13 @@ namespace ToyCarArena.UI
             table.EnableInClassList("results--wide", wide);
             rows.Clear();
             youRow = null;
+            // A round in teams: each team under its header with its points, every car of it, its best with MVP.
+            if (model.TeamPoints.Count == 2) {
+                table.AddToClassList("results--teams");
+                LayoutTeams(wide);
+                return;
+            }
+
             var standings = model.Standings;
             var playerAt = 0;
             for (var i = 0; i < standings.Count; i++) {
@@ -293,7 +373,68 @@ namespace ToyCarArena.UI
             }
         }
 
-        private VisualElement CreateRow(RoundStanding standing)
+        // The player's team first, then the other; within a team in place order, so its best car leads it. The compact
+        // form (a phone held upright, where every car of both teams would not fit over the cards) keeps each team's
+        // header and its best car, and the player when not its team's best.
+        private void LayoutTeams(bool wide)
+        {
+            var playerTeam = RoundTeams.Blue;
+            foreach (var standing in model.Standings) {
+                if (standing.Index == 0) {
+                    playerTeam = standing.Team;
+                }
+            }
+
+            for (var pass = 0; pass < 2; pass++) {
+                var team = pass == 0 ? playerTeam : 1 - playerTeam;
+                rows.Add(CreateTeamHeader(team));
+                var rank = 0;
+                foreach (var standing in model.Standings) {
+                    if (standing.Team != team) {
+                        continue;
+                    }
+
+                    rank++;
+                    if (!wide && rank > 1 && standing.Index != 0) {
+                        continue;
+                    }
+
+                    rows.Add(CreateRow(standing, team, rank, rank == 1 && standing.Points > 0));
+                }
+            }
+        }
+
+        private VisualElement CreateTeamHeader(int team)
+        {
+            var header = new VisualElement { pickingMode = PickingMode.Ignore };
+            header.AddToClassList("results__team");
+            header.AddToClassList(team == RoundTeams.Red ? "results__team--red" : "results__team--blue");
+            header.EnableInClassList(RowEnterClass, !isPlayed);
+            // The team's name and points outlined as every title is (a stroke, not a USS outline, which smears small).
+            var name = StrokeText.Create(string.Empty, "results__team-name", out var names, "display",
+                "results__team-name-text");
+            foreach (var label in names) {
+                text.Set(label, () => Strings.Get(team == RoundTeams.Red ? "hud.team_red" : "hud.team_blue"));
+            }
+
+            header.Add(name);
+            var points = model.TeamPoints[team];
+            var other = model.TeamPoints[1 - team];
+            if (points > other) {
+                var tag = new Label { pickingMode = PickingMode.Ignore };
+                tag.AddToClassList("results__team-tag");
+                text.Set(tag, () => Strings.Get("result.winner"));
+                header.Add(tag);
+            }
+
+            var score = StrokeText.Create(points.ToString(), "results__team-points", out _, "display",
+                "results__team-points-text");
+            header.Add(score);
+            return header;
+        }
+
+        private VisualElement CreateRow(RoundStanding standing, int team = RoundTeams.None, int teamRank = 0,
+            bool isBest = false)
         {
             var index = standing.Index;
             var isPlayer = index == 0;
@@ -310,7 +451,14 @@ namespace ToyCarArena.UI
                 rank.AddToClassList($"results__rank--{standing.Place}");
             }
 
-            var place = new Label(standing.Place.ToString()) { pickingMode = PickingMode.Ignore };
+            // In teams the circle is the team's colour with the car's rank within its team.
+            if (team != RoundTeams.None) {
+                rank.RemoveFromClassList($"results__rank--{standing.Place}");
+                rank.AddToClassList(team == RoundTeams.Red ? "results__rank--red" : "results__rank--blue");
+            }
+
+            var place = new Label((team != RoundTeams.None ? teamRank : standing.Place).ToString())
+                { pickingMode = PickingMode.Ignore };
             place.AddToClassList("results__rank-text");
             rank.Add(place);
             row.Add(rank);
@@ -322,6 +470,13 @@ namespace ToyCarArena.UI
             name.AddToClassList("results__name");
             text.Set(name, () => model.NameOf(index));
             row.Add(name);
+            // The team's best contributor, the most points on it.
+            if (isBest) {
+                var mvp = new Label { pickingMode = PickingMode.Ignore };
+                mvp.AddToClassList("results__mvp");
+                text.Set(mvp, () => Strings.Get("result.mvp"));
+                row.Add(mvp);
+            }
 
             // The column is the round's score: knock-outs in the match, the mode's points in a mode.
             var knockouts = new Label(standing.Points.ToString()) { pickingMode = PickingMode.Ignore };

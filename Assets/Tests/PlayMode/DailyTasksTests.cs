@@ -227,12 +227,11 @@ namespace ToyCarArena.Tests.PlayMode
                     Is.EqualTo(new[] { MissionTier.Medium, MissionTier.Hard }));
             }
 
-            // The task follows the mode of the day: one of the build's (HOT POTATO or CROWN), or another one played that day.
-            Assert.That(TodaysEvent(Monday), Is.EqualTo("hot-potato").Or.EqualTo("crown"));
-            var other = TodaysEvent(Monday) == "crown" ? EventMode.HotPotato : EventMode.Crown;
-            EventSchedule.Forced = other;
+            // The task follows the mode of the day: one the build has on, or another one played that day.
+            Assert.That(tuning.IsModeEnabled(EventSchedule.Of(tuning, CalendarDay.Of(Monday))), Is.True);
+            EventSchedule.Forced = EventMode.Crown;
             tasks.Reset(Monday);
-            Assert.That(tasks.Today(Monday)[0].Definition.Mode, Is.EqualTo(EventModes.IdOf(other)));
+            Assert.That(tasks.Today(Monday)[0].Definition.Mode, Is.EqualTo("crown"));
         }
 
         [Test]
@@ -240,8 +239,7 @@ namespace ToyCarArena.Tests.PlayMode
         {
             var mode = TodaysEvent(Monday);
             Assert.That(Played(tasks.Record(Stats(RoundOutcome.Out, 0), Monday)), Is.False, "A plain round.");
-            var other = mode == "crown" ? "hot-potato" : "crown";
-            Assert.That(Played(tasks.Record(Stats(RoundOutcome.Out, 0, other), Monday)), Is.False, "Another mode.");
+            Assert.That(Played(tasks.Record(Stats(RoundOutcome.Out, 0, "crown"), Monday)), Is.False, "Another mode.");
             var left = new MissionStats(false, RoundOutcome.Out, 3, 0, 0, false, 0, 0, 0, "sandbox", mode);
             Assert.That(tasks.CountDone(left, Monday), Is.Zero, "A round left in the middle.");
             Assert.That(tasks.Today(Monday)[0].IsDone, Is.False);
@@ -268,32 +266,35 @@ namespace ToyCarArena.Tests.PlayMode
         [Test]
         public void NoEventNoTaskOfIt()
         {
-            // Every mode that is on in the build turned off (HOT POTATO and CROWN).
-            var modes = new object[] { tuning.SpecialRounds.HotPotato, tuning.Crown };
-            void SetEvents(bool isOn)
+            // Every mode on or off together, whichever of them the build ships: the tuning is this test's own.
+            void Events(bool on)
             {
+                var modes = new object[] {
+                    tuning.SpecialRounds.HotPotato, tuning.Crown, tuning.GoldRush, tuning.ItemFrenzy, tuning.Overheat,
+                    tuning.TeamPush, tuning.Football,
+                };
                 foreach (var settings in modes) {
                     settings.GetType().GetField("enabled", BindingFlags.Instance | BindingFlags.NonPublic)
-                        .SetValue(settings, isOn);
+                        .SetValue(settings, on);
                 }
             }
 
-            SetEvents(false);
+            Events(false);
             for (var day = 0; day < 20; day++) {
                 Assert.That(tasks.Today(Monday.AddDays(day)).Select(task => task.Definition.Id),
                     Has.No.Member(DailyTasks.EventTaskId), $"day {day}");
             }
 
             // A set saved with the task while the build had events is drawn again.
-            SetEvents(true);
+            Events(true);
             tasks.Reset(Monday);
             Assert.That(tasks.Today(Monday)[0].Definition.Id, Is.EqualTo(DailyTasks.EventTaskId));
-            SetEvents(false);
+            Events(false);
             Assert.That(new DailyTasks(storage, tuning, progress).Today(Monday).Select(task => task.Definition.Id),
                 Has.No.Member(DailyTasks.EventTaskId));
 
             // The match build has no events.
-            SetEvents(true);
+            Events(true);
             typeof(GameTuning).GetField("mode", BindingFlags.Instance | BindingFlags.NonPublic)
                 .SetValue(tuning, GameTuning.GameMode.Match);
             tasks.Reset(Monday);

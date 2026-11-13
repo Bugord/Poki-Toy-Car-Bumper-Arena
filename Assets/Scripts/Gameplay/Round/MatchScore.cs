@@ -25,6 +25,7 @@ namespace ToyCarArena.Gameplay.Round
         private readonly int[] falls;
         private readonly int[] knockedOff;
         private readonly float[] scoredAt;
+        private readonly int[] teamPoints;
 
         // The indices best first, kept sorted as the score changes, so the HUD can read the leader every frame.
         private readonly int[] order;
@@ -38,6 +39,7 @@ namespace ToyCarArena.Gameplay.Round
             falls = new int[carCount];
             knockedOff = new int[carCount];
             scoredAt = new float[carCount];
+            teamPoints = new int[Math.Max(0, teams)];
             order = new int[carCount];
             for (var index = 0; index < carCount; index++) {
                 order[index] = index;
@@ -69,12 +71,53 @@ namespace ToyCarArena.Gameplay.Round
         public int Teams => teams;
 
         /// <summary>The team of a car, from 0 (the player's); -1 without teams.</summary>
-        public int TeamOf(int index) => teams > 0 ? index % teams : -1;
+        public int TeamOf(int index) => RoundTeams.TeamOf(index, teams);
 
-        /// <summary>The sum of a team's points.</summary>
+        /// <summary>
+        /// Raised after a team's points changed, with the team and by how much: a point of one of its cars, or one the
+        /// team gets as a whole (<see cref="AddTeamPoints"/>). The team HUD follows it.
+        /// </summary>
+        public event Action<int, int> TeamChanged;
+
+        /// <summary>
+        /// The points a team has as a whole, on top of its cars' own: a fall nobody on the team is credited with (a car of
+        /// the other team that drove off alone), an own goal.
+        /// </summary>
+        public int TeamOwnPointsOf(int team) => team >= 0 && team < teamPoints.Length ? teamPoints[team] : 0;
+
+        /// <summary>
+        /// Adds <paramref name="amount"/> points to a team as a whole, credited to none of its cars (never below 0): its
+        /// cars' own points stay their personal score.
+        /// </summary>
+        public void AddTeamPoints(int team, int amount)
+        {
+            if (amount == 0 || team < 0 || team >= teamPoints.Length) {
+                return;
+            }
+
+            var before = TeamPointsOf(team);
+            teamPoints[team] = Math.Max(0, teamPoints[team] + amount);
+            var change = TeamPointsOf(team) - before;
+            if (change != 0) {
+                TeamChanged?.Invoke(team, change);
+            }
+        }
+
+        /// <summary>Every team's points, by team: the result's score.</summary>
+        public int[] TeamScores()
+        {
+            var scores = new int[teams];
+            for (var team = 0; team < teams; team++) {
+                scores[team] = TeamPointsOf(team);
+            }
+
+            return scores;
+        }
+
+        /// <summary>The sum of a team's points: its cars' and its own.</summary>
         public int TeamPointsOf(int team)
         {
-            var sum = 0;
+            var sum = TeamOwnPointsOf(team);
             for (var index = 0; index < points.Length; index++) {
                 if (TeamOf(index) == team) {
                     sum += points[index];
@@ -120,6 +163,7 @@ namespace ToyCarArena.Gameplay.Round
                 return;
             }
 
+            var before = points[index];
             points[index] = Math.Max(0, points[index] + amount);
             if (amount > 0) {
                 scoredAt[index] = time;
@@ -127,6 +171,9 @@ namespace ToyCarArena.Gameplay.Round
 
             Sort();
             Changed?.Invoke(index);
+            if (teams > 0 && points[index] != before) {
+                TeamChanged?.Invoke(TeamOf(index), points[index] - before);
+            }
         }
 
         public int FallsOf(int index) => falls[index];
@@ -156,6 +203,9 @@ namespace ToyCarArena.Gameplay.Round
             Sort();
             if (isScored && pointsPerKnockout != 0) {
                 Changed?.Invoke(by);
+                if (teams > 0) {
+                    TeamChanged?.Invoke(TeamOf(by), pointsPerKnockout);
+                }
             }
         }
 
