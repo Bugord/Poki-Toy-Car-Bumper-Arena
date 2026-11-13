@@ -371,11 +371,15 @@ namespace ToyCarArena.Gameplay.Modes
                 round.AddPoints(holder, after - before);
             }
 
-            // The press counts only once the holder can lose the crown, or a car glued to it would steal it the moment
-            // the holder's first moment is over.
+            // A press starts with a push on the holder, once the holder can lose the crown, or a car glued to it would
+            // steal it the moment the holder's first moment is over. It goes on while the pusher stays at the holder's
+            // side facing it: two cars stalled against the fence stop crediting the push, and the press must not end.
             var by = holder.LastHitBy;
-            if (by == null || Time.time < ProtectedUntil(by) || holder.LastHitByItem || Time.time - holder.LastHitTime > PressGap
-                || Flat(by.Position - holder.Position).magnitude > PressReach) {
+            if (pressCar != null && IsPressing(pressCar, holder)) {
+                by = pressCar;
+            }
+            else if (by == null || Time.time < ProtectedUntil(by) || holder.LastHitByItem
+                || Time.time - holder.LastHitTime > PressGap || !IsPressing(by, holder)) {
                 pressCar = null;
                 return;
             }
@@ -390,6 +394,15 @@ namespace ToyCarArena.Gameplay.Modes
                 PressSteals++;
                 Steal(by, holder, (by.Position + holder.Position) * 0.5f);
             }
+        }
+
+        // Whether the car is at the holder's side and facing it: still pushing, if not crediting the push.
+        private bool IsPressing(Car car, Car holder)
+        {
+            var toHolder = Flat(holder.Position - car.Position);
+            var distance = toHolder.magnitude;
+            return car.IsTargetable && distance <= PressReach
+                && (distance < 0.01f || Vector3.Dot(Flat(car.transform.forward).normalized, toHolder / distance) > 0.5f);
         }
 
         // A ram on the holder steals the crown: a real bump by a car driving at it with a run-up, not a nudge in a crowd.
