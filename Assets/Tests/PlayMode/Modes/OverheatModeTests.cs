@@ -251,13 +251,16 @@ namespace ToyCarArena.Tests.PlayMode
             yield return Ram(Round.Cars[2], Round.Cars[3], 9f);
             var player = mode.HeatOf(0);
             var bot = mode.HeatOf(3);
-            var share = Mathf.Lerp(mode.Settings.EasyPlayerShare, 1f, difficulty.Level);
+            var share = mode.Settings.PlayerShareAt(difficulty.Level);
             Debug.Log($"OVERHEAT round {round} (level {difficulty.Level:0.00}): the player {player:0.000} against a bot " +
                 $"{bot:0.000}, share {share:0.00}");
             Assert.That(bot, Is.GreaterThan(0f), "The test's hit did not land.");
             Assert.That(player / bot, Is.EqualTo(share).Within(0.2f), "The player's share of the heat.");
             if (round == 1) {
                 Assert.That(player, Is.LessThan(bot * 0.75f), "On Easy the player heats as fast as a bot.");
+            }
+            else {
+                Assert.That(player, Is.LessThan(bot), "On Normal the player heats as fast as a bot.");
             }
         }
 

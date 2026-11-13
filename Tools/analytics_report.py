@@ -111,6 +111,10 @@ def summarise(data):
         # clear 3-5, big 6+) и KO игрока в нём, по id режима (TEAM PUSH, позже FOOTBALL)
         "team_end": other(o, r"special-((?:team-push|football)-team-(?:won|draw|lost)-(?:close|clear|big))-team"),
         "team_ko": other(o, r"special-((?:team-push|football)-ko-(?:\d+|10plus))-team-knockouts"),
+        # после overheat: сколько раскалённых машинок столкнул игрок за раунд и с каким средним нагревом падал сам
+        # (none: не падал; cold < 35%, warm < 70%, hot)
+        "overheat_hot_ko": other(o, r"special-overheat-hotko-(\d+|10plus)-overheat-knockouts"),
+        "overheat_falls": other(o, r"special-overheat-fall-(none|cold|warm|hot)-overheat-falls"),
         "scoreboard": i.get("scoreboard-shown"),
         "ad_commercial": i.get("ad-commercial"),
         # после v0.17.9: FPS по экранам и медиана первой минуты визита (ScreenFrameRate), длина рекламы между раундами
@@ -446,6 +450,8 @@ def report(version, previous):
         ("Режимы: место по режиму (после event-modes; визиты с place)", "mode_place"),
         ("Команды: исход раунда команды игрока и разрыв (после team-push; визиты с team)", "team_end"),
         ("Команды: KO игрока за раунд команд (после team-push; визиты с team-knockouts)", "team_ko"),
+        ("OVERHEAT: раскалённые машинки, столкнутые игроком за раунд (после overheat; визиты с overheat-knockouts)", "overheat_hot_ko"),
+        ("OVERHEAT: средний нагрев игрока при падениях (после overheat; none не падал, cold < 35%, warm < 70%, hot; визиты с overheat-falls)", "overheat_falls"),
         ("Свои рывки по раундам (после v0.7.1, после v0.14.1 только в сборке с бустами; визиты с round-boosts)", "round_boosts"),
         ("Рывки автобуста по раундам (после v0.7.1, после v0.14.1 только в сборке с бустами; визиты с auto-boosts)", "auto_boosts"),
         ("Миссии: сколько выполнено за раунд (v0.10, визиты с missions)", "missions_done"),

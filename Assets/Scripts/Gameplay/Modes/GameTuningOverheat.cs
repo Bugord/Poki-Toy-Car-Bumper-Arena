@@ -68,12 +68,18 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Times the heat a hit by the player gives: the player's rams heat the bots faster")]
             [Min(0f)]
             [SerializeField]
-            private float fromPlayer = 1.3f;
+            private float fromPlayer = 1.8f;
 
-            [Tooltip("Share of the heat the player takes on Easy, growing to all of it on Normal")]
+            [Tooltip("Share of the heat the player takes from a hit on Easy")]
             [Range(0f, 1f)]
             [SerializeField]
             private float easyPlayerShare = 0.5f;
+
+            [Tooltip("Share of the heat the player takes from a hit on Normal (the shares mix by the round's level): a " +
+                "little under the bots', so the player stays the strongest car of a later round")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float normalPlayerShare = 0.65f;
 
             [Tooltip("Heat from which a car is warm: it steams")]
             [Range(0f, 1f)]
@@ -147,6 +153,10 @@ namespace ToyCarArena.Gameplay
             public float HitterShare => hitterShare;
             public float FromPlayer => fromPlayer;
             public float EasyPlayerShare => easyPlayerShare;
+            public float NormalPlayerShare => normalPlayerShare;
+
+            /// <summary>The share of a hit's heat the player takes at the round's level of difficulty, 0 (Easy) to 1.</summary>
+            public float PlayerShareAt(float level) => Mathf.Lerp(easyPlayerShare, normalPlayerShare, level);
             public float Warm => warm;
             public float Hot => hot;
             public float Curve => curve;

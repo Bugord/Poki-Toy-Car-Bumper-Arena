@@ -82,8 +82,11 @@ namespace ToyCarArena.Gameplay.Modes
 
         public SpecialRound Kind => SpecialRound.Overheat;
 
-        /// <summary>The card's picture: a blue racer with the red-hot flame crown on its roof.</summary>
-        public ModeCard Card { get; } = new("racer", 2, FlameName, 0.05f);
+        /// <summary>
+        /// The card's picture: a blue racer with the red-hot flame crown on its roof (the crown's flames stand above its
+        /// pivot, so it is set lower than a round prop would be).
+        /// </summary>
+        public ModeCard Card { get; } = new("racer", 2, FlameName, -0.14f);
 
         public bool IsActive { get; }
 
@@ -269,7 +272,7 @@ namespace ToyCarArena.Gameplay.Modes
             }
 
             if (car.IsPlayer) {
-                gain *= Mathf.Lerp(settings.EasyPlayerShare, 1f, difficulty.Level);
+                gain *= settings.PlayerShareAt(difficulty.Level);
             }
 
             var wasHot = heats[index] >= settings.Hot;
