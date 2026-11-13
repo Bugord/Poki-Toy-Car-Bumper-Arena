@@ -97,7 +97,7 @@ namespace ToyCarArena.Gameplay
             [Tooltip("Seconds the player keeps the crown it took whatever hits it, Easy to Normal: longer than a bot's " +
                 "moment, so the player sees it has it and can drive off with it")]
             [SerializeField]
-            private Vector2 playerKeep = new(4f, 4f);
+            private Vector2 playerKeep = new(4f, 3f);
 
             [Tooltip("Seconds the car the crown was just stolen from cannot steal it straight back")]
             [Min(0f)]
@@ -157,12 +157,12 @@ namespace ToyCarArena.Gameplay
             [Tooltip("How many bots hunt a bot that holds the crown, Easy to Normal; the others keep their distance on " +
                 "free floor round it, so the crown does not change hands every second in a swarm")]
             [SerializeField]
-            private Vector2Int botHunters = new(1, 2);
+            private Vector2Int botHunters = new(1, 3);
 
             [Tooltip("The pace the hunters drive at the player holding the crown, Easy to Normal: under the player's own, " +
                 "so a player who drives away with it keeps it and only a corner or a cut-off loses it")]
             [SerializeField]
-            private Vector2 hunterPlayerPace = new(0.7f, 0.8f);
+            private Vector2 hunterPlayerPace = new(0.7f, 0.95f);
 
             [Tooltip("Seconds ahead of the holder a bot that chases it aims, and one that cuts it off aims; the bots " +
                 "take turns at the two, so they do not all drive at one point")]
@@ -178,7 +178,7 @@ namespace ToyCarArena.Gameplay
             [Tooltip("The pace a bot holding the crown runs from the player at, Easy to Normal: under the player's own, so " +
                 "a player who drives at it catches it")]
             [SerializeField]
-            private Vector2 fleePlayerPace = new(0.7f, 0.75f);
+            private Vector2 fleePlayerPace = new(0.7f, 1f);
 
             [Tooltip("Metres within which a bot holding the crown runs from a car")]
             [Min(0f)]
