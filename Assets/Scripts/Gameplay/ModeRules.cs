@@ -126,6 +126,13 @@ namespace ToyCarArena.Gameplay
         /// </summary>
         public int TopPlaces { get; private set; }
 
+        /// <summary>
+        /// The arena of the mode's own, played whatever the rotation says (a pitch), or null for the rotation's. Its
+        /// numbers live in the mode's code and its look in the arena catalog by the same id; it is never in
+        /// <see cref="GameTuning.Maps"/>, so the rotation, missions and tasks never meet it.
+        /// </summary>
+        public GameTuning.MapSettings Arena { get; private set; }
+
         /// <summary>The car falls and stays out; a car that is put back or comes back is never out for good.</summary>
         public bool IsKnockOutFinal => Fall == FallRule.Out;
 
@@ -161,7 +168,7 @@ namespace ToyCarArena.Gameplay
         public ModeRules With(FallRule? fall = null, bool? fence = null, FloorRule? floor = null, bool? mechanics = null,
             PickupRule? pickups = null, float? pickupPace = null, int? pickupMax = null, float? duration = null,
             int? pointsPerKnockout = null, int? teams = null, int? bots = null, bool? edgeAssist = null,
-            int? knockoutRewardCap = null, int? topPlaces = null)
+            int? knockoutRewardCap = null, int? topPlaces = null, GameTuning.MapSettings arena = null)
         {
             return new ModeRules {
                 Fall = fall ?? Fall,
@@ -178,6 +185,7 @@ namespace ToyCarArena.Gameplay
                 HasEdgeAssist = edgeAssist ?? HasEdgeAssist,
                 KnockoutRewardCap = knockoutRewardCap ?? KnockoutRewardCap,
                 TopPlaces = topPlaces ?? TopPlaces,
+                Arena = arena ?? Arena,
             };
         }
     }
