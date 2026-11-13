@@ -80,7 +80,7 @@ namespace ToyCarArena.Gameplay
                 "touch, so a holder that keeps moving keeps it")]
             [Min(0f)]
             [SerializeField]
-            private float pressTime = 1.2f;
+            private float pressTime = 1.5f;
 
             [Tooltip("Seconds a new holder keeps the crown whatever hits it, so a pile-up does not pass it round and the " +
                 "thief gets a start")]

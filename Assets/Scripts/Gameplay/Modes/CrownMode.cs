@@ -514,8 +514,8 @@ namespace ToyCarArena.Gameplay.Modes
             return Phase == CrownPhase.Loose ? pace : pace * 0.8f;
         }
 
-        // Whether the bot has held the crown longest of all this round: one more bot goes after it, so one bot does not
-        // run away with the round while the others wait.
+        // Whether the bot has held the crown longest of all this round: one more bot goes after it (never more than
+        // the most hunters), so one bot does not run away with the round while the others wait.
         private bool IsLeading(Car car)
         {
             var own = HeldOf(car);
@@ -548,9 +548,9 @@ namespace ToyCarArena.Gameplay.Modes
                 ? round.Elapsed < difficulty.PlayerGrace
                     ? 0
                     : Mathf.RoundToInt(Mathf.Lerp(settings.PlayerHunters.x, settings.PlayerHunters.y, difficulty.Level))
-                : Mathf.Min(chasers,
+                : Mathf.Min(chasers, Mathf.Min(settings.BotHunters.y,
                     Mathf.RoundToInt(Mathf.Lerp(settings.BotHunters.x, settings.BotHunters.y, difficulty.Level))
-                    + (IsLeading(holder) ? 1 : 0));
+                    + (IsLeading(holder) ? 1 : 0)));
             if (IsStealBack(bot.Car) || rank >= hunters) {
                 Wait(bot, play, floor, position, holderPosition);
                 return;
