@@ -15,7 +15,8 @@ namespace ToyCarArena.UI
     /// hidden), so the player sees where the items go before the first box;</item>
     /// <item>the usual hint, TAP TO USE over the button or RIGHT CLICK with its E key beside it, stays up with the button
     /// pulsing whenever an item is ready, until the player has used an item in the mode once this visit, even if they
-    /// saw the hint in another round or visit (it shows once for good there).</item>
+    /// saw the hint in another round or visit (it shows once for good there); the HUD's own one-time hint keeps off it
+    /// (<see cref="OwnsItemHint"/>), so it shows once and stays.</item>
     /// </list>
     /// It only borrows the shared elements (the button, the hint and its texts) and leaves them as it found them.
     /// </summary>
@@ -73,6 +74,9 @@ namespace ToyCarArena.UI
             hintLabels = text != null ? StrokeText.LabelsOf(text) : Array.Empty<Label>();
             model.ItemUsed += OnItemUsed;
         }
+
+        /// <summary>The whole round: the HUD's one-time hint would come down at its moment, and show after a first use.</summary>
+        public bool OwnsItemHint => true;
 
         public void Tick(Camera camera, float top, float left, float right)
         {

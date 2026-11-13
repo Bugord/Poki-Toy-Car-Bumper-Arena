@@ -26,15 +26,15 @@ namespace ToyCarArena.Tests.PlayMode
     /// <summary>
     /// The ITEM FRENZY HUD on the real Game scene: the item hint is up whenever an item is ready, past the moment the
     /// stock hint would have gone, until the player uses an item, and does not come back for the next one; the same for
-    /// a player who saw the stock hint before and one who did not (the stock hint then shows and hides under it).
+    /// a player who saw the stock hint before and one who did not: the mode has the hint, so the stock one, which would come
+    /// down at its own moment and pop in again under the mode's, keeps off it. Once up, the hint never goes down until the
+    /// item is used.
     /// </summary>
     public sealed class ItemFrenzyHudTests : ModeFixture
     {
         private const string HintShown = "hud__item-hint--shown";
         // Longer than the stock hint stays up (2.6 s).
         private const float PastStockHint = 3.2f;
-        // The longest the hint may be down meanwhile: a tick of the UI as the stock hint hides.
-        private const float MaxOff = 0.05f;
 
         [UnityTest]
         public IEnumerator TheHintStaysUntilTheFirstItemIsUsed([Values(true, false)] bool sawStockHint)
@@ -83,21 +83,18 @@ namespace ToyCarArena.Tests.PlayMode
                 yield return Until(() => player.IsItemReady && hint.ClassListContains(HintShown), 1f);
                 Assert.That(hint.ClassListContains(HintShown), Is.True, "the hint comes up with the item");
 
-                // Past the stock hint's moment: it stays up. Where the stock hint shows first, it hides at its moment and
-                // the mode's puts it back on its next tick (the UI ticks less often than these headless frames).
-                var off = 0f;
+                // Past the stock hint's moment: it stays up, not down for a single frame (it would pop in again).
+                var downs = 0;
                 var end = Time.unscaledTime + PastStockHint;
                 while (Time.unscaledTime < end) {
                     Hold();
-                    var before = Time.unscaledTime;
                     yield return null;
                     if (!hint.ClassListContains(HintShown)) {
-                        off += Time.unscaledTime - before;
+                        downs++;
                     }
                 }
 
-                Debug.Log($"Frenzy hint (saw the stock one: {sawStockHint}): off for {off:0.000} s of {PastStockHint} s.");
-                Assert.That(off, Is.LessThanOrEqualTo(MaxOff), "the hint stays up while the item waits");
+                Assert.That(downs, Is.Zero, "the hint stays up while the item waits");
                 Assert.That(hint.ClassListContains(HintShown), Is.True);
 
                 Assert.That(pickups.Use(player), Is.True);
