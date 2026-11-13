@@ -160,7 +160,13 @@ namespace ToyCarArena.Gameplay.Bots
             foreach (var car in round.Cars) {
                 car.Hit += OnHit;
                 if (car != round.Player) {
-                    bots.Add(new Bot(car, personalities[next++], tuning, difficulty, round.Player, random.Next(), ballLane, hazards));
+                    var bot = new Bot(car, personalities[next++], tuning, difficulty, round.Player, random.Next(), ballLane, hazards);
+                    // In teams the other team's bots are softer on the easiest rounds, so a new player's team wins.
+                    if (car.Team >= 0 && car.Team != round.Player.Team) {
+                        bot.Pace = tuning.Teams.EnemyPaceAt(difficulty.Level);
+                    }
+
+                    bots.Add(bot);
                 }
             }
         }
@@ -213,8 +219,9 @@ namespace ToyCarArena.Gameplay.Bots
             var cars = round.Cars;
             for (var i = 0; i < cars.Count; i++) {
                 var car = cars[i];
-                // A car just back in a match is safe and cannot be pushed: no target until it is in play again.
-                if (car == bot.Car || !car.IsTargetable || (isPlayerSpared && car == player)) {
+                // A car just back in a match is safe and cannot be pushed: no target until it is in play again. A
+                // teammate is never one (skipped before the noise is drawn, so a round without teams replays as it did).
+                if (car == bot.Car || !car.IsTargetable || (isPlayerSpared && car == player) || bot.Car.IsTeammateOf(car)) {
                     continue;
                 }
 
@@ -238,6 +245,10 @@ namespace ToyCarArena.Gameplay.Bots
 
                 if (IsSlidingOff(car, edge, now)) {
                     score += settings.OpportunityWeight * traits.Opportunism;
+                }
+
+                if (bot.Car.Team >= 0) {
+                    score += TeamScore(bot, car, now);
                 }
 
                 if (score > bestScore) {
@@ -341,6 +352,51 @@ namespace ToyCarArena.Gameplay.Bots
             var position = car.Position;
             var velocity = car.Movement.Velocity;
             return Vector3.Dot(velocity, edge.Inward(position)) < 0f;
+        }
+
+        /// <summary>
+        /// What a round in teams adds to a car's score for a bot: the help of a teammate the car is pushing or has just hit,
+        /// less a share for each teammate of the bot already after it, so a team spreads over the other team.
+        /// </summary>
+        private float TeamScore(Bot bot, Car car, float now)
+        {
+            var settings = tuning.Teams;
+            var score = 0f;
+            var cars = round.Cars;
+            for (var i = 0; i < cars.Count; i++) {
+                var mate = cars[i];
+                if (mate.IsOut || !bot.Car.IsTeammateOf(mate)) {
+                    continue;
+                }
+
+                var isHitting = mate.LastHitBy == car && now - mate.LastHitTime <= settings.CoverTime;
+                if (isHitting || IsAfter(car, mate, settings.CoverRange)) {
+                    score += settings.CoverWeight;
+                    break;
+                }
+            }
+
+            foreach (var other in bots) {
+                if (other != bot && !other.Car.IsOut && other.Target == car && bot.Car.IsTeammateOf(other.Car)) {
+                    score -= settings.TeamCrowdPenalty;
+                }
+            }
+
+            return score;
+        }
+
+        /// <summary>Whether <paramref name="car"/> is a bot after <paramref name="mate"/> and close to it.</summary>
+        private bool IsAfter(Car car, Car mate, float range)
+        {
+            foreach (var other in bots) {
+                if (other.Car == car) {
+                    var offset = car.Position - mate.Position;
+                    offset.y = 0f;
+                    return other.Target == mate && offset.sqrMagnitude <= range * range;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>

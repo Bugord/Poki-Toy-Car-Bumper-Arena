@@ -493,6 +493,8 @@ namespace ToyCarArena.App
             if (EventModes.IsEvent(kind) && itemsUsed >= 0) {
                 platform.Measure(SpecialCategory, $"{id}-items-{ItemsBucket(itemsUsed)}", "items");
             }
+
+            platform.MeasureTeamEnd(kind, result);
         }
 
         // 0, 1 to 3, 4 to 9, 10 and more: no number in the name, so the event keeps within GameEvent.MaxNumbers.
@@ -578,7 +580,11 @@ namespace ToyCarArena.App
         {
             platform.MeasureComplete(RoundCategory, RoundBucket(round));
             var tag = RoundTag(round);
-            platform.Measure(ResultCategory, $"color-{CarPaint.NameOf(result.ColorOf(0))}-{tag}", "color");
+            // A round in teams paints the player's car in the team's colour: that is not a colour the player chose.
+            if (result.Teams == 0) {
+                platform.Measure(ResultCategory, $"color-{CarPaint.NameOf(result.ColorOf(0))}-{tag}", "color");
+            }
+
             platform.Measure(ResultCategory, $"cars-{result.CarCount}-{tag}", "cars");
             MeasureBoosts(platform, tag, driver, hasBoost);
             if (measuresControls) {

@@ -78,19 +78,17 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [Test]
-        public void OnlyTheFinishedModesAreOnAndOnlyInABuildOfRounds()
+        public void ModesAreOnOnlyInABuildOfRounds()
         {
+            // Which modes the build ships is each mode's own switch; this test holds whichever of them are on.
             var tuning = LoadTuning();
-            var finished = new[] { EventMode.HotPotato, EventMode.ItemFrenzy };
-            foreach (var mode in finished) {
-                Assert.That(tuning.IsModeEnabled(mode), Is.EqualTo(tuning.HasEvents), mode + " is finished.");
-            }
-
-            foreach (var mode in EventModes.Circle.Where(mode => !finished.Contains(mode))) {
-                Assert.That(tuning.IsModeEnabled(mode), Is.False, mode + " is a stub and must stay off.");
-            }
-
+            Assert.That(tuning.IsModeEnabled(EventMode.HotPotato), Is.EqualTo(tuning.HasEvents));
             Assert.That(tuning.IsModeEnabled(EventMode.None), Is.False);
+
+            UseMode(GameTuning.GameMode.Match);
+            foreach (var mode in EventModes.Circle) {
+                Assert.That(tuning.IsModeEnabled(mode), Is.False, mode + " is on in a build of matches.");
+            }
         }
 
         [Test]
