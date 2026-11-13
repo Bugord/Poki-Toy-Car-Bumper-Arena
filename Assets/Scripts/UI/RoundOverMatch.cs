@@ -79,6 +79,7 @@ namespace ToyCarArena.UI
         private readonly VisualElement crown;
         private readonly VisualElement table;
         private readonly VisualElement rows;
+        private readonly Label subtitle;
         private readonly LiveText text = new();
         private VisualElement youRow;
         private IVisualElementScheduledItem turn;
@@ -104,6 +105,7 @@ namespace ToyCarArena.UI
             crown.generateVisualContent += DrawCrown;
             table = root.Q<VisualElement>("results");
             rows = root.Q<VisualElement>("results-rows");
+            subtitle = root.Q<Label>("subtitle");
             // An event mode counts points of its own, not knock-outs: the column says so.
             var pointsHead = root.Q<Label>(className: "results__title--ko");
             if (model.IsEvent && pointsHead != null) {
@@ -116,6 +118,7 @@ namespace ToyCarArena.UI
             winner.RegisterCallback<GeometryChangedEvent>(OnRivalGeometry);
             podium.parent.RegisterCallback<GeometryChangedEvent>(PlaceTeamPodium);
             table.RegisterCallback<GeometryChangedEvent>(PlaceTeamPodium);
+            table.RegisterCallback<GeometryChangedEvent>(KeepSubtitle);
 
             if (model.Podium != null) {
                 car.style.backgroundImage = Background.FromRenderTexture((RenderTexture)model.Podium);
@@ -190,7 +193,23 @@ namespace ToyCarArena.UI
             winner.UnregisterCallback<GeometryChangedEvent>(OnRivalGeometry);
             podium.parent.UnregisterCallback<GeometryChangedEvent>(PlaceTeamPodium);
             table.UnregisterCallback<GeometryChangedEvent>(PlaceTeamPodium);
+            table.UnregisterCallback<GeometryChangedEvent>(KeepSubtitle);
             text.Dispose();
+        }
+
+        /// <summary>
+        /// On a phone held upright the table can be taller than the room left under the subtitle, and centred beside
+        /// the podium it rises over it, the place showing under the table's top. The table's own row says the place, so
+        /// the subtitle steps aside then; it keeps its room, so the table does not move.
+        /// </summary>
+        private void KeepSubtitle(GeometryChangedEvent _)
+        {
+            if (subtitle == null) {
+                return;
+            }
+
+            var isCovered = table.resolvedStyle.display != DisplayStyle.None && table.layout.y < -1f;
+            subtitle.style.visibility = isCovered ? Visibility.Hidden : new StyleEnum<Visibility>(StyleKeyword.Null);
         }
 
         private void After(long delay, Action action) => root.schedule.Execute(action).StartingIn(delay);
