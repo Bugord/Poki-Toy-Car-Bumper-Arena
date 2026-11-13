@@ -126,11 +126,13 @@ namespace ToyCarArena.Tests.PlayMode
             }
 
             Assert.That(slot, Is.GreaterThan(0), "The rotation has no event slot.");
-            Assert.That(RoundRules.For(tuning, slot, EventMode.None), Is.EqualTo(SpecialRound.HotPotato),
-                "The build as it ships plays HOT POTATO there.");
+            // The build as it ships plays its mode of the day there, HOT POTATO or CROWN by the day.
+            var today = EventSchedule.Today(tuning);
+            Assert.That(today == EventMode.HotPotato || today == EventMode.Crown, Is.True, today.ToString());
+            Assert.That(RoundRules.For(tuning, slot, EventMode.None), Is.EqualTo(EventModes.KindOf(today)));
 
-            EventSchedule.Forced = EventMode.Crown;
-            Assert.That(RoundRules.For(tuning, slot, EventMode.None), Is.EqualTo(SpecialRound.Crown));
+            EventSchedule.Forced = EventMode.Football;
+            Assert.That(RoundRules.For(tuning, slot, EventMode.None), Is.EqualTo(SpecialRound.Football));
             // The other special rounds and the menu's own pick are not the schedule's.
             Assert.That(RoundRules.For(tuning, specials.FirstRound, EventMode.None), Is.EqualTo(SpecialRound.LowGravity));
             Assert.That(RoundRules.For(tuning, slot, EventMode.HotPotato), Is.EqualTo(SpecialRound.HotPotato));

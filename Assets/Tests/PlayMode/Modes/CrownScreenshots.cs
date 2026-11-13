@@ -257,7 +257,7 @@ namespace ToyCarArena.Tests.PlayMode
             var storage = new RoundOverScreenshots.MemoryStorage();
             storage.SetString("missions", "round-knockouts:0|knockouts:4|revenge:0");
             storage.SetInt("coins", 85);
-            storage.SetInt("xp_total", 1250);
+            storage.SetInt("xp_total", 1440); // Level 14 with room: no new car or popup over the result.
             var missions = new MissionTracker(storage, tuning);
             missions.Seed(1);
             var missionRound = missions.Record(new MissionStats(true, result.Outcome, result.Place, result.Knockouts, 3,
