@@ -31,7 +31,7 @@ namespace ToyCarArena.UI
         private const float LeaveRise = 260f;
 
         // The arrow to the red goal: reference pixels from the player's car to the arrow's middle, its bob along the way.
-        private const float ArrowReach = 210f;
+        private const float ArrowReach = 330f;
         private const float ArrowBob = 26f;
         private const float ArrowRate = 6f;
         private const float ArrowWidth = 190f;

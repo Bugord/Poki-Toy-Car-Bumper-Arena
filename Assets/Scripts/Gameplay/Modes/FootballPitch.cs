@@ -24,6 +24,8 @@ namespace ToyCarArena.Gameplay.Modes
 
         private const float PostRadius = 0.2f;
         private const float NetThickness = 0.14f;
+        private const float StrandThickness = 0.07f;
+        private const float StrandSpacing = 0.75f;
         private const float BumperThickness = 0.45f;
         private const float BumperHeight = 0.6f;
         private const float BumperWall = 4f;
@@ -178,7 +180,6 @@ namespace ToyCarArena.Gameplay.Modes
             var post = Own(ToyMeshes.Cylinder(PostRadius, PostRadius, height, 12));
             var side = Own(ToyMeshes.Box(new Vector3(NetThickness, height, depth)));
             var bar = Own(ToyMeshes.Box(new Vector3((width + PostRadius) * 2f, PostRadius * 2f, PostRadius * 2f)));
-            var roof = Own(ToyMeshes.Box(new Vector3(width * 2f, NetThickness, depth)));
             foreach (var sx in new[] { 1f, -1f }) {
                 var x = sx * (width + PostRadius);
                 ToyMeshes.Part(goal, "Post", post, frame, new Vector3(x, height * 0.5f, end * line));
@@ -187,7 +188,26 @@ namespace ToyCarArena.Gameplay.Modes
             }
 
             ToyMeshes.Part(goal, "Crossbar", bar, frame, new Vector3(0f, height, end * line));
-            ToyMeshes.Part(goal, "Roof Net", roof, net, new Vector3(0f, height, middle));
+            // The roof is a net seen from above: a frame of the team's colour round thin white strands, so the grass and
+            // the goal's own shade show through and the goal reads in its team's colour, not as a white slab.
+            var rim = Own(ToyMeshes.Box(new Vector3(PostRadius * 1.6f, PostRadius * 1.6f, depth)));
+            var rimBack = Own(ToyMeshes.Box(new Vector3((width + PostRadius) * 2f, PostRadius * 1.6f, PostRadius * 1.6f)));
+            foreach (var sx in new[] { 1f, -1f }) {
+                ToyMeshes.Part(goal, "Roof Rim", rim, frame, new Vector3(sx * (width + PostRadius), height, middle));
+            }
+
+            ToyMeshes.Part(goal, "Roof Rim", rimBack, frame, new Vector3(0f, height, end * back));
+            var across = Own(ToyMeshes.Box(new Vector3(width * 2f, StrandThickness, StrandThickness)));
+            var along = Own(ToyMeshes.Box(new Vector3(StrandThickness, StrandThickness, depth)));
+            var rows = Mathf.Max(1, Mathf.RoundToInt(depth / StrandSpacing));
+            for (var k = 1; k < rows; k++) {
+                ToyMeshes.Part(goal, "Net Strand", across, net, new Vector3(0f, height, end * (line + depth * k / rows)));
+            }
+
+            var columns = Mathf.Max(1, Mathf.RoundToInt(width * 2f / StrandSpacing));
+            for (var k = 1; k < columns; k++) {
+                ToyMeshes.Part(goal, "Net Strand", along, net, new Vector3(-width + width * 2f * k / columns, height, middle));
+            }
             // The roof solid as deep as the bar: a ball that bounces on top of the goal rolls off it.
             Solid(goal, new Vector3(0f, height + PostRadius, middle),
                 new Vector3((width + PostRadius) * 2f, PostRadius * 2f, depth));

@@ -98,7 +98,7 @@ namespace ToyCarArena.Gameplay.Modes
         public SpecialRound Kind => SpecialRound.Football;
 
         /// <summary>An orange SUV with the ball on its roof: no team's colour, warm on the card's sky blue.</summary>
-        public ModeCard Card { get; } = new("suv", 5, FootballPitch.BallLookName, 1.05f);
+        public ModeCard Card { get; } = new("suv", 5, FootballPitch.BallLookName, 0.55f, propScale: 0.52f);
 
         public bool IsActive { get; }
 
