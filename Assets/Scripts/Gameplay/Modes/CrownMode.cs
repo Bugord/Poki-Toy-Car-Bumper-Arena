@@ -16,15 +16,17 @@ namespace ToyCarArena.Gameplay.Modes
     /// The CROWN event mode: a crown drops from the sky onto the middle of a fenced floor in the first seconds after GO
     /// (<see cref="GameTuning.CrownSettings.FirstDelay"/>), the first car to reach it takes it, and every whole second a
     /// car holds it is a point (<see cref="ArenaRound.AddPoints"/>). A bump on its holder steals it (a hit at
-    /// <see cref="GameTuning.CrownSettings.StealStrength"/> or a push held for <see cref="PressTime"/>), though not in the
+    /// <see cref="GameTuning.CrownSettings.StealStrength"/> or a push held for <see cref="GameTuning.CrownSettings.PressTime"/>), though not in the
     /// holder's first moment with it and not straight back to the car it was just stolen from. The crown is heavy: its
     /// holder is slower (<see cref="GameTuning.CrownSettings.HolderSpeed"/>), so it changes hands. The round is timed;
     /// the car with the most seconds wins. Nobody falls: the floor is fenced, and a car past the fence after all is put
     /// back on (the rules, <see cref="GameTuning.CrownSettings.Rules"/>).
     /// <para>
-    /// The bots play both sides (<see cref="SteerBot"/>): they race to the loose crown, chase its holder (the nearest
-    /// straight at it, the others where it is going), and with it they run where the floor is widest and the chasers
-    /// farthest. The player's crown is hunted by a few bots only, by the difficulty, and not in its first seconds.
+    /// The bots play both sides (<see cref="SteerBot"/>): they race to the loose crown, and two or three of the nearest
+    /// chase its holder (the nearest straight at it, the others where it is going) while the rest keep their distance on
+    /// free floor round it, ready to cut in when it changes hands by them; with it they run where the floor is widest
+    /// and the chasers farthest. The player's crown is hunted by one or two bots only, by the difficulty, not in its
+    /// first seconds, and the player with it is as fast as they are, so driving away keeps it.
     /// </para>
     /// <para>
     /// Registered in <see cref="GameplayScope"/> always, active only in a round of its kind
@@ -33,9 +35,6 @@ namespace ToyCarArena.Gameplay.Modes
     /// </summary>
     public sealed class CrownMode : IRoundMode, IBotSteering, ITickable, IDisposable
     {
-        /// <summary>Seconds a car must keep pushing on the holder for the push to steal the crown.</summary>
-        public const float PressTime = 0.4f;
-
         // Seconds since the holder's last contact credit by the same car that still count as one push held.
         private const float PressGap = 0.12f;
         // Metres between two cars' middles that still count as touching, for a push.
@@ -44,6 +43,10 @@ namespace ToyCarArena.Gameplay.Modes
         private const float PickHeight = 2f;
         // Seconds between a bot's looks at what it chases, at the most: the difficulty's reaction time is shorter.
         private const float FleeThink = 0.25f;
+        // Seconds between a waiting bot's looks for free floor round the holder.
+        private const float ShadowThink = 0.6f;
+        // Directions round the holder a waiting bot weighs for its place.
+        private const int ShadowSlots = 12;
 
         /// <summary>The crown's state over the round.</summary>
         public enum CrownPhase
@@ -81,12 +84,17 @@ namespace ToyCarArena.Gameplay.Modes
         private EffectPlayer effects;
         private float[] held;
         private int[] takes;
+        // Every car's velocity on the frame before, on the ground plane: how fast a thief drove at the holder before the
+        // bump changed it.
+        private Vector3[] runUp;
         private float dropLeft;
         private float protectedUntil;
+        private float takenAt;
         private float stealBackUntil;
         private Car pressCar;
         private float pressSince;
         private readonly SurfaceFeel holderFeel;
+        private readonly SurfaceFeel playerHolderFeel;
 
         public CrownMode(GameTuning tuning, RoundRules rules, ArenaRound round, IArenaEdge edge, ArenaHazards hazards,
             RoundDifficulty difficulty, MechanicArt mechanicArt, ArenaCamera arenaCamera, IAudioService audioService)
@@ -102,6 +110,8 @@ namespace ToyCarArena.Gameplay.Modes
             this.audioService = audioService;
             this.IsActive = rules.Kind == SpecialRound.Crown;
             holderFeel = new SurfaceFeel(settings.HolderSpeed, settings.HolderAcceleration, 1f, settings.HolderPush, 1f);
+            playerHolderFeel = new SurfaceFeel(settings.PlayerHolderSpeed, settings.PlayerHolderSpeed, 1f,
+                settings.HolderPush, 1f);
         }
 
         public SpecialRound Kind => SpecialRound.Crown;
@@ -201,6 +211,11 @@ namespace ToyCarArena.Gameplay.Modes
                 }
             }
 
+            var cars = round.Cars;
+            for (var i = 0; i < cars.Count; i++) {
+                runUp[i] = Flat(cars[i].Movement.Velocity);
+            }
+
             var dropShare = settings.FirstDelay > 0f ? Mathf.Clamp01(1f - dropLeft / settings.FirstDelay) : 1f;
             art.Animate(Phase, round.HasBegun, Holder, Spot, dropShare, IsProtected);
         }
@@ -248,8 +263,7 @@ namespace ToyCarArena.Gameplay.Modes
             }
 
             if (Phase != CrownPhase.Held) {
-                var racePace = Mathf.Lerp(0.8f, 1f, difficulty.Level);
-                Drive(bot, play, floor, position, Flat(Spot) - position, Phase == CrownPhase.Loose ? racePace : racePace * 0.8f);
+                Drive(bot, play, floor, position, Flat(Spot) - position, RacePace(car));
                 return true;
             }
 
@@ -275,6 +289,7 @@ namespace ToyCarArena.Gameplay.Modes
             var cars = round.Cars;
             held = new float[cars.Count];
             takes = new int[cars.Count];
+            runUp = new Vector3[cars.Count];
             Spot = FindSpot();
             dropLeft = settings.FirstDelay;
             // The effects live in the scene, not the container.
@@ -347,7 +362,7 @@ namespace ToyCarArena.Gameplay.Modes
         private void Hold(float deltaTime)
         {
             var holder = Holder;
-            holder.Movement.Tyres = holderFeel;
+            holder.Movement.Tyres = FeelOf(holder);
             var index = round.IndexOf(holder);
             var before = Mathf.FloorToInt(held[index]);
             held[index] += deltaTime;
@@ -359,7 +374,7 @@ namespace ToyCarArena.Gameplay.Modes
             // The press counts only once the holder can lose the crown, or a car glued to it would steal it the moment
             // the holder's first moment is over.
             var by = holder.LastHitBy;
-            if (IsProtected || by == null || holder.LastHitByItem || Time.time - holder.LastHitTime > PressGap
+            if (by == null || Time.time < ProtectedUntil(by) || holder.LastHitByItem || Time.time - holder.LastHitTime > PressGap
                 || Flat(by.Position - holder.Position).magnitude > PressReach) {
                 pressCar = null;
                 return;
@@ -371,24 +386,39 @@ namespace ToyCarArena.Gameplay.Modes
                 return;
             }
 
-            if (Time.time - pressSince >= PressTime && CanSteal(by)) {
+            if (Time.time - pressSince >= settings.PressTime && CanSteal(by)) {
                 PressSteals++;
                 Steal(by, holder, (by.Position + holder.Position) * 0.5f);
             }
         }
 
-        // A bump on the holder steals the crown; both cars hear a hit, so only the holder's side counts.
+        // A ram on the holder steals the crown: a real bump by a car driving at it with a run-up, not a nudge in a crowd.
+        // Both cars hear a hit, so only the holder's side counts.
         private void OnHit(Car car, CarHit hit)
         {
-            if (car != Holder || !round.IsRunning || hit.Strength < settings.StealStrength || !CanSteal(hit.Other)) {
+            if (car != Holder || !round.IsRunning || hit.Strength < settings.StealStrength || !CanSteal(hit.Other)
+                || RunUpOf(hit.Other, car) < (hit.Other.IsPlayer ? settings.PlayerRunUp : settings.StealRunUp)) {
                 return;
             }
 
             Steal(hit.Other, car, hit.Point);
         }
 
+        // How fast the thief drove at the holder on the frame before the bump, in metres per second.
+        private float RunUpOf(Car thief, Car holder)
+        {
+            var index = round.IndexOf(thief);
+            var toHolder = Flat(holder.Position - thief.Position);
+            return index >= 0 && toHolder.sqrMagnitude > 0.0001f ? Vector3.Dot(runUp[index], toHolder.normalized) : 0f;
+        }
+
         private bool CanSteal(Car thief) => thief != null && thief != Holder && thief.IsTargetable
-            && Time.time >= protectedUntil && !IsStealBack(thief) && round.IndexOf(thief) >= 0;
+            && Time.time >= ProtectedUntil(thief) && !IsStealBack(thief) && round.IndexOf(thief) >= 0;
+
+        // Until when the holder keeps the crown from this thief: a bot's crown is the player's to take sooner.
+        private float ProtectedUntil(Car thief) => thief.IsPlayer && Holder != null && !Holder.IsPlayer
+            ? Mathf.Min(protectedUntil, takenAt + settings.PlayerStealAfter)
+            : protectedUntil;
 
         /// <summary>
         /// The crown goes from <paramref name="from"/> to <paramref name="thief"/>: the robbed car is knocked away from
@@ -420,6 +450,7 @@ namespace ToyCarArena.Gameplay.Modes
             Holder = car;
             Phase = CrownPhase.Held;
             // The player's crown is safe a moment longer, longer on Easy: time to see it and turn away.
+            takenAt = Time.time;
             protectedUntil = Time.time + (car.IsPlayer
                 ? Mathf.Lerp(settings.PlayerKeep.x, settings.PlayerKeep.y, difficulty.Level)
                 : settings.StealCooldown);
@@ -427,7 +458,7 @@ namespace ToyCarArena.Gameplay.Modes
             Changes++;
             Version++;
             takes[round.IndexOf(car)]++;
-            car.Movement.Tyres = holderFeel;
+            car.Movement.Tyres = FeelOf(car);
 
             var isPlayer = car.IsPlayer || from != null && from.IsPlayer;
             if (effects != null) {
@@ -451,10 +482,48 @@ namespace ToyCarArena.Gameplay.Modes
         }
 
         /// <summary>
-        /// A bot without the crown after its holder. While the player holds it, only the difficulty's few hunters go
-        /// for it, after its first seconds, at the difficulty's pace; the others shadow it a few metres off, so the
-        /// player sees the threat. A bot's holder is chased by three or four, the rest shadowing it: the nearest straight at it, the others at where
-        /// it is going, every other one further ahead, so they close in from more than one side.
+        /// The pace a bot races to the loose crown at: the difficulty's, and no faster than it would take the player to
+        /// drive there, so a bot that starts nearer the spot than the player (the stadium's sides against its end) does
+        /// not take the first crown every round. Slower while it is still dropping.
+        /// </summary>
+        private float RacePace(Car car)
+        {
+            var pace = Mathf.Lerp(0.8f, 1f, difficulty.Level);
+            var player = round.Player;
+            if (player != null && player.IsTargetable) {
+                var own = Flat(car.Position - Spot).magnitude;
+                var players = Flat(player.Position - Spot).magnitude;
+                if (players > own && players > 0.01f) {
+                    pace *= Mathf.Max(0.5f, own / players);
+                }
+            }
+
+            return Phase == CrownPhase.Loose ? pace : pace * 0.8f;
+        }
+
+        // Whether the bot has held the crown longest of all this round: one more bot goes after it, so one bot does not
+        // run away with the round while the others wait.
+        private bool IsLeading(Car car)
+        {
+            var own = HeldOf(car);
+            foreach (var other in round.Cars) {
+                if (other != car && HeldOf(other) >= own) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // The holder's tyres: the crown's weight on a bot, the player as fast as its hunters.
+        private SurfaceFeel FeelOf(Car car) => car.IsPlayer ? playerHolderFeel : holderFeel;
+
+        /// <summary>
+        /// A bot without the crown after its holder. While the player holds it, only the difficulty's one or two hunters
+        /// go for it, after its first seconds, at the difficulty's pace. A bot's holder is chased by two or three: the
+        /// nearest straight at it, the others at where it is going, every other one further ahead, so they close in from
+        /// more than one side. While the holder cannot lose the crown yet they close in slowly instead of ramming it
+        /// round the floor. The others keep their distance on free floor round it (<see cref="Wait"/>).
         /// </summary>
         private void Chase(Bot bot, BotPlay play, IArenaEdge floor, Vector3 position)
         {
@@ -467,18 +536,10 @@ namespace ToyCarArena.Gameplay.Modes
                     ? 0
                     : Mathf.RoundToInt(Mathf.Lerp(settings.PlayerHunters.x, settings.PlayerHunters.y, difficulty.Level))
                 : Mathf.Min(chasers,
-                    Mathf.RoundToInt(Mathf.Lerp(settings.BotHunters.x, settings.BotHunters.y, difficulty.Level)));
+                    Mathf.RoundToInt(Mathf.Lerp(settings.BotHunters.x, settings.BotHunters.y, difficulty.Level))
+                    + (IsLeading(holder) ? 1 : 0));
             if (IsStealBack(bot.Car) || rank >= hunters) {
-                // The robbed car and the ones not hunting keep a few metres off, on their own side.
-                var side = position - holderPosition;
-                side = side.sqrMagnitude > 0.01f ? side.normalized : Flat(bot.Car.transform.forward);
-                var spot = holderPosition + side * settings.ShadowDistance;
-                if (floor.DistanceToEdge(spot, 1.5f) < 0f) {
-                    spot = holderPosition + Flat(floor.Inward(holderPosition)).normalized * settings.ShadowDistance;
-                }
-
-                var toSpot = spot - position;
-                Drive(bot, play, floor, position, toSpot, toSpot.magnitude > 2f ? 0.6f : 0f);
+                Wait(bot, play, floor, position, holderPosition);
                 return;
             }
 
@@ -504,7 +565,78 @@ namespace ToyCarArena.Gameplay.Modes
             }
 
             var heading = Quaternion.AngleAxis(play.AimError, Vector3.up) * (aim - position);
-            Drive(bot, play, floor, position, heading, isPlayer ? difficulty.PlayerPace : 1f, aim);
+            var pace = isPlayer
+                ? Mathf.Lerp(settings.HunterPlayerPace.x, settings.HunterPlayerPace.y, difficulty.Level)
+                : 1f;
+            Drive(bot, play, floor, position, heading, IsProtected ? pace * settings.ProtectedPace : pace, aim);
+        }
+
+        /// <summary>
+        /// A bot that does not hunt the holder keeps <see cref="GameTuning.CrownSettings.ShadowDistance"/> off it, on the
+        /// free floor round it: of the directions round the holder that stand on the floor, the one farthest from the
+        /// other cars, its own side breaking ties. So the waiting bots spread round the holder instead of piling up at
+        /// it, and the one by the car that takes the crown next is near enough to cut in.
+        /// </summary>
+        private void Wait(Bot bot, BotPlay play, IArenaEdge floor, Vector3 position, Vector3 holderPosition)
+        {
+            if (Time.time >= play.ShadowAt || play.ShadowVersion != Version) {
+                play.ShadowAt = Time.time + ShadowThink;
+                play.ShadowVersion = Version;
+                play.ShadowDirection = ShadowDirection(bot.Car, play, floor, position, holderPosition);
+            }
+
+            var spot = holderPosition + play.ShadowDirection * play.ShadowReach;
+            if (floor.DistanceToEdge(spot, 1.5f) < 0f) {
+                spot = floor.ClampToFloor(spot);
+            }
+
+            var toSpot = spot - position;
+            var distance = toSpot.magnitude;
+            Drive(bot, play, floor, position, toSpot, distance > 2f ? Mathf.Clamp(distance / 8f, 0.4f, 1f) : 0f);
+        }
+
+        private Vector3 ShadowDirection(Car self, BotPlay play, IArenaEdge floor, Vector3 position,
+            Vector3 holderPosition)
+        {
+            var last = play.ShadowDirection;
+            var own = position - holderPosition;
+            own = own.sqrMagnitude > 0.01f ? own.normalized : Flat(self.transform.forward).normalized;
+            var best = own;
+            var bestReach = settings.ShadowDistance * 0.6f;
+            var bestScore = float.NegativeInfinity;
+            for (var slot = 0; slot < ShadowSlots; slot++) {
+                var direction = Quaternion.AngleAxis(slot * (360f / ShadowSlots), Vector3.up) * Vector3.forward;
+                var reach = settings.ShadowDistance;
+                var point = holderPosition + direction * reach;
+                // Short of the fence, a nearer place on the same side will do.
+                if (floor.DistanceToEdge(point, 1.5f) < 0f) {
+                    reach *= 0.6f;
+                    point = holderPosition + direction * reach;
+                    if (floor.DistanceToEdge(point, 1.5f) < 0f) {
+                        continue;
+                    }
+                }
+
+                var room = settings.ShadowDistance;
+                foreach (var car in round.Cars) {
+                    if (car == self || car == Holder || !car.IsTargetable) {
+                        continue;
+                    }
+
+                    room = Mathf.Min(room, Flat(car.Position - point).magnitude);
+                }
+
+                var score = room + Vector3.Dot(direction, own) * 2f + Vector3.Dot(direction, last) * 1.5f
+                    + reach / settings.ShadowDistance;
+                if (score > bestScore) {
+                    bestScore = score;
+                    best = direction;
+                    bestReach = reach;
+                }
+            }
+
+            play.ShadowReach = bestReach;
+            return best;
         }
 
         /// <summary>
@@ -557,7 +689,9 @@ namespace ToyCarArena.Gameplay.Modes
                     : Flat(self.transform.forward).normalized;
             }
 
-            pace = nearest == round.Player ? difficulty.PlayerPace : 1f;
+            pace = nearest == round.Player
+                ? Mathf.Lerp(settings.FleePlayerPace.x, settings.FleePlayerPace.y, difficulty.Level)
+                : 1f;
             away = away.normalized;
             var best = away;
             var bestScore = float.NegativeInfinity;
@@ -588,13 +722,15 @@ namespace ToyCarArena.Gameplay.Modes
         }
 
         // The bot's place among the cars in play by distance to the holder, robbed car and holder aside, and how many.
+        // The player after a bot's crown counts too: a bot leaves its turn to the player nearer the holder than it is,
+        // so the player is not beaten to every steal by the bots around it.
         private int RankNear(Car self, Car holder, out int count)
         {
             var own = Flat(self.Position - holder.Position).sqrMagnitude;
             var rank = 0;
             count = 0;
             foreach (var car in round.Cars) {
-                if (car == holder || car == round.Player || !car.IsTargetable || IsStealBack(car)) {
+                if (car == holder || !car.IsTargetable || IsStealBack(car)) {
                     continue;
                 }
 
@@ -646,6 +782,10 @@ namespace ToyCarArena.Gameplay.Modes
             public float LastPace;
             public float PitSide = 1f;
             public float PitHold;
+            public Vector3 ShadowDirection;
+            public float ShadowReach;
+            public float ShadowAt;
+            public int ShadowVersion = -1;
         }
     }
 }
