@@ -82,7 +82,6 @@ namespace ToyCarArena.UI
         private const float ItemSpinRate = 14f;
 
         // The first item of a visit says how to use it for this long, the button pulsing meanwhile, in unscaled seconds.
-        private const float ItemHintDuration = 2.6f;
         private const float ItemHintPulsePeriod = 0.65f;
 
         // The kinds the slot can hold, in the order its roulette shows them.
@@ -288,7 +287,6 @@ namespace ToyCarArena.UI
         private ItemKind shownItem = ItemKind.None;
         private bool isItemShownRolling;
         private bool isItemHintShown;
-        private float itemHintTime;
         private float nextItemPulse;
         private VisualElement popupLayer;
         private VisualElement nameLayer;
@@ -1259,36 +1257,30 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>
-        /// TAP TO USE, or RIGHT CLICK with the E key cap on a desktop, over the slot the first time an item lands in it,
-        /// the button pulsing with it, for a moment; the controls remember it was shown, for good.
+        /// TAP TO USE, or RIGHT CLICK with the E key cap on a desktop, over the slot whenever an item is ready, the button
+        /// pulsing with it, until the player has used an item once, for good (<see cref="HudControls.HasUsedItem"/>, the
+        /// item lesson): on v0.17.9 a hint for a moment, once, left 41% of the first round's items unused.
         /// </summary>
         private void RefreshItemHint(bool isTouch)
         {
-            // A mode that shows the hint its own way (ITEM FRENZY) has it: shown here first, it would come down at this
-            // hint's moment and pop in again under the mode's.
+            // A mode that shows the hint its own way (ITEM FRENZY) has it: shown here too, the two would fight.
             if (modeHud is { OwnsItemHint: true }) {
+                return;
+            }
+
+            if (!ViewModel.IsItemReady || isItemShownRolling || controls.HasUsedItem) {
+                HideItemHint();
                 return;
             }
 
             var now = Time.unscaledTime;
             if (!isItemHintShown) {
-                if (!ViewModel.IsItemReady || isItemShownRolling || controls.HasShownItemHint) {
-                    return;
-                }
-
-                controls.HasShownItemHint = true;
                 isItemHintShown = true;
-                itemHintTime = now;
                 nextItemPulse = now;
                 var text = Strings.Get(isTouch ? "hud.tap_to_use" : "hud.right_click");
                 itemHintText.text = text;
                 itemHintFace.text = text;
                 itemHint.AddToClassList(ItemHintShownClass);
-            }
-
-            if (now - itemHintTime >= ItemHintDuration || !ViewModel.IsItemReady) {
-                HideItemHint();
-                return;
             }
 
             if (now >= nextItemPulse) {

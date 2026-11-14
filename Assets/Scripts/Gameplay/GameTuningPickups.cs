@@ -40,6 +40,12 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private int firstRound = 2;
 
+            [Tooltip("Metres in front of the player a box waits at the start of each round with boxes until the player " +
+                "has used an item once, for good (the item lesson); 0 none")]
+            [Min(0f)]
+            [SerializeField]
+            private float lessonDistance = 3.5f;
+
             [Header("Appearing")]
             [Tooltip("Seconds into the match, and into each cycle of the floor, before the first boxes appear")]
             [Min(0f)]
@@ -173,6 +179,7 @@ namespace ToyCarArena.Gameplay
 
             public bool Enabled => enabled;
             public int FirstRound => firstRound;
+            public float LessonDistance => lessonDistance;
             public float FirstDelay => firstDelay;
             public float Interval => interval;
             public float Jitter => jitter;
