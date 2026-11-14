@@ -2441,7 +2441,7 @@
 .level-card {
     flex-shrink: 0;
     margin: 24px 0 44px 0;
-    padding: 28px 40px 10px 40px;
+    padding: 18px 40px 10px 40px;
     align-items: stretch;
     transition-property: translate, opacity;
     transition-duration: 0.3s;
@@ -2558,14 +2558,15 @@
    badge (RoundOverProgress moves it here), so the level shows once; the rank and XP line sits over the track beside
    it. */
 .track {
-    /* Room for the crown a rank stop wears over its circle, clear of the XP line. */
-    margin-top: 36px;
-    padding: 0 30px 96px 30px;
+    /* Room for the crown a rank stop wears over its circle, clear of the stickers over it. Under the stops, the two
+       caption lines and no more: the card gave the podium the rest. */
+    margin-top: 16px;
+    padding: 0 30px 58px 30px;
 }
 
 /* Only plain levels ahead (past the last reward and rank): no captions but the badge's rank. */
 .track--plain {
-    padding-bottom: 56px;
+    padding-bottom: 40px;
 }
 
 /* The bars' row and, laid exactly over it, the stops' row (RoundOverProgress.BuildTrack). Every bar and every gap
@@ -4394,24 +4395,11 @@
     display: none;
 }
 
-/* A round's podium has no subtitle or name pill over the player's own car: the car takes that height, and its
-   picture reaches down under the cards below (later in the tree, so drawn over it), which cover the podium's foot. */
+/* A round's podium has no subtitle or name pill over the player's own car: the car takes that height. Where the car
+   and a name pill stand in the podium RoundOverMatch.PlacePicture sets in every layout: the car whole, the pill over
+   its roof. */
 .round-over--podium .podium {
     margin-top: 0;
-}
-
-.round-over--podium .podium__car {
-    top: 0;
-    bottom: -70px;
-}
-
-/* The car that pushed the player off keeps its name pill, up at the podium's top, over the car's roof. */
-.round-over--podium .podium--rival .podium__winner {
-    top: 0;
-}
-
-.round-over--podium .podium--rival .podium__car {
-    top: 90px;
 }
 
 /* WINNER under a won round's title, the one sticker there when neither REVENGE! nor the streak has it. */
@@ -4888,8 +4876,8 @@
 .rewards {
     flex-direction: row;
     align-items: stretch;
-    height: 176px;
-    margin: 0 0 24px 0;
+    height: 150px;
+    margin: 0 0 8px 0;
 }
 
 .reward {
@@ -4935,7 +4923,7 @@
 .reward__value-text {
     margin: 0;
     padding: 0;
-    font-size: 84px;
+    font-size: 78px;
     -unity-text-align: middle-center;
     white-space: nowrap;
     -unity-text-outline-width: 10px;
@@ -5368,7 +5356,7 @@
 
 /* With the missions over it, the level card and the podium give up a little height, so a 16:9 portrait still fits. */
 .round-over--meta .level-card {
-    margin: 14px 0 30px 0;
+    margin: 12px 0 18px 0;
 }
 
 .round-over--meta .podium {
@@ -5632,11 +5620,6 @@
     display: none;
 }
 
-/* Beside the cards, not over them: the picture stays inside its own column. */
-.round-over--columns.round-over--landscape .podium__car {
-    bottom: 0;
-}
-
 .round-over--columns.round-over--landscape .podium {
     position: relative;
     left: auto;
@@ -5654,7 +5637,7 @@
 }
 
 /* The rival a size up beside the cards (a phone held sideways shows the panel at about half size), its pill standing
-   on the car's roof (RoundOverMatch.OnRivalGeometry) rather than at the podium's top. */
+   on the car's roof (RoundOverMatch.PlacePicture). */
 .round-over--columns.round-over--landscape .podium--rival .podium__winner {
     padding: 12px 52px 14px 16px;
     border-width: 9px;

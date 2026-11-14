@@ -149,15 +149,15 @@ MonoBehaviour:
     m_PointSize: 64
     m_Scale: 1
     m_UnitsPerEM: 1000
-    m_LineHeight: 87.296
-    m_AscentLine: 64.704
+    m_LineHeight: 73.15
+    m_AscentLine: 59.07
     m_CapLine: 46
     m_MeanLine: 33
     m_Baseline: 0
-    m_DescentLine: -22.592
-    m_SuperscriptOffset: 64.704
+    m_DescentLine: -14.08
+    m_SuperscriptOffset: 59.07
     m_SuperscriptSize: 0.5
-    m_SubscriptOffset: -22.592
+    m_SubscriptOffset: -14.08
     m_SubscriptSize: 0.5
     m_UnderlineOffset: -6.016
     m_UnderlineThickness: 1.792
