@@ -104,7 +104,7 @@ namespace ToyCarArena.Gameplay
             if (isStandalone) {
                 builder.Register<IOnScreenControls, NoOnScreenControls>(Lifetime.Singleton);
                 // The app's HUD controls remember the item lesson for good; on its own the scene keeps it for this run.
-                builder.RegisterInstance<IItemLesson>(new ItemLessonMemory());
+                builder.RegisterInstance(new ItemLessonMemory(), typeof(IItemLesson));
             }
 
             // From Boot the audio is the app's, so the music goes on across the rounds' reloads; on its own the scene
