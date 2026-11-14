@@ -158,12 +158,22 @@ namespace ToyCarArena.App
         private const string DailyAd = "daily";
 
         /// <summary>
-        /// A content bundle (<see cref="ContentBundles"/>) that never came (<c>failed</c>), or that a round or result
-        /// screen stopped waiting for (<c>late</c>): <c>content / late-floors-tabletop / load</c>. The bundle names
-        /// carry no numbers.
+        /// A content bundle (<see cref="ContentBundles"/>) that never came (<c>failed</c>), that came only as plain bytes
+        /// after the streamed download failed (<c>memory</c>), or that a round or result screen stopped waiting for
+        /// (<c>late</c>): <c>content / late-floors-tabletop / load</c>. The bundle names carry no numbers.
         /// </summary>
         public static void MeasureContent(this IGamePlatform platform, string how, string bundle) =>
             platform.Measure("content", $"{how}-{bundle}", "load");
+
+        /// <summary>
+        /// How many of the player's falls a safe first round caught (<see cref="Gameplay.Round.PlayerSafety"/>), sent only
+        /// in such a round: <c>result / saved-none|one|few-r1 / saved</c> (0, 1, 2 and more), one number.
+        /// </summary>
+        public static void MeasureSaved(this IGamePlatform platform, int round, int rescues)
+        {
+            var count = rescues <= 0 ? "none" : rescues == 1 ? "one" : "few";
+            platform.Measure(ResultCategory, $"saved-{count}-{RoundTag(round)}", "saved");
+        }
 
         /// <summary>
         /// The visit has been on the page <paramref name="minutes"/> minutes (<see cref="SessionTime"/>):

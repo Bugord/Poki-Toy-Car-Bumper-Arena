@@ -109,6 +109,13 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public float PowerScale { get; set; } = 1f;
 
+        /// <summary>
+        /// Times on top of <see cref="PowerScale"/> the push this car's hits give, grown over a new player's safe rounds
+        /// (<see cref="Round.PlayerSafety"/>); 1 otherwise. The time off balance it leaves alone: on Easy that is at its
+        /// cap already, and longer would leave the bots standing.
+        /// </summary>
+        public float PowerBoost { get; set; } = 1f;
+
         public Vector3 Position => transform.position;
 
         /// <summary>
@@ -366,6 +373,14 @@ namespace ToyCarArena.Gameplay.Cars
         public void ReportItemHit(ItemKind kind, Vector3 point)
         {
             ItemHit?.Invoke(kind, point);
+        }
+
+        /// <summary>Forgets who hit this car last: a fall the game caught and undid is nobody's knock-out.</summary>
+        public void ForgetHit()
+        {
+            LastHitBy = null;
+            LastHitByItem = false;
+            LastHitTime = float.NegativeInfinity;
         }
 
         private void ClearItem()
@@ -671,7 +686,7 @@ namespace ToyCarArena.Gameplay.Cars
             // while one car pushes another does not kick it again at full speed.
             var isOtherBoosting = other.Movement.IsBoosting;
             var multiplier = (isOtherBoosting ? boostSettings.BumpMultiplier : 1f)
-                * (other.IsPlayer ? difficulty.PlayerBump * other.PowerScale : 1f);
+                * (other.IsPlayer ? difficulty.PlayerBump * other.PowerScale * other.PowerBoost : 1f);
             var drive = Mathf.Min(otherApproach, strength);
             var push = carSettings.BumpForce * drive * multiplier * other.Movement.Mass / Movement.Mass
                 * Movement.Surface.Push;

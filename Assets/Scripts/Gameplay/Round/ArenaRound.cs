@@ -349,7 +349,12 @@ namespace ToyCarArena.Gameplay.Round
                 if (!car.IsOut && car.Position.y < tuning.Round.FallHeight) {
                     // Nobody falls in a fenced mode (the hot potato): a car that got past the fence after all is put
                     // back on.
-                    if (mode.Fall == FallRule.PutBack) {
+                    // Nor does the player in their safe first rounds, if the catch missed the fall (PlayerSafety).
+                    if (mode.Fall == FallRule.PutBack || car == Player && difficulty.IsPlayerSafe) {
+                        if (car == Player) {
+                            car.ForgetHit();
+                        }
+
                         PutBack(car);
                         continue;
                     }

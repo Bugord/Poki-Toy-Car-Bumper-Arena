@@ -150,16 +150,20 @@ namespace ToyCarArena.App
             var url = $"{Application.streamingAssetsPath}/{ContentNames.Folder}/{ContentNames.FileOf(name)}";
             for (var attempt = 1; ; attempt++) {
                 AssetBundle bundle = null;
-                using (var request = UnityWebRequestAssetBundle.GetAssetBundle(url)) {
-                    request.timeout = RequestTimeout;
-                    try {
-                        await request.SendWebRequest().ToUniTask(cancellationToken: token);
-                        bundle = DownloadHandlerAssetBundle.GetContent(request);
-                    } catch (OperationCanceledException) {
-                        return false;
-                    } catch (Exception exception) {
-                        Debug.LogWarning($"Content bundle '{name}', attempt {attempt}: {exception.Message}");
-                    }
+                // The streaming handler failed to unpack every bundle on some phones (v0.17.9: about one visit in ten,
+                // all bundles, every attempt, while the CDN served the files byte for byte), so after its first try the
+                // file comes as plain bytes, past any cache, and opens from memory.
+                var isFromMemory = attempt > 1;
+                try {
+                    bundle = isFromMemory ? await DownloadToMemory(url, attempt, token) : await DownloadStreamed(url, token);
+                } catch (OperationCanceledException) {
+                    return false;
+                } catch (Exception exception) {
+                    Debug.LogWarning($"Content bundle '{name}', attempt {attempt}: {exception.Message}");
+                }
+
+                if (bundle != null && isFromMemory) {
+                    platform.MeasureContent("memory", name);
                 }
 
                 if (bundle != null) {
@@ -185,6 +189,39 @@ namespace ToyCarArena.App
                     return false;
                 }
             }
+        }
+
+        private static async UniTask<AssetBundle> DownloadStreamed(string url, CancellationToken token)
+        {
+            using var request = UnityWebRequestAssetBundle.GetAssetBundle(url);
+            request.timeout = RequestTimeout;
+            await request.SendWebRequest().ToUniTask(cancellationToken: token);
+            return DownloadHandlerAssetBundle.GetContent(request);
+        }
+
+        /// <summary>
+        /// The bundle as bytes, opened from memory: no streaming unpacker, and a query that keeps the browser and the
+        /// player's download cache from handing back what failed before.
+        /// </summary>
+        private static async UniTask<AssetBundle> DownloadToMemory(string url, int attempt, CancellationToken token)
+        {
+            byte[] bytes;
+            using (var request = UnityWebRequest.Get($"{url}?try={attempt}")) {
+                request.timeout = RequestTimeout;
+                await request.SendWebRequest().ToUniTask(cancellationToken: token);
+                bytes = request.downloadHandler.data;
+            }
+
+            if (bytes == null || bytes.Length == 0) {
+                throw new InvalidOperationException("empty download");
+            }
+
+            var bundle = await AssetBundle.LoadFromMemoryAsync(bytes).ToUniTask(cancellationToken: token);
+            if (bundle == null) {
+                throw new InvalidOperationException($"{bytes.Length} bytes did not open as a bundle");
+            }
+
+            return bundle;
         }
 
         private async UniTask Apply(string name, AssetBundle bundle)

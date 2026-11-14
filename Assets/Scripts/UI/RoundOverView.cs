@@ -558,6 +558,10 @@ namespace ToyCarArena.UI
             }
 
             isPlayAgainPressed = true;
+            // The card stops where it is: a popup due later would otherwise open over the curtain, unseen, and count
+            // as shown (v0.18.0 sent shop / equip-vintage / visible after NEXT MATCH on a quick press).
+            rewardRun?.Cancel();
+            xpProgress.Stop();
             audioService.PlayUiClick();
             ViewModel.PlayAgain();
         }
@@ -570,6 +574,8 @@ namespace ToyCarArena.UI
             }
 
             isPlayAgainPressed = true;
+            rewardRun?.Cancel();
+            xpProgress.Stop();
             audioService.PlayUiClick();
             ViewModel.GoHome();
         }

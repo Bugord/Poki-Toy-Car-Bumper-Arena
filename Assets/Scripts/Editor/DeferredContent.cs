@@ -83,7 +83,7 @@ namespace ToyCarArena.Editor
                 .Select(bundle => new AssetBundleBuild { assetBundleName = bundle.Key, assetNames = bundle.Value.ToArray() })
                 .ToArray();
             var manifest = BuildPipeline.BuildAssetBundles(BundleFolder, builds,
-                BuildAssetBundleOptions.ChunkBasedCompression | BuildAssetBundleOptions.StrictMode, BuildTarget.WebGL);
+                BuildAssetBundleOptions.UncompressedAssetBundle | BuildAssetBundleOptions.StrictMode, BuildTarget.WebGL);
             if (manifest == null) {
                 throw new BuildFailedException("The content bundles did not build.");
             }

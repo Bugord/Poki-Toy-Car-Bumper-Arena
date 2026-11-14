@@ -104,7 +104,15 @@ namespace ToyCarArena.Tests.PlayMode
                     yield return null;
                 }
 
+                // SHOTS_LANG=es,de shoots every size again in each language, its code in the file name.
+                var languages = new List<string> { "en" };
+                if (System.Environment.GetEnvironmentVariable("SHOTS_LANG") is { Length: > 0 } extra) {
+                    languages.AddRange(extra.Split(','));
+                }
+
+                foreach (var language in languages)
                 foreach (var (width, height, touch, left) in Sizes) {
+                    Strings.SetLanguage(language.Trim());
                     if (touch) {
                         controls.BeginTouchSteering(left ? new Vector2(float.MaxValue, 0f) : Vector2.zero);
                     }
@@ -127,7 +135,8 @@ namespace ToyCarArena.Tests.PlayMode
 
                     camera.Render();
                     var picture = Compose(Read(scene), Read(interface_));
-                    var path = Path.Combine(directory, $"hud_{width}x{height}{(left ? "_left" : "")}.png");
+                    var prefix = language == "en" ? "" : $"{language.Trim()}_";
+                    var path = Path.Combine(directory, $"{prefix}hud_{width}x{height}{(left ? "_left" : "")}.png");
                     File.WriteAllBytes(path, picture.EncodeToPNG());
                     Object.DestroyImmediate(picture);
                     Debug.Log($"Item screenshot: {path}");
@@ -143,6 +152,7 @@ namespace ToyCarArena.Tests.PlayMode
                     }
                 }
 
+                Strings.SetLanguage("en");
                 typeof(Strings).GetField("table", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
             }
         }

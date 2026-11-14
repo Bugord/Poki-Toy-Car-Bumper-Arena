@@ -83,6 +83,14 @@ namespace ToyCarArena.UI
 
         // The first item of a visit says how to use it for this long, the button pulsing meanwhile, in unscaled seconds.
         private const float ItemHintPulsePeriod = 0.65f;
+        private const float ItemHintMargin = 16f;
+
+        // The widest the hint's words may be, in reference pixels: the hint is 400 wide less the pill's padding, and on a
+        // desktop the E key cap beside them; longer words (TOUCHE POUR UTILISER) shrink, down to half, instead of
+        // spilling out of the pill. As in ItemFrenzyHud.
+        private const float ItemHintTouchWidth = 330f;
+        private const float ItemHintDesktopWidth = 270f;
+        private const float ItemHintMinShare = 0.5f;
 
         // The kinds the slot can hold, in the order its roulette shows them.
         private static readonly ItemKind[] ItemKinds =
@@ -283,10 +291,11 @@ namespace ToyCarArena.UI
         private VisualElement itemIcon;
         private VisualElement itemHint;
         private Label itemHintText;
-        private Label itemHintFace;
+        private VisualElement itemHintLabel;
         private ItemKind shownItem = ItemKind.None;
         private bool isItemShownRolling;
         private bool isItemHintShown;
+        private bool isItemHintFitDue;
         private float nextItemPulse;
         private VisualElement popupLayer;
         private VisualElement nameLayer;
@@ -402,7 +411,7 @@ namespace ToyCarArena.UI
             itemIcon = Root.Q<VisualElement>("item-icon");
             itemHint = Root.Q<VisualElement>("item-hint");
             itemHintText = Root.Q<Label>("item-hint-text");
-            itemHintFace = Root.Q<Label>("item-hint-face");
+            itemHintLabel = itemHintText.parent.parent;
             // Only a round with boxes has items; one without keeps the slot as it was.
             itemButton.EnableInClassList(ItemShownClass, ViewModel.HasItems);
             itemButton.AddToClassList(ItemEmptyClass);
@@ -1277,15 +1286,67 @@ namespace ToyCarArena.UI
             if (!isItemHintShown) {
                 isItemHintShown = true;
                 nextItemPulse = now;
-                var text = Strings.Get(isTouch ? "hud.tap_to_use" : "hud.right_click");
-                itemHintText.text = text;
-                itemHintFace.text = text;
+                var labels = StrokeText.LabelsOf(itemHintText.parent);
+                StrokeText.SetText(labels, Strings.Get(isTouch ? "hud.tap_to_use" : "hud.right_click"));
+                foreach (var label in labels) {
+                    label.style.fontSize = StyleKeyword.Null;
+                }
+
+                isItemHintFitDue = true;
                 itemHint.AddToClassList(ItemHintShownClass);
+            }
+            else if (isItemHintFitDue) {
+                // A frame on, the labels have the style sheet's size for this screen.
+                isItemHintFitDue = false;
+                FitItemHint(isTouch ? ItemHintTouchWidth : ItemHintDesktopWidth);
             }
 
             if (now >= nextItemPulse) {
                 nextItemPulse = now + ItemHintPulsePeriod;
                 Pulse(itemButton, ItemHintPulseClass);
+            }
+
+            KeepItemHintOnScreen();
+        }
+
+        /// <summary>
+        /// Slides the hint's pill, not its arrow, back inside the safe screen: by a slot at the screen's edge the pill of
+        /// a long language is wider than the room beside the button, and on the v0.18.0 playtest TOCA PARA USAR read
+        /// OCA PARA USAR for five rounds. Measured on the layout, without the scales the hint and the slot pop in with.
+        /// </summary>
+        private void KeepItemHintOnScreen()
+        {
+            var width = itemHintLabel.layout.width;
+            if (!(width > 0f)) {
+                return;
+            }
+
+            var left = itemHintLabel.layout.x;
+            for (var element = itemHintLabel.parent; element != null && element != Root; element = element.parent) {
+                left += element.layout.x + element.resolvedStyle.translate.x;
+            }
+
+            var min = safeInsets.Left + ItemHintMargin;
+            var max = Root.layout.width - safeInsets.Right - ItemHintMargin;
+            var shift = left < min ? min - left : left + width > max ? max - (left + width) : 0f;
+            if (!Mathf.Approximately(itemHintLabel.resolvedStyle.translate.x, shift)) {
+                itemHintLabel.style.translate = new Translate(shift, 0f);
+            }
+        }
+
+        private void FitItemHint(float room)
+        {
+            var labels = StrokeText.LabelsOf(itemHintText.parent);
+            var size = itemHintText.resolvedStyle.fontSize;
+            var width = itemHintText.MeasureTextSize(itemHintText.text, 0f, VisualElement.MeasureMode.Undefined, 0f,
+                VisualElement.MeasureMode.Undefined).x;
+            if (!(size > 0f) || width <= room) {
+                return;
+            }
+
+            var fit = Mathf.Max(size * room / width, size * ItemHintMinShare);
+            foreach (var label in labels) {
+                label.style.fontSize = fit;
             }
         }
 
