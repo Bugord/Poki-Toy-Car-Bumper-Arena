@@ -91,7 +91,7 @@ namespace ToyCarArena.Gameplay.Pickups
                     continue;
                 }
 
-                if (pickups.Spawn(spot) != null) {
+                if (pickups.Spawn(spot, player) != null) {
                     Box = spot;
                 }
 

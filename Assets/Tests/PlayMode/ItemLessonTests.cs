@@ -63,6 +63,32 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator OnlyThePlayerBreaksTheLessonBox()
+        {
+            HasUsedItem = false;
+            yield return Load(2, "sandbox");
+            var box = lesson.Box.Value;
+            var bot = round.Cars[1];
+            bot.Movement.Place(box + Vector3.up * 0.3f, bot.transform.rotation);
+            round.Begin();
+            for (var frame = 0; frame < 30; frame++) {
+                yield return null;
+            }
+
+            Assert.That(bot.HasItem, Is.False, "a bot broke the player's box");
+            Assert.That(pickups.Live.Any(live => (live.Position - box).sqrMagnitude < 0.01f), Is.True,
+                "the box is gone");
+
+            bot.Movement.Place(box + new Vector3(8f, 0.3f, 0f), bot.transform.rotation);
+            round.Player.Movement.Place(box + Vector3.up * 0.3f, round.Player.transform.rotation);
+            for (var frame = 0; frame < 30 && !round.Player.HasItem; frame++) {
+                yield return null;
+            }
+
+            Assert.That(round.Player.HasItem, Is.True, "the player did not break their box");
+        }
+
+        [UnityTest]
         public IEnumerator ThePlayersFirstUseEndsTheLesson()
         {
             HasUsedItem = false;

@@ -296,7 +296,7 @@ namespace ToyCarArena.Gameplay.Bots
                 var offset = pickup.Position - position;
                 offset.y = 0f;
                 var distance = offset.magnitude;
-                if (distance > settings.Range) {
+                if (distance > settings.Range || !pickup.IsFor(bot.Car)) {
                     continue;
                 }
 
