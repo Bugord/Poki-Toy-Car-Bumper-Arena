@@ -103,6 +103,8 @@ namespace ToyCarArena.Gameplay
             // HUD, so nothing is drawn over the game.
             if (isStandalone) {
                 builder.Register<IOnScreenControls, NoOnScreenControls>(Lifetime.Singleton);
+                // The app's HUD controls remember the item lesson for good; on its own the scene keeps it for this run.
+                builder.RegisterInstance<IItemLesson>(new ItemLessonMemory());
             }
 
             // From Boot the audio is the app's, so the music goes on across the rounds' reloads; on its own the scene
@@ -162,6 +164,8 @@ namespace ToyCarArena.Gameplay
             builder.Register<ArenaVariants>(Lifetime.Singleton);
             // The abilities on the floor of a long match; in a round of last-car-standing it builds nothing.
             builder.RegisterEntryPoint<ArenaPickups>().AsSelf().WithParameter(transform);
+            // A box in front of the player until they have used an item once.
+            builder.RegisterEntryPoint<ItemLesson>().AsSelf();
             // The bomb of a hot potato round; in any other round it builds nothing.
             builder.RegisterEntryPoint<HotPotato>().AsSelf().WithParameter(transform);
             // The other event modes: each active only in a round of its kind, silent in any other.

@@ -156,15 +156,16 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [Test]
-        public void TheItemHintIsShownOncePerPlayer()
+        public void TheItemLessonEndsOncePerPlayer()
         {
             var storage = new RoundOverScreenshots.MemoryStorage();
             var visit = new HudControls(storage);
-            Assert.That(visit.HasShownItemHint, Is.False);
-            visit.HasShownItemHint = true;
+            Assert.That(visit.HasUsedItem, Is.False);
+            visit.MarkItemUsed();
+            Assert.That(visit.HasUsedItem, Is.True);
 
-            Assert.That(new HudControls(storage).HasShownItemHint, Is.True, "the next visit remembers it");
-            Assert.That(new HudControls().HasShownItemHint, Is.False);
+            Assert.That(new HudControls(storage).HasUsedItem, Is.True, "the next visit remembers it");
+            Assert.That(new HudControls().HasUsedItem, Is.False);
         }
 
         private HudViewModel Hud(int roundNumber, int playerRound)
