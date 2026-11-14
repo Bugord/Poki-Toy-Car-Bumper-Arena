@@ -86,19 +86,22 @@ namespace ToyCarArena.Gameplay.Arena
         private int warned;
         private int fallen;
         private readonly bool isStill;
+        // The floor's cycles are the round's own (a match's), not a test's: part of the floor stands at the peak.
+        private readonly bool keepsPeakFloor;
 
         public ArenaCrumble(GameTuning tuning, GameTuning.ArenaSettings settings, ArenaRound round, ArenaFloor floor,
             RoundRules rules)
         {
-            // HOT POTATO's floor is fenced and whole for the round: nothing shakes, falls or cycles.
-            this.isStill = rules.IsHotPotato;
+            // A mode's floor may stand whole for the round (HOT POTATO's fenced one): nothing shakes, falls or cycles.
+            this.isStill = rules.Mode.Floor == FloorRule.Still;
+            this.keepsPeakFloor = rules.Mode.Floor == FloorRule.Cycles;
             this.tuning = tuning;
             this.settings = settings;
             this.round = round;
             this.floor = floor;
             // The one place the switch is read: off, nothing of the cycles runs and the edge crumbles once. A match
             // always cycles, since respawned cars need the floor back; the switch also lets a round cycle for testing.
-            this.isCycling = tuning.IsMatch || tuning.FloorCycles.Enabled;
+            this.isCycling = keepsPeakFloor || tuning.FloorCycles.Enabled;
         }
 
         /// <summary>Whether the floor goes in cycles and comes back, instead of crumbling once.</summary>
@@ -170,7 +173,7 @@ namespace ToyCarArena.Gameplay.Arena
             // A match keeps part of the floor standing at the peak, so there is room to come back on; a round cycling for
             // a test still crumbles to the core.
             schedule ??= FloorCycleSchedule.From(tuning.FloorCycles, settings.CrumbleWarning, floor.WaveCount,
-                tuning.IsMatch ? tuning.FloorCycles.MatchFallingWaves(floor.WaveCount) : -1);
+                keepsPeakFloor ? tuning.FloorCycles.MatchFallingWaves(floor.WaveCount) : -1);
             applied ??= new WaveState[floor.WaveCount];
             var isRunning = round.IsRunning;
             if (isRunning) {

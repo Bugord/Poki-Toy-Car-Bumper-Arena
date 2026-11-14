@@ -72,7 +72,7 @@ namespace ToyCarArena.App
                 }
 
                 platform.MeasureGarageShown();
-                if (record.Result.IsMatch) {
+                if (record.Result.IsTimed) {
                     platform.MeasureScoreboardShown();
                 }
 

@@ -83,7 +83,7 @@ def summarise(data):
         # с v0.16.0: главное меню визитов 2+ (показ, через сколько секунд после старта движка, что нажали), HOME на результате
         "menu": i.get("menu-shown"),
         "menu_time": other(o, r"menu-ready-([0-9a-z-]+)-start-time"),
-        "menu_press": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"menu-(play|garage|missions|mode|leagues|boost|boost-no|daily|daily-no|mode-hot-potato|mode-quick)", e))},
+        "menu_press": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"menu-(play|garage|missions|mode|leagues|boost|boost-no|daily|daily-no|mode-hot-potato|mode-quick|event-hot-potato|mode-crown|mode-gold-rush|mode-item-frenzy|mode-overheat|mode-team-push|mode-football|event-crown|event-gold-rush|event-item-frenzy|event-overheat|event-team-push|event-football)", e))},
         # после v0.16.0: попап NEW LEAGUE! в меню, по лиге (раз на игрока и лигу)
         "menu_league": {m.group(1): row for e, row in i.items() if (m := re.fullmatch(r"menu-league-(bronze|silver|gold|legend)", e))},
         # после feature/result-popups: тот же попап на результате раунда, который поднял лигу (меню показывает его, только если результат не показал)
@@ -102,11 +102,23 @@ def summarise(data):
         "arenas": {m.group(1): row for e, row in p.items() if (m := re.fullmatch(r"arena-([a-z]+-[a-z]+)", e))},
         # после v0.15.0: особые раунды (start / complete / fail) и их исход, в раунде босса взят ли он
         "specials": {m.group(1): row for e, row in p.items()
-                     if (m := re.fullmatch(r"special-(mega|hot-potato|boss|ice|low-gravity)", e))},
-        "special_outcome": other(o, r"special-((?:mega|hot-potato|boss|ice|low-gravity)-(?:won|out|survived))-outcome"),
+                     if (m := re.fullmatch(r"special-(mega|hot-potato|boss|ice|low-gravity|crown|gold-rush|item-frenzy|overheat|team-push|football)", e))},
+        "special_outcome": other(o, r"special-((?:mega|hot-potato|boss|ice|low-gravity|crown|gold-rush|item-frenzy|overheat|team-push|football)-(?:won|out|survived))-outcome"),
         "boss": other(o, r"special-boss-(taken|missed)-boss"),
+        # после event-modes: место в режиме по id режима (одна таблица на все режимы)
+        "mode_place": other(o, r"special-((?:hot-potato|crown|gold-rush|item-frenzy|overheat|team-push|football)-place-\d+)-place"),
+        # после event-modes: сколько предметов игрок применил в раунде режима с коробками (none 0, few 1–3, some 4–9, many 10+)
+        "mode_items": other(o, r"special-((?:hot-potato|crown|gold-rush|item-frenzy|overheat|team-push|football)-items-(?:none|few|some|many))-items"),
+        # после team-push: как кончился раунд команд (выиграла, ничья, проиграла команда игрока; разрыв close <= 2,
+        # clear 3-5, big 6+) и KO игрока в нём, по id режима (TEAM PUSH, позже FOOTBALL)
+        "team_end": other(o, r"special-((?:team-push|football)-team-(?:won|draw|lost)-(?:close|clear|big))-team"),
+        "team_ko": other(o, r"special-((?:team-push|football)-ko-(?:\d+|10plus))-team-knockouts"),
         "scoreboard": i.get("scoreboard-shown"),
         "ad_commercial": i.get("ad-commercial"),
+        # после v0.17.9: FPS по экранам и медиана первой минуты визита (ScreenFrameRate), длина рекламы между раундами
+        "fps_screen": other(o, r"fps-((?:round|result|curtain|menu|garage|ad)-(?:touch|mouse)-(?:\d+|70plus))-screen"),
+        "fps_visit": other(o, r"fps-(visit-(?:touch|mouse)-(?:\d+|70plus))-visit"),
+        "ad_length": other(o, r"ad-commercial-(none|short|mid|long)-length"),
         "ad_double": i.get("ad-double"),
         "ad_double_end": other(o, r"ad-double-(granted|unavailable|dismissed)"),
         # после v0.16.0: XP BOOST в меню (плитка с предложением показана, WATCH, чем кончилась реклама) и раунды под бустом
@@ -120,6 +132,10 @@ def summarise(data):
         "daily_claim": other(o, r"daily-(day-[0-9]+|reset|hat)-claim"),
         "ad_daily": i.get("ad-daily"),
         "ad_daily_end": other(o, r"ad-daily-(granted|unavailable|dismissed)"),
+        "daily_tasks_shown": i.get("daily-tasks"),
+        "first_win": other(o, r"daily-first-win-(r[0-9]+(?:plus)?)-win"),
+        "task_done": other(o, r"daily-task-(.+)-complete"),
+        "tasks_done": other(o, r"daily-tasks-([0-9]+)-done"),
         "levels": other(o, r"progress-level-(2|3|4|5|6|7|8|9|10|10plus)-level-up"),
         "unlocks": other(o, r"progress-(?!map-|hat-)([a-z]+(?:-[a-z]+)*)-unlock"),
         "map_unlocks": other(o, r"progress-map-([a-z]+)-unlock"),
@@ -247,9 +263,7 @@ def report(version, previous):
         shown = lambda s: num(s["menu"], "seen")
         out.append(line("Меню показано", lambda s: str(shown(s)) if s["menu"] else "-"))
         for key, name in (("play", "PLAY"), ("garage", "GARAGE"), ("missions", "MISSIONS"), ("mode", "MODE (до feature/ux-fixes: потом это плашка, не кнопка)"),
-                          ("leagues", "значок или шкалу опыта (лиги; после v0.16.0)"),
-                          ("mode-hot-potato", "HOT POTATO в CHOOSE MODE (режим, feature/hot-potato)"),
-                          ("mode-quick", "QUICK MATCH в CHOOSE MODE (feature/hot-potato)")):
+                          ("leagues", "значок или шкалу опыта (лиги; после v0.16.0)")):
             out.append(line(f"Нажали {name}, от показов меню",
                             lambda s, k=key: (lambda n: f"{n} ({pct(n, shown(s))})")(num(s["menu_press"].get(k), "interacted"))
                             if s["menu"] else "-"))
@@ -263,6 +277,19 @@ def report(version, previous):
         for league in ("bronze", "silver", "gold", "legend"):
             out.append(line(f"Попап NEW LEAGUE! {league.upper()} на результате (после feature/result-popups)",
                             lambda s, l=league: str(num(s["result_league"].get(l), "seen")) if s["result_league"] else "-"))
+        # Event modes by id (the mode of the day, claude/event-modes): the tile, then CHOOSE MODE. Until that branch only
+        # HOT POTATO, and its picks came without a visible (Poki dropped them); since, opening CHOOSE MODE sends a
+        # visible for QUICK MATCH and the day's mode, so a pick reads against the times it was offered.
+        seen_and_pressed = lambda r: f"{num(r, 'seen')} / {num(r, 'interacted')} ({pct(num(r, 'interacted'), num(r, 'seen'))})"
+        modes = ("hot-potato", "crown", "gold-rush", "item-frenzy", "overheat", "team-push", "football")
+        for mode in modes:
+            if any(s and s["menu_press"].get(f"event-{mode}") for s in (cur, old)):
+                out.append(line(f"Плитка события {mode}: показана / нажата (после v0.17.9)",
+                                lambda s, k=f"event-{mode}": seen_and_pressed(s["menu_press"][k]) if s["menu_press"].get(k) else "-"))
+        for mode in ("quick",) + modes:
+            if any(s and s["menu_press"].get(f"mode-{mode}") for s in (cur, old)):
+                out.append(line(f"CHOOSE MODE: {mode} предложен / выбран (до claude/event-modes только выбран)",
+                                lambda s, k=f"mode-{mode}": seen_and_pressed(s["menu_press"][k]) if s["menu_press"].get(k) else "-"))
         out.append(line("HOME на результате: показан / нажат",
                         lambda s: f"{num(s['home'], 'seen')} / {num(s['home'], 'interacted')} ({pct(num(s['home'], 'interacted'), num(s['home'], 'seen'))})" if s["home"] else "-"))
 
@@ -397,7 +424,7 @@ def report(version, previous):
         # это ушли посреди цикла этого варианта, а «раундов» это циклов.
         ("Раунды по варианту арены (после v0.5.1; визиты: старты / победы / поражения / ушли посреди; "
          "в матче по циклам пола)", "arenas", arena),
-        ("Особые раунды и режим HOT POTATO (после v0.15.0, hot-potato с feature/hot-potato это режим; визиты: старты / победы / поражения / ушли посреди)", "specials",
+        ("Особые раунды и режимы (после v0.15.0, hot-potato с feature/hot-potato это режим, остальные режимы после event-modes; у режимов на время fail это место-поражение; визиты: старты / победы / поражения / ушли посреди)", "specials",
          lambda s, k: arena(s, k, "specials")),
     ):
         keys = keys_of(key)
@@ -418,6 +445,10 @@ def report(version, previous):
         ("Варианты арен по раундам (визиты с map-variant)", "variants"),
         ("Особые раунды по исходу (после v0.15.0; визиты с outcome)", "special_outcome"),
         ("Раунд босса: столкнул ли игрок босса (после v0.15.0; визиты)", "boss"),
+        ("Режимы: место по режиму (после event-modes; визиты с place)", "mode_place"),
+        ("Режимы: сколько предметов применил игрок за раунд режима с коробками (после item-frenzy; none 0, few 1–3, some 4–9, many 10+; визиты с items)", "mode_items"),
+        ("Команды: исход раунда команды игрока и разрыв (после team-push; визиты с team)", "team_end"),
+        ("Команды: KO игрока за раунд команд (после team-push; визиты с team-knockouts)", "team_ko"),
         ("Свои рывки по раундам (после v0.7.1, после v0.14.1 только в сборке с бустами; визиты с round-boosts)", "round_boosts"),
         ("Рывки автобуста по раундам (после v0.7.1, после v0.14.1 только в сборке с бустами; визиты с auto-boosts)", "auto_boosts"),
         ("Миссии: сколько выполнено за раунд (v0.10, визиты с missions)", "missions_done"),
@@ -449,6 +480,40 @@ def report(version, previous):
     out.append(line("CLAIM x2 (нажали / показано)", lambda s: f"{num(s['ad_double'], 'interacted')} / {num(s['ad_double'], 'seen')} ({pct(num(s['ad_double'], 'interacted'), num(s['ad_double'], 'seen'))})"))
     for how in ("granted", "unavailable", "dismissed"):
         out.append(line(f"CLAIM x2: {how} (визиты)", lambda s, how=how: str(s["ad_double_end"].get(how, 0))))
+
+    # The game's own frame rate, once a visit per screen and for the visit's first minute (median of per-second counts,
+    # as Poki's Player Fit Test counts its own); buckets of 5, 70 meaning 70 and more.
+    if any(s and (s["fps_screen"] or s["fps_visit"]) for s in (cur, old)):
+        out += ["", "## FPS (после v0.17.9; визиты: медиана, доля ниже 50, сколько визитов)", "", head, sep]
+
+        def fps(s, prefix):
+            counts = {}
+            for key, n in {**s["fps_screen"], **s["fps_visit"]}.items():
+                if key.startswith(prefix + "-"):
+                    bucket = key[len(prefix) + 1:]
+                    value = 70 if bucket == "70plus" else int(bucket)
+                    counts[value] = counts.get(value, 0) + n
+            total = sum(counts.values())
+            if not total:
+                return "-"
+            seen, median = 0, 0
+            for value in sorted(counts):
+                seen += counts[value]
+                if seen * 2 >= total:
+                    median = value
+                    break
+            low = sum(n for value, n in counts.items() if value < 50)
+            return f"{'70+' if median == 70 else median}, {pct(low, total)}, {total}"
+
+        for device in ("touch", "mouse"):
+            out.append(line(f"Визит, первая минута ({device}), как считает Poki", lambda s, d=device: fps(s, f"visit-{d}")))
+            for screen, name in (("round", "раунд"), ("result", "результат"), ("curtain", "шторка и лобби"),
+                                 ("menu", "меню"), ("garage", "гараж"), ("ad", "реклама")):
+                out.append(line(f"{name} ({device})", lambda s, k=f"{screen}-{device}": fps(s, k)))
+        lengths = lambda s: sum(s["ad_length"].values())
+        for key, name in (("none", "меньше 2 с: рекламы не было"), ("short", "2–10 с"), ("mid", "10–25 с"), ("long", "25 с и дольше")):
+            out.append(line(f"Реклама между раундами: {name}",
+                            lambda s, k=key: f"{s['ad_length'].get(k, 0)} ({pct(s['ad_length'].get(k, 0), lengths(s))})" if s["ad_length"] else "-"))
 
     # XP BOOST: the tile's offer counts per menu shown with it; the popup and NO THANKS are menu presses.
     if any(s and s["ad_boost"] for s in (cur, old)):
@@ -482,6 +547,19 @@ def report(version, previous):
         out.append(line("CLAIM x2 (нажали / показано)", lambda s: f"{num(s['ad_daily'], 'interacted')} / {num(s['ad_daily'], 'seen')} ({pct(num(s['ad_daily'], 'interacted'), num(s['ad_daily'], 'seen'))})"))
         for how in ("granted", "unavailable", "dismissed"):
             out.append(line(f"CLAIM x2 подарка: {how} (визиты)", lambda s, how=how: str(s["ad_daily_end"].get(how, 0))))
+
+    # The day's three tasks and the first win of the day: the TASKS tab looked at, each task done, how many a visit
+    # finished, and on which round of the visit the first win came.
+    if any(s and (s["first_win"] or s["task_done"]) for s in (cur, old)):
+        out += ["", "## Ежедневные задания и первая победа дня (после v0.16.0)", "", head, sep]
+        out.append(line("Вкладка TASKS открыта (визиты)", lambda s: str(num(s["daily_tasks_shown"], "seen"))))
+        for r in ("r1", "r2", "r3", "r4plus"):
+            out.append(line(f"Первая победа дня в {r.upper()} (визиты)", lambda s, r=r: str(s["first_win"].get(r, 0))))
+        for n in ("1", "2", "3"):
+            out.append(line(f"Выполнено заданий за день: {n} (визиты)", lambda s, n=n: str(s["tasks_done"].get(n, 0))))
+        ids = sorted({t for s in (cur, old) if s for t in s["task_done"]})
+        for task in ids:
+            out.append(line(f"Задание {task} выполнено (визиты)", lambda s, task=task: str(s["task_done"].get(task, 0))))
     print("\n".join(out))
 
 

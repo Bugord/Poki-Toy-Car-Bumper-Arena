@@ -207,9 +207,14 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private string map = "";
 
+            // The event mode a task of the day's mode asks for: set in code for that day (DailyTasks), never saved.
+            [NonSerialized]
+            private string mode = "";
+
             public MissionDefinition(string id, MissionSlot slot, MissionCounter counter, int target, MissionTier tier,
-                bool starter = false, bool starterOnly = false, string map = "")
+                bool starter = false, bool starterOnly = false, string map = "", string mode = "")
             {
+                this.mode = mode;
                 this.id = id;
                 this.slot = slot;
                 this.counter = counter;
@@ -228,6 +233,12 @@ namespace ToyCarArena.Gameplay
             public bool IsStarter => starter;
             public bool IsStarterOnly => starterOnly;
             public string Map => map ?? "";
+
+            /// <summary>
+            /// For <see cref="MissionCounter.EventRounds"/>: the id of the event mode the rounds must be of (the mode of
+            /// the day); empty for any other.
+            /// </summary>
+            public string Mode => mode ?? "";
 
             /// <summary>Whether it counts items, which a round of a visit has only from <see cref="PickupSettings.FirstRound"/>.</summary>
             public bool NeedsItems => counter is MissionCounter.ItemsUsed or MissionCounter.Boxes or
@@ -414,6 +425,12 @@ namespace ToyCarArena.Gameplay
 
         /// <summary>Rounds played on the mission's arena.</summary>
         ArenaRounds,
+
+        /// <summary>
+        /// Rounds of the task's event mode played to the end (<see cref="MissionDefinition.Mode"/>): the daily task of
+        /// the mode of the day, built in code, never in the pools.
+        /// </summary>
+        EventRounds,
     }
 
     /// <summary>How hard a mission is, which sets its reward. Stored in the asset by number.</summary>

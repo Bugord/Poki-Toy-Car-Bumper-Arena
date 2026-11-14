@@ -1,6 +1,7 @@
 using System.Threading;
 using Bugord.App.UI;
 using Cysharp.Threading.Tasks;
+using ToyCarArena.Rendering;
 using UIKit.Runtime.Abstractions;
 using UIKit.Runtime.Core;
 using UnityEngine;
@@ -14,8 +15,19 @@ namespace ToyCarArena.UI
     public abstract class FadingView<TViewModel> : View<TViewModel> where TViewModel : ViewModel
     {
         private float opacity = 1f;
+        // This screen's entry in ShownScreens while it is shown.
+        private object shown;
 
         protected virtual float FadeDuration => 0.2f;
+
+        /// <summary>Which screen this is, for <see cref="ShownScreens"/>; None leaves it out.</summary>
+        protected virtual ShownScreen ScreenKind => ShownScreen.None;
+
+        /// <summary>
+        /// Whether the screen is opaque over the whole arena once faded in, so the arena's camera stops drawing the 3D
+        /// under it (<see cref="ShownScreens.IsArenaCovered"/>).
+        /// </summary>
+        protected virtual bool CoversArena => false;
 
         /// <summary>
         /// True once the fade-in is complete, false again as soon as the fade-out starts. Screens ignore input until
@@ -47,13 +59,32 @@ namespace ToyCarArena.UI
             await base.ShowAsync(token);
             await Fade(1f, token);
             IsShown = true;
+            if (ScreenKind != ShownScreen.None) {
+                ShownScreens.Remove(shown);
+                shown = ShownScreens.Add(ScreenKind, CoversArena);
+            }
         }
 
         public override async UniTask HideAsync(CancellationToken token)
         {
             IsShown = false;
+            // From the first frame of the fade-out, so the arena is drawn again as soon as it can show.
+            ForgetShown();
             await Fade(0f, token);
             await base.HideAsync(token);
+        }
+
+        public override void Dispose()
+        {
+            // A screen torn down without hiding must not leave the arena undrawn.
+            ForgetShown();
+            base.Dispose();
+        }
+
+        private void ForgetShown()
+        {
+            ShownScreens.Remove(shown);
+            shown = null;
         }
 
         private async UniTask Fade(float targetOpacity, CancellationToken token)

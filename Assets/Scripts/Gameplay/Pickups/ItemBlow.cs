@@ -43,7 +43,8 @@ namespace ToyCarArena.Gameplay.Pickups
         public bool Apply(Car car, Car user, Vector3 direction, float push, float cap, float lift, float stagger,
             bool isItem = true)
         {
-            if (!car.IsTargetable) {
+            // A teammate's item leaves the car alone, as its bump does.
+            if (!car.IsTargetable || car.IsTeammateOf(user)) {
                 return false;
             }
 

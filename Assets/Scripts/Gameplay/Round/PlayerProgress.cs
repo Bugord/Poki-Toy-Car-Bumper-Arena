@@ -241,10 +241,12 @@ namespace ToyCarArena.Gameplay.Round
 
         /// <summary>
         /// Saves a decided round's XP: its own (a streak round's multiplied, <paramref name="streakBonus"/> being the
-        /// streak's share of it, and a boosted one's by the boost, which this round uses up one match of) plus the XP
-        /// of the missions it completed.
+        /// streak's share of it, a boosted one's by the boost, which this round uses up one match of, and the first win
+        /// of the day's by <paramref name="firstWinMultiplier"/> on top of all that) plus the XP of the missions and
+        /// daily tasks it completed (<paramref name="missionXp"/>).
         /// </summary>
-        public XpGain Record(RoundResult result, GameTuning.StreakSettings streakBonus = null, int missionXp = 0)
+        public XpGain Record(RoundResult result, GameTuning.StreakSettings streakBonus = null, int missionXp = 0,
+            int firstWinMultiplier = 1)
         {
             var totalBefore = TotalXp;
             var before = At(totalBefore);
@@ -261,15 +263,20 @@ namespace ToyCarArena.Gameplay.Round
                 storage.SetInt(BoostKey, boostLeft - 1);
             }
 
+            // The first win of the day doubles what the round itself paid, the boost's share included.
+            var firstWinXp = firstWinMultiplier > 1
+                ? checked((roundXp + placeXp + winXp + knockoutXp + streakXp + boostXp) * (firstWinMultiplier - 1))
+                : 0;
+
             // The ad's bonus on this result counts towards the same one level; a boosted result, which the player
-            // watched an ad for, keeps all it earned.
-            resultCap = boostLeft > 0 ? int.MaxValue : CapAbove(before);
-            var totalAfter = (int)Math.Min(resultCap,
-                checked((long)totalBefore + roundXp + placeXp + winXp + knockoutXp + streakXp + boostXp + missionXp));
+            // watched an ad for, and the day's first win, which the result shows doubled, keep all they earned.
+            resultCap = boostLeft > 0 || firstWinXp > 0 ? int.MaxValue : CapAbove(before);
+            var totalAfter = (int)Math.Min(resultCap, checked((long)totalBefore + roundXp + placeXp + winXp +
+                knockoutXp + streakXp + boostXp + firstWinXp + missionXp));
             var after = At(totalAfter);
             var unlocked = Save(before, after, totalAfter);
             return new XpGain(totalBefore, totalAfter, roundXp, placeXp, winXp, knockoutXp, before, after,
-                unlocked, streakXp, missionXp, boostXp);
+                unlocked, streakXp, missionXp, boostXp, firstWinXp);
         }
 
         /// <summary>

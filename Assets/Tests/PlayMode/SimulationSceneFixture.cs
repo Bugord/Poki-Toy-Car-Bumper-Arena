@@ -10,7 +10,9 @@ using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Input;
+using ToyCarArena.Gameplay.Pickups;
 using ToyCarArena.Gameplay.Round;
+using ToyCarArena.Rendering;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -58,6 +60,8 @@ namespace ToyCarArena.Tests.PlayMode
             this.originalRunInBackground = Application.runInBackground;
             this.originalRandomState = UnityEngine.Random.state;
 
+            // A screen an earlier test left shown would keep the arena undrawn.
+            ShownScreens.Clear();
             Time.timeScale = 1f;
             Time.captureDeltaTime = 1f / 60f;
             Application.targetFrameRate = -1;
@@ -69,7 +73,15 @@ namespace ToyCarArena.Tests.PlayMode
             UseMode(GameTuning.GameMode.LastStanding);
             // The suites measure plain rounds whatever round of the visit they play; a test asks for one with UseSpecial.
             UseSpecial(SpecialRound.None);
+            // The suites and simulations measure rounds without the item lesson's box; a test asks for it.
+            HasUsedItem = true;
         }
+
+        /// <summary>
+        /// Whether the player of the scenes loaded after this call has used an item before, so no lesson box is laid;
+        /// true unless a test sets it, reset by every set-up.
+        /// </summary>
+        protected bool HasUsedItem { get; set; } = true;
 
         /// <summary>
         /// Plays <paramref name="kind"/> in the Game scenes loaded after this call, whatever round of the visit they are:
@@ -210,6 +222,7 @@ namespace ToyCarArena.Tests.PlayMode
                     .As(typeof(IArenaRotation));
                 builder.Register<IPlayerCar, FirstPlayerCar>(Lifetime.Singleton);
                 builder.RegisterInstance<IPlayerTopper>(new FixedTopper(PlayerTopper));
+                builder.RegisterInstance<IItemLesson>(new ItemLessonMemory(HasUsedItem));
                 builder.Register<SessionRoster>(Lifetime.Singleton).As<ISessionRoster>()
                     .WithParameter(typeof(GameTuning), LoadTuning());
                 builder.RegisterInstance<IAudioService>(audio);

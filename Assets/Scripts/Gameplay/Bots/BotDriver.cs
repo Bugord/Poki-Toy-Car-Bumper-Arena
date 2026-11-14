@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Cars;
+using ToyCarArena.Gameplay.Modes;
 using ToyCarArena.Gameplay.Pickups;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
@@ -42,7 +43,8 @@ namespace ToyCarArena.Gameplay.Bots
         private readonly BallLane ballLane;
         private readonly ArenaHazards hazards;
         private readonly ArenaPickups pickups;
-        private readonly HotPotato potato;
+        private readonly RoundModes modes;
+        private readonly PlayerItemTurn itemTurn;
         private readonly List<Bot> bots = new();
 
         private int seed;
@@ -56,10 +58,11 @@ namespace ToyCarArena.Gameplay.Bots
         private Bot playerGrudge;
 
         public BotDriver(GameTuning tuning, ArenaRound round, RoundDifficulty difficulty, BallLane ballLane,
-            ArenaHazards hazards, ArenaPickups pickups, HotPotato potato)
+            ArenaHazards hazards, ArenaPickups pickups, RoundModes modes, PlayerItemTurn itemTurn)
         {
             this.pickups = pickups;
-            this.potato = potato;
+            this.itemTurn = itemTurn;
+            this.modes = modes;
             this.tuning = tuning;
             this.round = round;
             this.difficulty = difficulty;
@@ -107,7 +110,10 @@ namespace ToyCarArena.Gameplay.Bots
             var isDuel = round.IsDuel;
             // A new pickup is worth a look at once, not at the next pick.
             var hasNewPickup = pickups.IsEnabled && pickups.Version != seenPickups;
+            var steering = modes.BotSteering;
             seenPickups = pickups.Version;
+            // The grace that spares the player as a target spares them the bots' items too.
+            var spared = round.Elapsed < difficulty.PlayerGrace ? round.Player : null;
             foreach (var bot in bots) {
                 if (bot.Car.IsOut) {
                     continue;
@@ -117,18 +123,8 @@ namespace ToyCarArena.Gameplay.Bots
                     bot.Reconsider();
                 }
 
-                // The HOT POTATO mode: nobody falls, so the bomb is all a bot plays for. With it the bot goes for the
-                // car it is best passed to; without it, it runs from the holder.
-                if (potato.IsActive) {
-                    if (potato.Holder == bot.Car) {
-                        var victim = ChooseVictim(bot.Car);
-                        if (victim != bot.Target || bot.WantsTarget) {
-                            bot.SetTarget(victim);
-                        }
-                    }
-
-                    bot.SetPickup(null);
-                    bot.SteerPotato(edge, potato, deltaTime);
+                // An event mode that plays its bots its own way (the hot potato's chase and flight) steers them here.
+                if (steering != null && steering.SteerBot(bot, edge, deltaTime)) {
                     continue;
                 }
 
@@ -138,8 +134,9 @@ namespace ToyCarArena.Gameplay.Bots
                 }
 
                 bot.Steer(edge, deltaTime, isDuel);
-                if (pickups.IsEnabled && round.IsRunning && bot.WantsToUseItem(edge, round.Cars, deltaTime)) {
-                    pickups.Use(bot.Car);
+                // One bot's item at the player at a time: the turn is taken at the use, before the next bot looks.
+                if (pickups.IsEnabled && round.IsRunning) {
+                    itemTurn.TryUse(bot, edge, deltaTime, spared);
                 }
             }
         }
@@ -166,7 +163,13 @@ namespace ToyCarArena.Gameplay.Bots
             foreach (var car in round.Cars) {
                 car.Hit += OnHit;
                 if (car != round.Player) {
-                    bots.Add(new Bot(car, personalities[next++], tuning, difficulty, round.Player, random.Next(), ballLane, hazards));
+                    var bot = new Bot(car, personalities[next++], tuning, difficulty, round.Player, random.Next(), ballLane, hazards);
+                    // In teams the other team's bots are softer on the easiest rounds, so a new player's team wins.
+                    if (car.Team >= 0 && car.Team != round.Player.Team) {
+                        bot.Pace = tuning.Teams.EnemyPaceAt(difficulty.Level);
+                    }
+
+                    bots.Add(bot);
                 }
             }
         }
@@ -186,51 +189,6 @@ namespace ToyCarArena.Gameplay.Bots
                     bot.Reconsider();
                 }
             }
-        }
-
-        /// <summary>
-        /// The car the holder of the hot potato drives at: the nearest one in play, but never the car that just passed
-        /// the bomb (it cannot take it back, <see cref="HotPotato.IsPassBack"/>), and never the player in the first
-        /// seconds of the round (<see cref="RoundDifficulty.PlayerGrace"/>). The player counts as a little farther than
-        /// it is, more so on Easy, so the bots pass it the bomb less often than to each other. With no other choice the
-        /// passer and the player are taken after all; null when there is no car to pass to.
-        /// </summary>
-        private Car ChooseVictim(Car self)
-        {
-            var playerScale = Mathf.Lerp(1.4f, 1.1f, difficulty.Level);
-            var isPlayerSpared = round.Elapsed < difficulty.PlayerGrace;
-            Car best = null;
-            Car fallback = null;
-            var bestDistance = float.PositiveInfinity;
-            var fallbackDistance = float.PositiveInfinity;
-            var cars = round.Cars;
-            for (var i = 0; i < cars.Count; i++) {
-                var car = cars[i];
-                if (car == self || !car.IsTargetable) {
-                    continue;
-                }
-
-                var distance = (car.Position - self.Position).magnitude;
-                if (distance < fallbackDistance) {
-                    fallbackDistance = distance;
-                    fallback = car;
-                }
-
-                if (potato.IsPassBack(car) || car == round.Player && isPlayerSpared) {
-                    continue;
-                }
-
-                if (car == round.Player) {
-                    distance *= playerScale;
-                }
-
-                if (distance < bestDistance) {
-                    bestDistance = distance;
-                    best = car;
-                }
-            }
-
-            return best ?? fallback;
         }
 
         /// <summary>
@@ -264,8 +222,9 @@ namespace ToyCarArena.Gameplay.Bots
             var cars = round.Cars;
             for (var i = 0; i < cars.Count; i++) {
                 var car = cars[i];
-                // A car just back in a match is safe and cannot be pushed: no target until it is in play again.
-                if (car == bot.Car || !car.IsTargetable || (isPlayerSpared && car == player)) {
+                // A car just back in a match is safe and cannot be pushed: no target until it is in play again. A
+                // teammate is never one (skipped before the noise is drawn, so a round without teams replays as it did).
+                if (car == bot.Car || !car.IsTargetable || (isPlayerSpared && car == player) || bot.Car.IsTeammateOf(car)) {
                     continue;
                 }
 
@@ -289,6 +248,10 @@ namespace ToyCarArena.Gameplay.Bots
 
                 if (IsSlidingOff(car, edge, now)) {
                     score += settings.OpportunityWeight * traits.Opportunism;
+                }
+
+                if (bot.Car.Team >= 0) {
+                    score += TeamScore(bot, car, now);
                 }
 
                 if (score > bestScore) {
@@ -333,7 +296,7 @@ namespace ToyCarArena.Gameplay.Bots
                 var offset = pickup.Position - position;
                 offset.y = 0f;
                 var distance = offset.magnitude;
-                if (distance > settings.Range) {
+                if (distance > settings.Range || !pickup.IsFor(bot.Car)) {
                     continue;
                 }
 
@@ -392,6 +355,51 @@ namespace ToyCarArena.Gameplay.Bots
             var position = car.Position;
             var velocity = car.Movement.Velocity;
             return Vector3.Dot(velocity, edge.Inward(position)) < 0f;
+        }
+
+        /// <summary>
+        /// What a round in teams adds to a car's score for a bot: the help of a teammate the car is pushing or has just hit,
+        /// less a share for each teammate of the bot already after it, so a team spreads over the other team.
+        /// </summary>
+        private float TeamScore(Bot bot, Car car, float now)
+        {
+            var settings = tuning.Teams;
+            var score = 0f;
+            var cars = round.Cars;
+            for (var i = 0; i < cars.Count; i++) {
+                var mate = cars[i];
+                if (mate.IsOut || !bot.Car.IsTeammateOf(mate)) {
+                    continue;
+                }
+
+                var isHitting = mate.LastHitBy == car && now - mate.LastHitTime <= settings.CoverTime;
+                if (isHitting || IsAfter(car, mate, settings.CoverRange)) {
+                    score += settings.CoverWeight;
+                    break;
+                }
+            }
+
+            foreach (var other in bots) {
+                if (other != bot && !other.Car.IsOut && other.Target == car && bot.Car.IsTeammateOf(other.Car)) {
+                    score -= settings.TeamCrowdPenalty;
+                }
+            }
+
+            return score;
+        }
+
+        /// <summary>Whether <paramref name="car"/> is a bot after <paramref name="mate"/> and close to it.</summary>
+        private bool IsAfter(Car car, Car mate, float range)
+        {
+            foreach (var other in bots) {
+                if (other.Car == car) {
+                    var offset = car.Position - mate.Position;
+                    offset.y = 0f;
+                    return other.Target == mate && offset.sqrMagnitude <= range * range;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>

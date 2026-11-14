@@ -87,13 +87,18 @@ namespace ToyCarArena.UI
         public bool HasNewCar => XpGain.UnlockedCarIds.Count > 0 || BonusXp.UnlockedCarIds?.Count > 0;
 
         /// <summary>
-        /// The round's own XP on its sticker: what CLAIM ×2 pays once more, the XP boost's share included. The missions'
-        /// XP stays on their rows and is not doubled.
+        /// The round's own XP on its sticker: what CLAIM ×2 pays once more, the XP boost's and the first win's shares
+        /// included. The XP of the missions and the daily tasks stays on their rows and is not doubled.
         /// </summary>
         public int RoundXp => XpGain.Total - XpGain.MissionXp;
 
         /// <summary>What the XP boost multiplies a round's own XP by: the stamp on a boosted round's XP sticker.</summary>
         public int BoostMultiplier => tuning.Ads.BoostMultiplier;
+
+        /// <summary>The round was the day's first win, which paid its own XP and coins twice: the stickers' stamp.</summary>
+        public bool IsFirstWin => XpGain.FirstWinXp > 0 || Coins.FirstWinCoins > 0;
+
+        public int FirstWinMultiplier => tuning.Daily.FirstWinMultiplier;
 
         /// <summary>The round's own coins on their sticker, the missions' left out, as <see cref="RoundXp"/>.</summary>
         public int RoundCoins => Coins.Total - Coins.MissionCoins;
@@ -506,13 +511,32 @@ namespace ToyCarArena.UI
         public RoundOutcome Outcome { get; private set; }
 
         /// <summary>
-        /// Whether the result is a long match's: the subtitle gives its place and knock-outs.
+        /// Whether the result is a timed round's, decided by its score (the long match, a mode that scores points): the
+        /// subtitle gives its place and score, the table its standings and the podium its winner.
         /// </summary>
-        public bool IsMatch { get; private set; }
+        public bool IsTimed { get; private set; }
 
         public int Place { get; private set; }
 
         public int Knockouts { get; private set; }
+
+        /// <summary>The player's points in a timed round (<see cref="RoundResult.Points"/>).</summary>
+        public int Points { get; private set; }
+
+        /// <summary>The event mode played, or <see cref="SpecialRound.None"/> (the result reads its look and words).</summary>
+        public SpecialRound Kind { get; private set; }
+
+        /// <summary>Whether the round was an event mode's, not the plain round, a special round or the match.</summary>
+        public bool IsEvent => EventModes.IsEvent(Kind);
+
+        /// <summary>Whether the round was played in teams: the subtitle says how the player's team did.</summary>
+        public bool IsTeamRound { get; private set; }
+
+        /// <summary>Whether a timed team round ended with the teams level.</summary>
+        public bool IsTeamDraw { get; private set; }
+
+        /// <summary>A team round's score by team, empty otherwise.</summary>
+        public System.Collections.Generic.IReadOnlyList<int> TeamPoints { get; private set; } = System.Array.Empty<int>();
 
         /// <summary>
         /// The index of the car that knocked the player out, or <see cref="RoundResult.Nobody"/>.
@@ -532,10 +556,10 @@ namespace ToyCarArena.UI
         public int PodiumCar { get; private set; }
 
         /// <summary>Whether the podium crowns a winner: a match's first place, or the player's own win of a round.</summary>
-        public bool IsPodiumWinner => IsMatch || Outcome == RoundOutcome.Won;
+        public bool IsPodiumWinner => IsTimed || Outcome == RoundOutcome.Won;
 
         /// <summary>Whether the podium shows the car that knocked the player off a round: the one to get back at.</summary>
-        public bool IsPodiumRival => !IsMatch && Outcome == RoundOutcome.Out && KnockedOutBy != RoundResult.Nobody;
+        public bool IsPodiumRival => !IsTimed && Outcome == RoundOutcome.Out && KnockedOutBy != RoundResult.Nobody;
 
         public string NameOf(int index) =>
             index == 0 ? Strings.Get("common.you") : index < names.Count ? names[index] : string.Empty;
@@ -553,7 +577,7 @@ namespace ToyCarArena.UI
             Nemesis = payload.Nemesis;
             Podium = payload.Podium;
             PodiumCar = result.PodiumCar;
-            Standings = result.IsMatch ? result.Standings : System.Array.Empty<RoundStanding>();
+            Standings = result.IsTimed ? result.Standings : System.Array.Empty<RoundStanding>();
             XpGain = payload.XpGain;
             Coins = payload.Coins;
             Missions = payload.Missions;
@@ -570,9 +594,14 @@ namespace ToyCarArena.UI
             Gift = wallet.UnseenGift;
             Streak = payload.Streak;
             Outcome = result.Outcome;
-            IsMatch = result.IsMatch;
+            IsTimed = result.IsTimed;
             Place = result.Place;
             Knockouts = result.Knockouts;
+            Points = result.Points;
+            Kind = result.Kind;
+            IsTeamRound = result.Teams > 0;
+            IsTeamDraw = IsTeamRound && result.IsTimed && result.IsDraw;
+            TeamPoints = result.TeamPoints;
             KnockedOutBy = result.KnockedOutBy;
             KnockedOutByName = payload.KnockedOutByName;
             RevengeTaken = result.RevengeTaken;

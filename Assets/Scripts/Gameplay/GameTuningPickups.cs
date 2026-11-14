@@ -40,6 +40,12 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private int firstRound = 2;
 
+            [Tooltip("Metres in front of the player a box waits at the start of each round with boxes until the player " +
+                "has used an item once, for good (the item lesson); 0 none")]
+            [Min(0f)]
+            [SerializeField]
+            private float lessonDistance = 3.5f;
+
             [Header("Appearing")]
             [Tooltip("Seconds into the match, and into each cycle of the floor, before the first boxes appear")]
             [Min(0f)]
@@ -173,6 +179,7 @@ namespace ToyCarArena.Gameplay
 
             public bool Enabled => enabled;
             public int FirstRound => firstRound;
+            public float LessonDistance => lessonDistance;
             public float FirstDelay => firstDelay;
             public float Interval => interval;
             public float Jitter => jitter;
@@ -779,6 +786,13 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float shieldThreatSpeed = 4f;
 
+            [Tooltip("Seconds after a bot's item went at the player before another bot's may: one at a time, so the items " +
+                "that waited out the round's grace do not all go off at once. Longer than a bomb's flight and fuse, so the " +
+                "next one does not land on a player still staggered by the last")]
+            [Min(0f)]
+            [SerializeField]
+            private float playerItemGap = 4f;
+
             public float Weight => weight;
             public float TrailingBonus => trailingBonus;
             public float CrowdPenalty => crowdPenalty;
@@ -794,6 +808,7 @@ namespace ToyCarArena.Gameplay
             public int ShockwaveCars => shockwaveCars;
             public float ShieldThreat => shieldThreat;
             public float ShieldThreatSpeed => shieldThreatSpeed;
+            public float PlayerItemGap => playerItemGap;
         }
     }
 }

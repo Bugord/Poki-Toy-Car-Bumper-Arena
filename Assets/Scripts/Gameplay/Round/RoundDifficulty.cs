@@ -36,8 +36,9 @@ namespace ToyCarArena.Gameplay.Round
             this.AimError = Mathf.Lerp(easy.AimError, normal.AimError, level);
             this.BoostDelay = Vector2.Lerp(easy.BoostDelay, normal.BoostDelay, level);
             this.EscapeBoostChance = Mathf.Lerp(easy.EscapeBoostChance, normal.EscapeBoostChance, level);
-            // HOT POTATO's floor is fenced: the help at the edge would only make the car stick and slow along the fence.
-            this.EdgeAssist = RoundRules.For(tuning, progress.Round, progress.Mode) == SpecialRound.HotPotato ? 0f :
+            // A mode may turn the help off: on HOT POTATO's fenced floor it would only make the car stick and slow along
+            // the fence.
+            this.EdgeAssist = !RoundRules.RulesFor(tuning, progress).HasEdgeAssist ? 0f :
                 Mathf.Lerp(easy.EdgeAssist, normal.EdgeAssist, LevelFor(settings, progress, settings.EdgeAssistRounds));
             this.AutoBoost = Mathf.Lerp(easy.AutoBoost, normal.AutoBoost, level);
             this.PlayerBump = Mathf.Lerp(easy.PlayerBump, normal.PlayerBump, level);
@@ -58,9 +59,17 @@ namespace ToyCarArena.Gameplay.Round
         /// </summary>
         public int BotCount { get; }
 
-        /// <summary>The lobby and arena use the same calculation, before and after scene loading.</summary>
-        public static int BotCountFor(GameTuning tuning, ISessionProgress progress) =>
-            Mathf.RoundToInt(Mathf.Lerp(tuning.Bots.Easy.Bots, tuning.Bots.Normal.Bots, LevelFor(tuning.Bots, progress)));
+        /// <summary>
+        /// The lobby and arena use the same calculation, before and after scene loading: the difficulty's number, or
+        /// the round's mode's own (<see cref="ModeRules.BotCountFor"/>: a number of its own, or an even count of cars
+        /// for its teams).
+        /// </summary>
+        public static int BotCountFor(GameTuning tuning, ISessionProgress progress)
+        {
+            var bots = Mathf.RoundToInt(Mathf.Lerp(tuning.Bots.Easy.Bots, tuning.Bots.Normal.Bots,
+                LevelFor(tuning.Bots, progress)));
+            return RoundRules.RulesFor(tuning, progress).BotCountFor(bots, SessionRoster.MaxBots);
+        }
 
         private static float LevelFor(GameTuning.BotSettings settings, ISessionProgress progress) =>
             LevelFor(settings, progress, settings.RampRounds);

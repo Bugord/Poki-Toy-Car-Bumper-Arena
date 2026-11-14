@@ -5,6 +5,7 @@ using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Input;
+using ToyCarArena.Gameplay.Pickups;
 using ToyCarArena.Gameplay.Round;
 using ToyCarArena.Rendering;
 using ToyCarArena.UI;
@@ -101,7 +102,7 @@ namespace ToyCarArena.App
             builder.RegisterEntryPoint<AudioService>().As<IAudioService>();
             builder.Register<ScreenCurtain>(Lifetime.Singleton);
             // Here and not in the arena's scope: the HUD is an app screen; the arena's input finds it in this parent.
-            builder.Register<HudControls>(Lifetime.Singleton).AsSelf().As<IOnScreenControls>();
+            builder.Register<HudControls>(Lifetime.Singleton).AsSelf().As<IOnScreenControls>().As<IItemLesson>();
             // Here, so they outlive the Game scene reloaded every round: the bots read the progress as the scene is
             // built.
             builder.Register<SessionProgress>(Lifetime.Singleton).AsSelf().As<ISessionProgress>();
@@ -111,6 +112,7 @@ namespace ToyCarArena.App
             builder.Register<PersonalBests>(Lifetime.Singleton);
             builder.Register<AdBreaks>(Lifetime.Singleton);
             builder.RegisterEntryPoint<SessionTime>().AsSelf();
+            builder.RegisterEntryPoint<ScreenFrameRate>().AsSelf();
             builder.RegisterEntryPoint<Visits>().AsSelf();
             // The 3D scene's render scale follows the screen; the UI is drawn on top at full resolution.
             builder.RegisterEntryPoint<RenderScaler>().AsSelf()
@@ -120,8 +122,10 @@ namespace ToyCarArena.App
             // Coins, toppers and missions are saved and outlive the arena scene, as XP does.
             builder.Register<PlayerWallet>(Lifetime.Singleton).AsSelf().As<IPlayerTopper>();
             builder.Register<MissionTracker>(Lifetime.Singleton);
-            // The daily gift of the menu pays into the wallet and counts days across visits.
+            // The daily gift of the menu pays into the wallet and counts days across visits; the daily tasks pay with
+            // the round that does them, as the missions do.
             builder.Register<PlayerDaily>(Lifetime.Singleton);
+            builder.Register<DailyTasks>(Lifetime.Singleton);
             // NEXT MATCH on the result and PLAY in the menu share one way into the next round.
             builder.Register<MatchLobby>(Lifetime.Singleton);
 #if BUGORD_SUPERCONSOLE

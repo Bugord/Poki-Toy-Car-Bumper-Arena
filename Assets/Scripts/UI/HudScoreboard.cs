@@ -1,5 +1,6 @@
 using System;
 using Bugord.App.Localization;
+using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -66,7 +67,7 @@ namespace ToyCarArena.UI
         /// The board for the match the HUD shows, or null in a round of the last car standing, which has none.
         /// </summary>
         public static HudScoreboard Create(VisualElement container, HudViewModel model) =>
-            model.IsMatch && model.CarCount > 0 ? new HudScoreboard(container, model) : null;
+            model.IsTimed && model.CarCount > 0 && model.Teams == 0 ? new HudScoreboard(container, model) : null;
 
         private HudScoreboard(VisualElement container, HudViewModel model)
         {
@@ -79,7 +80,10 @@ namespace ToyCarArena.UI
             // One star over the knock-out column says what the numbers count, as the star by the player's own on the bar.
             var header = new VisualElement { pickingMode = PickingMode.Ignore };
             header.AddToClassList("scoreboard__header");
-            header.Add(HudView.CreateStar("scoreboard__star"));
+            // Over the column of points: the mode's own icon, the burst for knock-outs.
+            var pointsIcon = HudView.CreateStar("scoreboard__star");
+            ModeLooks.DrawPoints(pointsIcon, model.Mode?.Kind ?? SpecialRound.None);
+            header.Add(pointsIcon);
             container.Add(header);
 
             rowLayer = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -96,6 +100,7 @@ namespace ToyCarArena.UI
             model.Eliminated += OnEliminated;
             model.CarBack += OnCarBack;
             model.NemesisChanged += OnNemesisChanged;
+            model.ScoreChanged += OnScoreChanged;
             // The settings open over the running match, so the language can change under the board: YOU follows it.
             Strings.Changed += OnLanguageChanged;
             OnNemesisChanged();
@@ -116,6 +121,7 @@ namespace ToyCarArena.UI
             model.Eliminated -= OnEliminated;
             model.CarBack -= OnCarBack;
             model.NemesisChanged -= OnNemesisChanged;
+            model.ScoreChanged -= OnScoreChanged;
             Strings.Changed -= OnLanguageChanged;
         }
 
@@ -197,6 +203,8 @@ namespace ToyCarArena.UI
         // The score is counted before the round tells of the fall, so it is current here; a fall of its own can move a
         // car too (fewer falls rank higher).
         private void OnEliminated(int index, int by) => Order(true);
+
+        private void OnScoreChanged(int index) => Order(true);
 
         private void OnCarBack(int index)
         {

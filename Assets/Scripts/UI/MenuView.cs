@@ -7,6 +7,7 @@ using ToyCarArena.Audio;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
+using ToyCarArena.Rendering;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -36,6 +37,11 @@ namespace ToyCarArena.UI
     /// </summary>
     public sealed class MenuView : FadingView<MenuViewModel>
     {
+        protected override ShownScreen ScreenKind => ShownScreen.Menu;
+
+        // Opaque over the whole screen, so the arena under it is not drawn.
+        protected override bool CoversArena => true;
+
         private const string WideClass = "menu--wide";
         private const string DesktopClass = "menu--desktop";
         private const string OpenClass = "menu__popup--open";
@@ -124,13 +130,13 @@ namespace ToyCarArena.UI
         private static readonly Color Green = new Color32(0x5b, 0xd3, 0x4a, 0xff);
         // A mode not out yet keeps its sign, greyed: --shade filled, --muted outlined, its sand between.
         private static readonly Color Orange = new Color32(0xff, 0x9f, 0x1c, 0xff);
-        private static readonly Color EventLight = new Color32(0xff, 0xc0, 0x6a, 0xff);
-        private static readonly Color EventDeep = new Color32(0xff, 0x8f, 0x1f, 0xff);
         private static readonly Color EventRay = new(1f, 1f, 1f, 0.18f);
         private const float RayStep = 20f;
         private const float RayWidth = 8f;
         // The desktop key that opens the modes: M is MISSIONS, and the plate reads QUICK MATCH.
         private const KeyCode ModesKey = KeyCode.Q;
+        // The desktop key of the HOT POTATO tile: H for hot (HOME's key on the result, which has no tile of its own here).
+        private const KeyCode EventKey = KeyCode.H;
         private const float ShakeSeconds = 0.3f;
 
         private readonly IAudioService audioService;
@@ -180,12 +186,27 @@ namespace ToyCarArena.UI
         private VisualElement modesSheet;
         private CarPortrait modePortrait;
         private VisualElement eventCard;
+        // The parts of the event card and tile that change with the mode of the day (ShowEvent).
+        private VisualElement eventFace;
+        private VisualElement eventArt;
+        private Label[] eventTitle;
+        private Label eventHint;
+
+        // The smallest share of its size an event's rule goes down to on its card.
+        private const float MinHintShare = 0.6f;
+        private Label eventTimer;
+        private VisualElement eventTileFill;
+        private VisualElement eventTileArt;
+        private Label[] eventTileCaption;
+        private string eventArtClass;
+        private EventMode shownEvent = (EventMode)(-1);
         private VisualElement quickCard;
         private Label modeName;
         private GarageStage garageStage;
         private MenuLeagues leagues;
         private VisualElement rightRail;
         private VisualElement boostTile;
+        private VisualElement eventTile;
         private Label boostLeft;
         private VisualElement xpBoost;
         private Label[] xpBoostLabels;
@@ -199,6 +220,8 @@ namespace ToyCarArena.UI
         // The daily popup shows a gift just taken: it keeps the claim on screen until it closes.
         private bool isDailyClaimed;
         private bool wasDailyReady;
+        // The calendar day the menu last drew: midnight brings new tasks and a new first win, as it brings a new gift.
+        private int dailyDay;
 
         public MenuView(IAudioService audioService, HudControls controls)
         {
@@ -252,6 +275,10 @@ namespace ToyCarArena.UI
             Root.Focus();
             if (ViewModel.CanOfferBoost) {
                 ViewModel.BoostShown();
+            }
+
+            if (ViewModel.HasEvents) {
+                ViewModel.EventShown();
             }
 
             // The first menu in a new league greets it, over the league's sky and plinth already behind the dim.
@@ -365,7 +392,8 @@ namespace ToyCarArena.UI
         /// <summary>
         /// The rail at the right: DAILY (a gift box, a green READY pill and a red dot while today's gift waits, the time
         /// to the next on a navy pill after), then XP BOOST (a blue star with an AD tag while it is offered, blue with ×2
-        /// and the matches left while it runs).
+        /// and the matches left while it runs), then HOT POTATO (the event's orange with its picture and a bolt tag),
+        /// which starts the event at once: in CHOOSE MODE only 6 of 557 visits of v0.17.9 found it.
         /// </summary>
         private void BuildBoost(VisualElement menu)
         {
@@ -392,7 +420,36 @@ namespace ToyCarArena.UI
             boostLeft = Text("menu__boost-left");
             button.Add(boostLeft);
             rightRail.Add(boostTile);
+            rightRail.Add(BuildEventTile());
             menu.Add(rightRail);
+        }
+
+        private VisualElement BuildEventTile()
+        {
+            eventTile = Tile(null, EventName, EventKey.ToString(), PlayEvent);
+            eventTile.AddToClassList("menu__tile--event");
+            var button = eventTile.Q<VisualElement>(className: "menu__tile-button");
+            var face = button.Q<VisualElement>(className: "menu__face");
+            // The event card's colours and its picture (the mode of the day's, ShowEvent): the toy bigger than the
+            // face, over its bottom edge as on the card.
+            // The rays inside the fill, which clips them to its rounded corners; the picture on the face, so it sinks
+            // with it on a press.
+            eventTileFill = face.Q<VisualElement>(className: "menu__fill");
+            eventTileFill.Add(Icon("menu__event-tile-rays", DrawEventRays));
+            eventTileArt = Element("menu__event-tile-art");
+            eventTileArt.pickingMode = PickingMode.Ignore;
+            face.Add(eventTileArt);
+            // The bolt of EVENT's tag on a white pill where the boost's AD tag sits: no word, СОБЫТИЕ would not fit.
+            var tag = Element("menu__event-tile-tag");
+            tag.Add(Icon("menu__event-tile-bolt", DrawBolt));
+            button.Add(tag);
+            // HEISSE KARTOFFEL or ГОРЯЧАЯ КАРТОШКА go on two lines under the tile rather than run off the screen.
+            eventTileCaption = eventTile.Query<Label>(className: "menu__tile-caption").ToList().ToArray();
+            foreach (var label in eventTileCaption) {
+                label.AddToClassList("menu__tile-caption--wrap");
+            }
+
+            return eventTile;
         }
 
         private void BuildStage(VisualElement menu)
@@ -499,14 +556,15 @@ namespace ToyCarArena.UI
             modesPopup.AddToClassList("menu__modes-popup");
             var sheet = modesSheet;
 
-            eventCard = ModeCard(EventMode.HotPotato, out var eventFace);
+            eventCard = ModeCard(() => ViewModel.TodayEvent, out eventFace);
             eventFace.AddToClassList("menu__mode-card--event");
-            eventFace.style.backgroundImage = EventBack();
             eventFace.Add(Icon("menu__event-rays", DrawEventRays));
             // The picture under the words: a long name in another language runs over it, not under.
-            // The game's own red monster truck with the mode's bomb riding on it, drawn once from the models
-            // (ModeCardArt) into the picture the style sheet names.
-            eventFace.Add(Element("menu__event-art"));
+            // The game's own car of the mode with its prop riding on it (the red monster truck and the bomb), drawn
+            // once from the models (ModeCardArt) into the picture the style sheet names for the mode's id.
+            eventArt = Element("menu__event-art");
+            eventFace.Add(eventArt);
+            var head = Element("menu__event-head");
             var tag = Element("menu__event-tag");
             tag.Add(Icon("menu__event-bolt", DrawBolt));
             var tagText = StrokeText.Create("", "menu__event-tag-label", out var tagLabels,
@@ -516,23 +574,34 @@ namespace ToyCarArena.UI
             }
 
             tag.Add(tagText);
-            eventFace.Add(tag);
+            head.Add(tag);
+            // A clock and 5H 12M: the event changes at midnight, as DAILY's gift does. No words, as on DAILY's tile:
+            // НОВЫЙ ЧЕРЕЗ ran into SELECTED on the card.
+            var timer = Element("menu__event-timer");
+            timer.Add(Icon("menu__event-clock", DrawClock));
+            eventTimer = Text("menu__event-timer-text");
+            timer.Add(eventTimer);
+            head.Add(timer);
+            eventFace.Add(head);
             var title = StrokeText.Create("", "menu__event-title", out var titleLabels, "menu__event-title-text");
+            eventTitle = titleLabels;
             foreach (var label in titleLabels) {
-                text.Set(label, () => Strings.Get("menu.hot_potato"));
+                text.Set(label, EventName);
             }
 
             title.AddToClassList("menu__event-title-box");
             // One size for all layers, shrunk to the room left of the picture: a long name in another language fits.
             FitText.Fit(title, titleLabels);
             eventFace.Add(title);
-            var eventHint = Text("menu__mode-desc");
+            eventHint = Text("menu__mode-desc");
             eventHint.AddToClassList("menu__mode-desc--event");
-            text.Set(eventHint, () => Strings.Get("menu.hot_potato_hint"));
+            text.Set(eventHint, EventHint);
             eventFace.Add(eventHint);
+            // Every mode has its own rule, some long in another language (CROWN's ran off the card in Russian).
+            FitToHeight(eventHint, eventFace);
             sheet.Add(eventCard);
 
-            quickCard = ModeCard(EventMode.None, out var quickFace);
+            quickCard = ModeCard(() => EventMode.None, out var quickFace);
             var quickName = Text("menu__mode-card-name");
             text.Set(quickName, () => Strings.Get("menu.quick_match"));
             // In a box of fixed width left of the SELECTED tag: a longer name in another language shrinks instead of
@@ -561,7 +630,7 @@ namespace ToyCarArena.UI
         /// A mode's card: the face (filled by the caller) inside a holder that carries the green ring, the shadow and the
         /// SELECTED tag, which the face's clipping would cut. A tap picks the mode.
         /// </summary>
-        private VisualElement ModeCard(EventMode mode, out VisualElement face)
+        private VisualElement ModeCard(System.Func<EventMode> mode, out VisualElement face)
         {
             var holder = Element("menu__mode-holder");
             holder.pickingMode = PickingMode.Position;
@@ -581,7 +650,7 @@ namespace ToyCarArena.UI
 
             selected.Add(selectedText);
             holder.Add(selected);
-            holder.RegisterCallback<ClickEvent>(_ => PickMode(mode, holder));
+            holder.RegisterCallback<ClickEvent>(_ => PickMode(mode(), holder));
             return holder;
         }
 
@@ -633,15 +702,59 @@ namespace ToyCarArena.UI
         // The selected mode on its card and on the MODE plate; the event's card only where the build has events.
         private void ShowMode()
         {
+            ShowEvent();
             var mode = ViewModel.HasEvents ? ViewModel.Mode : EventMode.None;
             eventCard.style.display = ViewModel.HasEvents ? DisplayStyle.Flex : DisplayStyle.None;
-            eventCard.EnableInClassList(ModeSelectedClass, mode == EventMode.HotPotato);
+            eventCard.EnableInClassList(ModeSelectedClass, mode != EventMode.None);
             quickCard.EnableInClassList(ModeSelectedClass, mode == EventMode.None);
             modeName.text = ModeName();
         }
 
         private string ModeName() =>
-            Strings.Get(ViewModel.HasEvents && ViewModel.Mode == EventMode.HotPotato ? "menu.hot_potato" : "menu.quick_match");
+            ViewModel.HasEvents && ViewModel.Mode != EventMode.None ? EventName() : Strings.Get("menu.quick_match");
+
+        // The look of the mode of the day, HOT POTATO's when there is none (its card is hidden then).
+        private ModeLook EventLook => ModeLooks.Of(ViewModel.TodayEvent) ?? HotPotatoLook.Look;
+
+        private string EventName() => Strings.Get(EventLook.NameKey);
+
+        private string EventHint() => Strings.Get(EventLook.HintKey);
+
+        /// <summary>
+        /// Dresses the event card and tile as the mode of the day: its colours, its picture, its name and rule, and the
+        /// time until it changes. Built for one mode at a time, so the shared screens name none.
+        /// </summary>
+        private void ShowEvent()
+        {
+            eventTimer.text = MenuDaily.TimeText(ViewModel.EventTimeLeft);
+            var today = ViewModel.TodayEvent;
+            if (today == shownEvent) {
+                return;
+            }
+
+            shownEvent = today;
+            var look = EventLook;
+            var back = EventBack(look);
+            eventFace.style.backgroundImage = back;
+            eventTileFill.style.backgroundImage = back;
+            if (eventArtClass != null) {
+                eventArt.RemoveFromClassList(eventArtClass);
+                eventTileArt.RemoveFromClassList(eventArtClass);
+            }
+
+            eventArtClass = look.ArtClass;
+            eventArt.AddToClassList(eventArtClass);
+            eventTileArt.AddToClassList(eventArtClass);
+            foreach (var label in eventTitle) {
+                text.Set(label, EventName);
+            }
+
+            foreach (var label in eventTileCaption) {
+                text.Set(label, EventName);
+            }
+
+            text.Set(eventHint, EventHint);
+        }
 
         /// <summary>
         /// The XP boost's offer: ×N XP for the next matches, a pip a match, and WATCH (the rewarded ad) or NO THANKS.
@@ -793,12 +906,38 @@ namespace ToyCarArena.UI
         /// <summary>The daily gift: its calendar, CLAIM and CLAIM ×2 (<see cref="MenuDaily"/>) on the menu's popup card.</summary>
         private void BuildDailyPopup(VisualElement menu)
         {
-            dailyPopup = Popup(menu, () => Strings.Get("daily.title"), out var sheet);
+            dailyPopup = Popup(menu, () => Strings.Get(daily is { IsTasks: true } ? "daily.tasks_title" : "daily.title"),
+                out var sheet);
             dailyPopup.AddToClassList("menu__daily-popup");
             daily = new MenuDaily(sheet, PressDailyDouble, PressDailyClaim, () => {
                 audioService.PlayUiClick();
                 ClosePopups();
-            });
+            }, PressDailyTab);
+        }
+
+        // GIFT or TASKS pressed: a click, the half drawn, the title to match; a gift being celebrated keeps its half.
+        private void PressDailyTab(bool isTasks)
+        {
+            if (IsBusy || !IsDailyOpen || isDailyClaimed || daily.IsTasks == isTasks) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            ShowDailyTab(isTasks);
+        }
+
+        private void ShowDailyTab(bool isTasks)
+        {
+            daily.SetTab(isTasks);
+            daily.Fill(ViewModel.Daily, ViewModel);
+            dailyPopup.EnableInClassList("menu__daily-popup--tasks", daily.IsTasks);
+            foreach (var title in dailyPopup.Query<Label>(className: "menu__sheet-title").ToList()) {
+                title.text = Strings.Get(daily.IsTasks ? "daily.tasks_title" : "daily.title");
+            }
+
+            if (daily.IsTasks) {
+                ViewModel.DailyTasksShown();
+            }
         }
 
         private Button PlayButton(string className, bool hasKey)
@@ -834,7 +973,10 @@ namespace ToyCarArena.UI
             var tile = Element("menu__tile");
             var button = Sticker("menu__tile-button", pressed);
             var face = button.Q<VisualElement>(className: "menu__face");
-            face.Add(Icon("menu__icon", draw));
+            if (draw != null) {
+                face.Add(Icon("menu__icon", draw));
+            }
+
             var isNew = Text("menu__new");
             text.Set(isNew, () => Strings.Get("common.new"));
             button.Add(isNew);
@@ -956,11 +1098,14 @@ namespace ToyCarArena.UI
             garageTile.EnableInClassList("menu__tile--dot", ViewModel.CanShop && !ViewModel.HasNewCar);
             RefreshBoost();
             RefreshDaily();
+            eventTile.style.display = ViewModel.HasEvents ? DisplayStyle.Flex : DisplayStyle.None;
             rightRail.style.display = boostTile.style.display == DisplayStyle.Flex ||
-                dailyTile.style.display == DisplayStyle.Flex ? DisplayStyle.Flex : DisplayStyle.None;
+                dailyTile.style.display == DisplayStyle.Flex || eventTile.style.display == DisplayStyle.Flex
+                    ? DisplayStyle.Flex
+                    : DisplayStyle.None;
             // A gift just taken stays on the card as it was claimed (the hat's day would show coins once the hat is owned).
             if (IsDailyOpen && !isDailyClaimed) {
-                daily.Fill(ViewModel.Daily);
+                daily.Fill(ViewModel.Daily, ViewModel);
             }
 
             var car = ViewModel.Car;
@@ -1012,31 +1157,48 @@ namespace ToyCarArena.UI
             dailyTile.style.display = ViewModel.HasDaily ? DisplayStyle.Flex : DisplayStyle.None;
             var isReady = ViewModel.CanClaimDaily;
             wasDailyReady = isReady;
+            dailyDay = ViewModel.Today;
             dailyTile.EnableInClassList("menu__tile--dot", isReady);
             dailyTile.EnableInClassList("menu__tile--daily-ready", isReady);
             dailyTime.text = isReady ? Strings.Get("daily.ready") : TimeText(ViewModel.DailyTimeLeft);
         }
 
-        private static string TimeText(System.TimeSpan left)
-        {
-            var hours = (int)left.TotalHours;
-            var minutes = Mathf.Max(hours > 0 ? 0 : 1, left.Minutes);
-            return hours > 0 ? Strings.Format("daily.time_hm", hours, minutes) : Strings.Format("daily.time_m", minutes);
-        }
+        private static string TimeText(System.TimeSpan left) => MenuDaily.TimeText(left);
 
         // Once a second: the timer, and the whole menu when midnight brings a new gift.
         private void TickDaily()
         {
             // Hidden or past PLAY, the menu waits: a whole refresh would wake the garage stage's camera.
-            if (Root?.panel == null || !IsShown || ViewModel.IsDecided || !ViewModel.HasDaily) {
+            if (Root?.panel == null || !IsShown || ViewModel.IsDecided) {
                 return;
             }
 
-            if (ViewModel.CanClaimDaily != wasDailyReady) {
+            // The event of the day: its NEW IN counts down, and midnight brings the next mode.
+            if (ViewModel.TodayEvent != shownEvent) {
+                Refresh();
+                return;
+            }
+
+            if (ViewModel.HasEvents && modesPopup.ClassListContains(OpenClass)) {
+                ShowEvent();
+            }
+
+            if (!ViewModel.HasDaily) {
+                return;
+            }
+
+            if (ViewModel.CanClaimDaily != wasDailyReady || ViewModel.Today != dailyDay) {
                 Refresh();
             }
-            else if (!wasDailyReady) {
-                dailyTime.text = TimeText(ViewModel.DailyTimeLeft);
+            else {
+                if (!wasDailyReady) {
+                    dailyTime.text = TimeText(ViewModel.DailyTimeLeft);
+                }
+
+                // The tasks' NEW TASKS IN … counts down with the tile.
+                if (IsDailyOpen && daily.IsTasks && !isDailyClaimed) {
+                    daily.Fill(ViewModel.Daily, ViewModel);
+                }
             }
         }
 
@@ -1383,7 +1545,7 @@ namespace ToyCarArena.UI
             if (IsDailyOpen && evt.keyCode is not KeyCode.Escape) {
                 evt.StopPropagation();
                 if (evt.keyCode is KeyCode.Space or KeyCode.Return or KeyCode.KeypadEnter) {
-                    if (ViewModel.CanClaimDaily) {
+                    if (ViewModel.CanClaimDaily && !daily.IsTasks) {
                         PressDailyClaim();
                     }
                     else {
@@ -1391,8 +1553,11 @@ namespace ToyCarArena.UI
                         ClosePopups();
                     }
                 }
-                else if (evt.keyCode == KeyCode.X) {
+                else if (evt.keyCode == KeyCode.X && !daily.IsTasks) {
                     PressDailyDouble();
+                }
+                else if (evt.keyCode is KeyCode.LeftArrow or KeyCode.RightArrow or KeyCode.Tab) {
+                    PressDailyTab(!daily.IsTasks);
                 }
 
                 return;
@@ -1429,6 +1594,10 @@ namespace ToyCarArena.UI
                     evt.StopPropagation();
                     OpenDaily();
                     break;
+                case EventKey:
+                    evt.StopPropagation();
+                    PlayEvent();
+                    break;
                 case KeyCode.Escape:
                     evt.StopPropagation();
                     ClosePopups();
@@ -1445,6 +1614,19 @@ namespace ToyCarArena.UI
             audioService.PlayUiClick();
             ClosePopups();
             ViewModel.Play();
+        }
+
+        // The HOT POTATO tile: the event becomes the mode in play and starts, as PLAY would.
+        private void PlayEvent()
+        {
+            if (IsBusy || !ViewModel.HasEvents) {
+                return;
+            }
+
+            audioService.PlayUiClick();
+            ClosePopups();
+            Pop(eventTile);
+            ViewModel.PlayEvent();
         }
 
         private void OpenGarage()
@@ -1604,11 +1786,12 @@ namespace ToyCarArena.UI
             ShowDaily();
         }
 
+        // The gift's half while a gift waits, otherwise the day's tasks.
         private void ShowDaily()
         {
             isDailyClaimed = false;
-            daily.Fill(ViewModel.Daily);
             dailyPopup.AddToClassList(OpenClass);
+            ShowDailyTab(!ViewModel.CanClaimDaily);
             ViewModel.DailyShown();
         }
 
@@ -1652,7 +1835,7 @@ namespace ToyCarArena.UI
             Root.Focus();
             if (claim == null) {
                 // No reward: CLAIM ×2 goes, and CLAIM still takes the gift.
-                daily.Fill(ViewModel.Daily);
+                daily.Fill(ViewModel.Daily, ViewModel);
                 daily.Refuse(dailyPopup, lifetime.Token);
                 return;
             }
@@ -1660,8 +1843,9 @@ namespace ToyCarArena.UI
             CelebrateDaily(claim);
         }
 
-        // The gift is taken: the cell turns done, the celebration plays, the coins land in the counter, and the card
-        // closes once it is over (as the garage's window does); the DAILY tile shows the time to the next.
+        // The gift is taken: the cell turns done, the celebration plays, the coins land in the counter, and once it is
+        // over the card turns to the day's tasks (or closes, in a build without them); the DAILY tile shows the time to
+        // the next.
         private void CelebrateDaily(DailyClaim claim)
         {
             isDailyClaimed = true;
@@ -1676,8 +1860,14 @@ namespace ToyCarArena.UI
                 }
 
                 if (IsDailyOpen && isDailyClaimed) {
-                    dailyPopup.RemoveFromClassList(OpenClass);
                     isDailyClaimed = false;
+                    if (ViewModel.HasDailyTasks) {
+                        ShowDailyTab(true);
+                    }
+                    else {
+                        dailyPopup.RemoveFromClassList(OpenClass);
+                    }
+
                     Root.Focus();
                 }
 
@@ -1959,6 +2149,80 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>EVENT's lightning bolt: orange with a navy outline.</summary>
+        // A white clock face with its two hands: the time until the event of the day changes.
+        /// <summary>
+        /// Shrinks wrapped <paramref name="label"/> until it ends inside <paramref name="box"/>, never below
+        /// <see cref="MinHintShare"/> of the style sheet's size, and lets it grow back for a shorter text. The label
+        /// measures only at its present size; wrapped text grows with both its lines and their height, so the size goes
+        /// by the square root of the overflow and settles over a layout or two.
+        /// </summary>
+        private static void FitToHeight(Label label, VisualElement box)
+        {
+            var full = 0f;
+
+            void Fit()
+            {
+                var size = label.resolvedStyle.fontSize;
+                if (full <= 0f) {
+                    full = size;
+                }
+
+                var width = label.contentRect.width;
+                var room = box.contentRect.yMax - label.layout.y;
+                if (full <= 0f || float.IsNaN(width) || width <= 0f || float.IsNaN(room) || room <= 0f ||
+                    string.IsNullOrEmpty(label.text)) {
+                    return;
+                }
+
+                var height = label.MeasureTextSize(label.text, width, VisualElement.MeasureMode.Exactly, 0f,
+                    VisualElement.MeasureMode.Undefined).y;
+                if (height <= 0f) {
+                    return;
+                }
+
+                // Down while it runs over; up only when even its own size would leave some room, so it does not swing.
+                float fit;
+                if (height > room) {
+                    fit = size * Mathf.Sqrt(room / height) * 0.97f;
+                } else if (size < full && height * (full / size) * (full / size) < room * 0.9f) {
+                    fit = full;
+                } else {
+                    return;
+                }
+
+                fit = Mathf.Clamp(fit, full * MinHintShare, full);
+                if (Mathf.Abs(fit - size) >= 0.5f) {
+                    label.style.fontSize = fit;
+                }
+            }
+
+            label.RegisterCallback<GeometryChangedEvent>(_ => Fit());
+            box.RegisterCallback<GeometryChangedEvent>(_ => Fit());
+        }
+
+        private static void DrawClock(MeshGenerationContext context)
+        {
+            var r = context.visualElement.contentRect;
+            if (float.IsNaN(r.width) || r.width <= 0f) {
+                return;
+            }
+
+            var p = context.painter2D;
+            var middle = r.center;
+            var radius = Mathf.Min(r.width, r.height) * 0.42f;
+            p.strokeColor = Color.white;
+            p.lineWidth = r.width * 0.12f;
+            p.lineCap = LineCap.Round;
+            p.BeginPath();
+            p.Arc(middle, radius, 0f, 360f);
+            p.Stroke();
+            p.BeginPath();
+            p.MoveTo(middle + new Vector2(0f, -radius * 0.62f));
+            p.LineTo(middle);
+            p.LineTo(middle + new Vector2(radius * 0.48f, 0f));
+            p.Stroke();
+        }
+
         private static void DrawBolt(MeshGenerationContext context)
         {
             var r = context.visualElement.contentRect;
@@ -2001,29 +2265,30 @@ namespace ToyCarArena.UI
             }
         }
 
-        // The event card's orange, light at the top to deep at the bottom: USS has no gradients, so a strip is drawn
-        // once and stretched over the card.
-        private static Texture2D eventBack;
+        // An event card's colours, light at the top to deep at the bottom: USS has no gradients, so a strip is drawn
+        // once a mode and stretched over the card and the tile.
+        private static readonly Dictionary<SpecialRound, Texture2D> eventBacks = new();
 
-        private static Background EventBack()
+        private static Background EventBack(ModeLook look)
         {
-            if (eventBack == null) {
+            if (!eventBacks.TryGetValue(look.Kind, out var back) || back == null) {
                 const int Size = 64;
-                eventBack = new Texture2D(1, Size, TextureFormat.RGBA32, false) {
-                    name = "Event Card",
+                back = new Texture2D(1, Size, TextureFormat.RGBA32, false) {
+                    name = "Event Card " + look.Id,
                     wrapMode = TextureWrapMode.Clamp,
                     filterMode = FilterMode.Bilinear,
                     hideFlags = HideFlags.DontSave,
                 };
                 for (var y = 0; y < Size; y++) {
                     // The texture's first row is its bottom.
-                    eventBack.SetPixel(0, y, Color.Lerp(EventDeep, EventLight, y / (Size - 1f)));
+                    back.SetPixel(0, y, Color.Lerp(look.Deep, look.Light, y / (Size - 1f)));
                 }
 
-                eventBack.Apply(false, true);
+                back.Apply(false, true);
+                eventBacks[look.Kind] = back;
             }
 
-            return Background.FromTexture2D(eventBack);
+            return Background.FromTexture2D(back);
         }
 
         internal static void DrawLock(MeshGenerationContext context)

@@ -16,8 +16,8 @@ namespace ToyCarArena.Gameplay
         Mega,
 
         /// <summary>
-        /// The HOT POTATO mode of the menu (no longer in the rotation): a bomb sits on one car and passes on a bump; when
-        /// its fuse runs out its holder is out of the round. The floor is fenced, so nobody falls.
+        /// The HOT POTATO mode of the menu, and a round of the rotation too: a bomb sits on one car and passes on a bump;
+        /// when its fuse runs out its holder is out of the round. The floor is fenced, so nobody falls.
         /// </summary>
         HotPotato,
 
@@ -29,6 +29,27 @@ namespace ToyCarArena.Gameplay
 
         /// <summary>Gravity is weak: hits throw cars high and far.</summary>
         LowGravity,
+
+        // The event modes after hot potato (EventMode, one to one): only as a mode of the menu, the mode of the day
+        // or the rotation's mode slot, never in the order of special rounds by themselves.
+
+        /// <summary>CROWN: the car that holds the crown longest wins; a bump steals it.</summary>
+        Crown,
+
+        /// <summary>GOLD RUSH: the most coins wins; a bump shakes a rival's coins out.</summary>
+        GoldRush,
+
+        /// <summary>ITEM FRENZY: boxes everywhere; the last car standing wins.</summary>
+        ItemFrenzy,
+
+        /// <summary>OVERHEAT: every hit heats a car up; the hotter it is, the farther it flies.</summary>
+        Overheat,
+
+        /// <summary>TEAM PUSH: blue against red; the team that pushes the other off wins.</summary>
+        TeamPush,
+
+        /// <summary>FOOTBALL: two teams push a ball into each other's goal.</summary>
+        Football,
     }
 
     /// <summary>
@@ -62,11 +83,13 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private int every = 3;
 
-            // Only low gravity is left in the rotation (after v0.17.4): the hot potato became a mode of its own in the
-            // menu (EventMode), and the user took mega, boss and ice out. Their code stays, reachable by Force.
+            // Low gravity and the hot potato (after v0.17.9): the hot potato became a mode of the menu (EventMode) after
+            // v0.17.4, but on v0.17.9 only 6 of 557 visits found it there (the first visit has no menu), so it is back in
+            // the rotation as well, after low gravity: round 4 stays as v0.17.9 had it, round 7 is the hot potato. The
+            // user took mega, boss and ice out; their code stays, reachable by Force.
             [Tooltip("The special rounds in the order they come, then again from the start")]
             [SerializeField]
-            private SpecialRound[] order = { SpecialRound.LowGravity };
+            private SpecialRound[] order = { SpecialRound.LowGravity, SpecialRound.HotPotato };
 
             [Header("Mega")]
             [Tooltip("How many times its own size every car is in a mega round")]
@@ -156,6 +179,9 @@ namespace ToyCarArena.Gameplay
             /// </summary>
             public void Force(SpecialRound? kind) => forced = kind;
 
+            /// <summary>Whether a test has forced every round's kind (<see cref="Force"/>).</summary>
+            public bool IsForced => forced.HasValue;
+
             /// <summary>The special round of the visit's round <paramref name="round"/> (from 1).</summary>
             public SpecialRound For(int round)
             {
@@ -181,6 +207,11 @@ namespace ToyCarArena.Gameplay
         [Serializable]
         public sealed class HotPotatoSettings
         {
+            [Tooltip("Whether the build plays the mode: the menu, the mode of the day and the rotation offer only modes " +
+                "that are on")]
+            [SerializeField]
+            private bool enabled = true;
+
             [Tooltip("Seconds from the round's start to the first bomb")]
             [Min(0f)]
             [SerializeField]
@@ -273,6 +304,7 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float fenceMargin = 3f;
 
+            public bool Enabled => enabled;
             public float FirstDelay => firstDelay;
             public float Fuse => fuse;
             public float NextDelay => nextDelay;
@@ -291,6 +323,14 @@ namespace ToyCarArena.Gameplay
             public float FenceThickness => fenceThickness;
             public float WallHeight => wallHeight;
             public float FenceMargin => fenceMargin;
+
+            /// <summary>
+            /// What the mode changes in the shared round: nobody falls (a fence, and a car past it is put back), the
+            /// floor stands still without mechanics or boxes, and the edge assist does not hold the player back from the
+            /// fence.
+            /// </summary>
+            public ModeRules Rules => ModeRules.Plain.With(fall: FallRule.PutBack, fence: true, floor: FloorRule.Still,
+                mechanics: false, pickups: PickupRule.None, edgeAssist: false);
         }
     }
 }

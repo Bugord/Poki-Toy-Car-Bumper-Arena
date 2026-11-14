@@ -14,9 +14,14 @@ namespace ToyCarArena.UI
     /// what tomorrow brings, and CLAIM with CLAIM ×2 for a rewarded ad beside it. Upright the calendar is two rows of four
     /// cells, the last two wide; sideways it is one row (<c>menu--wide</c> in ui_menu). Days already taken this week are
     /// pale with a green tick, today's is gold-ringed and lifted. Once claimed it shows the claim and celebrates
-    /// it (<see cref="RewardCelebration"/>), and the menu closes it after; opened again the same day it shows the
-    /// calendar with CONTINUE. The screen it is on (<see cref="MenuView"/>, <see cref="ResultDaily"/>) owns the frame, the
-    /// keys and when it opens and closes.
+    /// it (<see cref="RewardCelebration"/>); the menu then turns to the tasks, the result closes it. Opened again the
+    /// same day the menu shows the tasks with CONTINUE. The screen it is on (<see cref="MenuView"/>,
+    /// <see cref="ResultDaily"/>) owns the frame, the keys and when it opens and closes.
+    /// <para>
+    /// In the menu a GIFT | TASKS switch at the top (as the garage's) turns to the day's tasks: the first win of the
+    /// day, which pays twice, and the three daily tasks (<see cref="DailyTasks"/>) with their progress and reward, under
+    /// them when the next ones come. Over the result the popup is the gift alone, without the switch.
+    /// </para>
     /// </summary>
     internal sealed class MenuDaily
     {
@@ -31,6 +36,20 @@ namespace ToyCarArena.UI
         private static readonly Color Red = new Color32(0xff, 0x4d, 0x4d, 0xff);
 
         private readonly VisualElement sheet;
+        private readonly VisualElement tabs;
+        private readonly Button giftTab;
+        private readonly Button tasksTab;
+        private readonly VisualElement giftDot;
+        private readonly VisualElement giftPage;
+        private readonly VisualElement tasksPage;
+        private readonly VisualElement firstWin;
+        private readonly Label firstWinBadge;
+        private readonly Label firstWinTitle;
+        private readonly Label firstWinHint;
+        private readonly VisualElement taskList;
+        private readonly Label tasksHint;
+        private readonly Label[] giftTabLabels;
+        private readonly Label[] tasksTabLabels;
         private readonly Label streak;
         private readonly VisualElement days;
         private readonly Label hint;
@@ -40,17 +59,54 @@ namespace ToyCarArena.UI
         private readonly Button continueButton;
         private Cell[] cells = Array.Empty<Cell>();
 
-        public MenuDaily(VisualElement sheet, Action pressDouble, Action pressClaim, Action pressContinue)
+        public MenuDaily(VisualElement sheet, Action pressDouble, Action pressClaim, Action pressContinue,
+            Action<bool> pressTab = null)
         {
             this.sheet = sheet;
             sheet.AddToClassList("menu__daily-sheet");
 
+            // GIFT | TASKS: a white pill, the chosen half green, a red dot on GIFT while it waits.
+            tabs = Element("menu__daily-tabs");
+            tabs.Add(Element("menu__drop"));
+            var tabsFace = Element("menu__daily-tabs-face");
+            giftTab = Tab(() => pressTab?.Invoke(false), false, out giftTabLabels);
+            giftDot = Element("menu__daily-tab-dot");
+            giftTab.Add(giftDot);
+            tasksTab = Tab(() => pressTab?.Invoke(true), true, out tasksTabLabels);
+            tabsFace.Add(giftTab);
+            tabsFace.Add(tasksTab);
+            tabs.Add(tabsFace);
+            sheet.Add(tabs);
+
+            giftPage = Element("menu__daily-page");
+            sheet.Add(giftPage);
             streak = Text("menu__daily-streak");
-            sheet.Add(streak);
+            giftPage.Add(streak);
             days = Element("menu__daily-days");
-            sheet.Add(days);
+            giftPage.Add(days);
             hint = Text("menu__daily-hint");
-            sheet.Add(hint);
+            giftPage.Add(hint);
+
+            // The tasks: the day's first win on an orange card, then the three tasks as the missions' rows.
+            tasksPage = Element("menu__daily-page");
+            sheet.Add(tasksPage);
+            firstWin = Element("menu__daily-first");
+            firstWinBadge = Text("menu__daily-first-badge");
+            firstWin.Add(firstWinBadge);
+            var firstWinText = Element("menu__daily-first-text");
+            firstWinTitle = Text("menu__daily-first-title");
+            firstWinText.Add(firstWinTitle);
+            firstWinHint = Text("menu__daily-first-hint");
+            firstWinText.Add(firstWinHint);
+            firstWin.Add(firstWinText);
+            var firstWinTick = Element("menu__daily-tick");
+            firstWinTick.Add(Element("mission__mark"));
+            firstWin.Add(firstWinTick);
+            tasksPage.Add(firstWin);
+            taskList = Element("menu__daily-tasks");
+            tasksPage.Add(taskList);
+            tasksHint = Text("menu__daily-hint");
+            tasksPage.Add(tasksHint);
 
             claimRow = Element("menu__daily-buttons");
             doubleButton = Button("button--purple", "menu__daily-double", pressDouble);
@@ -88,7 +144,7 @@ namespace ToyCarArena.UI
             SpaceKey = KeyCap(Strings.Get("common.space"), "menu__daily-key");
             claimButton.Add(SpaceKey);
             claimRow.Add(claimButton);
-            sheet.Add(claimRow);
+            giftPage.Add(claimRow);
 
             continueButton = Button("button--white", "menu__daily-continue", pressContinue);
             var continueLabel = Text("button__label");
@@ -111,15 +167,46 @@ namespace ToyCarArena.UI
         /// <summary>The popup's card, which the menu scales to the screen.</summary>
         public VisualElement Sheet => sheet;
 
+        /// <summary>Whether the TASKS half shows, rather than the gift's calendar.</summary>
+        public bool IsTasks { get; private set; }
+
+        /// <summary>Turns to the tasks or the gift; <see cref="Fill"/> draws it.</summary>
+        public void SetTab(bool isTasks) => IsTasks = isTasks;
+
         /// <summary>The CLAIM ×2 button, which shakes when its ad came back empty.</summary>
         public VisualElement DoubleButton => doubleButton;
 
         /// <summary>
-        /// Shows the calendar as <paramref name="gift"/> has it now: the days taken, today's, what is to come, and the
-        /// buttons a gift still to claim or a taken one leaves. Also redraws the words in the language shown.
+        /// Shows the half chosen as it is now: the calendar as <paramref name="gift"/> has it (the days taken, today's,
+        /// what is to come, and the buttons a gift still to claim or a taken one leaves), or the day's tasks from
+        /// <paramref name="menu"/>. Without <paramref name="menu"/> (over the result) it is the calendar alone. Also
+        /// redraws the words in the language shown.
         /// </summary>
-        public void Fill(DailyGift gift)
+        public void Fill(DailyGift gift, MenuViewModel menu = null)
         {
+            // A popup with only one half shows it without the switch.
+            var hasTasks = menu is { HasDailyTasks: true };
+            var hasGift = gift.IsEnabled;
+            IsTasks = hasGift ? IsTasks && hasTasks : hasTasks;
+            tabs.style.display = hasGift && hasTasks ? DisplayStyle.Flex : DisplayStyle.None;
+            giftTab.EnableInClassList(TabOnClass, !IsTasks);
+            tasksTab.EnableInClassList(TabOnClass, IsTasks);
+            giftDot.style.display = gift.CanClaim ? DisplayStyle.Flex : DisplayStyle.None;
+            StrokeText.SetText(giftTabLabels, Strings.Get("daily.tab_gift"));
+            if (hasTasks) {
+                StrokeText.SetText(tasksTabLabels,
+                    Strings.Format("daily.tab_tasks", menu.DailyTasksDone, menu.TodaysTasks.Count));
+            }
+
+            giftPage.style.display = IsTasks ? DisplayStyle.None : DisplayStyle.Flex;
+            tasksPage.style.display = IsTasks ? DisplayStyle.Flex : DisplayStyle.None;
+            ContinueLabel.text = Strings.Get("result.continue");
+            if (IsTasks) {
+                FillTasks(menu);
+                continueButton.style.display = DisplayStyle.Flex;
+                return;
+            }
+
             var canClaim = gift.CanClaim;
             var today = gift.Slot;
             streak.text = Strings.Format("daily.streak", gift.Streak);
@@ -169,7 +256,72 @@ namespace ToyCarArena.UI
 
             AdTag.text = Strings.Get("result.ad");
             SpaceKey.Q<Label>().text = Strings.Get("common.space");
-            ContinueLabel.text = Strings.Get("result.continue");
+        }
+
+        // The first win of the day (still to come, or taken today) and the day's three tasks, each a row: the check,
+        // the task, its progress (DONE! once done) and what it pays.
+        private void FillTasks(MenuViewModel model)
+        {
+            firstWin.style.display = model.IsFirstWinOn ? DisplayStyle.Flex : DisplayStyle.None;
+            var isWinTaken = !model.HasFirstWin;
+            firstWin.EnableInClassList("menu__daily-first--done", isWinTaken);
+            firstWinBadge.text = $"×{model.FirstWinMultiplier}";
+            firstWinTitle.text = Strings.Get("daily.first_win");
+            firstWinHint.text = isWinTaken ? Strings.Get("daily.first_win_done")
+                : Strings.Format("daily.first_win_hint", model.FirstWinMultiplier);
+
+            taskList.Clear();
+            foreach (var task in model.TodaysTasks) {
+                // As the missions popup's rows: the task's sign (gold with a tick once done), the task over its XP and
+                // coins, and the count with its bar.
+                var definition = task.Definition;
+                var row = Element("menu__mission-row");
+                row.AddToClassList("menu__daily-task");
+                row.EnableInClassList("menu__daily-task--done", task.IsDone);
+                var icon = MissionLook.IconOf(definition);
+                icon.Set(definition, task.IsDone);
+                row.Add(icon);
+                var body = Element("menu__mission-row-body");
+                var text = Text("menu__mission-row-task");
+                text.text = model.MissionText(definition);
+                body.Add(text);
+                body.Add(MissionLook.Reward(model.DailyTaskXp(definition), model.DailyTaskCoins(definition)));
+                row.Add(body);
+                var progress = MissionLook.ProgressOf();
+                progress.Set(task.IsDone ? task.Target : task.Progress, task.Target);
+                row.Add(progress);
+                taskList.Add(row);
+            }
+
+            // USS has no :last-child, so the last row drops its gap under it by a class.
+            if (taskList.childCount > 0) {
+                taskList[taskList.childCount - 1].AddToClassList("menu__mission-row--last");
+            }
+
+            tasksHint.text = Strings.Format("daily.tasks_next", TimeText(model.DailyTasksTimeLeft));
+        }
+
+        /// <summary>The time to midnight as the DAILY tile shows it: hours and minutes, or minutes under an hour.</summary>
+        internal static string TimeText(TimeSpan left)
+        {
+            var hours = (int)left.TotalHours;
+            var minutes = Mathf.Max(hours > 0 ? 0 : 1, left.Minutes);
+            return hours > 0 ? Strings.Format("daily.time_hm", hours, minutes) : Strings.Format("daily.time_m", minutes);
+        }
+
+        private const string TabOnClass = "menu__daily-tab--on";
+
+        private static Button Tab(Action pressed, bool isSplit, out Label[] labels)
+        {
+            var button = new Button(pressed);
+            button.RemoveFromClassList(UnityEngine.UIElements.Button.ussClassName);
+            button.AddToClassList("menu__daily-tab");
+            // A navy line between the halves (USS has no :first-child).
+            button.EnableInClassList("menu__daily-tab--split", isSplit);
+            button.focusable = false;
+            // As the garage's tabs: the face over its outline and drop (StrokeText).
+            button.Add(StrokeText.Outlined("", "menu__daily-tab-label", out labels));
+            return button;
         }
 
         /// <summary>

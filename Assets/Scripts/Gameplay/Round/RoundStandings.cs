@@ -73,8 +73,19 @@ namespace ToyCarArena.Gameplay.Round
         public readonly int Knockouts;
         public readonly int OutOrder;
 
-        public RoundStanding(int index, int place, int knockouts, int outOrder)
+        /// <summary>
+        /// The points of a timed round (<see cref="MatchScore.PointsOf"/>): the knock-outs in the long match; the
+        /// knock-outs in a round of last car standing, which has no points.
+        /// </summary>
+        public readonly int Points;
+
+        /// <summary>The car's team, from 0 (the player's); -1 without teams.</summary>
+        public readonly int Team;
+
+        public RoundStanding(int index, int place, int knockouts, int outOrder, int? points = null, int team = -1)
         {
+            this.Points = points ?? knockouts;
+            this.Team = team;
             this.Index = index;
             this.Place = place;
             this.Knockouts = knockouts;

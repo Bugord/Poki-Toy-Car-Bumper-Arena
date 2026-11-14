@@ -80,6 +80,9 @@ namespace ToyCarArena.Tests.PlayMode
                 // The daily gift on day 3 (coins, CLAIM ×2 beside CLAIM) and day 7 (the mystery hat).
                 yield return Capture(directory, "daily", size, false, dailyStreak: 2);
                 yield return Capture(directory, "daily7", size, false, dailyStreak: 6);
+                // The day's tasks: under way with the first win still to come, then one done and the first win taken.
+                yield return Capture(directory, "tasks", size, false, tasks: 1);
+                yield return Capture(directory, "tasks-done", size, false, tasks: 2);
             }
 
             Strings.SetLanguage("ru");
@@ -88,13 +91,16 @@ namespace ToyCarArena.Tests.PlayMode
             yield return Capture(directory, "ru-boosted", (1080, 1920, true), false, boost: 3);
             yield return Capture(directory, "ru-daily", (1080, 1920, true), false, dailyStreak: 2);
             yield return Capture(directory, "ru-daily", (1920, 1080, false), false, dailyStreak: 2);
+            yield return Capture(directory, "ru-tasks", (1080, 1920, true), false, tasks: 2);
+            yield return Capture(directory, "ru-tasks", (1920, 1080, false), false, tasks: 2);
             Strings.SetLanguage("en");
             typeof(Strings).GetField("table", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
         }
 
         /// <summary>
-        /// CHOOSE MODE at every size, as it opens on QUICK MATCH and with HOT POTATO picked, and the menu after it with
-        /// the MODE plate on the event; also in Russian. <c>Logs/menu/modes*_&lt;w&gt;x&lt;h&gt;.png</c>.
+        /// CHOOSE MODE at every size, as it opens on QUICK MATCH and with the event of the day (HOT POTATO, as the build
+        /// ships) picked, and the menu after it with the MODE plate on the event; also in Russian.
+        /// <c>Logs/menu/modes*_&lt;w&gt;x&lt;h&gt;.png</c>.
         /// </summary>
         [UnityTest]
         public IEnumerator CaptureTheModes()
@@ -113,9 +119,40 @@ namespace ToyCarArena.Tests.PlayMode
             typeof(Strings).GetField("table", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
         }
 
+        /// <summary>
+        /// The menu and CHOOSE MODE with other modes of the day (stubs, forced as the dev console's event_day does):
+        /// their colours, card pictures, names, rules (GOLD RUSH's the longest) and the clock on the card and the tile, in
+        /// English, Russian and French. <c>Logs/menu/event-&lt;id&gt;*_&lt;w&gt;x&lt;h&gt;.png</c>, <c>ru-event-&lt;id&gt;*</c>
+        /// and <c>fr-event-&lt;id&gt;*</c>.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator CaptureTheEventsOfTheDay()
+        {
+            Strings.Load(new StringTable(AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Localization/strings.csv").text));
+            var directory = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "menu");
+            Directory.CreateDirectory(directory);
+            try {
+                foreach (var mode in new[] { EventMode.Crown, EventMode.GoldRush, EventMode.Football }) {
+                    EventSchedule.Forced = mode;
+                    var id = EventModes.IdOf(mode);
+                    foreach (var language in new[] { "en", "ru", "fr" }) {
+                        Strings.SetLanguage(language);
+                        var prefix = language == "en" ? "" : language + "-";
+                        yield return Capture(directory, $"{prefix}event-{id}", (1080, 1920, true), false, modes: true);
+                        yield return Capture(directory, $"{prefix}event-{id}", (1920, 1080, false), false, modes: true);
+                    }
+                }
+            }
+            finally {
+                EventSchedule.Forced = null;
+                Strings.SetLanguage("en");
+                typeof(Strings).GetField("table", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
+            }
+        }
+
         private static IEnumerator Capture(string directory, string name, (int Width, int Height, bool IsTouch) size,
             bool withPopups, int xp = 540, int leagueSeen = 0, bool withLeagues = false, int boost = 0,
-            int dailyStreak = 0, bool modes = false)
+            int dailyStreak = 0, bool modes = false, int tasks = 0)
         {
             var catalog = AssetDatabase.LoadAssetAtPath<CarCatalog>("Assets/Data/Cars/data_car_catalog.asset");
             var arenas = AssetDatabase.LoadAssetAtPath<ArenaCatalog>("Assets/Data/Arenas/data_arena_catalog.asset");
@@ -150,8 +187,22 @@ namespace ToyCarArena.Tests.PlayMode
             var host = new GameObject("Menu screenshot");
             var document = host.AddComponent<UIDocument>();
             document.panelSettings = panelSettings;
-            var model = new MenuViewModel(new PlayerProgress(storage, tuning, catalog), wallet,
-                missions, catalog, arenas, tuning, null, new MatchTests.RecordingPlatform(), null, daily);
+            var progress = new PlayerProgress(storage, tuning, catalog);
+            var dailyTasks = new DailyTasks(storage, tuning, progress);
+            if (tasks > 0) {
+                // A lost round with two KOs and a box, and for the second case a won one with more: the day's tasks
+                // part-way, one of them done.
+                var now = System.DateTime.Now;
+                dailyTasks.Record(new MissionStats(true, RoundOutcome.Out, 3, 2, 0, false, 1, 1, 0, "sandbox"), now);
+                if (tasks > 1) {
+                    dailyTasks.Record(new MissionStats(true, RoundOutcome.Won, 1, 4, 0, true, 4, 4, 1, "tabletop"),
+                        now);
+                    daily.SetFirstWin(now, true);
+                }
+            }
+
+            var model = new MenuViewModel(progress, wallet, missions, catalog, arenas, tuning, null,
+                new MatchTests.RecordingPlatform(), null, daily, dailyTasks);
             var light = new GameObject("Menu screenshot light").AddComponent<Light>();
             light.type = LightType.Directional;
             light.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
@@ -183,10 +234,10 @@ namespace ToyCarArena.Tests.PlayMode
                     typeof(MenuView).GetMethod("OpenModes", Private)?.Invoke(view, null);
                     yield return Wait(0.3f);
                     Save(target, Path.Combine(directory, $"{name}_{width}x{height}.png"));
-                    model.SelectMode(EventMode.HotPotato);
+                    model.SelectMode(model.TodayEvent);
                     typeof(MenuView).GetMethod("ShowMode", Private)?.Invoke(view, null);
                     yield return Wait(0.3f);
-                    Save(target, Path.Combine(directory, $"{name}-potato_{width}x{height}.png"));
+                    Save(target, Path.Combine(directory, $"{name}-event_{width}x{height}.png"));
                     typeof(MenuView).GetMethod("ClosePopups", Private)?.Invoke(view, null);
                     yield return Wait(0.3f);
                     Save(target, Path.Combine(directory, $"{name}-menu_{width}x{height}.png"));
@@ -212,6 +263,14 @@ namespace ToyCarArena.Tests.PlayMode
                     Save(target, Path.Combine(directory, $"{name}-claimed_{width}x{height}.png"));
                     yield return Wait(1.2f);
                     Save(target, Path.Combine(directory, $"{name}-after_{width}x{height}.png"));
+                    typeof(MenuView).GetMethod("ClosePopups", Private)?.Invoke(view, null);
+                }
+
+                if (tasks > 0) {
+                    // The gift is taken today: DAILY opens on the tasks.
+                    typeof(MenuView).GetMethod("OpenDaily", Private)?.Invoke(view, null);
+                    yield return Wait(0.4f);
+                    Save(target, Path.Combine(directory, $"{name}-popup_{width}x{height}.png"));
                     typeof(MenuView).GetMethod("ClosePopups", Private)?.Invoke(view, null);
                 }
 

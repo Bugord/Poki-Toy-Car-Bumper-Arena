@@ -25,6 +25,15 @@ namespace ToyCarArena.Gameplay.Pickups
         /// <summary>Whether it left the floor because a car broke it, not because it faded.</summary>
         public bool WasTaken { get; internal set; }
 
+        /// <summary>
+        /// The only car that may break it, the bots leave it lying (the item lesson's box, for the player); null for
+        /// anyone.
+        /// </summary>
+        public Cars.Car Owner { get; internal set; }
+
+        /// <summary>Whether <paramref name="car"/> may break it.</summary>
+        public bool IsFor(Cars.Car car) => Owner == null || Owner == car;
+
         /// <summary>Seconds since it appeared.</summary>
         public float Age { get; internal set; }
 

@@ -493,6 +493,54 @@
 /* The pill hangs under the tile: the caption keeps clear of it. */
 .menu__tile--boost-on .menu__tile-caption { margin-top: 26px; }
 
+/* HOT POTATO under the boost: the event card's orange (a texture from code) with its rays, the truck with the bomb
+   standing on the face's bottom edge and its bomb over the top, and the bolt of EVENT on a white pill in the corner. */
+.menu__tile--event .menu__fill { overflow: hidden; -unity-background-scale-mode: stretch-to-fill; }
+.menu__tile--event .menu__sticker:hover > .menu__face > .menu__fill { -unity-background-image-tint-color: #fff2e0; }
+
+.menu__event-tile-rays {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.menu__event-tile-art {
+    position: absolute;
+    left: 6px;
+    bottom: -6px;
+    width: 122px;
+    height: 172px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.menu__event-tile-tag {
+    position: absolute;
+    top: -24px;
+    right: -30px;
+    width: 76px;
+    height: 56px;
+    align-items: center;
+    justify-content: center;
+    border-width: 6px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+}
+
+.menu__event-tile-bolt {
+    width: 40px;
+    height: 40px;
+}
+
+/* A long name goes on two lines under the tile: the rail stays about as wide as XP BOOST makes it. */
+.menu__tile-caption--wrap {
+    max-width: 240px;
+    white-space: normal;
+    -unity-text-align: upper-center;
+}
+
 /* The offer's popup: a blue tilted title, the offer on a pale blue panel ringed in blue, WATCH and NO THANKS. */
 .menu__boost-popup .menu__sheet { width: 860px; align-items: center; }
 .menu__boost-popup .menu__sheet-head { align-self: stretch; }
@@ -1157,7 +1205,6 @@
     bottom: -48px;
     width: 312px;
     height: 440px;
-    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_hot_potato.png?fileID=2800000&guid=64c7f85dcef645e409866a1a16d2c310&type=3#sprite_mode_hot_potato");
     -unity-background-scale-mode: scale-to-fit;
 }
 
@@ -2233,3 +2280,212 @@
 }
 
 .menu__daily-continue-label { font-size: 52px; color: var(--navy); }
+
+/* -- The daily popup's GIFT | TASKS switch and its tasks ------------------------------------------------------------ */
+
+/* A white pill under the title, the chosen half green, as the garage's switch. */
+.menu__daily-tabs {
+    align-self: center;
+    width: 640px;
+    height: 104px;
+    margin: 0 0 30px 0;
+    flex-shrink: 0;
+}
+
+.menu__daily-tabs > .menu__drop { top: 10px; bottom: -10px; border-radius: 999px; }
+
+.menu__daily-tabs-face {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    flex-direction: row;
+    border-width: 7px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--white);
+    overflow: hidden;
+}
+
+.menu__daily-tab {
+    flex-grow: 1;
+    flex-basis: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    border-width: 0;
+    border-radius: 0;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: none;
+}
+
+.menu__daily-tab--split {
+    border-left-width: 6px;
+    border-color: var(--navy);
+}
+
+.menu__daily-tab:hover { background-color: var(--soft); }
+
+.menu__daily-tab--on,
+.menu__daily-tab--on:hover { background-color: var(--green); }
+
+.menu__daily-tab-label-text {
+    margin: 0;
+    padding: 0;
+    font-size: 40px;
+    color: var(--navy);
+    -unity-text-outline-width: 0;
+}
+
+/* The chosen tab: white on green, the outline and its drop on the layer under the face (as the garage's tabs). */
+.menu__daily-tab--on .menu__daily-tab-label-text {
+    color: var(--white);
+    -unity-text-outline-width: 8px;
+    -unity-text-outline-color: var(--navy);
+}
+
+.menu__daily-tab--on .menu__daily-tab-label-text.stroke__drop { translate: 0 5px; display: flex; }
+
+.menu__daily-tab--on .menu__daily-tab-label-text.stroke__face { -unity-text-outline-width: 0; }
+
+.menu__daily-tab-dot {
+    position: absolute;
+    top: 12px;
+    right: 22px;
+    width: 28px;
+    height: 28px;
+    border-width: 5px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--red);
+}
+
+/* Sideways the tasks keep a readable width: the calendar's card is wider than three rows need. */
+.menu--wide .menu__daily-popup--tasks .menu__sheet { width: 1240px; }
+
+/* The first win of the day: an orange card with a big ×2, pale with a green tick once taken today. */
+.menu__daily-first {
+    flex-direction: row;
+    align-items: center;
+    min-height: 150px;
+    margin: 0 0 26px 0;
+    padding: 16px 30px;
+    border-width: 7px;
+    border-bottom-width: 13px;
+    border-color: var(--navy);
+    border-radius: 40px;
+    background-color: #ffe8c2;
+}
+
+.menu__daily-first-badge {
+    flex-shrink: 0;
+    width: 110px;
+    height: 110px;
+    margin: 0 26px 0 0;
+    padding: 0 0 6px 0;
+    border-width: 7px;
+    border-color: var(--navy);
+    border-radius: 999px;
+    background-color: var(--orange);
+    font-size: 52px;
+    color: var(--white);
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 7px;
+    -unity-text-outline-color: var(--navy);
+    rotate: -6deg;
+}
+
+.menu__daily-first-text { flex-grow: 1; flex-shrink: 1; min-width: 0; }
+
+.menu__daily-first-title {
+    margin: 0;
+    padding: 0;
+    font-size: 44px;
+    color: var(--navy);
+    white-space: normal;
+}
+
+.menu__daily-first-hint {
+    margin: 2px 0 0 0;
+    padding: 0;
+    font-size: 32px;
+    color: #c4610a;
+    white-space: normal;
+}
+
+.menu__daily-first--done { background-color: #e3e8f1; }
+.menu__daily-first--done .menu__daily-first-badge { background-color: var(--shade); }
+.menu__daily-first--done .menu__daily-first-hint { color: var(--muted); }
+.menu__daily-first--done .menu__daily-tick { display: flex; }
+.menu__daily-first .menu__daily-tick { width: 64px; height: 64px; top: -24px; right: -20px; }
+
+/* The three tasks, as the missions popup's rows; a done one on pale gold. */
+.menu__daily-tasks { margin: 0; }
+
+.menu__daily-task--done { background-color: #fff4c7; }
+
+.menu__daily-page { flex-shrink: 0; }
+
+/* Each event mode's card picture (ModeLook.ArtClass), drawn by ModeCardArt: on the CHOOSE MODE card and the tile. */
+.mode-art--hot-potato {
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_hot_potato.png?fileID=2800000&guid=64c7f85dcef645e409866a1a16d2c310&type=3#sprite_mode_hot_potato");
+}
+
+.mode-art--crown {
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_crown.png?fileID=2800000&guid=d4d69de286714ac18c70cdcffdcde961&type=3#sprite_mode_crown");
+}
+
+.mode-art--gold-rush {
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_gold_rush.png?fileID=2800000&guid=69445c77e56d46f5b38223e2d40694a1&type=3#sprite_mode_gold_rush");
+}
+
+.mode-art--item-frenzy {
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_item_frenzy.png?fileID=2800000&guid=1efde7ca5be24dbc835b53632a3f5151&type=3#sprite_mode_item_frenzy");
+}
+
+.mode-art--overheat {
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_overheat.png?fileID=2800000&guid=7609e763b745428593c465f07df205c0&type=3#sprite_mode_overheat");
+}
+
+.mode-art--team-push {
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_team_push.png?fileID=2800000&guid=c78475f68bac4828a1e9149afff0709e&type=3#sprite_mode_team_push");
+}
+
+.mode-art--football {
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_football.png?fileID=2800000&guid=812c20b90dd14020b4f4f71fb5c27f03&type=3#sprite_mode_football");
+}
+
+/* The event card's head: its EVENT tag and, beside it, a clock and the time until the mode of the day changes. */
+.menu__event-head {
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: center;
+    align-self: flex-start;
+}
+
+.menu__event-timer {
+    flex-direction: row;
+    align-items: center;
+    height: 48px;
+    margin-left: 14px;
+    padding: 0 20px 0 12px;
+    border-radius: 24px;
+    background-color: var(--navy);
+}
+
+.menu__event-clock {
+    width: 30px;
+    height: 30px;
+    margin-right: 8px;
+}
+
+.menu__event-timer-text {
+    margin: 0;
+    padding: 0;
+    font-size: 28px;
+    color: var(--white);
+    white-space: nowrap;
+}

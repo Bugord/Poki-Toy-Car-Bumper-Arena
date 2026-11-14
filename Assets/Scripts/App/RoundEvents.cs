@@ -2,6 +2,7 @@ using Bugord.App.Platform;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
+using ToyCarArena.Rendering;
 using UnityEngine;
 
 namespace ToyCarArena.App
@@ -95,6 +96,17 @@ namespace ToyCarArena.App
     /// <item>after v0.15.0: <c>special / mega, hot-potato, boss, ice, low-gravity / start</c> at GO! of a special round,
     /// then <c>complete</c> or <c>fail</c>, <c>special / id-won, out, survived / outcome</c> and in a boss round
     /// <c>special / boss-taken, boss-missed / boss</c></item>
+    /// <item>with the event modes: <c>special / &lt;id&gt;-items-none|few|some|many / items</c> (items the player used: 0,
+    /// 1–3, 4–9, 10 and more) for an event mode's round with boxes,</item>
+    /// <item>with the event modes: <c>special / &lt;id&gt;-place-N / place</c> for every event mode, and a timed mode
+    /// fails on a place that is a loss; a timed mode sends <c>round / N / complete</c>, colour, cars, boosts and the
+    /// first round's controls, but not the outcome, place, knock-outs, time, round time, revenge or out causes
+    /// (<see cref="MeasureTimedEnd"/>)</item>
+    /// <item>after v0.17.9, once a visit (<see cref="ScreenFrameRate"/>): <c>fps / screen-touch, mouse-N / screen</c>,
+    /// the frames per second of each screen (round, result, curtain, menu, garage, ad), and <c>fps / visit-touch,
+    /// mouse-N / visit</c>, the median of the visit's first minute of seconds as Poki's Player Fit Test counts it; N is
+    /// rounded to 5, 0 to 65 or 70plus. And <c>ad / commercial-none, short, mid, long / length</c> after each commercial
+    /// break: back under 2 seconds (no ad shown), under 10, under 25, longer</item>
     /// </list>
     /// Removed after v0.14.1, as they only repeated others or no longer told anything: <c>result / pushed, fell /
     /// out-cause</c> (the same as <c>round-out-cause</c> without the round), <c>result / boosts-0, 1-2, 3plus /
@@ -139,6 +151,7 @@ namespace ToyCarArena.App
         public const float SlowLobbySeconds = 4f;
 
         private const string AdCategory = "ad";
+        private const string FpsCategory = "fps";
         private const string DoubleReward = "double";
         private const string XpBoost = "boost";
         private const string DailyCategory = "daily";
@@ -206,6 +219,13 @@ namespace ToyCarArena.App
             platform.MeasureInteract(MenuCategory, what);
 
         /// <summary>
+        /// Something the main menu shows, for a press of the same name to count: <c>menu / event-hot-potato / visible</c>
+        /// (after v0.17.9, the HOT POTATO tile; its press is <see cref="MeasureMenuPressed"/> with the same name).
+        /// </summary>
+        public static void MeasureMenuVisible(this IGamePlatform platform, string what) =>
+            platform.MeasureVisible(MenuCategory, what);
+
+        /// <summary>
         /// The menu greeted a new league with its popup: <c>menu / league-bronze, silver, gold, legend / visible</c>.
         /// The leagues list opening is <c>menu / leagues / interact</c> (<see cref="MeasureMenuPressed"/>).
         /// </summary>
@@ -232,6 +252,61 @@ namespace ToyCarArena.App
         /// <summary>A commercial break is asked for under the curtain after NEXT MATCH (Poki may still show none).</summary>
         public static void MeasureCommercialBreak(this IGamePlatform platform) =>
             platform.MeasureVisible(AdCategory, "commercial");
+
+        /// <summary>
+        /// How long a commercial break held the game, in real seconds: <c>ad / commercial-none, short, mid, long /
+        /// length</c>, none for one back too soon to have played (as a rewarded one's unavailable), then under 10, under
+        /// 25 and longer. Sent after the break, so nothing goes out while it plays.
+        /// </summary>
+        public static void MeasureCommercialLength(this IGamePlatform platform, float seconds) =>
+            platform.Measure(AdCategory, seconds < 2f ? "commercial-none" : seconds < 10f ? "commercial-short"
+                : seconds < 25f ? "commercial-mid" : "commercial-long", "length");
+
+        /// <summary>
+        /// A screen's frames per second over its sample (<see cref="ScreenFrameRate"/>): <c>fps / round-touch-55 /
+        /// screen</c>, one number.
+        /// </summary>
+        public static void MeasureScreenFps(this IGamePlatform platform, ShownScreen screen, bool isTouch, float fps) =>
+            platform.Measure(FpsCategory, $"{ScreenName(screen)}-{Device(isTouch)}-{FpsBucket(fps)}", "screen");
+
+        /// <summary>
+        /// The median of the frames counted in each of the visit's first minute of seconds, as Poki's Player Fit Test
+        /// counts its own: <c>fps / visit-mouse-60 / visit</c>.
+        /// </summary>
+        public static void MeasureVisitFps(this IGamePlatform platform, bool isTouch, float fps) =>
+            platform.Measure(FpsCategory, $"visit-{Device(isTouch)}-{FpsBucket(fps)}", "visit");
+
+        /// <summary>
+        /// Frames per second rounded to 5, so 58 to 62 read 60, and 70plus above: a screen refreshed faster than 60
+        /// times a second counts more frames, as Poki's own counter does.
+        /// </summary>
+        public static string FpsBucket(float fps)
+        {
+            var bucket = Mathf.Clamp(Mathf.RoundToInt(fps / 5f) * 5, 0, 70);
+            return bucket >= 70 ? "70plus" : bucket.ToString();
+        }
+
+        private static string Device(bool isTouch) => isTouch ? "touch" : "mouse";
+
+        private static string ScreenName(ShownScreen screen)
+        {
+            switch (screen) {
+                case ShownScreen.Round:
+                    return "round";
+                case ShownScreen.Result:
+                    return "result";
+                case ShownScreen.Curtain:
+                    return "curtain";
+                case ShownScreen.Menu:
+                    return "menu";
+                case ShownScreen.Garage:
+                    return "garage";
+                case ShownScreen.Ad:
+                    return "ad";
+                default:
+                    return "none";
+            }
+        }
 
         /// <summary>The result offers CLAIM ×2, once per result.</summary>
         public static void MeasureDoubleShown(this IGamePlatform platform) =>
@@ -389,14 +464,15 @@ namespace ToyCarArena.App
         /// whether the player knocked the boss off.
         /// </summary>
         public static void MeasureSpecialEnd(this IGamePlatform platform, SpecialRound kind, RoundResult result,
-            bool bossTaken)
+            bool bossTaken, int itemsUsed = -1)
         {
             if (kind == SpecialRound.None) {
                 return;
             }
 
             var id = RoundRules.IdOf(kind);
-            if (result.Outcome == RoundOutcome.Out) {
+            // A timed round never ends with the player out: it fails when its place is a loss.
+            if (result.IsTimed ? result.IsLoss : result.Outcome == RoundOutcome.Out) {
                 platform.MeasureFail(SpecialCategory, id);
             }
             else {
@@ -404,10 +480,30 @@ namespace ToyCarArena.App
             }
 
             platform.Measure(SpecialCategory, $"{id}-{GameEvent.Clean(result.Outcome.ToString())}", "outcome");
+            // An event mode's place by its own id: the round's place event is not sent for a timed mode (it means a
+            // score there, not the order the cars fell in), and one table reads every mode the same way.
+            if (EventModes.IsEvent(kind) && result.CarCount > 1) {
+                platform.Measure(SpecialCategory, $"{id}-place-{result.Place}", "place");
+            }
             if (kind == SpecialRound.Boss) {
                 platform.Measure(SpecialCategory, bossTaken ? "boss-taken" : "boss-missed", "boss");
             }
+
+            // How many items the player used in an event mode's round with boxes: whether they find the item button.
+            if (EventModes.IsEvent(kind) && itemsUsed >= 0) {
+                platform.Measure(SpecialCategory, $"{id}-items-{ItemsBucket(itemsUsed)}", "items");
+            }
+
+            platform.MeasureTeamEnd(kind, result);
         }
+
+        // 0, 1 to 3, 4 to 9, 10 and more: no number in the name, so the event keeps within GameEvent.MaxNumbers.
+        private static string ItemsBucket(int count) => count switch {
+            0 => "none",
+            < 4 => "few",
+            < 10 => "some",
+            _ => "many",
+        };
 
         /// <summary>
         /// The end of the round started as <paramref name="round"/>, and the milestones of its result.
@@ -416,16 +512,21 @@ namespace ToyCarArena.App
         /// The first-round controls events (input, first move, boost input, swipes) go out only for a round that waited
         /// on the start screen, <paramref name="isStartRound"/>: the menu's first round counts down instead, and its
         /// first move would read the countdown as the player's hesitation. Null keeps the old rule, the first round.
-        /// In the HOT POTATO mode (<paramref name="isHotPotato"/>) nobody falls and the player is out only by the blast,
-        /// so the out causes (<c>round-out-cause</c>, <c>fall-cause</c>) are not sent: the mode's own are the
-        /// <c>special / hot-potato…</c> events.
+        /// In a mode where nobody falls for good (<paramref name="hasFalls"/> false: HOT POTATO's fence, where the player
+        /// is out only by the blast) the out causes (<c>round-out-cause</c>, <c>fall-cause</c>) are not sent: the mode's
+        /// own are the <c>special / &lt;id&gt;…</c> events.
         /// </remarks>
         public static void MeasureRoundEnd(this IGamePlatform platform, int round, RoundResult result, float duration,
-            PlayerDriver driver, bool hasBoost, bool? isStartRound = null, bool isHotPotato = false)
+            PlayerDriver driver, bool hasBoost, bool? isStartRound = null, bool hasFalls = true)
         {
             var measuresControls = isStartRound ?? round <= 1;
             if (result.IsMatch) {
                 MeasureMatchEnd(platform, round, result, driver, hasBoost, measuresControls);
+                return;
+            }
+
+            if (result.IsTimed) {
+                MeasureTimedEnd(platform, round, result, driver, hasBoost, measuresControls);
                 return;
             }
 
@@ -452,7 +553,7 @@ namespace ToyCarArena.App
                 var revenge = result.RevengeTaken ? "got" : "missed";
                 platform.Measure(ResultCategory, $"revenge-{revenge}-{tag}", "revenge");
             }
-            if (result.Outcome == RoundOutcome.Out && !isHotPotato) {
+            if (result.Outcome == RoundOutcome.Out && hasFalls) {
                 var cause = result.KnockedOutBy == RoundResult.Nobody ? "fell" : "pushed";
                 platform.Measure(ResultCategory, $"{cause}-{tag}", "round-out-cause");
                 if (result.KnockedOutBy == RoundResult.Nobody) {
@@ -461,6 +562,30 @@ namespace ToyCarArena.App
                 }
             }
 
+            MeasureBoosts(platform, tag, driver, hasBoost);
+            if (measuresControls) {
+                MeasureControls(platform, driver, hasBoost);
+            }
+        }
+
+        /// <summary>
+        /// The end of a timed event mode's round (<see cref="ModeRules.IsTimed"/>), in a build of rounds. It keeps the
+        /// round's funnel, <c>round / N / complete</c> (it always runs its time, as the match does), and the events that
+        /// still mean the same: the colour, the cars in it, the boosts and, in the first, the controls. The outcome,
+        /// place, knock-outs, time, round time, revenge and out causes mean a score or never change there, so they are
+        /// not sent: the mode's own are <c>special / &lt;id&gt;…</c> (<see cref="MeasureSpecialEnd"/>).
+        /// </summary>
+        private static void MeasureTimedEnd(IGamePlatform platform, int round, RoundResult result, PlayerDriver driver,
+            bool hasBoost, bool measuresControls)
+        {
+            platform.MeasureComplete(RoundCategory, RoundBucket(round));
+            var tag = RoundTag(round);
+            // A round in teams paints the player's car in the team's colour: that is not a colour the player chose.
+            if (result.Teams == 0) {
+                platform.Measure(ResultCategory, $"color-{CarPaint.NameOf(result.ColorOf(0))}-{tag}", "color");
+            }
+
+            platform.Measure(ResultCategory, $"cars-{result.CarCount}-{tag}", "cars");
             MeasureBoosts(platform, tag, driver, hasBoost);
             if (measuresControls) {
                 MeasureControls(platform, driver, hasBoost);
@@ -634,6 +759,34 @@ namespace ToyCarArena.App
                 platform.Measure(ResultCategory, $"boosted-{tag}", "xp-boost");
             }
         }
+
+        /// <summary>
+        /// What a decided round did for the day: <c>daily / first-win-rR / win</c> when it was the day's first win and
+        /// paid twice (R the round of the visit, one number), <c>daily / &lt;task-id&gt; / complete</c> for each daily task
+        /// it completed and then <c>daily / tasks-N / done</c>, N the day's tasks done by then (1..3, one number): how many
+        /// players reach one, two and all three tasks a day.
+        /// </summary>
+        public static void MeasureDailyRound(this IGamePlatform platform, int round, bool isFirstWin,
+            DailyTaskRound tasks)
+        {
+            if (isFirstWin) {
+                platform.Measure(DailyCategory, $"first-win-{RoundTag(round)}", "win");
+            }
+
+            if (tasks.Completed.Count == 0) {
+                return;
+            }
+
+            foreach (var task in tasks.Completed) {
+                platform.Measure(DailyCategory, $"task-{task.Id}", "complete");
+            }
+
+            platform.Measure(DailyCategory, $"tasks-{tasks.DoneToday}", "done");
+        }
+
+        /// <summary>The daily popup's TASKS tab shown: <c>daily / tasks / visible</c>.</summary>
+        public static void MeasureDailyTasksShown(this IGamePlatform platform) =>
+            platform.MeasureVisible(DailyCategory, "tasks");
 
         public static void MeasureMissionsShown(this IGamePlatform platform) =>
             platform.Measure(MissionCategory, "shown", "visible");

@@ -14,9 +14,9 @@ namespace ToyCarArena.Tests.PlayMode
 {
     /// <summary>
     /// The special rounds of a visit: when they come, and that each one changes its rule in the real Game scene (the
-    /// ice, the low gravity and its return, the giants, the boss and its reward). Only low gravity is in the rotation;
-    /// the others stay for <see cref="GameTuning.SpecialRoundSettings.Force"/>. The hot potato, now a mode of the menu,
-    /// has <see cref="HotPotatoModeTests"/>.
+    /// ice, the low gravity and its return, the giants, the boss and its reward). Low gravity and the hot potato are in
+    /// the rotation; the others stay for <see cref="GameTuning.SpecialRoundSettings.Force"/>. The hot potato, a mode of
+    /// the menu too, has <see cref="HotPotatoModeTests"/>.
     /// </summary>
     public sealed class SpecialRoundTests : ObjectsBFixture
     {
@@ -28,11 +28,12 @@ namespace ToyCarArena.Tests.PlayMode
                 var specials = tuning.SpecialRounds;
                 Assert.That(specials.For(1), Is.EqualTo(SpecialRound.None));
                 Assert.That(specials.For(3), Is.EqualTo(SpecialRound.None));
-                // Only low gravity is left in the rotation; the hot potato is a mode of the menu.
+                // Low gravity, then the hot potato (a mode of the menu as well), then again.
                 Assert.That(specials.For(4), Is.EqualTo(SpecialRound.LowGravity));
                 Assert.That(specials.For(5), Is.EqualTo(SpecialRound.None));
-                Assert.That(specials.For(7), Is.EqualTo(SpecialRound.LowGravity));
+                Assert.That(specials.For(7), Is.EqualTo(SpecialRound.HotPotato));
                 Assert.That(specials.For(10), Is.EqualTo(SpecialRound.LowGravity));
+                Assert.That(specials.For(13), Is.EqualTo(SpecialRound.HotPotato));
                 specials.Force(SpecialRound.Boss);
                 Assert.That(specials.For(1), Is.EqualTo(SpecialRound.Boss));
                 specials.Force(null);

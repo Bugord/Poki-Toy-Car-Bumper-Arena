@@ -19,6 +19,7 @@ namespace ToyCarArena.Gameplay.Round
     {
         private const string DayKey = "daily_day";
         private const string StreakKey = "daily_streak";
+        private const string WinDayKey = "daily_win_day";
 
         private readonly IKeyValueStorage storage;
         private readonly GameTuning tuning;
@@ -104,6 +105,42 @@ namespace ToyCarArena.Gameplay.Round
             var coins = Settings.CoinsOf(slot) * Math.Max(1, multiplier);
             var gain = wallet.AddBonus(coins);
             return new DailyClaim(streak, slot, gain.Total, null, isReset, gain.Before, gain.After);
+        }
+
+        /// <summary>
+        /// Whether today's first win is still to come: the next round or match the player wins pays
+        /// <see cref="GameTuning.DailySettings.FirstWinMultiplier"/> times its own XP and coins. A clock turned back
+        /// before the last first win waits for that day to pass again.
+        /// </summary>
+        public bool HasFirstWin(DateTime now) => Settings.HasFirstWin &&
+            (!storage.HasKey(WinDayKey) || CalendarDay.Of(now) > storage.GetInt(WinDayKey));
+
+        /// <summary>The multiplier the first win of the day pays, for the result's stamp and the menu.</summary>
+        public int FirstWinMultiplier => Settings.FirstWinMultiplier;
+
+        /// <summary>
+        /// The multiplier a decided round's own reward gets: today's first win, saved as taken before it pays, or 1
+        /// (a loss or a draw keeps the first win for later; a second win the same day gets nothing more).
+        /// </summary>
+        public int TakeFirstWin(DateTime now, RoundResult result)
+        {
+            if (result.Outcome != RoundOutcome.Won || !HasFirstWin(now)) {
+                return 1;
+            }
+
+            storage.SetInt(WinDayKey, CalendarDay.Of(now));
+            return Settings.FirstWinMultiplier;
+        }
+
+        /// <summary>Development commands and tests: forgets today's first win (it comes again) or takes it.</summary>
+        public void SetFirstWin(DateTime now, bool isTaken)
+        {
+            if (isTaken) {
+                storage.SetInt(WinDayKey, CalendarDay.Of(now));
+            }
+            else {
+                storage.DeleteKey(WinDayKey);
+            }
         }
 
         /// <summary>

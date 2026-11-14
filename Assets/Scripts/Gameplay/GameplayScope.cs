@@ -4,6 +4,7 @@ using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Bots;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Input;
+using ToyCarArena.Gameplay.Modes;
 using ToyCarArena.Gameplay.Pickups;
 using ToyCarArena.Gameplay.Round;
 using UnityEngine;
@@ -102,6 +103,8 @@ namespace ToyCarArena.Gameplay
             // HUD, so nothing is drawn over the game.
             if (isStandalone) {
                 builder.Register<IOnScreenControls, NoOnScreenControls>(Lifetime.Singleton);
+                // The app's HUD controls remember the item lesson for good; on its own the scene keeps it for this run.
+                builder.RegisterInstance(new ItemLessonMemory(), typeof(IItemLesson));
             }
 
             // From Boot the audio is the app's, so the music goes on across the rounds' reloads; on its own the scene
@@ -153,14 +156,27 @@ namespace ToyCarArena.Gameplay
             builder.Register<BallLane>(Lifetime.Singleton);
             builder.Register<ArenaHazards>(Lifetime.Singleton);
             builder.RegisterInstance(mechanicArt, typeof(MechanicArt));
+            // One bot's item at the player at a time, for the bots and for a mode that lets their items go.
+            builder.Register<PlayerItemTurn>(Lifetime.Singleton);
             builder.RegisterEntryPoint<BotDriver>();
             builder.RegisterEntryPoint<ArenaCrumble>().AsSelf();
             // The variant playing now: the scene's own in a round, turning with the floor's cycles in a match.
             builder.Register<ArenaVariants>(Lifetime.Singleton);
             // The abilities on the floor of a long match; in a round of last-car-standing it builds nothing.
             builder.RegisterEntryPoint<ArenaPickups>().AsSelf().WithParameter(transform);
+            // A box in front of the player until they have used an item once.
+            builder.RegisterEntryPoint<ItemLesson>().AsSelf();
             // The bomb of a hot potato round; in any other round it builds nothing.
             builder.RegisterEntryPoint<HotPotato>().AsSelf().WithParameter(transform);
+            // The other event modes: each active only in a round of its kind, silent in any other.
+            builder.RegisterEntryPoint<CrownMode>().AsSelf();
+            builder.RegisterEntryPoint<GoldRushMode>().AsSelf();
+            builder.RegisterEntryPoint<ItemFrenzyMode>().AsSelf();
+            builder.RegisterEntryPoint<OverheatMode>().AsSelf();
+            builder.RegisterEntryPoint<TeamPushMode>().AsSelf();
+            builder.RegisterEntryPoint<FootballMode>().AsSelf();
+            // Every mode of the scene and the active one, for the bots and the HUD.
+            builder.Register<RoundModes>(Lifetime.Singleton);
             // The fence of the hot potato mode, round the rim and every hole; in any other round it builds nothing.
             builder.RegisterEntryPoint<ArenaFence>().AsSelf().WithParameter(transform);
             // The objects of the sandbox and tabletop variants: each does nothing unless its variant names it.

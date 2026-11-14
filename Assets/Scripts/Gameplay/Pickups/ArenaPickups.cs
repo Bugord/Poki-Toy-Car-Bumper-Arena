@@ -69,6 +69,9 @@ namespace ToyCarArena.Gameplay.Pickups
         private readonly ArenaSurface surface;
         private readonly Transform parent;
         private readonly bool isEnabled;
+        private readonly float pace;
+        private readonly int maxCount;
+        private readonly float rollTime;
         private readonly List<FloorPickup> live = new();
         private readonly List<(Car car, Action handler)> shieldHandlers = new();
 
@@ -104,11 +107,18 @@ namespace ToyCarArena.Gameplay.Pickups
             this.audioService = audioService;
             this.surface = surface;
             this.parent = parent;
-            // The one place the mode is read: a match always has boxes, a round from the visit's round the tuning says.
-            // A scene without them never builds an object for one.
-            // HOT POTATO has no boxes: the bomb is its only item.
-            this.isEnabled = settings.Enabled && !rules.IsHotPotato && (tuning.IsMatch ||
-                (settings.FirstRound > 0 && progress.Round >= settings.FirstRound));
+            // The one place the mode is read: a match (and a mode that says so) always has boxes, a plain round from the
+            // visit's round the tuning says, and a mode may have none (HOT POTATO: the bomb is its only item). A scene
+            // without them never builds an object for one.
+            this.isEnabled = settings.Enabled && rules.Mode.Pickups switch {
+                PickupRule.Always => true,
+                PickupRule.Usual => settings.FirstRound > 0 && progress.Round >= settings.FirstRound,
+                _ => false,
+            };
+            // A mode may bring boxes faster and more of them at once (ITEM FRENZY).
+            this.pace = Mathf.Max(0.01f, rules.Mode.PickupPace);
+            this.maxCount = rules.Mode.PickupMax > 0 ? rules.Mode.PickupMax : settings.MaxCount;
+            this.rollTime = rules.Mode.PickupRollTime > 0f ? rules.Mode.PickupRollTime : settings.RollTime;
         }
 
         /// <summary>
@@ -170,9 +180,10 @@ namespace ToyCarArena.Gameplay.Pickups
 
         /// <summary>
         /// Puts a box on the floor at <paramref name="position"/> (flat), as the spawner does when it has chosen a spot;
-        /// null when every slot is taken. For the spawner, tests and the dev console.
+        /// null when every slot is taken. For the spawner, tests and the dev console. With <paramref name="owner"/> only that
+        /// car may break it and the bots leave it lying (the item lesson's box).
         /// </summary>
-        public FloorPickup Spawn(Vector3 position)
+        public FloorPickup Spawn(Vector3 position, Car owner = null)
         {
             EnsureBuilt();
             foreach (var slot in slots) {
@@ -184,6 +195,7 @@ namespace ToyCarArena.Gameplay.Pickups
                 slot.Age = 0f;
                 slot.StageTime = 0f;
                 slot.WasTaken = false;
+                slot.Owner = owner;
                 slot.State = FloorPickup.Stage.Live;
                 slot.Phase = (float)random.NextDouble() * Mathf.PI * 2f;
                 slot.Root.position = slot.Position;
@@ -224,6 +236,11 @@ namespace ToyCarArena.Gameplay.Pickups
             }
 
             EnsureBuilt();
+            // A glove that cannot punch yet (its last still out) stays in the slot rather than being spent for nothing.
+            if (car.HeldItem == ItemKind.Glove && !gloves.CanPunch(car)) {
+                return false;
+            }
+
             var kind = car.UseItem();
             switch (kind) {
                 case ItemKind.Mega:
@@ -325,7 +342,7 @@ namespace ToyCarArena.Gameplay.Pickups
             surface.Add(oil);
             balloons = new ItemBalloons(tuning, round, edge, effects, audioService, art, root);
 
-            slots = new FloorPickup[settings.MaxCount];
+            slots = new FloorPickup[maxCount];
             for (var i = 0; i < slots.Length; i++) {
                 var slot = new FloorPickup();
                 slot.Root = new GameObject("Box").transform;
@@ -396,7 +413,7 @@ namespace ToyCarArena.Gameplay.Pickups
         {
             var trailing = ItemRoll.TrailingOf(round.Score, round.IndexOf(car), settings);
             var kind = ItemRoll.Choose(random, settings, trailing);
-            car.GiveItem(kind, settings.RollTime);
+            car.GiveItem(kind, rollTime);
             if (effects != null) {
                 effects.PlayPickup(car.Position);
             }
@@ -414,7 +431,8 @@ namespace ToyCarArena.Gameplay.Pickups
                 var car = cars[i];
                 // A car that is safe after coming back is a ghost, a car in the air takes nothing, and a car that holds
                 // an item (its slot spinning too) leaves the box lying for one that can take it.
-                if (!car.IsTargetable || car.HasItem || !car.Movement.IsGrounded || car.Position.y > TakeHeight) {
+                if (!car.IsTargetable || car.HasItem || !car.Movement.IsGrounded || car.Position.y > TakeHeight
+                    || !pickup.IsFor(car)) {
                     continue;
                 }
 
@@ -459,7 +477,7 @@ namespace ToyCarArena.Gameplay.Pickups
 
             if (TryPickSpot(out var spot) && Spawn(spot) != null) {
                 var jitter = ((float)random.NextDouble() * 2f - 1f) * settings.Jitter;
-                nextSpawn = round.Elapsed + Mathf.Max(0.5f, settings.Interval + jitter);
+                nextSpawn = round.Elapsed + Mathf.Max(0.5f, settings.Interval + jitter) / pace;
             }
             else {
                 nextSpawn = round.Elapsed + RetryDelay;

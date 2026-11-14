@@ -124,7 +124,7 @@ namespace ToyCarArena.UI
         /// <summary>The end of a match on the HUD, or null after a round of last-car-standing.</summary>
         public static HudEndTimer Create(VisualElement root, HudViewModel model, VisualElement timePill,
             VisualElement scoreboard, params VisualElement[] hiddenAtStamp) =>
-            model.IsMatch ? new HudEndTimer(root, model, timePill, scoreboard, hiddenAtStamp) : null;
+            model.IsTimed ? new HudEndTimer(root, model, timePill, scoreboard, hiddenAtStamp) : null;
 
         public void Dispose()
         {

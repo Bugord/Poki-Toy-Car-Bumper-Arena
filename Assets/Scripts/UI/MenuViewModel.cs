@@ -18,7 +18,8 @@ namespace ToyCarArena.UI
     /// its plinth, the missions, the mode and PLAY. The result is set once, by PLAY (in the menu or the garage's NEXT
     /// MATCH); the garage, the settings, the missions and the modes open over the menu and come back to it. XP BOOST
     /// plays a rewarded ad for double XP over the next matches. DAILY holds the daily gift (<see cref="PlayerDaily"/>): the
-    /// first menu of a visit with a gift to claim opens it by itself.
+    /// first menu of a visit with a gift to claim opens it by itself. Its TASKS tab shows the day's three tasks
+    /// (<see cref="DailyTasks"/>) and the day's first win.
     /// </summary>
     public sealed class MenuViewModel : ResultViewModel<bool>
     {
@@ -31,6 +32,8 @@ namespace ToyCarArena.UI
         private readonly IScreenNavigator navigator;
         private readonly IGamePlatform platform;
         private readonly LevelScene levelScene;
+        private readonly PlayerDaily daily;
+        private readonly DailyTasks dailyTasks;
         private readonly SessionProgress session;
         // The mode picked without a session (the screenshots and tests build the menu alone).
         private EventMode mode;
@@ -43,8 +46,10 @@ namespace ToyCarArena.UI
 
         public MenuViewModel(PlayerProgress progress, PlayerWallet wallet, MissionTracker missions, CarCatalog catalog,
             ArenaCatalog arenaCatalog, GameTuning tuning, IScreenNavigator navigator, IGamePlatform platform,
-            LevelScene levelScene, PlayerDaily daily, SessionProgress session = null)
+            LevelScene levelScene, PlayerDaily daily, DailyTasks dailyTasks, SessionProgress session = null)
         {
+            this.daily = daily;
+            this.dailyTasks = dailyTasks;
             this.session = session;
             this.Daily = new DailyGift(daily, tuning, platform);
             this.progress = progress;
@@ -190,8 +195,38 @@ namespace ToyCarArena.UI
             set => Daily.Clock = value;
         }
 
-        /// <summary>Whether the menu has the daily gift at all.</summary>
-        public bool HasDaily => Daily.IsEnabled;
+        // The daily gift's clock, which the tasks and the first win read too.
+        private DateTime Now => Clock();
+
+        /// <summary>The calendar day on the clock: the menu redraws when it changes (new tasks, a new first win).</summary>
+        public int Today => CalendarDay.Of(Now);
+
+        /// <summary>Whether the menu has the DAILY tile at all: the gift, or the tasks and the first win.</summary>
+        public bool HasDaily => daily.IsEnabled || HasDailyTasks;
+
+        /// <summary>Whether the popup has its TASKS tab: the day's tasks or the day's first win.</summary>
+        public bool HasDailyTasks => dailyTasks.IsEnabled || tuning.Daily.HasFirstWin;
+
+        /// <summary>Whether the popup has its GIFT tab, the calendar.</summary>
+        public bool HasDailyGift => daily.IsEnabled;
+
+        /// <summary>Today's three tasks and how far the player got; drawn on the first look of the day.</summary>
+        public IReadOnlyList<DailyTask> TodaysTasks => dailyTasks.Today(Now);
+
+        public int DailyTasksDone => dailyTasks.DoneCount(Now);
+        public int DailyTaskXp(GameTuning.MissionDefinition task) => dailyTasks.XpOf(task);
+        public int DailyTaskCoins(GameTuning.MissionDefinition task) => dailyTasks.CoinsOf(task);
+
+        /// <summary>The time left until the next tasks and the next first win: to midnight on the player's clock.</summary>
+        public TimeSpan DailyTasksTimeLeft => DailyTasks.TimeToNext(Now);
+
+        /// <summary>Whether today's first win, which pays twice, is still to come; false without one in the build.</summary>
+        public bool HasFirstWin => daily.HasFirstWin(Now);
+        public bool IsFirstWinOn => tuning.Daily.HasFirstWin;
+        public int FirstWinMultiplier => daily.FirstWinMultiplier;
+
+        /// <summary>The TASKS tab shown: <c>daily / tasks / visible</c>.</summary>
+        public void DailyTasksShown() => platform.MeasureDailyTasksShown();
 
         /// <summary>Today's gift waits: DAILY reads READY and its popup offers CLAIM.</summary>
         public bool CanClaimDaily => Daily.CanClaim;
@@ -283,23 +318,54 @@ namespace ToyCarArena.UI
         /// <summary>The menu's own popups opened: <c>menu / missions, mode, leagues, boost / interact</c>.</summary>
         public void MissionsOpened() => platform.MeasureMenuPressed("missions");
         /// <remarks>Not sent in v0.17.1, where MODE was a plate; after it MODE opens the modes again, CUP and SURVIVAL as SOON.</remarks>
-        public void ModesOpened() => platform.MeasureMenuPressed("mode");
         public void LeaguesOpened() => platform.MeasureMenuPressed("leagues");
 
         /// <summary>
-        /// The mode PLAY starts: QUICK MATCH (<see cref="EventMode.None"/>) or HOT POTATO. Kept for the visit by the
-        /// session, so NEXT MATCH and HOME back to the menu keep it.
+        /// The mode PLAY starts: QUICK MATCH (<see cref="EventMode.None"/>) or the event of the day. Kept for the visit by
+        /// the session, so NEXT MATCH and HOME back to the menu keep it; an event picked before midnight reads as the new
+        /// day's event, the one the menu now offers.
         /// </summary>
-        public EventMode Mode => session?.Mode ?? mode;
+        public EventMode Mode
+        {
+            get {
+                var picked = session?.Mode ?? mode;
+                return picked == EventMode.None ? EventMode.None : TodayEvent;
+            }
+        }
 
         /// <summary>
-        /// Whether the menu offers the HOT POTATO event: it is a round of last car standing with one rule changed, so a
-        /// build of matches has none.
+        /// The event of the day on the menu's clock (<see cref="EventSchedule"/>): the card on top of CHOOSE MODE and the
+        /// tile under XP BOOST. None in a build of matches or with every mode off.
         /// </summary>
-        public bool HasEvents => !tuning.IsMatch;
+        public EventMode TodayEvent => EventSchedule.Of(tuning, Today);
+
+        /// <summary>The id of the event of the day, for its strings, art and analytics.</summary>
+        public string TodayEventId => EventModes.IdOf(TodayEvent);
+
+        /// <summary>How long until the event of the day changes: the card's NEW IN, at the player's midnight.</summary>
+        public TimeSpan EventTimeLeft => EventSchedule.LeftToday(Now);
 
         /// <summary>
-        /// Makes <paramref name="next"/> the mode PLAY starts and counts the pick, <c>menu / mode-hot-potato|mode-quick
+        /// Whether the menu offers an event: there is one today, and it is a round of last car standing with its rules
+        /// changed, so a build of matches has none.
+        /// </summary>
+        public bool HasEvents => tuning.HasEvents && TodayEvent != EventMode.None;
+
+        /// <summary>
+        /// The CHOOSE MODE popup opened, <c>menu / mode / interact</c>, and shows its two choices:
+        /// <c>menu / mode-&lt;id&gt;|mode-quick / visible</c>, so their picks' interacts are kept.
+        /// </summary>
+        public void ModesOpened()
+        {
+            platform.MeasureMenuPressed("mode");
+            platform.MeasureMenuVisible(ModePick(EventMode.None));
+            if (HasEvents) {
+                platform.MeasureMenuVisible(ModePick(TodayEvent));
+            }
+        }
+
+        /// <summary>
+        /// Makes <paramref name="next"/> the mode PLAY starts and counts the pick, <c>menu / mode-&lt;id&gt;|mode-quick
         /// / interact</c>, a pick of the mode already in play too: it says the card was understood as a choice.
         /// </summary>
         public void SelectMode(EventMode next)
@@ -313,8 +379,45 @@ namespace ToyCarArena.UI
             }
 
             mode = next;
-            platform.MeasureMenuPressed(next == EventMode.HotPotato ? "mode-hot-potato" : "mode-quick");
+            platform.MeasureMenuPressed(ModePick(next));
         }
+
+        /// <summary>
+        /// <c>menu / event-&lt;id&gt; / visible</c>: the menu shows the tile of the event of the day under XP BOOST. Its
+        /// press is the same name's <c>interact</c> (<see cref="PlayEvent"/>): Poki drops an interact without a visible of
+        /// its name, which is why v0.17.9 has no <c>mode-hot-potato</c> at all.
+        /// </summary>
+        public void EventShown()
+        {
+            if (HasEvents) {
+                platform.MeasureMenuVisible(EventTile);
+            }
+        }
+
+        /// <summary>
+        /// The event tile: makes the event of the day the mode in play for the visit, as its card in CHOOSE MODE does,
+        /// and starts it at once, <c>menu / event-&lt;id&gt; / interact</c> before PLAY's own <c>menu / play</c>.
+        /// </summary>
+        public void PlayEvent()
+        {
+            if (IsDecided || !HasEvents) {
+                return;
+            }
+
+            var today = TodayEvent;
+            if (session != null) {
+                session.Mode = today;
+            }
+
+            mode = today;
+            platform.MeasureMenuPressed(EventTile);
+            Play();
+        }
+
+        private string EventTile => "event-" + TodayEventId;
+
+        private static string ModePick(EventMode pick) =>
+            pick == EventMode.None ? "mode-quick" : "mode-" + EventModes.IdOf(pick);
 
         /// <summary>Whether PLAY was pressed: the menu takes no more input while the lobby comes down over it.</summary>
         public bool IsDecided { get; private set; }
@@ -326,6 +429,11 @@ namespace ToyCarArena.UI
             }
 
             IsDecided = true;
+            // The round plays what the menu shows: an event picked yesterday is today's now.
+            if (session != null) {
+                session.Mode = Mode;
+            }
+
             platform.MeasureMenuPressed("play");
             SetResult(true);
         }

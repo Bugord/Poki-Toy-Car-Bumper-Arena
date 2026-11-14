@@ -84,11 +84,49 @@ namespace ToyCarArena.Gameplay.Round
         public readonly bool RevengeTaken;
 
         /// <summary>
-        /// A long match rather than a last-car-standing round: the place is by knock-outs, <see cref="Outcome"/> is
-        /// <see cref="RoundOutcome.Won"/> for first place and <see cref="RoundOutcome.Survived"/> otherwise, and the
-        /// player is never out at the end, so <see cref="KnockedOutBy"/> is <see cref="Nobody"/>.
+        /// The build's long match (<see cref="GameTuning.IsMatch"/>) rather than a round: the analytics name its events
+        /// by it. A match is also timed (<see cref="IsTimed"/>).
         /// </summary>
         public readonly bool IsMatch;
+
+        /// <summary>
+        /// A timed round decided by its score rather than a last-car-standing round, the long match and a mode that
+        /// scores points alike: the place is by the score, <see cref="Outcome"/> is <see cref="RoundOutcome.Won"/> for
+        /// first place and <see cref="RoundOutcome.Survived"/> otherwise, <see cref="Standings"/> holds the score, and
+        /// the player is not out at the end, so <see cref="KnockedOutBy"/> is <see cref="Nobody"/>.
+        /// </summary>
+        public readonly bool IsTimed;
+
+        /// <summary>The kind of round played (<see cref="RoundRules.Kind"/>): a special round's, an event mode's or none.</summary>
+        public readonly SpecialRound Kind;
+
+        /// <summary>The most knock-outs the reward pays for (<see cref="ModeRules.KnockoutRewardCap"/>); 0 for no cap.</summary>
+        public readonly int KnockoutRewardCap;
+
+        /// <summary>The number of teams the round was played in (<see cref="ModeRules.Teams"/>), 0 for none.</summary>
+        public readonly int Teams;
+
+        /// <summary>
+        /// The player's points in a timed round (<see cref="RoundStanding.Points"/>): its knock-outs in the match, what
+        /// the mode counted in a mode; its knock-outs in a round of last car standing.
+        /// </summary>
+        public int Points
+        {
+            get
+            {
+                if (!IsTimed || Standings == null) {
+                    return Knockouts;
+                }
+
+                foreach (var standing in Standings) {
+                    if (standing.Index == 0) {
+                        return standing.Points;
+                    }
+                }
+
+                return Knockouts;
+            }
+        }
 
         /// <summary>
         /// Times the player fell off in a match, knocked off or not; 0 in a round, which ends at the first.
@@ -113,7 +151,9 @@ namespace ToyCarArena.Gameplay.Round
         public readonly int BonusKnockouts;
 
         /// <summary>The knock-outs the round's XP and coins pay for.</summary>
-        public int RewardKnockouts => Knockouts + BonusKnockouts;
+        public int RewardKnockouts => KnockoutRewardCap > 0
+            ? Math.Min(KnockoutRewardCap, Knockouts + BonusKnockouts)
+            : Knockouts + BonusKnockouts;
 
         public IReadOnlyList<RoundStanding> Standings { get; }
 
@@ -121,16 +161,84 @@ namespace ToyCarArena.Gameplay.Round
         /// The car the result shows on its podium: a match's winner; after a round the player's own car on a win, the
         /// car that knocked the player off on a loss to one, and the player's own car otherwise.
         /// </summary>
-        public int PodiumCar => IsMatch ? Standings.Count > 0 ? Standings[0].Index : Nobody
+        public int PodiumCar => Teams > 0 && IsTimed ? BestOf(WinningTeam)
+            : IsTimed ? Standings.Count > 0 ? Standings[0].Index : Nobody
             : Outcome == RoundOutcome.Out && KnockedOutBy != Nobody ? KnockedOutBy : 0;
+
+        /// <summary>
+        /// Every team's points at the end of a timed team round, by team (<see cref="RoundTeams"/>); empty otherwise.
+        /// </summary>
+        public IReadOnlyList<int> TeamPoints { get; }
+
+        public int TeamPointsOf(int team) => team >= 0 && team < TeamPoints.Count ? TeamPoints[team] : 0;
+
+        /// <summary>A timed team round that ended level: neither a win nor a loss.</summary>
+        public bool IsDraw
+        {
+            get
+            {
+                if (Teams <= 0 || TeamPoints.Count < 2) {
+                    return false;
+                }
+
+                for (var team = 1; team < TeamPoints.Count; team++) {
+                    if (TeamPoints[team] != TeamPoints[0]) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// The team ahead at the end of a timed team round; the player's on a draw, so the podium shows one of theirs.
+        /// <see cref="RoundTeams.None"/> without teams.
+        /// </summary>
+        public int WinningTeam
+        {
+            get
+            {
+                if (Teams <= 0 || TeamPoints.Count == 0) {
+                    return RoundTeams.None;
+                }
+
+                var best = RoundTeams.Blue;
+                for (var team = 1; team < TeamPoints.Count; team++) {
+                    if (TeamPoints[team] > TeamPoints[best]) {
+                        best = team;
+                    }
+                }
+
+                return best;
+            }
+        }
+
+        /// <summary>The best placed car of a team (its first in <see cref="Standings"/>), <see cref="Nobody"/> for none.</summary>
+        public int BestOf(int team)
+        {
+            foreach (var standing in Standings) {
+                if (standing.Team == team) {
+                    return standing.Index;
+                }
+            }
+
+            return Standings.Count > 0 ? Standings[0].Index : Nobody;
+        }
         public IReadOnlyList<int> Colors { get; }
         public int ColorOf(int index) => Colors[index];
 
         public RoundResult(RoundOutcome outcome, int place, int carCount, float seconds, int knockouts, int knockedOutBy,
             FallCause fallCause, bool hadNemesis, bool revengeTaken, IReadOnlyList<RoundStanding> standings = null,
             IReadOnlyList<int> colors = null, bool isMatch = false, int falls = 0, int knockedOff = 0, bool? isLoss = null,
-            int bonusKnockouts = 0)
+            int bonusKnockouts = 0, bool? isTimed = null, SpecialRound kind = SpecialRound.None, int knockoutRewardCap = 0,
+            int teams = 0, IReadOnlyList<int> teamPoints = null)
         {
+            TeamPoints = teamPoints ?? Array.Empty<int>();
+            IsTimed = isTimed ?? isMatch;
+            Kind = kind;
+            KnockoutRewardCap = knockoutRewardCap;
+            Teams = teams;
             BonusKnockouts = bonusKnockouts;
             Outcome = outcome;
             Place = place;
