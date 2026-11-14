@@ -127,7 +127,7 @@ hud.boost_pop,"Sticker over the player's car when the game fires the boost for t
 hud.pow,"Match: comic sticker where the player's boxing glove hits a car; max ~6 chars",POW!,PAF !,POW!,BUMM!,¡PUM!,PAT!,POW!,БАЦ!
 hud.strike,"Match: comic sticker on each car the player's bowling ball knocks aside; max ~8 chars",STRIKE!,STRIKE !,STRIKE!,STRIKE!,¡STRIKE!,STRIKE!,STRIKE!,СТРАЙК!
 hud.saved,"Match: comic sticker over the player's car when its balloon catches a fall off the edge; max ~10 chars",SAVED!,SAUVÉ !,SALVO!,GERETTET!,¡SALVADO!,KURTULDUN!,SALVO!,СПАСЁН!
-hud.tap_to_use,"Match: first-time hint over the touch item button; max ~14 chars",TAP TO USE,TOUCHE POUR UTILISER,TOCCA PER USARE,TIPPEN ZUM NUTZEN,TOCA PARA USAR,KULLANMAK İÇİN DOKUN,TOQUE PARA USAR,"ЖМИ, ЧТОБЫ ПРИМЕНИТЬ"
+hud.tap_to_use,"Match: first-time hint over the touch item button; max ~14 chars",TAP TO USE,TOUCHE POUR UTILISER,TOCCA PER USARE,TIPPEN ZUM NUTZEN,TOCA PARA USAR,KULLANMAK İÇİN DOKUN,TOQUE PARA USAR,НАЖМИ!
 hud.press_e,"Match: first-time hint over the item button on a desktop: the E key uses the item; keep the letter E",PRESS E,APPUIE SUR E,PREMI E,DRÜCKE E,PULSA E,E TUŞUNA BAS,APERTE E,НАЖМИ E
 hud.right_click,"Match: first-time hint over the item button on a desktop: the right mouse button uses the item (the E key cap shows beside it); max ~12 chars",RIGHT CLICK,CLIC DROIT,CLIC DESTRO,RECHTSKLICK,CLIC DERECHO,SAĞ TIK,BOTÃO DIREITO,ПРАВЫЙ КЛИК
 mission.title,Header over the three missions on the result and the lobby,MISSIONS,MISSIONS,MISSIONI,MISSIONEN,MISIONES,GÖREVLER,MISSÕES,МИССИИ

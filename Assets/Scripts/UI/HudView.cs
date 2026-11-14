@@ -1264,6 +1264,12 @@ namespace ToyCarArena.UI
         /// </summary>
         private void RefreshItemHint(bool isTouch)
         {
+            // A mode that shows the hint its own way (ITEM FRENZY) has it: shown here first, it would come down at this
+            // hint's moment and pop in again under the mode's.
+            if (modeHud is { OwnsItemHint: true }) {
+                return;
+            }
+
             var now = Time.unscaledTime;
             if (!isItemHintShown) {
                 if (!ViewModel.IsItemReady || isItemShownRolling || controls.HasShownItemHint) {
