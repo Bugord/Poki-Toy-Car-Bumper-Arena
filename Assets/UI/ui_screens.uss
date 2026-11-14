@@ -2862,19 +2862,19 @@
     position: absolute;
     left: 0;
     right: 0;
-    top: 112px;
+    top: 92px;
     rotate: -4deg;
 }
 
 .xp-bar__level-up-text {
     margin: 0;
     padding: 0;
-    font-size: 72px;
+    font-size: 64px;
     color: var(--gold);
-    -unity-text-outline-width: 12px;
+    -unity-text-outline-width: 11px;
 }
 
-.xp-bar__level-up-text.stroke__drop { translate: 0 10px; display: flex; }
+.xp-bar__level-up-text.stroke__drop { translate: 0 9px; display: flex; }
 
 /* The second step: a level's reward over the whole result, dimmed, gold rays turning behind a white card. */
 .level-reward {

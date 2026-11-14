@@ -52,9 +52,6 @@ namespace ToyCarArena.UI
         private const float ContentAspect = 1.3f;
         // Over the pill the winner's crown (ui_screens: .podium__crown, 60 px over it); under its tag, the roof.
         private const float CrownRoom = 64f;
-        // In portrait the crown may reach up past the podium's top into the gap under the subtitle: the subtitle stands
-        // in the middle and the crown over the left column, so they do not meet, and the car gets that height.
-        private const float PortraitCrownRoom = 24f;
         private const float PillRoofGap = 12f;
 
         // The narrow form shows this many leaders, then the player's own row when it is lower.
@@ -298,7 +295,7 @@ namespace ToyCarArena.UI
             }
 
             var hasPill = winner.resolvedStyle.display != DisplayStyle.None;
-            var crownRoom = hasPill && model.IsPodiumWinner ? (isWide ? CrownRoom : PortraitCrownRoom) : 0f;
+            var crownRoom = hasPill && model.IsPodiumWinner ? CrownRoom : 0f;
             var pill = hasPill ? PillHeight() : 0f;
             var gap = hasPill ? PillRoofGap : 0f;
             var over = crownRoom + pill + gap;
