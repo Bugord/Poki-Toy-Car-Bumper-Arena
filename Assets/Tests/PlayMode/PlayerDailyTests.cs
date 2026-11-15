@@ -60,7 +60,6 @@ namespace ToyCarArena.Tests.PlayMode
 
             Assert.That(claim.Streak, Is.EqualTo(1));
             Assert.That(claim.Coins, Is.EqualTo(tuning.Daily.CoinsOf(0)));
-            Assert.That(claim.IsReset, Is.False);
             Assert.That(wallet.Coins, Is.EqualTo(claim.Coins));
             Assert.That(daily.CanClaim(Monday.AddMinutes(5)), Is.False);
             Assert.That(daily.Claim(Monday.AddMinutes(5)), Is.Null);
@@ -86,19 +85,36 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [Test]
-        public void AMissedDayStartsTheCalendarAgain()
+        public void AMissedDayKeepsTheCalendar()
         {
             daily.Claim(Monday);
             daily.Claim(Monday.AddDays(1));
 
             var later = Monday.AddDays(3);
-            Assert.That(daily.IsBroken(later), Is.True);
-            Assert.That(daily.Streak(later), Is.EqualTo(1));
+            Assert.That(daily.CanClaim(later), Is.True);
+            Assert.That(daily.Streak(later), Is.EqualTo(3));
             var claim = daily.Claim(later);
 
-            Assert.That(claim.Streak, Is.EqualTo(1));
-            Assert.That(claim.Slot, Is.EqualTo(0));
-            Assert.That(claim.IsReset, Is.True);
+            Assert.That(claim.Streak, Is.EqualTo(3));
+            Assert.That(claim.Slot, Is.EqualTo(2));
+            Assert.That(claim.Coins, Is.EqualTo(tuning.Daily.CoinsOf(2)));
+            Assert.That(daily.NextSlot(later), Is.EqualTo(3));
+        }
+
+        [Test]
+        public void ALongBreakStillLeadsToTheHat()
+        {
+            var days = tuning.Daily.Days;
+            for (var day = 0; day < days - 1; day++) {
+                daily.Claim(Monday.AddDays(day * 30));
+            }
+
+            var hatDay = Monday.AddDays((days - 1) * 30 + 400);
+            Assert.That(daily.Slot(hatDay), Is.EqualTo(days - 1));
+            Assert.That(daily.Claim(hatDay).Hat, Is.EqualTo(tuning.Daily.Hat));
+
+            // After the hat a break still goes round to day 1, not further.
+            Assert.That(daily.Claim(hatDay.AddDays(5)).Slot, Is.EqualTo(0));
         }
 
         [Test]
@@ -216,7 +232,7 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(names, Does.Contain("daily / day-1 / claim"));
             Assert.That(names, Does.Contain($"daily / day-{days} / claim"));
             Assert.That(names, Does.Contain("daily / hat / claim"));
-            Assert.That(names, Does.Contain("daily / reset / claim"));
+            Assert.That(names, Does.Not.Contain("daily / reset / claim"));
             Assert.That(names, Does.Contain("daily / offer / visible"));
             Assert.That(names, Does.Contain("ad / daily / visible"));
             Assert.That(names, Does.Contain("ad / daily / interact"));

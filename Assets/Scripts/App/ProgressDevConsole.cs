@@ -48,14 +48,14 @@ namespace ToyCarArena.App
                     progress.SetBoost(matches);
                     return $"XP boost: {progress.BoostMatchesLeft} matches";
                 }));
-            CommandRegistry.Register("daily", "Set the daily gift's last claim N days ago with S days in a row (1 makes "
-                + "the next day due, more breaks the streak, a negative N forgets every claim); the menu shows it when "
+            CommandRegistry.Register("daily", "Set the daily gift's last claim N days ago with S days claimed (1 or more "
+                + "makes the next day due, 0 claims today, a negative N forgets every claim); the menu shows it when "
                 + "it opens next", (Func<int, int, string>)((daysAgo, streak) => {
                     var now = DateTime.Now;
                     daily.SetLastClaim(now, daysAgo, streak);
                     return daily.CanClaim(now)
-                        ? $"Daily gift due: day {daily.Streak(now)} in a row"
-                        : $"Daily gift claimed: day {daily.Streak(now)} in a row";
+                        ? $"Daily gift due: day {daily.Streak(now)}"
+                        : $"Daily gift claimed: day {daily.Streak(now)}";
                 }));
             CommandRegistry.Register("daily_tasks", "Draw today's daily tasks again (0) or complete them all (1)",
                 (Func<int, string>)(isDone => {

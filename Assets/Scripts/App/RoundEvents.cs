@@ -352,9 +352,9 @@ namespace ToyCarArena.App
         /// <summary>
         /// The daily gift in the main menu: <c>daily / offer / visible</c> each time its popup shows a gift still to
         /// claim (by itself on the menu or from the DAILY tile, which is <c>menu / daily / interact</c>), then on the
-        /// claim <c>daily / day-N / claim</c>, N the calendar day 1..7 (one number), with <c>daily / reset / claim</c>
-        /// beside it when a missed day started the calendar again and <c>daily / hat / claim</c> when the last day gave the
-        /// hat. Closing it without claiming is <c>menu / daily-no / interact</c>. Over a visit's first result (no menu
+        /// claim <c>daily / day-N / claim</c>, N the calendar day 1..7 (one number), with <c>daily / hat / claim</c> when
+        /// the last day gave the hat. Until v0.19.0 a missed day started the calendar again and sent
+        /// <c>daily / reset / claim</c> beside it; after it a missed day keeps the calendar and that event is gone. Closing it without claiming is <c>menu / daily-no / interact</c>. Over a visit's first result (no menu
         /// offered it) the popup also sends <c>daily / offer-result / visible</c>, and closing it there unclaimed is
         /// <c>result / daily-no / interact</c>.
         /// </summary>
@@ -371,10 +371,6 @@ namespace ToyCarArena.App
         {
             const string action = "claim";
             platform.Measure(DailyCategory, $"day-{claim.Slot + 1}", action);
-            if (claim.IsReset) {
-                platform.Measure(DailyCategory, "reset", action);
-            }
-
             if (claim.Hat != null) {
                 platform.Measure(DailyCategory, "hat", action);
             }
