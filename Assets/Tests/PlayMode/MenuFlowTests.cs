@@ -210,9 +210,11 @@ namespace ToyCarArena.Tests.PlayMode
         [UnityTest]
         public IEnumerator TheEventOfTheDayPlaysFromItsTileToTheNextMatch()
         {
-            // OVERHEAT the event of the day: its tile on the menu plays it, the result's NEXT MATCH keeps it.
+            // OVERHEAT the event of the day: its tile opens CHOOSE MODE on it, PLAY there plays it, and the result's
+            // NEXT MATCH keeps it.
             EventSchedule.Forced = EventMode.Overheat;
             ReturningPlayer();
+            QuietMenu("overheat");
             yield return Boot();
             yield return WaitFor(() => IsShown(FindButton("menu__play")), "the menu");
             yield return Wait(0.5f);
@@ -220,6 +222,7 @@ namespace ToyCarArena.Tests.PlayMode
             var tile = roots.GetLayerRoot(UILayer.Screen).Q(className: "menu__tile--event")?.Q<Button>();
             Assert.That(IsShown(tile), Is.True, "the event's tile");
             Press(tile);
+            yield return PlayTheChosenMode();
 
             yield return WaitFor(() => State == typeof(RoundState) && Round is { HasBegun: true }, "the event's round");
             Assert.That(platform.Events, Does.Contain(("menu", "event-overheat", "interact")));
@@ -233,7 +236,7 @@ namespace ToyCarArena.Tests.PlayMode
             yield return Wait(1f);
             Assert.That(platform.Events.Any(e => e.Item1 == "special" && e.Item2 == "overheat" && e.Item3 != "start"),
                 Is.True, "the mode's end is measured");
-            Press(FindButton("play-again-button"));
+            yield return PressNextMatch();
 
             yield return WaitFor(() => State == typeof(RoundState) && Round is { HasBegun: true }, "the next match");
             Assert.That(Rules.Kind, Is.EqualTo(SpecialRound.Overheat), "NEXT MATCH keeps the visit's mode");
@@ -253,6 +256,7 @@ namespace ToyCarArena.Tests.PlayMode
         public IEnumerator FootballFromTheMenuTileKeepsItsPitchThroughNextMatch()
         {
             ReturningPlayer();
+            QuietMenu("football");
             EventSchedule.Forced = EventMode.Football;
             object savedDuration = null;
             System.Reflection.FieldInfo duration = null;
@@ -270,6 +274,7 @@ namespace ToyCarArena.Tests.PlayMode
                 yield return Wait(0.5f);
                 Assert.That(platform.Events, Does.Contain(("menu", "event-football", "visible")));
                 Press(EventTile);
+                yield return PlayTheChosenMode();
                 yield return WaitFor(() => State == typeof(RoundState) && Round is { HasBegun: true }, "the match");
                 Assert.That(platform.Events, Does.Contain(("menu", "event-football", "interact")));
                 Assert.That(Scope.Container.Resolve<ISessionProgress>().Mode, Is.EqualTo(EventMode.Football));
@@ -283,7 +288,7 @@ namespace ToyCarArena.Tests.PlayMode
                 Assert.That(platform.Events.Any(e => e.Item1 == "special" && e.Item2.StartsWith("football-team-")),
                     Is.True, "the team layer's ending is measured");
                 yield return Wait(1f);
-                Press(FindButton("play-again-button"));
+                yield return PressNextMatch();
 
                 yield return WaitFor(() => State == typeof(RoundState) && Round is { HasBegun: true }, "the next match");
                 Assert.That(Scope.Container.Resolve<ISessionProgress>().Round, Is.EqualTo(2));
@@ -329,6 +334,38 @@ namespace ToyCarArena.Tests.PlayMode
             storage.SetInt("visit_day", (int)(DateTime.Now.Date - DateTime.MinValue.Date).TotalDays);
             storage.SetInt("xp_total", 120);
             storage.SetInt(SessionProgress.RoundsKey, 5);
+        }
+
+        // No popup of its own over the menu: today's gift is taken and the mode is no longer new, so the event tile
+        // is free to press.
+        private void QuietMenu(string modeId)
+        {
+            storage.SetInt("daily_day", CalendarDay.Of(DateTime.Now));
+            storage.SetBool("intro_mode-" + modeId, true);
+        }
+
+        // NEXT MATCH on the result: a new car the round opened shows first, and CONTINUE closes it before the match.
+        private static IEnumerator PressNextMatch()
+        {
+            Press(FindButton("play-again-button"));
+            var until = Time.realtimeSinceStartup + 20f;
+            while (State != typeof(RoundState) && Time.realtimeSinceStartup < until) {
+                var skip = FindButton("level-reward__skip");
+                if (IsShown(skip)) {
+                    yield return Wait(0.8f);
+                    Press(skip);
+                }
+
+                yield return null;
+            }
+        }
+
+        // The event tile opens CHOOSE MODE with the event picked; its PLAY starts it.
+        private static IEnumerator PlayTheChosenMode()
+        {
+            yield return WaitFor(() => IsShown(FindButton("menu__modes-play")), "CHOOSE MODE");
+            yield return Wait(0.4f);
+            Press(FindButton("menu__modes-play"));
         }
 
         private IEnumerator Boot()
