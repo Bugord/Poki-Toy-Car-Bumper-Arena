@@ -41,6 +41,10 @@ Shader "ToyCarArena/Outline"
             // line by this much for its own render; unset, it is 0 and counts as 1.
             float _OutlineBoost;
 
+            // The device's share on top of that: RenderScaler thickens the line a little on a desktop, whose game frame is
+            // a small part of a big screen and whose short side has the fewest pixels. Unset, it is 0 and counts as 1.
+            float _OutlineDeviceScale;
+
             struct Attributes
             {
                 float4 positionOS : POSITION;
@@ -66,7 +70,8 @@ Shader "ToyCarArena/Outline"
 
                 // The width is a share of the short screen side, so a phone and a desktop show the same line.
                 float2 screen = _ScreenParams.xy;
-                float pixels = _Width * min(screen.x, screen.y) / 1080.0 * max(_OutlineBoost, 1.0);
+                float pixels = _Width * min(screen.x, screen.y) / 1080.0 * max(_OutlineBoost, 1.0)
+                    * (_OutlineDeviceScale > 0.0 ? _OutlineDeviceScale : 1.0);
                 positionCS.xy += direction * (pixels * 2.0 / screen) * positionCS.w;
 
                 output.positionCS = positionCS;
