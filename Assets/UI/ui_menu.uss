@@ -493,8 +493,8 @@
 /* The pill hangs under the tile: the caption keeps clear of it. */
 .menu__tile--boost-on .menu__tile-caption { margin-top: 26px; }
 
-/* HOT POTATO under the boost: the event card's orange (a texture from code) with its rays, the truck with the bomb
-   standing on the face's bottom edge and its bomb over the top, and the bolt of EVENT on a white pill in the corner. */
+/* The event of the day under the boost: the event card's colour (a texture from code) with its rays, the mode's icon
+   (its object, painted by Codex) in the middle, and the bolt of EVENT on a white pill in the corner. */
 .menu__tile--event .menu__fill { overflow: hidden; -unity-background-scale-mode: stretch-to-fill; }
 .menu__tile--event .menu__sticker:hover > .menu__face > .menu__fill { -unity-background-image-tint-color: #fff2e0; }
 
@@ -508,10 +508,11 @@
 
 .menu__event-tile-art {
     position: absolute;
-    left: 6px;
-    bottom: -6px;
-    width: 122px;
-    height: 172px;
+    left: 50%;
+    top: 50%;
+    width: 112px;
+    height: 112px;
+    translate: -50% -52%;
     -unity-background-scale-mode: scale-to-fit;
 }
 
@@ -2429,7 +2430,7 @@
 
 .menu__daily-page { flex-shrink: 0; }
 
-/* Each event mode's card picture (ModeLook.ArtClass), drawn by ModeCardArt: on the CHOOSE MODE card and the tile. */
+/* Each event mode's card picture (ModeLook.ArtClass), painted by Codex (Logs/codex-modes): on the CHOOSE MODE card and NEW MODE!. */
 .mode-art--hot-potato {
     background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_hot_potato.png?fileID=2800000&guid=64c7f85dcef645e409866a1a16d2c310&type=3#sprite_mode_hot_potato");
 }
@@ -2456,6 +2457,35 @@
 
 .mode-art--football {
     background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_football.png?fileID=2800000&guid=812c20b90dd14020b4f4f71fb5c27f03&type=3#sprite_mode_football");
+}
+
+/* On the menu's event tile the mode shows its icon (only its object) instead of the card picture. */
+.menu__event-tile-art.mode-art--hot-potato {
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_icon_hot_potato.png?fileID=2800000&guid=ecca30bc47ae44118793f1c4104de324&type=3#sprite_mode_icon_hot_potato");
+}
+
+.menu__event-tile-art.mode-art--crown {
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_icon_crown.png?fileID=2800000&guid=5dbce1498db24443b17df69f0e667cfc&type=3#sprite_mode_icon_crown");
+}
+
+.menu__event-tile-art.mode-art--gold-rush {
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_icon_gold_rush.png?fileID=2800000&guid=edbe82e6c77742abb2cf6eb077477f13&type=3#sprite_mode_icon_gold_rush");
+}
+
+.menu__event-tile-art.mode-art--item-frenzy {
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_icon_item_frenzy.png?fileID=2800000&guid=c1caaa1a4672434c9d6ef66573b6983f&type=3#sprite_mode_icon_item_frenzy");
+}
+
+.menu__event-tile-art.mode-art--overheat {
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_icon_overheat.png?fileID=2800000&guid=782f982cb70c4d1f8d90682facd4091c&type=3#sprite_mode_icon_overheat");
+}
+
+.menu__event-tile-art.mode-art--team-push {
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_icon_team_push.png?fileID=2800000&guid=f345a810124640e7a50d6e76e5a33728&type=3#sprite_mode_icon_team_push");
+}
+
+.menu__event-tile-art.mode-art--football {
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_icon_football.png?fileID=2800000&guid=43f7890e5c7c43809d88024454b4c387&type=3#sprite_mode_icon_football");
 }
 
 /* The event card's head: its EVENT tag and, beside it, a clock and the time until the mode of the day changes. */
