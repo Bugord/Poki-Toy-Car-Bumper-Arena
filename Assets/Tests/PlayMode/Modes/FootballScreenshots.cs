@@ -105,9 +105,9 @@ namespace ToyCarArena.Tests.PlayMode
             IsDrivingField.SetValue(botDriver, true);
             yield return null;
             // A goal each before the pictures, so the score reads 1 : 1 and up.
-            yield return Shoot(mode, round.Player, RoundTeams.Red);
+            yield return Shoot(round, mode, round.Player, RoundTeams.Red);
             yield return WaitForPlay(mode);
-            yield return Shoot(mode, round.Cars[1], RoundTeams.Blue);
+            yield return Shoot(round, mode, round.Cars[1], RoundTeams.Blue);
             yield return WaitForPlay(mode);
             yield return Hud(container, round, modes, tuning, (model, camera, scene, overlay, language, width, height) =>
                 Play(round, mode, botDriver, camera, scene, overlay, language, width, height));
@@ -384,13 +384,13 @@ namespace ToyCarArena.Tests.PlayMode
             Shoot(camera, scene, overlay, $"{Prefix(language)}pointer_{width}x{height}.png");
 
             // Blue scores: GOAL! with the player's YOU.
-            yield return Shoot(mode, round.Player, RoundTeams.Red);
+            yield return Shoot(round, mode, round.Player, RoundTeams.Red);
             yield return RealSeconds(GoalMoment);
             Shoot(camera, scene, overlay, $"{Prefix(language)}goal-blue_{width}x{height}.png");
             yield return WaitForPlay(mode);
 
             // Red scores.
-            yield return Shoot(mode, round.Cars[3], RoundTeams.Blue);
+            yield return Shoot(round, mode, round.Cars[3], RoundTeams.Blue);
             yield return RealSeconds(GoalMoment);
             Shoot(camera, scene, overlay, $"{Prefix(language)}goal-red_{width}x{height}.png");
             yield return WaitForPlay(mode);
@@ -403,10 +403,21 @@ namespace ToyCarArena.Tests.PlayMode
             yield return RealSeconds(0.5f);
         }
 
-        private static IEnumerator Shoot(FootballMode mode, Car toucher, int goal)
+        private static IEnumerator Shoot(ArenaRound round, FootballMode mode, Car toucher, int goal)
         {
             var body = mode.Ball.Body;
             var end = FootballPitch.EndOf(goal);
+            // A car the bots' play left in the goal mouth would stop the staged shot: it waits by the side line.
+            var settings = mode.Settings;
+            foreach (var car in round.Cars) {
+                var at = car.Position;
+                if (at.z * end > settings.GoalLine - 5f && Mathf.Abs(at.x) < settings.GoalHalfWidth + 2f) {
+                    var side = at.x < 0f ? -1f : 1f;
+                    car.Movement.Place(new Vector3(side * (settings.GoalHalfWidth + 4f), 0.6f,
+                        end * (settings.GoalLine - 6f - round.IndexOf(car))), car.transform.rotation);
+                }
+            }
+
             mode.Ball.Forget();
             if (toucher != null) {
                 mode.Ball.Touch(toucher);
