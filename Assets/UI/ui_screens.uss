@@ -1186,6 +1186,91 @@
 
 .hud__pass-text.stroke__drop { translate: 0 10px; display: flex; }
 
+/* The tutorial (TutorialHud): what to do now on a white sticker under the bar, the step's number on a gold disc; green
+   with the last words. The arrow over the step's place is painted in code. */
+.hud__tutorial {
+    position: absolute;
+    left: 0;
+    right: 0;
+    align-items: center;
+    scale: 0.4 0.4;
+    opacity: 0;
+    transition-property: scale, opacity;
+    transition-duration: 0.3s, 0.15s;
+    transition-timing-function: ease-out-back, linear;
+}
+
+.hud__tutorial--shown {
+    scale: 1 1;
+    opacity: 1;
+}
+
+.hud__tutorial-sticker {
+    flex-direction: row;
+    align-items: center;
+    max-width: 960px;
+    padding: 10px 40px 12px 14px;
+    border-radius: 60px;
+    border-width: 6px 6px 14px 6px;
+    border-color: var(--navy);
+    background-color: var(--white);
+}
+
+.hud__tutorial--done .hud__tutorial-sticker {
+    background-color: var(--green);
+}
+
+.hud__tutorial-step {
+    width: 84px;
+    height: 84px;
+    margin-right: 22px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 42px;
+    border-width: 5px;
+    border-color: var(--navy);
+    background-color: var(--gold);
+}
+
+.hud__tutorial-step-text {
+    margin: 0;
+    padding: 0;
+    font-size: 54px;
+    -unity-text-align: middle-center;
+}
+
+.hud__tutorial-step-text.stroke__drop { translate: 0 5px; display: flex; }
+
+.hud__tutorial-text {
+    flex-shrink: 1;
+    margin: 0;
+    padding: 0;
+    font-size: 56px;
+    color: var(--navy);
+    -unity-text-outline-width: 0;
+    -unity-text-align: middle-left;
+    white-space: normal;
+}
+
+.hud__tutorial--done .hud__tutorial-text {
+    color: var(--white);
+    -unity-text-outline-width: 6px;
+    -unity-text-outline-color: var(--navy);
+}
+
+.hud__tutorial-arrow {
+    display: none;
+    position: absolute;
+    width: 96px;
+    height: 112px;
+    translate: -50% -100%;
+}
+
+.hud__tutorial-arrow--shown {
+    display: flex;
+}
+
 /* A match: SAFE over the player's car while it is safe after coming back (HudView places it over the car's marker),
    on the dark backdrop of the bots' handles, with a bar that runs down with the safe time. */
 .hud__shield {

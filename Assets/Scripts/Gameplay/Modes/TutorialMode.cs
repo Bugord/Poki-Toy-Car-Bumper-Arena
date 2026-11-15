@@ -53,6 +53,9 @@ namespace ToyCarArena.Gameplay.Modes
         // The bot slows over this many metres before its place.
         private const float SlowDown = 2.5f;
 
+        // Metres of floor the box keeps around it to the edge or a hole.
+        private const float BoxClearance = 2f;
+
         private readonly GameTuning.TutorialSettings settings;
         private readonly ArenaRound round;
         private readonly ArenaPickups pickups;
@@ -215,7 +218,14 @@ namespace ToyCarArena.Gameplay.Modes
             }
 
             inward.Normalize();
+            // On the floor: short of a hole in the middle (candy) if one is nearer than the drive.
             DrivePoint = start + inward * settings.DriveDistance;
+            for (var distance = settings.DriveDistance; distance > 1f; distance -= 0.25f) {
+                DrivePoint = start + inward * distance;
+                if (edge.DistanceToEdge(DrivePoint, settings.DriveReach) >= 0f) {
+                    break;
+                }
+            }
 
             var bots = new List<Car>();
             foreach (var car in round.Cars) {
@@ -239,14 +249,13 @@ namespace ToyCarArena.Gameplay.Modes
         /// </summary>
         private Vector3 PairSpot(IArenaEdge edge, Vector3 inward)
         {
+            // The farthest such point on the line: the middle may be a hole (candy), so the first unsafe one is no end.
             var spot = Vector3.zero;
             for (var distance = 0f; distance < edge.FullExtent; distance += 0.25f) {
                 var point = inward * distance;
-                if (edge.DistanceToEdge(point, settings.PairInset) < 0f) {
-                    break;
+                if (edge.DistanceToEdge(point, settings.PairInset) >= 0f) {
+                    spot = point;
                 }
-
-                spot = point;
             }
 
             return spot;
@@ -308,11 +317,23 @@ namespace ToyCarArena.Gameplay.Modes
             }
         }
 
-        /// <summary>The box with a Shockwave, for the player alone, lying until taken, towards the pair from the middle.</summary>
+        /// <summary>
+        /// The box with a Shockwave, for the player alone, lying until taken, towards the pair from the middle: on the
+        /// first floor out from <c>BoxDistance</c> that is well inside the edge, so a floor with a hole in the middle
+        /// (candy) has it at the hole's rim.
+        /// </summary>
         private void LayBox()
         {
             var towards = Flat(pairSpot);
-            var spot = towards.sqrMagnitude > 0.01f ? towards.normalized * settings.BoxDistance : Vector3.zero;
+            var way = towards.sqrMagnitude > 0.01f ? towards.normalized : Vector3.zero;
+            var spot = way * settings.BoxDistance;
+            for (var distance = settings.BoxDistance; distance < towards.magnitude; distance += 0.25f) {
+                if (round.Edge.DistanceToEdge(way * distance, BoxClearance) >= 0f) {
+                    spot = way * distance;
+                    break;
+                }
+            }
+
             Box = pickups.Spawn(spot, player, ItemKind.Shockwave, true);
         }
 

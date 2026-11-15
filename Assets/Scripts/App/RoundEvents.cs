@@ -1,5 +1,6 @@
 using Bugord.App.Platform;
 using ToyCarArena.Gameplay;
+using ToyCarArena.Gameplay.Modes;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Round;
 using ToyCarArena.Rendering;
@@ -828,6 +829,13 @@ namespace ToyCarArena.App
 
         public static void MeasureHatOfferPressed(this IGamePlatform platform, string topperId) =>
             platform.MeasureInteract("shop", $"hat-offer-{topperId}");
+
+        /// <summary>
+        /// A step of the new player's tutorial began (<c>tutorial / drive|push|box|use / start</c>) or was done
+        /// (<c>complete</c>); the lesson is done with <c>tutorial / use / complete</c>.
+        /// </summary>
+        public static void MeasureTutorialStep(this IGamePlatform platform, TutorialStep step, bool isDone) =>
+            platform.Measure("tutorial", step.ToString().ToLowerInvariant(), isDone ? "complete" : "start");
 
         /// <summary>The result's popup shows the free topper (<c>gift / &lt;id&gt; / visible</c>), and EQUIP on it.</summary>
         public static void MeasureGiftShown(this IGamePlatform platform, string topperId) =>

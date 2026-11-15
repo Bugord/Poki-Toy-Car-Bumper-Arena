@@ -444,7 +444,8 @@ namespace ToyCarArena.UI
             teams = HudTeams.Create(Root, ViewModel);
             endTimer = HudEndTimer.Create(Root, ViewModel, timePill, scoreboard?.Element ?? teams?.Element, respawn,
                 popupLayer);
-            modeHud = ModeLooks.Of(ViewModel.Mode)?.CreateHud(nameLayer, Root, ViewModel);
+            modeHud = ModeLooks.Of(ViewModel.Mode)?.CreateHud(nameLayer, Root, ViewModel)
+                ?? TutorialHud.Create(nameLayer, Root, ViewModel);
             settingsButton = Root.Q<Button>("settings-button");
             settingsButton.RemoveFromClassList(Button.ussClassName);
             // Space is the boost: a focused button would take it as a click and open the settings mid-round.

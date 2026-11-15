@@ -45,6 +45,11 @@ namespace ToyCarArena.Tests.PlayMode
                 && Vector3.Dot(hit.Other.Movement.Velocity, round.Player.Position - hit.Other.Position) > 0f
                 && tutorial.Step != TutorialStep.Push;
 
+            var selfFalls = 0;
+            round.Eliminated += (index, by) => {
+                selfFalls += by == RoundResult.Nobody ? 1 : 0;
+                times.Add($"out {index} by {by} at {tutorial.Step} {round.Elapsed:0.0}s");
+            };
             RoundResult? result = null;
             round.Finished += r => result = r;
             round.Begin();
@@ -63,6 +68,7 @@ namespace ToyCarArena.Tests.PlayMode
                 TutorialStep.Push, TutorialStep.Box, TutorialStep.Use, TutorialStep.Done,
             }));
             Assert.That(hitByBot, Is.False, "the bots never drive into the player");
+            Assert.That(selfFalls, Is.Zero, "every bot off was knocked off (by the player, or by a bot the Shockwave threw): none drives off by itself");
         }
 
         [UnityTest]

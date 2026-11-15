@@ -231,8 +231,9 @@ namespace ToyCarArena.UI
         /// </summary>
         public bool HasRoomToWait => !isAfterPopup && !opensReward && !isWaitingShown;
 
-        /// <summary>The free hat's popup shows on this result: first of the waiting ones, it shows the hats there are.</summary>
-        public bool IsGiftDue => Gift != null && HasRoomToWait;
+        /// <summary>The free hat's popup shows on this result: first of the waiting ones, it shows the hats there are.
+        /// The tutorial's hat does not wait: the lesson's reward shows on its own result, before the cars it opens.</summary>
+        public bool IsGiftDue => Gift != null && (HasRoomToWait || wallet.IsGiftEarned);
 
         /// <summary>A popup is up over this result: the next result of the visit leaves the waiting ones for later.</summary>
         public void PopupShown() => lastResultHadPopup = true;
