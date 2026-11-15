@@ -57,35 +57,17 @@ namespace ToyCarArena.Gameplay.Effects
         private float botHitVolume = 0.6f;
 
         [Header("Hit-stop")]
-        [Tooltip("The player's hits from this closing speed on, in metres per second, freeze the game: every real " +
-            "hit the player lands, not only the heavy ones")]
+        [Tooltip("Hits with the player in them, given or taken, from this closing speed on, in metres per second, " +
+            "freeze the game for a moment: only the strong ones, so it reads as a hit and not as a stutter. A car at " +
+            "top speed into a still one closes at 11")]
         [Min(0f)]
         [SerializeField]
-        private float playerStopStrength = 4f;
+        private float playerStopStrength = 8f;
 
-        [Tooltip("Real seconds the game freezes on the player's hit, from the weakest that freezes to a full one")]
+        [Tooltip("Real seconds the game freezes on such a hit, from the weakest that freezes to a full one: a few " +
+            "frames, longer would feel like the game lagging")]
         [SerializeField]
-        private Vector2 playerStopDuration = new(0.09f, 0.16f);
-
-        [Tooltip("A bot ramming at this closing speed or faster, in metres per second, into a bot or the player can " +
-            "freeze the game too: a run-up hit, a car at top speed into a still one closes at 11")]
-        [Min(0f)]
-        [SerializeField]
-        private float ramStrength = 8f;
-
-        [Tooltip("Share of the bots' run-up hits that freeze the game: now and then, or eight cars would stutter it")]
-        [Range(0f, 1f)]
-        [SerializeField]
-        private float ramStopChance = 0.3f;
-
-        [Tooltip("Real seconds the game freezes on a bot's run-up hit, from the weakest to a full one")]
-        [SerializeField]
-        private Vector2 ramStopDuration = new(0.07f, 0.11f);
-
-        [Tooltip("Real seconds after a bot's run-up freeze before the next freeze can come")]
-        [Min(0f)]
-        [SerializeField]
-        private float ramStopGap = 0.6f;
+        private Vector2 playerStopDuration = new(0.04f, 0.06f);
 
         [Tooltip("How slow the game runs during a hit's freeze, as a share of normal speed")]
         [Range(0f, 1f)]
@@ -100,7 +82,20 @@ namespace ToyCarArena.Gameplay.Effects
         [Tooltip("Shake of a hit that freezes the game, from 0 (none) to 1 (the camera's most), at full strength")]
         [Range(0f, 1f)]
         [SerializeField]
-        private float stopShake = 0.6f;
+        private float stopShake = 0.75f;
+
+        [Tooltip("Shake of any other hit with the player in it, at full strength; a weak one gets a quarter")]
+        [Range(0f, 1f)]
+        [SerializeField]
+        private float playerHitShake = 0.35f;
+
+        [Tooltip("How flat the hit car goes for a moment, as a share of its height: the weakest real hit, a full one")]
+        [SerializeField]
+        private Vector2 hitSquash = new(0.12f, 0.3f);
+
+        [Tooltip("Pitch of the player's hit sound, from the weakest hit to a full one: harder sounds deeper")]
+        [SerializeField]
+        private Vector2 bonkPitch = new(1.15f, 0.85f);
 
         [Header("Player's knock-out")]
         [Tooltip("Real seconds the game runs slow when a car the player pushed goes over, so the player sees it fall")]
@@ -158,6 +153,42 @@ namespace ToyCarArena.Gameplay.Effects
         [SerializeField]
         private float landShake = 0.12f;
 
+        [Header("Wheel smoke")]
+        [Tooltip("Sideways slide, in metres per second, at which smoke starts to come from under the back wheels: a "
+            + "sharp turn at speed, or a car shoved sideways")]
+        [Min(0f)]
+        [SerializeField]
+        private float skidFrom = 3.5f;
+
+        [Tooltip("Sideways slide, in metres per second, at which the smoke is at its thickest")]
+        [Min(0.1f)]
+        [SerializeField]
+        private float skidFull = 8f;
+
+        [Tooltip("Below this speed forward, in metres per second, a car driven hard spins its wheels and smokes: the "
+            + "start at GO!, a car pushing against another")]
+        [Min(0f)]
+        [SerializeField]
+        private float spinSpeed = 3.5f;
+
+        [Tooltip("Least throttle, 0 to 1, that spins the wheels of a slow car")]
+        [Range(0f, 1f)]
+        [SerializeField]
+        private float spinThrottle = 0.6f;
+
+        [Tooltip("Seconds between puffs from a light skid and from a full one")]
+        [SerializeField]
+        private Vector2 smokeInterval = new(0.14f, 0.06f);
+
+        [Tooltip("How far out to each side of the middle, and behind it, the back wheels are, in metres")]
+        [SerializeField]
+        private Vector2 rearWheels = new(0.55f, 0.95f);
+
+        [Tooltip("A car off the floor for longer than this, in seconds, throws up dust as it lands")]
+        [Min(0f)]
+        [SerializeField]
+        private float landingAir = 0.3f;
+
         [Header("Sound")]
         [Tooltip("Volume of a bot's boost, against the player's")]
         [Range(0f, 1f)]
@@ -210,6 +241,8 @@ namespace ToyCarArena.Gameplay.Effects
         private readonly List<Car> cars = new();
         private readonly List<Action<CarHit>> hitHandlers = new();
         private readonly List<Action> boostHandlers = new();
+        private readonly List<float> nextSmoke = new();
+        private readonly List<float> airSince = new();
 
         private ArenaRound round;
         private ArenaCrumble crumble;
@@ -254,6 +287,7 @@ namespace ToyCarArena.Gameplay.Effects
         {
             hitStop.Tick();
             WatchNewCars();
+            TickWheels();
             TickCountdown();
 
             if (pendingJingle != null && Time.unscaledTime >= jingleTime) {
@@ -307,6 +341,65 @@ namespace ToyCarArena.Gameplay.Effects
                 cars.Add(car);
                 hitHandlers.Add(onHit);
                 boostHandlers.Add(onBoosted);
+                nextSmoke.Add(0f);
+                airSince.Add(float.NaN);
+            }
+        }
+
+        /// <summary>
+        /// Smoke from under the wheels, where it tells the player something: a car sliding sideways (a sharp turn at
+        /// speed, or shoved by a hit) leaves a trail from its back wheels, a slow car driven hard spins them (the start
+        /// at GO!, a car pushing against another), and a car landing after a jump throws up a ring of dust.
+        /// </summary>
+        private void TickWheels()
+        {
+            var now = Time.time;
+            for (var i = 0; i < cars.Count; i++) {
+                var car = cars[i];
+                if (car == null || car.IsOut || !car.isActiveAndEnabled || car.Movement.IsCarried) {
+                    airSince[i] = float.NaN;
+                    continue;
+                }
+
+                var movement = car.Movement;
+                if (!movement.IsGrounded) {
+                    if (float.IsNaN(airSince[i])) {
+                        airSince[i] = now;
+                    }
+
+                    continue;
+                }
+
+                var position = car.Position;
+                if (!float.IsNaN(airSince[i])) {
+                    var air = now - airSince[i];
+                    airSince[i] = float.NaN;
+                    if (air > landingAir) {
+                        effects.PlayLanding(position + Vector3.up * 0.2f, Mathf.InverseLerp(landingAir, 1f, air));
+                    }
+                }
+
+                if (!round.HasBegun || now < nextSmoke[i]) {
+                    continue;
+                }
+
+                var forward = Vector3.ProjectOnPlane(car.transform.forward, Vector3.up).normalized;
+                var right = Vector3.Cross(Vector3.up, forward);
+                var velocity = movement.Velocity;
+                var slide = Mathf.InverseLerp(skidFrom, skidFull, Mathf.Abs(Vector3.Dot(velocity, right)));
+                var ahead = Vector3.Dot(velocity, forward);
+                var spin = movement.Throttle >= spinThrottle && ahead < spinSpeed
+                    ? 0.6f * (1f - Mathf.Max(0f, ahead) / Mathf.Max(spinSpeed, 0.01f))
+                    : 0f;
+                var share = Mathf.Max(slide, spin);
+                if (share <= 0f) {
+                    continue;
+                }
+
+                nextSmoke[i] = now + Mathf.Lerp(smokeInterval.x, smokeInterval.y, share);
+                var back = position - forward * rearWheels.y + Vector3.up * 0.2f;
+                effects.PlayWheelSmoke(back + right * rearWheels.x, velocity, share);
+                effects.PlayWheelSmoke(back - right * rearWheels.x, velocity, share);
             }
         }
 
@@ -352,31 +445,38 @@ namespace ToyCarArena.Gameplay.Effects
             var player = round.Player;
             var hasPlayer = player != null && (car == player || hit.Other == player);
 
-            // Every real hit the player lands freezes the game for a moment, so it is felt; a bot's run-up hit, on a bot
-            // or on the player, only now and then: eight cars bump all the time and would stutter it.
-            var isPlayerStop = car == player && hit.Strength >= playerStopStrength;
-            var isRamStop = car != player && hit.Strength >= ramStrength && UnityEngine.Random.value < ramStopChance;
-            var isStop = (isPlayerStop || isRamStop) && round.IsRunning;
+            // Only a strong hit with the player in it freezes the game, for a few frames; bots bump all the time, and
+            // their hits or a soft one freezing read as the game lagging.
+            var isStop = hasPlayer && hit.Strength >= playerStopStrength && round.IsRunning;
             var isHeavy = hit.Strength >= heavyStrength || isStop;
 
             // The normal points from the hit car to the hitter; the effect sprays the way the hit car is pushed. A hit
             // that freezes the game gets the bigger, boosted burst.
             effects.PlayHit(hit.Point, -hit.Normal, power, isHeavy, hit.IsBoosted || isStop);
+            if (hit.Other != null && hit.Other.TryGetComponent<CarLook>(out var look)) {
+                look.Squash(Mathf.Lerp(hitSquash.x, hitSquash.y, power) * (hasPlayer ? 1f : 0.6f));
+            }
 
+            // The player's hits are a toy's bonk, deeper the harder; two bots bumping only tap, so the player's own
+            // hits stand out.
             var library = audioService.Library;
-            var volume = Mathf.Lerp(quietestHit, 1f, power) * (hasPlayer || isStop ? 1f : botHitVolume);
-            audioService.Play(isHeavy ? library.HitHeavy : library.HitLight, volume);
+            var volume = Mathf.Lerp(quietestHit, 1f, power);
+            if (hasPlayer) {
+                audioService.Play(library.CarBonk, volume, Mathf.Lerp(bonkPitch.x, bonkPitch.y, power));
+            }
+            else {
+                audioService.Play(library.CarTap, volume * botHitVolume);
+            }
 
             if (isStop) {
-                arenaCamera.Shake(stopShake * Mathf.Lerp(0.6f, 1f, power) * (hasPlayer ? 1f : 0.7f));
-                if (isPlayerStop) {
-                    hitStop.Stop(Mathf.Lerp(playerStopDuration.x, playerStopDuration.y, power), hitStopTimeScale,
-                        hitStopGap);
-                }
-                else {
-                    hitStop.Stop(Mathf.Lerp(ramStopDuration.x, ramStopDuration.y, power), hitStopTimeScale, ramStopGap);
-                }
+                arenaCamera.Shake(stopShake * Mathf.Lerp(0.6f, 1f, power));
+                hitStop.Stop(Mathf.Lerp(playerStopDuration.x, playerStopDuration.y, power), hitStopTimeScale,
+                    hitStopGap);
+                return;
+            }
 
+            if (hasPlayer) {
+                arenaCamera.Shake(playerHitShake * Mathf.Lerp(0.25f, 1f, power) * (hit.IsBoosted ? boostedHitShake : 1f));
                 return;
             }
 
@@ -384,7 +484,7 @@ namespace ToyCarArena.Gameplay.Effects
                 return;
             }
 
-            var shake = hitShake * Mathf.Lerp(0.6f, 1f, power) * (hasPlayer ? 1f : botHitShake);
+            var shake = hitShake * Mathf.Lerp(0.6f, 1f, power) * botHitShake;
             arenaCamera.Shake(shake * (hit.IsBoosted ? boostedHitShake : 1f));
         }
 

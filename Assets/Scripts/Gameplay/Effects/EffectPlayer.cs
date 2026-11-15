@@ -28,6 +28,13 @@ namespace ToyCarArena.Gameplay.Effects
         // The impact ring thins as it grows: it steps through rings with ever larger holes.
         private static readonly float[] RingHoles = { 0.5f, 0.62f, 0.72f, 0.8f, 0.86f, 0.91f };
 
+        // Each shape is built with these outlines, in its own units, and drawn with the one that comes closest to
+        // outlinePixels on screen for its size and its distance: one line width for every effect, with no shader.
+        private static readonly float[] OutlineLevels = { 0.015f, 0.025f, 0.04f, 0.06f, 0.09f, 0.13f, 0.19f, 0.28f };
+
+        // The hit burst's spikes, the HUD's knock-out burst's.
+        private static readonly float[] BurstReach = { 1f, 0.86f, 0.97f, 0.8f, 1f, 0.9f, 0.82f, 1f, 0.88f, 0.95f, 0.84f };
+
         // The longest a frame may move the effects, in seconds, so a frame after a stall does not throw them away.
         private const float MaxStep = 0.1f;
 
@@ -58,20 +65,11 @@ namespace ToyCarArena.Gameplay.Effects
         [SerializeField]
         private float sizeScale = 1.25f;
 
-        [Tooltip("Outline of a puff or a chunk, as a share of its size")]
-        [Range(0f, 0.5f)]
+        [Tooltip("Width of every shape's outline on screen, in pixels at 1080 on the short side: the toy models' " +
+            "outline (_Width of mat_outline), so the effects and the cars are drawn with one line")]
+        [Min(0f)]
         [SerializeField]
-        private float solidOutline = 0.34f;
-
-        [Tooltip("Outline of a star or a speed line, as a share of its size")]
-        [Range(0f, 0.2f)]
-        [SerializeField]
-        private float flatOutline = 0.11f;
-
-        [Tooltip("Outline of an impact ring, as a share of its radius")]
-        [Range(0f, 0.2f)]
-        [SerializeField]
-        private float ringOutline = 0.08f;
+        private float outlinePixels = 4f;
 
         [Tooltip("Downward pull on stars, hopping dust and chunks, in metres per second squared; above the real " +
             "one, so they drop with a cartoon snap")]
@@ -97,14 +95,29 @@ namespace ToyCarArena.Gameplay.Effects
         [SerializeField]
         private float hitStarLife = 0.5f;
 
-        [Tooltip("Radius the impact ring grows to in the weakest and in the strongest hit, in metres")]
+        [Tooltip("Size of the comic burst at the point of the weakest and of the strongest hit, in metres; it stands " +
+            "in the air, so it is never taken for the player's ring on the floor")]
         [SerializeField]
-        private Vector2 hitRingRadius = new(1.1f, 2.6f);
+        private Vector2 hitBurstSize = new(1.3f, 2.3f);
 
-        [Tooltip("Seconds the impact ring lasts")]
+        [Tooltip("Seconds the burst lasts")]
         [Min(0.05f)]
         [SerializeField]
-        private float hitRingLife = 0.3f;
+        private float hitBurstLife = 0.2f;
+
+        [Tooltip("Colour of the burst")]
+        [SerializeField]
+        private Color hitBurstColor = new(1f, 0.93f, 0.55f);
+
+        [Tooltip("Speed lines flying out of the burst in the weakest and in the strongest hit")]
+        [SerializeField]
+        private Vector2Int hitLines = new(4, 7);
+
+        [Tooltip("How far a hit's effect is pulled toward the camera, in metres: it shows in the same place, in front " +
+            "of the cars that made it")]
+        [Min(0f)]
+        [SerializeField]
+        private float hitLift = 2.5f;
 
         [Tooltip("Puffs of the weakest and of the strongest hit")]
         [SerializeField]
@@ -138,6 +151,21 @@ namespace ToyCarArena.Gameplay.Effects
         [Min(0f)]
         [SerializeField]
         private float boostPuffSpeed = 5f;
+
+        [Header("Wheel smoke")]
+        [Tooltip("Least and most size of a puff of smoke from under a wheel, in metres, from a light skid to a full one")]
+        [SerializeField]
+        private Vector2 wheelPuffSize = new(0.35f, 0.7f);
+
+        [Tooltip("How long a puff of wheel smoke lasts, in seconds")]
+        [Min(0.05f)]
+        [SerializeField]
+        private float wheelPuffLife = 0.45f;
+
+        [Tooltip("Puffs thrown out from under the wheels when a car lands after a jump")]
+        [Min(0)]
+        [SerializeField]
+        private int landingPuffs = 6;
 
         [Tooltip("How far behind the car's middle its back is, in metres; the car is about 2.6 m long")]
         [Min(0f)]
@@ -274,6 +302,7 @@ namespace ToyCarArena.Gameplay.Effects
             Sparkle,
             Ring,
             Streak,
+            Burst,
         }
 
         /// <summary>
@@ -317,13 +346,16 @@ namespace ToyCarArena.Gameplay.Effects
         // Where a shape goes when the buffer is full; never drawn.
         private Particle overflow;
 
-        private Mesh puff;
-        private Mesh chunk;
-        private Mesh star;
-        private Mesh sparkle;
-        private Mesh streak;
-        private Mesh[] rings;
-        private Transform viewpoint;
+        // By outline level, and the rings by hole first.
+        private Mesh[] puffs;
+        private Mesh[] chunks;
+        private Mesh[] stars;
+        private Mesh[] sparkles;
+        private Mesh[] streaks;
+        private Mesh[] bursts;
+        private Mesh[][] rings;
+        private Material burstFill;
+        private Camera view;
 
         private void Awake()
         {
@@ -334,15 +366,35 @@ namespace ToyCarArena.Gameplay.Effects
                 return;
             }
 
-            puff = Keep(EffectShapes.Puff(12, 8, solidOutline));
-            chunk = Keep(EffectShapes.Chunk(solidOutline));
-            star = Keep(EffectShapes.Star(5, 0.5f, flatOutline));
-            sparkle = Keep(EffectShapes.Star(4, 0.3f, flatOutline));
-            streak = Keep(EffectShapes.Streak(streakWidth, flatOutline));
-            rings = new Mesh[RingHoles.Length];
-            for (var i = 0; i < rings.Length; i++) {
-                rings[i] = Keep(EffectShapes.Ring(RingHoles[i], ringOutline, 40));
+            var levels = OutlineLevels.Length;
+            puffs = new Mesh[levels];
+            chunks = new Mesh[levels];
+            stars = new Mesh[levels];
+            sparkles = new Mesh[levels];
+            streaks = new Mesh[levels];
+            bursts = new Mesh[levels];
+            rings = new Mesh[RingHoles.Length][];
+            for (var hole = 0; hole < rings.Length; hole++) {
+                rings[hole] = new Mesh[levels];
             }
+
+            for (var i = 0; i < levels; i++) {
+                // A solid's outline is a larger copy, so its visible width is half the growth of its 1 unit across.
+                var level = OutlineLevels[i];
+                puffs[i] = Keep(EffectShapes.Puff(12, 8, level * 2f));
+                chunks[i] = Keep(EffectShapes.Chunk(level * 2f));
+                stars[i] = Keep(EffectShapes.Star(5, 0.5f, level));
+                sparkles[i] = Keep(EffectShapes.Star(4, 0.3f, level));
+                streaks[i] = Keep(EffectShapes.Streak(streakWidth, level));
+                bursts[i] = Keep(EffectShapes.Burst(BurstReach, 0.62f, level));
+                for (var hole = 0; hole < rings.Length; hole++) {
+                    rings[hole][i] = Keep(EffectShapes.Ring(RingHoles[hole], level, 40));
+                }
+            }
+
+            burstFill = new Material(white) { name = "Effect Burst" };
+            burstFill.SetColor("_BaseColor", hitBurstColor);
+            burstFill.SetColor("_Color", hitBurstColor);
         }
 
         private void OnDestroy()
@@ -350,18 +402,25 @@ namespace ToyCarArena.Gameplay.Effects
             foreach (var mesh in meshes) {
                 Destroy(mesh);
             }
+
+            if (burstFill != null) {
+                Destroy(burstFill);
+            }
         }
 
         /// <summary>
-        /// Two cars hitting at <paramref name="point"/>: a burst of stars, an impact ring on the floor and a few puffs,
-        /// all bigger the stronger the hit (<paramref name="power"/> 0 to 1), and a white flash for a heavy one.
+        /// Two cars hitting at <paramref name="point"/>: a comic burst in the air with speed lines flying out of it, stars
+        /// and a few puffs, all bigger the stronger the hit (<paramref name="power"/> 0 to 1), and a white flash for a
+        /// heavy one. No ring on the floor: the player's own marker is a ring there.
         /// <paramref name="normal"/> is the way the car that was hit is pushed, on the floor.
         /// </summary>
         public void PlayHit(Vector3 point, Vector3 normal, float power, bool isHeavy, bool isBoosted)
         {
             power = Mathf.Clamp01(power);
             var scale = isBoosted ? boostedScale : 1f;
-            var origin = point + Vector3.up * 0.3f;
+            // Pulled toward the camera along its view of the point, so it stays where it was on screen but stands in
+            // front of the two cars: a puff's outline is its far side, which a car behind it would hide.
+            var origin = TowardView(point + Vector3.up * 0.3f, hitLift);
 
             var stars = Mathf.RoundToInt(Mathf.Lerp(hitStars.x, hitStars.y, power) * scale);
             var starSize = Mathf.Lerp(hitStarSize.x, hitStarSize.y, power) * scale;
@@ -380,15 +439,32 @@ namespace ToyCarArena.Gameplay.Effects
                 shape.Hold = 0.55f;
             }
 
-            var ringRadius = Mathf.Lerp(hitRingRadius.x, hitRingRadius.y, power) * scale;
-            ref var ring = ref Add(Shape.Ring, white, OnFloor(point), ringRadius, hitRingLife);
-            ring.StartSize = ring.Size * 0.25f;
+            // The burst stands behind the stars, turned a little each time; the lines fly out of it in the view's plane.
+            var burstSize = Mathf.Lerp(hitBurstSize.x, hitBurstSize.y, power) * scale;
+            var burstAt = TowardView(origin, 0.3f);
+            ref var burst = ref Add(Shape.Burst, burstFill, burstAt, burstSize, hitBurstLife);
+            burst.Angle = Random.Range(-25f, 25f);
+            burst.Hold = 0.45f;
+            var facing = view != null ? view.transform.rotation : Quaternion.identity;
+            var lines = Mathf.RoundToInt(Mathf.Lerp(hitLines.x, hitLines.y, power));
+            for (var i = 0; i < lines; i++) {
+                var angle = (i + Random.Range(-0.25f, 0.25f)) / lines * Mathf.PI * 2f;
+                var axis = facing * new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f);
+                ref var line = ref Add(Shape.Streak, white, burstAt + axis * (burstSize * sizeScale * 0.45f),
+                    burstSize * Random.Range(0.45f, 0.65f), hitBurstLife * Random.Range(0.9f, 1.3f));
+                line.Axis = axis;
+                line.Velocity = axis * (burstSize * Random.Range(5f, 7f));
+                line.Drag = 9f;
+                line.Hold = 0.3f;
+            }
 
             var puffs = Mathf.RoundToInt(Mathf.Lerp(hitPuffs.x, hitPuffs.y, power));
             var puffSize = Mathf.Lerp(hitPuffSize.x, hitPuffSize.y, power) * scale;
+            // In front of the burst, whose face would hide the far side that is a puff's outline.
+            var puffsAt = TowardView(origin, 0.7f);
             for (var i = 0; i < puffs; i++) {
                 var side = Around(Random.value);
-                ref var shape = ref Add(Shape.Puff, white, origin + side * 0.3f, puffSize * Random.Range(0.7f, 1.1f),
+                ref var shape = ref Add(Shape.Puff, white, puffsAt + side * 0.3f, puffSize * Random.Range(0.7f, 1.1f),
                     Random.Range(0.35f, 0.5f));
                 shape.Velocity = side * Random.Range(1.5f, 3f) + Vector3.up * Random.Range(0.5f, 1.5f);
                 shape.Gravity = -1f;
@@ -397,7 +473,7 @@ namespace ToyCarArena.Gameplay.Effects
             }
 
             if (isHeavy) {
-                ref var flash = ref Add(Shape.Sparkle, white, origin + Vector3.up * 0.2f, heavyFlashSize * scale, 0.16f);
+                ref var flash = ref Add(Shape.Sparkle, white, TowardView(origin, 0.5f), heavyFlashSize * scale, 0.16f);
                 flash.Angle = Random.Range(-20f, 20f);
                 flash.Hold = 0.35f;
             }
@@ -431,6 +507,42 @@ namespace ToyCarArena.Gameplay.Effects
             }
 
             trails.Add(new Trail { Car = car, LastPosition = car.Position });
+        }
+
+        /// <summary>
+        /// A puff of smoke from under a wheel at <paramref name="point"/>, left behind as the car slides on: bigger the
+        /// harder the skid (<paramref name="share"/> 0 to 1). <paramref name="carVelocity"/> is the car's, a little of
+        /// which the puff keeps, so a trail curls off the way the car went.
+        /// </summary>
+        public void PlayWheelSmoke(Vector3 point, Vector3 carVelocity, float share)
+        {
+            share = Mathf.Clamp01(share);
+            ref var shape = ref Add(Shape.Puff, white, point, Mathf.Lerp(wheelPuffSize.x, wheelPuffSize.y, share)
+                * Random.Range(0.8f, 1.1f), wheelPuffLife * Random.Range(0.8f, 1.15f));
+            shape.Velocity = carVelocity * 0.15f + Around(Random.value) * Random.Range(0.3f, 0.8f)
+                + Vector3.up * Random.Range(0.6f, 1.2f);
+            shape.Gravity = -1.5f;
+            shape.Drag = 4f;
+            shape.Hold = 0.25f;
+        }
+
+        /// <summary>
+        /// A car landing on the floor at <paramref name="point"/> after a jump: a ring of puffs thrown out from under it,
+        /// bigger the harder it came down (<paramref name="share"/> 0 to 1).
+        /// </summary>
+        public void PlayLanding(Vector3 point, float share)
+        {
+            share = Mathf.Clamp01(share);
+            var size = Mathf.Lerp(wheelPuffSize.x, wheelPuffSize.y * 1.3f, share);
+            for (var i = 0; i < landingPuffs; i++) {
+                var outward = Around((i + Random.value * 0.5f) / landingPuffs);
+                ref var shape = ref Add(Shape.Puff, white, point + outward * 1.3f, size * Random.Range(0.8f, 1.1f),
+                    wheelPuffLife * Random.Range(0.9f, 1.2f));
+                shape.Velocity = outward * Random.Range(2f, 3.5f) * (0.6f + share) + Vector3.up * Random.Range(0.3f, 0.8f);
+                shape.Gravity = -1f;
+                shape.Drag = 5f;
+                shape.Hold = 0.25f;
+            }
         }
 
         /// <summary>
@@ -774,12 +886,11 @@ namespace ToyCarArena.Gameplay.Effects
             var deltaTime = Mathf.Min(Time.unscaledDeltaTime, MaxStep);
             LeaveTrails();
 
-            if (viewpoint == null) {
-                var main = Camera.main;
-                viewpoint = main != null ? main.transform : null;
+            if (view == null) {
+                view = Camera.main;
             }
 
-            var view = viewpoint != null ? viewpoint.rotation : Quaternion.identity;
+            var facing = view != null ? view.transform.rotation : Quaternion.identity;
             // Removing swaps the last shape in; going backwards, that one has already moved this frame.
             for (var i = count - 1; i >= 0; i--) {
                 ref var shape = ref particles[i];
@@ -798,7 +909,7 @@ namespace ToyCarArena.Gameplay.Effects
                 shape.Velocity *= Mathf.Exp(-shape.Drag * deltaTime);
                 shape.Position += shape.Velocity * deltaTime;
                 shape.Angle += shape.Spin * deltaTime;
-                Draw(shape, view);
+                Draw(shape, facing);
             }
         }
 
@@ -847,9 +958,10 @@ namespace ToyCarArena.Gameplay.Effects
             }
         }
 
-        private void Draw(in Particle shape, Quaternion view)
+        private void Draw(in Particle shape, Quaternion facing)
         {
             var progress = shape.Age / shape.Life;
+            var line = OutlineWidth(shape.Position);
             Mesh mesh;
             Quaternion rotation;
             Vector3 scale;
@@ -857,7 +969,8 @@ namespace ToyCarArena.Gameplay.Effects
                 // Out fast, then easing; it thins as it goes and is gone at its widest.
                 var grow = 1f - Cube(1f - progress);
                 var radius = Mathf.Lerp(shape.StartSize, shape.Size, grow);
-                mesh = rings[Mathf.Min((int)(progress * rings.Length), rings.Length - 1)];
+                var hole = Mathf.Min((int)(progress * rings.Length), rings.Length - 1);
+                mesh = rings[hole][Level(line, radius, radius * (1f - RingHoles[hole]))];
                 rotation = Quaternion.identity;
                 scale = new Vector3(radius, 1f, radius);
             }
@@ -868,24 +981,28 @@ namespace ToyCarArena.Gameplay.Effects
                 }
 
                 scale = new Vector3(size, size, size);
+                var level = Level(line, size, size * 0.5f);
                 switch (shape.Shape) {
                     case Shape.Chunk:
-                        mesh = chunk;
+                        mesh = chunks[level];
                         rotation = Quaternion.AngleAxis(shape.Angle, shape.Axis);
                         break;
                     case Shape.Star:
                     case Shape.Sparkle:
+                    case Shape.Burst:
                         // Facing the camera like the player's arrow, turned about the view.
-                        mesh = shape.Shape == Shape.Star ? star : sparkle;
-                        rotation = view * Quaternion.Euler(0f, 0f, shape.Angle);
+                        mesh = shape.Shape == Shape.Star ? stars[level] :
+                            shape.Shape == Shape.Burst ? bursts[level] : sparkles[level];
+                        rotation = facing * Quaternion.Euler(0f, 0f, shape.Angle);
                         break;
                     case Shape.Streak:
-                        // Along its way, its face turned to the camera as far as that lets it.
-                        mesh = streak;
-                        rotation = Quaternion.LookRotation(shape.Axis, view * Vector3.back);
+                        // Along its way, its face turned to the camera as far as that lets it. Its width, not its
+                        // length, is what a thick line would swallow.
+                        mesh = streaks[Level(line, size, size * streakWidth)];
+                        rotation = Quaternion.LookRotation(shape.Axis, facing * Vector3.back);
                         break;
                     default:
-                        mesh = puff;
+                        mesh = puffs[level];
                         rotation = Quaternion.identity;
                         break;
                 }
@@ -894,6 +1011,62 @@ namespace ToyCarArena.Gameplay.Effects
             var matrix = Matrix4x4.TRS(shape.Position, rotation, scale);
             Graphics.DrawMesh(mesh, matrix, outline, 0, null, EffectShapes.OutlinePart, null, false, false);
             Graphics.DrawMesh(mesh, matrix, shape.Fill, 0, null, EffectShapes.FillPart, null, false, false);
+        }
+
+        /// <summary>
+        /// <paramref name="point"/> moved <paramref name="distance"/> metres toward the camera along the line it is seen
+        /// on, so it shows in the same place but in front of what stands round it.
+        /// </summary>
+        private Vector3 TowardView(Vector3 point, float distance)
+        {
+            if (view == null) {
+                view = Camera.main;
+            }
+
+            if (view == null) {
+                return point;
+            }
+
+            var toCamera = view.transform.position - point;
+            return point + toCamera.normalized * Mathf.Min(distance, toCamera.magnitude * 0.5f);
+        }
+
+        /// <summary>
+        /// The world width at <paramref name="position"/> that is <see cref="outlinePixels"/> on screen, as the toy
+        /// models' outline measures it: pixels at 1080 on the short side.
+        /// </summary>
+        private float OutlineWidth(Vector3 position)
+        {
+            if (view == null) {
+                return 0.08f;
+            }
+
+            var height = Mathf.Max(1f, view.pixelHeight);
+            var shortSide = Mathf.Min(view.pixelWidth, view.pixelHeight);
+            var camera = view.transform;
+            var span = view.orthographic ? view.orthographicSize * 2f :
+                2f * Mathf.Max(0.1f, Vector3.Dot(position - camera.position, camera.forward)) *
+                Mathf.Tan(view.fieldOfView * 0.5f * Mathf.Deg2Rad);
+            return outlinePixels * shortSide / 1080f * span / height;
+        }
+
+        /// <summary>
+        /// The outline level that comes closest to <paramref name="width"/> on a shape scaled by
+        /// <paramref name="scale"/>. A shape thinner than about three lines (a puff almost gone) takes a thinner one, so
+        /// it never ends as a navy dot.
+        /// </summary>
+        private static int Level(float width, float scale, float thickness)
+        {
+            width = Mathf.Min(width, thickness * 0.35f);
+            var share = width / Mathf.Max(0.001f, scale);
+            var best = 0;
+            for (var i = 1; i < OutlineLevels.Length; i++) {
+                if (Mathf.Abs(OutlineLevels[i] - share) < Mathf.Abs(OutlineLevels[best] - share)) {
+                    best = i;
+                }
+            }
+
+            return best;
         }
 
         /// <summary>
