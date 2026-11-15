@@ -118,7 +118,8 @@ namespace ToyCarArena.UI
             // An event mode counts points of its own, not knock-outs: the column says so.
             var pointsHead = root.Q<Label>(className: "results__title--ko");
             if (model.IsEvent && pointsHead != null) {
-                text.Set(pointsHead, () => Strings.Get("result.points_short"));
+                var pointsKey = ModeLooks.Of(model.Kind)?.PointsKey ?? ModeLook.DefaultPointsKey;
+                text.Set(pointsHead, () => Strings.Get(pointsKey));
             }
             winnerTag = root.Q<Label>("podium-winner-tag");
             rivalTag = root.Q<Label>("podium-rival-tag");

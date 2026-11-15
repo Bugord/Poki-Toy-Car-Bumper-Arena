@@ -113,6 +113,8 @@ def summarise(data):
         # clear 3-5, big 6+) и KO игрока в нём, по id режима (TEAM PUSH, позже FOOTBALL)
         "team_end": other(o, r"special-((?:team-push|football)-team-(?:won|draw|lost)-(?:close|clear|big))-team"),
         "team_ko": other(o, r"special-((?:team-push|football)-ko-(?:\d+|10plus))-team-knockouts"),
+        # после crown: сколько секунд игрок держал корону (none, 1: 1-9 с, 10: 10-19 с, 20plus) и сколько раз взял
+        "crown": other(o, r"special-(crown-held-(?:none|1|10|20plus)-takes-(?:\d+|10plus))-crown"),
         # после overheat: сколько раскалённых машинок столкнул игрок за раунд и с каким средним нагревом падал сам
         # (none: не падал; cold < 35%, warm < 70%, hot)
         "overheat_hot_ko": other(o, r"special-overheat-hotko-(\d+|10plus)-overheat-knockouts"),
@@ -453,6 +455,7 @@ def report(version, previous):
         ("Режимы: сколько предметов применил игрок за раунд режима с коробками (после item-frenzy; none 0, few 1–3, some 4–9, many 10+; визиты с items)", "mode_items"),
         ("Команды: исход раунда команды игрока и разрыв (после team-push; визиты с team)", "team_end"),
         ("Команды: KO игрока за раунд команд (после team-push; визиты с team-knockouts)", "team_ko"),
+        ("CROWN: секунды игрока с короной (none, 1 = 1-9 с, 10 = 10-19 с, 20plus) и сколько раз взял (после crown; визиты с crown)", "crown"),
         ("OVERHEAT: раскалённые машинки, столкнутые игроком за раунд (после overheat; визиты с overheat-knockouts)", "overheat_hot_ko"),
         ("OVERHEAT: средний нагрев игрока при падениях (после overheat; none не падал, cold < 35%, warm < 70%, hot; визиты с overheat-falls)", "overheat_falls"),
         ("Свои рывки по раундам (после v0.7.1, после v0.14.1 только в сборке с бустами; визиты с round-boosts)", "round_boosts"),

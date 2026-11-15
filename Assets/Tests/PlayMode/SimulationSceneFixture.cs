@@ -80,6 +80,12 @@ namespace ToyCarArena.Tests.PlayMode
         /// </summary>
         protected void UseSpecial(SpecialRound kind) => LoadTuning().SpecialRounds.Force(kind);
 
+        /// <summary>
+        /// Plays <paramref name="rules"/> in the rounds of <paramref name="kind"/> (in memory, TearDown restores the
+        /// kind's own): a framework test states the rules it needs without leaning on a real mode's.
+        /// </summary>
+        protected void UseRules(SpecialRound kind, ModeRules rules) => LoadTuning().ForceRules(kind, rules);
+
         /// <summary>The mode the tuning asset ships, whatever the test plays.</summary>
         protected GameTuning.GameMode ShippedMode => savedMode;
 
@@ -107,6 +113,7 @@ namespace ToyCarArena.Tests.PlayMode
                 RestoreMode();
                 RestoreBoost();
                 LoadTuning().SpecialRounds.Force(null);
+                LoadTuning().ForceRules(SpecialRound.None, null);
             }
         }
 
