@@ -115,20 +115,18 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [Test]
-        public void APlayerFromBeforeTheCountIsPastTheRamps()
+        public void APlayerFromBeforeTheCountStartsTheOnboardingAgain()
         {
-            var storage = new RoundOverScreenshots.MemoryStorage();
-            storage.SetInt("xp_total", 40);
-            var progress = new SessionProgress(storage, tuning);
+            // Level 4 on a build from before coins (the v0.18.1 playtester): a new player again, whatever the XP.
+            foreach (var xp in new[] { 10, 150, 5000 }) {
+                var storage = new RoundOverScreenshots.MemoryStorage();
+                storage.SetInt("xp_total", xp);
+                var progress = new SessionProgress(storage, tuning);
+                Assert.That(progress.RoundsBefore, Is.EqualTo(0), $"{xp} XP");
+                Assert.That(new RoundDifficulty(tuning, progress).IsPlayerSafe, Is.True, $"{xp} XP");
+            }
 
-            Assert.That(progress.RoundsBefore, Is.GreaterThanOrEqualTo(tuning.Bots.RampRounds));
-            Assert.That(progress.RoundsBefore, Is.GreaterThanOrEqualTo(tuning.Bots.EdgeAssistRounds));
-            Assert.That(progress.RoundsBefore, Is.GreaterThanOrEqualTo(tuning.Controls.GhostStickRounds));
             Assert.That(new SessionProgress().RoundsBefore, Is.EqualTo(0), "nothing saved, a new player");
-
-            var fresh = new RoundOverScreenshots.MemoryStorage();
-            fresh.SetInt("xp_total", 0);
-            Assert.That(new SessionProgress(fresh, tuning).RoundsBefore, Is.EqualTo(0), "no experience, a new player");
         }
 
         [Test]

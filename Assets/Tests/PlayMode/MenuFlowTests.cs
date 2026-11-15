@@ -185,12 +185,14 @@ namespace ToyCarArena.Tests.PlayMode
         // The layers the arena's camera draws now.
         private static int ArenaLayers => Object.FindAnyObjectByType<ArenaCamera>().Camera.cullingMask;
 
-        // A player back for a second visit: one visit counted, some XP and the cars of the first levels.
+        // A player back for a second visit: one visit counted, some XP and the cars of the first levels, and rounds
+        // played past the safe first rounds (a fall knocks them out again).
         private void ReturningPlayer()
         {
             storage.SetInt("visit_count", 1);
             storage.SetInt("visit_day", (int)(DateTime.Now.Date - DateTime.MinValue.Date).TotalDays);
             storage.SetInt("xp_total", 120);
+            storage.SetInt(SessionProgress.RoundsKey, 5);
         }
 
         private IEnumerator Boot()

@@ -66,7 +66,7 @@ namespace ToyCarArena.App
             isCounted = true;
             var day = CalendarDay.Of(today);
             var saved = Math.Max(0, storage.GetInt(CountKey));
-            var isOld = saved == 0 && storage.HasKey(XpKey);
+            var isOld = saved == 0 && storage.GetInt(XpKey) > 0;
             var previous = isOld ? 1 : saved;
 
             this.Count = previous + 1;
