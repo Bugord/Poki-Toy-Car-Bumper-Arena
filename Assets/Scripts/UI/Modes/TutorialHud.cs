@@ -21,10 +21,11 @@ namespace ToyCarArena.UI
     {
         private const int StepCount = 4;
 
-        // Reference pixels under the safe top the sticker sits at: in portrait under the bar and the kill feed's rows at
-        // its left, in landscape under the bar.
-        private const float PortraitTop = 470f;
-        private const float LandscapeTop = 190f;
+        // Where the sticker sits, clear of the arena's far edge, where the last two bots wait: in portrait right under
+        // the bar (the kill feed there is hidden: the lesson needs none), in landscape at the bottom middle, between the
+        // item button and the corner it is not in.
+        private const float PortraitTop = 205f;
+        private const float LandscapeBottom = 60f;
 
         // Metres over the step's place the arrow's tip floats, by what it points at.
         private const float PointLift = 0.6f;
@@ -55,6 +56,7 @@ namespace ToyCarArena.UI
         private readonly VisualElement arrow;
         private readonly VisualElement timePill;
         private readonly VisualElement carsSep;
+        private readonly VisualElement feed;
         private readonly Action onLanguage;
         private TutorialStep shownStep = (TutorialStep)(-1);
         private float popAt = float.NegativeInfinity;
@@ -94,8 +96,10 @@ namespace ToyCarArena.UI
             // The clock would count five minutes down: the lesson has no time limit, so the bar shows only the cars.
             timePill = root.Q<VisualElement>("time-pill");
             carsSep = root.Q<VisualElement>("cars-pill")?.Q<VisualElement>(className: "hud__sep");
+            feed = root.Q<VisualElement>("feed");
             SetDisplay(timePill, false);
             SetDisplay(carsSep, false);
+            SetDisplay(feed, false);
 
             onLanguage = () => shownStep = (TutorialStep)(-1);
             Strings.Changed += onLanguage;
@@ -118,7 +122,14 @@ namespace ToyCarArena.UI
             }
 
             var size = banner.parent?.layout.size ?? Vector2.zero;
-            banner.style.top = top + (size.x > size.y ? LandscapeTop : PortraitTop);
+            if (size.x > size.y) {
+                banner.style.top = StyleKeyword.Auto;
+                banner.style.bottom = LandscapeBottom;
+            }
+            else {
+                banner.style.top = top + PortraitTop;
+                banner.style.bottom = StyleKeyword.Auto;
+            }
             var isShown = step != TutorialStep.None && !model.IsFinished || step == TutorialStep.Done
                 && now - doneAt < DoneSeconds;
             if (model.PlayerCar != null && model.PlayerCar.IsOut) {
@@ -138,6 +149,7 @@ namespace ToyCarArena.UI
             Strings.Changed -= onLanguage;
             SetDisplay(timePill, true);
             SetDisplay(carsSep, true);
+            SetDisplay(feed, true);
             banner.RemoveFromHierarchy();
             arrow.RemoveFromHierarchy();
         }
@@ -172,7 +184,8 @@ namespace ToyCarArena.UI
             var size = layer.layout.size;
             var minX = left + ArrowMargin;
             point.x = Mathf.Clamp(point.x, minX, Mathf.Max(minX, size.x - right - ArrowMargin));
-            var minY = top + ArrowMargin * 2f;
+            // Under the bar and, in portrait, the sticker under it.
+            var minY = top + ArrowMargin + (size.x > size.y ? 230f : PortraitTop + 130f);
             point.y = Mathf.Clamp(point.y, minY, Mathf.Max(minY, size.y - ArrowMargin));
             arrow.style.left = point.x;
             arrow.style.top = point.y;
