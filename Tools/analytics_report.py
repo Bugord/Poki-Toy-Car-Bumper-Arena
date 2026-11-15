@@ -122,6 +122,11 @@ def summarise(data):
         # после football: голы обеих команд за матч и голы игрока (FootballMode.EndEvents)
         "football_goals": other(o, r"special-(football-goals-(?:\d+|10plus))-goals"),
         "football_scored": other(o, r"special-(football-scored-(?:\d+|5plus))-player-goals"),
+        # после gold-rush: монеты игрока в конце раунда (по нижнему краю: none, 1, 5, 10, 15, 20, 30plus), сколько он
+        # потерял от ударов и падений и сколько выбил ударами (none, 1, 5, 10, 20plus; GoldRushMode.EndEvents)
+        "gold_coins": other(o, r"special-gold-rush-coins-(none|\d+|30plus)-gold-rush-coins"),
+        "gold_lost": other(o, r"special-gold-rush-lost-(none|\d+|20plus)-gold-rush-lost"),
+        "gold_shook": other(o, r"special-gold-rush-shook-(none|\d+|20plus)-gold-rush-shook"),
         "scoreboard": i.get("scoreboard-shown"),
         "ad_commercial": i.get("ad-commercial"),
         # после v0.17.9: FPS по экранам и медиана первой минуты визита (ScreenFrameRate), длина рекламы между раундами
@@ -463,6 +468,9 @@ def report(version, previous):
         ("OVERHEAT: средний нагрев игрока при падениях (после overheat; none не падал, cold < 35%, warm < 70%, hot; визиты с overheat-falls)", "overheat_falls"),
         ("FOOTBALL: голы за матч, обе команды (после football; визиты с goals)", "football_goals"),
         ("FOOTBALL: голы игрока за матч (после football; визиты с player-goals)", "football_scored"),
+        ("GOLD RUSH: монеты игрока в конце раунда (после gold-rush; по нижнему краю: 1 = 1-4, 5 = 5-9, …; визиты с gold-rush-coins)", "gold_coins"),
+        ("GOLD RUSH: монеты, которые игрок потерял от ударов и падений (после gold-rush; визиты с gold-rush-lost)", "gold_lost"),
+        ("GOLD RUSH: монеты, которые игрок выбил из соперников ударами (после gold-rush; визиты с gold-rush-shook)", "gold_shook"),
         ("Свои рывки по раундам (после v0.7.1, после v0.14.1 только в сборке с бустами; визиты с round-boosts)", "round_boosts"),
         ("Рывки автобуста по раундам (после v0.7.1, после v0.14.1 только в сборке с бустами; визиты с auto-boosts)", "auto_boosts"),
         ("Миссии: сколько выполнено за раунд (v0.10, визиты с missions)", "missions_done"),

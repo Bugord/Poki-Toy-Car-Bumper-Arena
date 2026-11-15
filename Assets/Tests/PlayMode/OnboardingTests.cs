@@ -23,7 +23,13 @@ namespace ToyCarArena.Tests.PlayMode
         {
             tuning = AssetDatabase.LoadAssetAtPath<GameTuning>(TuningPath);
             Assert.That(tuning, Is.Not.Null);
+            // The ramp is about plain rounds: round 7 is the rotation's event slot, which plays the mode of the day, and a
+            // mode with teams sets its own number of bots, so the outcome would hang on the date.
+            tuning.SpecialRounds.Force(SpecialRound.None);
         }
+
+        [TearDown]
+        public void TearDown() => tuning.SpecialRounds.Force(null);
 
         [Test]
         public void ANewPlayersFirstRoundIsEasy()

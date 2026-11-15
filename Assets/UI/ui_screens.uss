@@ -6238,3 +6238,108 @@
     width: 80px;
     height: 80px;
 }
+
+/* GOLD RUSH (HudGoldRush): the coins a car carries as a coin and a number, in every bot's handle after its name and
+   bigger on a sticker under the player's car; gold for the car in the lead. A red -N springs over a car that just lost
+   coins to a bump or a fall. */
+.car-coins {
+    flex-direction: row;
+    align-items: center;
+    height: 48px;
+    margin: 0 10px 0 -4px;
+    padding: 0 12px 0 6px;
+    border-width: 4px 4px 7px 4px;
+    border-radius: 12px;
+    border-color: var(--navy);
+    background-color: var(--white);
+}
+
+.car-coins__icon {
+    width: 34px;
+    height: 34px;
+    margin-right: 4px;
+}
+
+.car-coins__text {
+    margin: 0;
+    padding: 0 0 2px 0;
+    font-size: 36px;
+    color: var(--navy);
+    -unity-text-outline-width: 0;
+    white-space: nowrap;
+}
+
+.car-coins--lead { background-color: var(--gold); }
+
+.hud__coins {
+    display: none;
+    position: absolute;
+    translate: -50% -50%;
+    align-items: center;
+}
+
+.hud__coins--shown { display: flex; }
+
+.hud__coins-sticker {
+    flex-direction: row;
+    align-items: center;
+    height: 72px;
+    padding: 0 22px 0 10px;
+    border-width: 5px 5px 11px 5px;
+    border-radius: 36px;
+    border-color: var(--navy);
+    background-color: var(--white);
+}
+
+.hud__coins-icon {
+    width: 52px;
+    height: 52px;
+    margin-right: 6px;
+}
+
+.hud__coins-text {
+    margin: 0;
+    padding: 0 0 3px 0;
+    font-size: 46px;
+    color: var(--navy);
+    -unity-text-outline-width: 0;
+    white-space: nowrap;
+}
+
+.hud__coins-sticker.car-coins--lead { background-color: var(--gold); }
+
+.hud__coin-loss {
+    position: absolute;
+    translate: -50% -50%;
+    align-items: center;
+}
+
+.hud__coin-loss-sticker {
+    flex-direction: row;
+    align-items: center;
+    padding: 2px 16px 6px 22px;
+    border-radius: 24px;
+    border-width: 5px 5px 11px 5px;
+    border-color: var(--navy);
+    background-color: var(--red);
+    rotate: -5deg;
+}
+
+.hud__coin-loss-icon {
+    width: 46px;
+    height: 46px;
+    margin-left: 6px;
+}
+
+.hud__coin-loss-text {
+    margin: 0;
+    padding: 0;
+    font-size: 50px;
+    color: var(--white);
+    -unity-text-outline-width: 7px;
+    -unity-text-outline-color: var(--navy);
+    white-space: nowrap;
+}
+
+.hud__coin-loss-text.stroke__face { -unity-text-outline-width: 0; }
+.hud__coin-loss-text.stroke__drop { translate: 0 7px; display: flex; }
