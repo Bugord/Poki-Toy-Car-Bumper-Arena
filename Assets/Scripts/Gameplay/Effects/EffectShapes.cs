@@ -5,7 +5,7 @@ namespace ToyCarArena.Gameplay.Effects
 {
     /// <summary>
     /// The shapes the effects are drawn with, built in code as <see cref="Cars.CarLook"/> builds the player's marker:
-    /// no textures, nothing to import, a few hundred vertices in all. Each mesh has two parts, the navy outline
+    /// no textures, nothing to import, a few thousand vertices in all. Each mesh has two parts, the navy outline
     /// (submesh <see cref="OutlinePart"/>) and the flat fill (<see cref="FillPart"/>), so every effect has the thick
     /// outline of the screens' stickers. A solid shape (a puff, a chunk) gets its outline as a slightly larger copy
     /// turned inside out, which only shows round the silhouette; a flat shape gets a slightly wider copy just behind
@@ -85,6 +85,27 @@ namespace ToyCarArena.Gameplay.Effects
             mesh.AddFan(OutlinePart, Vector2.zero, Inflate(rim, outline), OutlineDepth);
             mesh.AddFan(FillPart, Vector2.zero, rim, 0f);
             return mesh.Build("Effect Star");
+        }
+
+        /// <summary>
+        /// A comic hit's burst, 1 unit across, upright and facing -Z like <see cref="Star"/>: uneven spikes (their reach
+        /// a share of the radius, the HUD's knock-out burst's) with valleys at <paramref name="innerRatio"/>.
+        /// <paramref name="outline"/> units wide.
+        /// </summary>
+        public static Mesh Burst(float[] reach, float innerRatio, float outline)
+        {
+            var spikes = reach.Length;
+            var rim = new Vector2[spikes * 2];
+            for (var i = 0; i < rim.Length; i++) {
+                var angle = (i * 180f / spikes + 98f) * Mathf.Deg2Rad;
+                var radius = 0.5f * (i % 2 == 0 ? reach[i / 2] : innerRatio);
+                rim[i] = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+            }
+
+            var mesh = new Flat(false);
+            mesh.AddFan(OutlinePart, Vector2.zero, Inflate(rim, outline), OutlineDepth);
+            mesh.AddFan(FillPart, Vector2.zero, rim, 0f);
+            return mesh.Build("Effect Burst");
         }
 
         /// <summary>

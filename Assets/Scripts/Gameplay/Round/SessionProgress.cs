@@ -18,15 +18,13 @@ namespace ToyCarArena.Gameplay.Round
         /// <summary>The rounds finished on this device, saved after each one.</summary>
         public const string RoundsKey = "rounds_played";
 
-        // Saved by PlayerProgress: a player who has it but no round count played before rounds were counted.
-        private const string XpKey = "xp_total";
-
         private readonly IKeyValueStorage storage;
         private readonly GameTuning tuning;
         private int roundsBefore = -1;
+        private bool? isNewPlayer;
 
         /// <param name="storage">Where the rounds finished are kept; null keeps nothing, as a new player.</param>
-        /// <param name="tuning">The ramps a player from before the count is taken to be past.</param>
+        /// <param name="tuning">Kept for the scope's registration; the count no longer needs it.</param>
         public SessionProgress(IKeyValueStorage storage = null, GameTuning tuning = null)
         {
             this.storage = storage;
@@ -37,8 +35,10 @@ namespace ToyCarArena.Gameplay.Round
 
         /// <summary>
         /// Read on first use rather than when the scope is built, as the other saved progress is, and kept for the
-        /// visit. A player with experience (every finished round gives some) from before the count has played an unknown number of rounds and is taken
-        /// to be past every ramp.
+        /// visit. A player from before the count (experience, but no count saved) starts the onboarding again, as a new
+        /// player, and keeps their experience, cars and coins: the game is not released, so they can only be playtesters
+        /// of a build weeks older, with a different game. Until v0.18.2 they were taken to be past every ramp, and a
+        /// v0.18.1 playtester with three rounds on a build from before coins got a veteran's warm-up and no safe round.
         /// </summary>
         public int RoundsBefore
         {
@@ -46,11 +46,23 @@ namespace ToyCarArena.Gameplay.Round
             {
                 if (roundsBefore < 0) {
                     roundsBefore = storage == null ? 0 :
-                        storage.HasKey(RoundsKey) ? Math.Max(0, storage.GetInt(RoundsKey)) :
-                        storage.GetInt(XpKey) > 0 ? PastTheRamps() : 0;
+                        storage.HasKey(RoundsKey) ? Math.Max(0, storage.GetInt(RoundsKey)) : 0;
                 }
 
                 return roundsBefore;
+            }
+        }
+
+        /// <summary>Read on first use and kept for the visit: the rounds this visit finishes do not change it.</summary>
+        public bool IsNewPlayer
+        {
+            get
+            {
+                if (isNewPlayer == null) {
+                    isNewPlayer = storage != null && RoundsBefore == 0 && storage.GetInt(PlayerProgress.XpKey) <= 0;
+                }
+
+                return isNewPlayer.Value;
             }
         }
 
@@ -94,16 +106,6 @@ namespace ToyCarArena.Gameplay.Round
             var before = RoundsBefore;
             this.Round = Round + 1;
             storage?.SetInt(RoundsKey, before + Round - 1);
-        }
-
-        private int PastTheRamps()
-        {
-            if (tuning == null) {
-                return 0;
-            }
-
-            var bots = tuning.Bots;
-            return Math.Max(Math.Max(bots.RampRounds, bots.EdgeAssistRounds), tuning.Controls.GhostStickRounds);
         }
     }
 }

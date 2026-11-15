@@ -47,7 +47,16 @@ namespace ToyCarArena.Gameplay.Round
             this.PlayerKnockoutWindow = Mathf.Lerp(easy.PlayerKnockoutWindow, normal.PlayerKnockoutWindow, level);
             this.DuelPace = Mathf.Lerp(easy.DuelPace, normal.DuelPace, level);
             this.DuelEscapeBoostChance = Mathf.Lerp(easy.DuelEscapeBoostChance, normal.DuelEscapeBoostChance, level);
+            // Only where a fall is a loss: a match brings the car back anyway, a fenced mode puts it back.
+            this.IsPlayerSafe = RoundRules.RulesFor(tuning, progress).Fall == FallRule.Out
+                && Mathf.Max(0, progress.RoundsBefore) + progress.Round <= tuning.Safety.Rounds;
         }
+
+        /// <summary>
+        /// Whether this is one of the player's first rounds on this device, which cannot be lost: a fall off the floor is
+        /// caught and undone, and the player's hits grow harder over the round (<see cref="PlayerSafety"/>).
+        /// </summary>
+        public bool IsPlayerSafe { get; }
 
         /// <summary>
         /// From 0, easy, to 1, normal.

@@ -129,11 +129,15 @@ namespace ToyCarArena.Gameplay.Round
         /// Gives the free topper (<see cref="GameTuning.TopperSettings.GiftTopper"/>) once the player has reached
         /// <see cref="GameTuning.TopperSettings.GiftLevel"/>, once ever and only to a player who owns no topper; it is owned, not worn, until the result's popup or the garage puts it on. Its id, or null.
         /// </summary>
-        public string TryGift(int level)
+        /// <param name="isEarned">
+        /// The tutorial was done: the hat is its reward at any level (still once ever, so the level's gift does not come
+        /// again), and its popup does not wait (<see cref="IsGiftEarned"/>).
+        /// </param>
+        public string TryGift(int level, bool isEarned = false)
         {
             var settings = tuning.Toppers;
             var id = settings.GiftTopper;
-            if (level < settings.GiftLevel || storage.GetBool(GiftKey) || settings.Find(id) == null
+            if (level < settings.GiftLevel && !isEarned || storage.GetBool(GiftKey) || settings.Find(id) == null
                 || !string.IsNullOrEmpty(storage.GetString(OwnedKey))) {
                 return null;
             }
@@ -141,6 +145,7 @@ namespace ToyCarArena.Gameplay.Round
             storage.SetBool(GiftKey, true);
             storage.SetString(OwnedKey, id);
             UnseenGift = id;
+            IsGiftEarned = isEarned;
             Changed?.Invoke();
             return id;
         }
@@ -175,11 +180,18 @@ namespace ToyCarArena.Gameplay.Round
             private set => storage.SetString(UnseenGiftKey, value ?? "");
         }
 
+        /// <summary>
+        /// Whether the unseen gift is the tutorial's reward, given this visit: its popup shows on the very result that
+        /// earned it, with whatever else opens there. Not saved: a gift left over to another visit waits like any.
+        /// </summary>
+        public bool IsGiftEarned { get; private set; }
+
         /// <summary>The gift for the result's popup, once.</summary>
         public string TakeGift()
         {
             var id = UnseenGift;
             UnseenGift = null;
+            IsGiftEarned = false;
             return id;
         }
 

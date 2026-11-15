@@ -48,6 +48,12 @@ namespace ToyCarArena.Gameplay
 
         /// <summary>From the first round of the visit on, as a match has them.</summary>
         Always,
+
+        /// <summary>
+        /// Only the boxes the mode lays itself (<see cref="Pickups.ArenaPickups.Spawn"/>), from the first round on: the
+        /// tutorial's. The spawner lays none and the item lesson none either.
+        /// </summary>
+        Laid,
     }
 
     /// <summary>
@@ -102,6 +108,13 @@ namespace ToyCarArena.Gameplay
         public float Duration { get; private set; }
 
         public bool IsTimed => Duration > 0f;
+
+        /// <summary>
+        /// How long a round that is not timed may last, in seconds, in place of the plain round's
+        /// (<see cref="GameTuning.RoundSettings.Duration"/>); 0 keeps the plain round's. The tutorial's is long: it ends
+        /// when its lesson does.
+        /// </summary>
+        public float Length { get; private set; }
 
         /// <summary>
         /// The points a knock-out scores in a timed round: 1 in the match, where knock-outs are the score, 0 in a mode
@@ -167,7 +180,7 @@ namespace ToyCarArena.Gameplay
         public ModeRules With(FallRule? fall = null, bool? fence = null, FloorRule? floor = null, bool? mechanics = null,
             PickupRule? pickups = null, float? pickupPace = null, int? pickupMax = null, float? duration = null,
             int? pointsPerKnockout = null, int? teams = null, int? bots = null, bool? edgeAssist = null,
-            int? knockoutRewardCap = null, int? topPlaces = null, float? pickupRollTime = null)
+            int? knockoutRewardCap = null, int? topPlaces = null, float? pickupRollTime = null, float? length = null)
         {
             return new ModeRules {
                 Fall = fall ?? Fall,
@@ -185,6 +198,7 @@ namespace ToyCarArena.Gameplay
                 KnockoutRewardCap = knockoutRewardCap ?? KnockoutRewardCap,
                 TopPlaces = topPlaces ?? TopPlaces,
                 PickupRollTime = pickupRollTime ?? PickupRollTime,
+                Length = length ?? Length,
             };
         }
     }

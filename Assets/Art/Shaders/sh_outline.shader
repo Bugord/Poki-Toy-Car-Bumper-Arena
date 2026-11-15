@@ -10,7 +10,7 @@ Shader "ToyCarArena/Outline"
     Properties
     {
         _Color ("Colour", Color) = (0.1137, 0.1686, 0.3098, 1)
-        _Width ("Width, pixels at 1080 on the short screen side", Float) = 3
+        _Width ("Width, pixels at 1080 on the short screen side", Float) = 4
     }
 
     SubShader

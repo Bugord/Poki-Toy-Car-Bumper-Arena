@@ -193,7 +193,7 @@ result.new_hat_tag,Tag on the popup that offers a hat for coins; short,HAT SHOP,
 result.buy,Button on the level popup that buys the new car for coins; short,BUY,ACHETER,COMPRA,KAUFEN,COMPRAR,AL,COMPRAR,КУПИТЬ
 result.buy_equip,Button on the new-car popup: buys the car for coins and drives it next; short,BUY & EQUIP,ACHETER ET ÉQUIPER,COMPRA E SCEGLI,KAUFEN & WÄHLEN,COMPRAR Y EQUIPAR,AL VE SEÇ,COMPRAR E EQUIPAR,КУПИТЬ И ВЫБРАТЬ
 result.equipped,Stamp slammed over a bought car or a gift hat once it is put on,EQUIPPED!,ÉQUIPÉ !,SCELTO!,GEWÄHLT!,¡EQUIPADO!,SEÇİLDİ!,EQUIPADO!,ВЫБРАНО!
-result.gift_title,"Title of the popup giving a free hat after a win; short",GIFT!,CADEAU !,REGALO!,GESCHENK!,¡REGALO!,HEDİYE!,PRESENTE!,ПОДАРОК!
+result.gift_title,"Title of the popup giving a free hat after a win; short",REWARD!,RÉCOMPENSE !,PREMIO!,BELOHNUNG!,¡PREMIO!,ÖDÜL!,PRÊMIO!,НАГРАДА!
 result.free_hat_tag,"Tag on the free hat popup",FREE HAT!,CHAPEAU OFFERT !,CAPPELLO GRATIS!,GRATIS-HUT!,¡GORRO GRATIS!,BEDAVA ŞAPKA!,CHAPÉU GRÁTIS!,ШАПКА В ПОДАРОК!
 result.reward_xp,Name on the XP sticker of the result,XP,XP,XP,XP,XP,XP,XP,ОПЫТ
 result.reward_coins,Name on the coins sticker of the result,COINS,PIÈCES,MONETE,MÜNZEN,MONEDAS,ALTIN,MOEDAS,МОНЕТЫ
@@ -228,7 +228,7 @@ menu.cup,"Game mode coming later: a cup of several rounds",CUP,COUPE,COPPA,POKAL
 menu.cup_hint,What the cup mode will be,"THREE ROUNDS, ONE CUP","TROIS MANCHES, UNE COUPE","TRE ROUND, UNA COPPA","DREI RUNDEN, EIN POKAL","TRES RONDAS, UNA COPA","ÜÇ TUR, BİR KUPA","TRÊS RODADAS, UMA COPA",ТРИ РАУНДА — ОДИН КУБОК
 menu.survival,Game mode coming later: waves of bots,SURVIVAL,SURVIE,SOPRAVVIVENZA,ÜBERLEBEN,SUPERVIVENCIA,HAYATTA KAL,SOBREVIVÊNCIA,ВЫЖИВАНИЕ
 menu.survival_hint,What the survival mode will be,WAVES OF BOTS. HOW LONG CAN YOU LAST?,DES VAGUES DE BOTS. TU TIENS COMBIEN ?,ONDATE DI BOT. QUANTO RESISTI?,BOT-WELLEN. WIE LANGE HÄLTST DU DURCH?,OLEADAS DE BOTS. ¿CUÁNTO AGUANTAS?,BOT DALGALARI. NE KADAR DAYANIRSIN?,ONDAS DE BOTS. QUANTO VOCÊ AGUENTA?,ВОЛНЫ БОТОВ. СКОЛЬКО ПРОДЕРЖИШЬСЯ?
-result.home,"Round button on the result that goes back to the main menu; max ~6 chars",HOME,MENU,MENU,MENÜ,MENÚ,MENÜ,MENU,МЕНЮ
+result.home,"Round button on the result that goes back to the main menu (the hub); max ~6 chars",HUB,HUB,HUB,HUB,HUB,HUB,HUB,ХАБ
 menu.new_league,"Title of the popup when the player reaches a new league (a rank: bronze, silver, gold, legend); short",NEW LEAGUE!,NOUVELLE LIGUE !,NUOVA LEGA!,NEUE LIGA!,¡NUEVA LIGA!,YENİ LİG!,NOVA LIGA!,НОВАЯ ЛИГА!
 menu.league_name,"A league's full name, {0} is the rank name (e.g. SILVER LEAGUE)",{0} LEAGUE,LIGUE {0},LEGA {0},LIGA {0},LIGA {0},{0} LİGİ,LIGA {0},ЛИГА {0}
 menu.leagues,Title of the screen that lists all leagues; short,LEAGUES,LIGUES,LEGHE,LIGEN,LIGAS,LİGLER,LIGAS,ЛИГИ
@@ -250,7 +250,7 @@ menu.watch,Button that plays the rewarded ad of the XP boost; short,WATCH,REGARD
 menu.no_thanks,Button that turns the XP boost offer down; short,NO THANKS,NON MERCI,NO GRAZIE,NEIN DANKE,"NO, GRACIAS",HAYIR,"NÃO, VALEU","НЕТ, СПАСИБО"
 menu.boost_left,"On the XP boost tile while it runs: the matches it still lasts, {0} a number from 1; max ~8 chars; keep it right for any number",{0} LEFT,ENCORE {0},ANCORA {0},NOCH {0},{0} MÁS,{0} KALDI,MAIS {0},ЕЩЁ {0}
 menu.daily,"Main menu tile that opens the daily gift; max ~9 chars",DAILY,QUOTIDIEN,GIORNO,TÄGLICH,DIARIO,GÜNLÜK,DIÁRIO,ПОДАРОК
-daily.title,Title of the daily gift popup,DAILY GIFT!,CADEAU DU JOUR !,REGALO DEL GIORNO!,TAGESGESCHENK!,¡REGALO DIARIO!,GÜNÜN HEDİYESİ!,PRESENTE DIÁRIO!,ПОДАРОК ДНЯ!
+daily.title,Title of the daily reward popup,DAILY REWARD!,RÉCOMPENSE DU JOUR !,PREMIO DEL GIORNO!,TAGESBELOHNUNG!,¡PREMIO DIARIO!,GÜNÜN ÖDÜLÜ!,PRÊMIO DIÁRIO!,НАГРАДА ДНЯ!
 daily.streak,"Tag on the daily gift: how many days in a row the player has come, {0} a number from 1; short",DAY {0} IN A ROW,JOUR {0} D'AFFILÉE,GIORNO {0} DI FILA,TAG {0} IN FOLGE,DÍA {0} SEGUIDO,ÜST ÜSTE {0}. GÜN,DIA {0} SEGUIDO,ДЕНЬ {0} ПОДРЯД
 daily.today,"Caption of today's cell in the daily gift calendar; max ~7 chars",TODAY,AUJOURD'HUI,OGGI,HEUTE,HOY,BUGÜN,HOJE,СЕГОДНЯ
 daily.day,"Caption of a cell in the daily gift calendar, {0} the day 1..7; max ~7 chars",DAY {0},JOUR {0},GIORNO {0},TAG {0},DÍA {0},{0}. GÜN,DIA {0},ДЕНЬ {0}
@@ -263,7 +263,7 @@ daily.ready,"Small green pill on the DAILY tile while the gift waits; max ~6 cha
 daily.time_hm,"Small pill on the DAILY tile: time to the next gift, {0} hours and {1} minutes; max ~7 chars",{0}H {1}M,{0}H {1}M,{0}H {1}M,{0}H {1}M,{0}H {1}M,{0}S {1}D,{0}H {1}M,{0}Ч {1}М
 daily.time_m,"Small pill on the DAILY tile: time to the next gift under an hour, {0} minutes; max ~7 chars",{0}M,{0}M,{0}M,{0}M,{0}M,{0}D,{0}M,{0}М
 daily.tasks_title,Title of the daily popup on its tasks half,DAILY TASKS!,TÂCHES DU JOUR !,COMPITI DEL GIORNO!,TAGESAUFGABEN!,¡TAREAS DIARIAS!,GÜNLÜK GÖREVLER!,TAREFAS DIÁRIAS!,ЗАДАНИЯ ДНЯ!
-daily.tab_gift,"Half of the GIFT | TASKS switch at the top of the daily popup: the gift calendar; max ~8 chars",GIFT,CADEAU,REGALO,GESCHENK,REGALO,HEDİYE,PRESENTE,ПОДАРОК
+daily.tab_gift,"Half of the REWARD | TASKS switch at the top of the daily popup: the reward calendar; max ~8 chars",REWARD,PRIME,PREMIO,BONUS,PREMIO,ÖDÜL,PRÊMIO,НАГРАДА
 daily.tab_tasks,"The other half of the switch: the daily tasks, {0} done of {1}; max ~12 chars",TASKS {0}/{1},TÂCHES {0}/{1},COMPITI {0}/{1},AUFGABEN {0}/{1},TAREAS {0}/{1},GÖREVLER {0}/{1},TAREFAS {0}/{1},ЗАДАНИЯ {0}/{1}
 daily.first_win,Card on the daily tasks: the first round won each day pays double,FIRST WIN OF THE DAY,PREMIÈRE VICTOIRE DU JOUR,PRIMA VITTORIA DEL GIORNO,ERSTER SIEG DES TAGES,PRIMERA VICTORIA DEL DÍA,GÜNÜN İLK ZAFERİ,PRIMEIRA VITÓRIA DO DIA,ПЕРВАЯ ПОБЕДА ДНЯ
 daily.first_win_hint,"Under the first win card while it is still to come, {0} the multiplier",WIN A ROUND FOR ×{0} XP AND COINS,GAGNE UNE MANCHE : ×{0} XP ET PIÈCES,VINCI UN ROUND: ×{0} XP E MONETE,GEWINNE EINE RUNDE: ×{0} XP UND MÜNZEN,GANA UNA RONDA: ×{0} XP Y MONEDAS,BİR TUR KAZAN: ×{0} XP VE ALTIN,VENÇA UMA RODADA: ×{0} XP E MOEDAS,ВЫИГРАЙ РАУНД: ×{0} ОПЫТА И МОНЕТ
@@ -309,3 +309,14 @@ result.team_draw,Result subtitle: the teams ended level,IT'S A DRAW!,MATCH NUL !
 hud.team_blue,Team name in a round in teams: the blue team (score bar; lobby and result headers),BLUE,BLEUS,BLU,BLAU,AZULES,MAVİ,AZUL,СИНИЕ
 hud.team_red,Team name in a round in teams: the red team (score bar; lobby and result headers),RED,ROUGES,ROSSI,ROT,ROJOS,KIRMIZI,VERMELHO,КРАСНЫЕ
 result.mvp,Tag on the best player of a team in the result table; max ~4 chars,MVP,MVP,MVP,MVP,MVP,MVP,MVP,MVP
+tutorial.push,"Tutorial step 1: ram the car under the arrow off the arena's edge; short",PUSH IT OFF THE EDGE!,POUSSE-LA DANS LE VIDE !,BUTTALA GIÙ!,SCHUBS SIE RUNTER!,¡TÍRALO DEL BORDE!,ONU KENARDAN İT!,EMPURRE PRA FORA!,СТОЛКНИ ЕГО С КРАЯ!
+tutorial.drive_mouse,"Tutorial step 1, under its words on a computer: how to drive; short",HOLD THE MOUSE OR USE WASD,MAINTIENS LA SOURIS OU LES FLÈCHES,TIENI PREMUTO IL MOUSE O USA WASD,MAUS GEDRÜCKT HALTEN ODER WASD,MANTÉN EL RATÓN O USA WASD,FAREYİ BASILI TUT YA DA WASD,SEGURE O MOUSE OU USE WASD,ЗАЖМИ МЫШЬ ИЛИ ЖМИ WASD
+tutorial.box,"Tutorial step 2: drive into the item box to take what's inside; short",GRAB THE BOX,PRENDS LA BOÎTE,PRENDI LA SCATOLA,SCHNAPP DIR DIE BOX,AGARRA LA CAJA,KUTUYU KAP,PEGUE A CAIXA,ВОЗЬМИ КОРОБКУ
+tutorial.use,"Tutorial step 3: use the item from the box, which makes the car giant; short",USE IT TO GROW BIG!,UTILISE-LE POUR GRANDIR !,USALO PER DIVENTARE ENORME!,NUTZ ES UND WERD RIESIG!,¡ÚSALO PARA CRECER!,KULLAN VE BÜYÜ!,USE PARA CRESCER!,ПРИМЕНИ И СТАНЬ БОЛЬШИМ!
+tutorial.smash,"Tutorial step 4: two cars drop in and the car is giant now, ram the last two cars under the arrow off the edge; short",NOW SMASH THEM OFF!,ÉJECTE-LES MAINTENANT !,ORA BUTTALI GIÙ!,JETZT SCHUBS SIE RUNTER!,¡AHORA TÍRALOS!,ŞİMDİ ONLARI İT!,AGORA EMPURRE ELES!,ТЕПЕРЬ СТОЛКНИ ИХ!
+tutorial.done,"Tutorial: all steps done, the round is won; short cheer",YOU'VE GOT IT!,TU AS COMPRIS !,CE L'HAI FATTA!,DU HAST ES DRAUF!,¡LO TIENES!,TAMAMDIR!,MANDOU BEM!,ТЫ ВСЁ ПОНЯЛ!
+tutorial.nice_push,"Tutorial praise: the first car was pushed off the edge; short cheer",NICE PUSH!,BELLE POUSSÉE !,BELLA SPINTA!,STARKER STOSS!,¡BUEN EMPUJÓN!,SÜPER İTİŞ!,BELO EMPURRÃO!,ОТЛИЧНЫЙ ТОЛЧОК!
+tutorial.huge,"Tutorial praise: the item made the car giant; short cheer","WOW, YOU'RE HUGE!","WOUAH, TU ES ÉNORME !","WOW, SEI ENORME!","WOW, DU BIST RIESIG!","¡GUAU, ERES ENORME!","VAY, DEV OLDUN!","UAU, VOCÊ ESTÁ ENORME!","ОГО, ТЫ ОГРОМНЫЙ!"
+menu.new_mode,"Title of the popup that shows a game mode the player has not seen; short",NEW MODE!,NOUVEAU MODE !,NUOVA MODALITÀ!,NEUER MODUS!,¡NUEVO MODO!,YENİ MOD!,NOVO MODO!,НОВЫЙ РЕЖИМ!
+menu.try,"Big green button on the new mode popup: opens the modes with it picked; short",TRY IT!,ESSAIE !,PROVALA!,PROBIER ES!,¡PRUÉBALO!,DENE!,EXPERIMENTE!,ПОПРОБОВАТЬ!
+menu.later,"White button on the new mode popup that closes it; short",LATER,PLUS TARD,DOPO,SPÄTER,LUEGO,SONRA,DEPOIS,ПОЗЖЕ

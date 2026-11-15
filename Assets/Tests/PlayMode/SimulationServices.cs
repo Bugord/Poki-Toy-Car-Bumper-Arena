@@ -16,6 +16,9 @@ namespace ToyCarArena.Tests.PlayMode
         public int WinStreak { get; set; }
         public int Nemesis => RoundResult.Nobody;
         public ToyCarArena.Gameplay.EventMode Mode { get; set; }
+
+        /// <summary>False, so the measured first round is a plain one; a tutorial test sets it.</summary>
+        public bool IsNewPlayer { get; set; }
     }
 
     /// <summary>

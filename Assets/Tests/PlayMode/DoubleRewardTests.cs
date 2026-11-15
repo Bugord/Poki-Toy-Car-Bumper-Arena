@@ -195,6 +195,21 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [Test]
+        public void TheTutorialsHatShowsOnItsOwnResultAndOnlyOnce()
+        {
+            Assert.That(wallet.TryGift(1), Is.Null, "the level's gift waits for its level");
+            var gift = wallet.TryGift(1, true);
+            Assert.That(gift, Is.EqualTo(tuning.Toppers.GiftTopper));
+            // The first result opens a car, which leaves no room for a waiting popup: the lesson's reward shows anyway.
+            var model = Result(out _, out _);
+            Assert.That(model.HasRoomToWait, Is.False);
+            Assert.That(model.IsGiftDue, Is.True);
+            model.GiftShown();
+            Assert.That(wallet.IsGiftEarned, Is.False);
+            Assert.That(wallet.TryGift(tuning.Toppers.GiftLevel), Is.Null, "the level does not give the hat again");
+        }
+
+        [Test]
         public void AGiftIsNotOfferedOverAWornHat()
         {
             var gift = wallet.TryGift(tuning.Toppers.GiftLevel);

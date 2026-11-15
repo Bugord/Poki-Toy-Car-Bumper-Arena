@@ -155,6 +155,9 @@ def summarise(data):
     s["round_time"] = other(o, r"result-((?:early|mid|late|full)-r[0-9a-z]+)-round-time")
     # долгий матч (режим Match): свои старты и итоги вместо round / result
     s["matches"] = rounds(p, "match")
+    # после v0.18.1: шаги обучения первого раунда (TutorialMode), начали / прошли / ушли на шаге
+    s["tutorial"] = {m.group(1): (num(row, "starts"), num(row, "completes"), num(row, "lefts"))
+                     for event, row in p.items() if (m := re.fullmatch(r"tutorial-(drive|push|box|use|smash)", event))}
     s["match_place"] = other(o, r"match-place-(\d+-r[0-9a-z]+)-place")
     s["match_knockouts"] = other(o, r"match-knockouts-([0-9a-z]+-r[0-9a-z]+)-knockouts")
     s["match_falls"] = other(o, r"match-falls-([0-9a-z]+-r[0-9a-z]+)-falls")
@@ -560,6 +563,14 @@ def report(version, previous):
         ids = sorted({t for s in (cur, old) if s for t in s["task_done"]})
         for task in ids:
             out.append(line(f"Задание {task} выполнено (визиты)", lambda s, task=task: str(s["task_done"].get(task, 0))))
+    # The first round's tutorial: how many began each step, did it and left on it.
+    if any(s and s.get("tutorial") for s in (cur, old)):
+        out += ["", "## Обучение в первом раунде (после v0.18.1; шаг drive только в v0.18.1)", "", head, sep]
+        for step in ("drive", "push", "box", "use", "smash"):
+            def cell(s, step=step):
+                started, done, left = s.get("tutorial", {}).get(step, (0, 0, 0))
+                return f"{started} → {done} ({pct(done, started)}), ушли {left}"
+            out.append(line(f"Шаг {step}: начали → прошли", cell))
     print("\n".join(out))
 
 

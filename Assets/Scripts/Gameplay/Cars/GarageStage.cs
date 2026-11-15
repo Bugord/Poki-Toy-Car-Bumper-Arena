@@ -40,11 +40,11 @@ namespace ToyCarArena.Gameplay.Cars
         private const int CellSize = 256;
         private const float HatPitch = 16f;
         private const float HatYaw = 200f;
-        // The share of its cell the topper fills, its widest or tallest side. The rest is room for its outline: 3 pixels
-        // boosted six times is about 17 of the cell's 256, and an outline crossing into the next cell showed there as a
+        // The share of its cell the topper fills, its widest or tallest side. The rest is room for its outline: 4 pixels
+        // boosted 2.5 times is about 10 of the cell's 256 (six times bent the toppers out of shape); one crossing into the next cell showed there as a
         // stray dark line.
         private const float HatFill = 0.84f;
-        private const float HatBoost = 6f;
+        private const float HatBoost = 2.5f;
 
         // The main menu stands the car on a plain 3D pedestal in the stickers' colours, turning with it: a navy drum,
         // a gold band round its top and a top set in from the band, so a gold rim shows round it. The top takes the

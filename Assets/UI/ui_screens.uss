@@ -1186,6 +1186,109 @@
 
 .hud__pass-text.stroke__drop { translate: 0 10px; display: flex; }
 
+/* The tutorial (TutorialHud): what to do now on a white sticker over the arrow at the step's place in the world (the
+   code moves it there every frame), the step's number on a gold disc; green with the last words. The arrow is painted
+   in code. */
+.hud__tutorial {
+    position: absolute;
+    align-items: center;
+    transform-origin: 50% 100%;
+    scale: 0.4 0.4;
+    opacity: 0;
+    transition-property: scale, opacity;
+    transition-duration: 0.3s, 0.15s;
+    transition-timing-function: ease-out-back, linear;
+}
+
+.hud__tutorial--shown {
+    scale: 1 1;
+    opacity: 1;
+}
+
+.hud__tutorial-sticker {
+    flex-direction: row;
+    align-items: center;
+    max-width: 640px;
+    padding: 10px 34px 12px 12px;
+    border-radius: 60px;
+    border-width: 6px 6px 14px 6px;
+    border-color: var(--navy);
+    background-color: var(--white);
+}
+
+.hud__tutorial--done .hud__tutorial-sticker {
+    background-color: var(--green);
+}
+
+.hud__tutorial-step {
+    width: 84px;
+    height: 84px;
+    margin-right: 22px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 42px;
+    border-width: 5px;
+    border-color: var(--navy);
+    background-color: var(--gold);
+}
+
+.hud__tutorial-step-text {
+    margin: 0;
+    padding: 0;
+    font-size: 54px;
+    -unity-text-align: middle-center;
+}
+
+.hud__tutorial-step-text.stroke__drop { translate: 0 5px; display: flex; }
+
+.hud__tutorial-text {
+    flex-shrink: 1;
+    margin: 0;
+    padding: 0;
+    font-size: 48px;
+    color: var(--navy);
+    -unity-text-outline-width: 0;
+    -unity-text-align: middle-left;
+    white-space: normal;
+}
+
+.hud__tutorial-words {
+    flex-shrink: 1;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+/* How to drive, under the first step's words: smaller and softer. */
+.hud__tutorial-hint {
+    flex-shrink: 1;
+    margin: 4px 0 0 0;
+    padding: 0;
+    font-size: 32px;
+    color: #4d5f8a;
+    -unity-text-outline-width: 0;
+    -unity-text-align: middle-left;
+    white-space: normal;
+}
+
+.hud__tutorial--done .hud__tutorial-text {
+    color: var(--white);
+    -unity-text-outline-width: 6px;
+    -unity-text-outline-color: var(--navy);
+}
+
+.hud__tutorial-arrow {
+    display: none;
+    position: absolute;
+    width: 96px;
+    height: 112px;
+    translate: -50% -100%;
+}
+
+.hud__tutorial-arrow--shown {
+    display: flex;
+}
+
 /* A match: SAFE over the player's car while it is safe after coming back (HudView places it over the car's marker),
    on the dark backdrop of the bots' handles, with a bar that runs down with the safe time. */
 .hud__shield {
@@ -2694,12 +2797,15 @@
 }
 
 .track__map {
-    width: 55px;
-    height: 55px;
-    border-width: 7px;
-    border-color: var(--navy);
-    border-radius: 999px;
+    width: 76px;
+    height: 76px;
+    -unity-background-scale-mode: scale-to-fit;
 }
+
+.track__map--sandbox { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_arena_sandbox.png"); }
+.track__map--tabletop { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_arena_tabletop.png"); }
+.track__map--candy { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_arena_candy.png"); }
+.track__map--playroom { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_arena_playroom.png"); }
 
 /* As wide as the step between stops, so a long name in another language shrinks rather than runs into its
    neighbour's. */
@@ -6011,3 +6117,19 @@
    (.stroke > .stroke__face), or the outline, centred on the letters' edge, eats them and leaves them hollow. */
 .stroke > Label.results__team-name-text.stroke__face,
 .stroke > Label.results__team-points-text.stroke__face { -unity-text-outline-width: 0; }
+
+/* The missions' and HOME's pictures, painted (Codex, in the item icons' sticker style). */
+.mission-icon__sign { -unity-background-scale-mode: scale-to-fit; }
+.mission-icon__sign--knockout { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_knockout.png"); }
+.mission-icon__sign--item-knockout { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_item_knockout.png"); }
+.mission-icon__sign--bomb { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_bomb.png"); }
+.mission-icon__sign--box { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_box.png"); }
+.mission-icon__sign--win { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_win.png"); }
+.mission-icon__sign--final-two { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_final_two.png"); }
+.mission-icon__sign--revenge { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_revenge.png"); }
+.mission-icon__sign--boost { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_boost.png"); }
+.mission-icon__sign--rounds { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_rounds.png"); }
+.round-over__home-icon--painted {
+    background-image: url("/Assets/Art/Sprites/UI/sprite_icon_hub.png");
+    -unity-background-scale-mode: scale-to-fit;
+}

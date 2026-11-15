@@ -93,12 +93,28 @@ namespace ToyCarArena.App
             }
 
             var round = levelScene.Resolve<ArenaRound>();
+            var tutorial = levelScene.Resolve<TutorialMode>();
             var tuning = levelScene.Resolve<GameTuning>();
             var driver = levelScene.Resolve<PlayerDriver>();
             var finished = new UniTaskCompletionSource<RoundResult>();
             void OnFinished(RoundResult result) => finished.TrySetResult(result);
 
             round.Finished += OnFinished;
+            // The tutorial's steps: where a new player stops learning (tutorial / <step> / start|complete).
+            void OnStepStarted(TutorialStep step)
+            {
+                // The lesson's end is the use step's complete: a start with no complete would read as a leave.
+                if (step != TutorialStep.Done) {
+                    platform.MeasureTutorialStep(step, false);
+                }
+            }
+
+            void OnStepDone(TutorialStep step) => platform.MeasureTutorialStep(step, true);
+            if (tutorial.IsActive) {
+                tutorial.StepStarted += OnStepStarted;
+                tutorial.StepDone += OnStepDone;
+            }
+
             ScreenHandle<HudViewModel> hud = null;
             var isPlaying = false;
             var playStarted = 0f;
@@ -272,8 +288,8 @@ namespace ToyCarArena.App
                 var xpGain = playerProgress.Record(result, isStreakRound ? streaks : null,
                     missionRound.Xp + taskRound.Xp, firstWin);
                 var coinGain = wallet.Record(result, isStreakRound, missionRound.Coins + taskRound.Coins, firstWin);
-                // The free topper of its level: the result offers to wear it.
-                wallet.TryGift(xpGain.After.Level);
+                // The free topper of its level, or the tutorial's reward: the result offers to wear it.
+                wallet.TryGift(xpGain.After.Level, tutorial is { IsActive: true, IsDone: true });
                 var record = bests.Record(result).WithXp(xpGain).WithKnocker(
                     result.KnockedOutBy == RoundResult.Nobody ? "" : round.NameOf(result.KnockedOutBy)).WithRoster(
                     round.Names, round.Levels, IndexOf(round, round.Nemesis)).WithMeta(coinGain, missionRound,
@@ -283,6 +299,11 @@ namespace ToyCarArena.App
                     RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis, tuning.Players);
                 platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, driver, tuning.Boost.IsEnabled,
                     waitsForPlayer, round.Mode.IsKnockOutFinal);
+                var safety = levelScene.Resolve<PlayerSafety>();
+                if (levelScene.Resolve<RoundDifficulty>().IsPlayerSafe) {
+                    platform.MeasureSaved(roundNumber, safety.Rescues);
+                }
+
                 if (pickups.IsEnabled) {
                     platform.MeasureMatchPickups(roundNumber, pickupCount, result.IsMatch);
                 }
@@ -306,6 +327,8 @@ namespace ToyCarArena.App
             }
             finally {
                 round.Finished -= OnFinished;
+                tutorial.StepStarted -= OnStepStarted;
+                tutorial.StepDone -= OnStepDone;
                 round.KnockedOut -= OnKnockedOut;
                 variants.VariantChanged -= OnVariantChanged;
                 pickups.Collected -= OnCollected;
