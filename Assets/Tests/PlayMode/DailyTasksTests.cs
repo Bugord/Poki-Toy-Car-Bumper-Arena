@@ -191,16 +191,15 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [Test]
-        public void TheFirstWinKeepsAllItEarnedAndStacksWithTheBoost()
+        public void TheFirstWinIsHeldToOneLevelAndStacksWithTheBoost()
         {
-            // A big win at the start: one level's hold would cut it, the first win keeps all of it.
+            // A big win at the start: a new player's first round is always their first win, and it stays one level.
             var result = new RoundResult(RoundOutcome.Won, 1, 7, 40f, 6, RoundResult.Nobody, FallCause.None, false,
                 false);
-            var plain = new PlayerProgress(new RoundOverScreenshots.MemoryStorage(), tuning, catalog).Record(result);
             var doubled = progress.Record(result, null, 0, 2);
-            Assert.That(doubled.TotalAfter, Is.EqualTo(doubled.Total));
-            Assert.That(doubled.TotalAfter, Is.GreaterThan(plain.TotalAfter));
-            Assert.That(doubled.After.Level - doubled.Before.Level, Is.GreaterThan(1));
+            Assert.That(doubled.FirstWinXp, Is.GreaterThan(0));
+            Assert.That(doubled.After.Level - doubled.Before.Level, Is.EqualTo(1));
+            Assert.That(doubled.TotalAfter, Is.LessThan(doubled.TotalBefore + doubled.Total));
 
             // Under the menu's XP boost the first win doubles the boosted round again.
             var boosted = new RoundOverScreenshots.MemoryStorage();
@@ -239,7 +238,9 @@ namespace ToyCarArena.Tests.PlayMode
         {
             var mode = TodaysEvent(Monday);
             Assert.That(Played(tasks.Record(Stats(RoundOutcome.Out, 0), Monday)), Is.False, "A plain round.");
-            Assert.That(Played(tasks.Record(Stats(RoundOutcome.Out, 0, "crown"), Monday)), Is.False, "Another mode.");
+            // Any mode but the day's, whichever of the modes the build has on.
+            var other = mode == "crown" ? "hot-potato" : "crown";
+            Assert.That(Played(tasks.Record(Stats(RoundOutcome.Out, 0, other), Monday)), Is.False, "Another mode.");
             var left = new MissionStats(false, RoundOutcome.Out, 3, 0, 0, false, 0, 0, 0, "sandbox", mode);
             Assert.That(tasks.CountDone(left, Monday), Is.Zero, "A round left in the middle.");
             Assert.That(tasks.Today(Monday)[0].IsDone, Is.False);

@@ -108,7 +108,9 @@ namespace ToyCarArena.App
             builder.Register<SessionProgress>(Lifetime.Singleton).AsSelf().As<ISessionProgress>();
             builder.Register<SessionRoster>(Lifetime.Singleton).As<ISessionRoster>();
             // The arena of the next round is chosen before its scene is built, so it lives here too.
-            builder.Register<ArenaRotation>(Lifetime.Singleton).As<IArenaRotation>();
+            builder.Register<ArenaRotation>(Lifetime.Singleton).AsSelf();
+            // A mode with an arena of its own (FOOTBALL's pitch) plays it on top of the rotation, without moving it.
+            builder.Register<ModeArenaRotation>(Lifetime.Singleton).As<IArenaRotation>();
             builder.Register<PersonalBests>(Lifetime.Singleton);
             builder.Register<AdBreaks>(Lifetime.Singleton);
             builder.RegisterEntryPoint<SessionTime>().AsSelf();

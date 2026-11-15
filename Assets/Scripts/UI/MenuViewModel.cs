@@ -110,6 +110,9 @@ namespace ToyCarArena.UI
         public IReadOnlyList<MissionState> Missions => missions.Slots;
         public MissionState NearestMission => missions.Nearest();
 
+        /// <summary>Whether the missions are open (from level 3): before it the menu has no MISSIONS tile.</summary>
+        public bool HasMissions => missions.IsOpen;
+
         /// <summary>A mission's task in the language shown, its arena named.</summary>
         public string MissionText(GameTuning.MissionDefinition mission) =>
             GameText.Mission(mission, mission.Map.Length > 0 ? GameText.Arena(arenaCatalog.Find(mission.Map)) : null);
@@ -395,26 +398,50 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>
-        /// The event tile: makes the event of the day the mode in play for the visit, as its card in CHOOSE MODE does,
-        /// and starts it at once, <c>menu / event-&lt;id&gt; / interact</c> before PLAY's own <c>menu / play</c>.
+        /// The event tile was pressed, <c>menu / event-&lt;id&gt; / interact</c>: CHOOSE MODE opens on the event (its
+        /// pick is <see cref="SelectMode"/>), and PLAY there starts it.
         /// </summary>
-        public void PlayEvent()
+        public void EventPressed()
+        {
+            if (!IsDecided && HasEvents) {
+                platform.MeasureMenuPressed(EventTile);
+            }
+        }
+
+        /// <summary>
+        /// Whether the menu should offer NEW MODE!: the event of the day was never offered to this player. Taking it
+        /// marks the mode offered and counts the popup, <c>menu / new-mode-&lt;id&gt; / visible</c>, so call it as it
+        /// opens. TRY is the same name's <c>interact</c> (<see cref="NewModeTried"/>); LATER is the visible without it.
+        /// </summary>
+        public bool TakeNewMode()
         {
             if (IsDecided || !HasEvents) {
-                return;
+                return false;
             }
 
-            var today = TodayEvent;
-            if (session != null) {
-                session.Mode = today;
+            var key = NewModeIntro;
+            if (wallet.IsIntroduced(key)) {
+                return false;
             }
 
-            mode = today;
-            platform.MeasureMenuPressed(EventTile);
-            Play();
+            wallet.MarkIntroduced(key);
+            platform.MeasureMenuVisible(NewMode);
+            return true;
+        }
+
+        /// <summary>TRY on NEW MODE!: <c>menu / new-mode-&lt;id&gt; / interact</c>.</summary>
+        public void NewModeTried()
+        {
+            if (HasEvents) {
+                platform.MeasureMenuPressed(NewMode);
+            }
         }
 
         private string EventTile => "event-" + TodayEventId;
+
+        private string NewMode => "new-mode-" + TodayEventId;
+
+        private string NewModeIntro => "mode-" + TodayEventId;
 
         private static string ModePick(EventMode pick) =>
             pick == EventMode.None ? "mode-quick" : "mode-" + EventModes.IdOf(pick);

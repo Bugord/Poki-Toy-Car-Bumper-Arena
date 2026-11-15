@@ -1,6 +1,8 @@
 using Bugord.App.Platform;
 using ToyCarArena.Gameplay;
+using ToyCarArena.Gameplay.Modes;
 using ToyCarArena.Gameplay.Cars;
+using ToyCarArena.Gameplay.Modes;
 using ToyCarArena.Gameplay.Round;
 using ToyCarArena.Rendering;
 using UnityEngine;
@@ -158,12 +160,22 @@ namespace ToyCarArena.App
         private const string DailyAd = "daily";
 
         /// <summary>
-        /// A content bundle (<see cref="ContentBundles"/>) that never came (<c>failed</c>), or that a round or result
-        /// screen stopped waiting for (<c>late</c>): <c>content / late-floors-tabletop / load</c>. The bundle names
-        /// carry no numbers.
+        /// A content bundle (<see cref="ContentBundles"/>) that never came (<c>failed</c>), that came only as plain bytes
+        /// after the streamed download failed (<c>memory</c>), or that a round or result screen stopped waiting for
+        /// (<c>late</c>): <c>content / late-floors-tabletop / load</c>. The bundle names carry no numbers.
         /// </summary>
         public static void MeasureContent(this IGamePlatform platform, string how, string bundle) =>
             platform.Measure("content", $"{how}-{bundle}", "load");
+
+        /// <summary>
+        /// How many of the player's falls a safe first round caught (<see cref="Gameplay.Round.PlayerSafety"/>), sent only
+        /// in such a round: <c>result / saved-none|one|few-r1 / saved</c> (0, 1, 2 and more), one number.
+        /// </summary>
+        public static void MeasureSaved(this IGamePlatform platform, int round, int rescues)
+        {
+            var count = rescues <= 0 ? "none" : rescues == 1 ? "one" : "few";
+            platform.Measure(ResultCategory, $"saved-{count}-{RoundTag(round)}", "saved");
+        }
 
         /// <summary>
         /// The visit has been on the page <paramref name="minutes"/> minutes (<see cref="SessionTime"/>):
@@ -506,6 +518,21 @@ namespace ToyCarArena.App
         };
 
         /// <summary>
+        /// The active event mode's own events at the end of its round (<see cref="IModeAnalytics"/>), beside the
+        /// shared ones of <see cref="MeasureSpecialEnd"/>; nothing for a mode without them or without a mode.
+        /// </summary>
+        public static void MeasureModeEnd(this IGamePlatform platform, IRoundMode mode)
+        {
+            if (mode is not IModeAnalytics analytics) {
+                return;
+            }
+
+            foreach (var (id, action) in analytics.EndEvents) {
+                platform.Measure(SpecialCategory, id, action);
+            }
+        }
+
+        /// <summary>
         /// The end of the round started as <paramref name="round"/>, and the milestones of its result.
         /// </summary>
         /// <remarks>
@@ -818,6 +845,14 @@ namespace ToyCarArena.App
 
         public static void MeasureHatOfferPressed(this IGamePlatform platform, string topperId) =>
             platform.MeasureInteract("shop", $"hat-offer-{topperId}");
+
+        /// <summary>
+        /// A step of the new player's tutorial began (<c>tutorial / push|box|use|smash / start</c>) or was done
+        /// (<c>complete</c>); the lesson is done with <c>tutorial / smash / complete</c>. <c>drive</c> came first up to
+        /// v0.18.1 (a point to drive to), then was cut: the first step tells how to drive.
+        /// </summary>
+        public static void MeasureTutorialStep(this IGamePlatform platform, TutorialStep step, bool isDone) =>
+            platform.Measure("tutorial", step.ToString().ToLowerInvariant(), isDone ? "complete" : "start");
 
         /// <summary>The result's popup shows the free topper (<c>gift / &lt;id&gt; / visible</c>), and EQUIP on it.</summary>
         public static void MeasureGiftShown(this IGamePlatform platform, string topperId) =>

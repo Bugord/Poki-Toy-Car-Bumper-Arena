@@ -1186,6 +1186,141 @@
 
 .hud__pass-text.stroke__drop { translate: 0 10px; display: flex; }
 
+/* The tutorial (TutorialHud): what to do now on a white sticker over the arrow at the step's place in the world (the
+   code moves it there every frame), the step's number on a gold disc; green with the last words. The arrow is painted
+   in code. */
+.hud__tutorial {
+    position: absolute;
+    align-items: center;
+    transform-origin: 50% 100%;
+    scale: 0.4 0.4;
+    opacity: 0;
+    transition-property: scale, opacity;
+    transition-duration: 0.3s, 0.15s;
+    transition-timing-function: ease-out-back, linear;
+}
+
+.hud__tutorial--shown {
+    scale: 1 1;
+    opacity: 1;
+}
+
+.hud__tutorial-sticker {
+    flex-direction: row;
+    align-items: center;
+    max-width: 640px;
+    padding: 10px 34px 12px 12px;
+    border-radius: 60px;
+    border-width: 6px 6px 14px 6px;
+    border-color: var(--navy);
+    background-color: var(--white);
+}
+
+.hud__tutorial--done .hud__tutorial-sticker {
+    background-color: var(--green);
+}
+
+.hud__tutorial-step {
+    width: 84px;
+    height: 84px;
+    margin-right: 22px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 42px;
+    border-width: 5px;
+    border-color: var(--navy);
+    background-color: var(--gold);
+}
+
+.hud__tutorial-step-text {
+    margin: 0;
+    padding: 0;
+    font-size: 54px;
+    -unity-text-align: middle-center;
+}
+
+.hud__tutorial-step-text.stroke__drop { translate: 0 5px; display: flex; }
+
+.hud__tutorial-text {
+    flex-shrink: 1;
+    margin: 0;
+    padding: 0;
+    font-size: 48px;
+    color: var(--navy);
+    -unity-text-outline-width: 0;
+    -unity-text-align: middle-left;
+    white-space: normal;
+}
+
+.hud__tutorial-words {
+    flex-shrink: 1;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+/* How to drive, under the first step's words: smaller and softer. */
+.hud__tutorial-hint {
+    flex-shrink: 1;
+    margin: 4px 0 0 0;
+    padding: 0;
+    font-size: 32px;
+    color: #4d5f8a;
+    -unity-text-outline-width: 0;
+    -unity-text-align: middle-left;
+    white-space: normal;
+}
+
+.hud__tutorial--done .hud__tutorial-text {
+    color: var(--white);
+    -unity-text-outline-width: 6px;
+    -unity-text-outline-color: var(--navy);
+}
+
+/* The tutorial's praise and last words: big tilted gold words in the middle of the screen (confetti bursts from them),
+   as YOU WIN! on the result. They stand still and pop in; nothing catches input. */
+.hud__tutorial-cheer {
+    position: absolute;
+    left: 60px;
+    right: 60px;
+    top: 30%;
+    rotate: -4deg;
+    scale: 0.3 0.3;
+    opacity: 0;
+    transition-property: scale, opacity;
+    transition-duration: 0.35s, 0.15s;
+    transition-timing-function: ease-out-back, linear;
+}
+
+.hud__tutorial-cheer--shown {
+    scale: 1 1;
+    opacity: 1;
+}
+
+.hud__tutorial-cheer-text {
+    margin: 0;
+    padding: 0;
+    color: var(--gold);
+    font-size: 130px;
+    -unity-text-outline-width: 14px;
+    -unity-text-auto-size: best-fit 60px 130px;
+    white-space: normal;
+}
+
+.hud__tutorial-cheer-text.stroke__drop { translate: 0 14px; display: flex; }
+
+.hud__tutorial-arrow {
+    display: none;
+    position: absolute;
+    width: 96px;
+    height: 112px;
+    translate: -50% -100%;
+}
+
+.hud__tutorial-arrow--shown {
+    display: flex;
+}
+
 /* A match: SAFE over the player's car while it is safe after coming back (HudView places it over the car's marker),
    on the dark backdrop of the bots' handles, with a bar that runs down with the safe time. */
 .hud__shield {
@@ -1686,26 +1821,27 @@
     position: absolute;
 }
 
-/* Mega, shockwave, bomb, bowling, balloon and oil are drawn pictures (the round's items since v0.7.1): a big car with
-   arrows out, a broken ring round a smaller one, a bomb with a lit fuse, a bowling ball, a balloon on a string and a
-   drop of oil over a puddle. The others keep their glyphs from parts. */
+/* Mega, shockwave, bomb, bowling, balloon and oil are painted pictures (the round's items since v0.7.1; the art is
+   generated, sprite_item_<kind>.png 256x256, cropped to the picture): a big yellow car with arrows out, a burst in a
+   ring, a bomb with a lit fuse, a bowling ball, a yellow balloon on a string and a drop of oil over a puddle. They fill
+   most of the disc (136 of its 146 inner px). The others keep their glyphs from parts. */
 .hud__item-icon--mega .hud__item-glyph,
 .hud__item-icon--shockwave .hud__item-glyph,
 .hud__item-icon--bomb .hud__item-glyph,
 .hud__item-icon--bowling .hud__item-glyph,
 .hud__item-icon--balloon .hud__item-glyph,
 .hud__item-icon--oil .hud__item-glyph {
-    width: 112px;
-    height: 112px;
+    width: 136px;
+    height: 136px;
     -unity-background-scale-mode: scale-to-fit;
 }
 
-.hud__item-icon--mega .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_mega.svg"); }
-.hud__item-icon--shockwave .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_shockwave.svg"); }
-.hud__item-icon--bomb .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_bomb.svg"); }
-.hud__item-icon--bowling .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_bowling.svg"); }
-.hud__item-icon--balloon .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_balloon.svg"); }
-.hud__item-icon--oil .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_oil.svg"); }
+.hud__item-icon--mega .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_mega.png"); }
+.hud__item-icon--shockwave .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_shockwave.png"); }
+.hud__item-icon--bomb .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_bomb.png"); }
+.hud__item-icon--bowling .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_bowling.png"); }
+.hud__item-icon--balloon .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_balloon.png"); }
+.hud__item-icon--oil .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_oil.png"); }
 
 /* A shield: a white bubble with a navy rim. */
 .hud__item-icon--shield .hud__item-glyph {
@@ -1971,8 +2107,8 @@
    the SPACE key and BOOST on a desktop (hud__start--desktop). Nothing dims the arena: the player's car and the HUD
    stay as in play. On a narrow screen it sits in the sky under the HUD, over the arena's far edge; on a wide one
    (hud__start--wide) inside the ring of cars, between the far bots and the player's car. It springs in once the curtain
-   is up (hud__start--enter, taken off once it is laid out), bobs (hud__start--bob, toggled by HudView, with the mouse
-   swinging with it), and flashes away as the round begins (hud__start--leave). */
+   is up (hud__start--enter, taken off once it is laid out), stands still (moving words are hard to read)
+   and flashes away as the round begins (hud__start--leave). */
 .hud__start {
     display: none;
     position: absolute;
@@ -2018,8 +2154,9 @@
     transition-timing-function: ease-in-out;
 }
 
-.hud__start--bob .hud__start-prompt {
-    scale: 1.06 1.06;
+/* The tutorial's start: one line how to drive, no hints under it (its round has no boost and no start to press). */
+.hud__start--plain .hud__start-hint {
+    display: none;
 }
 
 .hud__start-goal {
@@ -2270,9 +2407,6 @@
     transition-timing-function: ease-in-out;
 }
 
-.hud__start--bob .hud__start-mouse {
-    translate: 8px 0;
-}
 
 .hud__start-mouse-button {
     position: absolute;
@@ -2441,7 +2575,7 @@
 .level-card {
     flex-shrink: 0;
     margin: 24px 0 44px 0;
-    padding: 28px 40px 10px 40px;
+    padding: 18px 40px 10px 40px;
     align-items: stretch;
     transition-property: translate, opacity;
     transition-duration: 0.3s;
@@ -2558,14 +2692,15 @@
    badge (RoundOverProgress moves it here), so the level shows once; the rank and XP line sits over the track beside
    it. */
 .track {
-    /* Room for the crown a rank stop wears over its circle, clear of the XP line. */
-    margin-top: 36px;
-    padding: 0 30px 96px 30px;
+    /* Room for the crown a rank stop wears over its circle, clear of the stickers over it. Under the stops, the two
+       caption lines and no more: the card gave the podium the rest. */
+    margin-top: 16px;
+    padding: 0 30px 58px 30px;
 }
 
 /* Only plain levels ahead (past the last reward and rank): no captions but the badge's rank. */
 .track--plain {
-    padding-bottom: 56px;
+    padding-bottom: 40px;
 }
 
 /* The bars' row and, laid exactly over it, the stops' row (RoundOverProgress.BuildTrack). Every bar and every gap
@@ -2693,12 +2828,15 @@
 }
 
 .track__map {
-    width: 55px;
-    height: 55px;
-    border-width: 7px;
-    border-color: var(--navy);
-    border-radius: 999px;
+    width: 76px;
+    height: 76px;
+    -unity-background-scale-mode: scale-to-fit;
 }
+
+.track__map--sandbox { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_arena_sandbox.png"); }
+.track__map--tabletop { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_arena_tabletop.png"); }
+.track__map--candy { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_arena_candy.png"); }
+.track__map--playroom { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_arena_playroom.png"); }
 
 /* As wide as the step between stops, so a long name in another language shrinks rather than runs into its
    neighbour's. */
@@ -2861,19 +2999,19 @@
     position: absolute;
     left: 0;
     right: 0;
-    top: 112px;
+    top: 92px;
     rotate: -4deg;
 }
 
 .xp-bar__level-up-text {
     margin: 0;
     padding: 0;
-    font-size: 72px;
+    font-size: 64px;
     color: var(--gold);
-    -unity-text-outline-width: 12px;
+    -unity-text-outline-width: 11px;
 }
 
-.xp-bar__level-up-text.stroke__drop { translate: 0 10px; display: flex; }
+.xp-bar__level-up-text.stroke__drop { translate: 0 9px; display: flex; }
 
 /* The second step: a level's reward over the whole result, dimmed, gold rays turning behind a white card. */
 .level-reward {
@@ -4394,24 +4532,11 @@
     display: none;
 }
 
-/* A round's podium has no subtitle or name pill over the player's own car: the car takes that height, and its
-   picture reaches down under the cards below (later in the tree, so drawn over it), which cover the podium's foot. */
+/* A round's podium has no subtitle or name pill over the player's own car: the car takes that height. Where the car
+   and a name pill stand in the podium RoundOverMatch.PlacePicture sets in every layout: the car whole, the pill over
+   its roof. */
 .round-over--podium .podium {
     margin-top: 0;
-}
-
-.round-over--podium .podium__car {
-    top: 0;
-    bottom: -70px;
-}
-
-/* The car that pushed the player off keeps its name pill, up at the podium's top, over the car's roof. */
-.round-over--podium .podium--rival .podium__winner {
-    top: 0;
-}
-
-.round-over--podium .podium--rival .podium__car {
-    top: 90px;
 }
 
 /* WINNER under a won round's title, the one sticker there when neither REVENGE! nor the streak has it. */
@@ -4888,8 +5013,8 @@
 .rewards {
     flex-direction: row;
     align-items: stretch;
-    height: 176px;
-    margin: 0 0 24px 0;
+    height: 150px;
+    margin: 0 0 8px 0;
 }
 
 .reward {
@@ -4935,7 +5060,7 @@
 .reward__value-text {
     margin: 0;
     padding: 0;
-    font-size: 84px;
+    font-size: 78px;
     -unity-text-align: middle-center;
     white-space: nowrap;
     -unity-text-outline-width: 10px;
@@ -5368,7 +5493,7 @@
 
 /* With the missions over it, the level card and the podium give up a little height, so a 16:9 portrait still fits. */
 .round-over--meta .level-card {
-    margin: 14px 0 30px 0;
+    margin: 12px 0 18px 0;
 }
 
 .round-over--meta .podium {
@@ -5632,11 +5757,6 @@
     display: none;
 }
 
-/* Beside the cards, not over them: the picture stays inside its own column. */
-.round-over--columns.round-over--landscape .podium__car {
-    bottom: 0;
-}
-
 .round-over--columns.round-over--landscape .podium {
     position: relative;
     left: auto;
@@ -5654,7 +5774,7 @@
 }
 
 /* The rival a size up beside the cards (a phone held sideways shows the panel at about half size), its pill standing
-   on the car's roof (RoundOverMatch.OnRivalGeometry) rather than at the podium's top. */
+   on the car's roof (RoundOverMatch.PlacePicture). */
 .round-over--columns.round-over--landscape .podium--rival .podium__winner {
     padding: 12px 52px 14px 16px;
     border-width: 9px;
@@ -5743,6 +5863,13 @@
     flex-grow: 1;
     width: auto;
     margin-left: 30px;
+}
+
+/* The tutorial's result: the win and its hat only (RoundOverView, RoundRecord.IsLesson). */
+.round-over--lesson .level-card,
+.round-over--lesson .missions,
+.round-over--lesson .coin-pill {
+    display: none;
 }
 
 /* The daily gift over a visit's first result (ResultDaily): the still empty cards wait out of sight under it. */
@@ -6010,3 +6137,379 @@
    (.stroke > .stroke__face), or the outline, centred on the letters' edge, eats them and leaves them hollow. */
 .stroke > Label.results__team-name-text.stroke__face,
 .stroke > Label.results__team-points-text.stroke__face { -unity-text-outline-width: 0; }
+
+/* OVERHEAT: a car's heat as a flame and a percent (HudOverheat), in every bot's handle after its name and bigger on a
+   sticker under the player's car; white and navy when cold, orange when warm, red (and beating) when red-hot. RED HOT!
+   springs over a car whose heat gets there, MELTDOWN! crosses the screen when the player knocks a red-hot car off. */
+.car-heat {
+    flex-direction: row;
+    align-items: center;
+    height: 48px;
+    margin: 0 10px 0 -4px;
+    padding: 0 12px 0 6px;
+    border-width: 4px 4px 7px 4px;
+    border-radius: 12px;
+    border-color: var(--navy);
+    background-color: var(--white);
+}
+
+.car-heat__flame {
+    width: 28px;
+    height: 36px;
+    margin-right: 2px;
+    color: rgb(255, 170, 80);
+}
+
+.car-heat__text {
+    margin: 0;
+    padding: 0 0 2px 0;
+    font-size: 36px;
+    color: var(--navy);
+    -unity-text-outline-width: 0;
+    white-space: nowrap;
+}
+
+.car-heat--warm { background-color: var(--orange); }
+.car-heat--hot { background-color: var(--red); }
+.car-heat--warm .car-heat__flame,
+.car-heat--hot .car-heat__flame { color: rgb(255, 230, 96); }
+
+.car-heat--warm .car-heat__text,
+.car-heat--hot .car-heat__text {
+    color: var(--white);
+    -unity-text-outline-width: 5px;
+    -unity-text-outline-color: var(--navy);
+}
+
+/* The face has no outline of its own: with one, the navy ate the white letters. */
+.car-heat--warm .car-heat__text.stroke__face,
+.car-heat--hot .car-heat__text.stroke__face,
+.car-heat--warm .hud__heat-text.stroke__face,
+.car-heat--hot .hud__heat-text.stroke__face { -unity-text-outline-width: 0; }
+
+.hud__heat {
+    display: none;
+    position: absolute;
+    translate: -50% -50%;
+    align-items: center;
+}
+
+.hud__heat--shown { display: flex; }
+
+.hud__heat-sticker {
+    flex-direction: row;
+    align-items: center;
+    height: 72px;
+    padding: 0 22px 0 12px;
+    border-width: 5px 5px 11px 5px;
+    border-radius: 36px;
+    border-color: var(--navy);
+    background-color: var(--white);
+}
+
+.hud__heat-flame {
+    width: 40px;
+    height: 50px;
+    margin-right: 6px;
+    color: rgb(255, 170, 80);
+}
+
+.hud__heat-text {
+    margin: 0;
+    padding: 0 0 3px 0;
+    font-size: 46px;
+    color: var(--navy);
+    -unity-text-outline-width: 0;
+    white-space: nowrap;
+}
+
+.hud__heat-sticker.car-heat--warm { background-color: var(--orange); }
+.hud__heat-sticker.car-heat--hot { background-color: var(--red); }
+.car-heat--warm .hud__heat-flame,
+.car-heat--hot .hud__heat-flame { color: rgb(255, 230, 96); }
+
+.car-heat--warm .hud__heat-text,
+.car-heat--hot .hud__heat-text {
+    color: var(--white);
+    -unity-text-outline-width: 6px;
+    -unity-text-outline-color: var(--navy);
+}
+
+.car-heat--warm .hud__heat-text.stroke__drop,
+.car-heat--hot .hud__heat-text.stroke__drop { translate: 0 5px; display: flex; }
+
+.hud__red-hot {
+    position: absolute;
+    translate: -50% -50%;
+    align-items: center;
+}
+
+.hud__red-hot-sticker {
+    padding: 4px 26px 8px 26px;
+    border-radius: 24px;
+    border-width: 5px 5px 11px 5px;
+    border-color: var(--navy);
+    background-color: var(--red);
+    rotate: -5deg;
+}
+
+.hud__red-hot-text {
+    margin: 0;
+    padding: 0;
+    font-size: 50px;
+    color: rgb(255, 230, 96);
+    -unity-text-outline-width: 7px;
+    -unity-text-outline-color: var(--navy);
+    white-space: nowrap;
+}
+
+.hud__red-hot-text.stroke__drop { translate: 0 7px; display: flex; }
+
+.hud__meltdown {
+    position: absolute;
+    left: 0;
+    right: 0;
+    align-items: center;
+}
+
+.hud__meltdown-sticker {
+    padding: 6px 44px 12px 44px;
+    border-radius: 30px;
+    border-width: 6px 6px 14px 6px;
+    border-color: var(--navy);
+    background-color: rgb(224, 47, 36);
+    rotate: -4deg;
+}
+
+.hud__meltdown-text {
+    margin: 0;
+    padding: 0;
+    font-size: 88px;
+    color: rgb(255, 230, 96);
+    -unity-text-outline-width: 8px;
+    -unity-text-outline-color: var(--navy);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.hud__meltdown-text.stroke__drop { translate: 0 10px; display: flex; }
+
+/* FOOTBALL (HudFootball): GOAL! in the scoring team's colour with the scorer's nick under it, the arrow from the
+   player's car to the goal it attacks at each kick-off, and the ball at the screen's edge while it is off the screen. */
+.hud__goal {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    translate: 0 -50%;
+    align-items: center;
+}
+
+.hud__goal-sticker {
+    padding: 4px 56px 14px 56px;
+    border-radius: 40px;
+    border-width: 7px 7px 17px 7px;
+    border-color: var(--navy);
+    background-color: var(--car-blue);
+    rotate: -5deg;
+}
+
+.hud__goal--red .hud__goal-sticker {
+    background-color: var(--car-red);
+    rotate: 5deg;
+}
+
+.hud__goal-text {
+    margin: 0;
+    padding: 0;
+    font-size: 150px;
+    color: var(--white);
+    -unity-text-outline-width: 10px;
+    -unity-text-outline-color: var(--navy);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.hud__goal-text.stroke__drop { translate: 0 12px; display: flex; }
+
+.hud__goal-scorer {
+    margin-top: -6px;
+    padding: 2px 34px 8px 34px;
+    border-radius: 30px;
+    border-width: 5px 5px 11px 5px;
+    border-color: var(--navy);
+    background-color: var(--white);
+}
+
+.hud__goal-scorer--you {
+    background-color: var(--gold);
+}
+
+.hud__goal-scorer-text {
+    margin: 0;
+    padding: 0;
+    font-size: 54px;
+    color: var(--navy);
+    -unity-text-outline-width: 0;
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.hud__attack {
+    position: absolute;
+    display: none;
+}
+
+.hud__ball-pointer {
+    position: absolute;
+    display: none;
+    width: 96px;
+    height: 96px;
+}
+
+.hud__ball-pointer-tip {
+    position: absolute;
+    left: -24px;
+    top: -24px;
+    width: 144px;
+    height: 144px;
+}
+
+.hud__ball-pointer-ball {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    width: 80px;
+    height: 80px;
+}
+
+/* GOLD RUSH (HudGoldRush): the coins a car carries as a coin and a number, in every bot's handle after its name and
+   bigger on a sticker under the player's car; gold for the car in the lead. A red -N springs over a car that just lost
+   coins to a bump or a fall. */
+.car-coins {
+    flex-direction: row;
+    align-items: center;
+    height: 48px;
+    margin: 0 10px 0 -4px;
+    padding: 0 12px 0 6px;
+    border-width: 4px 4px 7px 4px;
+    border-radius: 12px;
+    border-color: var(--navy);
+    background-color: var(--white);
+}
+
+.car-coins__icon {
+    width: 34px;
+    height: 34px;
+    margin-right: 4px;
+}
+
+.car-coins__text {
+    margin: 0;
+    padding: 0 0 2px 0;
+    font-size: 36px;
+    color: var(--navy);
+    -unity-text-outline-width: 0;
+    white-space: nowrap;
+}
+
+.car-coins--lead { background-color: var(--gold); }
+
+.hud__coins {
+    display: none;
+    position: absolute;
+    translate: -50% -50%;
+    align-items: center;
+}
+
+.hud__coins--shown { display: flex; }
+
+.hud__coins-sticker {
+    flex-direction: row;
+    align-items: center;
+    height: 72px;
+    padding: 0 22px 0 10px;
+    border-width: 5px 5px 11px 5px;
+    border-radius: 36px;
+    border-color: var(--navy);
+    background-color: var(--white);
+}
+
+.hud__coins-icon {
+    width: 52px;
+    height: 52px;
+    margin-right: 6px;
+}
+
+.hud__coins-text {
+    margin: 0;
+    padding: 0 0 3px 0;
+    font-size: 46px;
+    color: var(--navy);
+    -unity-text-outline-width: 0;
+    white-space: nowrap;
+}
+
+.hud__coins-sticker.car-coins--lead { background-color: var(--gold); }
+
+.hud__coin-loss {
+    position: absolute;
+    translate: -50% -50%;
+    align-items: center;
+}
+
+.hud__coin-loss-sticker {
+    flex-direction: row;
+    align-items: center;
+    padding: 2px 16px 6px 22px;
+    border-radius: 24px;
+    border-width: 5px 5px 11px 5px;
+    border-color: var(--navy);
+    background-color: var(--red);
+    rotate: -5deg;
+}
+
+.hud__coin-loss-icon {
+    width: 46px;
+    height: 46px;
+    margin-left: 6px;
+}
+
+.hud__coin-loss-text {
+    margin: 0;
+    padding: 0;
+    font-size: 50px;
+    color: var(--white);
+    -unity-text-outline-width: 7px;
+    -unity-text-outline-color: var(--navy);
+    white-space: nowrap;
+}
+
+.hud__coin-loss-text.stroke__face { -unity-text-outline-width: 0; }
+.hud__coin-loss-text.stroke__drop { translate: 0 7px; display: flex; }
+
+/* The missions' and HOME's pictures, painted (Codex, in the item icons' sticker style). */
+.mission-icon__sign { -unity-background-scale-mode: scale-to-fit; }
+.mission-icon__sign--knockout { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_knockout.png"); }
+.mission-icon__sign--item-knockout { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_item_knockout.png"); }
+.mission-icon__sign--bomb { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_bomb.png"); }
+.mission-icon__sign--box { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_box.png"); }
+.mission-icon__sign--win { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_win.png"); }
+.mission-icon__sign--final-two { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_final_two.png"); }
+.mission-icon__sign--revenge { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_revenge.png"); }
+.mission-icon__sign--boost { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_boost.png"); }
+.mission-icon__sign--rounds { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_rounds.png"); }
+.mission-icon__sign--mode-hot-potato { background-image: url("/Assets/Art/Sprites/UI/sprite_mode_icon_hot_potato.png"); }
+.mission-icon__sign--mode-crown { background-image: url("/Assets/Art/Sprites/UI/sprite_mode_icon_crown.png"); }
+.mission-icon__sign--mode-gold-rush { background-image: url("/Assets/Art/Sprites/UI/sprite_mode_icon_gold_rush.png"); }
+.mission-icon__sign--mode-item-frenzy { background-image: url("/Assets/Art/Sprites/UI/sprite_mode_icon_item_frenzy.png"); }
+.mission-icon__sign--mode-overheat { background-image: url("/Assets/Art/Sprites/UI/sprite_mode_icon_overheat.png"); }
+.mission-icon__sign--mode-team-push { background-image: url("/Assets/Art/Sprites/UI/sprite_mode_icon_team_push.png"); }
+.mission-icon__sign--mode-football { background-image: url("/Assets/Art/Sprites/UI/sprite_mode_icon_football.png"); }
+.round-over__home-icon--painted {
+    background-image: url("/Assets/Art/Sprites/UI/sprite_icon_hub.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+/* The result's mission rows show no task sign: small, it only made the rows noisy. */
+.mission > .mission-icon { display: none; }

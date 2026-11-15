@@ -48,7 +48,7 @@ namespace ToyCarArena.UI
         private const string StartShownClass = "hud__start--shown";
         private const string StartEnterClass = "hud__start--enter";
         private const string StartLeaveClass = "hud__start--leave";
-        private const string StartBobClass = "hud__start--bob";
+        private const string StartPlainClass = "hud__start--plain";
         private const string StartWideClass = "hud__start--wide";
         private const string StartTouchClass = "hud__start--touch";
         private const string StartDesktopClass = "hud__start--desktop";
@@ -83,6 +83,14 @@ namespace ToyCarArena.UI
 
         // The first item of a visit says how to use it for this long, the button pulsing meanwhile, in unscaled seconds.
         private const float ItemHintPulsePeriod = 0.65f;
+        private const float ItemHintMargin = 16f;
+
+        // The widest the hint's words may be, in reference pixels: the hint is 400 wide less the pill's padding, and on a
+        // desktop the E key cap beside them; longer words (TOUCHE POUR UTILISER) shrink, down to half, instead of
+        // spilling out of the pill. As in ItemFrenzyHud.
+        private const float ItemHintTouchWidth = 330f;
+        private const float ItemHintDesktopWidth = 270f;
+        private const float ItemHintMinShare = 0.5f;
 
         // The kinds the slot can hold, in the order its roulette shows them.
         private static readonly ItemKind[] ItemKinds =
@@ -130,10 +138,6 @@ namespace ToyCarArena.UI
         private const long NameLeaveDuration = 400;
         private const long RevengeEnterDuration = 350;
         private const long RevengePulseInterval = 500;
-
-        // The start prompt bobs: each toggle eases it a little bigger or back (hud__start-prompt's transition), so a bob
-        // takes twice this, as SMUP's TAP TO START.
-        private const long StartBobInterval = 600;
 
         // How long the start prompt takes to flash away (hud__start--leave) before it is taken off the screen.
         private const long StartLeaveDuration = 200;
@@ -283,10 +287,11 @@ namespace ToyCarArena.UI
         private VisualElement itemIcon;
         private VisualElement itemHint;
         private Label itemHintText;
-        private Label itemHintFace;
+        private VisualElement itemHintLabel;
         private ItemKind shownItem = ItemKind.None;
         private bool isItemShownRolling;
         private bool isItemHintShown;
+        private bool isItemHintFitDue;
         private float nextItemPulse;
         private VisualElement popupLayer;
         private VisualElement nameLayer;
@@ -298,7 +303,6 @@ namespace ToyCarArena.UI
         private int shownKnockouts;
         private int popupCount;
         private VisualElement start;
-        private IVisualElementScheduledItem startBob;
         private IVisualElementScheduledItem startWatch;
         private VisualElement stick;
         private VisualElement stickBase;
@@ -402,7 +406,7 @@ namespace ToyCarArena.UI
             itemIcon = Root.Q<VisualElement>("item-icon");
             itemHint = Root.Q<VisualElement>("item-hint");
             itemHintText = Root.Q<Label>("item-hint-text");
-            itemHintFace = Root.Q<Label>("item-hint-face");
+            itemHintLabel = itemHintText.parent.parent;
             // Only a round with boxes has items; one without keeps the slot as it was.
             itemButton.EnableInClassList(ItemShownClass, ViewModel.HasItems);
             itemButton.AddToClassList(ItemEmptyClass);
@@ -435,7 +439,8 @@ namespace ToyCarArena.UI
             teams = HudTeams.Create(Root, ViewModel);
             endTimer = HudEndTimer.Create(Root, ViewModel, timePill, scoreboard?.Element ?? teams?.Element, respawn,
                 popupLayer);
-            modeHud = ModeLooks.Of(ViewModel.Mode)?.CreateHud(nameLayer, Root, ViewModel);
+            modeHud = ModeLooks.Of(ViewModel.Mode)?.CreateHud(nameLayer, Root, ViewModel)
+                ?? TutorialHud.Create(nameLayer, Root, ViewModel, controls.CheckTouchScreen);
             settingsButton = Root.Q<Button>("settings-button");
             settingsButton.RemoveFromClassList(Button.ussClassName);
             // Space is the boost: a focused button would take it as a click and open the settings mid-round.
@@ -468,9 +473,8 @@ namespace ToyCarArena.UI
                 controls.SetItemButton(itemButton);
             }
 
-            // The very first start also says what to do: everyone else off the arena.
-            Root.Q<VisualElement>("start-goal").style.display =
-                ViewModel.IsNewPlayer ? DisplayStyle.Flex : DisplayStyle.None;
+            // No goal over the start: the very first start is the tutorial, whose steps say what to do.
+            Root.Q<VisualElement>("start-goal").style.display = DisplayStyle.None;
             if (ViewModel.IsWaitingForPlayer) {
                 ShowStart();
             }
@@ -674,14 +678,17 @@ namespace ToyCarArena.UI
             shieldFill.style.width = Length.Percent(share * 100f);
         }
 
+        /// <summary>The round's mode keeps the win streak's crowns off it (<see cref="ModeLook.HidesStreakCrowns"/>).</summary>
+        private bool HidesStreakCrowns => ModeLooks.Of(ViewModel.Mode)?.HidesStreakCrowns == true;
+
         /// <summary>
         /// On a win streak a gold crown with ×N floats over the player's car: the round pays more, and the bots go for
-        /// it a little more. It makes way for SAFE, and goes with the car when it falls.
+        /// it a little more. It makes way for SAFE, and goes with the car when it falls (unless the mode hides it).
         /// </summary>
         private void ShowStreak(Camera camera)
         {
             var isShown = ViewModel.Streak > 0 && camera != null && streak.panel != null && ViewModel.IsCarIn(0)
-                && !shield.ClassListContains(ShieldShownClass);
+                && !shield.ClassListContains(ShieldShownClass) && !HidesStreakCrowns;
             streak.EnableInClassList(StreakShownClass, isShown);
             if (!isShown) {
                 return;
@@ -723,16 +730,25 @@ namespace ToyCarArena.UI
 
         /// <summary>
         /// Shows the start prompt while the cars wait for the player: TAP TO START and how to steer on a touch screen,
-        /// CLICK TO START, how to steer and the boost key on a desktop. It springs in once the curtain is up, bobs, and
+        /// CLICK TO START, how to steer and the boost key on a desktop. It springs in once the curtain is up, stands still and
         /// flashes away the moment the round begins. A touch while it shows begins the round, so it never has to turn
         /// from the desktop one into the touch one.
         /// </summary>
         private void ShowStart()
         {
             var isTouch = controls.CheckTouchScreen();
+            // The tutorial has no start to press: its first input just drives. On a touch screen the ghost joystick
+            // already says DRAG TO DRIVE, so nothing more; on a computer one line says how (the mouse or WASD).
+            var isTutorial = ViewModel.Mode is Gameplay.Modes.TutorialMode { IsActive: true };
+            if (isTutorial && isTouch) {
+                return;
+            }
+
             start.EnableInClassList(StartTouchClass, isTouch);
             start.EnableInClassList(StartDesktopClass, !isTouch);
-            var text = Strings.Get(isTouch ? "hud.tap_to_start" : "hud.click_to_start");
+            start.EnableInClassList(StartPlainClass, isTutorial);
+            var text = Strings.Get(isTutorial ? "tutorial.drive_mouse"
+                : isTouch ? "hud.tap_to_start" : "hud.click_to_start");
             Root.Q<Label>("start-text").text = text;
             Root.Q<Label>("start-text-face").text = text;
 
@@ -751,7 +767,7 @@ namespace ToyCarArena.UI
             start.AddToClassList(StartEnterClass);
             start.RegisterCallback<GeometryChangedEvent>(OnLaidOut);
 
-            startBob = Root.schedule.Execute(() => start.ToggleInClassList(StartBobClass)).Every(StartBobInterval);
+            // The prompt stands still (it used to bob): moving words are hard to read.
             startWatch = Root.schedule.Execute(WatchStart).Every(BoostRefreshInterval);
         }
 
@@ -762,9 +778,7 @@ namespace ToyCarArena.UI
             }
 
             startWatch.Pause();
-            startBob.Pause();
             Root.UnregisterCallback<GeometryChangedEvent>(OnResized);
-            start.RemoveFromClassList(StartBobClass);
             start.AddToClassList(StartLeaveClass);
             start.schedule.Execute(() => start.RemoveFromClassList(StartShownClass)).StartingIn(StartLeaveDuration);
         }
@@ -1187,6 +1201,11 @@ namespace ToyCarArena.UI
                 return;
             }
 
+            // An item with no end (the tutorial's mega) has no timer to show.
+            var isUntimed = float.IsPositiveInfinity(ViewModel.AbilityTimeLeft);
+            powerFill.parent.style.display = isUntimed
+                ? DisplayStyle.None
+                : new StyleEnum<DisplayStyle>(StyleKeyword.Null);
             powerFill.style.width = Length.Percent(ViewModel.AbilityShare * 100f);
             var isBlinking = ViewModel.AbilityTimeLeft < PowerBlinkTime
                 && Mathf.Repeat(Time.unscaledTime * PowerBlinkRate, 1f) < 0.5f;
@@ -1277,15 +1296,67 @@ namespace ToyCarArena.UI
             if (!isItemHintShown) {
                 isItemHintShown = true;
                 nextItemPulse = now;
-                var text = Strings.Get(isTouch ? "hud.tap_to_use" : "hud.right_click");
-                itemHintText.text = text;
-                itemHintFace.text = text;
+                var labels = StrokeText.LabelsOf(itemHintText.parent);
+                StrokeText.SetText(labels, Strings.Get(isTouch ? "hud.tap_to_use" : "hud.right_click"));
+                foreach (var label in labels) {
+                    label.style.fontSize = StyleKeyword.Null;
+                }
+
+                isItemHintFitDue = true;
                 itemHint.AddToClassList(ItemHintShownClass);
+            }
+            else if (isItemHintFitDue) {
+                // A frame on, the labels have the style sheet's size for this screen.
+                isItemHintFitDue = false;
+                FitItemHint(isTouch ? ItemHintTouchWidth : ItemHintDesktopWidth);
             }
 
             if (now >= nextItemPulse) {
                 nextItemPulse = now + ItemHintPulsePeriod;
                 Pulse(itemButton, ItemHintPulseClass);
+            }
+
+            KeepItemHintOnScreen();
+        }
+
+        /// <summary>
+        /// Slides the hint's pill, not its arrow, back inside the safe screen: by a slot at the screen's edge the pill of
+        /// a long language is wider than the room beside the button, and on the v0.18.0 playtest TOCA PARA USAR read
+        /// OCA PARA USAR for five rounds. Measured on the layout, without the scales the hint and the slot pop in with.
+        /// </summary>
+        private void KeepItemHintOnScreen()
+        {
+            var width = itemHintLabel.layout.width;
+            if (!(width > 0f)) {
+                return;
+            }
+
+            var left = itemHintLabel.layout.x;
+            for (var element = itemHintLabel.parent; element != null && element != Root; element = element.parent) {
+                left += element.layout.x + element.resolvedStyle.translate.x;
+            }
+
+            var min = safeInsets.Left + ItemHintMargin;
+            var max = Root.layout.width - safeInsets.Right - ItemHintMargin;
+            var shift = left < min ? min - left : left + width > max ? max - (left + width) : 0f;
+            if (!Mathf.Approximately(itemHintLabel.resolvedStyle.translate.x, shift)) {
+                itemHintLabel.style.translate = new Translate(shift, 0f);
+            }
+        }
+
+        private void FitItemHint(float room)
+        {
+            var labels = StrokeText.LabelsOf(itemHintText.parent);
+            var size = itemHintText.resolvedStyle.fontSize;
+            var width = itemHintText.MeasureTextSize(itemHintText.text, 0f, VisualElement.MeasureMode.Undefined, 0f,
+                VisualElement.MeasureMode.Undefined).x;
+            if (!(size > 0f) || width <= room) {
+                return;
+            }
+
+            var fit = Mathf.Max(size * room / width, size * ItemHintMinShare);
+            foreach (var label in labels) {
+                label.style.fontSize = fit;
             }
         }
 
@@ -1641,8 +1712,11 @@ namespace ToyCarArena.UI
             line.Add(CreateOutlinedText(ViewModel.NameOf(index), "car-name__text"));
             // In teams a teammate's tag has a shield, an enemy's none: told apart by more than the colour.
             HudTeams.MarkName(tag, line, ViewModel, index);
-            // A bot that joined on a win streak wears the player's crown and ×N after its name.
-            var streakOf = ViewModel.StreakOf(index);
+            // A mode with its own part of the handle (OVERHEAT's heat) adds it after the name.
+            (modeHud as IModeNameHud)?.MarkName(line, index);
+            // A bot that joined on a win streak wears the player's crown and ×N after its name, unless the mode's own
+            // thing is a crown.
+            var streakOf = HidesStreakCrowns ? 0 : ViewModel.StreakOf(index);
             if (streakOf > 0) {
                 var crown = new VisualElement { pickingMode = PickingMode.Ignore };
                 crown.AddToClassList("car-name__crown");
@@ -1667,10 +1741,29 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>
-        /// A car back in a match gets its handle again, and the rival its REVENGE at once: it was introduced already.
+        /// A car back in a match gets its handle again, and the rival its REVENGE at once: it was introduced already. A
+        /// car that joins a round late (the tutorial's last two) gets its chip in the stack, before the player's, too.
         /// </summary>
         private void OnCarBack(int index)
         {
+            if (!ViewModel.IsTimed && chipSlots != null && index >= 0 && index < chipSlots.Length
+                && chipSlots[index] == null && index != ViewModel.PlayerIndex && ViewModel.IsCarIn(index)) {
+                var slot = CreateChip(ViewModel.ColorOf(index), false);
+                chipSlots[index] = slot;
+                var playerSlot = chipSlots[ViewModel.PlayerIndex];
+                var at = playerSlot != null ? chipRow.IndexOf(playerSlot) : -1;
+                if (at >= 0) {
+                    chipRow.Insert(at, slot);
+                }
+                else {
+                    chipRow.Add(slot);
+                }
+
+                ShowCarsLeft();
+                Pulse(carsLeftLabel, CountPunchClass);
+                Pulse(carsPill, PopClass);
+            }
+
             if (carNames == null || index < 0 || index >= carNames.Length || index == ViewModel.PlayerIndex
                 || carNames[index] != null) {
                 return;

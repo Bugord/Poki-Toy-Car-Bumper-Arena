@@ -55,9 +55,16 @@ namespace ToyCarArena.Gameplay.Round
         public event Action<RoundResult> Finished;
 
         /// <summary>
-        /// Raised in a match when a car that fell comes back onto the floor, safe for a moment.
+        /// Raised in a match when a car that fell comes back onto the floor, safe for a moment, and when a car held off
+        /// the arena joins the round (<see cref="Join"/>).
         /// </summary>
         public event Action<Car> Respawned;
+
+        /// <summary>
+        /// Raised once, at the end of <see cref="Place"/>, with the cars standing: a mode that holds some of them off the
+        /// arena (<see cref="Hold"/>) does it here, before anything (the HUD, the bots) has seen them.
+        /// </summary>
+        public event Action Placed;
 
         /// <summary>
         /// Raised in a match when the player's marked rival changes: a car knocked the player off, or the player knocked
@@ -93,6 +100,7 @@ namespace ToyCarArena.Gameplay.Round
         private readonly bool isMatch;
         private readonly ModeRules mode;
         private readonly List<Car> cars = new();
+        private readonly List<Car> held = new();
 
         // A match's cars waiting to come back (Time.time, positive infinity for none), and the safe time of those that
         // came back: when they came back and when it ends (positive infinity until the car lands).
@@ -207,7 +215,7 @@ namespace ToyCarArena.Gameplay.Round
         public bool IsBotsPlaying => IsRunning || (!mode.IsTimed && IsFinished && Player != null && Player.IsOut);
 
         /// <summary>Seconds the round lasts at most: a timed round's own length, else the round's.</summary>
-        public float Duration => mode.IsTimed ? mode.Duration : tuning.Round.Duration;
+        public float Duration => mode.IsTimed ? mode.Duration : mode.Length > 0f ? mode.Length : tuning.Round.Duration;
 
         public float TimeLeft => Mathf.Max(0f, Duration - elapsed);
 
@@ -309,6 +317,48 @@ namespace ToyCarArena.Gameplay.Round
                     safeUntil[i] = float.NegativeInfinity;
                 }
             }
+
+            Placed?.Invoke();
+        }
+
+        /// <summary>
+        /// Takes a placed bot off the arena until <see cref="Join"/> brings it in: the tutorial's last two wait so. It is
+        /// out of play (<see cref="Car.IsOut"/>) and off the count of cars left, but the round is not won while a car is
+        /// held, and no event tells of it: it never fell. False, and nothing done, for the player, a car out or one not
+        /// in the round.
+        /// </summary>
+        public bool Hold(Car car)
+        {
+            if (!IsPlaced || car == null || car == Player || car.IsOut || IndexOf(car) < 0) {
+                return false;
+            }
+
+            car.PutAway();
+            held.Add(car);
+            CarsLeft--;
+            return true;
+        }
+
+        /// <summary>Whether the car is held off the arena (<see cref="Hold"/>).</summary>
+        public bool IsHeld(Car car) => held.Contains(car);
+
+        /// <summary>
+        /// Brings a held car into the round: it drops from <see cref="GameTuning.MatchSettings.DropHeight"/> over
+        /// <paramref name="spot"/> on the floor, facing <paramref name="facing"/>, back on the count of cars left, and
+        /// <see cref="Respawned"/> tells the HUD. False, and nothing done, for a car not held.
+        /// </summary>
+        public bool Join(Car car, Vector3 spot, Vector3 facing)
+        {
+            if (!held.Remove(car)) {
+                return false;
+            }
+
+            facing.y = 0f;
+            var rotation = Quaternion.LookRotation(facing.sqrMagnitude > 0.0001f ? facing : Vector3.forward);
+            car.Join(new Vector3(spot.x, 0f, spot.z) + Vector3.up * tuning.Match.DropHeight, rotation);
+            CarsLeft++;
+            Respawned?.Invoke(car);
+            return true;
         }
 
         /// <summary>
@@ -349,7 +399,12 @@ namespace ToyCarArena.Gameplay.Round
                 if (!car.IsOut && car.Position.y < tuning.Round.FallHeight) {
                     // Nobody falls in a fenced mode (the hot potato): a car that got past the fence after all is put
                     // back on.
-                    if (mode.Fall == FallRule.PutBack) {
+                    // Nor does the player in their safe first rounds, if the catch missed the fall (PlayerSafety).
+                    if (mode.Fall == FallRule.PutBack || car == Player && difficulty.IsPlayerSafe) {
+                        if (car == Player) {
+                            car.ForgetHit();
+                        }
+
                         PutBack(car);
                         continue;
                     }
@@ -388,10 +443,11 @@ namespace ToyCarArena.Gameplay.Round
             if (Player.IsOut) {
                 Finish(RoundOutcome.Out, cars.Count > 1 ? Mathf.Max(2, CarsLeft + 1) : 1);
             }
-            else if (cars.Count > 1 && CarsLeft == 1) {
+            // A car still held off the arena (the tutorial's last two) has yet to come: the player is not alone.
+            else if (cars.Count > 1 && CarsLeft == 1 && held.Count == 0) {
                 Finish(RoundOutcome.Won, 1);
             }
-            else if (elapsed >= tuning.Round.Duration) {
+            else if (elapsed >= Duration) {
                 Finish(CarsLeft == 1 ? RoundOutcome.Won : RoundOutcome.Survived, 1);
             }
         }
@@ -425,7 +481,7 @@ namespace ToyCarArena.Gameplay.Round
             else if (otherLeft == 0) {
                 Finish(RoundOutcome.Won, 1);
             }
-            else if (elapsed >= tuning.Round.Duration) {
+            else if (elapsed >= Duration) {
                 Finish(ownLeft > otherLeft ? RoundOutcome.Won : RoundOutcome.Survived, ownLeft >= otherLeft ? 1 : 2);
             }
         }
@@ -710,6 +766,9 @@ namespace ToyCarArena.Gameplay.Round
             Finished?.Invoke(new RoundResult(place == 1 ? RoundOutcome.Won : RoundOutcome.Survived, place, cars.Count,
                 elapsed, PlayerKnockouts, RoundResult.Nobody, FallCause.None, HadNemesis, RevengeTaken, Score.Snapshot(),
                 Colors, isMatch, Score.FallsOf(0), Score.KnockedOffOf(0), isLoss, isTimed: true,
+                // A mode scored by something other than knock-outs (FOOTBALL's goals) pays each point of the player's
+                // as a knock-out, under the same cap.
+                bonusKnockouts: mode.PointsPayAsKnockouts ? Score.PointsOf(0) : 0,
                 kind: rules.Kind, knockoutRewardCap: mode.KnockoutRewardCap, teams: mode.Teams,
                 teamPoints: mode.Teams > 0 ? Array.AsReadOnly(Score.TeamScores()) : null));
         }

@@ -57,10 +57,15 @@ namespace ToyCarArena.UI
         public bool HasJoystickPlace { get; private set; }
 
         /// <summary>
-        /// The button starts on the right and changes sides only when a new steering finger comes down. The choice
-        /// lives here, in the app's scope, so the next round keeps the side the player plays on.
+        /// The button starts on the right and goes to the side opposite the steering finger: where a new one comes
+        /// down, and again when the finger drags well into the other half (the v0.18.0 playtest steered with the thumb
+        /// on the button's side, beside the item it never pressed). The choice lives here, in the app's scope, so the
+        /// next round keeps the side the player plays on.
         /// </summary>
         public bool IsBoostOnLeft { get; private set; }
+
+        /// <summary>How far past the middle, as a share of the screen's width, the steering finger moves the button.</summary>
+        private const float SideSwitchMargin = 0.12f;
 
         /// <param name="storage">Where the hints already shown are kept; null keeps them for this run only.</param>
         public HudControls(IKeyValueStorage storage = null)
@@ -188,6 +193,15 @@ namespace ToyCarArena.UI
 
         public void ShowJoystick(Vector2 center, Vector2 knob, float radius)
         {
+            // Past the middle by a margin, so a thumb that steers around the middle does not swing the button about.
+            var margin = Screen.width * SideSwitchMargin;
+            if (IsBoostOnLeft && knob.x < Screen.width * 0.5f - margin) {
+                IsBoostOnLeft = false;
+            }
+            else if (!IsBoostOnLeft && knob.x > Screen.width * 0.5f + margin) {
+                IsBoostOnLeft = true;
+            }
+
             IsJoystickShown = true;
             HasJoystickPlace = true;
             JoystickCenter = center;

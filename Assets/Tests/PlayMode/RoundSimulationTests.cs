@@ -38,6 +38,11 @@ namespace ToyCarArena.Tests.PlayMode
                 UseMode(GameTuning.GameMode.Match);
             }
 
+            // SIM_SAFE=1 plays the new player's safe first rounds as the build ships them (off by default).
+            if (Environment.GetEnvironmentVariable("SIM_SAFE") == "1") {
+                UseSafety(null);
+            }
+
             CreateParent(input, progress);
 
             foreach (var level in levels) {

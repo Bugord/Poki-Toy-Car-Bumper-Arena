@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Linq;
-using System.Reflection;
 using NUnit.Framework;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Round;
@@ -17,20 +16,15 @@ namespace ToyCarArena.Tests.PlayMode
     public sealed class ModeFrameworkTests : ObjectsBFixture
     {
         private const float ShortRound = 10f;
+        private const int RewardCap = 5;
 
-        private static readonly FieldInfo CrownDuration =
-            typeof(GameTuning.CrownSettings).GetField("duration", BindingFlags.NonPublic | BindingFlags.Instance);
-
-        private float savedCrownDuration = -1f;
-
-        [TearDown]
-        public void RestoreCrown()
-        {
-            if (savedCrownDuration >= 0f) {
-                CrownDuration.SetValue(LoadTuning().Crown, savedCrownDuration);
-                savedCrownDuration = -1f;
-            }
-        }
+        /// <summary>
+        /// The framework's own timed round where cars come back, played on the plain kind, which no mode's logic plays:
+        /// the tests state the rules they need and lean on no real mode's.
+        /// </summary>
+        private static ModeRules TimedRespawn(float duration) => ModeRules.Plain.With(fall: FallRule.Respawn,
+            floor: FloorRule.Still, mechanics: false, pickups: PickupRule.None, duration: duration,
+            knockoutRewardCap: RewardCap);
 
         [Test]
         public void EveryKindOfRoundHasItsRules()
@@ -167,10 +161,7 @@ namespace ToyCarArena.Tests.PlayMode
         [UnityTest]
         public IEnumerator ATimedModeEndsByTimeAndPlacesByPoints()
         {
-            var tuning = LoadTuning();
-            savedCrownDuration = tuning.Crown.Duration;
-            CrownDuration.SetValue(tuning.Crown, ShortRound);
-            UseSpecial(SpecialRound.Crown);
+            UseRules(SpecialRound.None, TimedRespawn(ShortRound));
             yield return Open("sandbox", "rake");
             Assert.That(Round.IsTimed, Is.True);
             Assert.That(Round.Mode.Fall, Is.EqualTo(FallRule.Respawn));
@@ -202,7 +193,7 @@ namespace ToyCarArena.Tests.PlayMode
             var end = result.Value;
             Assert.That(end.IsTimed, Is.True);
             Assert.That(end.IsMatch, Is.False, "A mode in a build of rounds is not the build's match.");
-            Assert.That(end.Kind, Is.EqualTo(SpecialRound.Crown));
+            Assert.That(end.Kind, Is.EqualTo(SpecialRound.None));
             Assert.That(end.Place, Is.EqualTo(2));
             Assert.That(end.Outcome, Is.EqualTo(RoundOutcome.Survived));
             Assert.That(end.Points, Is.EqualTo(3));
@@ -210,16 +201,14 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(end.Standings[0].Index, Is.EqualTo(2));
             Assert.That(end.Standings[0].Points, Is.EqualTo(5));
             Assert.That(end.PodiumCar, Is.EqualTo(2));
-            Assert.That(end.KnockoutRewardCap, Is.EqualTo(tuning.Crown.KnockoutRewardCap));
+            Assert.That(end.KnockoutRewardCap, Is.EqualTo(RewardCap));
         }
 
         [UnityTest]
         public IEnumerator ACarThatFallsInARespawnModeComesBack()
         {
             var tuning = LoadTuning();
-            savedCrownDuration = tuning.Crown.Duration;
-            CrownDuration.SetValue(tuning.Crown, ShortRound * 3f);
-            UseSpecial(SpecialRound.Crown);
+            UseRules(SpecialRound.None, TimedRespawn(ShortRound * 3f));
             yield return Open("sandbox", "rake");
             var car = Round.Cars[1];
             car.Movement.Place(new Vector3(0f, tuning.Round.FallHeight - 1f, 0f), Quaternion.identity);

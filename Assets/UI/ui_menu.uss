@@ -493,8 +493,8 @@
 /* The pill hangs under the tile: the caption keeps clear of it. */
 .menu__tile--boost-on .menu__tile-caption { margin-top: 26px; }
 
-/* HOT POTATO under the boost: the event card's orange (a texture from code) with its rays, the truck with the bomb
-   standing on the face's bottom edge and its bomb over the top, and the bolt of EVENT on a white pill in the corner. */
+/* The event of the day under the boost: the event card's colour (a texture from code) with its rays, the mode's icon
+   (its object, painted by Codex) in the middle, and the bolt of EVENT on a white pill in the corner. */
 .menu__tile--event .menu__fill { overflow: hidden; -unity-background-scale-mode: stretch-to-fill; }
 .menu__tile--event .menu__sticker:hover > .menu__face > .menu__fill { -unity-background-image-tint-color: #fff2e0; }
 
@@ -508,10 +508,11 @@
 
 .menu__event-tile-art {
     position: absolute;
-    left: 6px;
-    bottom: -6px;
-    width: 122px;
-    height: 172px;
+    left: 50%;
+    top: 50%;
+    width: 112px;
+    height: 112px;
+    translate: -50% -52%;
     -unity-background-scale-mode: scale-to-fit;
 }
 
@@ -1526,6 +1527,8 @@
 .menu__league-plinth {
     width: 200px;
     height: 104px;
+    background-image: url("/Assets/Art/Sprites/UI/sprite_icon_podium.png");
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .menu__league-get-badge {
@@ -2138,10 +2141,19 @@
 .menu__daily-day--big .menu__daily-amount { color: var(--white); }
 .menu__daily-day--big .menu__daily-amount { font-size: 34px; }
 
-/* A pile of coins growing day by day (MenuDaily.CoinPile, painter2D), stood on the bottom of the art. */
-.menu__daily-pile { width: 160px; height: 120px; flex-shrink: 1; }
+/* A pile of coins growing day by day (sprite_icon_coins_1 to 4), stood on the bottom of the art. */
+.menu__daily-pile { width: 150px; height: 120px; flex-shrink: 1; -unity-background-scale-mode: scale-to-fit; }
+.menu__daily-pile--1 { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_coins_1.png"); }
+.menu__daily-pile--2 { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_coins_2.png"); }
+.menu__daily-pile--3 { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_coins_3.png"); }
+.menu__daily-pile--4 { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_coins_4.png"); }
 
-.menu__daily-gift { width: 110px; height: 110px; }
+.menu__daily-gift {
+    width: 120px;
+    height: 120px;
+    background-image: url("/Assets/Art/Sprites/UI/sprite_icon_daily.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
 .menu__daily-hat { width: 170px; height: 110px; }
 
 /* Taken: pale, with a green tick in the corner. */
@@ -2168,8 +2180,6 @@
 .menu__daily-day--done .menu__daily-art,
 .menu__daily-day--done .menu__daily-amount { opacity: 0.55; }
 .menu__daily-day--done .menu__daily-tick { display: flex; }
-/* The pile draws itself pale: under opacity its overlapping coins would show each other's outlines. */
-.menu__daily-day--done .menu__daily-art--pile { opacity: 1; }
 
 /* Today: cream, ringed in gold and lifted. */
 .menu__daily-day--today {
@@ -2429,7 +2439,7 @@
 
 .menu__daily-page { flex-shrink: 0; }
 
-/* Each event mode's card picture (ModeLook.ArtClass), drawn by ModeCardArt: on the CHOOSE MODE card and the tile. */
+/* Each event mode's card picture (ModeLook.ArtClass), painted by Codex (Logs/codex-modes): on the CHOOSE MODE card and NEW MODE!. */
 .mode-art--hot-potato {
     background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_hot_potato.png?fileID=2800000&guid=64c7f85dcef645e409866a1a16d2c310&type=3#sprite_mode_hot_potato");
 }
@@ -2456,6 +2466,35 @@
 
 .mode-art--football {
     background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_football.png?fileID=2800000&guid=812c20b90dd14020b4f4f71fb5c27f03&type=3#sprite_mode_football");
+}
+
+/* On the menu's event tile the mode shows its icon (only its object) instead of the card picture. */
+.menu__event-tile-art.mode-art--hot-potato {
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_icon_hot_potato.png?fileID=2800000&guid=ecca30bc47ae44118793f1c4104de324&type=3#sprite_mode_icon_hot_potato");
+}
+
+.menu__event-tile-art.mode-art--crown {
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_icon_crown.png?fileID=2800000&guid=5dbce1498db24443b17df69f0e667cfc&type=3#sprite_mode_icon_crown");
+}
+
+.menu__event-tile-art.mode-art--gold-rush {
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_icon_gold_rush.png?fileID=2800000&guid=edbe82e6c77742abb2cf6eb077477f13&type=3#sprite_mode_icon_gold_rush");
+}
+
+.menu__event-tile-art.mode-art--item-frenzy {
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_icon_item_frenzy.png?fileID=2800000&guid=c1caaa1a4672434c9d6ef66573b6983f&type=3#sprite_mode_icon_item_frenzy");
+}
+
+.menu__event-tile-art.mode-art--overheat {
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_icon_overheat.png?fileID=2800000&guid=782f982cb70c4d1f8d90682facd4091c&type=3#sprite_mode_icon_overheat");
+}
+
+.menu__event-tile-art.mode-art--team-push {
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_icon_team_push.png?fileID=2800000&guid=f345a810124640e7a50d6e76e5a33728&type=3#sprite_mode_icon_team_push");
+}
+
+.menu__event-tile-art.mode-art--football {
+    background-image: url("project://database/Assets/Art/Sprites/UI/sprite_mode_icon_football.png?fileID=2800000&guid=43f7890e5c7c43809d88024454b4c387&type=3#sprite_mode_icon_football");
 }
 
 /* The event card's head: its EVENT tag and, beside it, a clock and the time until the mode of the day changes. */
@@ -2489,3 +2528,23 @@
     color: var(--white);
     white-space: nowrap;
 }
+
+/* NEW MODE!: the event's orange card as in CHOOSE MODE, then TRY IT! and LATER under it. */
+.menu__newmode-popup .menu__sheet { width: 960px; align-items: stretch; }
+.menu__newmode-popup .menu__sheet-head > .stroke { rotate: -4deg; }
+.menu__newmode-popup .menu__sheet-title { color: var(--orange); }
+.menu__newmode-holder { margin: 10px 0 40px 0; }
+.menu__try { height: 190px; padding-bottom: 36px; }
+.menu__try .button__label { font-size: 96px; }
+.menu__newmode-popup .menu__no-thanks { align-self: center; }
+
+/* The tiles' pictures, painted (Codex, in the item icons' sticker style). */
+.menu__icon { -unity-background-scale-mode: scale-to-fit; }
+.menu__icon--garage { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_garage.png"); }
+.menu__icon--missions { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_missions.png"); }
+.menu__icon--daily { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_daily.png"); }
+.menu__icon--xp-boost { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_xp_boost.png"); }
+
+/* The missions popup and the daily tasks show no task sign in their rows: small, it only made them noisy. The menu's
+   one mission card keeps its sign. */
+.menu__mission-row > .mission-icon { display: none; }

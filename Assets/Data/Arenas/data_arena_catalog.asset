@@ -967,3 +967,199 @@ MonoBehaviour:
       scale: 36
       yaw: -24.775146
       pitch: 0
+  - id: pitch
+    displayName: PITCH
+    floorMaterial: {fileID: 2100000, guid: 7b62f1a7dd8d48f0b4e3cdb51f26e079, type: 2}
+    background: {r: 0.55, g: 0.8, b: 0.96, a: 1}
+    looks:
+    - variantId: grass
+      floorMaterial: {fileID: 2100000, guid: 7b62f1a7dd8d48f0b4e3cdb51f26e079, type: 2}
+    groundDepth: 50
+    groundMaterial: {fileID: 2100000, guid: 22984108c7fd0d6418cb3d9f550a0134, type: 2}
+    fogStart: 10
+    fogEnd: 260
+    pedestal:
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 172dc44586351b144947fbe70c9e79ae, type: 2}
+      size: {x: 20, y: 1.2, z: 32}
+      offset: {x: 0, y: 0}
+      baseHeight: -1.75
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 0bb4618c50efd25479494332f3a7febd, type: 2}
+      size: {x: 18.5, y: 47.5, z: 30.5}
+      offset: {x: 0, y: 0}
+      baseHeight: -49.5
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 172dc44586351b144947fbe70c9e79ae, type: 2}
+      size: {x: 21, y: 1.2, z: 33}
+      offset: {x: 0, y: 0}
+      baseHeight: -16
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 172dc44586351b144947fbe70c9e79ae, type: 2}
+      size: {x: 22, y: 1.2, z: 34}
+      offset: {x: 0, y: 0}
+      baseHeight: -32
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 0bb4618c50efd25479494332f3a7febd, type: 2}
+      size: {x: 26, y: 2.4, z: 38}
+      offset: {x: 0, y: 0}
+      baseHeight: -50
+      yaw: 0
+    groundPieces:
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 617dc7c2dcf7bcf419cc9e16dca7ccc7, type: 2}
+      size: {x: 34, y: 2.2, z: 3}
+      offset: {x: 0, y: 30}
+      baseHeight: -50.0
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 4c182efc22f5ed543a5af5b92e49dcf5, type: 2}
+      size: {x: 34, y: 2.2, z: 3}
+      offset: {x: 0, y: -30}
+      baseHeight: -50.0
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 617dc7c2dcf7bcf419cc9e16dca7ccc7, type: 2}
+      size: {x: 32, y: 2.2, z: 3}
+      offset: {x: 0, y: 33}
+      baseHeight: -47.8
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 4c182efc22f5ed543a5af5b92e49dcf5, type: 2}
+      size: {x: 32, y: 2.2, z: 3}
+      offset: {x: 0, y: -33}
+      baseHeight: -47.8
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 617dc7c2dcf7bcf419cc9e16dca7ccc7, type: 2}
+      size: {x: 30, y: 2.2, z: 3}
+      offset: {x: 0, y: 36}
+      baseHeight: -45.6
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 4c182efc22f5ed543a5af5b92e49dcf5, type: 2}
+      size: {x: 30, y: 2.2, z: 3}
+      offset: {x: 0, y: -36}
+      baseHeight: -45.6
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 617dc7c2dcf7bcf419cc9e16dca7ccc7, type: 2}
+      size: {x: 28, y: 2.2, z: 3}
+      offset: {x: 0, y: 39}
+      baseHeight: -43.4
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 4c182efc22f5ed543a5af5b92e49dcf5, type: 2}
+      size: {x: 28, y: 2.2, z: 3}
+      offset: {x: 0, y: -39}
+      baseHeight: -43.4
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 172dc44586351b144947fbe70c9e79ae, type: 2}
+      size: {x: 3, y: 2.2, z: 40}
+      offset: {x: 22, y: 0}
+      baseHeight: -50.0
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 172dc44586351b144947fbe70c9e79ae, type: 2}
+      size: {x: 3, y: 2.2, z: 40}
+      offset: {x: -22, y: 0}
+      baseHeight: -50.0
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 30b50d637a8a99940b5ed1b5200a4d96, type: 2}
+      size: {x: 3, y: 2.2, z: 38}
+      offset: {x: 25, y: 0}
+      baseHeight: -47.8
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 30b50d637a8a99940b5ed1b5200a4d96, type: 2}
+      size: {x: 3, y: 2.2, z: 38}
+      offset: {x: -25, y: 0}
+      baseHeight: -47.8
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 172dc44586351b144947fbe70c9e79ae, type: 2}
+      size: {x: 3, y: 2.2, z: 36}
+      offset: {x: 28, y: 0}
+      baseHeight: -45.6
+      yaw: 0
+    - shape: 1
+      model: {fileID: 0}
+      material: {fileID: 2100000, guid: 172dc44586351b144947fbe70c9e79ae, type: 2}
+      size: {x: 3, y: 2.2, z: 36}
+      offset: {x: -28, y: 0}
+      baseHeight: -45.6
+      yaw: 0
+    decor:
+    - model: {fileID: 919132149155446097, guid: c466f8d01f99a7f4aacfeb34722e08c7, type: 3}
+      angle: -50
+      distance: 70
+      height: -50
+      scale: 60
+      yaw: 230
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: c7e07948309a98c49842aa80fffc375a, type: 3}
+      angle: -28
+      distance: 95
+      height: -50
+      scale: 58
+      yaw: 208
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: c466f8d01f99a7f4aacfeb34722e08c7, type: 3}
+      angle: 12
+      distance: 105
+      height: -50
+      scale: 62
+      yaw: 168
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: c7e07948309a98c49842aa80fffc375a, type: 3}
+      angle: 38
+      distance: 88
+      height: -50
+      scale: 56
+      yaw: 142
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: c466f8d01f99a7f4aacfeb34722e08c7, type: 3}
+      angle: 62
+      distance: 72
+      height: -50
+      scale: 60
+      yaw: 118
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: c7e07948309a98c49842aa80fffc375a, type: 3}
+      angle: -72
+      distance: 60
+      height: -50
+      scale: 54
+      yaw: 252
+      pitch: 0
+    - model: {fileID: 919132149155446097, guid: c466f8d01f99a7f4aacfeb34722e08c7, type: 3}
+      angle: 80
+      distance: 58
+      height: -50
+      scale: 58
+      yaw: 100
+      pitch: 0

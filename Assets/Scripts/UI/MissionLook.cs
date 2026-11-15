@@ -83,6 +83,46 @@ namespace ToyCarArena.UI
                 sign = Element("mission-icon__sign");
                 sign.generateVisualContent += Draw;
                 Add(sign);
+                ShowPicture();
+            }
+
+            // The painted pictures of the tasks that have one (mission-icon__sign--<name> in the style sheet), the mode of
+            // the day's its icon (mode-<id>); the arena's is drawn in its own colour, and the done tick over gold.
+            private static readonly string[] Pictures = PicturesWithModes(
+                "knockout", "item-knockout", "bomb", "box", "win", "final-two", "revenge", "boost", "rounds");
+
+            private static string[] PicturesWithModes(params string[] pictures)
+            {
+                var all = new string[pictures.Length + EventModes.Circle.Length];
+                pictures.CopyTo(all, 0);
+                for (var i = 0; i < EventModes.Circle.Length; i++) {
+                    all[pictures.Length + i] = "mode-" + EventModes.IdOf(EventModes.Circle[i]);
+                }
+
+                return all;
+            }
+
+            private string PictureOf() => isDone ? null : counter switch {
+                null => null,
+                MissionCounter.Knockouts => "knockout",
+                MissionCounter.ItemKnockouts => "item-knockout",
+                MissionCounter.ItemsUsed => "bomb",
+                MissionCounter.Boxes => "box",
+                MissionCounter.Wins => "win",
+                MissionCounter.FinalTwo => "final-two",
+                MissionCounter.Revenge => "revenge",
+                MissionCounter.Boosts => "boost",
+                MissionCounter.ArenaRounds => null,
+                MissionCounter.EventRounds => ModeLooks.Of(EventModes.Parse(mode)) is { } look ? "mode-" + look.Id : null,
+                _ => "rounds",
+            };
+
+            private void ShowPicture()
+            {
+                var picture = PictureOf();
+                foreach (var name in Pictures) {
+                    sign.EnableInClassList("mission-icon__sign--" + name, name == picture);
+                }
             }
 
             public void Set(GameTuning.MissionDefinition definition, bool done)
@@ -99,6 +139,7 @@ namespace ToyCarArena.UI
                 mode = valueMode;
                 isDone = done;
                 EnableInClassList("mission-icon--done", done);
+                ShowPicture();
                 sign.MarkDirtyRepaint();
             }
 
@@ -115,6 +156,10 @@ namespace ToyCarArena.UI
                 p.lineCap = LineCap.Round;
                 if (isDone) {
                     DrawTick(p, r);
+                    return;
+                }
+
+                if (PictureOf() != null) {
                     return;
                 }
 

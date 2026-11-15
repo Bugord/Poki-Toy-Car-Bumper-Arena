@@ -24,6 +24,7 @@ namespace ToyCarArena.UI
 
         private const string WonClass = "round-over__title--won";
         private const string GiftClass = "round-over--gift";
+        private const string LessonClass = "round-over--lesson";
         private const string OutClass = "round-over__title--out";
         private const string EnterClass = "round-over--enter";
         // The title's spring in (round-over__title in ui_screens) before the confetti bursts out of it, in milliseconds.
@@ -36,6 +37,9 @@ namespace ToyCarArena.UI
         // Each side keeps at least this far from the edge: a phone's camera can sit in the middle of either side, and
         // in Poki's frame the browser often reports no safe area at all.
         private const float ColumnsSide = 240f;
+        // A desktop has no camera in its side: its sides stay closer to the edge, and the podium beside a mode's tall
+        // table gets that width.
+        private const float DesktopColumnsSide = 100f;
         // The right column starts under the coins and the gear, and stops this far above the bottom.
         private const float ColumnsTop = 180f;
         private const float ColumnsBottom = 36f;
@@ -94,7 +98,7 @@ namespace ToyCarArena.UI
             homeButton = Root.Q<Button>("home-button");
             homeButton.RemoveFromClassList(Button.ussClassName);
             homeButton.clicked += GoHome;
-            Root.Q<VisualElement>("home-icon").generateVisualContent += MenuView.DrawHome;
+            Root.Q<VisualElement>("home-icon").AddToClassList("round-over__home-icon--painted");
             // With a mouse NEXT MATCH carries its SPACE key in the columns (ui_screens).
             isTouch = controls.CheckTouchScreen();
             Root.EnableInClassList("round-over--desktop", !isTouch);
@@ -149,6 +153,8 @@ namespace ToyCarArena.UI
         {
             // The title and the buttons start small or low and spring into place while the screen fades in.
             Root.AddToClassList(EnterClass);
+            // The tutorial's result is the win and its hat: no level, missions or coins crowding them.
+            Root.EnableInClassList(LessonClass, ViewModel.IsLesson);
             Root.schedule.Execute(() => Root?.RemoveFromClassList(EnterClass)).StartingIn(EnterDelay);
             if (ViewModel.Outcome == RoundOutcome.Won) {
                 Celebrate(lifetime.Token).Forget();
@@ -170,7 +176,8 @@ namespace ToyCarArena.UI
             rewardRun = CancellationTokenSource.CreateLinkedTokenSource(token, lifetime.Token);
             // The cards wait out of sight under the gift: still empty, they looked like a broken stub under its card.
             Root.AddToClassList(GiftClass);
-            var isCancelled = await daily.Run(rewardRun.Token).SuppressCancellationThrow();
+            // Not over the tutorial's result: its hat is the one reward there; the menu or a later result offers it.
+            var isCancelled = !ViewModel.IsLesson && await daily.Run(rewardRun.Token).SuppressCancellationThrow();
             Root.RemoveFromClassList(GiftClass);
             if (isCancelled || rewardRun.IsCancellationRequested) {
                 return;
@@ -303,7 +310,7 @@ namespace ToyCarArena.UI
                 return;
             }
 
-            var side = Mathf.Max(ColumnsSide, Mathf.Max(safeInsets.Left, safeInsets.Right));
+            var side = Mathf.Max(isTouch ? ColumnsSide : DesktopColumnsSide, Mathf.Max(safeInsets.Left, safeInsets.Right));
             var top = ColumnsTop + safeInsets.Top;
             var low = ColumnsBottom + safeInsets.Bottom;
             var missionsHeight = missions != null && missions.resolvedStyle.display != DisplayStyle.None
@@ -558,8 +565,29 @@ namespace ToyCarArena.UI
             }
 
             isPlayAgainPressed = true;
+            // The card stops where it is: a popup due later would otherwise open over the curtain, unseen, and count
+            // as shown (v0.18.0 sent shop / equip-vintage / visible after NEXT MATCH on a quick press).
+            rewardRun?.Cancel();
             audioService.PlayUiClick();
+            // Players skipped the new car's popup with NEXT MATCH before it came: a popup the player would lose shows
+            // first, at once, without the bar and the track before it; the match follows when it is closed.
+            if (xpProgress.HasPopupDue) {
+                ShowDueThen(ViewModel.PlayAgain, lifetime.Token).Forget();
+                return;
+            }
+
+            xpProgress.Stop();
             ViewModel.PlayAgain();
+        }
+
+        private async UniTaskVoid ShowDueThen(System.Action next, CancellationToken token)
+        {
+            if (await xpProgress.ShowDue(token).SuppressCancellationThrow()) {
+                return;
+            }
+
+            xpProgress.Stop();
+            next();
         }
 
         /// <summary>HOME: back to the main menu, behind the curtain; taken like NEXT MATCH, once.</summary>
@@ -570,7 +598,14 @@ namespace ToyCarArena.UI
             }
 
             isPlayAgainPressed = true;
+            rewardRun?.Cancel();
             audioService.PlayUiClick();
+            if (xpProgress.HasPopupDue) {
+                ShowDueThen(ViewModel.GoHome, lifetime.Token).Forget();
+                return;
+            }
+
+            xpProgress.Stop();
             ViewModel.GoHome();
         }
     }

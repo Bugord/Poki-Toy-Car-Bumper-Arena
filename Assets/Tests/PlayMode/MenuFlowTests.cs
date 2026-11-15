@@ -80,6 +80,7 @@ namespace ToyCarArena.Tests.PlayMode
             typeof(Strings).GetField("table", System.Reflection.BindingFlags.Static |
                 System.Reflection.BindingFlags.NonPublic)?.SetValue(null, null);
             Time.timeScale = 1f;
+            EventSchedule.Forced = null;
         }
 
         [UnityTest]
@@ -100,6 +101,19 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(Scope.Container.Resolve<ISessionProgress>().RoundsBefore, Is.EqualTo(0));
             Assert.That(Difficulty.Level, Is.EqualTo(0f));
             Assert.That(Round.Cars.Count, Is.EqualTo(1 + tuning.Bots.Easy.Bots));
+        }
+
+        [UnityTest]
+        public IEnumerator AVisitorWhoNeverPlayedGoesStraightToTheRoundAgain()
+        {
+            // Two visits counted, but neither finished a round: still a new player.
+            storage.SetInt("visit_count", 2);
+            yield return Boot();
+            yield return WaitFor(() => State == typeof(RoundState) && Round is { IsPlaced: true }, "the round");
+
+            Assert.That(Scope.Container.Resolve<Visits>().Count, Is.EqualTo(3));
+            Assert.That(FindButton("menu__play"), Is.Null, "no menu for a player who never played");
+            Assert.That(Round.HasBegun, Is.False, "the round waits for the player");
         }
 
         [UnityTest]
@@ -173,6 +187,17 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(platform.Events, Does.Contain(("result", "home", "visible")));
             Assert.That(ArenaLayers, Is.Not.Zero, "the result lies over the arena it ended on");
             Press(FindButton("home-button"));
+            // A new car the round opened shows first (HOME does not skip it); CONTINUE closes it, then HOME goes on.
+            var until = Time.realtimeSinceStartup + 20f;
+            while (!(State == typeof(MenuState) && IsShown(FindButton("menu__play"))) && Time.realtimeSinceStartup < until) {
+                var skip = FindButton("level-reward__skip");
+                if (IsShown(skip)) {
+                    yield return Wait(0.8f);
+                    Press(skip);
+                }
+
+                yield return null;
+            }
 
             yield return WaitFor(() => State == typeof(MenuState) && IsShown(FindButton("menu__play")), "the menu again");
             yield return Wait(0.5f);
@@ -182,15 +207,165 @@ namespace ToyCarArena.Tests.PlayMode
                 "only the visit's first menu reports its time");
         }
 
+        [UnityTest]
+        public IEnumerator TheEventOfTheDayPlaysFromItsTileToTheNextMatch()
+        {
+            // OVERHEAT the event of the day: its tile opens CHOOSE MODE on it, PLAY there plays it, and the result's
+            // NEXT MATCH keeps it.
+            EventSchedule.Forced = EventMode.Overheat;
+            ReturningPlayer();
+            QuietMenu("overheat");
+            yield return Boot();
+            yield return WaitFor(() => IsShown(FindButton("menu__play")), "the menu");
+            yield return Wait(0.5f);
+            var roots = Scope.Container.Resolve<IUIRootProvider>();
+            var tile = roots.GetLayerRoot(UILayer.Screen).Q(className: "menu__tile--event")?.Q<Button>();
+            Assert.That(IsShown(tile), Is.True, "the event's tile");
+            Press(tile);
+            yield return PlayTheChosenMode();
+
+            yield return WaitFor(() => State == typeof(RoundState) && Round is { HasBegun: true }, "the event's round");
+            Assert.That(platform.Events, Does.Contain(("menu", "event-overheat", "interact")));
+            Assert.That(Rules.Kind, Is.EqualTo(SpecialRound.Overheat));
+            Assert.That(Round.IsTimed, Is.True);
+
+            // The clock runs out: the round ends on points and the result comes up.
+            yield return EndTheClock();
+            yield return WaitFor(() => State == typeof(ResultState) && IsShown(FindButton("play-again-button")),
+                "the result");
+            yield return Wait(1f);
+            Assert.That(platform.Events.Any(e => e.Item1 == "special" && e.Item2 == "overheat" && e.Item3 != "start"),
+                Is.True, "the mode's end is measured");
+            yield return PressNextMatch();
+
+            yield return WaitFor(() => State == typeof(RoundState) && Round is { HasBegun: true }, "the next match");
+            Assert.That(Rules.Kind, Is.EqualTo(SpecialRound.Overheat), "NEXT MATCH keeps the visit's mode");
+        }
+
+        private static RoundRules Rules => Scope.Container.Resolve<LevelScene>().Resolve<RoundRules>();
+
+        // Moves the round's clock to its last moment rather than waiting the whole minute.
+        private static IEnumerator EndTheClock()
+        {
+            typeof(ArenaRound).GetField("elapsed", System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic)?.SetValue(Round, Round.Duration - 0.2f);
+            yield return WaitFor(() => Round == null || Round.IsFinished, "the end of the round");
+        }
+
+        [UnityTest]
+        public IEnumerator FootballFromTheMenuTileKeepsItsPitchThroughNextMatch()
+        {
+            ReturningPlayer();
+            QuietMenu("football");
+            EventSchedule.Forced = EventMode.Football;
+            object savedDuration = null;
+            System.Reflection.FieldInfo duration = null;
+            GameTuning.FootballSettings settings = null;
+            try {
+                yield return Boot();
+                // A short match: the flow, not the football, is under test.
+                settings = Scope.Container.Resolve<GameTuning>().Football;
+                duration = settings.GetType().GetField("duration", System.Reflection.BindingFlags.Instance |
+                    System.Reflection.BindingFlags.NonPublic);
+                savedDuration = duration.GetValue(settings);
+                duration.SetValue(settings, 6f);
+
+                yield return WaitFor(() => IsShown(EventTile), "the menu's FOOTBALL tile");
+                yield return Wait(0.5f);
+                Assert.That(platform.Events, Does.Contain(("menu", "event-football", "visible")));
+                Press(EventTile);
+                yield return PlayTheChosenMode();
+                yield return WaitFor(() => State == typeof(RoundState) && Round is { HasBegun: true }, "the match");
+                Assert.That(platform.Events, Does.Contain(("menu", "event-football", "interact")));
+                Assert.That(Scope.Container.Resolve<ISessionProgress>().Mode, Is.EqualTo(EventMode.Football));
+                ExpectFootballOnThePitch();
+                Assert.That(platform.Events, Does.Contain(("special", "football", "start")));
+
+                yield return WaitFor(() => State == typeof(ResultState) && IsShown(FindButton("play-again-button")),
+                    "the result");
+                Assert.That(platform.Events.Any(e => e.Item1 == "special" && e.Item2.StartsWith("football-goals-") &&
+                    e.Item3 == "goals"), Is.True, "the match's goals are measured");
+                Assert.That(platform.Events.Any(e => e.Item1 == "special" && e.Item2.StartsWith("football-team-")),
+                    Is.True, "the team layer's ending is measured");
+                yield return Wait(1f);
+                yield return PressNextMatch();
+
+                yield return WaitFor(() => State == typeof(RoundState) && Round is { HasBegun: true }, "the next match");
+                Assert.That(Scope.Container.Resolve<ISessionProgress>().Round, Is.EqualTo(2));
+                ExpectFootballOnThePitch();
+                Assert.That(platform.Events.Count(e => e == ("special", "football", "start")), Is.EqualTo(2));
+            } finally {
+                EventSchedule.Forced = null;
+                if (duration != null) {
+                    duration.SetValue(settings, savedDuration);
+                }
+            }
+        }
+
+        // The round now plays FOOTBALL, on its own pitch, with its ball.
+        private static void ExpectFootballOnThePitch()
+        {
+            var level = Scope.Container.Resolve<LevelScene>();
+            Assert.That(level.Resolve<ArenaMap>().Id, Is.EqualTo("pitch"));
+            Assert.That(level.Resolve<RoundRules>().Kind, Is.EqualTo(SpecialRound.Football));
+            var mode = level.Resolve<ToyCarArena.Gameplay.Modes.FootballMode>();
+            Assert.That(mode.IsActive, Is.True);
+            Assert.That(mode.Ball, Is.Not.Null, "the ball is on the pitch");
+            Assert.That(Round.Cars.Count, Is.EqualTo(6), "three a side");
+        }
+
+        // The menu's tile of the event of the day.
+        private static Button EventTile
+        {
+            get {
+                var root = Scope?.Container?.Resolve<IUIRootProvider>()?.GetLayerRoot(UILayer.Screen);
+                return root?.Q<VisualElement>(className: "menu__tile--event")?.Q<Button>(className: "menu__tile-button");
+            }
+        }
+
         // The layers the arena's camera draws now.
         private static int ArenaLayers => Object.FindAnyObjectByType<ArenaCamera>().Camera.cullingMask;
 
-        // A player back for a second visit: one visit counted, some XP and the cars of the first levels.
+        // A player back for a second visit: one visit counted, some XP and the cars of the first levels, and rounds
+        // played past the safe first rounds (a fall knocks them out again).
         private void ReturningPlayer()
         {
             storage.SetInt("visit_count", 1);
             storage.SetInt("visit_day", (int)(DateTime.Now.Date - DateTime.MinValue.Date).TotalDays);
             storage.SetInt("xp_total", 120);
+            storage.SetInt(SessionProgress.RoundsKey, 5);
+        }
+
+        // No popup of its own over the menu: today's gift is taken and the mode is no longer new, so the event tile
+        // is free to press.
+        private void QuietMenu(string modeId)
+        {
+            storage.SetInt("daily_day", CalendarDay.Of(DateTime.Now));
+            storage.SetBool("intro_mode-" + modeId, true);
+        }
+
+        // NEXT MATCH on the result: a new car the round opened shows first, and CONTINUE closes it before the match.
+        private static IEnumerator PressNextMatch()
+        {
+            Press(FindButton("play-again-button"));
+            var until = Time.realtimeSinceStartup + 20f;
+            while (State != typeof(RoundState) && Time.realtimeSinceStartup < until) {
+                var skip = FindButton("level-reward__skip");
+                if (IsShown(skip)) {
+                    yield return Wait(0.8f);
+                    Press(skip);
+                }
+
+                yield return null;
+            }
+        }
+
+        // The event tile opens CHOOSE MODE with the event picked; its PLAY starts it.
+        private static IEnumerator PlayTheChosenMode()
+        {
+            yield return WaitFor(() => IsShown(FindButton("menu__modes-play")), "CHOOSE MODE");
+            yield return Wait(0.4f);
+            Press(FindButton("menu__modes-play"));
         }
 
         private IEnumerator Boot()

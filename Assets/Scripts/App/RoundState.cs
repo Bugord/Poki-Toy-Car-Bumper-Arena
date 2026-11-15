@@ -93,12 +93,28 @@ namespace ToyCarArena.App
             }
 
             var round = levelScene.Resolve<ArenaRound>();
+            var tutorial = levelScene.Resolve<TutorialMode>();
             var tuning = levelScene.Resolve<GameTuning>();
             var driver = levelScene.Resolve<PlayerDriver>();
             var finished = new UniTaskCompletionSource<RoundResult>();
             void OnFinished(RoundResult result) => finished.TrySetResult(result);
 
             round.Finished += OnFinished;
+            // The tutorial's steps: where a new player stops learning (tutorial / <step> / start|complete).
+            void OnStepStarted(TutorialStep step)
+            {
+                // The lesson's end is the use step's complete: a start with no complete would read as a leave.
+                if (step != TutorialStep.Done) {
+                    platform.MeasureTutorialStep(step, false);
+                }
+            }
+
+            void OnStepDone(TutorialStep step) => platform.MeasureTutorialStep(step, true);
+            if (tutorial.IsActive) {
+                tutorial.StepStarted += OnStepStarted;
+                tutorial.StepDone += OnStepDone;
+            }
+
             ScreenHandle<HudViewModel> hud = null;
             var isPlaying = false;
             var playStarted = 0f;
@@ -257,8 +273,13 @@ namespace ToyCarArena.App
                 var now = DateTime.Now;
                 var stats = new MissionStats(true, result.Outcome, result.Place, result.Knockouts, driver.Boosts,
                     result.RevengeTaken, driver.ItemsUsed, pickupCount, itemKnockouts, playedMap, playedEvent);
-                var missionRound = missions.Record(stats, playerProgress.Level, progress.Round);
-                var taskRound = dailyTasks.Record(stats, now);
+                // The tutorial pays only its hat: no XP, coins, missions or daily tasks, so its result is the win and the
+                // hat alone, and the first real round brings the first level and car.
+                var isLesson = tutorial is { IsActive: true };
+                var missionRound = isLesson
+                    ? new MissionRound(Array.Empty<MissionLine>(), Array.Empty<GameTuning.MissionDefinition>(), 0, 0)
+                    : missions.Record(stats, playerProgress.Level, progress.Round);
+                var taskRound = isLesson ? DailyTaskRound.None : dailyTasks.Record(stats, now);
                 // The task of the mode of the day is done only by a round played to the end: it pops DAILY TASK! now,
                 // over the round's last moment, where the ones done in play popped as they came.
                 foreach (var task in taskRound.Completed) {
@@ -268,21 +289,31 @@ namespace ToyCarArena.App
                     }
                 }
                 // The day's first win doubles the round's own reward, taken (and saved) before it pays.
-                var firstWin = daily.TakeFirstWin(now, result);
-                var xpGain = playerProgress.Record(result, isStreakRound ? streaks : null,
-                    missionRound.Xp + taskRound.Xp, firstWin);
-                var coinGain = wallet.Record(result, isStreakRound, missionRound.Coins + taskRound.Coins, firstWin);
-                // The free topper of its level: the result offers to wear it.
-                wallet.TryGift(xpGain.After.Level);
+                var firstWin = isLesson ? 1 : daily.TakeFirstWin(now, result);
+                var xpGain = isLesson ? playerProgress.AddBonus(0) : playerProgress.Record(result,
+                    isStreakRound ? streaks : null, missionRound.Xp + taskRound.Xp, firstWin);
+                var coinGain = isLesson ? wallet.AddBonus(0)
+                    : wallet.Record(result, isStreakRound, missionRound.Coins + taskRound.Coins, firstWin);
+                // The free topper of its level, or the tutorial's reward: the result offers to wear it.
+                wallet.TryGift(xpGain.After.Level, tutorial is { IsActive: true, IsDone: true });
                 var record = bests.Record(result).WithXp(xpGain).WithKnocker(
                     result.KnockedOutBy == RoundResult.Nobody ? "" : round.NameOf(result.KnockedOutBy)).WithRoster(
                     round.Names, round.Levels, IndexOf(round, round.Nemesis)).WithMeta(coinGain, missionRound,
                     new StreakChange(streakBefore, progress.WinStreak, streaks.Start));
+                if (isLesson) {
+                    record = record.AsLesson();
+                }
+
                 arenaRotation.Next(record.XpGain.After.Level);
                 levelScene.Resolve<ISessionRoster>().NextRound(result.CarCount - 1,
                     RoundDifficulty.BotCountFor(tuning, progress), progress.Nemesis, tuning.Players);
                 platform.MeasureRoundEnd(roundNumber, result, tuning.Round.Duration, driver, tuning.Boost.IsEnabled,
                     waitsForPlayer, round.Mode.IsKnockOutFinal);
+                var safety = levelScene.Resolve<PlayerSafety>();
+                if (levelScene.Resolve<RoundDifficulty>().IsPlayerSafe) {
+                    platform.MeasureSaved(roundNumber, safety.Rescues);
+                }
+
                 if (pickups.IsEnabled) {
                     platform.MeasureMatchPickups(roundNumber, pickupCount, result.IsMatch);
                 }
@@ -290,6 +321,7 @@ namespace ToyCarArena.App
                 // The variant playing as it ended: the rotation's own in a round, the last cycle's in a match.
                 platform.MeasureVariantEnd(playedMap, currentVariant, result.Outcome);
                 platform.MeasureSpecialEnd(special, result, round.BossTaken, pickups.IsEnabled ? driver.ItemsUsed : -1);
+                platform.MeasureModeEnd(levelScene.Resolve<RoundModes>().Active);
                 platform.MeasureRoundCar(roundNumber, playedCar);
                 platform.MeasureProgress(record.XpGain);
                 platform.MeasureRoundMap(roundNumber, playedMap);
@@ -306,6 +338,8 @@ namespace ToyCarArena.App
             }
             finally {
                 round.Finished -= OnFinished;
+                tutorial.StepStarted -= OnStepStarted;
+                tutorial.StepDone -= OnStepDone;
                 round.KnockedOut -= OnKnockedOut;
                 variants.VariantChanged -= OnVariantChanged;
                 pickups.Collected -= OnCollected;

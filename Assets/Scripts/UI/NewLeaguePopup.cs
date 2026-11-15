@@ -152,7 +152,10 @@ namespace ToyCarArena.UI
             var swatch = Element("menu__league-swatch");
             swatch.style.backgroundImage = new StyleBackground(LeagueLook.CardSkyOf(tier));
             gets.Add(Get(swatch, "menu.unlock_background"));
-            gets.Add(Get(MenuLeagues.Plinth(tier, "menu__league-plinth"), "menu.unlock_plinth"));
+            // The painted podium (sprite_icon_podium, set by the class): the drawn drum read poorly at this size.
+            var podium = new VisualElement { pickingMode = PickingMode.Ignore };
+            podium.AddToClassList("menu__league-plinth");
+            gets.Add(Get(podium, "menu.unlock_plinth"));
             gets.Add(Get(HudView.CreateLevelBadge(PlayerRank.StartOf(tier), "menu__league-get-badge"),
                 "menu.unlock_badge"));
             Card.Add(gets);

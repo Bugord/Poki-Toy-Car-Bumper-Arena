@@ -13,7 +13,7 @@ namespace ToyCarArena.UI
     /// top three and, apart, the player's own row; a wide screen every car, the table at the left of the podium.
     /// <para>
     /// After a round of the last car standing the podium stands alone in the middle, without the table, as big as the
-    /// screen allows, its foot tucked under the cards below: the player's own car with no name over it (the title says
+    /// screen allows and always whole (PlacePicture): the player's own car with no name over it (the title says
     /// whose it is) and no crown either (a flat one reads oddly on the 3D car), and the car that pushed them off on a
     /// loss to one, its name red with
     /// the REVENGE horns and a red REVENGE NEXT ROUND tag under it.
@@ -33,19 +33,26 @@ namespace ToyCarArena.UI
         private const string RaysEnterClass = "podium__rays--enter";
         private const string WinnerEnterClass = "podium__winner--enter";
         private const string CrownEnterClass = "podium__crown--enter";
-        private const string ColumnsClass = "round-over--columns";
-        // The rival's pill sits this far over the car's roof: the REVENGE NEXT ROUND tag under it and a little air.
-        private const float RivalPillGap = 76f;
-        // The wide columns' table stands this far in from the left (ui_screens: .results--wide), the podium past it.
+        // The wide columns' table stands this far in from the left (ui_screens: .results--wide). An event mode's tall
+        // table is a little narrower there, so the podium beside it gets the width its car needs.
         private const float WideTableLeft = 80f;
-        private const float WidePodiumLeft = 900f;
+        private const float TallTableWidth = 660f;
+        private const float TallPodiumLeft = 780f;
         private const float WidePodiumTop = 20f;
         // Between the bottom of the teams' table and the podium under it: the crown over the pill reaches up into it.
         private const float TeamPodiumGap = 40f;
-        // In teams the MVP pill stands on the car's roof too, its small tag under it; never higher than its own place
-        // (ui_screens: .podium__winner), where its crown clears the table.
-        private const float TeamPillGap = 40f;
-        private const float PillTop = 46f;
+        // The podium goes under the table only when its car is this much bigger there: beside it, as designed, the
+        // car stays whole above the bottom edge and next to the rows it won.
+        private const float UnderBias = 1.25f;
+        // The height a name pill takes over the car (its crown, the pill, its tag and the air to the roof), for the
+        // choice between beside and under the table.
+        private const float PillRoom = 210f;
+        // The car and its pedestal fill about this much width per height of the podium picture (twice as wide as
+        // high, its sides empty): the picture may run past its box, as its sides are see-through.
+        private const float ContentAspect = 1.3f;
+        // Over the pill the winner's crown (ui_screens: .podium__crown, 60 px over it); under its tag, the roof.
+        private const float CrownRoom = 64f;
+        private const float PillRoofGap = 12f;
 
         // The narrow form shows this many leaders, then the player's own row when it is lower.
         private const int CompactLeaders = 3;
@@ -79,6 +86,9 @@ namespace ToyCarArena.UI
         private readonly VisualElement crown;
         private readonly VisualElement table;
         private readonly VisualElement rows;
+        private readonly Label winnerTag;
+        private readonly Label rivalTag;
+        private readonly Label subtitle;
         private readonly LiveText text = new();
         private VisualElement youRow;
         private IVisualElementScheduledItem turn;
@@ -104,18 +114,25 @@ namespace ToyCarArena.UI
             crown.generateVisualContent += DrawCrown;
             table = root.Q<VisualElement>("results");
             rows = root.Q<VisualElement>("results-rows");
+            subtitle = root.Q<Label>("subtitle");
             // An event mode counts points of its own, not knock-outs: the column says so.
             var pointsHead = root.Q<Label>(className: "results__title--ko");
             if (model.IsEvent && pointsHead != null) {
-                text.Set(pointsHead, () => Strings.Get("result.points_short"));
+                var pointsKey = ModeLooks.Of(model.Kind)?.PointsKey ?? ModeLook.DefaultPointsKey;
+                text.Set(pointsHead, () => Strings.Get(pointsKey));
             }
+            winnerTag = root.Q<Label>("podium-winner-tag");
+            rivalTag = root.Q<Label>("podium-rival-tag");
             podium.parent.RegisterCallback<GeometryChangedEvent>(OnPictureGeometry);
             podium.RegisterCallback<GeometryChangedEvent>(OnPictureGeometry);
             car.RegisterCallback<GeometryChangedEvent>(OnPictureGeometry);
-            car.RegisterCallback<GeometryChangedEvent>(OnRivalGeometry);
-            winner.RegisterCallback<GeometryChangedEvent>(OnRivalGeometry);
-            podium.parent.RegisterCallback<GeometryChangedEvent>(PlaceTeamPodium);
-            table.RegisterCallback<GeometryChangedEvent>(PlaceTeamPodium);
+            podium.RegisterCallback<GeometryChangedEvent>(PlacePicture);
+            winner.RegisterCallback<GeometryChangedEvent>(PlacePicture);
+            winnerTag.RegisterCallback<GeometryChangedEvent>(PlacePicture);
+            rivalTag.RegisterCallback<GeometryChangedEvent>(PlacePicture);
+            podium.parent.RegisterCallback<GeometryChangedEvent>(PlaceWidePodium);
+            table.RegisterCallback<GeometryChangedEvent>(PlaceWidePodium);
+            table.RegisterCallback<GeometryChangedEvent>(KeepSubtitle);
 
             if (model.Podium != null) {
                 car.style.backgroundImage = Background.FromRenderTexture((RenderTexture)model.Podium);
@@ -124,8 +141,7 @@ namespace ToyCarArena.UI
             BuildWinner();
             // In teams the podium shows the winning team's best car (the player's team's on a draw): MVP, not WINNER,
             // which a draw has none of.
-            var winnerTag = root.Q<Label>("podium-winner-tag");
-            if (model.TeamPoints.Count == 2 && winnerTag != null) {
+            if (model.TeamPoints.Count == 2) {
                 winnerTag.ClearBinding("text");
                 text.Set(winnerTag, () => Strings.Get("result.mvp"));
             }
@@ -186,11 +202,38 @@ namespace ToyCarArena.UI
             podium.parent.UnregisterCallback<GeometryChangedEvent>(OnPictureGeometry);
             podium.UnregisterCallback<GeometryChangedEvent>(OnPictureGeometry);
             car.UnregisterCallback<GeometryChangedEvent>(OnPictureGeometry);
-            car.UnregisterCallback<GeometryChangedEvent>(OnRivalGeometry);
-            winner.UnregisterCallback<GeometryChangedEvent>(OnRivalGeometry);
-            podium.parent.UnregisterCallback<GeometryChangedEvent>(PlaceTeamPodium);
-            table.UnregisterCallback<GeometryChangedEvent>(PlaceTeamPodium);
+            podium.UnregisterCallback<GeometryChangedEvent>(PlacePicture);
+            winner.UnregisterCallback<GeometryChangedEvent>(PlacePicture);
+            winnerTag.UnregisterCallback<GeometryChangedEvent>(PlacePicture);
+            rivalTag.UnregisterCallback<GeometryChangedEvent>(PlacePicture);
+            podium.parent.UnregisterCallback<GeometryChangedEvent>(PlaceWidePodium);
+            table.UnregisterCallback<GeometryChangedEvent>(PlaceWidePodium);
+            table.UnregisterCallback<GeometryChangedEvent>(KeepSubtitle);
             text.Dispose();
+        }
+
+        /// <summary>
+        /// On a phone held upright the table can be taller than the room left under the subtitle, and centred beside
+        /// the podium it rises over it, the place showing under the table's top. The table's own row says the place, so
+        /// the subtitle steps aside then; it keeps its room, so the table does not move.
+        /// </summary>
+        private void KeepSubtitle(GeometryChangedEvent _)
+        {
+            if (subtitle == null) {
+                return;
+            }
+
+            // The letters, not the row: a table that rises a little above its row keeps the subtitle; it steps aside
+            // only when the table's top reaches above its baseline (the label's box holds a descent under it). Layout
+            // positions, not world bounds: the table grows in from its top, and its transition would move them.
+            var isCovered = false;
+            if (table.resolvedStyle.display != DisplayStyle.None && table.layout.y < -1f && table.parent != null
+                && subtitle.parent != null) {
+                var top = table.parent.ChangeCoordinatesTo(subtitle.parent, table.layout.position).y;
+                isCovered = top < subtitle.layout.y + subtitle.layout.height * 0.8f;
+            }
+
+            subtitle.style.visibility = isCovered ? Visibility.Hidden : new StyleEnum<Visibility>(StyleKeyword.Null);
         }
 
         private void After(long delay, Action action) => root.schedule.Execute(action).StartingIn(delay);
@@ -237,72 +280,105 @@ namespace ToyCarArena.UI
             rays.style.top = middle.y - span * 0.5f - layer.resolvedStyle.borderTopWidth;
         }
 
-        // In the wide columns the podium is tall and the picture (twice as wide as high) sits in its middle, so the
-        // rival's pill at the podium's top hung far over the car: it stands on the car's roof instead, which the
-        // podium's camera keeps at WinnerPodium.RoofTop of the picture's height. So does the MVP's in teams.
-        private void OnRivalGeometry(GeometryChangedEvent evt)
+        /// <summary>
+        /// The car's picture in the podium, every layout alike: the whole car always shows, no card covers its foot,
+        /// and a name pill stands over the roof (which the podium's camera keeps at WinnerPodium.RoofTop of the
+        /// picture's height), never on the car. The picture is twice as wide as high but the car fills only the middle
+        /// of it, so the podium's width limits the car, not the picture: in a narrow column beside the table its
+        /// see-through sides run past the column (the table, later in the tree, is drawn over them). The pill and the
+        /// car together stand in the middle of the podium's height.
+        /// </summary>
+        private void PlacePicture(GeometryChangedEvent evt)
         {
-            var isTeams = model.TeamPoints.Count == 2;
-            if (!model.IsPodiumRival && !isTeams) {
+            var area = podium.contentRect;
+            if (float.IsNaN(area.width) || area.width <= 0f || float.IsNaN(area.height) || area.height <= 0f) {
                 return;
             }
 
-            if (!root.ClassListContains(ColumnsClass)) {
-                winner.style.top = StyleKeyword.Null;
-                return;
+            var hasPill = winner.resolvedStyle.display != DisplayStyle.None;
+            var crownRoom = hasPill && model.IsPodiumWinner ? CrownRoom : 0f;
+            var pill = hasPill ? PillHeight() : 0f;
+            var gap = hasPill ? PillRoofGap : 0f;
+            var over = crownRoom + pill + gap;
+            // Without a pill the whole picture fits the height; with one its empty top over the roof tucks behind it.
+            var height = hasPill ? (area.height - over) / (1f - WinnerPodium.RoofTop) : area.height;
+            height = Mathf.Floor(Mathf.Max(0f, Mathf.Min(height, area.width / ContentAspect)));
+            var used = hasPill ? over + height * (1f - WinnerPodium.RoofTop) : height;
+            var offset = Mathf.Round(Mathf.Max(0f, (area.height - used) * 0.5f));
+            var top = hasPill ? offset + over - height * WinnerPodium.RoofTop : offset;
+            if (hasPill) {
+                Place(v => winner.style.top = v, winner.resolvedStyle.top, offset + crownRoom);
             }
 
-            var box = car.layout;
-            var height = Mathf.Min(box.height, box.width * 0.5f);
-            var roof = box.y + (box.height - height) * 0.5f + height * WinnerPodium.RoofTop;
-            var top = model.IsPodiumRival
-                ? Mathf.Round(Mathf.Max(0f, roof - winner.layout.height - RivalPillGap))
-                : Mathf.Round(Mathf.Max(PillTop, roof - winner.layout.height - TeamPillGap));
-            if (Mathf.Abs(winner.resolvedStyle.top - top) > 1.5f) {
-                winner.style.top = top;
-            }
+            car.style.right = StyleKeyword.Auto;
+            car.style.bottom = StyleKeyword.Auto;
+            Place(v => car.style.left = v, car.resolvedStyle.left, Mathf.Round((area.width - height * 2f) * 0.5f));
+            Place(v => car.style.top = v, car.resolvedStyle.top, Mathf.Round(top));
+            Place(v => car.style.width = v, car.resolvedStyle.width, height * 2f);
+            Place(v => car.style.height = v, car.resolvedStyle.height, height);
         }
 
-        // A wide screen in teams: the table of two teams is tall, and beside it the podium got a strip of the width, its
-        // car small. Under the table, whenever that fits the bigger picture (twice as wide as high), the podium takes
-        // the whole width and the height left under it, and the table moves to the middle over it. Kept until a value
-        // moves by more than snapping can, as the columns, so the layout settles.
-        private void PlaceTeamPodium(GeometryChangedEvent evt)
+        // The pill and the tag hanging under it (WINNER, MVP or REVENGE NEXT ROUND), in its own layout: its entrance
+        // scales it, which its layout does not see.
+        private float PillHeight()
         {
-            if (model.TeamPoints.Count != 2) {
+            var height = winner.layout.height;
+            foreach (var tag in new[] { winnerTag, rivalTag }) {
+                if (tag.resolvedStyle.display != DisplayStyle.None && !float.IsNaN(tag.layout.yMax)) {
+                    height = Mathf.Max(height, tag.layout.yMax);
+                }
+            }
+
+            return float.IsNaN(height) ? 0f : height;
+        }
+
+        // A wide screen with an event mode's table (two teams, or seven cars by points): the table, a little narrower,
+        // at the left and the podium beside it, as designed, unless under the table its car would be clearly bigger (a
+        // 4:3 screen, whose left part is narrow): then the podium takes the whole width and the height left under it,
+        // and the table moves to the middle over it. Kept until a value moves by more than snapping can, as the
+        // columns, so the layout settles.
+        private void PlaceWidePodium(GeometryChangedEvent evt)
+        {
+            if (!IsTallTable) {
                 return;
             }
 
             if (!isWide) {
                 table.style.left = StyleKeyword.Null;
+                table.style.width = StyleKeyword.Null;
                 podium.style.marginLeft = StyleKeyword.Null;
                 podium.style.marginTop = StyleKeyword.Null;
                 podium.style.minHeight = StyleKeyword.Null;
                 return;
             }
 
+            table.style.width = TallTableWidth;
             var area = podium.parent.contentRect.size;
             var box = table.layout;
-            var carTop = car.resolvedStyle.top;
-            if (float.IsNaN(area.x) || area.x <= 0f || float.IsNaN(box.height) || box.height <= 0f ||
-                float.IsNaN(carTop)) {
+            if (float.IsNaN(area.x) || area.x <= 0f || float.IsNaN(box.height) || box.height <= 0f) {
                 return;
             }
 
-            var beside = Picture(area.x - WidePodiumLeft, area.y - WidePodiumTop - carTop);
+            var beside = Picture(area.x - TallPodiumLeft, area.y - WidePodiumTop - PillRoom);
             var underTop = box.height + TeamPodiumGap;
-            var under = Picture(area.x, area.y - underTop - carTop);
-            var isUnder = under > beside;
+            var under = Picture(area.x, area.y - underTop - PillRoom);
+            var isUnder = under > beside * UnderBias;
             Place(v => table.style.left = v, table.resolvedStyle.left,
-                isUnder ? Mathf.Round((area.x - box.width) * 0.5f) : WideTableLeft);
-            Place(v => podium.style.marginLeft = v, podium.resolvedStyle.marginLeft, isUnder ? 0f : WidePodiumLeft);
+                isUnder ? Mathf.Round((area.x - TallTableWidth) * 0.5f) : WideTableLeft);
+            Place(v => podium.style.marginLeft = v, podium.resolvedStyle.marginLeft, isUnder ? 0f : TallPodiumLeft);
             Place(v => podium.style.marginTop = v, podium.resolvedStyle.marginTop,
                 isUnder ? Mathf.Round(underTop) : WidePodiumTop);
             // Its own height comes from the space left, not a minimum that could push the row taller.
             podium.style.minHeight = 0f;
         }
 
-        private static float Picture(float width, float height) => Mathf.Max(0f, Mathf.Min(width, height * 2f));
+        // An event mode's table, of two teams or of every car by points: tall enough that the podium beside it is small.
+        // The plain match keeps its own layout.
+        private bool IsTallTable => model.TeamPoints.Count == 2 || model.IsTimed && model.IsEvent;
+
+        // The height of the car's picture a box of this size holds: as high as the box, as wide as the car needs.
+        private static float Picture(float width, float height) =>
+            Mathf.Max(0f, Mathf.Min(width / ContentAspect, height));
 
         private static void Place(Action<StyleLength> set, float current, float value)
         {

@@ -85,7 +85,8 @@ namespace ToyCarArena.UI
             missions.AddToClassList("missions");
             var bottom = root.Q<VisualElement>(className: "round-over__bottom");
             bottom.parent.Insert(bottom.parent.IndexOf(bottom), missions);
-            if (viewModel.Missions == null) {
+            // No card where nothing tracks the missions, before they open (level 3) and after the tutorial.
+            if (viewModel.Missions == null || viewModel.Missions.Lines.Count == 0) {
                 missions.style.display = DisplayStyle.None;
                 return;
             }

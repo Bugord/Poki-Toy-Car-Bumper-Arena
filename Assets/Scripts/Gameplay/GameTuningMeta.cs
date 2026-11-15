@@ -127,6 +127,11 @@ namespace ToyCarArena.Gameplay
         [Serializable]
         public sealed class MissionSettings
         {
+            [Tooltip("The player's level the missions open at: before it they are not counted or shown (the first rounds " +
+                "have enough to learn)")]
+            [SerializeField]
+            private int fromLevel = 3;
+
             [Tooltip("XP for a done mission of each tier: easy, medium, hard")]
             [SerializeField]
             private int[] tierXp = { 30, 45, 60 };
@@ -141,6 +146,9 @@ namespace ToyCarArena.Gameplay
             private MissionDefinition[] pool = DefaultPool();
 
             public IReadOnlyList<MissionDefinition> Pool => pool;
+
+            /// <summary>The player's level the missions open at.</summary>
+            public int FromLevel => fromLevel;
 
             public int XpOf(MissionTier tier) => tierXp[Mathf.Clamp((int)tier, 0, tierXp.Length - 1)];
 
