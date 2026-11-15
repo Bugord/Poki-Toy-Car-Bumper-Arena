@@ -16,6 +16,23 @@ namespace ToyCarArena.UI
         /// <param name="left">The safe area's left inset, in reference pixels.</param>
         /// <param name="right">The safe area's right inset, in reference pixels.</param>
         void Tick(Camera camera, float top, float left, float right);
+
+        /// <summary>
+        /// Whether the mode's HUD shows the item hint its own way (on the shared element): the HUD's one-time hint then
+        /// keeps off it, so it neither pops the hint in nor takes it down on its own clock.
+        /// </summary>
+        bool OwnsItemHint => false;
+    }
+
+    /// <summary>
+    /// A mode HUD with something of its own in each bot's handle over its car (OVERHEAT's heat): the HUD calls it for
+    /// every handle it builds, again when a handle is rebuilt (a car back, a new rival), so the mode keeps the latest
+    /// element per car.
+    /// </summary>
+    internal interface IModeNameHud
+    {
+        /// <summary>Adds the mode's part to the handle line of car <paramref name="index"/>.</summary>
+        void MarkName(VisualElement line, int index);
     }
 
     /// <summary>

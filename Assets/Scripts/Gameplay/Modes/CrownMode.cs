@@ -33,8 +33,10 @@ namespace ToyCarArena.Gameplay.Modes
     /// (<see cref="SpecialRound.Crown"/>), silent in every other: it builds nothing and draws no random numbers there.
     /// </para>
     /// </summary>
-    public sealed class CrownMode : IRoundMode, IBotSteering, ITickable, IDisposable
+    public sealed class CrownMode : IRoundMode, IBotSteering, IModeAnalytics, ITickable, IDisposable
     {
+        // Takes past this many share one bucket of the end event.
+        private const int LastTakesBucket = 10;
         // Seconds since the holder's last contact credit by the same car that still count as one push held.
         private const float PressGap = 0.12f;
         // Metres between two cars' middles that still count as touching, for a push.
@@ -160,6 +162,40 @@ namespace ToyCarArena.Gameplay.Modes
         public bool IsProtected => Holder != null && Time.time < protectedUntil;
 
         /// <summary>Seconds the crown has been on <paramref name="car"/>'s roof this round, fractions included.</summary>
+        /// <summary>
+        /// The mode's own event at the end of its round, beside the shared ones of every mode:
+        /// <c>special / crown-held-&lt;s&gt;-takes-&lt;n&gt; / crown</c>. <c>s</c> is how long the player kept the crown, by
+        /// the lower end of its bucket (<see cref="HeldBucketOf"/>), <c>n</c> how many times the player took it
+        /// (<see cref="TakesBucketOf"/>). It says whether the player gets the crown at all and keeps it, or takes it often
+        /// and loses it straight away.
+        /// </summary>
+        /// <remarks>
+        /// A bucket is named by its lower end rather than as a range: Poki drops an event with more than two numbers, and
+        /// <c>held-1-9-takes-3</c> would have three.
+        /// </remarks>
+        public IEnumerable<(string id, string action)> EndEvents
+        {
+            get {
+                if (!IsActive || round.Player == null) {
+                    yield break;
+                }
+
+                yield return ($"crown-held-{HeldBucketOf(HeldOf(round.Player))}-takes-"
+                    + TakesBucketOf(TakesOf(round.Player)), "crown");
+            }
+        }
+
+        /// <summary>none, 1, 10 or 20plus: the player's whole seconds with the crown, by the bucket's lower end.</summary>
+        public static string HeldBucketOf(float seconds)
+        {
+            var whole = (int)seconds;
+            return whole <= 0 ? "none" : whole < 10 ? "1" : whole < 20 ? "10" : "20plus";
+        }
+
+        /// <summary>0..9, or 10plus: the times the player took the crown.</summary>
+        public static string TakesBucketOf(int takes) =>
+            takes >= LastTakesBucket ? $"{LastTakesBucket}plus" : Math.Max(0, takes).ToString();
+
         public float HeldOf(Car car)
         {
             var index = round.IndexOf(car);

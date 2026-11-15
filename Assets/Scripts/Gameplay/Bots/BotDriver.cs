@@ -44,6 +44,7 @@ namespace ToyCarArena.Gameplay.Bots
         private readonly ArenaHazards hazards;
         private readonly ArenaPickups pickups;
         private readonly RoundModes modes;
+        private readonly PlayerItemTurn itemTurn;
         private readonly List<Bot> bots = new();
 
         private int seed;
@@ -57,9 +58,10 @@ namespace ToyCarArena.Gameplay.Bots
         private Bot playerGrudge;
 
         public BotDriver(GameTuning tuning, ArenaRound round, RoundDifficulty difficulty, BallLane ballLane,
-            ArenaHazards hazards, ArenaPickups pickups, RoundModes modes)
+            ArenaHazards hazards, ArenaPickups pickups, RoundModes modes, PlayerItemTurn itemTurn)
         {
             this.pickups = pickups;
+            this.itemTurn = itemTurn;
             this.modes = modes;
             this.tuning = tuning;
             this.round = round;
@@ -110,6 +112,8 @@ namespace ToyCarArena.Gameplay.Bots
             var hasNewPickup = pickups.IsEnabled && pickups.Version != seenPickups;
             var steering = modes.BotSteering;
             seenPickups = pickups.Version;
+            // The grace that spares the player as a target spares them the bots' items too.
+            var spared = round.Elapsed < difficulty.PlayerGrace ? round.Player : null;
             foreach (var bot in bots) {
                 if (bot.Car.IsOut) {
                     continue;
@@ -130,8 +134,9 @@ namespace ToyCarArena.Gameplay.Bots
                 }
 
                 bot.Steer(edge, deltaTime, isDuel);
-                if (pickups.IsEnabled && round.IsRunning && bot.WantsToUseItem(edge, round.Cars, deltaTime)) {
-                    pickups.Use(bot.Car);
+                // One bot's item at the player at a time: the turn is taken at the use, before the next bot looks.
+                if (pickups.IsEnabled && round.IsRunning) {
+                    itemTurn.TryUse(bot, edge, deltaTime, spared);
                 }
             }
         }
@@ -211,6 +216,7 @@ namespace ToyCarArena.Gameplay.Bots
                 grudge = null;
             }
 
+            var targeting = modes.BotTargeting;
             Car best = null;
             var bestScore = float.NegativeInfinity;
             // By index: a foreach over the read-only list would box its enumerator on every pick.
@@ -225,10 +231,16 @@ namespace ToyCarArena.Gameplay.Bots
 
                 var carPosition = new Vector2(car.Position.x, car.Position.z);
                 var distance = Vector2.Distance(new Vector2(position.x, position.z), carPosition);
+                var hunters = CountHunters(car, bot);
                 var score = settings.EdgeWeight * traits.EdgeWeight * edge.Nearness(car.Position)
                     - settings.DistanceWeight * distance / diameter
-                    - settings.CrowdPenalty * CountHunters(car, bot)
+                    - settings.CrowdPenalty * hunters
                     + bot.Range(0f, settings.PickNoise);
+                // An event mode that makes some cars worth more (OVERHEAT's hot ones) adds to the usual score.
+                if (targeting != null) {
+                    score += targeting.TargetBonus(bot, car, hunters);
+                }
+
                 if (car == player) {
                     score += playerWeight;
                 }

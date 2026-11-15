@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Bots;
+using ToyCarArena.Gameplay.Cars;
 
 namespace ToyCarArena.Gameplay.Modes
 {
@@ -36,6 +37,31 @@ namespace ToyCarArena.Gameplay.Modes
     }
 
     /// <summary>
+    /// A mode that adds to how much the bots want a car (OVERHEAT's hot cars) while leaving the usual pick as it is:
+    /// <see cref="BotDriver"/> adds the bonus to a car's score, after the player's grace and the cap on the player's
+    /// hunters, so those still hold. It must draw no random numbers, so a round replays as it did.
+    /// </summary>
+    public interface IBotTargeting
+    {
+        /// <summary>
+        /// What <paramref name="car"/> is worth to <paramref name="bot"/> beyond the usual score, with
+        /// <paramref name="hunters"/> other bots already after it.
+        /// </summary>
+        float TargetBonus(Bot bot, Car car, int hunters);
+    }
+
+    /// <summary>
+    /// A mode with analytics events of its own at the end of its round, beside the shared ones of every mode
+    /// (<c>special / &lt;id&gt;…</c>): the events as category <c>special</c>, an id and an action, at most two numbers in
+    /// each.
+    /// </summary>
+    public interface IModeAnalytics
+    {
+        /// <summary>The mode's own events of the round that just ended: id and action.</summary>
+        IEnumerable<(string id, string action)> EndEvents { get; }
+    }
+
+    /// <summary>
     /// Every event mode of the scene and the one active in its round, for what is shared (the bots, the HUD): they ask
     /// here instead of naming a mode.
     /// </summary>
@@ -52,6 +78,7 @@ namespace ToyCarArena.Gameplay.Modes
             }
 
             BotSteering = Active as IBotSteering;
+            BotTargeting = Active as IBotTargeting;
         }
 
         public IReadOnlyList<IRoundMode> All { get; }
@@ -61,6 +88,9 @@ namespace ToyCarArena.Gameplay.Modes
 
         /// <summary>The active mode's own bot play, null when it has none.</summary>
         public IBotSteering BotSteering { get; }
+
+        /// <summary>The active mode's bonus to the bots' pick of a target, null when it has none.</summary>
+        public IBotTargeting BotTargeting { get; }
 
         /// <summary>The scene's mode of <typeparamref name="T"/>, active or not; null when none is registered.</summary>
         public T Get<T>() where T : class, IRoundMode

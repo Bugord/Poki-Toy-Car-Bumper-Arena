@@ -1267,6 +1267,12 @@ namespace ToyCarArena.UI
         /// </summary>
         private void RefreshItemHint(bool isTouch)
         {
+            // A mode that shows the hint its own way (ITEM FRENZY) has it: shown here first, it would come down at this
+            // hint's moment and pop in again under the mode's.
+            if (modeHud is { OwnsItemHint: true }) {
+                return;
+            }
+
             var now = Time.unscaledTime;
             if (!isItemHintShown) {
                 if (!ViewModel.IsItemReady || isItemShownRolling || controls.HasShownItemHint) {
@@ -1646,6 +1652,8 @@ namespace ToyCarArena.UI
             line.Add(CreateOutlinedText(ViewModel.NameOf(index), "car-name__text"));
             // In teams a teammate's tag has a shield, an enemy's none: told apart by more than the colour.
             HudTeams.MarkName(tag, line, ViewModel, index);
+            // A mode with its own part of the handle (OVERHEAT's heat) adds it after the name.
+            (modeHud as IModeNameHud)?.MarkName(line, index);
             // A bot that joined on a win streak wears the player's crown and ×N after its name, unless the mode's own
             // thing is a crown.
             var streakOf = HidesStreakCrowns ? 0 : ViewModel.StreakOf(index);

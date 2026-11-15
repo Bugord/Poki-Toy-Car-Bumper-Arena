@@ -78,6 +78,24 @@ namespace ToyCarArena.Gameplay.Pickups
             return false;
         }
 
+        /// <summary>
+        /// Whether <paramref name="user"/> can punch now: its own glove is not out and a glove is free. As
+        /// <see cref="Punch"/> would refuse, asked before the item leaves the slot.
+        /// </summary>
+        public bool CanPunch(Car user)
+        {
+            var isFree = false;
+            foreach (var glove in gloves) {
+                if (glove.IsActive && glove.User == user) {
+                    return false;
+                }
+
+                isFree |= !glove.IsActive;
+            }
+
+            return isFree;
+        }
+
         /// <summary>Punches from <paramref name="user"/>'s nose; false when every glove is out already.</summary>
         public bool Punch(Car user)
         {

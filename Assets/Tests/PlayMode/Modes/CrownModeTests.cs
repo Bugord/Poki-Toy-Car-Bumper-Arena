@@ -482,16 +482,16 @@ namespace ToyCarArena.Tests.PlayMode
         [Test]
         public void ItsEventBucketsTheSecondsAndTakesWithinTwoNumbers()
         {
-            Assert.AreEqual("none", ToyCarArena.App.CrownEvents.HeldBucketOf(0.9f));
-            Assert.AreEqual("1", ToyCarArena.App.CrownEvents.HeldBucketOf(9.9f));
-            Assert.AreEqual("10", ToyCarArena.App.CrownEvents.HeldBucketOf(19.5f));
-            Assert.AreEqual("20plus", ToyCarArena.App.CrownEvents.HeldBucketOf(20f));
-            Assert.AreEqual("9", ToyCarArena.App.CrownEvents.TakesBucketOf(9));
-            Assert.AreEqual("10plus", ToyCarArena.App.CrownEvents.TakesBucketOf(14));
+            Assert.AreEqual("none", CrownMode.HeldBucketOf(0.9f));
+            Assert.AreEqual("1", CrownMode.HeldBucketOf(9.9f));
+            Assert.AreEqual("10", CrownMode.HeldBucketOf(19.5f));
+            Assert.AreEqual("20plus", CrownMode.HeldBucketOf(20f));
+            Assert.AreEqual("9", CrownMode.TakesBucketOf(9));
+            Assert.AreEqual("10plus", CrownMode.TakesBucketOf(14));
             foreach (var held in new[] { 0f, 5f, 15f, 25f }) {
                 foreach (var takes in new[] { 0, 3, 12 }) {
-                    var what = $"crown-held-{ToyCarArena.App.CrownEvents.HeldBucketOf(held)}-takes-"
-                        + ToyCarArena.App.CrownEvents.TakesBucketOf(takes);
+                    var what = $"crown-held-{CrownMode.HeldBucketOf(held)}-takes-"
+                        + CrownMode.TakesBucketOf(takes);
                     Assert.LessOrEqual(Bugord.App.Platform.GameEvent.CountNumbers("special", what, "crown"),
                         Bugord.App.Platform.GameEvent.MaxNumbers, what);
                 }

@@ -127,7 +127,7 @@ hud.boost_pop,"Sticker over the player's car when the game fires the boost for t
 hud.pow,"Match: comic sticker where the player's boxing glove hits a car; max ~6 chars",POW!,PAF !,POW!,BUMM!,¡PUM!,PAT!,POW!,БАЦ!
 hud.strike,"Match: comic sticker on each car the player's bowling ball knocks aside; max ~8 chars",STRIKE!,STRIKE !,STRIKE!,STRIKE!,¡STRIKE!,STRIKE!,STRIKE!,СТРАЙК!
 hud.saved,"Match: comic sticker over the player's car when its balloon catches a fall off the edge; max ~10 chars",SAVED!,SAUVÉ !,SALVO!,GERETTET!,¡SALVADO!,KURTULDUN!,SALVO!,СПАСЁН!
-hud.tap_to_use,"Match: first-time hint over the touch item button; max ~14 chars",TAP TO USE,TOUCHE POUR UTILISER,TOCCA PER USARE,TIPPEN ZUM NUTZEN,TOCA PARA USAR,KULLANMAK İÇİN DOKUN,TOQUE PARA USAR,"ЖМИ, ЧТОБЫ ПРИМЕНИТЬ"
+hud.tap_to_use,"Match: first-time hint over the touch item button; max ~14 chars",TAP TO USE,TOUCHE POUR UTILISER,TOCCA PER USARE,TIPPEN ZUM NUTZEN,TOCA PARA USAR,KULLANMAK İÇİN DOKUN,TOQUE PARA USAR,НАЖМИ!
 hud.press_e,"Match: first-time hint over the item button on a desktop: the E key uses the item; keep the letter E",PRESS E,APPUIE SUR E,PREMI E,DRÜCKE E,PULSA E,E TUŞUNA BAS,APERTE E,НАЖМИ E
 hud.right_click,"Match: first-time hint over the item button on a desktop: the right mouse button uses the item (the E key cap shows beside it); max ~12 chars",RIGHT CLICK,CLIC DROIT,CLIC DESTRO,RECHTSKLICK,CLIC DERECHO,SAĞ TIK,BOTÃO DIREITO,ПРАВЫЙ КЛИК
 mission.title,Header over the three missions on the result and the lobby,MISSIONS,MISSIONS,MISSIONI,MISSIONEN,MISIONES,GÖREVLER,MISSÕES,МИССИИ
@@ -315,3 +315,5 @@ hud.crown_run,"HUD banner in the crown mode while the player holds it: drive awa
 hud.crown_got,Pop over the player's car when it takes the crown,GOT IT!,À TOI !,PRESA!,GESCHNAPPT!,¡ES TUYA!,SENDE!,É SUA!,ТВОЯ!
 hud.crown_stolen,Pop over the player's car when a bump takes the crown from it,STOLEN!,VOLÉE !,RUBATA!,GEKLAUT!,¡ROBADA!,ÇALINDI!,ROUBADA!,УКРАЛИ!
 result.seconds_short,"Header of the seconds column of the results table in the crown mode (seconds with the crown), short",SEC,SEC,SEC,SEK,SEG,SN,SEG,СЕК
+hud.heat_hot,"Overheat mode: sticker over a car whose heat just reached red-hot; short",RED HOT!,BRÛLANT !,ROVENTE!,GLÜHEND!,¡AL ROJO!,KIZGIN!,EM BRASA!,РАСКАЛЁН!
+hud.meltdown,"Overheat mode: banner when the player knocks off a red-hot car; short",MELTDOWN!,FUSION !,FUSIONE!,KERNSCHMELZE!,¡FUNDIDO!,ERİDİ!,DERRETEU!,РАСПЛАВИЛ!

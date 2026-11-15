@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
+using ToyCarArena.App;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Round;
 
@@ -143,6 +144,26 @@ namespace ToyCarArena.Tests.PlayMode
             }
 
             Assert.That(RoundRules.For(tuning, slot, EventMode.None), Is.EqualTo(SpecialRound.None));
+        }
+
+        [Test]
+        public void TheDevConsoleOffersEveryModeAndTheSchedule()
+        {
+            var ids = ProgressDevConsole.EventDayIds();
+            var expected = new List<string>();
+            foreach (var mode in EventModes.Circle) {
+                expected.Add(EventModes.IdOf(mode));
+            }
+
+            expected.Add("auto");
+            Assert.That(ids, Is.EqualTo(expected));
+
+            // Every hint but auto is a mode event_day can force; auto names none, so it cannot hide one.
+            for (var i = 0; i < ids.Count - 1; i++) {
+                Assert.That(EventModes.Parse(ids[i]), Is.EqualTo(EventModes.Circle[i]), ids[i]);
+            }
+
+            Assert.That(EventModes.Parse(ProgressDevConsole.ScheduleId), Is.EqualTo(EventMode.None));
         }
 
         private void Enable(GameTuning tuning, EventMode mode, bool enabled)
