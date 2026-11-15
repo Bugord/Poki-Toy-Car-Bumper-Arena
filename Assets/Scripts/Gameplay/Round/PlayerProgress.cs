@@ -13,7 +13,8 @@ namespace ToyCarArena.Gameplay.Round
     /// </summary>
     public sealed class PlayerProgress : IPlayerCar
     {
-        private const string TotalKey = "xp_total";
+        public const string XpKey = "xp_total";
+        private const string TotalKey = XpKey;
         private const string SelectedKey = "car_selected";
         private const string ColorKey = "car_color";
         private const string OwnedKey = "cars_owned";

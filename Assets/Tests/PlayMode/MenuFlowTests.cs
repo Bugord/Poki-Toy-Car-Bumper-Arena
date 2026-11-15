@@ -103,6 +103,19 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator AVisitorWhoNeverPlayedGoesStraightToTheRoundAgain()
+        {
+            // Two visits counted, but neither finished a round: still a new player.
+            storage.SetInt("visit_count", 2);
+            yield return Boot();
+            yield return WaitFor(() => State == typeof(RoundState) && Round is { IsPlaced: true }, "the round");
+
+            Assert.That(Scope.Container.Resolve<Visits>().Count, Is.EqualTo(3));
+            Assert.That(FindButton("menu__play"), Is.Null, "no menu for a player who never played");
+            Assert.That(Round.HasBegun, Is.False, "the round waits for the player");
+        }
+
+        [UnityTest]
         public IEnumerator AReturningPlayersFirstRoundIsNotTheEasyOne()
         {
             ReturningPlayer();
