@@ -2514,3 +2514,7 @@
 .menu__icon--missions { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_missions.png"); }
 .menu__icon--daily { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_daily.png"); }
 .menu__icon--xp-boost { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_xp_boost.png"); }
+
+/* The missions popup and the daily tasks show no task sign in their rows: small, it only made them noisy. The menu's
+   one mission card keeps its sign. */
+.menu__mission-row > .mission-icon { display: none; }

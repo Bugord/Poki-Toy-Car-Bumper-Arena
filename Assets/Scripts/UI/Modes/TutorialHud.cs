@@ -1,4 +1,6 @@
 using System;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using Bugord.App.Localization;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Modes;
@@ -44,6 +46,8 @@ namespace ToyCarArena.UI
         private const float ArrowHeight = 112f;
         private const float StickerGap = 6f;
         private const float BelowGap = 110f;
+        // How far under a target's foot the tip of an arrow pointing up from below stands.
+        private const float FlipGap = 40f;
         private const float BarRoom = 150f;
         private const float SideMargin = 16f;
 
@@ -54,6 +58,7 @@ namespace ToyCarArena.UI
 
         private const string ShownClass = "hud__tutorial--shown";
         private const string DoneClass = "hud__tutorial--done";
+        private const string CheerShownClass = "hud__tutorial-cheer--shown";
         private const string ArrowShownClass = "hud__tutorial-arrow--shown";
 
         private readonly HudViewModel model;
@@ -71,8 +76,13 @@ namespace ToyCarArena.UI
         private readonly VisualElement itemButton;
         private readonly VisualElement feed;
         private readonly Action onLanguage;
+        private readonly VisualElement cheer;
+        private readonly Label[] cheerLabels;
+        private readonly ConfettiBurst confetti;
+        private readonly CancellationTokenSource lifetime = new();
         private TutorialStep shownStep = (TutorialStep)(-1);
         private TutorialPraise shownPraise;
+        private TutorialPraise shownCheer = (TutorialPraise)(-1);
         private bool shownTouch;
         private float popAt = float.NegativeInfinity;
         private float doneAt = float.PositiveInfinity;
@@ -122,6 +132,13 @@ namespace ToyCarArena.UI
             banner.style.left = -10000f;
             layer.Add(banner);
 
+            // The praise and the last words: big tilted gold words in the middle of the screen with confetti, as YOU
+            // WIN! on the result, not a bubble over the car.
+            cheer = StrokeText.Outlined("", "hud__tutorial-cheer", out cheerLabels);
+            cheer.pickingMode = PickingMode.Ignore;
+            layer.Add(cheer);
+            confetti = new ConfettiBurst(layer);
+
             // No bar at all: the clock would count five minutes down for a lesson with no time limit, and the cars'
             // chips only crowd a screen whose one job is the next step.
             bar = root.Q<VisualElement>("hud-bar");
@@ -168,6 +185,14 @@ namespace ToyCarArena.UI
             var scale = 1f + (PopScale - 1f) * Mathf.Sin(pop * Mathf.PI) * (1f - pop * 0.5f);
             sticker.style.scale = new Scale(new Vector3(scale, scale, 1f));
 
+            var isCheer = step == TutorialStep.Done || praise != TutorialPraise.None;
+            cheer.EnableInClassList(CheerShownClass, isShown && isCheer);
+            if (isCheer) {
+                arrow.EnableInClassList(ArrowShownClass, false);
+                banner.EnableInClassList(ShownClass, false);
+                return;
+            }
+
             var hasPlace = Place(camera, now, top, left, right);
             banner.EnableInClassList(ShownClass, isShown && hasPlace);
         }
@@ -175,6 +200,9 @@ namespace ToyCarArena.UI
         public void Dispose()
         {
             Strings.Changed -= onLanguage;
+            lifetime.Cancel();
+            lifetime.Dispose();
+            cheer.RemoveFromHierarchy();
             SetDisplay(bar, true);
             SetDisplay(feed, true);
             banner.RemoveFromHierarchy();
@@ -197,6 +225,15 @@ namespace ToyCarArena.UI
                 },
             };
             StrokeText.SetText(textLabels, Strings.Get(key));
+            if (isCheer) {
+                var isNew = !cheer.ClassListContains(CheerShownClass) || praise != shownCheer;
+                StrokeText.SetText(cheerLabels, Strings.Get(key));
+                if (isNew && !lifetime.IsCancellationRequested) {
+                    confetti.Play(cheer, lifetime.Token).SuppressCancellationThrow().Forget();
+                }
+            }
+
+            shownCheer = isCheer ? praise : (TutorialPraise)(-1);
 
             var number = Mathf.Clamp((int)step, 1, StepCount);
             StrokeText.SetText(stepLabels, isCheer ? "!" : number.ToString());
@@ -218,7 +255,9 @@ namespace ToyCarArena.UI
             }
             var place = Vector3.zero;
             var isOwnCar = false;
-            var hasPlace = isAtButton || TryGetPlace(out place, out isOwnCar) && camera != null && layer.panel != null;
+            var lift = 0f;
+            var hasPlace = isAtButton || TryGetPlace(out place, out isOwnCar, out lift) && camera != null
+                && layer.panel != null;
             var isPointing = hasPlace && !isOwnCar && !model.IsFinished;
             arrow.EnableInClassList(ArrowShownClass, isPointing);
             if (!hasPlace) {
@@ -236,6 +275,12 @@ namespace ToyCarArena.UI
             // A place too near the top for the arrow over it (the bar above it, a wide screen): the arrow points up at
             // it from below, and the sticker stands under the arrow.
             var isFlipped = isPointing && point.y - ArrowHeight - BobHeight < minY;
+            if (isFlipped && !isAtButton) {
+                // From below the arrow points at the target's own foot, a little under it: from the lifted point over
+                // the target it would cover the target.
+                var foot = RuntimePanelUtils.CameraTransformWorldToPanel(layer.panel, place - Vector3.up * lift, camera);
+                point.y = layer.WorldToLocal(foot).y + FlipGap;
+            }
             var below = point.y;
             if (isPointing) {
                 var minX = left + ArrowMargin;
@@ -274,10 +319,13 @@ namespace ToyCarArena.UI
         /// Where the step is, in the world: the arrow's tip floats over it, or, on the player's own car
         /// (<paramref name="isOwnCar"/>), the sticker.
         /// </summary>
-        private bool TryGetPlace(out Vector3 place, out bool isOwnCar)
+        private bool TryGetPlace(out Vector3 place, out bool isOwnCar, out float lift)
         {
             place = default;
             isOwnCar = false;
+            lift = tutorial.Step == TutorialStep.Box || tutorial.Step == TutorialStep.Use
+                || tutorial.Step == TutorialStep.Smash && model.PlayerCar != null
+                && !model.PlayerCar.IsRunning(ItemKind.Mega) ? BoxLift : CarLift;
             var player = model.PlayerCar;
             if (tutorial.Praise != TutorialPraise.None) {
                 return OverPlayer(player, out place, out isOwnCar);
