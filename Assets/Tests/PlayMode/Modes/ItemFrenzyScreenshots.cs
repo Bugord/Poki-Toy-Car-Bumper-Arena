@@ -82,7 +82,7 @@ namespace ToyCarArena.Tests.PlayMode
             var document = host.AddComponent<UIDocument>();
             document.panelSettings = panelSettings;
             // A player who saw the stock hint in another visit: in the mode it shows all the same.
-            var controls = new HudControls { HasShownItemHint = true };
+            var controls = new HudControls { HasUsedItem = true };
             var model = new HudViewModel(null, controls);
             model.SetPayload(new HudRound(round, container.Resolve<IEnumerable<ITickable>>().OfType<PlayerDriver>().Single(),
                 tuning.Controls, false, 3, false, special: SpecialRound.ItemFrenzy, playerRound: 9, mode: mode));

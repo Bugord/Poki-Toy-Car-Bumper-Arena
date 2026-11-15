@@ -1686,26 +1686,27 @@
     position: absolute;
 }
 
-/* Mega, shockwave, bomb, bowling, balloon and oil are drawn pictures (the round's items since v0.7.1): a big car with
-   arrows out, a broken ring round a smaller one, a bomb with a lit fuse, a bowling ball, a balloon on a string and a
-   drop of oil over a puddle. The others keep their glyphs from parts. */
+/* Mega, shockwave, bomb, bowling, balloon and oil are painted pictures (the round's items since v0.7.1; the art is
+   generated, sprite_item_<kind>.png 256x256, cropped to the picture): a big yellow car with arrows out, a burst in a
+   ring, a bomb with a lit fuse, a bowling ball, a yellow balloon on a string and a drop of oil over a puddle. They fill
+   most of the disc (136 of its 146 inner px). The others keep their glyphs from parts. */
 .hud__item-icon--mega .hud__item-glyph,
 .hud__item-icon--shockwave .hud__item-glyph,
 .hud__item-icon--bomb .hud__item-glyph,
 .hud__item-icon--bowling .hud__item-glyph,
 .hud__item-icon--balloon .hud__item-glyph,
 .hud__item-icon--oil .hud__item-glyph {
-    width: 112px;
-    height: 112px;
+    width: 136px;
+    height: 136px;
     -unity-background-scale-mode: scale-to-fit;
 }
 
-.hud__item-icon--mega .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_mega.svg"); }
-.hud__item-icon--shockwave .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_shockwave.svg"); }
-.hud__item-icon--bomb .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_bomb.svg"); }
-.hud__item-icon--bowling .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_bowling.svg"); }
-.hud__item-icon--balloon .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_balloon.svg"); }
-.hud__item-icon--oil .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_oil.svg"); }
+.hud__item-icon--mega .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_mega.png"); }
+.hud__item-icon--shockwave .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_shockwave.png"); }
+.hud__item-icon--bomb .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_bomb.png"); }
+.hud__item-icon--bowling .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_bowling.png"); }
+.hud__item-icon--balloon .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_balloon.png"); }
+.hud__item-icon--oil .hud__item-glyph { background-image: url("/Assets/Art/Sprites/UI/sprite_item_oil.png"); }
 
 /* A shield: a white bubble with a navy rim. */
 .hud__item-icon--shield .hud__item-glyph {

@@ -55,7 +55,7 @@ namespace ToyCarArena.Tests.PlayMode
             var host = new GameObject("Frenzy HUD");
             var document = host.AddComponent<UIDocument>();
             document.panelSettings = panelSettings;
-            var controls = new HudControls { HasShownItemHint = sawStockHint };
+            var controls = new HudControls { HasUsedItem = sawStockHint };
             var model = new HudViewModel(null, controls);
             model.SetPayload(new HudRound(round, Container.Resolve<IEnumerable<ITickable>>().OfType<PlayerDriver>().Single(),
                 Tuning.Controls, false, 3, false, special: SpecialRound.ItemFrenzy, playerRound: 9, mode: mode));

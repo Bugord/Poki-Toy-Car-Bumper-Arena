@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using Bugord.Core.Storage;
 using ToyCarArena.Gameplay.Input;
+using ToyCarArena.Gameplay.Pickups;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
@@ -15,13 +16,14 @@ namespace ToyCarArena.UI
     /// <see cref="IOnScreenControls"/>, so a finger on the button boosts and does not steer. The other way, the player's
     /// driver hands it the joystick a finger steers with, and the HUD draws it from here.
     /// </summary>
-    public sealed class HudControls : IOnScreenControls
+    public sealed class HudControls : IOnScreenControls, IItemLesson
     {
         public event Action BoostPressed;
         public event Action ItemPressed;
 
-        // Saved once the item hint has been shown: the player has seen how an item is used, in any visit.
-        private const string ItemHintKey = "hint_item";
+        // Saved once the player has used an item: the item lesson is over, in any visit. (Until v0.17.9 the hint showed
+        // once for a moment under "hint_item"; that key is no longer read, so a player who only saw it learns again.)
+        private const string ItemUsedKey = "item_used";
 
         // Read once: whether the browser's main pointer is a finger does not change while the game runs.
         private readonly bool isTouchDevice = IsTouchDevice();
@@ -31,7 +33,7 @@ namespace ToyCarArena.UI
         private VisualElement itemButton;
         private VisualElement settingsButton;
         private bool isTouchSeen;
-        private bool hasShownItemHint;
+        private bool hasUsedItem;
 
         /// <summary>
         /// Whether a finger steers with the joystick now, and so the HUD draws it.
@@ -67,29 +69,37 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>
-        /// Whether the HUD has shown how to use an item: once is enough, for the player and not for each visit, so it
-        /// is saved, and kept here, in the app's scope, beside it.
+        /// Whether the player has used an item, for good: until then each round with boxes lays one in front of them and
+        /// the HUD keeps its TAP TO USE hint up whenever an item is ready. Saved, and kept here, in the app's scope, beside
+        /// the HUD; settable for the tests and screenshots.
         /// </summary>
-        public bool HasShownItemHint
+        public bool HasUsedItem
         {
             get
             {
-                // Once known, kept: the HUD asks every frame an item is ready until the hint is shown.
-                if (!hasShownItemHint && storage != null && storage.HasKey(ItemHintKey)) {
-                    hasShownItemHint = true;
+                // Once known, kept: the HUD asks every frame an item is ready.
+                if (!hasUsedItem && storage != null && storage.HasKey(ItemUsedKey)) {
+                    hasUsedItem = true;
                 }
 
-                return hasShownItemHint;
+                return hasUsedItem;
             }
             set
             {
-                hasShownItemHint = value;
+                hasUsedItem = value;
                 if (value) {
-                    storage?.SetInt(ItemHintKey, 1);
+                    storage?.SetInt(ItemUsedKey, 1);
                 }
                 else {
-                    storage?.DeleteKey(ItemHintKey);
+                    storage?.DeleteKey(ItemUsedKey);
                 }
+            }
+        }
+
+        public void MarkItemUsed()
+        {
+            if (!HasUsedItem) {
+                HasUsedItem = true;
             }
         }
 

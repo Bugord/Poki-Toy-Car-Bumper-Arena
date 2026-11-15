@@ -180,9 +180,10 @@ namespace ToyCarArena.Gameplay.Pickups
 
         /// <summary>
         /// Puts a box on the floor at <paramref name="position"/> (flat), as the spawner does when it has chosen a spot;
-        /// null when every slot is taken. For the spawner, tests and the dev console.
+        /// null when every slot is taken. For the spawner, tests and the dev console. With <paramref name="owner"/> only that
+        /// car may break it and the bots leave it lying (the item lesson's box).
         /// </summary>
-        public FloorPickup Spawn(Vector3 position)
+        public FloorPickup Spawn(Vector3 position, Car owner = null)
         {
             EnsureBuilt();
             foreach (var slot in slots) {
@@ -194,6 +195,7 @@ namespace ToyCarArena.Gameplay.Pickups
                 slot.Age = 0f;
                 slot.StageTime = 0f;
                 slot.WasTaken = false;
+                slot.Owner = owner;
                 slot.State = FloorPickup.Stage.Live;
                 slot.Phase = (float)random.NextDouble() * Mathf.PI * 2f;
                 slot.Root.position = slot.Position;
@@ -429,7 +431,8 @@ namespace ToyCarArena.Gameplay.Pickups
                 var car = cars[i];
                 // A car that is safe after coming back is a ghost, a car in the air takes nothing, and a car that holds
                 // an item (its slot spinning too) leaves the box lying for one that can take it.
-                if (!car.IsTargetable || car.HasItem || !car.Movement.IsGrounded || car.Position.y > TakeHeight) {
+                if (!car.IsTargetable || car.HasItem || !car.Movement.IsGrounded || car.Position.y > TakeHeight
+                    || !pickup.IsFor(car)) {
                     continue;
                 }
 

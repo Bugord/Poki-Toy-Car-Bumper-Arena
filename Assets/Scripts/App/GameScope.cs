@@ -5,6 +5,7 @@ using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Arena;
 using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Input;
+using ToyCarArena.Gameplay.Pickups;
 using ToyCarArena.Gameplay.Round;
 using ToyCarArena.Rendering;
 using ToyCarArena.UI;
@@ -101,7 +102,7 @@ namespace ToyCarArena.App
             builder.RegisterEntryPoint<AudioService>().As<IAudioService>();
             builder.Register<ScreenCurtain>(Lifetime.Singleton);
             // Here and not in the arena's scope: the HUD is an app screen; the arena's input finds it in this parent.
-            builder.Register<HudControls>(Lifetime.Singleton).AsSelf().As<IOnScreenControls>();
+            builder.Register<HudControls>(Lifetime.Singleton).AsSelf().As<IOnScreenControls>().As<IItemLesson>();
             // Here, so they outlive the Game scene reloaded every round: the bots read the progress as the scene is
             // built.
             builder.Register<SessionProgress>(Lifetime.Singleton).AsSelf().As<ISessionProgress>();

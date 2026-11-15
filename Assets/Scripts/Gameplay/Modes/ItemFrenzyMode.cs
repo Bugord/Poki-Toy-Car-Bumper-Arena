@@ -260,7 +260,7 @@ namespace ToyCarArena.Gameplay.Modes
             for (var i = 0; i < live.Count; i++) {
                 var box = live[i];
                 var distance = (Flat(box.Position) - position).sqrMagnitude;
-                if (distance > range || distance >= bestDistance || IsTakenFrom(car, box, distance)) {
+                if (distance > range || distance >= bestDistance || !box.IsFor(car) || IsTakenFrom(car, box, distance)) {
                     continue;
                 }
 
