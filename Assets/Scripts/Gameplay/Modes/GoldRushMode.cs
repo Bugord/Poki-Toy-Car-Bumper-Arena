@@ -114,8 +114,9 @@ namespace ToyCarArena.Gameplay.Modes
 
         public SpecialRound Kind => SpecialRound.GoldRush;
 
-        /// <summary>The card's picture: a purple truck with the leader's pile of coins on its roof.</summary>
-        public ModeCard Card { get; } = new("truck", 4, GoldRushArt.PileName);
+        /// <summary>The card's picture: a purple truck with the leader's pile of coins on its roof, shrunk so the
+        /// pile stays clear of the card's SELECTED tag.</summary>
+        public ModeCard Card { get; } = new("truck", 4, GoldRushArt.PileName, propScale: 0.7f);
 
         public bool IsActive { get; }
 
