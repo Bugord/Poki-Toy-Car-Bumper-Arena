@@ -147,6 +147,10 @@ namespace ToyCarArena.Gameplay.Modes
             var standing = ToyMeshes.Part(pile, "Coin", rim, gold,
                 new Vector3(0.05f, CoinThickness * 3f + CoinRadius * 0.95f, 0f), new Vector3(90f, 0f, -12f));
             ToyMeshes.Part(standing, "Face", faceMesh, face, Vector3.zero);
+            // A second one across it: the pile spins, and a lone standing coin seen on its edge read as a pin.
+            standing = ToyMeshes.Part(pile, "Coin", rim, gold,
+                new Vector3(-0.06f, CoinThickness * 3f + CoinRadius * 0.85f, 0.03f), new Vector3(90f, 90f, 10f));
+            ToyMeshes.Part(standing, "Face", faceMesh, face, Vector3.zero);
             // Scaled away rather than switched off: the card art finds the pile by its name.
             pile.localScale = Vector3.zero;
 

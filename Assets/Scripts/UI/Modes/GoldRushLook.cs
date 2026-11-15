@@ -13,6 +13,6 @@ namespace ToyCarArena.UI
         public static readonly ModeLook Look = new(SpecialRound.GoldRush,
             new Color32(0xff, 0xe2, 0x7a, 0xff), new Color32(0xf0, 0xa8, 0x00, 0xff),
             createHud: (layer, root, model) => HudGoldRush.Create(layer, root, model),
-            paintPoints: HudGoldRush.DrawCoin, pointsKey: "result.reward_coins");
+            paintPoints: HudGoldRush.DrawCoin, pointsKey: "result.reward_coins", hidesStreakCrowns: true);
     }
 }

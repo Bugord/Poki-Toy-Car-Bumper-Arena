@@ -114,8 +114,8 @@ namespace ToyCarArena.Gameplay.Modes
 
         public SpecialRound Kind => SpecialRound.GoldRush;
 
-        /// <summary>The card's picture: a yellow truck with the leader's pile of coins on its roof.</summary>
-        public ModeCard Card { get; } = new("truck", 3, GoldRushArt.PileName);
+        /// <summary>The card's picture: a purple truck with the leader's pile of coins on its roof.</summary>
+        public ModeCard Card { get; } = new("truck", 4, GoldRushArt.PileName);
 
         public bool IsActive { get; }
 
@@ -287,7 +287,8 @@ namespace ToyCarArena.Gameplay.Modes
         public bool SteerBot(Bot bot, IArenaEdge arenaEdge, float deltaTime)
         {
             var car = bot.Car;
-            if (!IsActive || !round.IsRunning || car.IsOut) {
+            // The bots may tick before this mode on the frame the round begins: nothing to go for until it is built.
+            if (!IsActive || !isBuilt || !round.IsRunning || car.IsOut) {
                 return false;
             }
 
