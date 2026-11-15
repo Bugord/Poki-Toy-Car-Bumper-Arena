@@ -166,7 +166,7 @@ namespace ToyCarArena.Gameplay
             builder.RegisterEntryPoint<HotPotato>().AsSelf().WithParameter(transform);
             // The other event modes: each active only in a round of its kind, silent in any other.
             builder.RegisterEntryPoint<CrownMode>().AsSelf();
-            builder.RegisterEntryPoint<GoldRushMode>().AsSelf();
+            builder.RegisterEntryPoint<GoldRushMode>().AsSelf().WithParameter(transform);
             builder.RegisterEntryPoint<ItemFrenzyMode>().AsSelf();
             builder.RegisterEntryPoint<OverheatMode>().AsSelf().WithParameter(transform);
             builder.RegisterEntryPoint<TeamPushMode>().AsSelf();
