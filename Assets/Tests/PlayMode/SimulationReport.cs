@@ -58,6 +58,11 @@ namespace ToyCarArena.Tests.PlayMode
             // Read the defaults themselves: a calibration change must also appear in the saved report.
             var defaults = new NoviceDriver(0, null, null, null);
             foreach (var field in typeof(NoviceDriver).GetFields(BindingFlags.Instance | BindingFlags.Public)) {
+                // Only the numbers of the model: FOOTBALL's ball and goal are set per match, not calibrated.
+                if (field.FieldType != typeof(float)) {
+                    continue;
+                }
+
                 text.AppendLine($"| {field.Name} | {Number((float)field.GetValue(defaults))} |");
             }
 
