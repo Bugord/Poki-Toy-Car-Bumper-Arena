@@ -48,7 +48,7 @@ namespace ToyCarArena.UI
         private const string StartShownClass = "hud__start--shown";
         private const string StartEnterClass = "hud__start--enter";
         private const string StartLeaveClass = "hud__start--leave";
-        private const string StartBobClass = "hud__start--bob";
+        private const string StartPlainClass = "hud__start--plain";
         private const string StartWideClass = "hud__start--wide";
         private const string StartTouchClass = "hud__start--touch";
         private const string StartDesktopClass = "hud__start--desktop";
@@ -138,10 +138,6 @@ namespace ToyCarArena.UI
         private const long NameLeaveDuration = 400;
         private const long RevengeEnterDuration = 350;
         private const long RevengePulseInterval = 500;
-
-        // The start prompt bobs: each toggle eases it a little bigger or back (hud__start-prompt's transition), so a bob
-        // takes twice this, as SMUP's TAP TO START.
-        private const long StartBobInterval = 600;
 
         // How long the start prompt takes to flash away (hud__start--leave) before it is taken off the screen.
         private const long StartLeaveDuration = 200;
@@ -307,7 +303,6 @@ namespace ToyCarArena.UI
         private int shownKnockouts;
         private int popupCount;
         private VisualElement start;
-        private IVisualElementScheduledItem startBob;
         private IVisualElementScheduledItem startWatch;
         private VisualElement stick;
         private VisualElement stickBase;
@@ -478,9 +473,8 @@ namespace ToyCarArena.UI
                 controls.SetItemButton(itemButton);
             }
 
-            // The very first start also says what to do: everyone else off the arena.
-            Root.Q<VisualElement>("start-goal").style.display =
-                ViewModel.IsNewPlayer ? DisplayStyle.Flex : DisplayStyle.None;
+            // No goal over the start: the very first start is the tutorial, whose steps say what to do.
+            Root.Q<VisualElement>("start-goal").style.display = DisplayStyle.None;
             if (ViewModel.IsWaitingForPlayer) {
                 ShowStart();
             }
@@ -736,16 +730,25 @@ namespace ToyCarArena.UI
 
         /// <summary>
         /// Shows the start prompt while the cars wait for the player: TAP TO START and how to steer on a touch screen,
-        /// CLICK TO START, how to steer and the boost key on a desktop. It springs in once the curtain is up, bobs, and
+        /// CLICK TO START, how to steer and the boost key on a desktop. It springs in once the curtain is up, stands still and
         /// flashes away the moment the round begins. A touch while it shows begins the round, so it never has to turn
         /// from the desktop one into the touch one.
         /// </summary>
         private void ShowStart()
         {
             var isTouch = controls.CheckTouchScreen();
+            // The tutorial has no start to press: its first input just drives. On a touch screen the ghost joystick
+            // already says DRAG TO DRIVE, so nothing more; on a computer one line says how (the mouse or WASD).
+            var isTutorial = ViewModel.Mode is Gameplay.Modes.TutorialMode { IsActive: true };
+            if (isTutorial && isTouch) {
+                return;
+            }
+
             start.EnableInClassList(StartTouchClass, isTouch);
             start.EnableInClassList(StartDesktopClass, !isTouch);
-            var text = Strings.Get(isTouch ? "hud.tap_to_start" : "hud.click_to_start");
+            start.EnableInClassList(StartPlainClass, isTutorial);
+            var text = Strings.Get(isTutorial ? "tutorial.drive_mouse"
+                : isTouch ? "hud.tap_to_start" : "hud.click_to_start");
             Root.Q<Label>("start-text").text = text;
             Root.Q<Label>("start-text-face").text = text;
 
@@ -764,7 +767,7 @@ namespace ToyCarArena.UI
             start.AddToClassList(StartEnterClass);
             start.RegisterCallback<GeometryChangedEvent>(OnLaidOut);
 
-            startBob = Root.schedule.Execute(() => start.ToggleInClassList(StartBobClass)).Every(StartBobInterval);
+            // The prompt stands still (it used to bob): moving words are hard to read.
             startWatch = Root.schedule.Execute(WatchStart).Every(BoostRefreshInterval);
         }
 
@@ -775,9 +778,7 @@ namespace ToyCarArena.UI
             }
 
             startWatch.Pause();
-            startBob.Pause();
             Root.UnregisterCallback<GeometryChangedEvent>(OnResized);
-            start.RemoveFromClassList(StartBobClass);
             start.AddToClassList(StartLeaveClass);
             start.schedule.Execute(() => start.RemoveFromClassList(StartShownClass)).StartingIn(StartLeaveDuration);
         }

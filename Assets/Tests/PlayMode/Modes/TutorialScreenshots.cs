@@ -123,6 +123,8 @@ namespace ToyCarArena.Tests.PlayMode
                         yield return null;
                     }
 
+                    // A praise lasts a moment of the round's clock: frozen, every size and language shows it.
+                    Time.timeScale = praise != TutorialPraise.None ? 0f : 1f;
                     foreach (var (width, height, touch) in Sizes) {
                         touchSeen.SetValue(controls, false);
                         if (touch) {
@@ -155,9 +157,12 @@ namespace ToyCarArena.Tests.PlayMode
                             Debug.Log($"Tutorial screenshot: {path}");
                         }
                     }
+
+                    Time.timeScale = 1f;
                 }
             }
             finally {
+                Time.timeScale = 1f;
                 camera.targetTexture = null;
                 PlayModeWindow.SetCustomRenderingResolution((uint)screenWidth, (uint)screenHeight, "Tutorial screenshot");
                 view.Dispose();

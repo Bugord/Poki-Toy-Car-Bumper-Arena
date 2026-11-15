@@ -21,6 +21,12 @@ namespace ToyCarArena.Rendering
     /// once a step gained nothing (a phone held back by its CPU). It never steps back up, so the picture does not pump
     /// between two sizes.
     /// </para>
+    /// <para>
+    /// A desktop also gets MSAA and a thicker outline (<see cref="DesktopMsaa"/>, <see cref="DesktopOutline"/>): its game
+    /// frame on Poki is a window with few pixels on its short side, and the comic line, drawn without anti-aliasing at a
+    /// share of that side, came out about 2 pixels wide and stair-stepped. A touch device keeps MSAA off: phones are fill
+    /// rate bound, and their dense screens hide the steps anyway.
+    /// </para>
     /// </summary>
     /// <remarks>
     /// Lives in the app scope (Boot). The Game scene opened alone, without Boot, keeps the asset's scale of 1. The asset is
@@ -46,15 +52,25 @@ namespace ToyCarArena.Rendering
         // A frame this long is a hidden tab or a load, not the GPU.
         private const float LongestFrame = 0.5f;
 
+        /// <summary>MSAA samples of the 3D image on a desktop; a touch device keeps 1.</summary>
+        public const int DesktopMsaa = 4;
+
+        /// <summary>How much thicker the outline is drawn on a desktop than its share of the short side gives.</summary>
+        public const float DesktopOutline = 1.3f;
+
+        private static readonly int OutlineDeviceScaleId = Shader.PropertyToID("_OutlineDeviceScale");
+
         private readonly HudControls controls;
         private readonly float touchMaxShortSide;
         private readonly float desktopMaxShortSide;
         private readonly UniversalRenderPipelineAsset asset;
         private readonly float originalScale;
+        private readonly int originalMsaa;
 
         private int lastWidth = -1;
         private int lastHeight = -1;
         private bool lastTouch;
+        private bool isDeviceSet;
         private float scaleOverride;
         private bool isDirty = true;
         private float touchCap;
@@ -71,6 +87,7 @@ namespace ToyCarArena.Rendering
             touchCap = touchMaxShortSide;
             asset = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
             originalScale = asset != null ? asset.renderScale : 1f;
+            originalMsaa = asset != null ? asset.msaaSampleCount : 1;
         }
 
         /// <summary>
@@ -111,6 +128,14 @@ namespace ToyCarArena.Rendering
 
             if (!isDirty && width == lastWidth && height == lastHeight && isTouch == lastTouch) {
                 return;
+            }
+
+            // Only when the kind of device changes, so a developer's perf_msaa stays until then. A touch laptop turns
+            // into a touch device on its first touch and loses MSAA there.
+            if (!isDeviceSet || isTouch != lastTouch) {
+                isDeviceSet = true;
+                asset.msaaSampleCount = isTouch ? 1 : DesktopMsaa;
+                Shader.SetGlobalFloat(OutlineDeviceScaleId, isTouch ? 1f : DesktopOutline);
             }
 
             isDirty = false;
@@ -174,7 +199,10 @@ namespace ToyCarArena.Rendering
         {
             if (asset != null) {
                 asset.renderScale = originalScale;
+                asset.msaaSampleCount = originalMsaa;
             }
+
+            Shader.SetGlobalFloat(OutlineDeviceScaleId, 1f);
         }
 
         /// <summary>

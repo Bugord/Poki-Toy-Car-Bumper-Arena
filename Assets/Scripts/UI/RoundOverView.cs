@@ -24,6 +24,7 @@ namespace ToyCarArena.UI
 
         private const string WonClass = "round-over__title--won";
         private const string GiftClass = "round-over--gift";
+        private const string LessonClass = "round-over--lesson";
         private const string OutClass = "round-over__title--out";
         private const string EnterClass = "round-over--enter";
         // The title's spring in (round-over__title in ui_screens) before the confetti bursts out of it, in milliseconds.
@@ -152,6 +153,8 @@ namespace ToyCarArena.UI
         {
             // The title and the buttons start small or low and spring into place while the screen fades in.
             Root.AddToClassList(EnterClass);
+            // The tutorial's result is the win and its hat: no level, missions or coins crowding them.
+            Root.EnableInClassList(LessonClass, ViewModel.IsLesson);
             Root.schedule.Execute(() => Root?.RemoveFromClassList(EnterClass)).StartingIn(EnterDelay);
             if (ViewModel.Outcome == RoundOutcome.Won) {
                 Celebrate(lifetime.Token).Forget();
@@ -173,7 +176,8 @@ namespace ToyCarArena.UI
             rewardRun = CancellationTokenSource.CreateLinkedTokenSource(token, lifetime.Token);
             // The cards wait out of sight under the gift: still empty, they looked like a broken stub under its card.
             Root.AddToClassList(GiftClass);
-            var isCancelled = await daily.Run(rewardRun.Token).SuppressCancellationThrow();
+            // Not over the tutorial's result: its hat is the one reward there; the menu or a later result offers it.
+            var isCancelled = !ViewModel.IsLesson && await daily.Run(rewardRun.Token).SuppressCancellationThrow();
             Root.RemoveFromClassList(GiftClass);
             if (isCancelled || rewardRun.IsCancellationRequested) {
                 return;

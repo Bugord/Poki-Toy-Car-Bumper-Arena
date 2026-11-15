@@ -389,6 +389,8 @@ namespace ToyCarArena.UI
             missionsTile = Tile("missions", () => Strings.Get("mission.title"), "M", OpenMissions);
             // AWARDS waits until there are awards: a locked tile that explains nothing only takes the rail.
             rail.Add(garageTile);
+            // The missions open at level 3: before it the tile would show a list that counts nothing.
+            missionsTile.style.display = ViewModel.HasMissions ? DisplayStyle.Flex : DisplayStyle.None;
             rail.Add(missionsTile);
             menu.Add(rail);
         }
@@ -1808,7 +1810,7 @@ namespace ToyCarArena.UI
 
         private void OpenMissions()
         {
-            if (IsBusy || IsPopupOpen) {
+            if (IsBusy || IsPopupOpen || !ViewModel.HasMissions) {
                 return;
             }
 

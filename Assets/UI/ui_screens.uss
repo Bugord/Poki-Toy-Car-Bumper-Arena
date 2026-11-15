@@ -1277,6 +1277,38 @@
     -unity-text-outline-color: var(--navy);
 }
 
+/* The tutorial's praise and last words: big tilted gold words in the middle of the screen (confetti bursts from them),
+   as YOU WIN! on the result. They stand still and pop in; nothing catches input. */
+.hud__tutorial-cheer {
+    position: absolute;
+    left: 60px;
+    right: 60px;
+    top: 30%;
+    rotate: -4deg;
+    scale: 0.3 0.3;
+    opacity: 0;
+    transition-property: scale, opacity;
+    transition-duration: 0.35s, 0.15s;
+    transition-timing-function: ease-out-back, linear;
+}
+
+.hud__tutorial-cheer--shown {
+    scale: 1 1;
+    opacity: 1;
+}
+
+.hud__tutorial-cheer-text {
+    margin: 0;
+    padding: 0;
+    color: var(--gold);
+    font-size: 130px;
+    -unity-text-outline-width: 14px;
+    -unity-text-auto-size: best-fit 60px 130px;
+    white-space: normal;
+}
+
+.hud__tutorial-cheer-text.stroke__drop { translate: 0 14px; display: flex; }
+
 .hud__tutorial-arrow {
     display: none;
     position: absolute;
@@ -2075,8 +2107,8 @@
    the SPACE key and BOOST on a desktop (hud__start--desktop). Nothing dims the arena: the player's car and the HUD
    stay as in play. On a narrow screen it sits in the sky under the HUD, over the arena's far edge; on a wide one
    (hud__start--wide) inside the ring of cars, between the far bots and the player's car. It springs in once the curtain
-   is up (hud__start--enter, taken off once it is laid out), bobs (hud__start--bob, toggled by HudView, with the mouse
-   swinging with it), and flashes away as the round begins (hud__start--leave). */
+   is up (hud__start--enter, taken off once it is laid out), stands still (moving words are hard to read)
+   and flashes away as the round begins (hud__start--leave). */
 .hud__start {
     display: none;
     position: absolute;
@@ -2122,8 +2154,9 @@
     transition-timing-function: ease-in-out;
 }
 
-.hud__start--bob .hud__start-prompt {
-    scale: 1.06 1.06;
+/* The tutorial's start: one line how to drive, no hints under it (its round has no boost and no start to press). */
+.hud__start--plain .hud__start-hint {
+    display: none;
 }
 
 .hud__start-goal {
@@ -2374,9 +2407,6 @@
     transition-timing-function: ease-in-out;
 }
 
-.hud__start--bob .hud__start-mouse {
-    translate: 8px 0;
-}
 
 .hud__start-mouse-button {
     position: absolute;
@@ -5835,6 +5865,13 @@
     margin-left: 30px;
 }
 
+/* The tutorial's result: the win and its hat only (RoundOverView, RoundRecord.IsLesson). */
+.round-over--lesson .level-card,
+.round-over--lesson .missions,
+.round-over--lesson .coin-pill {
+    display: none;
+}
+
 /* The daily gift over a visit's first result (ResultDaily): the still empty cards wait out of sight under it. */
 .round-over--gift .level-card,
 .round-over--gift .missions {
@@ -6473,3 +6510,6 @@
     background-image: url("/Assets/Art/Sprites/UI/sprite_icon_hub.png");
     -unity-background-scale-mode: scale-to-fit;
 }
+
+/* The result's mission rows show no task sign: small, it only made the rows noisy. */
+.mission > .mission-icon { display: none; }

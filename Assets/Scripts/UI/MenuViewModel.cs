@@ -110,6 +110,9 @@ namespace ToyCarArena.UI
         public IReadOnlyList<MissionState> Missions => missions.Slots;
         public MissionState NearestMission => missions.Nearest();
 
+        /// <summary>Whether the missions are open (from level 3): before it the menu has no MISSIONS tile.</summary>
+        public bool HasMissions => missions.IsOpen;
+
         /// <summary>A mission's task in the language shown, its arena named.</summary>
         public string MissionText(GameTuning.MissionDefinition mission) =>
             GameText.Mission(mission, mission.Map.Length > 0 ? GameText.Arena(arenaCatalog.Find(mission.Map)) : null);
