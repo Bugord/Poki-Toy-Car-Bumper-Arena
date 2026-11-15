@@ -75,7 +75,15 @@ namespace ToyCarArena.Tests.PlayMode
             UseSpecial(SpecialRound.None);
             // The suites and simulations measure rounds without the item lesson's box; a test asks for it.
             HasUsedItem = true;
+            // They measure real falls too: the new player's safe rounds are off unless a test asks with UseSafety.
+            UseSafety(0);
         }
+
+        /// <summary>
+        /// Plays the player's first <paramref name="rounds"/> rounds safe (null: as the build ships) (<see cref="PlayerSafety"/>) in the Game scenes
+        /// loaded after this call: in memory only, the tear-down puts the shipped number back.
+        /// </summary>
+        protected void UseSafety(int? rounds) => LoadTuning().Safety.Force(rounds);
 
         /// <summary>
         /// Whether the player of the scenes loaded after this call has used an item before, so no lesson box is laid;
@@ -123,6 +131,7 @@ namespace ToyCarArena.Tests.PlayMode
                 RestoreBoost();
                 LoadTuning().SpecialRounds.Force(null);
                 LoadTuning().ForceRules(SpecialRound.None, null);
+                LoadTuning().Safety.Force(null);
             }
         }
 

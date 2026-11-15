@@ -77,6 +77,9 @@ namespace ToyCarArena.Gameplay.Cars
         /// <summary>
         /// Whether the wheels are on the arena; only then does the car steer, and only then can it boost.
         /// </summary>
+        /// <summary>How hard the car is being driven now, 0 to 1; the wheel smoke reads it.</summary>
+        public float Throttle => throttle;
+
         public bool IsGrounded { get; private set; }
 
         /// <summary>

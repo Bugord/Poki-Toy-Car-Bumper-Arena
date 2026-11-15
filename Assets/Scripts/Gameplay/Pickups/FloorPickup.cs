@@ -34,6 +34,13 @@ namespace ToyCarArena.Gameplay.Pickups
         /// <summary>Whether <paramref name="car"/> may break it.</summary>
         public bool IsFor(Cars.Car car) => Owner == null || Owner == car;
 
+        /// <summary>The item this box always gives, in place of the roll; null for a box that rolls (every box but the
+        /// tutorial's).</summary>
+        public ItemKind? Item { get; internal set; }
+
+        /// <summary>Whether the box lies until it is taken, rather than fading after its lifetime: the tutorial's.</summary>
+        public bool IsLasting { get; internal set; }
+
         /// <summary>Seconds since it appeared.</summary>
         public float Age { get; internal set; }
 

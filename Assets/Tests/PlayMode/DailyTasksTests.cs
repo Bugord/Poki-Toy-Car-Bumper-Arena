@@ -191,16 +191,15 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [Test]
-        public void TheFirstWinKeepsAllItEarnedAndStacksWithTheBoost()
+        public void TheFirstWinIsHeldToOneLevelAndStacksWithTheBoost()
         {
-            // A big win at the start: one level's hold would cut it, the first win keeps all of it.
+            // A big win at the start: a new player's first round is always their first win, and it stays one level.
             var result = new RoundResult(RoundOutcome.Won, 1, 7, 40f, 6, RoundResult.Nobody, FallCause.None, false,
                 false);
-            var plain = new PlayerProgress(new RoundOverScreenshots.MemoryStorage(), tuning, catalog).Record(result);
             var doubled = progress.Record(result, null, 0, 2);
-            Assert.That(doubled.TotalAfter, Is.EqualTo(doubled.Total));
-            Assert.That(doubled.TotalAfter, Is.GreaterThan(plain.TotalAfter));
-            Assert.That(doubled.After.Level - doubled.Before.Level, Is.GreaterThan(1));
+            Assert.That(doubled.FirstWinXp, Is.GreaterThan(0));
+            Assert.That(doubled.After.Level - doubled.Before.Level, Is.EqualTo(1));
+            Assert.That(doubled.TotalAfter, Is.LessThan(doubled.TotalBefore + doubled.Total));
 
             // Under the menu's XP boost the first win doubles the boosted round again.
             var boosted = new RoundOverScreenshots.MemoryStorage();

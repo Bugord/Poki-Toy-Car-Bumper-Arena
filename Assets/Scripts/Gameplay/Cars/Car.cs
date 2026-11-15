@@ -126,6 +126,13 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public float BumpSpeedScale { get; set; } = 1f;
 
+        /// <summary>
+        /// Times on top of <see cref="PowerScale"/> the push this car's hits give, grown over a new player's safe rounds
+        /// (<see cref="Round.PlayerSafety"/>); 1 otherwise. The time off balance it leaves alone: on Easy that is at its
+        /// cap already, and longer would leave the bots standing.
+        /// </summary>
+        public float PowerBoost { get; set; } = 1f;
+
         public Vector3 Position => transform.position;
 
         /// <summary>
@@ -156,6 +163,12 @@ namespace ToyCarArena.Gameplay.Cars
         /// takes, a balloon with the fall it catches, and a fall of the car ends all.
         /// </summary>
         public bool IsRunning(ItemKind kind) => Time.time < abilityEnds[(int)kind];
+
+        /// <summary>
+        /// A timed item that runs without end on this car once used, until a fall or <see cref="ClearAbility"/>
+        /// (<see cref="ItemKind.None"/>: every item keeps its time). The tutorial's mega.
+        /// </summary>
+        public ItemKind UntimedAbility { get; set; }
 
         /// <summary>Seconds the running <paramref name="kind"/> has left; 0 when it does not run.</summary>
         public float TimeLeft(ItemKind kind) => Mathf.Max(0f, abilityEnds[(int)kind] - Time.time);
@@ -361,6 +374,12 @@ namespace ToyCarArena.Gameplay.Cars
                 return;
             }
 
+            // The tutorial's mega lasts until the lesson is over: a timer running out under a new player teaches
+            // nothing but haste.
+            if (kind == UntimedAbility) {
+                length = float.PositiveInfinity;
+            }
+
             abilityEnds[(int)kind] = Time.time + length;
             abilityOn[(int)kind] = true;
             lastAbility = kind;
@@ -383,6 +402,14 @@ namespace ToyCarArena.Gameplay.Cars
         public void ReportItemHit(ItemKind kind, Vector3 point)
         {
             ItemHit?.Invoke(kind, point);
+        }
+
+        /// <summary>Forgets who hit this car last: a fall the game caught and undid is nobody's knock-out.</summary>
+        public void ForgetHit()
+        {
+            LastHitBy = null;
+            LastHitByItem = false;
+            LastHitTime = float.NegativeInfinity;
         }
 
         private void ClearItem()
@@ -510,6 +537,30 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public void Respawn(Vector3 position, Quaternion rotation, IReadOnlyList<Car> cars)
         {
+            Refresh(position, rotation);
+            IsInvulnerable = false;
+            SetInvulnerable(true, cars);
+        }
+
+        /// <summary>
+        /// Takes a placed car off the arena until <see cref="Join"/>: out of play, its object off, so nothing sees,
+        /// hits or drives it meanwhile (<see cref="ToyCarArena.Gameplay.Round.ArenaRound.Hold"/>).
+        /// </summary>
+        public void PutAway()
+        {
+            TakeOut();
+            gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// Brings a car put away (<see cref="PutAway"/>) into the round at rest at <paramref name="position"/>, as fresh
+        /// as when it was placed; unlike a comeback in a match, not safe: it is there to be pushed.
+        /// </summary>
+        public void Join(Vector3 position, Quaternion rotation) => Refresh(position, rotation);
+
+        /// <summary>The car back on the floor, its object on, with nothing left of what it did before.</summary>
+        private void Refresh(Vector3 position, Quaternion rotation)
+        {
             // Put away far below the arena, it is woken up first: a collider out of play has nothing to ignore.
             if (!gameObject.activeSelf) {
                 gameObject.SetActive(true);
@@ -527,8 +578,6 @@ namespace ToyCarArena.Gameplay.Cars
             SetGrowth(baseSize);
             Movement.Respawn(position, rotation);
             Movement.SetMassScale(baseMass);
-            IsInvulnerable = false;
-            SetInvulnerable(true, cars);
         }
 
         /// <summary>
@@ -688,7 +737,7 @@ namespace ToyCarArena.Gameplay.Cars
             // while one car pushes another does not kick it again at full speed.
             var isOtherBoosting = other.Movement.IsBoosting;
             var multiplier = (isOtherBoosting ? boostSettings.BumpMultiplier : 1f)
-                * (other.IsPlayer ? difficulty.PlayerBump * other.PowerScale : 1f);
+                * (other.IsPlayer ? difficulty.PlayerBump * other.PowerScale * other.PowerBoost : 1f);
             var drive = Mathf.Min(otherApproach, strength);
             var push = carSettings.BumpForce * drive * multiplier * other.Movement.Mass / Movement.Mass
                 * Movement.Surface.Push * PushTakenScale;

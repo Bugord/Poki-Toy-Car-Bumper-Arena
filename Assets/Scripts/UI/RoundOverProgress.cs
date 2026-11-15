@@ -45,6 +45,9 @@ namespace ToyCarArena.UI
         // A reward popup closes on its own after this long, so a player who just watches is not stuck under it.
         private const float RewardAutoClose = 4f;
         private const float RewardFadeIn = 0.15f;
+
+        // Seconds a popup ignores the taps that would close it: the press that came with it is not a look at it.
+        private const float DismissGuard = 0.6f;
         // The menu's light behind a reward, turning as slowly as there.
         private const float RewardRaysTurnSeconds = 24f;
         // How far a reward's card keeps from the screen's edges, how far its tilted title rises over it, and how much
@@ -280,8 +283,9 @@ namespace ToyCarArena.UI
             }
             else {
                 var map = new VisualElement { pickingMode = PickingMode.Ignore };
+                // The arena's painted picture (sprite_icon_arena_<id>).
                 map.AddToClassList("track__map");
-                map.style.backgroundColor = reward.Arena.Background;
+                map.AddToClassList($"track__map--{reward.Arena.Id}");
                 node.Add(map);
             }
 
@@ -361,6 +365,54 @@ namespace ToyCarArena.UI
             }
 
             SetPosition(PositionOf(reached));
+        }
+
+        /// <summary>
+        /// Whether a popup the player would lose by leaving now is still to show: a car a level reached opens, the league
+        /// it starts, the hat the tutorial earned. The hat offer and a waiting gift are not: they wait for a later result.
+        /// </summary>
+        public bool HasPopupDue
+        {
+            get {
+                if (IsPopupOpen) {
+                    return false;
+                }
+
+                if (viewModel.IsGiftEarned && !isGiftShown) {
+                    return true;
+                }
+
+                for (var level = rewardsShownTo + 1; level <= reached.Level; level++) {
+                    foreach (var _ in viewModel.NewCarsAt(level)) {
+                        return true;
+                    }
+
+                    if (level > 1 && PlayerRank.TierOf(level) > PlayerRank.TierOf(level - 1) && viewModel.IsLeagueDue) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// NEXT MATCH pressed before those popups came: the card settles where the reward ends at once, and only the
+        /// popups that must be seen (<see cref="HasPopupDue"/>) show, one after another; then the screen goes on. The
+        /// player who wants the next match waits for no bar or track, only for what they won.
+        /// </summary>
+        public async UniTask ShowDue(CancellationToken token)
+        {
+            Settle();
+            animation = CancellationTokenSource.CreateLinkedTokenSource(token);
+            var run = animation.Token;
+            if (viewModel.IsGiftEarned) {
+                await ShowGift(run);
+            }
+
+            for (var level = rewardsShownTo + 1; level <= reached.Level; level++) {
+                await ShowRewards(level, run);
+            }
         }
 
         /// <summary>
@@ -685,6 +737,9 @@ namespace ToyCarArena.UI
             }
 
             var isOffer = forSale != null && viewModel.CanAfford(forSale);
+            // A tap that came with the popup (on NEXT MATCH, a second press of a quick player) does not close it unseen.
+            var openedAt = Time.realtimeSinceStartup;
+            bool IsGuarded() => Time.realtimeSinceStartup - openedAt < DismissGuard;
             var closeAt = isOffer || wear != null ? float.MaxValue : RewardAutoClose;
             var isClosed = false;
             var isTaken = false;
@@ -792,7 +847,7 @@ namespace ToyCarArena.UI
                 skip.Add(Text(Strings.Get("result.continue"), "level-reward__skip-label"));
                 skip.RegisterCallback<PointerDownEvent>(evt => evt.StopPropagation());
                 skip.clicked += () => {
-                    if (!isTaken) {
+                    if (!isTaken && !IsGuarded()) {
                         isClosed = true;
                     }
                 };
@@ -813,7 +868,7 @@ namespace ToyCarArena.UI
             overlay.RegisterCallback<PointerDownEvent>(evt => {
                 evt.StopPropagation();
                 // A tap mid-celebration waits for it: the popup closes on its own once it is over.
-                if (!isTaken) {
+                if (!isTaken && !IsGuarded()) {
                     isClosed = true;
                 }
             });

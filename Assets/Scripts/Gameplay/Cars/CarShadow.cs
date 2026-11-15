@@ -114,6 +114,14 @@ namespace ToyCarArena.Gameplay.Cars
             this.shape = root.transform;
         }
 
+        // A car put away (or removed far below) takes its spot with it: the spot lives apart from the car.
+        private void OnDisable()
+        {
+            if (shapeRenderer != null) {
+                shapeRenderer.enabled = false;
+            }
+        }
+
         private void OnDestroy()
         {
             if (shape != null) {

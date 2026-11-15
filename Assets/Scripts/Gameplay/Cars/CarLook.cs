@@ -22,6 +22,8 @@ namespace ToyCarArena.Gameplay.Cars
         private const float PropellerSpeed = 540f;
         // How much bigger a topper is on a car than as the garage builds it.
         private const float TopperScale = 1.3f;
+        // Real seconds a hit's squash takes to spring back.
+        private const float SquashTime = 0.22f;
 
         [Header("Body")]
         [Tooltip("The mesh of the car's body, the one that is painted in a single swatch of the atlas")]
@@ -109,6 +111,10 @@ namespace ToyCarArena.Gameplay.Cars
         private GameObject model;
         private Vector3 modelScale = Vector3.one;
         private Vector3 modelPosition;
+        private float growth = 1f;
+        // A hit's squash: how much, and when it started on the real clock (it plays through a hit-stop).
+        private float squash;
+        private float squashStart = float.NegativeInfinity;
         private bool isGhost;
         private Car car;
         private Transform ring;
@@ -287,12 +293,44 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public void SetGrowth(float growth)
         {
+            this.growth = growth;
+            Fit(1f);
+        }
+
+        /// <summary>
+        /// Squashes the car flat and wide by <paramref name="amount"/> (a share of its height) and lets it spring back,
+        /// on the real clock: a hit felt through the hit-stop that holds the game clock. Looks only, on top of
+        /// <see cref="SetGrowth"/>.
+        /// </summary>
+        public void Squash(float amount)
+        {
+            squash = Mathf.Clamp(amount, 0f, 0.6f);
+            squashStart = Time.unscaledTime;
+        }
+
+        // The model at its growth, flattened to a share of its height and widened to keep about its volume.
+        private void Fit(float height)
+        {
             if (model == null) {
                 return;
             }
 
-            model.transform.localScale = modelScale * growth;
-            model.transform.localPosition = modelPosition * growth;
+            var wide = 1f / Mathf.Sqrt(Mathf.Max(0.2f, height));
+            var shape = new Vector3(wide, height, wide);
+            model.transform.localScale = Vector3.Scale(modelScale * growth, shape);
+            model.transform.localPosition = Vector3.Scale(modelPosition * growth, new Vector3(1f, height, 1f));
+        }
+
+        // How flat a squash leaves the car this frame: flat at once, a little over on the way back, then itself.
+        private float SquashHeight()
+        {
+            var age = Time.unscaledTime - squashStart;
+            if (age >= SquashTime) {
+                return 1f;
+            }
+
+            var t = age / SquashTime;
+            return 1f - squash * Mathf.Cos(t * Mathf.PI * 1.5f) * (1f - t);
         }
 
         private void ReplaceModel(CarCatalog.Entry entry)
@@ -327,6 +365,10 @@ namespace ToyCarArena.Gameplay.Cars
 
         private void LateUpdate()
         {
+            if (Time.unscaledTime - squashStart < SquashTime + 0.05f) {
+                Fit(SquashHeight());
+            }
+
             if (topperSpinner != null) {
                 topperSpinner.Rotate(0f, PropellerSpeed * Time.deltaTime, 0f, Space.Self);
             }

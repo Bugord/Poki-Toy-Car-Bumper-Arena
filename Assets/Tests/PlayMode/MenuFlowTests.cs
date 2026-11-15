@@ -104,6 +104,19 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator AVisitorWhoNeverPlayedGoesStraightToTheRoundAgain()
+        {
+            // Two visits counted, but neither finished a round: still a new player.
+            storage.SetInt("visit_count", 2);
+            yield return Boot();
+            yield return WaitFor(() => State == typeof(RoundState) && Round is { IsPlaced: true }, "the round");
+
+            Assert.That(Scope.Container.Resolve<Visits>().Count, Is.EqualTo(3));
+            Assert.That(FindButton("menu__play"), Is.Null, "no menu for a player who never played");
+            Assert.That(Round.HasBegun, Is.False, "the round waits for the player");
+        }
+
+        [UnityTest]
         public IEnumerator AReturningPlayersFirstRoundIsNotTheEasyOne()
         {
             ReturningPlayer();
@@ -174,6 +187,17 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(platform.Events, Does.Contain(("result", "home", "visible")));
             Assert.That(ArenaLayers, Is.Not.Zero, "the result lies over the arena it ended on");
             Press(FindButton("home-button"));
+            // A new car the round opened shows first (HOME does not skip it); CONTINUE closes it, then HOME goes on.
+            var until = Time.realtimeSinceStartup + 20f;
+            while (!(State == typeof(MenuState) && IsShown(FindButton("menu__play"))) && Time.realtimeSinceStartup < until) {
+                var skip = FindButton("level-reward__skip");
+                if (IsShown(skip)) {
+                    yield return Wait(0.8f);
+                    Press(skip);
+                }
+
+                yield return null;
+            }
 
             yield return WaitFor(() => State == typeof(MenuState) && IsShown(FindButton("menu__play")), "the menu again");
             yield return Wait(0.5f);
@@ -297,12 +321,14 @@ namespace ToyCarArena.Tests.PlayMode
         // The layers the arena's camera draws now.
         private static int ArenaLayers => Object.FindAnyObjectByType<ArenaCamera>().Camera.cullingMask;
 
-        // A player back for a second visit: one visit counted, some XP and the cars of the first levels.
+        // A player back for a second visit: one visit counted, some XP and the cars of the first levels, and rounds
+        // played past the safe first rounds (a fall knocks them out again).
         private void ReturningPlayer()
         {
             storage.SetInt("visit_count", 1);
             storage.SetInt("visit_day", (int)(DateTime.Now.Date - DateTime.MinValue.Date).TotalDays);
             storage.SetInt("xp_total", 120);
+            storage.SetInt(SessionProgress.RoundsKey, 5);
         }
 
         private IEnumerator Boot()

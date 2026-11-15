@@ -32,6 +32,20 @@ MonoBehaviour:
     - {fileID: 8300000, guid: e76ba6d94fc04ecda1c54aae01c147a1, type: 3}
     volume: 0.9
     pitchJitter: 0.06
+  carBonk:
+    clips:
+    - {fileID: 8300000, guid: dc85c835999449d2a55f261373e5753f, type: 3}
+    - {fileID: 8300000, guid: 8659845dbcb243918707ef71647f14c0, type: 3}
+    - {fileID: 8300000, guid: c911fc47f6214617be021b6789c48eea, type: 3}
+    volume: 0.9
+    pitchJitter: 0.04
+  carTap:
+    clips:
+    - {fileID: 8300000, guid: d9e50576f77c420fb4dc15eb6699c7cd, type: 3}
+    - {fileID: 8300000, guid: a4d96a30b06548e98817e967d6c5f800, type: 3}
+    - {fileID: 8300000, guid: 140aba2768664a729cde9891aa7e66a1, type: 3}
+    volume: 0.5
+    pitchJitter: 0.12
   boost:
     clips:
     - {fileID: 8300000, guid: 67832059b40a448aa8ba080aafef4c65, type: 3}

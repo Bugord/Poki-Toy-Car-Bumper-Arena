@@ -296,16 +296,11 @@ MonoBehaviour:
   gold: {fileID: 2100000, guid: f1272fbc00e740799cb9b53fcf40d231, type: 2}
   dust: {fileID: 2100000, guid: 810c1088978e4c588ac3dd9022c20084, type: 2}
   sizeScale: 1.25
-  solidOutline: 0.34
-  flatOutline: 0.11
-  ringOutline: 0.08
   gravity: 18
   hitStars: {x: 3, y: 6}
   hitStarSize: {x: 0.55, y: 0.95}
   hitStarSpeed: {x: 3, y: 7}
   hitStarLife: 0.5
-  hitRingRadius: {x: 1.1, y: 2.6}
-  hitRingLife: 0.3
   hitPuffs: {x: 1, y: 4}
   hitPuffSize: {x: 0.45, y: 0.85}
   heavyFlashSize: 1.8

@@ -40,5 +40,12 @@ namespace ToyCarArena.Gameplay.Round
         /// scene is built for it (<see cref="RoundRules"/>), as for the round's number.
         /// </summary>
         EventMode Mode { get; }
+
+        /// <summary>
+        /// Whether the player had never played when the visit began: no experience and no round finished on this
+        /// device. Their first round is the tutorial (<see cref="GameTuning.TutorialSettings"/>). False where nothing is
+        /// saved (the Game scene on its own, the simulation), so only the app's visits get the tutorial.
+        /// </summary>
+        bool IsNewPlayer => false;
     }
 }

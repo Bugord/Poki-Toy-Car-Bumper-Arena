@@ -17,8 +17,9 @@ namespace ToyCarArena.Gameplay.Round
     {
         public RoundRules(GameTuning tuning, ISessionProgress progress)
         {
-            this.Kind = For(tuning, progress.Round, progress.Mode);
-            this.Mode = tuning.RulesOf(Kind);
+            this.IsTutorial = IsTutorialFor(tuning, progress);
+            this.Kind = IsTutorial ? SpecialRound.None : For(tuning, progress.Round, progress.Mode);
+            this.Mode = IsTutorial ? tuning.Tutorial.Rules : tuning.RulesOf(Kind);
             // The boss starts across the floor from the player, who is first, nearest the camera.
             this.BossIndex = Kind == SpecialRound.Boss ? 1 + RoundDifficulty.BotCountFor(tuning, progress) / 2 : -1;
             // A fall takes 1 / sqrt(g) as long, so a push off the rim under low gravity still counts as a knock-out.
@@ -31,6 +32,12 @@ namespace ToyCarArena.Gameplay.Round
         public float FallTimeScale { get; }
 
         public SpecialRound Kind { get; }
+
+        /// <summary>
+        /// Whether this round is the new player's tutorial (<see cref="GameTuning.TutorialSettings"/>): a plain round's
+        /// kind, with the tutorial's rules.
+        /// </summary>
+        public bool IsTutorial { get; }
 
         public bool IsSpecial => Kind != SpecialRound.None;
 
@@ -73,14 +80,22 @@ namespace ToyCarArena.Gameplay.Round
 
         /// <summary>The kind of the session's next round, as the scene built for it will read it.</summary>
         public static SpecialRound KindFor(GameTuning tuning, ISessionProgress progress) =>
-            For(tuning, progress.Round, progress.Mode);
+            IsTutorialFor(tuning, progress) ? SpecialRound.None : For(tuning, progress.Round, progress.Mode);
+
+        /// <summary>
+        /// Whether the session's next round is the tutorial: a new player's first round of the visit in QUICK MATCH, in
+        /// a build of rounds with the tutorial on.
+        /// </summary>
+        public static bool IsTutorialFor(GameTuning tuning, ISessionProgress progress) =>
+            tuning.Tutorial.IsEnabled && !tuning.IsMatch && progress.IsNewPlayer && progress.Round == 1
+            && progress.Mode == EventMode.None;
 
         /// <summary>
         /// The rules of the session's next round, before its scene is built: the lobby, the roster and the difficulty
         /// read the same ones as the round.
         /// </summary>
         public static ModeRules RulesFor(GameTuning tuning, ISessionProgress progress) =>
-            tuning.RulesOf(KindFor(tuning, progress));
+            IsTutorialFor(tuning, progress) ? tuning.Tutorial.Rules : tuning.RulesOf(KindFor(tuning, progress));
 
         /// <summary>The id of a special round for analytics and the string table: no numbers, never changed.</summary>
         public static string IdOf(SpecialRound kind) => kind switch {

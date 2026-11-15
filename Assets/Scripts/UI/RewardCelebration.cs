@@ -29,12 +29,25 @@ namespace ToyCarArena.UI
         private const float ToastTime = 1.1f;
 
         public static void Play(VisualElement overlay, VisualElement card, VisualElement art, string stampText,
-            VisualElement coinsFrom, VisualElement coinsTo, CancellationToken token)
+            VisualElement coinsFrom, VisualElement coinsTo, CancellationToken token) =>
+            Play(overlay, card, art, art, stampText, coinsFrom, coinsTo, token);
+
+        /// <summary>
+        /// As <see cref="Play(VisualElement, VisualElement, VisualElement, string, VisualElement, VisualElement,
+        /// CancellationToken)"/>, with the stamp over <paramref name="stampOver"/> and only <paramref name="reward"/>
+        /// jumping and wiggling: the daily gift's stamp needs the calendar's width, but only the cell taken is the
+        /// reward, and the card with every cell on it stays still.
+        /// </summary>
+        public static void Play(VisualElement overlay, VisualElement card, VisualElement stampOver, VisualElement reward,
+            string stampText, VisualElement coinsFrom, VisualElement coinsTo, CancellationToken token)
         {
             Flash(overlay, token).Forget();
-            Jump(card, 1.1f, token).Forget();
-            Wiggle(art, token).Forget();
-            Stamp(art, stampText, token).Forget();
+            if (reward == stampOver) {
+                Jump(card, 1.1f, token).Forget();
+            }
+
+            Wiggle(reward, token).Forget();
+            Stamp(stampOver, stampText, token).Forget();
             new ConfettiBurst(overlay).Play(card, token).Forget();
             if (coinsFrom != null && coinsTo != null) {
                 Coins(overlay, coinsFrom, coinsTo, token).Forget();

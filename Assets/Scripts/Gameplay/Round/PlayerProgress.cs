@@ -13,7 +13,8 @@ namespace ToyCarArena.Gameplay.Round
     /// </summary>
     public sealed class PlayerProgress : IPlayerCar
     {
-        private const string TotalKey = "xp_total";
+        public const string XpKey = "xp_total";
+        private const string TotalKey = XpKey;
         private const string SelectedKey = "car_selected";
         private const string ColorKey = "car_color";
         private const string OwnedKey = "cars_owned";
@@ -269,8 +270,9 @@ namespace ToyCarArena.Gameplay.Round
                 : 0;
 
             // The ad's bonus on this result counts towards the same one level; a boosted result, which the player
-            // watched an ad for, and the day's first win, which the result shows doubled, keep all they earned.
-            resultCap = boostLeft > 0 || firstWinXp > 0 ? int.MaxValue : CapAbove(before);
+            // watched an ad for, keeps all it earned. The day's first win is held to one level too: a new player's
+            // first round is always their first win, and without the hold it jumped four levels at once (v0.18.1).
+            resultCap = boostLeft > 0 ? int.MaxValue : CapAbove(before);
             var totalAfter = (int)Math.Min(resultCap, checked((long)totalBefore + roundXp + placeXp + winXp +
                 knockoutXp + streakXp + boostXp + firstWinXp + missionXp));
             var after = At(totalAfter);

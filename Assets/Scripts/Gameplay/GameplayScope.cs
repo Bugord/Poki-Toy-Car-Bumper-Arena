@@ -166,6 +166,8 @@ namespace ToyCarArena.Gameplay
             builder.RegisterEntryPoint<ArenaPickups>().AsSelf().WithParameter(transform);
             // A box in front of the player until they have used an item once.
             builder.RegisterEntryPoint<ItemLesson>().AsSelf();
+            // A new player's first rounds: a fall is caught and the player's hits grow; in any other round it does nothing.
+            builder.RegisterEntryPoint<PlayerSafety>().AsSelf();
             // The bomb of a hot potato round; in any other round it builds nothing.
             builder.RegisterEntryPoint<HotPotato>().AsSelf().WithParameter(transform);
             // The other event modes: each active only in a round of its kind, silent in any other.
@@ -174,6 +176,7 @@ namespace ToyCarArena.Gameplay
             builder.RegisterEntryPoint<ItemFrenzyMode>().AsSelf();
             builder.RegisterEntryPoint<OverheatMode>().AsSelf().WithParameter(transform);
             builder.RegisterEntryPoint<TeamPushMode>().AsSelf();
+            builder.RegisterEntryPoint<TutorialMode>().AsSelf();
             builder.RegisterEntryPoint<FootballMode>().AsSelf().WithParameter(transform);
             // Every mode of the scene and the active one, for the bots and the HUD.
             builder.Register<RoundModes>(Lifetime.Singleton);

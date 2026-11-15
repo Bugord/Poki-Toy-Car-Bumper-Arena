@@ -51,6 +51,14 @@ namespace ToyCarArena.Audio
         [SerializeField]
         private Sound hitHeavy = new();
 
+        [Tooltip("A car hit with the player in it: a toy's bonk, played higher the harder the hit")]
+        [SerializeField]
+        private Sound carBonk = new();
+
+        [Tooltip("Two bots bumping: a quiet plastic tap, so the player's own hits stand out")]
+        [SerializeField]
+        private Sound carTap = new();
+
         [Tooltip("A car firing its boost")]
         [SerializeField]
         private Sound boost = new();
@@ -121,6 +129,8 @@ namespace ToyCarArena.Audio
         public void SetArenaMusic(AudioClip clip) => arenaMusic = clip;
         public Sound HitLight => hitLight;
         public Sound HitHeavy => hitHeavy;
+        public Sound CarBonk => carBonk;
+        public Sound CarTap => carTap;
         public Sound Boost => boost;
         public Sound Knockout => knockout;
         public Sound KnockoutPlayer => knockoutPlayer;
