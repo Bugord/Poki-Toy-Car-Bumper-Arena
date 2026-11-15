@@ -520,6 +520,30 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public void Respawn(Vector3 position, Quaternion rotation, IReadOnlyList<Car> cars)
         {
+            Refresh(position, rotation);
+            IsInvulnerable = false;
+            SetInvulnerable(true, cars);
+        }
+
+        /// <summary>
+        /// Takes a placed car off the arena until <see cref="Join"/>: out of play, its object off, so nothing sees,
+        /// hits or drives it meanwhile (<see cref="ToyCarArena.Gameplay.Round.ArenaRound.Hold"/>).
+        /// </summary>
+        public void PutAway()
+        {
+            TakeOut();
+            gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// Brings a car put away (<see cref="PutAway"/>) into the round at rest at <paramref name="position"/>, as fresh
+        /// as when it was placed; unlike a comeback in a match, not safe: it is there to be pushed.
+        /// </summary>
+        public void Join(Vector3 position, Quaternion rotation) => Refresh(position, rotation);
+
+        /// <summary>The car back on the floor, its object on, with nothing left of what it did before.</summary>
+        private void Refresh(Vector3 position, Quaternion rotation)
+        {
             // Put away far below the arena, it is woken up first: a collider out of play has nothing to ignore.
             if (!gameObject.activeSelf) {
                 gameObject.SetActive(true);
@@ -537,8 +561,6 @@ namespace ToyCarArena.Gameplay.Cars
             SetGrowth(baseSize);
             Movement.Respawn(position, rotation);
             Movement.SetMassScale(baseMass);
-            IsInvulnerable = false;
-            SetInvulnerable(true, cars);
         }
 
         /// <summary>

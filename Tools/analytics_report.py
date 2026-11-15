@@ -565,7 +565,7 @@ def report(version, previous):
             out.append(line(f"Задание {task} выполнено (визиты)", lambda s, task=task: str(s["task_done"].get(task, 0))))
     # The first round's tutorial: how many began each step, did it and left on it.
     if any(s and s.get("tutorial") for s in (cur, old)):
-        out += ["", "## Обучение в первом раунде (после v0.18.1)", "", head, sep]
+        out += ["", "## Обучение в первом раунде (после v0.18.1; шаг drive только в v0.18.1)", "", head, sep]
         for step in ("drive", "push", "box", "use", "smash"):
             def cell(s, step=step):
                 started, done, left = s.get("tutorial", {}).get(step, (0, 0, 0))

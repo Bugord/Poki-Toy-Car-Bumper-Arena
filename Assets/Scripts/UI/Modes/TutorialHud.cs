@@ -9,14 +9,14 @@ using UnityEngine.UIElements;
 namespace ToyCarArena.UI
 {
     /// <summary>
-    /// The tutorial on the HUD (<see cref="TutorialMode"/>): a gold arrow bobs over where the step is (the point to
-    /// drive to, the bot to push, the box, the last two bots) and a white sticker right over the arrow says what to do
-    /// there, with the step's number on a gold disc (1 to 5); it pops whenever the step changes. The words stand at the
-    /// place in the world, not at an edge of the screen: a new player looks at the arena, not at the HUD. Using the item
-    /// and at the end, the sticker stands over the player's own car without an arrow. Both are kept on the screen, and
-    /// the sticker goes under the place when the top of the screen has no room for it. The round's clock and the kill
-    /// feed are hidden: the tutorial ends with its lesson, not on time. When the last bot is off the sticker turns green
-    /// with the last words.
+    /// The tutorial on the HUD (<see cref="TutorialMode"/>): a gold arrow bobs over where the step is (the bot to push,
+    /// the box, the last two bots) and a white sticker right over the arrow says what to do there, with the step's
+    /// number on a gold disc (1 to 4); it pops whenever the step changes. The first step says under its words how to
+    /// drive (drag on touch, the mouse or WASD on a computer). The words stand at the place in the world, not at an edge
+    /// of the screen: a new player looks at the arena, not at the HUD. Using the item, the praise between steps and at
+    /// the end, the sticker stands over the player's own car without an arrow; the praise and the last words are green.
+    /// Both are kept on the screen, and the sticker goes under the place when the top of the screen has no room for it.
+    /// The round's clock and the kill feed are hidden: the tutorial ends with its lesson, not on time.
     /// <para>
     /// The arrow is not a ring on the floor: a white ring is the player's own marker. Built once; a frame only sets
     /// styles, on real time, and nothing here catches input.
@@ -24,10 +24,9 @@ namespace ToyCarArena.UI
     /// </summary>
     internal sealed class TutorialHud : IModeHud
     {
-        private const int StepCount = 5;
+        private const int StepCount = 4;
 
         // Metres over the step's place the arrow's tip floats, by what it points at.
-        private const float PointLift = 0.6f;
         private const float CarLift = 2.2f;
         private const float BoxLift = 1.7f;
 
@@ -62,6 +61,9 @@ namespace ToyCarArena.UI
         private readonly VisualElement banner;
         private readonly VisualElement sticker;
         private readonly Label[] textLabels;
+        private readonly VisualElement hint;
+        private readonly Label[] hintLabels;
+        private readonly Func<bool> isTouch;
         private readonly Label[] stepLabels;
         private readonly VisualElement arrow;
         private readonly VisualElement timePill;
@@ -69,22 +71,26 @@ namespace ToyCarArena.UI
         private readonly VisualElement feed;
         private readonly Action onLanguage;
         private TutorialStep shownStep = (TutorialStep)(-1);
+        private TutorialPraise shownPraise;
+        private bool shownTouch;
         private float popAt = float.NegativeInfinity;
         private float doneAt = float.PositiveInfinity;
 
         /// <summary>The tutorial's HUD, in the tutorial round only.</summary>
-        public static TutorialHud Create(VisualElement layer, VisualElement root, HudViewModel model)
+        public static TutorialHud Create(VisualElement layer, VisualElement root, HudViewModel model, Func<bool> isTouch)
         {
             return model.Mode is TutorialMode { IsActive: true } tutorial && layer != null && root != null
-                ? new TutorialHud(layer, root, model, tutorial)
+                ? new TutorialHud(layer, root, model, tutorial, isTouch)
                 : null;
         }
 
-        private TutorialHud(VisualElement layer, VisualElement root, HudViewModel model, TutorialMode tutorial)
+        private TutorialHud(VisualElement layer, VisualElement root, HudViewModel model, TutorialMode tutorial,
+            Func<bool> isTouch)
         {
             this.model = model;
             this.tutorial = tutorial;
             this.layer = layer;
+            this.isTouch = isTouch ?? (() => false);
 
             arrow = new VisualElement { name = "tutorial-arrow", pickingMode = PickingMode.Ignore };
             arrow.AddToClassList("hud__tutorial-arrow");
@@ -101,7 +107,13 @@ namespace ToyCarArena.UI
             disc.AddToClassList("hud__tutorial-step");
             disc.Add(StrokeText.Create("1", null, out stepLabels, "display", "hud__tutorial-step-text"));
             sticker.Add(disc);
-            sticker.Add(StrokeText.Create("", null, out textLabels, "hud__tutorial-text"));
+            // The words, and under them in the first step how to drive.
+            var words = new VisualElement { pickingMode = PickingMode.Ignore };
+            words.AddToClassList("hud__tutorial-words");
+            words.Add(StrokeText.Create("", null, out textLabels, "hud__tutorial-text"));
+            hint = StrokeText.Create("", null, out hintLabels, "hud__tutorial-hint");
+            words.Add(hint);
+            sticker.Add(words);
             banner.Add(sticker);
             // Off the screen until its first frame has a place: it measures itself there first.
             banner.style.left = -10000f;
@@ -116,6 +128,7 @@ namespace ToyCarArena.UI
             SetDisplay(feed, false);
 
             onLanguage = () => shownStep = (TutorialStep)(-1);
+            shownTouch = this.isTouch();
             Strings.Changed += onLanguage;
         }
 
@@ -123,13 +136,17 @@ namespace ToyCarArena.UI
         {
             var now = Time.unscaledTime;
             var step = tutorial.Step;
-            if (step != shownStep) {
-                if (shownStep >= TutorialStep.Drive) {
+            var praise = tutorial.Praise;
+            var touch = isTouch();
+            if (step != shownStep || praise != shownPraise || touch != shownTouch) {
+                if (shownStep >= TutorialStep.Push && (step != shownStep || praise != shownPraise)) {
                     popAt = now;
                 }
 
                 shownStep = step;
-                Show(step);
+                shownPraise = praise;
+                shownTouch = touch;
+                Show(step, praise, touch);
                 if (step == TutorialStep.Done) {
                     doneAt = now;
                 }
@@ -159,21 +176,30 @@ namespace ToyCarArena.UI
             arrow.RemoveFromHierarchy();
         }
 
-        private void Show(TutorialStep step)
+        private void Show(TutorialStep step, TutorialPraise praise, bool touch)
         {
-            var isDone = step == TutorialStep.Done;
-            banner.EnableInClassList(DoneClass, isDone);
-            var key = step switch {
-                TutorialStep.Push => "tutorial.push",
-                TutorialStep.Box => "tutorial.box",
-                TutorialStep.Use => "tutorial.use",
-                TutorialStep.Smash => "tutorial.smash",
-                TutorialStep.Done => "tutorial.done",
-                _ => "tutorial.drive",
+            var isCheer = step == TutorialStep.Done || praise != TutorialPraise.None;
+            banner.EnableInClassList(DoneClass, isCheer);
+            var key = praise switch {
+                TutorialPraise.Pushed => "tutorial.nice_push",
+                TutorialPraise.Grown => "tutorial.huge",
+                _ => step switch {
+                    TutorialStep.Box => "tutorial.box",
+                    TutorialStep.Use => "tutorial.use",
+                    TutorialStep.Smash => "tutorial.smash",
+                    TutorialStep.Done => "tutorial.done",
+                    _ => "tutorial.push",
+                },
             };
             StrokeText.SetText(textLabels, Strings.Get(key));
+            var isHinted = step == TutorialStep.Push && praise == TutorialPraise.None;
+            hint.style.display = isHinted ? DisplayStyle.Flex : DisplayStyle.None;
+            if (isHinted) {
+                StrokeText.SetText(hintLabels, Strings.Get(touch ? "hud.drag_to_drive" : "tutorial.drive_mouse"));
+            }
+
             var number = Mathf.Clamp((int)step, 1, StepCount);
-            StrokeText.SetText(stepLabels, isDone ? "!" : number.ToString());
+            StrokeText.SetText(stepLabels, isCheer ? "!" : number.ToString());
         }
 
         /// <summary>
@@ -239,10 +265,11 @@ namespace ToyCarArena.UI
             place = default;
             isOwnCar = false;
             var player = model.PlayerCar;
+            if (tutorial.Praise != TutorialPraise.None) {
+                return OverPlayer(player, out place, out isOwnCar);
+            }
+
             switch (tutorial.Step) {
-                case TutorialStep.Drive:
-                    place = tutorial.DrivePoint + Vector3.up * PointLift;
-                    return true;
                 case TutorialStep.Push:
                     if (tutorial.Target == null || tutorial.Target.IsOut) {
                         return false;

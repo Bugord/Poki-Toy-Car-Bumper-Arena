@@ -91,31 +91,34 @@ namespace ToyCarArena.Tests.PlayMode
                     yield return null;
                 }
 
-                foreach (var step in new[] {
-                             TutorialStep.Drive, TutorialStep.Push, TutorialStep.Box, TutorialStep.Use, TutorialStep.Smash,
+                foreach (var (shot, step, praise) in new[] {
+                             ("push", TutorialStep.Push, TutorialPraise.None),
+                             ("nice-push", TutorialStep.Push, TutorialPraise.Pushed),
+                             ("box", TutorialStep.Box, TutorialPraise.None),
+                             ("use", TutorialStep.Use, TutorialPraise.None),
+                             ("huge", TutorialStep.Use, TutorialPraise.Grown),
+                             ("smash", TutorialStep.Smash, TutorialPraise.None),
                          }) {
-                    // Bring the lesson to the step by doing the one before it.
-                    if (step == TutorialStep.Push) {
-                        round.Player.Movement.Place(tutorial.DrivePoint, round.Player.transform.rotation);
-                    }
-                    else if (step == TutorialStep.Box) {
+                    // Bring the lesson to the shot by doing what the one before it asked.
+                    if (shot == "nice-push") {
                         Assert.That(round.KnockOut(tutorial.Target, round.Player), Is.True);
                     }
-                    else if (step == TutorialStep.Use) {
+                    else if (shot == "use") {
                         Assert.That(pickups.Give(round.Player, ItemKind.Mega), Is.True);
                     }
-                    else if (step == TutorialStep.Smash) {
+                    else if (shot == "huge") {
                         Assert.That(pickups.Use(round.Player), Is.True);
                     }
 
-                    var waited = Time.realtimeSinceStartup + 3f;
-                    while (tutorial.Step != step && Time.realtimeSinceStartup < waited) {
+                    var waited = Time.realtimeSinceStartup + 4f;
+                    while ((tutorial.Step != step || tutorial.Praise != praise) && Time.realtimeSinceStartup < waited) {
                         yield return null;
                     }
 
-                    Assert.That(tutorial.Step, Is.EqualTo(step));
-                    // Let the pair walk to its place.
-                    var walked = Time.realtimeSinceStartup + (step == TutorialStep.Box ? 4f : 0.5f);
+                    Assert.That(tutorial.Step, Is.EqualTo(step), shot);
+                    Assert.That(tutorial.Praise, Is.EqualTo(praise), shot);
+                    // Let the last two drop onto the floor.
+                    var walked = Time.realtimeSinceStartup + (step == TutorialStep.Smash ? 1f : 0.3f);
                     while (Time.realtimeSinceStartup < walked) {
                         yield return null;
                     }
@@ -146,7 +149,7 @@ namespace ToyCarArena.Tests.PlayMode
                                 read.Invoke(null, new object[] { scene }), read.Invoke(null, new object[] { interface_ }),
                             });
                             var path = Path.Combine(directory,
-                                $"{step.ToString().ToLowerInvariant()}_{language}_{width}x{height}.png");
+                                $"{shot}_{language}_{width}x{height}.png");
                             File.WriteAllBytes(path, picture.EncodeToPNG());
                             Object.DestroyImmediate(picture);
                             Debug.Log($"Tutorial screenshot: {path}");

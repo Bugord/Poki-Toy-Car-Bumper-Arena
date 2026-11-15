@@ -17,16 +17,15 @@ namespace ToyCarArena.Gameplay
 
         /// <summary>
         /// The tutorial: a new player's very first round (no experience and no round finished on this device, the
-        /// visit's first round of QUICK MATCH, not in a match) teaches the game step by step on a still floor, with three
-        /// bots that never attack. Drive to a point; push one bot off the edge; take a box, which always holds a
-        /// Mega, which runs with no timer here; grown, push the last two bots off. The round ends when the last bot is off, as a win, and pays a
-        /// hat (<see cref="TopperSettings.GiftTopper"/>). The player cannot fall: the safe first rounds catch them
-        /// (<see cref="SafetySettings"/>).
+        /// visit's first round of QUICK MATCH, not in a match) teaches the game step by step on a still floor, with bots
+        /// that never attack. One bot stands across the floor: push it off the edge (the sticker says how to drive).
+        /// Praise; a box in the middle, which always holds a Mega, running with no timer here; use it; praise; two more
+        /// bots drop in side by side, and grown, the player sends them flying off. The round ends when the last bot is
+        /// off, as a win, and pays a hat (<see cref="TopperSettings.GiftTopper"/>). The player cannot fall: the safe
+        /// first rounds catch them (<see cref="SafetySettings"/>).
         /// <para>
-        /// Every step is a gate on what has happened, not on the order: a bot pushed off early, or both shoved off by
-        /// ramming, moves the lesson on all the same. A step the player does not get on with is helped along after a
-        /// while: the point to drive to is skipped, the bot to push comes closer, and a Mega lost to a fall
-        /// brings another box.
+        /// A step the player does not get on with is helped along after a while: the bot to push comes closer, so do the
+        /// last two, and a Mega lost to a fall brings another box.
         /// </para>
         /// </summary>
         [Serializable]
@@ -36,20 +35,10 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private bool enabled = true;
 
-            [Tooltip("Metres from the player's start towards the middle where the point to drive to lies")]
-            [Min(1f)]
-            [SerializeField]
-            private float driveDistance = 5.5f;
-
-            [Tooltip("How close the player's car must come to the point, in metres")]
+            [Tooltip("Seconds the praise after a step stays before the next step comes")]
             [Min(0.5f)]
             [SerializeField]
-            private float driveReach = 1.8f;
-
-            [Tooltip("Seconds of the drive step after which it is skipped")]
-            [Min(1f)]
-            [SerializeField]
-            private float driveSkip = 12f;
+            private float praiseTime = 1.6f;
 
             [Tooltip("Seconds of the push step after which the bot to push comes towards the player")]
             [Min(1f)]
@@ -61,7 +50,7 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float helpStop = 3.5f;
 
-            [Tooltip("How far inside the safe edge the last two bots wait for the grown player, in metres")]
+            [Tooltip("How far inside the safe edge the last two bots drop in, in metres")]
             [Min(1f)]
             [SerializeField]
             private float pairInset = 3.5f;
@@ -71,15 +60,30 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float pairGap = 3f;
 
-            [Tooltip("Metres from the middle towards the pair where the box lies")]
-            [Min(0f)]
-            [SerializeField]
-            private float boxDistance = 1f;
-
             [Tooltip("Seconds after the Mega was lost with bots left standing until the next box")]
             [Min(0f)]
             [SerializeField]
             private float boxAgain = 1.5f;
+
+            [Tooltip("Metres a second the grown player's hit throws one of the last two bots away, along the floor")]
+            [Min(0f)]
+            [SerializeField]
+            private float smashPush = 17f;
+
+            [Tooltip("Metres a second the grown player's hit throws one of the last two bots up")]
+            [Min(0f)]
+            [SerializeField]
+            private float smashLift = 7.5f;
+
+            [Tooltip("Degrees a second the grown player's hit spins a bot it throws")]
+            [Min(0f)]
+            [SerializeField]
+            private float smashSpin = 600f;
+
+            [Tooltip("How fast, in metres a second, the grown player must close in for a hit to throw a bot")]
+            [Min(0f)]
+            [SerializeField]
+            private float smashFrom = 1.5f;
 
             [Tooltip("Throttle of a bot walking to its place, 0 to 1")]
             [Range(0.1f, 1f)]
@@ -93,15 +97,16 @@ namespace ToyCarArena.Gameplay
             private float length = 300f;
 
             public bool IsEnabled => enabled;
-            public float DriveDistance => driveDistance;
-            public float DriveReach => driveReach;
-            public float DriveSkip => driveSkip;
+            public float PraiseTime => praiseTime;
             public float PushHelp => pushHelp;
             public float HelpStop => helpStop;
             public float PairInset => pairInset;
             public float PairGap => pairGap;
-            public float BoxDistance => boxDistance;
             public float BoxAgain => boxAgain;
+            public float SmashPush => smashPush;
+            public float SmashLift => smashLift;
+            public float SmashSpin => smashSpin;
+            public float SmashFrom => smashFrom;
             public float BotPace => botPace;
 
             /// <summary>

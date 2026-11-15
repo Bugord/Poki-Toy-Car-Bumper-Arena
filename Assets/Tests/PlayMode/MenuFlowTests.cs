@@ -186,6 +186,17 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(platform.Events, Does.Contain(("result", "home", "visible")));
             Assert.That(ArenaLayers, Is.Not.Zero, "the result lies over the arena it ended on");
             Press(FindButton("home-button"));
+            // A new car the round opened shows first (HOME does not skip it); CONTINUE closes it, then HOME goes on.
+            var until = Time.realtimeSinceStartup + 20f;
+            while (!(State == typeof(MenuState) && IsShown(FindButton("menu__play"))) && Time.realtimeSinceStartup < until) {
+                var skip = FindButton("level-reward__skip");
+                if (IsShown(skip)) {
+                    yield return Wait(0.8f);
+                    Press(skip);
+                }
+
+                yield return null;
+            }
 
             yield return WaitFor(() => State == typeof(MenuState) && IsShown(FindButton("menu__play")), "the menu again");
             yield return Wait(0.5f);

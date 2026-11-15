@@ -55,9 +55,16 @@ namespace ToyCarArena.Gameplay.Round
         public event Action<RoundResult> Finished;
 
         /// <summary>
-        /// Raised in a match when a car that fell comes back onto the floor, safe for a moment.
+        /// Raised in a match when a car that fell comes back onto the floor, safe for a moment, and when a car held off
+        /// the arena joins the round (<see cref="Join"/>).
         /// </summary>
         public event Action<Car> Respawned;
+
+        /// <summary>
+        /// Raised once, at the end of <see cref="Place"/>, with the cars standing: a mode that holds some of them off the
+        /// arena (<see cref="Hold"/>) does it here, before anything (the HUD, the bots) has seen them.
+        /// </summary>
+        public event Action Placed;
 
         /// <summary>
         /// Raised in a match when the player's marked rival changes: a car knocked the player off, or the player knocked
@@ -93,6 +100,7 @@ namespace ToyCarArena.Gameplay.Round
         private readonly bool isMatch;
         private readonly ModeRules mode;
         private readonly List<Car> cars = new();
+        private readonly List<Car> held = new();
 
         // A match's cars waiting to come back (Time.time, positive infinity for none), and the safe time of those that
         // came back: when they came back and when it ends (positive infinity until the car lands).
@@ -309,6 +317,48 @@ namespace ToyCarArena.Gameplay.Round
                     safeUntil[i] = float.NegativeInfinity;
                 }
             }
+
+            Placed?.Invoke();
+        }
+
+        /// <summary>
+        /// Takes a placed bot off the arena until <see cref="Join"/> brings it in: the tutorial's last two wait so. It is
+        /// out of play (<see cref="Car.IsOut"/>) and off the count of cars left, but the round is not won while a car is
+        /// held, and no event tells of it: it never fell. False, and nothing done, for the player, a car out or one not
+        /// in the round.
+        /// </summary>
+        public bool Hold(Car car)
+        {
+            if (!IsPlaced || car == null || car == Player || car.IsOut || IndexOf(car) < 0) {
+                return false;
+            }
+
+            car.PutAway();
+            held.Add(car);
+            CarsLeft--;
+            return true;
+        }
+
+        /// <summary>Whether the car is held off the arena (<see cref="Hold"/>).</summary>
+        public bool IsHeld(Car car) => held.Contains(car);
+
+        /// <summary>
+        /// Brings a held car into the round: it drops from <see cref="GameTuning.MatchSettings.DropHeight"/> over
+        /// <paramref name="spot"/> on the floor, facing <paramref name="facing"/>, back on the count of cars left, and
+        /// <see cref="Respawned"/> tells the HUD. False, and nothing done, for a car not held.
+        /// </summary>
+        public bool Join(Car car, Vector3 spot, Vector3 facing)
+        {
+            if (!held.Remove(car)) {
+                return false;
+            }
+
+            facing.y = 0f;
+            var rotation = Quaternion.LookRotation(facing.sqrMagnitude > 0.0001f ? facing : Vector3.forward);
+            car.Join(new Vector3(spot.x, 0f, spot.z) + Vector3.up * tuning.Match.DropHeight, rotation);
+            CarsLeft++;
+            Respawned?.Invoke(car);
+            return true;
         }
 
         /// <summary>
@@ -393,7 +443,8 @@ namespace ToyCarArena.Gameplay.Round
             if (Player.IsOut) {
                 Finish(RoundOutcome.Out, cars.Count > 1 ? Mathf.Max(2, CarsLeft + 1) : 1);
             }
-            else if (cars.Count > 1 && CarsLeft == 1) {
+            // A car still held off the arena (the tutorial's last two) has yet to come: the player is not alone.
+            else if (cars.Count > 1 && CarsLeft == 1 && held.Count == 0) {
                 Finish(RoundOutcome.Won, 1);
             }
             else if (elapsed >= Duration) {

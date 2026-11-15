@@ -16,10 +16,7 @@ namespace ToyCarArena.Gameplay.Modes
         /// <summary>Not begun: the cars are not placed yet.</summary>
         None,
 
-        /// <summary>Drive to the point in front of the car.</summary>
-        Drive,
-
-        /// <summary>Push one bot off the edge.</summary>
+        /// <summary>Push the one bot on the floor off the edge (the sticker says how to drive).</summary>
         Push,
 
         /// <summary>Take the box lying in the middle.</summary>
@@ -28,26 +25,37 @@ namespace ToyCarArena.Gameplay.Modes
         /// <summary>Use its Mega: the car grows, with no end until the lesson is over.</summary>
         Use,
 
-        /// <summary>Push the last two bots off, grown.</summary>
+        /// <summary>Two bots drop in: push them off, grown.</summary>
         Smash,
 
         /// <summary>Every bot is off: the round ends as a win.</summary>
         Done,
     }
 
+    /// <summary>The praise between two steps of the tutorial (<see cref="TutorialMode.Praise"/>).</summary>
+    public enum TutorialPraise
+    {
+        None,
+
+        /// <summary>The first bot is off.</summary>
+        Pushed,
+
+        /// <summary>The Mega is used: the car is giant.</summary>
+        Grown,
+    }
+
     /// <summary>
     /// The new player's first round as a tutorial (<see cref="GameTuning.TutorialSettings"/>): steps the player through
-    /// driving, pushing a bot off and using an item, on a still floor with three bots that never attack. It is a mode
-    /// in that it drives the bots its own way (<see cref="IBotSteering"/>) and gives the HUD its own layer; its kind is
-    /// a plain round's, so nothing that names a special round or an event mode sees it.
+    /// pushing a bot off and using an item, on a still floor with bots that never attack. It is a mode in that it drives
+    /// the bots its own way (<see cref="IBotSteering"/>) and gives the HUD its own layer; its kind is a plain round's, so
+    /// nothing that names a special round or an event mode sees it.
     /// <para>
-    /// The bots stand where they were placed until their step: the one to push first (the nearest at the start), then
-    /// the last two walk side by side to the edge across the floor from the player's start, and a box with a Mega is
-    /// laid between them and the middle. The Mega has no timer in the tutorial (<see cref="Car.UntimedAbility"/>): grown,
-    /// the player rams the last two off at their own pace. Each step is a gate on state: one bot off ends the push, a
-    /// held item the box, a running Mega the use, no bot left the lesson; so a player who rams ahead skips the steps
-    /// they have done. A step that drags on is helped: the drive is skipped, the bot to push (and later the last ones) comes to the player, a Mega
-    /// lost to a fall brings another box.
+    /// The cars do not all start on the floor: only the bot across from the player does, the other two are held off the
+    /// arena (<see cref="ArenaRound.Hold"/>). Push it off, and the lesson praises the player; then a box with a Mega lies
+    /// in the middle; taken and used (the Mega has no timer here, <see cref="Car.UntimedAbility"/>), the lesson praises
+    /// the giant; then the last two drop in side by side, away from the player, and a grown hit throws them far
+    /// (<see cref="GameTuning.TutorialSettings.SmashPush"/>). A step that drags on is helped: the bot to push (and later
+    /// the last ones) comes to the player, a Mega lost to a fall brings another box.
     /// </para>
     /// </summary>
     public sealed class TutorialMode : IRoundMode, IBotSteering, ITickable, IDisposable
@@ -61,12 +69,23 @@ namespace ToyCarArena.Gameplay.Modes
         // Metres of floor the box keeps around it to the edge or a hole.
         private const float BoxClearance = 2f;
 
+        // Seconds a bot thrown by the grown player is not thrown again: one hit, one throw.
+        private const float ThrowRest = 0.6f;
+
+        // How much of the grown player's own way of driving the throw follows, against the hit's push.
+        private const float ThrowFollow = 0.6f;
+
         private readonly GameTuning.TutorialSettings settings;
         private readonly ArenaRound round;
         private readonly ArenaPickups pickups;
         private readonly Dictionary<Car, Vector3> places = new();
+        private readonly Dictionary<Car, float> thrownAt = new();
+        private readonly List<(Car Car, Action<CarHit> OnHit)> hits = new();
+        private readonly List<Car> pair = new();
         private Car player;
+        private Vector3 inward;
         private float stepStart;
+        private float praiseEnd;
         private float boxAgainAt = float.PositiveInfinity;
         private bool isStarted;
 
@@ -76,6 +95,10 @@ namespace ToyCarArena.Gameplay.Modes
             this.round = round;
             this.pickups = pickups;
             this.IsActive = rules.IsTutorial;
+            if (IsActive) {
+                // As the cars stand, before the HUD or the bots see them: the last two must not show first.
+                round.Placed += Begin;
+            }
         }
 
         /// <summary>A step began (<see cref="Step"/> is it already).</summary>
@@ -93,43 +116,31 @@ namespace ToyCarArena.Gameplay.Modes
 
         public TutorialStep Step { get; private set; }
 
+        /// <summary>
+        /// The praise shown now, between a step done and the next: the step stays the one done until it ends.
+        /// </summary>
+        public TutorialPraise Praise { get; private set; }
+
         /// <summary>Whether the lesson was done to the end: every bot off.</summary>
         public bool IsDone => Step == TutorialStep.Done;
 
-        /// <summary>The point to drive to in the drive step, on the floor.</summary>
-        public Vector3 DrivePoint { get; private set; }
-
-        /// <summary>The bot to push off in the push step.</summary>
+        /// <summary>The bot to push off in the push step: the one across from the player.</summary>
         public Car Target { get; private set; }
 
         /// <summary>The box of the box step, while it lies there.</summary>
         public FloorPickup Box { get; private set; }
 
-        /// <summary>The bots to smash off grown, in the box, use and smash steps: the ones still in.</summary>
+        /// <summary>
+        /// The last two bots, to smash off grown: held off the arena until the smash step, then in until they fall.
+        /// </summary>
         public IReadOnlyList<Car> Pair => pair;
 
-        private readonly List<Car> pair = new();
-        private Vector3 pairSpot;
-        private Vector3 pairSide;
+        /// <summary>Whether the last two have dropped in.</summary>
+        public bool IsPairIn { get; private set; }
 
         public void Tick()
         {
-            if (!IsActive || !round.IsPlaced) {
-                return;
-            }
-
-            if (!isStarted) {
-                Begin();
-            }
-
-            if (Step == TutorialStep.Done) {
-                return;
-            }
-
-            pair.RemoveAll(car => car.IsOut);
-            var botsLeft = round.CarsLeft - (player.IsOut ? 0 : 1);
-            if (botsLeft <= 0) {
-                Advance(TutorialStep.Done);
+            if (!IsActive || !isStarted || Step == TutorialStep.Done) {
                 return;
             }
 
@@ -138,17 +149,20 @@ namespace ToyCarArena.Gameplay.Modes
                 return;
             }
 
-            // A bot off ends the push whenever it happens, the drive with it: the steps are gates on state, not an order.
-            if (Step < TutorialStep.Box && botsLeft < round.Cars.Count - 1) {
-                Advance(TutorialStep.Box);
+            if (Praise != TutorialPraise.None) {
+                if (round.Elapsed >= praiseEnd) {
+                    var next = Praise == TutorialPraise.Pushed ? TutorialStep.Box : TutorialStep.Smash;
+                    Praise = TutorialPraise.None;
+                    Advance(next);
+                }
+
                 return;
             }
 
             switch (Step) {
-                case TutorialStep.Drive:
-                    if (Flat(player.Position - DrivePoint).magnitude <= settings.DriveReach
-                        || round.Elapsed - stepStart >= settings.DriveSkip) {
-                        Advance(TutorialStep.Push);
+                case TutorialStep.Push:
+                    if (Target == null || Target.IsOut) {
+                        StartPraise(TutorialPraise.Pushed);
                     }
 
                     break;
@@ -160,11 +174,16 @@ namespace ToyCarArena.Gameplay.Modes
                     break;
                 case TutorialStep.Use:
                     if (player.IsRunning(ItemKind.Mega)) {
-                        Advance(TutorialStep.Smash);
+                        StartPraise(TutorialPraise.Grown);
                     }
 
                     break;
                 case TutorialStep.Smash:
+                    if (IsPairIn && pair.TrueForAll(car => car.IsOut)) {
+                        Advance(TutorialStep.Done);
+                        return;
+                    }
+
                     TickSmash();
                     break;
             }
@@ -172,11 +191,19 @@ namespace ToyCarArena.Gameplay.Modes
 
         public void Dispose()
         {
+            round.Placed -= Begin;
+            foreach (var (car, onHit) in hits) {
+                if (car != null) {
+                    car.Hit -= onHit;
+                }
+            }
+
+            hits.Clear();
         }
 
         /// <summary>
-        /// The tutorial's bots: each walks to its place for the step and stands there, never attacking; the bot to push
-        /// comes to the player once the push step has dragged on.
+        /// The tutorial's bots: each stands at its place for the step, never attacking; the bot to push comes to the
+        /// player once the push step has dragged on, and the last two once the smash has.
         /// </summary>
         public bool SteerBot(Bot bot, IArenaEdge edge, float deltaTime)
         {
@@ -192,13 +219,10 @@ namespace ToyCarArena.Gameplay.Modes
 
             var place = places.TryGetValue(car, out var spot) ? spot : car.Position;
             var stop = Arrive;
-            if (car == Target && Step == TutorialStep.Push && round.Elapsed - stepStart >= settings.PushHelp) {
-                place = player.Position;
-                stop = settings.HelpStop;
-            }
-            // The grown player who has not got them off for a while: the last bots come to them too.
-            else if (Step == TutorialStep.Smash && pair.Contains(car) && player.IsRunning(ItemKind.Mega)
-                && round.Elapsed - stepStart >= settings.PushHelp) {
+            var isHelping = Praise == TutorialPraise.None && round.Elapsed - stepStart >= settings.PushHelp
+                && (car == Target && Step == TutorialStep.Push
+                    || Step == TutorialStep.Smash && pair.Contains(car) && player.IsRunning(ItemKind.Mega));
+            if (isHelping) {
                 place = player.Position;
                 stop = settings.HelpStop;
             }
@@ -207,7 +231,7 @@ namespace ToyCarArena.Gameplay.Modes
             var distance = offset.magnitude;
             // A bot the player just rammed lets itself be pushed: walking back to its place it would push against them.
             var isRammed = car.LastHitBy == player && Time.time - car.LastHitTime < settings.RammedRest;
-            if (distance <= stop || car.Movement.IsStaggered || isRammed) {
+            if (distance <= stop || car.Movement.IsStaggered || isRammed || !car.Movement.IsGrounded) {
                 car.Movement.Drive(Vector3.zero, 0f);
                 return true;
             }
@@ -218,63 +242,51 @@ namespace ToyCarArena.Gameplay.Modes
         }
 
         /// <summary>
-        /// The lesson's layout, once the cars stand: the point ahead of the player, the bot to push (the nearest), the
-        /// places the last two will walk to.
+        /// The lesson's layout, as the cars stand: the bot across from the player stays to be pushed, the other two are
+        /// held off the arena for the smash.
         /// </summary>
         private void Begin()
         {
+            if (isStarted) {
+                return;
+            }
+
             isStarted = true;
             player = round.Player;
             player.UntimedAbility = ItemKind.Mega;
-            var edge = round.Edge;
             var start = Flat(player.Position);
-            var inward = Flat(-start);
+            inward = Flat(-start);
             if (inward.sqrMagnitude < 0.01f) {
                 inward = Flat(player.transform.forward);
             }
 
             inward.Normalize();
-            // On the floor: short of a hole in the middle (candy) if one is nearer than the drive.
-            DrivePoint = start + inward * settings.DriveDistance;
-            for (var distance = settings.DriveDistance; distance > 1f; distance -= 0.25f) {
-                DrivePoint = start + inward * distance;
-                if (edge.DistanceToEdge(DrivePoint, settings.DriveReach) >= 0f) {
-                    break;
-                }
-            }
-
             var bots = new List<Car>();
             foreach (var car in round.Cars) {
                 if (car != player) {
                     bots.Add(car);
                     places[car] = Flat(car.Position);
+                    Action<CarHit> onHit = hit => OnBotHit(car, hit);
+                    car.Hit += onHit;
+                    hits.Add((car, onHit));
                 }
             }
 
-            // The nearest bot is the one to push; the others wait for the grown player across the floor from the start.
-            bots.Sort((a, b) => Flat(a.Position - start).sqrMagnitude.CompareTo(Flat(b.Position - start).sqrMagnitude));
+            // The farthest bot is the one to push: across the floor, straight ahead of the player's car.
+            bots.Sort((a, b) => Flat(b.Position - start).sqrMagnitude.CompareTo(Flat(a.Position - start).sqrMagnitude));
             Target = bots.Count > 0 ? bots[0] : null;
-            pairSpot = PairSpot(edge, inward);
-            pairSide = Vector3.Cross(Vector3.up, inward);
-            Advance(TutorialStep.Drive);
+            for (var i = 1; i < bots.Count; i++) {
+                pair.Add(bots[i]);
+                round.Hold(bots[i]);
+            }
+
+            Advance(TutorialStep.Push);
         }
 
-        /// <summary>
-        /// The middle of the pair's places: across the floor from the player's start, <c>PairInset</c> metres
-        /// inside the safe edge.
-        /// </summary>
-        private Vector3 PairSpot(IArenaEdge edge, Vector3 inward)
+        private void StartPraise(TutorialPraise praise)
         {
-            // The farthest such point on the line: the middle may be a hole (candy), so the first unsafe one is no end.
-            var spot = Vector3.zero;
-            for (var distance = 0f; distance < edge.FullExtent; distance += 0.25f) {
-                var point = inward * distance;
-                if (edge.DistanceToEdge(point, settings.PairInset) >= 0f) {
-                    spot = point;
-                }
-            }
-
-            return spot;
+            Praise = praise;
+            praiseEnd = round.Elapsed + settings.PraiseTime;
         }
 
         private void Advance(TutorialStep next)
@@ -296,25 +308,83 @@ namespace ToyCarArena.Gameplay.Modes
         {
             switch (step) {
                 case TutorialStep.Box:
-                    // Every bot still in (the last two, or more if the player pushed another off first) walks to a place
-                    // side by side by the edge; the box waits between them and the middle.
-                    pair.Clear();
-                    foreach (var car in round.Cars) {
-                        if (car != player && !car.IsOut) {
-                            pair.Add(car);
-                        }
-                    }
-
-                    for (var i = 0; i < pair.Count; i++) {
-                        places[pair[i]] = pairSpot + pairSide * ((i - (pair.Count - 1) * 0.5f) * settings.PairGap);
-                    }
-
                     LayBox();
+                    break;
+                case TutorialStep.Smash:
+                    JoinPair();
                     break;
                 case TutorialStep.Done:
                     Box = null;
                     break;
             }
+        }
+
+        /// <summary>
+        /// The last two drop in side by side, facing the player, <c>PairInset</c> inside the edge on whichever side of the
+        /// middle (across from the player's start, or by it) is farther from where the player is now.
+        /// </summary>
+        private void JoinPair()
+        {
+            var edge = round.Edge;
+            var at = Flat(player.Position);
+            var far = PairSpot(edge, inward);
+            var near = PairSpot(edge, -inward);
+            var spot = (far - at).sqrMagnitude >= (near - at).sqrMagnitude ? far : near;
+            var side = Vector3.Cross(Vector3.up, spot.sqrMagnitude > 0.01f ? spot.normalized : inward);
+            for (var i = 0; i < pair.Count; i++) {
+                var place = spot + side * ((i - (pair.Count - 1) * 0.5f) * settings.PairGap);
+                places[pair[i]] = place;
+                round.Join(pair[i], place, at - place);
+            }
+
+            IsPairIn = true;
+        }
+
+        /// <summary>
+        /// A point <c>PairInset</c> metres inside the safe edge along <paramref name="way"/> from the middle: the
+        /// farthest such on the line, since the middle may be a hole (candy).
+        /// </summary>
+        private Vector3 PairSpot(IArenaEdge edge, Vector3 way)
+        {
+            var spot = Vector3.zero;
+            for (var distance = 0f; distance < edge.FullExtent; distance += 0.25f) {
+                var point = way * distance;
+                if (edge.DistanceToEdge(point, settings.PairInset) >= 0f) {
+                    spot = point;
+                }
+            }
+
+            return spot;
+        }
+
+        /// <summary>
+        /// A grown hit on one of the last two throws it far and high, spinning, the way the hit went: a giant toy car
+        /// sends the small ones flying. The hit itself already marked the player as who knocked it.
+        /// </summary>
+        private void OnBotHit(Car car, CarHit hit)
+        {
+            if (Step != TutorialStep.Smash || hit.Other != player || !pair.Contains(car) || car.IsOut
+                || !player.IsRunning(ItemKind.Mega) || hit.Strength < settings.SmashFrom
+                || thrownAt.TryGetValue(car, out var at) && Time.time - at < ThrowRest) {
+                return;
+            }
+
+            thrownAt[car] = Time.time;
+            var away = Flat(hit.Normal);
+            if (away.sqrMagnitude < 0.01f) {
+                away = Flat(car.Position - player.Position);
+            }
+
+            away.Normalize();
+            var drive = Flat(player.Movement.Velocity);
+            if (drive.sqrMagnitude > 1f) {
+                away = (away + drive.normalized * ThrowFollow).normalized;
+            }
+
+            car.Movement.Push(away * settings.SmashPush - Flat(car.Movement.Velocity));
+            var turn = Vector3.Cross(away, drive).y >= 0f ? 1f : -1f;
+            car.Movement.Launch(settings.SmashLift, settings.SmashSpin * turn);
+            car.Movement.Stagger(settings.RammedRest);
         }
 
         /// <summary>
@@ -337,16 +407,16 @@ namespace ToyCarArena.Gameplay.Modes
         }
 
         /// <summary>
-        /// The box with a Mega, for the player alone, lying until taken, towards the pair from the middle: on the
-        /// first floor out from <c>BoxDistance</c> that is well inside the edge, so a floor with a hole in the middle
-        /// (candy) has it at the hole's rim.
+        /// The box with a Mega, for the player alone, lying until taken, in the middle: on the first floor out from it
+        /// towards the player that is well inside the edge, so a floor with a hole in the middle (candy) has it at the
+        /// hole's rim.
         /// </summary>
         private void LayBox()
         {
-            var towards = Flat(pairSpot);
-            var way = towards.sqrMagnitude > 0.01f ? towards.normalized : Vector3.zero;
-            var spot = way * settings.BoxDistance;
-            for (var distance = settings.BoxDistance; distance < towards.magnitude; distance += 0.25f) {
+            var towards = Flat(player.Position);
+            var way = towards.sqrMagnitude > 0.01f ? towards.normalized : -inward;
+            var spot = Vector3.zero;
+            for (var distance = 0f; distance < round.Edge.FullExtent; distance += 0.25f) {
                 if (round.Edge.DistanceToEdge(way * distance, BoxClearance) >= 0f) {
                     spot = way * distance;
                     break;

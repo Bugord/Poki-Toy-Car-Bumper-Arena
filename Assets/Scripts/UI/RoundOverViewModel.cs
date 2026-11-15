@@ -235,6 +235,15 @@ namespace ToyCarArena.UI
         /// The tutorial's hat does not wait: the lesson's reward shows on its own result, before the cars it opens.</summary>
         public bool IsGiftDue => Gift != null && (HasRoomToWait || wallet.IsGiftEarned);
 
+        /// <summary>The topper this round gave is the tutorial's (<see cref="PlayerWallet.IsGiftEarned"/>): it never waits.</summary>
+        public bool IsGiftEarned => Gift != null && wallet.IsGiftEarned;
+
+        /// <summary>
+        /// Whether the player's league is one the player has not been greeted in yet (<see cref="TakeNewLeague"/>), without
+        /// marking it seen.
+        /// </summary>
+        public bool IsLeagueDue => League > 0 && League > progress.SeenLeague;
+
         /// <summary>A popup is up over this result: the next result of the visit leaves the waiting ones for later.</summary>
         public void PopupShown() => lastResultHadPopup = true;
 

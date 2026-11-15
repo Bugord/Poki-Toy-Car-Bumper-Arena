@@ -445,7 +445,7 @@ namespace ToyCarArena.UI
             endTimer = HudEndTimer.Create(Root, ViewModel, timePill, scoreboard?.Element ?? teams?.Element, respawn,
                 popupLayer);
             modeHud = ModeLooks.Of(ViewModel.Mode)?.CreateHud(nameLayer, Root, ViewModel)
-                ?? TutorialHud.Create(nameLayer, Root, ViewModel);
+                ?? TutorialHud.Create(nameLayer, Root, ViewModel, controls.CheckTouchScreen);
             settingsButton = Root.Q<Button>("settings-button");
             settingsButton.RemoveFromClassList(Button.ussClassName);
             // Space is the boost: a focused button would take it as a click and open the settings mid-round.
@@ -1734,10 +1734,29 @@ namespace ToyCarArena.UI
         }
 
         /// <summary>
-        /// A car back in a match gets its handle again, and the rival its REVENGE at once: it was introduced already.
+        /// A car back in a match gets its handle again, and the rival its REVENGE at once: it was introduced already. A
+        /// car that joins a round late (the tutorial's last two) gets its chip in the stack, before the player's, too.
         /// </summary>
         private void OnCarBack(int index)
         {
+            if (!ViewModel.IsTimed && chipSlots != null && index >= 0 && index < chipSlots.Length
+                && chipSlots[index] == null && index != ViewModel.PlayerIndex && ViewModel.IsCarIn(index)) {
+                var slot = CreateChip(ViewModel.ColorOf(index), false);
+                chipSlots[index] = slot;
+                var playerSlot = chipSlots[ViewModel.PlayerIndex];
+                var at = playerSlot != null ? chipRow.IndexOf(playerSlot) : -1;
+                if (at >= 0) {
+                    chipRow.Insert(at, slot);
+                }
+                else {
+                    chipRow.Add(slot);
+                }
+
+                ShowCarsLeft();
+                Pulse(carsLeftLabel, CountPunchClass);
+                Pulse(carsPill, PopClass);
+            }
+
             if (carNames == null || index < 0 || index >= carNames.Length || index == ViewModel.PlayerIndex
                 || carNames[index] != null) {
                 return;

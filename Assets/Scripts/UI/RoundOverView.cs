@@ -561,9 +561,26 @@ namespace ToyCarArena.UI
             // The card stops where it is: a popup due later would otherwise open over the curtain, unseen, and count
             // as shown (v0.18.0 sent shop / equip-vintage / visible after NEXT MATCH on a quick press).
             rewardRun?.Cancel();
-            xpProgress.Stop();
             audioService.PlayUiClick();
+            // Players skipped the new car's popup with NEXT MATCH before it came: a popup the player would lose shows
+            // first, at once, without the bar and the track before it; the match follows when it is closed.
+            if (xpProgress.HasPopupDue) {
+                ShowDueThen(ViewModel.PlayAgain, lifetime.Token).Forget();
+                return;
+            }
+
+            xpProgress.Stop();
             ViewModel.PlayAgain();
+        }
+
+        private async UniTaskVoid ShowDueThen(System.Action next, CancellationToken token)
+        {
+            if (await xpProgress.ShowDue(token).SuppressCancellationThrow()) {
+                return;
+            }
+
+            xpProgress.Stop();
+            next();
         }
 
         /// <summary>HOME: back to the main menu, behind the curtain; taken like NEXT MATCH, once.</summary>
@@ -575,8 +592,13 @@ namespace ToyCarArena.UI
 
             isPlayAgainPressed = true;
             rewardRun?.Cancel();
-            xpProgress.Stop();
             audioService.PlayUiClick();
+            if (xpProgress.HasPopupDue) {
+                ShowDueThen(ViewModel.GoHome, lifetime.Token).Forget();
+                return;
+            }
+
+            xpProgress.Stop();
             ViewModel.GoHome();
         }
     }

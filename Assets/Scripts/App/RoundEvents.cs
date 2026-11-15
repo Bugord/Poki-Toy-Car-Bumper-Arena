@@ -831,8 +831,9 @@ namespace ToyCarArena.App
             platform.MeasureInteract("shop", $"hat-offer-{topperId}");
 
         /// <summary>
-        /// A step of the new player's tutorial began (<c>tutorial / drive|push|box|use / start</c>) or was done
-        /// (<c>complete</c>); the lesson is done with <c>tutorial / use / complete</c>.
+        /// A step of the new player's tutorial began (<c>tutorial / push|box|use|smash / start</c>) or was done
+        /// (<c>complete</c>); the lesson is done with <c>tutorial / smash / complete</c>. <c>drive</c> came first up to
+        /// v0.18.1 (a point to drive to), then was cut: the first step tells how to drive.
         /// </summary>
         public static void MeasureTutorialStep(this IGamePlatform platform, TutorialStep step, bool isDone) =>
             platform.Measure("tutorial", step.ToString().ToLowerInvariant(), isDone ? "complete" : "start");
