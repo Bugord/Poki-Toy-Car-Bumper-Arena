@@ -46,7 +46,7 @@ namespace ToyCarArena.UI
         /// <summary>Today's gift waits: DAILY reads READY and the popup offers CLAIM.</summary>
         public bool CanClaim => daily.CanClaim(Now);
 
-        /// <summary>The days in a row the calendar shows, from 1, and today's slot of it, from 0.</summary>
+        /// <summary>The days claimed the calendar shows, from 1, and today's slot of it, from 0.</summary>
         public int Streak => daily.Streak(Now);
         public int Slot => daily.Slot(Now);
         public int Days => tuning.Daily.Days;

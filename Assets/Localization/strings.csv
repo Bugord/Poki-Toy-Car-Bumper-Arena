@@ -252,7 +252,7 @@ menu.no_thanks,Button that turns the XP boost offer down; short,NO THANKS,NON ME
 menu.boost_left,"On the XP boost tile while it runs: the matches it still lasts, {0} a number from 1; max ~8 chars; keep it right for any number",{0} LEFT,ENCORE {0},ANCORA {0},NOCH {0},{0} MÁS,{0} KALDI,MAIS {0},ЕЩЁ {0}
 menu.daily,"Main menu tile that opens the daily gift; max ~9 chars",DAILY,QUOTIDIEN,GIORNO,TÄGLICH,DIARIO,GÜNLÜK,DIÁRIO,ПОДАРОК
 daily.title,Title of the daily reward popup,DAILY REWARD!,RÉCOMPENSE DU JOUR !,PREMIO DEL GIORNO!,TAGESBELOHNUNG!,¡PREMIO DIARIO!,GÜNÜN ÖDÜLÜ!,PRÊMIO DIÁRIO!,НАГРАДА ДНЯ!
-daily.streak,"Tag on the daily gift: how many days in a row the player has come, {0} a number from 1; short",DAY {0} IN A ROW,JOUR {0} D'AFFILÉE,GIORNO {0} DI FILA,TAG {0} IN FOLGE,DÍA {0} SEGUIDO,ÜST ÜSTE {0}. GÜN,DIA {0} SEGUIDO,ДЕНЬ {0} ПОДРЯД
+daily.streak,"Tag on the daily gift: today's day of the gift calendar, {0} the day 1..7 (missed days do not reset it); short",DAY {0},JOUR {0},GIORNO {0},TAG {0},DÍA {0},{0}. GÜN,DIA {0},ДЕНЬ {0}
 daily.today,"Caption of today's cell in the daily gift calendar; max ~7 chars",TODAY,AUJOURD'HUI,OGGI,HEUTE,HOY,BUGÜN,HOJE,СЕГОДНЯ
 daily.day,"Caption of a cell in the daily gift calendar, {0} the day 1..7; max ~7 chars",DAY {0},JOUR {0},GIORNO {0},TAG {0},DÍA {0},{0}. GÜN,DIA {0},ДЕНЬ {0}
 daily.mystery,"The last day's prize in the daily gift calendar: a hat kept secret until claimed; short",MYSTERY HAT,CHAPEAU MYSTÈRE,CAPPELLO MISTERO,GEHEIMHUT,SOMBRERO MISTERIO,GİZEMLİ ŞAPKA,CHAPÉU MISTÉRIO,ТАЙНАЯ ШАПКА
