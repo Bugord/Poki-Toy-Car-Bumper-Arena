@@ -676,13 +676,13 @@ namespace ToyCarArena.UI
             shieldFill.style.width = Length.Percent(share * 100f);
         }
 
-        /// <summary>
-        /// On a win streak a gold crown with ×N floats over the player's car: the round pays more, and the bots go for
-        /// it a little more. It makes way for SAFE, and goes with the car when it falls.
-        /// </summary>
         /// <summary>The round's mode keeps the win streak's crowns off it (<see cref="ModeLook.HidesStreakCrowns"/>).</summary>
         private bool HidesStreakCrowns => ModeLooks.Of(ViewModel.Mode)?.HidesStreakCrowns == true;
 
+        /// <summary>
+        /// On a win streak a gold crown with ×N floats over the player's car: the round pays more, and the bots go for
+        /// it a little more. It makes way for SAFE, and goes with the car when it falls (unless the mode hides it).
+        /// </summary>
         private void ShowStreak(Camera camera)
         {
             var isShown = ViewModel.Streak > 0 && camera != null && streak.panel != null && ViewModel.IsCarIn(0)

@@ -161,7 +161,6 @@ namespace ToyCarArena.Gameplay.Modes
         /// <summary>Whether the holder cannot lose the crown yet: its first moment with it.</summary>
         public bool IsProtected => Holder != null && Time.time < protectedUntil;
 
-        /// <summary>Seconds the crown has been on <paramref name="car"/>'s roof this round, fractions included.</summary>
         /// <summary>
         /// The mode's own event at the end of its round, beside the shared ones of every mode:
         /// <c>special / crown-held-&lt;s&gt;-takes-&lt;n&gt; / crown</c>. <c>s</c> is how long the player kept the crown, by
@@ -196,6 +195,7 @@ namespace ToyCarArena.Gameplay.Modes
         public static string TakesBucketOf(int takes) =>
             takes >= LastTakesBucket ? $"{LastTakesBucket}plus" : Math.Max(0, takes).ToString();
 
+        /// <summary>Seconds the crown has been on <paramref name="car"/>'s roof this round, fractions included.</summary>
         public float HeldOf(Car car)
         {
             var index = round.IndexOf(car);

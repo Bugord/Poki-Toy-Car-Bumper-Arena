@@ -40,8 +40,8 @@ namespace ToyCarArena.UI
     /// tile's gradient, the lobby card), its card art (the USS class <see cref="ArtClass"/>, the picture
     /// <c>sprite_mode_&lt;id&gt;.png</c>), its words (<see cref="NameKey"/>, <see cref="HintKey"/>), its own HUD and the
     /// icon of its points on the score table and the header of their column (<see cref="PointsKey"/>), and whether the
-    /// win streak's crowns stay off the round (<see cref="HidesStreakCrowns"/>). One per mode in <c>UI/Modes/&lt;Mode&gt;Look.cs</c>, listed in
-    /// <see cref="ModeLooks"/>.
+    /// win streak's crowns stay off the round (<see cref="HidesStreakCrowns"/>). One per mode in
+    /// <c>UI/Modes/&lt;Mode&gt;Look.cs</c>, listed in <see cref="ModeLooks"/>.
     /// </summary>
     internal sealed class ModeLook
     {
