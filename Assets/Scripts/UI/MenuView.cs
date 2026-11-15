@@ -385,8 +385,8 @@ namespace ToyCarArena.UI
         private void BuildRail(VisualElement menu)
         {
             rail = Element("menu__rail");
-            garageTile = Tile(DrawGarage, () => Strings.Get("garage.title"), "G", OpenGarage);
-            missionsTile = Tile(DrawMissions,() => Strings.Get("mission.title"), "M", OpenMissions);
+            garageTile = Tile("garage", () => Strings.Get("garage.title"), "G", OpenGarage);
+            missionsTile = Tile("missions", () => Strings.Get("mission.title"), "M", OpenMissions);
             // AWARDS waits until there are awards: a locked tile that explains nothing only takes the rail.
             rail.Add(garageTile);
             rail.Add(missionsTile);
@@ -403,12 +403,12 @@ namespace ToyCarArena.UI
         {
             rightRail = Element("menu__rail");
             rightRail.AddToClassList("menu__rail--right");
-            dailyTile = Tile(MenuDaily.DrawGift, () => Strings.Get("menu.daily"), "D", OpenDaily);
+            dailyTile = Tile("daily", () => Strings.Get("menu.daily"), "D", OpenDaily);
             dailyTile.AddToClassList("menu__tile--daily");
             dailyTime = Text("menu__daily-time");
             dailyTile.Q<VisualElement>(className: "menu__tile-button").Add(dailyTime);
             rightRail.Add(dailyTile);
-            boostTile = Tile(DrawXpStar, () => Strings.Get("menu.xp_boost"), "B", OpenBoost);
+            boostTile = Tile("xp-boost", () => Strings.Get("menu.xp_boost"), "B", OpenBoost);
             boostTile.AddToClassList("menu__tile--boost");
             var button = boostTile.Q<VisualElement>(className: "menu__tile-button");
             var times = StrokeText.Outlined("", "menu__boost-times", out var timesLabels);
@@ -1083,14 +1083,16 @@ namespace ToyCarArena.UI
             return play;
         }
 
-        private VisualElement Tile(System.Action<MeshGenerationContext> draw, System.Func<string> caption, string key,
-            System.Action pressed)
+        /// <param name="icon">The painted picture's name: <c>menu__icon--&lt;icon&gt;</c> in the style sheet.</param>
+        private VisualElement Tile(string icon, System.Func<string> caption, string key, System.Action pressed)
         {
             var tile = Element("menu__tile");
             var button = Sticker("menu__tile-button", pressed);
             var face = button.Q<VisualElement>(className: "menu__face");
-            if (draw != null) {
-                face.Add(Icon("menu__icon", draw));
+            if (icon != null) {
+                var picture = Element("menu__icon");
+                picture.AddToClassList("menu__icon--" + icon);
+                face.Add(picture);
             }
 
             var isNew = Text("menu__new");
@@ -2158,70 +2160,6 @@ namespace ToyCarArena.UI
             p.LineTo(new Vector2(X(0.4f), Y(0.92f)));
             p.ClosePath();
             p.Fill();
-        }
-
-        /// <summary>
-        /// MISSIONS' sign: a clipboard with a checklist of two green ticks. The rings of a target read as an eye at the
-        /// tile's size; a list of ticks is what games draw for tasks. Two rows, not three: the tile is about 30 CSS px
-        /// on a phone, and a third row only turns the list into noise.
-        /// </summary>
-        private static void DrawMissions(MeshGenerationContext context)
-        {
-            var r = context.visualElement.contentRect;
-            var p = context.painter2D;
-            float X(float x) => r.x + x * r.width;
-            float Y(float y) => r.y + y * r.height;
-            var outline = r.height * 0.08f;
-            p.strokeColor = Navy;
-            p.lineJoin = LineJoin.Round;
-            p.lineCap = LineCap.Round;
-
-            // The gold board, then the white sheet on it.
-            p.lineWidth = outline;
-            p.fillColor = Gold;
-            RoundBox(p, X(0.1f), Y(0.1f), X(0.9f), Y(0.96f), r.width * 0.12f);
-            p.Fill();
-            p.Stroke();
-            p.fillColor = White;
-            RoundBox(p, X(0.21f), Y(0.23f), X(0.79f), Y(0.85f), r.width * 0.05f);
-            p.Fill();
-            p.Stroke();
-
-            // Two rows, each a tick and a navy line for the task.
-            foreach (var y in new[] { 0.42f, 0.67f }) {
-                Tick(new Vector2(X(0.29f), Y(y)), new Vector2(X(0.36f), Y(y + 0.07f)), new Vector2(X(0.48f), Y(y - 0.075f)));
-                p.strokeColor = Navy;
-                p.lineWidth = outline;
-                p.BeginPath();
-                p.MoveTo(new Vector2(X(0.56f), Y(y)));
-                p.LineTo(new Vector2(X(0.7f), Y(y)));
-                p.Stroke();
-            }
-
-            // The clip: a navy plate over the board's top edge with a gold hole.
-            p.lineWidth = outline;
-            p.fillColor = Navy;
-            RoundBox(p, X(0.32f), Y(0.05f), X(0.68f), Y(0.22f), r.width * 0.05f);
-            p.Fill();
-            p.Stroke();
-            p.fillColor = Gold;
-            p.BeginPath();
-            p.Arc(new Vector2(X(0.5f), Y(0.12f)), r.width * 0.05f, 0f, 360f);
-            p.Fill();
-
-            // A green tick with a navy edge: the navy stroke under a narrower green one.
-            void Tick(Vector2 a, Vector2 b, Vector2 c)
-            {
-                foreach (var (color, width) in new[] { (Navy, outline * 1.6f), (Green, outline * 0.8f) }) {
-                    p.strokeColor = color;
-                    p.lineWidth = width;
-                    p.BeginPath();
-                    p.MoveTo(a);
-                    p.LineTo(b);
-                    p.LineTo(c);
-                    p.Stroke();
-                }
-            }
         }
 
         // A rectangle with rounded corners as the current path.

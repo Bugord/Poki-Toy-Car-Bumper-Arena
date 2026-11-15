@@ -6096,3 +6096,19 @@
    (.stroke > .stroke__face), or the outline, centred on the letters' edge, eats them and leaves them hollow. */
 .stroke > Label.results__team-name-text.stroke__face,
 .stroke > Label.results__team-points-text.stroke__face { -unity-text-outline-width: 0; }
+
+/* The missions' and HOME's pictures, painted (Codex, in the item icons' sticker style). */
+.mission-icon__sign { -unity-background-scale-mode: scale-to-fit; }
+.mission-icon__sign--knockout { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_knockout.png"); }
+.mission-icon__sign--item-knockout { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_item_knockout.png"); }
+.mission-icon__sign--bomb { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_bomb.png"); }
+.mission-icon__sign--box { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_box.png"); }
+.mission-icon__sign--win { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_win.png"); }
+.mission-icon__sign--final-two { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_final_two.png"); }
+.mission-icon__sign--revenge { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_revenge.png"); }
+.mission-icon__sign--boost { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_boost.png"); }
+.mission-icon__sign--rounds { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_rounds.png"); }
+.round-over__home-icon--painted {
+    background-image: url("/Assets/Art/Sprites/UI/sprite_icon_home.png");
+    -unity-background-scale-mode: scale-to-fit;
+}

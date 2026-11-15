@@ -94,7 +94,7 @@ namespace ToyCarArena.UI
             homeButton = Root.Q<Button>("home-button");
             homeButton.RemoveFromClassList(Button.ussClassName);
             homeButton.clicked += GoHome;
-            Root.Q<VisualElement>("home-icon").generateVisualContent += MenuView.DrawHome;
+            Root.Q<VisualElement>("home-icon").AddToClassList("round-over__home-icon--painted");
             // With a mouse NEXT MATCH carries its SPACE key in the columns (ui_screens).
             isTouch = controls.CheckTouchScreen();
             Root.EnableInClassList("round-over--desktop", !isTouch);

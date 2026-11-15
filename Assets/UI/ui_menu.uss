@@ -2498,3 +2498,10 @@
 .menu__try { height: 190px; padding-bottom: 36px; }
 .menu__try .button__label { font-size: 96px; }
 .menu__newmode-popup .menu__no-thanks { align-self: center; }
+
+/* The tiles' pictures, painted (Codex, in the item icons' sticker style). */
+.menu__icon { -unity-background-scale-mode: scale-to-fit; }
+.menu__icon--garage { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_garage.png"); }
+.menu__icon--missions { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_missions.png"); }
+.menu__icon--daily { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_daily.png"); }
+.menu__icon--xp-boost { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_xp_boost.png"); }
