@@ -2075,8 +2075,8 @@
    the SPACE key and BOOST on a desktop (hud__start--desktop). Nothing dims the arena: the player's car and the HUD
    stay as in play. On a narrow screen it sits in the sky under the HUD, over the arena's far edge; on a wide one
    (hud__start--wide) inside the ring of cars, between the far bots and the player's car. It springs in once the curtain
-   is up (hud__start--enter, taken off once it is laid out), bobs (hud__start--bob, toggled by HudView, with the mouse
-   swinging with it), and flashes away as the round begins (hud__start--leave). */
+   is up (hud__start--enter, taken off once it is laid out), stands still (moving words are hard to read)
+   and flashes away as the round begins (hud__start--leave). */
 .hud__start {
     display: none;
     position: absolute;
@@ -2122,8 +2122,9 @@
     transition-timing-function: ease-in-out;
 }
 
-.hud__start--bob .hud__start-prompt {
-    scale: 1.06 1.06;
+/* The tutorial's start: one line how to drive, no hints under it (its round has no boost and no start to press). */
+.hud__start--plain .hud__start-hint {
+    display: none;
 }
 
 .hud__start-goal {
@@ -2374,9 +2375,6 @@
     transition-timing-function: ease-in-out;
 }
 
-.hud__start--bob .hud__start-mouse {
-    translate: 8px 0;
-}
 
 .hud__start-mouse-button {
     position: absolute;
@@ -5850,6 +5848,13 @@
     flex-grow: 1;
     width: auto;
     margin-left: 30px;
+}
+
+/* The tutorial's result: the win and its hat only (RoundOverView, RoundRecord.IsLesson). */
+.round-over--lesson .level-card,
+.round-over--lesson .missions,
+.round-over--lesson .coin-pill {
+    display: none;
 }
 
 /* The daily gift over a visit's first result (ResultDaily): the still empty cards wait out of sight under it. */

@@ -11,9 +11,9 @@ namespace ToyCarArena.UI
     /// <summary>
     /// The tutorial on the HUD (<see cref="TutorialMode"/>): a gold arrow bobs over where the step is (the bot to push,
     /// the box, the last two bots) and a white sticker right over the arrow says what to do there, with the step's
-    /// number on a gold disc (1 to 4); it pops whenever the step changes. The first step says under its words how to
-    /// drive (drag on touch, the mouse or WASD on a computer). The words stand at the place in the world, not at an edge
-    /// of the screen: a new player looks at the arena, not at the HUD. Using the item, the praise between steps and at
+    /// number on a gold disc (1 to 4); it pops whenever the step changes, and only the arrow bobs, never the words.
+    /// The words stand at the place in the world, not at an edge
+    /// of the screen: a new player looks at the arena, not at the HUD; an item to use is pointed at its button. The praise between steps and at
     /// the end, the sticker stands over the player's own car without an arrow; the praise and the last words are green.
     /// Both are kept on the screen, and the sticker goes under the place when the top of the screen has no room for it.
     /// The round's clock and the kill feed are hidden: the tutorial ends with its lesson, not on time.
@@ -27,8 +27,9 @@ namespace ToyCarArena.UI
         private const int StepCount = 4;
 
         // Metres over the step's place the arrow's tip floats, by what it points at.
-        private const float CarLift = 2.2f;
-        private const float BoxLift = 1.7f;
+        // High enough that the arrow (it bobs only upwards) never covers what it points at.
+        private const float CarLift = 3.2f;
+        private const float BoxLift = 2.6f;
 
         // Metres over the player's own car the sticker's bottom stands.
         private const float OwnCarLift = 3.4f;
@@ -66,8 +67,8 @@ namespace ToyCarArena.UI
         private readonly Func<bool> isTouch;
         private readonly Label[] stepLabels;
         private readonly VisualElement arrow;
-        private readonly VisualElement timePill;
-        private readonly VisualElement carsSep;
+        private readonly VisualElement bar;
+        private readonly VisualElement itemButton;
         private readonly VisualElement feed;
         private readonly Action onLanguage;
         private TutorialStep shownStep = (TutorialStep)(-1);
@@ -107,11 +108,13 @@ namespace ToyCarArena.UI
             disc.AddToClassList("hud__tutorial-step");
             disc.Add(StrokeText.Create("1", null, out stepLabels, "display", "hud__tutorial-step-text"));
             sticker.Add(disc);
-            // The words, and under them in the first step how to drive.
+            // The words, and under them, at the item button on a computer, which press uses it. How to drive is said
+            // once, by the start hint in the middle of the screen.
             var words = new VisualElement { pickingMode = PickingMode.Ignore };
             words.AddToClassList("hud__tutorial-words");
             words.Add(StrokeText.Create("", null, out textLabels, "hud__tutorial-text"));
             hint = StrokeText.Create("", null, out hintLabels, "hud__tutorial-hint");
+            hint.style.display = DisplayStyle.None;
             words.Add(hint);
             sticker.Add(words);
             banner.Add(sticker);
@@ -119,18 +122,21 @@ namespace ToyCarArena.UI
             banner.style.left = -10000f;
             layer.Add(banner);
 
-            // The clock would count five minutes down: the lesson has no time limit, so the bar shows only the cars.
-            timePill = root.Q<VisualElement>("time-pill");
-            carsSep = root.Q<VisualElement>("cars-pill")?.Q<VisualElement>(className: "hud__sep");
+            // No bar at all: the clock would count five minutes down for a lesson with no time limit, and the cars'
+            // chips only crowd a screen whose one job is the next step.
+            bar = root.Q<VisualElement>("hud-bar");
+            itemButton = root.Q<VisualElement>("item-button");
             feed = root.Q<VisualElement>("feed");
-            SetDisplay(timePill, false);
-            SetDisplay(carsSep, false);
+            SetDisplay(bar, false);
             SetDisplay(feed, false);
 
             onLanguage = () => shownStep = (TutorialStep)(-1);
             shownTouch = this.isTouch();
             Strings.Changed += onLanguage;
         }
+
+        /// <summary>The tutorial points at the item button itself and says how to press it: the shared hint stays off.</summary>
+        public bool OwnsItemHint => true;
 
         public void Tick(Camera camera, float top, float left, float right)
         {
@@ -169,8 +175,7 @@ namespace ToyCarArena.UI
         public void Dispose()
         {
             Strings.Changed -= onLanguage;
-            SetDisplay(timePill, true);
-            SetDisplay(carsSep, true);
+            SetDisplay(bar, true);
             SetDisplay(feed, true);
             banner.RemoveFromHierarchy();
             arrow.RemoveFromHierarchy();
@@ -192,11 +197,6 @@ namespace ToyCarArena.UI
                 },
             };
             StrokeText.SetText(textLabels, Strings.Get(key));
-            var isHinted = step == TutorialStep.Push && praise == TutorialPraise.None;
-            hint.style.display = isHinted ? DisplayStyle.Flex : DisplayStyle.None;
-            if (isHinted) {
-                StrokeText.SetText(hintLabels, Strings.Get(touch ? "hud.drag_to_drive" : "tutorial.drive_mouse"));
-            }
 
             var number = Mathf.Clamp((int)step, 1, StepCount);
             StrokeText.SetText(stepLabels, isCheer ? "!" : number.ToString());
@@ -208,15 +208,28 @@ namespace ToyCarArena.UI
         /// </summary>
         private bool Place(Camera camera, float now, float top, float left, float right)
         {
-            var hasPlace = TryGetPlace(out var place, out var isOwnCar) && camera != null && layer.panel != null;
+            // An item to use: the arrow points at the item button, where the press is, not at the car.
+            var isAtButton = TryGetButton(out var point);
+            // At the button on a computer the sticker also says which press uses the item (the shared hint is off).
+            var isKeyed = isAtButton && !isTouch();
+            if (isKeyed != (hint.resolvedStyle.display == DisplayStyle.Flex)) {
+                hint.style.display = isKeyed ? DisplayStyle.Flex : DisplayStyle.None;
+                StrokeText.SetText(hintLabels, Strings.Get("tutorial.use_keys"));
+            }
+            var place = Vector3.zero;
+            var isOwnCar = false;
+            var hasPlace = isAtButton || TryGetPlace(out place, out isOwnCar) && camera != null && layer.panel != null;
             var isPointing = hasPlace && !isOwnCar && !model.IsFinished;
             arrow.EnableInClassList(ArrowShownClass, isPointing);
             if (!hasPlace) {
                 return false;
             }
 
-            var panelPoint = RuntimePanelUtils.CameraTransformWorldToPanel(layer.panel, place, camera);
-            var point = layer.WorldToLocal(panelPoint);
+            if (!isAtButton) {
+                var panelPoint = RuntimePanelUtils.CameraTransformWorldToPanel(layer.panel, place, camera);
+                point = layer.WorldToLocal(panelPoint);
+            }
+
             var size = layer.layout.size;
             var minY = top + BarRoom;
             var bottom = point.y;
@@ -227,14 +240,15 @@ namespace ToyCarArena.UI
             if (isPointing) {
                 var minX = left + ArrowMargin;
                 var tipX = Mathf.Clamp(point.x, minX, Mathf.Max(minX, size.x - right - ArrowMargin));
+                // Only the arrow bobs, away from the place; the sticker stands still over the arrow's highest point,
+                // so its words are easy to read.
+                var restY = Mathf.Clamp(point.y, isFlipped ? top : minY, Mathf.Max(minY, size.y - ArrowMargin));
                 var bob = BobHeight * (0.5f + 0.5f * Mathf.Sin(now * BobRate * Mathf.PI * 2f));
-                var tipY = isFlipped ? point.y + bob : point.y - bob;
-                tipY = Mathf.Clamp(tipY, isFlipped ? top : minY, Mathf.Max(minY, size.y - ArrowMargin));
                 arrow.style.left = tipX;
-                arrow.style.top = tipY;
+                arrow.style.top = isFlipped ? restY + bob : restY - bob;
                 arrow.style.rotate = new Rotate(isFlipped ? 180f : 0f);
-                bottom = tipY - ArrowHeight;
-                below = tipY + ArrowHeight;
+                bottom = restY - BobHeight - ArrowHeight;
+                below = restY + BobHeight + ArrowHeight;
             }
 
             // The sticker's bottom middle over the arrow or the car, its sides on the screen; with no room above it
@@ -307,6 +321,28 @@ namespace ToyCarArena.UI
                 default:
                     return false;
             }
+        }
+
+        /// <summary>The top middle of the item button, in the layer, while the step wants its item used.</summary>
+        private bool TryGetButton(out Vector2 point)
+        {
+            point = default;
+            var player = model.PlayerCar;
+            var wantsUse = tutorial.Praise == TutorialPraise.None && player != null && !player.IsOut && player.HasItem
+                && (tutorial.Step == TutorialStep.Use
+                    || tutorial.Step == TutorialStep.Smash && !player.IsRunning(ItemKind.Mega));
+            if (!wantsUse || itemButton == null || itemButton.panel == null
+                || itemButton.resolvedStyle.display == DisplayStyle.None) {
+                return false;
+            }
+
+            var bounds = itemButton.worldBound;
+            if (bounds.width <= 0f || float.IsNaN(bounds.width)) {
+                return false;
+            }
+
+            point = layer.WorldToLocal(new Vector2(bounds.center.x, bounds.yMin));
+            return true;
         }
 
         private static bool OverPlayer(Car player, out Vector3 place, out bool isOwnCar)

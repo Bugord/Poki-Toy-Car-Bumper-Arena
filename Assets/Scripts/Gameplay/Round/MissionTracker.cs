@@ -25,16 +25,24 @@ namespace ToyCarArena.Gameplay.Round
 
         private readonly IKeyValueStorage storage;
         private readonly GameTuning tuning;
+        private readonly Cars.IPlayerCar player;
         private Random random = new();
         private readonly MissionState[] slots = new MissionState[SlotCount];
 
         // One constructor: the container takes the one with the most parameters.
-        public MissionTracker(IKeyValueStorage storage, GameTuning tuning)
+        public MissionTracker(IKeyValueStorage storage, GameTuning tuning, Cars.IPlayerCar player = null)
         {
             this.storage = storage;
             this.tuning = tuning;
+            this.player = player;
             Load();
         }
+
+        /// <summary>
+        /// Whether the missions are open: from the player's level <see cref="GameTuning.MissionSettings.FromLevel"/>
+        /// (always, without a player). Before it nothing counts and nothing shows them: the first rounds teach enough.
+        /// </summary>
+        public bool IsOpen => player == null || player.Level >= tuning.Missions.FromLevel;
 
         /// <summary>Makes the next draws repeat, for tests.</summary>
         public void Seed(int seed) => random = new Random(seed);
@@ -48,6 +56,10 @@ namespace ToyCarArena.Gameplay.Round
         /// </summary>
         public MissionState Nearest()
         {
+            if (!IsOpen) {
+                return null;
+            }
+
             MissionState nearest = null;
             foreach (var slot in slots) {
                 if (nearest == null || slot.Progress * nearest.Definition.Target
@@ -81,6 +93,10 @@ namespace ToyCarArena.Gameplay.Round
         /// </summary>
         public int CountDone(MissionStats stats)
         {
+            if (!IsOpen) {
+                return 0;
+            }
+
             var done = 0;
             foreach (var slot in slots) {
                 if (slot.Progress + Gained(slot.Definition, stats) >= slot.Definition.Target) {
@@ -98,6 +114,10 @@ namespace ToyCarArena.Gameplay.Round
         /// </summary>
         public MissionRound Record(MissionStats stats, int level, int nextRound)
         {
+            if (!IsOpen) {
+                return new MissionRound(Array.Empty<MissionLine>(), Array.Empty<GameTuning.MissionDefinition>(), 0, 0);
+            }
+
             var lines = new MissionLine[SlotCount];
             var completed = new List<GameTuning.MissionDefinition>();
             var xp = 0;

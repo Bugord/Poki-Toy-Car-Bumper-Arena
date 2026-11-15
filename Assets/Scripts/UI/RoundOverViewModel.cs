@@ -520,6 +520,9 @@ namespace ToyCarArena.UI
 
         public RoundOutcome Outcome { get; private set; }
 
+        /// <summary>The tutorial's result (<see cref="RoundRecord.IsLesson"/>): the win and its hat only.</summary>
+        public bool IsLesson { get; private set; }
+
         /// <summary>
         /// Whether the result is a timed round's, decided by its score (the long match, a mode that scores points): the
         /// subtitle gives its place and score, the table its standings and the podium its winner.
@@ -591,6 +594,7 @@ namespace ToyCarArena.UI
             XpGain = payload.XpGain;
             Coins = payload.Coins;
             Missions = payload.Missions;
+            IsLesson = payload.IsLesson;
             isAfterPopup = lastResultHadPopup;
             lastResultHadPopup = false;
             isWaitingShown = false;

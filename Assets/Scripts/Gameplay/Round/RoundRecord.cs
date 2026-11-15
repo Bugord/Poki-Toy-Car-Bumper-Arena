@@ -35,6 +35,12 @@ namespace ToyCarArena.Gameplay.Round
         /// <summary>The win streak going into the round and after it.</summary>
         public readonly StreakChange Streak;
 
+        /// <summary>
+        /// The tutorial's round (<see cref="AsLesson"/>): it pays no XP, coins or missions, only its hat, and the result
+        /// shows just the win and that hat.
+        /// </summary>
+        public readonly bool IsLesson;
+
         /// <summary>The match winner turning on its podium, drawn by the arena still loaded; null without one.</summary>
         public readonly Texture Podium;
 
@@ -62,8 +68,9 @@ namespace ToyCarArena.Gameplay.Round
         public RoundRecord(RoundResult result, int bestPlace, int bestKnockouts, bool isBestPlace, bool isBestKnockouts,
             XpGain xpGain = default, string knockedOutByName = "", IReadOnlyList<string> names = null,
             IReadOnlyList<int> levels = null, int nemesis = RoundResult.Nobody, Texture podium = null,
-            CoinGain coins = default, MissionRound missions = null, StreakChange streak = default)
+            CoinGain coins = default, MissionRound missions = null, StreakChange streak = default, bool isLesson = false)
         {
+            this.IsLesson = isLesson;
             this.Coins = coins;
             this.Missions = missions;
             this.Streak = streak;
@@ -83,25 +90,30 @@ namespace ToyCarArena.Gameplay.Round
         /// <summary>Attaches the saved XP reward without changing the bests captured before this round.</summary>
         public RoundRecord WithXp(XpGain gain) =>
             new(Result, BestPlace, BestKnockouts, IsBestPlace, IsBestKnockouts, gain, KnockedOutByName, Names, Levels,
-                Nemesis, Podium, Coins, Missions, Streak);
+                Nemesis, Podium, Coins, Missions, Streak, IsLesson);
 
         public RoundRecord WithKnocker(string name) =>
             new(Result, BestPlace, BestKnockouts, IsBestPlace, IsBestKnockouts, XpGain, name, Names, Levels, Nemesis,
-                Podium, Coins, Missions, Streak);
+                Podium, Coins, Missions, Streak, IsLesson);
 
         /// <summary>The round's names and levels by index, and its REVENGE target, for the result's table.</summary>
         public RoundRecord WithRoster(IReadOnlyList<string> names, IReadOnlyList<int> levels, int nemesis) =>
             new(Result, BestPlace, BestKnockouts, IsBestPlace, IsBestKnockouts, XpGain, KnockedOutByName, names, levels,
-                nemesis, Podium, Coins, Missions, Streak);
+                nemesis, Podium, Coins, Missions, Streak, IsLesson);
 
         /// <summary>The round's coins, missions and streak, saved beside its XP.</summary>
         public RoundRecord WithMeta(CoinGain coins, MissionRound missions, StreakChange streak) =>
             new(Result, BestPlace, BestKnockouts, IsBestPlace, IsBestKnockouts, XpGain, KnockedOutByName, Names, Levels,
-                Nemesis, Podium, coins, missions, streak);
+                Nemesis, Podium, coins, missions, streak, IsLesson);
+
+        /// <summary>Marks the record as the tutorial's round.</summary>
+        public RoundRecord AsLesson() =>
+            new(Result, BestPlace, BestKnockouts, IsBestPlace, IsBestKnockouts, XpGain, KnockedOutByName, Names, Levels,
+                Nemesis, Podium, Coins, Missions, Streak, true);
 
         public RoundRecord WithPodium(Texture podium) =>
             new(Result, BestPlace, BestKnockouts, IsBestPlace, IsBestKnockouts, XpGain, KnockedOutByName, Names, Levels,
-                Nemesis, podium, Coins, Missions, Streak);
+                Nemesis, podium, Coins, Missions, Streak, IsLesson);
     }
 
     /// <summary>
