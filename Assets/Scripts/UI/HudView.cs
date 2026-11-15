@@ -1649,6 +1649,8 @@ namespace ToyCarArena.UI
             line.Add(CreateOutlinedText(ViewModel.NameOf(index), "car-name__text"));
             // In teams a teammate's tag has a shield, an enemy's none: told apart by more than the colour.
             HudTeams.MarkName(tag, line, ViewModel, index);
+            // A mode with its own part of the handle (OVERHEAT's heat) adds it after the name.
+            (modeHud as IModeNameHud)?.MarkName(line, index);
             // A bot that joined on a win streak wears the player's crown and ×N after its name.
             var streakOf = ViewModel.StreakOf(index);
             if (streakOf > 0) {

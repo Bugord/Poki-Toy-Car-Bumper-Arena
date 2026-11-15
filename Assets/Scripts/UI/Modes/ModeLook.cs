@@ -25,6 +25,17 @@ namespace ToyCarArena.UI
     }
 
     /// <summary>
+    /// A mode HUD with something of its own in each bot's handle over its car (OVERHEAT's heat): the HUD calls it for
+    /// every handle it builds, again when a handle is rebuilt (a car back, a new rival), so the mode keeps the latest
+    /// element per car.
+    /// </summary>
+    internal interface IModeNameHud
+    {
+        /// <summary>Adds the mode's part to the handle line of car <paramref name="index"/>.</summary>
+        void MarkName(VisualElement line, int index);
+    }
+
+    /// <summary>
     /// How an event mode looks wherever the shared screens show it, by its id: its two colours (the event card's and
     /// tile's gradient, the lobby card), its card art (the USS class <see cref="ArtClass"/>, the picture
     /// <c>sprite_mode_&lt;id&gt;.png</c>), its words (<see cref="NameKey"/>, <see cref="HintKey"/>), its own HUD and the

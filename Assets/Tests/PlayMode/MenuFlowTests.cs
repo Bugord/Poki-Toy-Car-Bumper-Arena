@@ -80,6 +80,7 @@ namespace ToyCarArena.Tests.PlayMode
             typeof(Strings).GetField("table", System.Reflection.BindingFlags.Static |
                 System.Reflection.BindingFlags.NonPublic)?.SetValue(null, null);
             Time.timeScale = 1f;
+            EventSchedule.Forced = null;
         }
 
         [UnityTest]
@@ -180,6 +181,48 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(platform.Events.Count(e => e == ("menu", "shown", "visible")), Is.EqualTo(2));
             Assert.That(platform.Events.Count(e => e.Item1 == "menu" && e.Item3 == "start-time"), Is.EqualTo(1),
                 "only the visit's first menu reports its time");
+        }
+
+        [UnityTest]
+        public IEnumerator TheEventOfTheDayPlaysFromItsTileToTheNextMatch()
+        {
+            // OVERHEAT the event of the day: its tile on the menu plays it, the result's NEXT MATCH keeps it.
+            EventSchedule.Forced = EventMode.Overheat;
+            ReturningPlayer();
+            yield return Boot();
+            yield return WaitFor(() => IsShown(FindButton("menu__play")), "the menu");
+            yield return Wait(0.5f);
+            var roots = Scope.Container.Resolve<IUIRootProvider>();
+            var tile = roots.GetLayerRoot(UILayer.Screen).Q(className: "menu__tile--event")?.Q<Button>();
+            Assert.That(IsShown(tile), Is.True, "the event's tile");
+            Press(tile);
+
+            yield return WaitFor(() => State == typeof(RoundState) && Round is { HasBegun: true }, "the event's round");
+            Assert.That(platform.Events, Does.Contain(("menu", "event-overheat", "interact")));
+            Assert.That(Rules.Kind, Is.EqualTo(SpecialRound.Overheat));
+            Assert.That(Round.IsTimed, Is.True);
+
+            // The clock runs out: the round ends on points and the result comes up.
+            yield return EndTheClock();
+            yield return WaitFor(() => State == typeof(ResultState) && IsShown(FindButton("play-again-button")),
+                "the result");
+            yield return Wait(1f);
+            Assert.That(platform.Events.Any(e => e.Item1 == "special" && e.Item2 == "overheat" && e.Item3 != "start"),
+                Is.True, "the mode's end is measured");
+            Press(FindButton("play-again-button"));
+
+            yield return WaitFor(() => State == typeof(RoundState) && Round is { HasBegun: true }, "the next match");
+            Assert.That(Rules.Kind, Is.EqualTo(SpecialRound.Overheat), "NEXT MATCH keeps the visit's mode");
+        }
+
+        private static RoundRules Rules => Scope.Container.Resolve<LevelScene>().Resolve<RoundRules>();
+
+        // Moves the round's clock to its last moment rather than waiting the whole minute.
+        private static IEnumerator EndTheClock()
+        {
+            typeof(ArenaRound).GetField("elapsed", System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic)?.SetValue(Round, Round.Duration - 0.2f);
+            yield return WaitFor(() => Round == null || Round.IsFinished, "the end of the round");
         }
 
         // The layers the arena's camera draws now.
