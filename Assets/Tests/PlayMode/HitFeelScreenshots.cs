@@ -5,6 +5,7 @@ using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Effects;
 using UnityEngine;
 using UnityEngine.TestTools;
+using VContainer;
 
 namespace ToyCarArena.Tests.PlayMode
 {
@@ -141,6 +142,32 @@ namespace ToyCarArena.Tests.PlayMode
             File.WriteAllBytes(path, texture.EncodeToPNG());
             Object.DestroyImmediate(texture);
             Debug.Log($"Hit picture: {path}");
+        }
+    }
+
+    /// <summary>
+    /// How much wheel smoke an ordinary round makes, the bots fighting: logs puffs a second over 15 s of round 7.
+    /// Explicit: a measure for a person to read, not a check.
+    /// </summary>
+    [Explicit("Logs the wheel smoke's rate in an ordinary round; run it by name.")]
+    public sealed class WheelSmokeRate : SimulationSceneFixture
+    {
+        [UnityTest]
+        public IEnumerator Measure()
+        {
+            CreateParent(new SimulationInput(), new SimulationProgress { Round = 7 }, "sandbox", "rake");
+            yield return LoadGame();
+            var round = GameScope().Container.Resolve<ToyCarArena.Gameplay.Round.ArenaRound>();
+            round.Place();
+            round.Begin();
+            var effects = Object.FindAnyObjectByType<EffectPlayer>();
+            var start = effects.WheelPuffs;
+            var time = Time.time;
+            while (Time.time - time < 15f && !round.IsFinished) {
+                yield return null;
+            }
+
+            Debug.Log($"Wheel smoke: {(effects.WheelPuffs - start) / (Time.time - time):0.0} puffs a second");
         }
     }
 }

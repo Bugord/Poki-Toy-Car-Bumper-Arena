@@ -176,6 +176,16 @@ namespace ToyCarArena.Gameplay.Effects
         [SerializeField]
         private float spinThrottle = 0.6f;
 
+        [Tooltip("For this many seconds after GO! every car's wheels may spin and smoke; after it, only the player's")]
+        [Min(0f)]
+        [SerializeField]
+        private float startSpin = 0.8f;
+
+        [Tooltip("A bot's puffs come this many times further apart than the player's")]
+        [Min(1f)]
+        [SerializeField]
+        private float botSmokeSpacing = 2.5f;
+
         [Tooltip("Seconds between puffs from a light skid and from a full one")]
         [SerializeField]
         private Vector2 smokeInterval = new(0.14f, 0.06f);
@@ -388,15 +398,17 @@ namespace ToyCarArena.Gameplay.Effects
                 var velocity = movement.Velocity;
                 var slide = Mathf.InverseLerp(skidFrom, skidFull, Mathf.Abs(Vector3.Dot(velocity, right)));
                 var ahead = Vector3.Dot(velocity, forward);
-                var spin = movement.Throttle >= spinThrottle && ahead < spinSpeed
-                    ? 0.6f * (1f - Mathf.Max(0f, ahead) / Mathf.Max(spinSpeed, 0.01f))
-                    : 0f;
+                // Wheel spin is the player's own (and everyone's in the start's burst): a scrum of bots pushing would
+                // smoke without end.
+                var isSpinning = (car.IsPlayer || round.Elapsed < startSpin) && movement.Throttle >= spinThrottle
+                    && ahead >= -0.5f && ahead < spinSpeed && !movement.IsStaggered;
+                var spin = isSpinning ? 0.6f * (1f - Mathf.Max(0f, ahead) / Mathf.Max(spinSpeed, 0.01f)) : 0f;
                 var share = Mathf.Max(slide, spin);
                 if (share <= 0f) {
                     continue;
                 }
 
-                nextSmoke[i] = now + Mathf.Lerp(smokeInterval.x, smokeInterval.y, share);
+                nextSmoke[i] = now + Mathf.Lerp(smokeInterval.x, smokeInterval.y, share) * (car.IsPlayer ? 1f : botSmokeSpacing);
                 var back = position - forward * rearWheels.y + Vector3.up * 0.2f;
                 effects.PlayWheelSmoke(back + right * rearWheels.x, velocity, share);
                 effects.PlayWheelSmoke(back - right * rearWheels.x, velocity, share);

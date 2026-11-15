@@ -509,6 +509,9 @@ namespace ToyCarArena.Gameplay.Effects
             trails.Add(new Trail { Car = car, LastPosition = car.Position });
         }
 
+        /// <summary>How many puffs of wheel smoke have come since the scene started: tests count them.</summary>
+        public int WheelPuffs { get; private set; }
+
         /// <summary>
         /// A puff of smoke from under a wheel at <paramref name="point"/>, left behind as the car slides on: bigger the
         /// harder the skid (<paramref name="share"/> 0 to 1). <paramref name="carVelocity"/> is the car's, a little of
@@ -516,6 +519,7 @@ namespace ToyCarArena.Gameplay.Effects
         /// </summary>
         public void PlayWheelSmoke(Vector3 point, Vector3 carVelocity, float share)
         {
+            WheelPuffs++;
             share = Mathf.Clamp01(share);
             ref var shape = ref Add(Shape.Puff, white, point, Mathf.Lerp(wheelPuffSize.x, wheelPuffSize.y, share)
                 * Random.Range(0.8f, 1.1f), wheelPuffLife * Random.Range(0.8f, 1.15f));
