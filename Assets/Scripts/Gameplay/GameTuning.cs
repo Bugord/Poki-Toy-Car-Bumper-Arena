@@ -1171,6 +1171,18 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private ArenaSettings arena = new();
 
+            public MapSettings()
+            {
+            }
+
+            /// <summary>An arena made in code: a mode's own, whose numbers live with the mode, not in the asset.</summary>
+            public MapSettings(string id, ArenaSettings arena, params VariantSettings[] variants)
+            {
+                this.id = id;
+                this.arena = arena;
+                this.variants = variants;
+            }
+
             public string Id => id;
             public int UnlockLevel => unlockLevel;
             public IReadOnlyList<VariantSettings> Variants => variants;
@@ -1203,6 +1215,16 @@ namespace ToyCarArena.Gameplay
             [Tooltip("What makes a round on this variant play differently")]
             [SerializeField]
             private ArenaMechanic mechanic;
+
+            public VariantSettings()
+            {
+            }
+
+            public VariantSettings(string id, ArenaMechanic mechanic = ArenaMechanic.None)
+            {
+                this.id = id;
+                this.mechanic = mechanic;
+            }
 
             public string Id => id;
             public ArenaMechanic Mechanic => mechanic;
@@ -1359,6 +1381,34 @@ namespace ToyCarArena.Gameplay
             [Min(0f)]
             [SerializeField]
             private float spawnClear;
+
+            public ArenaSettings()
+            {
+            }
+
+            /// <summary>
+            /// A rounded rectangle that never crumbles, made in code for a mode's own arena: half its width and length,
+            /// the corners' radius, the radius of the circle that holds it and the room the camera leaves round it.
+            /// </summary>
+            public static ArenaSettings StillSquare(Vector2 halfSize, float cornerRadius, float spawnInset, float viewMargin)
+            {
+                return new ArenaSettings {
+                    radius = halfSize.magnitude,
+                    spawnRadius = 0.6f,
+                    spawnHeight = 0.05f,
+                    minRadius = Mathf.Min(halfSize.x, halfSize.y),
+                    crumbleStep = 0f,
+                    viewMargin = viewMargin,
+                    shape = ArenaShapeKind.RoundedSquare,
+                    pattern = CrumblePattern.Strips,
+                    halfSize = halfSize,
+                    cornerRadius = cornerRadius,
+                    // The square core leaves the corners room to round (ArenaShape clamps the radius to what is left).
+                    coreSize = Mathf.Max(1f, Mathf.Min(halfSize.x, halfSize.y) - cornerRadius - 0.5f),
+                    tilesPerSide = 1,
+                    spawnInset = spawnInset,
+                };
+            }
 
             public float Radius => radius;
             public float SpawnRadius => spawnRadius;

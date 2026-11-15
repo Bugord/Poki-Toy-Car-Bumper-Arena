@@ -110,6 +110,23 @@ namespace ToyCarArena.Gameplay.Cars
         public float PowerScale { get; set; } = 1f;
 
         /// <summary>
+        /// Times the extra push a hit by another car gives this car, on top of the physics; 1 without an event mode that
+        /// changes it. OVERHEAT raises it with the car's heat, so a hot car flies farther.
+        /// </summary>
+        public float PushTakenScale { get; set; } = 1f;
+
+        /// <summary>
+        /// Times the loss of balance a hit by another car gives this car; 1 without an event mode that changes it.
+        /// </summary>
+        public float StaggerTakenScale { get; set; } = 1f;
+
+        /// <summary>
+        /// Times <see cref="GameTuning.CarSettings.MaxBumpSpeed"/>, the most a hit may leave this car going; 1 without an
+        /// event mode that changes it.
+        /// </summary>
+        public float BumpSpeedScale { get; set; } = 1f;
+
+        /// <summary>
         /// Times on top of <see cref="PowerScale"/> the push this car's hits give, grown over a new player's safe rounds
         /// (<see cref="Round.PlayerSafety"/>); 1 otherwise. The time off balance it leaves alone: on Easy that is at its
         /// cap already, and longer would leave the bots standing.
@@ -723,11 +740,11 @@ namespace ToyCarArena.Gameplay.Cars
                 * (other.IsPlayer ? difficulty.PlayerBump * other.PowerScale * other.PowerBoost : 1f);
             var drive = Mathf.Min(otherApproach, strength);
             var push = carSettings.BumpForce * drive * multiplier * other.Movement.Mass / Movement.Mass
-                * Movement.Surface.Push;
+                * Movement.Surface.Push * PushTakenScale;
             // The solver has already bounced the car; the push only tops that up to the most a hit may leave a car
             // going, so a boosted hit or a heavy car cannot fling a car across the arena.
             var speedAway = Vector3.Dot(Movement.Velocity, normal);
-            push = Mathf.Min(push, Mathf.Max(0f, carSettings.MaxBumpSpeed - speedAway));
+            push = Mathf.Min(push, Mathf.Max(0f, carSettings.MaxBumpSpeed * BumpSpeedScale - speedAway));
             if (push > 0f) {
                 Movement.Push(normal * push);
             }
@@ -735,7 +752,7 @@ namespace ToyCarArena.Gameplay.Cars
             // Off balance for longer the harder the other car drove in, capped at a hit at full speed before the
             // difficulty scales the player's time and the time caused by the player's hits.
             var stagger = carSettings.HitStagger * Mathf.Clamp01(drive * multiplier / Mathf.Max(0.01f, carSettings.MaxSpeed));
-            stagger *= Movement.Surface.Stagger;
+            stagger *= Movement.Surface.Stagger * StaggerTakenScale;
             if (IsPlayer) {
                 stagger *= difficulty.PlayerStaggerScale;
             }

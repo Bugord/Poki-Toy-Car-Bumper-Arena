@@ -2,6 +2,7 @@ using Bugord.App.Platform;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Modes;
 using ToyCarArena.Gameplay.Cars;
+using ToyCarArena.Gameplay.Modes;
 using ToyCarArena.Gameplay.Round;
 using ToyCarArena.Rendering;
 using UnityEngine;
@@ -515,6 +516,21 @@ namespace ToyCarArena.App
             < 10 => "some",
             _ => "many",
         };
+
+        /// <summary>
+        /// The active event mode's own events at the end of its round (<see cref="IModeAnalytics"/>), beside the
+        /// shared ones of <see cref="MeasureSpecialEnd"/>; nothing for a mode without them or without a mode.
+        /// </summary>
+        public static void MeasureModeEnd(this IGamePlatform platform, IRoundMode mode)
+        {
+            if (mode is not IModeAnalytics analytics) {
+                return;
+            }
+
+            foreach (var (id, action) in analytics.EndEvents) {
+                platform.Measure(SpecialCategory, id, action);
+            }
+        }
 
         /// <summary>
         /// The end of the round started as <paramref name="round"/>, and the milestones of its result.

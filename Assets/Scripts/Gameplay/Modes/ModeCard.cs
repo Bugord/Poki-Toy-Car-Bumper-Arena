@@ -10,7 +10,7 @@ namespace ToyCarArena.Gameplay.Modes
     public sealed class ModeCard
     {
         public ModeCard(string carId, int color, string prop = null, float propRadius = 0f, string rivalCarId = null,
-            int rivalColor = -1)
+            int rivalColor = -1, float propScale = 1f)
         {
             CarId = carId;
             Color = color;
@@ -18,6 +18,7 @@ namespace ToyCarArena.Gameplay.Modes
             PropRadius = propRadius;
             RivalCarId = rivalCarId;
             RivalColor = rivalColor;
+            PropScale = propScale;
         }
 
         /// <summary>The catalog id of the car.</summary>
@@ -34,6 +35,12 @@ namespace ToyCarArena.Gameplay.Modes
 
         /// <summary>Metres from the prop's pivot to its bottom, so it sits on the roof.</summary>
         public float PropRadius { get; }
+
+        /// <summary>
+        /// The prop's scale on the card: a prop that is big in the round (a ball the cars can push) would hide the car
+        /// on the small card. <see cref="PropRadius"/> is the scaled one.
+        /// </summary>
+        public float PropScale { get; }
 
         /// <summary>The catalog id of a second car facing the first head-on, null for one car.</summary>
         public string RivalCarId { get; }

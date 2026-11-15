@@ -36,6 +36,9 @@ namespace ToyCarArena.UI
         // Each side keeps at least this far from the edge: a phone's camera can sit in the middle of either side, and
         // in Poki's frame the browser often reports no safe area at all.
         private const float ColumnsSide = 240f;
+        // A desktop has no camera in its side: its sides stay closer to the edge, and the podium beside a mode's tall
+        // table gets that width.
+        private const float DesktopColumnsSide = 100f;
         // The right column starts under the coins and the gear, and stops this far above the bottom.
         private const float ColumnsTop = 180f;
         private const float ColumnsBottom = 36f;
@@ -303,7 +306,7 @@ namespace ToyCarArena.UI
                 return;
             }
 
-            var side = Mathf.Max(ColumnsSide, Mathf.Max(safeInsets.Left, safeInsets.Right));
+            var side = Mathf.Max(isTouch ? ColumnsSide : DesktopColumnsSide, Mathf.Max(safeInsets.Left, safeInsets.Right));
             var top = ColumnsTop + safeInsets.Top;
             var low = ColumnsBottom + safeInsets.Bottom;
             var missionsHeight = missions != null && missions.resolvedStyle.display != DisplayStyle.None

@@ -766,6 +766,9 @@ namespace ToyCarArena.Gameplay.Round
             Finished?.Invoke(new RoundResult(place == 1 ? RoundOutcome.Won : RoundOutcome.Survived, place, cars.Count,
                 elapsed, PlayerKnockouts, RoundResult.Nobody, FallCause.None, HadNemesis, RevengeTaken, Score.Snapshot(),
                 Colors, isMatch, Score.FallsOf(0), Score.KnockedOffOf(0), isLoss, isTimed: true,
+                // A mode scored by something other than knock-outs (FOOTBALL's goals) pays each point of the player's
+                // as a knock-out, under the same cap.
+                bonusKnockouts: mode.PointsPayAsKnockouts ? Score.PointsOf(0) : 0,
                 kind: rules.Kind, knockoutRewardCap: mode.KnockoutRewardCap, teams: mode.Teams,
                 teamPoints: mode.Teams > 0 ? Array.AsReadOnly(Score.TeamScores()) : null));
         }

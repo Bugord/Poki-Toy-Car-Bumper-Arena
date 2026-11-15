@@ -15,13 +15,13 @@ using UnityEditor;
 namespace ToyCarArena.Tests.PlayMode
 {
     /// <summary>
-    /// The picture on an event mode's menu card (CHOOSE MODE's event card, the tile under XP BOOST), made from the game's
-    /// own models as the mode describes it (<see cref="ModeCard"/>): its car in three quarters from the front and above,
+    /// A 3D render of an event mode's menu card picture, made from the game's own models as the mode describes it (<see cref="ModeCard"/>): its car in three quarters from the front and above,
     /// as the catalog's portraits show the cars (the QUICK MATCH card's), with the mode's prop riding on its roof (the
     /// hot potato's lit bomb), all in the arena's outline and the Game scene's sun, transparent around them. Written to
-    /// <c>Assets/Art/Sprites/UI/sprite_mode_&lt;id with underscores&gt;.png</c> at half the size it is drawn, so its
-    /// edges are smooth. Explicit: it is for making the pictures, and needs graphics. A new mode adds its id to the
-    /// cases and draws again after its card changes.
+    /// <c>Logs/mode-cards/sprite_mode_&lt;id with underscores&gt;.png</c> at half the size it is drawn, so its edges are
+    /// smooth. The game's card pictures (<c>Assets/Art/Sprites/UI/sprite_mode_*.png</c>) are painted (Codex,
+    /// <c>Logs/codex-modes/PROMPT.md</c>), so these renders are a reference for a new mode's car and prop, not the
+    /// shipped picture. Explicit: it is for making the pictures, and needs graphics.
     /// </summary>
     [Explicit("Draws the event cards' pictures; run it by name.")]
     public sealed class ModeCardArt : ObjectsBFixture
@@ -100,7 +100,7 @@ namespace ToyCarArena.Tests.PlayMode
                 // The prop as it rides in the round (the bomb lit, its spark up), its flash off.
                 var prop = Object.Instantiate(sceneProp, root.transform, false).transform;
                 prop.gameObject.SetActive(true);
-                prop.localScale = Vector3.one;
+                prop.localScale = Vector3.one * card.PropScale;
                 prop.localRotation = Quaternion.Euler(0f, -10f, 8f);
                 prop.localPosition = Vector3.up * (bounds.size.y + PropGap + card.PropRadius);
                 var flash = prop.Find("Flash");
@@ -138,10 +138,10 @@ namespace ToyCarArena.Tests.PlayMode
             RenderTexture.active = previous;
             // Cut to what was drawn, as the board's picture is: the card places the toy, not empty margins.
             var cropped = Crop(picture);
-            var output = $"Assets/Art/Sprites/UI/sprite_mode_{id.Replace('-', '_')}.png";
+            var output = $"Logs/mode-cards/sprite_mode_{id.Replace('-', '_')}.png";
+            Directory.CreateDirectory(Path.GetDirectoryName(output));
             File.WriteAllBytes(Path.Combine(Directory.GetCurrentDirectory(), output), cropped.EncodeToPNG());
             Debug.Log($"Mode card art {id}: {cropped.width}x{cropped.height}");
-            Import(output);
 
             OutlineBoost.Clear(camera);
             Object.Destroy(picture);
@@ -225,25 +225,6 @@ namespace ToyCarArena.Tests.PlayMode
             cropped.SetPixels(picture.GetPixels(minX, minY, cropped.width, cropped.height));
             cropped.Apply();
             return cropped;
-        }
-
-        private static void Import(string output)
-        {
-#if UNITY_EDITOR
-            AssetDatabase.ImportAsset(output, ImportAssetOptions.ForceSynchronousImport);
-            var importer = (TextureImporter)AssetImporter.GetAtPath(output);
-            importer.textureType = TextureImporterType.Default;
-            importer.alphaIsTransparency = true;
-            importer.mipmapEnabled = false;
-            // Kept at its own size: scaled to a power of two, the picture would be squeezed out of shape.
-            importer.npotScale = TextureImporterNPOTScale.None;
-            importer.wrapMode = TextureWrapMode.Clamp;
-            importer.maxTextureSize = 512;
-            importer.textureCompression = TextureImporterCompression.Compressed;
-            importer.crunchedCompression = true;
-            importer.compressionQuality = 70;
-            importer.SaveAndReimport();
-#endif
         }
 
         private static Car LoadCarPrefab()

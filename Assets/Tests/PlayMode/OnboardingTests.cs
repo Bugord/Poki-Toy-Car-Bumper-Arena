@@ -23,8 +23,8 @@ namespace ToyCarArena.Tests.PlayMode
         {
             tuning = AssetDatabase.LoadAssetAtPath<GameTuning>(TuningPath);
             Assert.That(tuning, Is.Not.Null);
-            // The counts are a plain round's: the rotation's event slot (visit round 7) plays the mode of the day, and
-            // TEAM PUSH evens the cars out.
+            // The ramp is about plain rounds: round 7 is the rotation's event slot, which plays the mode of the day, and a
+            // mode with teams sets its own number of bots, so the outcome would hang on the date.
             tuning.SpecialRounds.Force(SpecialRound.None);
         }
 

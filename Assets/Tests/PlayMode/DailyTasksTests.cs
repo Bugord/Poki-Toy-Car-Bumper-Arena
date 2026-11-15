@@ -238,7 +238,9 @@ namespace ToyCarArena.Tests.PlayMode
         {
             var mode = TodaysEvent(Monday);
             Assert.That(Played(tasks.Record(Stats(RoundOutcome.Out, 0), Monday)), Is.False, "A plain round.");
-            Assert.That(Played(tasks.Record(Stats(RoundOutcome.Out, 0, "crown"), Monday)), Is.False, "Another mode.");
+            // Any mode but the day's, whichever of the modes the build has on.
+            var other = mode == "crown" ? "hot-potato" : "crown";
+            Assert.That(Played(tasks.Record(Stats(RoundOutcome.Out, 0, other), Monday)), Is.False, "Another mode.");
             var left = new MissionStats(false, RoundOutcome.Out, 3, 0, 0, false, 0, 0, 0, "sandbox", mode);
             Assert.That(tasks.CountDone(left, Monday), Is.Zero, "A round left in the middle.");
             Assert.That(tasks.Today(Monday)[0].IsDone, Is.False);

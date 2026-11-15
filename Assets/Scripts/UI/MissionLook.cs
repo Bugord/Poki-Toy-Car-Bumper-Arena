@@ -86,11 +86,21 @@ namespace ToyCarArena.UI
                 ShowPicture();
             }
 
-            // The painted pictures of the tasks that have one (mission-icon__sign--<name> in the style sheet); the arena's
-            // and the event's are drawn in their own colours, and the done tick over gold.
-            private static readonly string[] Pictures = {
-                "knockout", "item-knockout", "bomb", "box", "win", "final-two", "revenge", "boost", "rounds",
-            };
+            // The painted pictures of the tasks that have one (mission-icon__sign--<name> in the style sheet), the mode of
+            // the day's its icon (mode-<id>); the arena's is drawn in its own colour, and the done tick over gold.
+            private static readonly string[] Pictures = PicturesWithModes(
+                "knockout", "item-knockout", "bomb", "box", "win", "final-two", "revenge", "boost", "rounds");
+
+            private static string[] PicturesWithModes(params string[] pictures)
+            {
+                var all = new string[pictures.Length + EventModes.Circle.Length];
+                pictures.CopyTo(all, 0);
+                for (var i = 0; i < EventModes.Circle.Length; i++) {
+                    all[pictures.Length + i] = "mode-" + EventModes.IdOf(EventModes.Circle[i]);
+                }
+
+                return all;
+            }
 
             private string PictureOf() => isDone ? null : counter switch {
                 null => null,
@@ -103,7 +113,7 @@ namespace ToyCarArena.UI
                 MissionCounter.Revenge => "revenge",
                 MissionCounter.Boosts => "boost",
                 MissionCounter.ArenaRounds => null,
-                MissionCounter.EventRounds => null,
+                MissionCounter.EventRounds => ModeLooks.Of(EventModes.Parse(mode)) is { } look ? "mode-" + look.Id : null,
                 _ => "rounds",
             };
 

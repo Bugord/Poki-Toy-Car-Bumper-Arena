@@ -172,12 +172,12 @@ namespace ToyCarArena.Gameplay
             builder.RegisterEntryPoint<HotPotato>().AsSelf().WithParameter(transform);
             // The other event modes: each active only in a round of its kind, silent in any other.
             builder.RegisterEntryPoint<CrownMode>().AsSelf();
-            builder.RegisterEntryPoint<GoldRushMode>().AsSelf();
+            builder.RegisterEntryPoint<GoldRushMode>().AsSelf().WithParameter(transform);
             builder.RegisterEntryPoint<ItemFrenzyMode>().AsSelf();
-            builder.RegisterEntryPoint<OverheatMode>().AsSelf();
+            builder.RegisterEntryPoint<OverheatMode>().AsSelf().WithParameter(transform);
             builder.RegisterEntryPoint<TeamPushMode>().AsSelf();
             builder.RegisterEntryPoint<TutorialMode>().AsSelf();
-            builder.RegisterEntryPoint<FootballMode>().AsSelf();
+            builder.RegisterEntryPoint<FootballMode>().AsSelf().WithParameter(transform);
             // Every mode of the scene and the active one, for the bots and the HUD.
             builder.Register<RoundModes>(Lifetime.Singleton);
             // The fence of the hot potato mode, round the rim and every hole; in any other round it builds nothing.
