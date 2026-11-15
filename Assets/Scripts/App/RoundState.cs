@@ -289,8 +289,8 @@ namespace ToyCarArena.App
 
                 // The variant playing as it ended: the rotation's own in a round, the last cycle's in a match.
                 platform.MeasureVariantEnd(playedMap, currentVariant, result.Outcome);
-                platform.MeasureSpecialEnd(special, result, round.BossTaken);
-                platform.MeasureFootballEnd(special, result);
+                platform.MeasureSpecialEnd(special, result, round.BossTaken, pickups.IsEnabled ? driver.ItemsUsed : -1);
+                platform.MeasureModeEnd(levelScene.Resolve<RoundModes>().Active);
                 platform.MeasureRoundCar(roundNumber, playedCar);
                 platform.MeasureProgress(record.XpGain);
                 platform.MeasureRoundMap(roundNumber, playedMap);

@@ -7,6 +7,25 @@ namespace ToyCarArena.Gameplay
     /// </summary>
     public sealed partial class GameTuning
     {
+        // A test plays these rules in every round of this kind instead of the kind's own; null for the kind's own.
+        [System.NonSerialized]
+        private ModeRules forcedRules;
+
+        [System.NonSerialized]
+        private SpecialRound forcedRulesKind;
+
+        /// <summary>
+        /// Plays <paramref name="rules"/> in every round of <paramref name="kind"/> built after this, instead of the
+        /// kind's own, or the kind's own again with null: in memory only, for the tests, so a test of the framework
+        /// states the rules it needs without leaning on a real mode's (<see cref="SpecialRoundSettings.Force"/> picks
+        /// the kind). Usually with <see cref="SpecialRound.None"/>, which no mode's logic plays.
+        /// </summary>
+        public void ForceRules(SpecialRound kind, ModeRules rules)
+        {
+            forcedRulesKind = kind;
+            forcedRules = rules;
+        }
+
         /// <summary>Whether this build has event modes at all: a build of long matches has its own variety.</summary>
         public bool HasEvents => !IsMatch;
 
@@ -16,6 +35,10 @@ namespace ToyCarArena.Gameplay
         /// </summary>
         public ModeRules RulesOf(SpecialRound kind)
         {
+            if (forcedRules != null && kind == forcedRulesKind) {
+                return forcedRules;
+            }
+
             if (IsMatch) {
                 return ModeRules.Match(this);
             }

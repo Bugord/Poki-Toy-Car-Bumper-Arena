@@ -1,6 +1,7 @@
 using Bugord.App.Platform;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Cars;
+using ToyCarArena.Gameplay.Modes;
 using ToyCarArena.Gameplay.Round;
 using ToyCarArena.Rendering;
 using UnityEngine;
@@ -96,6 +97,8 @@ namespace ToyCarArena.App
     /// <item>after v0.15.0: <c>special / mega, hot-potato, boss, ice, low-gravity / start</c> at GO! of a special round,
     /// then <c>complete</c> or <c>fail</c>, <c>special / id-won, out, survived / outcome</c> and in a boss round
     /// <c>special / boss-taken, boss-missed / boss</c></item>
+    /// <item>with the event modes: <c>special / &lt;id&gt;-items-none|few|some|many / items</c> (items the player used: 0,
+    /// 1–3, 4–9, 10 and more) for an event mode's round with boxes,</item>
     /// <item>with the event modes: <c>special / &lt;id&gt;-place-N / place</c> for every event mode, and a timed mode
     /// fails on a place that is a loss; a timed mode sends <c>round / N / complete</c>, colour, cars, boosts and the
     /// first round's controls, but not the outcome, place, knock-outs, time, round time, revenge or out causes
@@ -462,7 +465,7 @@ namespace ToyCarArena.App
         /// whether the player knocked the boss off.
         /// </summary>
         public static void MeasureSpecialEnd(this IGamePlatform platform, SpecialRound kind, RoundResult result,
-            bool bossTaken)
+            bool bossTaken, int itemsUsed = -1)
         {
             if (kind == SpecialRound.None) {
                 return;
@@ -487,7 +490,35 @@ namespace ToyCarArena.App
                 platform.Measure(SpecialCategory, bossTaken ? "boss-taken" : "boss-missed", "boss");
             }
 
+            // How many items the player used in an event mode's round with boxes: whether they find the item button.
+            if (EventModes.IsEvent(kind) && itemsUsed >= 0) {
+                platform.Measure(SpecialCategory, $"{id}-items-{ItemsBucket(itemsUsed)}", "items");
+            }
+
             platform.MeasureTeamEnd(kind, result);
+        }
+
+        // 0, 1 to 3, 4 to 9, 10 and more: no number in the name, so the event keeps within GameEvent.MaxNumbers.
+        private static string ItemsBucket(int count) => count switch {
+            0 => "none",
+            < 4 => "few",
+            < 10 => "some",
+            _ => "many",
+        };
+
+        /// <summary>
+        /// The active event mode's own events at the end of its round (<see cref="IModeAnalytics"/>), beside the
+        /// shared ones of <see cref="MeasureSpecialEnd"/>; nothing for a mode without them or without a mode.
+        /// </summary>
+        public static void MeasureModeEnd(this IGamePlatform platform, IRoundMode mode)
+        {
+            if (mode is not IModeAnalytics analytics) {
+                return;
+            }
+
+            foreach (var (id, action) in analytics.EndEvents) {
+                platform.Measure(SpecialCategory, id, action);
+            }
         }
 
         /// <summary>

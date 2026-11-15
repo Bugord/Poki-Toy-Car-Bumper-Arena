@@ -26,7 +26,7 @@ namespace ToyCarArena.Gameplay.Modes
     /// (<see cref="SpecialRound.Football"/>), silent in every other: it builds nothing and draws no random number there.
     /// </para>
     /// </summary>
-    public sealed class FootballMode : IRoundMode, IBotSteering, ITickable, IFixedTickable, IDisposable
+    public sealed class FootballMode : IRoundMode, IBotSteering, IModeAnalytics, ITickable, IFixedTickable, IDisposable
     {
         /// <summary>Metres from the ball within which a car stops a slow ball from counting as stuck.</summary>
         private const float StuckClearance = 2.6f;
@@ -126,6 +126,29 @@ namespace ToyCarArena.Gameplay.Modes
 
         /// <summary>Goals the player scored this round.</summary>
         public int PlayerGoals { get; private set; }
+
+        /// <summary>
+        /// The mode's own analytics at the end of its match, beside the shared ones of a mode and of a round in teams:
+        /// <c>special / football-goals-N / goals</c>, the goals of both teams (N 0..9 or 10plus: whether a match has
+        /// enough goals to be fun, the aim is 3 and more, or ends 0 : 0), and <c>special / football-scored-N /
+        /// player-goals</c>, the player's own (N 0..4 or 5plus, the reward's cap: whether the player scores or watches
+        /// the bots play). One number in each. The team layer's <c>football-ko-N</c> is always 0: nobody falls here.
+        /// </summary>
+        public IEnumerable<(string id, string action)> EndEvents => IsActive ? EventsOf(Goals, PlayerGoals)
+            : Array.Empty<(string, string)>();
+
+        /// <summary>The end events of a match of <paramref name="goals"/>, <paramref name="playerGoals"/> the player's.</summary>
+        public static IEnumerable<(string id, string action)> EventsOf(int goals, int playerGoals)
+        {
+            yield return ($"football-goals-{BucketOf(goals, LastGoalBucket)}", "goals");
+            yield return ($"football-scored-{BucketOf(playerGoals, LastPlayerBucket)}", "player-goals");
+        }
+
+        // Goals past this many share one bucket: the match's, and the player's (the reward's cap).
+        private const int LastGoalBucket = 10;
+        private const int LastPlayerBucket = 5;
+
+        private static string BucketOf(int count, int last) => count >= last ? $"{last}plus" : Math.Max(0, count).ToString();
 
         /// <summary>The car's index in the round: its nick and its colour.</summary>
         public int IndexOf(Car car) => round.IndexOf(car);

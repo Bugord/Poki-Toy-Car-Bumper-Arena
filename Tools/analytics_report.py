@@ -107,11 +107,19 @@ def summarise(data):
         "boss": other(o, r"special-boss-(taken|missed)-boss"),
         # после event-modes: место в режиме по id режима (одна таблица на все режимы)
         "mode_place": other(o, r"special-((?:hot-potato|crown|gold-rush|item-frenzy|overheat|team-push|football)-place-\d+)-place"),
+        # после event-modes: сколько предметов игрок применил в раунде режима с коробками (none 0, few 1–3, some 4–9, many 10+)
+        "mode_items": other(o, r"special-((?:hot-potato|crown|gold-rush|item-frenzy|overheat|team-push|football)-items-(?:none|few|some|many))-items"),
         # после team-push: как кончился раунд команд (выиграла, ничья, проиграла команда игрока; разрыв close <= 2,
         # clear 3-5, big 6+) и KO игрока в нём, по id режима (TEAM PUSH, позже FOOTBALL)
         "team_end": other(o, r"special-((?:team-push|football)-team-(?:won|draw|lost)-(?:close|clear|big))-team"),
         "team_ko": other(o, r"special-((?:team-push|football)-ko-(?:\d+|10plus))-team-knockouts"),
-        # после football: голы обеих команд за матч и голы игрока (FootballEvents)
+        # после crown: сколько секунд игрок держал корону (none, 1: 1-9 с, 10: 10-19 с, 20plus) и сколько раз взял
+        "crown": other(o, r"special-(crown-held-(?:none|1|10|20plus)-takes-(?:\d+|10plus))-crown"),
+        # после overheat: сколько раскалённых машинок столкнул игрок за раунд и с каким средним нагревом падал сам
+        # (none: не падал; cold < 35%, warm < 70%, hot)
+        "overheat_hot_ko": other(o, r"special-overheat-hotko-(\d+|10plus)-overheat-knockouts"),
+        "overheat_falls": other(o, r"special-overheat-fall-(none|cold|warm|hot)-overheat-falls"),
+        # после football: голы обеих команд за матч и голы игрока (FootballMode.EndEvents)
         "football_goals": other(o, r"special-(football-goals-(?:\d+|10plus))-goals"),
         "football_scored": other(o, r"special-(football-scored-(?:\d+|5plus))-player-goals"),
         "scoreboard": i.get("scoreboard-shown"),
@@ -447,8 +455,12 @@ def report(version, previous):
         ("Особые раунды по исходу (после v0.15.0; визиты с outcome)", "special_outcome"),
         ("Раунд босса: столкнул ли игрок босса (после v0.15.0; визиты)", "boss"),
         ("Режимы: место по режиму (после event-modes; визиты с place)", "mode_place"),
+        ("Режимы: сколько предметов применил игрок за раунд режима с коробками (после item-frenzy; none 0, few 1–3, some 4–9, many 10+; визиты с items)", "mode_items"),
         ("Команды: исход раунда команды игрока и разрыв (после team-push; визиты с team)", "team_end"),
         ("Команды: KO игрока за раунд команд (после team-push; визиты с team-knockouts)", "team_ko"),
+        ("CROWN: секунды игрока с короной (none, 1 = 1-9 с, 10 = 10-19 с, 20plus) и сколько раз взял (после crown; визиты с crown)", "crown"),
+        ("OVERHEAT: раскалённые машинки, столкнутые игроком за раунд (после overheat; визиты с overheat-knockouts)", "overheat_hot_ko"),
+        ("OVERHEAT: средний нагрев игрока при падениях (после overheat; none не падал, cold < 35%, warm < 70%, hot; визиты с overheat-falls)", "overheat_falls"),
         ("FOOTBALL: голы за матч, обе команды (после football; визиты с goals)", "football_goals"),
         ("FOOTBALL: голы игрока за матч (после football; визиты с player-goals)", "football_scored"),
         ("Свои рывки по раундам (после v0.7.1, после v0.14.1 только в сборке с бустами; визиты с round-boosts)", "round_boosts"),

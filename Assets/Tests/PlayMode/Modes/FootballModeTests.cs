@@ -379,35 +379,26 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         /// <summary>
-        /// Puts the ball just short of the goal line of <paramref name="goal"/>'s goal, touched last by
-        /// <paramref name="toucher"/>, rolling in, and waits for the goal.
-        /// </summary>
-        /// <summary>
         /// The mode's own analytics: the match's goals and the player's, one number each, beside the shared events of a
-        /// mode and of a round in teams; another mode sends none of them.
+        /// mode and of a round in teams (<see cref="FootballMode.EndEvents"/>, silent outside its round).
         /// </summary>
         [Test]
         public void ItsAnalyticsCountTheGoals()
         {
-            var platform = new MatchTests.RecordingPlatform();
-            RoundResult Match(int playerGoals, int blue, int red) => new(blue > red ? RoundOutcome.Won : RoundOutcome.Survived,
-                blue > red ? 1 : 6, 6, 90f, 0, RoundResult.Nobody, FallCause.None, false, false,
-                new[] { new RoundStanding(0, 1, 0, 0, playerGoals, RoundTeams.Blue) }, isTimed: true,
-                kind: SpecialRound.Football, isLoss: red > blue, bonusKnockouts: playerGoals, teams: 2,
-                teamPoints: new[] { blue, red });
-            platform.MeasureFootballEnd(SpecialRound.Football, Match(2, 4, 1));
-            platform.MeasureFootballEnd(SpecialRound.Football, Match(7, 9, 3));
-            platform.MeasureFootballEnd(SpecialRound.Football, Match(0, 0, 0));
-            platform.MeasureFootballEnd(SpecialRound.TeamPush, Match(3, 5, 2));
-
-            var names = platform.Events.Select(e => $"{e.Item1} / {e.Item2} / {e.Item3}").ToList();
-            Assert.That(names, Is.EqualTo(new[] {
-                "special / football-goals-5 / goals", "special / football-scored-2 / player-goals",
-                "special / football-goals-10plus / goals", "special / football-scored-5plus / player-goals",
-                "special / football-goals-0 / goals", "special / football-scored-0 / player-goals",
-            }));
+            string[] Names(int goals, int playerGoals) =>
+                FootballMode.EventsOf(goals, playerGoals).Select(e => $"special / {e.id} / {e.action}").ToArray();
+            Assert.That(Names(5, 2), Is.EqualTo(new[] {
+                "special / football-goals-5 / goals", "special / football-scored-2 / player-goals" }));
+            Assert.That(Names(12, 7), Is.EqualTo(new[] {
+                "special / football-goals-10plus / goals", "special / football-scored-5plus / player-goals" }));
+            Assert.That(Names(0, 0), Is.EqualTo(new[] {
+                "special / football-goals-0 / goals", "special / football-scored-0 / player-goals" }));
         }
 
+        /// <summary>
+        /// Puts the ball just short of the goal line of <paramref name="goal"/>'s goal, touched last by
+        /// <paramref name="toucher"/>, rolling in, and waits for the goal.
+        /// </summary>
         private IEnumerator Shoot(FootballMode mode, Car toucher, int goal, float shortOfLine = 0.5f)
         {
             var body = mode.Ball.Body;

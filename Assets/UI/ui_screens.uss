@@ -2441,7 +2441,7 @@
 .level-card {
     flex-shrink: 0;
     margin: 24px 0 44px 0;
-    padding: 28px 40px 10px 40px;
+    padding: 18px 40px 10px 40px;
     align-items: stretch;
     transition-property: translate, opacity;
     transition-duration: 0.3s;
@@ -2558,14 +2558,15 @@
    badge (RoundOverProgress moves it here), so the level shows once; the rank and XP line sits over the track beside
    it. */
 .track {
-    /* Room for the crown a rank stop wears over its circle, clear of the XP line. */
-    margin-top: 36px;
-    padding: 0 30px 96px 30px;
+    /* Room for the crown a rank stop wears over its circle, clear of the stickers over it. Under the stops, the two
+       caption lines and no more: the card gave the podium the rest. */
+    margin-top: 16px;
+    padding: 0 30px 58px 30px;
 }
 
 /* Only plain levels ahead (past the last reward and rank): no captions but the badge's rank. */
 .track--plain {
-    padding-bottom: 56px;
+    padding-bottom: 40px;
 }
 
 /* The bars' row and, laid exactly over it, the stops' row (RoundOverProgress.BuildTrack). Every bar and every gap
@@ -2861,19 +2862,19 @@
     position: absolute;
     left: 0;
     right: 0;
-    top: 112px;
+    top: 92px;
     rotate: -4deg;
 }
 
 .xp-bar__level-up-text {
     margin: 0;
     padding: 0;
-    font-size: 72px;
+    font-size: 64px;
     color: var(--gold);
-    -unity-text-outline-width: 12px;
+    -unity-text-outline-width: 11px;
 }
 
-.xp-bar__level-up-text.stroke__drop { translate: 0 10px; display: flex; }
+.xp-bar__level-up-text.stroke__drop { translate: 0 9px; display: flex; }
 
 /* The second step: a level's reward over the whole result, dimmed, gold rays turning behind a white card. */
 .level-reward {
@@ -4394,24 +4395,11 @@
     display: none;
 }
 
-/* A round's podium has no subtitle or name pill over the player's own car: the car takes that height, and its
-   picture reaches down under the cards below (later in the tree, so drawn over it), which cover the podium's foot. */
+/* A round's podium has no subtitle or name pill over the player's own car: the car takes that height. Where the car
+   and a name pill stand in the podium RoundOverMatch.PlacePicture sets in every layout: the car whole, the pill over
+   its roof. */
 .round-over--podium .podium {
     margin-top: 0;
-}
-
-.round-over--podium .podium__car {
-    top: 0;
-    bottom: -70px;
-}
-
-/* The car that pushed the player off keeps its name pill, up at the podium's top, over the car's roof. */
-.round-over--podium .podium--rival .podium__winner {
-    top: 0;
-}
-
-.round-over--podium .podium--rival .podium__car {
-    top: 90px;
 }
 
 /* WINNER under a won round's title, the one sticker there when neither REVENGE! nor the streak has it. */
@@ -4888,8 +4876,8 @@
 .rewards {
     flex-direction: row;
     align-items: stretch;
-    height: 176px;
-    margin: 0 0 24px 0;
+    height: 150px;
+    margin: 0 0 8px 0;
 }
 
 .reward {
@@ -4935,7 +4923,7 @@
 .reward__value-text {
     margin: 0;
     padding: 0;
-    font-size: 84px;
+    font-size: 78px;
     -unity-text-align: middle-center;
     white-space: nowrap;
     -unity-text-outline-width: 10px;
@@ -5368,7 +5356,7 @@
 
 /* With the missions over it, the level card and the podium give up a little height, so a 16:9 portrait still fits. */
 .round-over--meta .level-card {
-    margin: 14px 0 30px 0;
+    margin: 12px 0 18px 0;
 }
 
 .round-over--meta .podium {
@@ -5632,11 +5620,6 @@
     display: none;
 }
 
-/* Beside the cards, not over them: the picture stays inside its own column. */
-.round-over--columns.round-over--landscape .podium__car {
-    bottom: 0;
-}
-
 .round-over--columns.round-over--landscape .podium {
     position: relative;
     left: auto;
@@ -5654,7 +5637,7 @@
 }
 
 /* The rival a size up beside the cards (a phone held sideways shows the panel at about half size), its pill standing
-   on the car's roof (RoundOverMatch.OnRivalGeometry) rather than at the podium's top. */
+   on the car's roof (RoundOverMatch.PlacePicture). */
 .round-over--columns.round-over--landscape .podium--rival .podium__winner {
     padding: 12px 52px 14px 16px;
     border-width: 9px;
@@ -6010,6 +5993,162 @@
    (.stroke > .stroke__face), or the outline, centred on the letters' edge, eats them and leaves them hollow. */
 .stroke > Label.results__team-name-text.stroke__face,
 .stroke > Label.results__team-points-text.stroke__face { -unity-text-outline-width: 0; }
+
+/* OVERHEAT: a car's heat as a flame and a percent (HudOverheat), in every bot's handle after its name and bigger on a
+   sticker under the player's car; white and navy when cold, orange when warm, red (and beating) when red-hot. RED HOT!
+   springs over a car whose heat gets there, MELTDOWN! crosses the screen when the player knocks a red-hot car off. */
+.car-heat {
+    flex-direction: row;
+    align-items: center;
+    height: 48px;
+    margin: 0 10px 0 -4px;
+    padding: 0 12px 0 6px;
+    border-width: 4px 4px 7px 4px;
+    border-radius: 12px;
+    border-color: var(--navy);
+    background-color: var(--white);
+}
+
+.car-heat__flame {
+    width: 28px;
+    height: 36px;
+    margin-right: 2px;
+    color: rgb(255, 170, 80);
+}
+
+.car-heat__text {
+    margin: 0;
+    padding: 0 0 2px 0;
+    font-size: 36px;
+    color: var(--navy);
+    -unity-text-outline-width: 0;
+    white-space: nowrap;
+}
+
+.car-heat--warm { background-color: var(--orange); }
+.car-heat--hot { background-color: var(--red); }
+.car-heat--warm .car-heat__flame,
+.car-heat--hot .car-heat__flame { color: rgb(255, 230, 96); }
+
+.car-heat--warm .car-heat__text,
+.car-heat--hot .car-heat__text {
+    color: var(--white);
+    -unity-text-outline-width: 5px;
+    -unity-text-outline-color: var(--navy);
+}
+
+/* The face has no outline of its own: with one, the navy ate the white letters. */
+.car-heat--warm .car-heat__text.stroke__face,
+.car-heat--hot .car-heat__text.stroke__face,
+.car-heat--warm .hud__heat-text.stroke__face,
+.car-heat--hot .hud__heat-text.stroke__face { -unity-text-outline-width: 0; }
+
+.hud__heat {
+    display: none;
+    position: absolute;
+    translate: -50% -50%;
+    align-items: center;
+}
+
+.hud__heat--shown { display: flex; }
+
+.hud__heat-sticker {
+    flex-direction: row;
+    align-items: center;
+    height: 72px;
+    padding: 0 22px 0 12px;
+    border-width: 5px 5px 11px 5px;
+    border-radius: 36px;
+    border-color: var(--navy);
+    background-color: var(--white);
+}
+
+.hud__heat-flame {
+    width: 40px;
+    height: 50px;
+    margin-right: 6px;
+    color: rgb(255, 170, 80);
+}
+
+.hud__heat-text {
+    margin: 0;
+    padding: 0 0 3px 0;
+    font-size: 46px;
+    color: var(--navy);
+    -unity-text-outline-width: 0;
+    white-space: nowrap;
+}
+
+.hud__heat-sticker.car-heat--warm { background-color: var(--orange); }
+.hud__heat-sticker.car-heat--hot { background-color: var(--red); }
+.car-heat--warm .hud__heat-flame,
+.car-heat--hot .hud__heat-flame { color: rgb(255, 230, 96); }
+
+.car-heat--warm .hud__heat-text,
+.car-heat--hot .hud__heat-text {
+    color: var(--white);
+    -unity-text-outline-width: 6px;
+    -unity-text-outline-color: var(--navy);
+}
+
+.car-heat--warm .hud__heat-text.stroke__drop,
+.car-heat--hot .hud__heat-text.stroke__drop { translate: 0 5px; display: flex; }
+
+.hud__red-hot {
+    position: absolute;
+    translate: -50% -50%;
+    align-items: center;
+}
+
+.hud__red-hot-sticker {
+    padding: 4px 26px 8px 26px;
+    border-radius: 24px;
+    border-width: 5px 5px 11px 5px;
+    border-color: var(--navy);
+    background-color: var(--red);
+    rotate: -5deg;
+}
+
+.hud__red-hot-text {
+    margin: 0;
+    padding: 0;
+    font-size: 50px;
+    color: rgb(255, 230, 96);
+    -unity-text-outline-width: 7px;
+    -unity-text-outline-color: var(--navy);
+    white-space: nowrap;
+}
+
+.hud__red-hot-text.stroke__drop { translate: 0 7px; display: flex; }
+
+.hud__meltdown {
+    position: absolute;
+    left: 0;
+    right: 0;
+    align-items: center;
+}
+
+.hud__meltdown-sticker {
+    padding: 6px 44px 12px 44px;
+    border-radius: 30px;
+    border-width: 6px 6px 14px 6px;
+    border-color: var(--navy);
+    background-color: rgb(224, 47, 36);
+    rotate: -4deg;
+}
+
+.hud__meltdown-text {
+    margin: 0;
+    padding: 0;
+    font-size: 88px;
+    color: rgb(255, 230, 96);
+    -unity-text-outline-width: 8px;
+    -unity-text-outline-color: var(--navy);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.hud__meltdown-text.stroke__drop { translate: 0 10px; display: flex; }
 
 /* FOOTBALL (HudFootball): GOAL! in the scoring team's colour with the scorer's nick under it, the arrow from the
    player's car to the goal it attacks at each kick-off, and the ball at the screen's edge while it is off the screen. */

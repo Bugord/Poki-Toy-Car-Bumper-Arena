@@ -154,6 +154,8 @@ namespace ToyCarArena.Gameplay
             builder.Register<BallLane>(Lifetime.Singleton);
             builder.Register<ArenaHazards>(Lifetime.Singleton);
             builder.RegisterInstance(mechanicArt, typeof(MechanicArt));
+            // One bot's item at the player at a time, for the bots and for a mode that lets their items go.
+            builder.Register<PlayerItemTurn>(Lifetime.Singleton);
             builder.RegisterEntryPoint<BotDriver>();
             builder.RegisterEntryPoint<ArenaCrumble>().AsSelf();
             // The variant playing now: the scene's own in a round, turning with the floor's cycles in a match.
@@ -166,7 +168,7 @@ namespace ToyCarArena.Gameplay
             builder.RegisterEntryPoint<CrownMode>().AsSelf();
             builder.RegisterEntryPoint<GoldRushMode>().AsSelf();
             builder.RegisterEntryPoint<ItemFrenzyMode>().AsSelf();
-            builder.RegisterEntryPoint<OverheatMode>().AsSelf();
+            builder.RegisterEntryPoint<OverheatMode>().AsSelf().WithParameter(transform);
             builder.RegisterEntryPoint<TeamPushMode>().AsSelf();
             builder.RegisterEntryPoint<FootballMode>().AsSelf().WithParameter(transform);
             // Every mode of the scene and the active one, for the bots and the HUD.
