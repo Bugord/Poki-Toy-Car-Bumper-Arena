@@ -25,8 +25,11 @@ namespace ToyCarArena.Gameplay.Modes
         /// <summary>Take the box lying in the middle.</summary>
         Box,
 
-        /// <summary>Use its Shockwave next to the last two bots.</summary>
+        /// <summary>Use its Mega: the car grows, with no end until the lesson is over.</summary>
         Use,
+
+        /// <summary>Push the last two bots off, grown.</summary>
+        Smash,
 
         /// <summary>Every bot is off: the round ends as a win.</summary>
         Done,
@@ -39,10 +42,12 @@ namespace ToyCarArena.Gameplay.Modes
     /// a plain round's, so nothing that names a special round or an event mode sees it.
     /// <para>
     /// The bots stand where they were placed until their step: the one to push first (the nearest at the start), then
-    /// the last two walk side by side to the edge across the floor from the player's start, and a box with a Shockwave
-    /// is laid between them and the middle. Each step is a gate on state: one bot off ends the push, a held item the box,
-    /// no bot left the lesson; so a player who rams ahead skips the steps they have done. A step that drags on is helped:
-    /// the drive is skipped, the bot to push comes to the player, a Shockwave spent too far away brings another box.
+    /// the last two walk side by side to the edge across the floor from the player's start, and a box with a Mega is
+    /// laid between them and the middle. The Mega has no timer in the tutorial (<see cref="Car.UntimedAbility"/>): grown,
+    /// the player rams the last two off at their own pace. Each step is a gate on state: one bot off ends the push, a
+    /// held item the box, a running Mega the use, no bot left the lesson; so a player who rams ahead skips the steps
+    /// they have done. A step that drags on is helped: the drive is skipped, the bot to push (and later the last ones) comes to the player, a Mega
+    /// lost to a fall brings another box.
     /// </para>
     /// </summary>
     public sealed class TutorialMode : IRoundMode, IBotSteering, ITickable, IDisposable
@@ -100,7 +105,7 @@ namespace ToyCarArena.Gameplay.Modes
         /// <summary>The box of the box step, while it lies there.</summary>
         public FloorPickup Box { get; private set; }
 
-        /// <summary>The bots the Shockwave is for, in the box and use steps: the ones still in.</summary>
+        /// <summary>The bots to smash off grown, in the box, use and smash steps: the ones still in.</summary>
         public IReadOnlyList<Car> Pair => pair;
 
         private readonly List<Car> pair = new();
@@ -148,22 +153,25 @@ namespace ToyCarArena.Gameplay.Modes
 
                     break;
                 case TutorialStep.Box:
-                    if (player.HasItem) {
+                    if (player.HasItem || player.IsRunning(ItemKind.Mega)) {
                         Advance(TutorialStep.Use);
                     }
 
                     break;
                 case TutorialStep.Use:
-                    TickUse();
+                    if (player.IsRunning(ItemKind.Mega)) {
+                        Advance(TutorialStep.Smash);
+                    }
+
+                    break;
+                case TutorialStep.Smash:
+                    TickSmash();
                     break;
             }
         }
 
         public void Dispose()
         {
-            if (player != null) {
-                player.ItemUsed -= OnPlayerUsed;
-            }
         }
 
         /// <summary>
@@ -188,10 +196,18 @@ namespace ToyCarArena.Gameplay.Modes
                 place = player.Position;
                 stop = settings.HelpStop;
             }
+            // The grown player who has not got them off for a while: the last bots come to them too.
+            else if (Step == TutorialStep.Smash && pair.Contains(car) && player.IsRunning(ItemKind.Mega)
+                && round.Elapsed - stepStart >= settings.PushHelp) {
+                place = player.Position;
+                stop = settings.HelpStop;
+            }
 
             var offset = Flat(place - car.Position);
             var distance = offset.magnitude;
-            if (distance <= stop || car.Movement.IsStaggered) {
+            // A bot the player just rammed lets itself be pushed: walking back to its place it would push against them.
+            var isRammed = car.LastHitBy == player && Time.time - car.LastHitTime < settings.RammedRest;
+            if (distance <= stop || car.Movement.IsStaggered || isRammed) {
                 car.Movement.Drive(Vector3.zero, 0f);
                 return true;
             }
@@ -209,7 +225,7 @@ namespace ToyCarArena.Gameplay.Modes
         {
             isStarted = true;
             player = round.Player;
-            player.ItemUsed += OnPlayerUsed;
+            player.UntimedAbility = ItemKind.Mega;
             var edge = round.Edge;
             var start = Flat(player.Position);
             var inward = Flat(-start);
@@ -235,7 +251,7 @@ namespace ToyCarArena.Gameplay.Modes
                 }
             }
 
-            // The nearest bot is the one to push; the others wait for the Shockwave across the floor from the start.
+            // The nearest bot is the one to push; the others wait for the grown player across the floor from the start.
             bots.Sort((a, b) => Flat(a.Position - start).sqrMagnitude.CompareTo(Flat(b.Position - start).sqrMagnitude));
             Target = bots.Count > 0 ? bots[0] : null;
             pairSpot = PairSpot(edge, inward);
@@ -301,24 +317,27 @@ namespace ToyCarArena.Gameplay.Modes
             }
         }
 
-        /// <summary>The use step: a Shockwave spent with bots left standing brings another box.</summary>
-        private void TickUse()
+        /// <summary>
+        /// The smash step: a Mega lost (a fall ends it) with bots left standing brings another box a moment later.
+        /// </summary>
+        private void TickSmash()
         {
-            if (!player.HasItem && (Box == null || !Box.IsLive) && round.Elapsed >= boxAgainAt) {
+            if (player.IsRunning(ItemKind.Mega) || player.HasItem || Box != null && Box.IsLive) {
+                boxAgainAt = float.PositiveInfinity;
+                return;
+            }
+
+            if (float.IsPositiveInfinity(boxAgainAt)) {
+                boxAgainAt = round.Elapsed + settings.BoxAgain;
+            }
+            else if (round.Elapsed >= boxAgainAt) {
                 boxAgainAt = float.PositiveInfinity;
                 LayBox();
             }
         }
 
-        private void OnPlayerUsed(ItemKind kind)
-        {
-            if (Step is TutorialStep.Use or TutorialStep.Box) {
-                boxAgainAt = round.Elapsed + settings.BoxAgain;
-            }
-        }
-
         /// <summary>
-        /// The box with a Shockwave, for the player alone, lying until taken, towards the pair from the middle: on the
+        /// The box with a Mega, for the player alone, lying until taken, towards the pair from the middle: on the
         /// first floor out from <c>BoxDistance</c> that is well inside the edge, so a floor with a hole in the middle
         /// (candy) has it at the hole's rim.
         /// </summary>
@@ -334,7 +353,7 @@ namespace ToyCarArena.Gameplay.Modes
                 }
             }
 
-            Box = pickups.Spawn(spot, player, ItemKind.Shockwave, true);
+            Box = pickups.Spawn(spot, player, ItemKind.Mega, true);
         }
 
         private static Vector3 Flat(Vector3 vector) => new(vector.x, 0f, vector.z);

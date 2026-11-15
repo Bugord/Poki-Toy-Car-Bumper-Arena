@@ -157,7 +157,7 @@ def summarise(data):
     s["matches"] = rounds(p, "match")
     # после v0.18.1: шаги обучения первого раунда (TutorialMode), начали / прошли / ушли на шаге
     s["tutorial"] = {m.group(1): (num(row, "starts"), num(row, "completes"), num(row, "lefts"))
-                     for event, row in p.items() if (m := re.fullmatch(r"tutorial-(drive|push|box|use)", event))}
+                     for event, row in p.items() if (m := re.fullmatch(r"tutorial-(drive|push|box|use|smash)", event))}
     s["match_place"] = other(o, r"match-place-(\d+-r[0-9a-z]+)-place")
     s["match_knockouts"] = other(o, r"match-knockouts-([0-9a-z]+-r[0-9a-z]+)-knockouts")
     s["match_falls"] = other(o, r"match-falls-([0-9a-z]+-r[0-9a-z]+)-falls")
@@ -566,7 +566,7 @@ def report(version, previous):
     # The first round's tutorial: how many began each step, did it and left on it.
     if any(s and s.get("tutorial") for s in (cur, old)):
         out += ["", "## Обучение в первом раунде (после v0.18.1)", "", head, sep]
-        for step in ("drive", "push", "box", "use"):
+        for step in ("drive", "push", "box", "use", "smash"):
             def cell(s, step=step):
                 started, done, left = s.get("tutorial", {}).get(step, (0, 0, 0))
                 return f"{started} → {done} ({pct(done, started)}), ушли {left}"

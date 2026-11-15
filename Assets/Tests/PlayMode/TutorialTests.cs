@@ -61,14 +61,21 @@ namespace ToyCarArena.Tests.PlayMode
 
             input.SetMove(Vector2.zero);
             Debug.Log($"Tutorial on {map}: {string.Join(", ", times)}");
+            if (!round.IsFinished) {
+                foreach (var car in round.Cars) {
+                    Debug.Log($"Stuck on {map}: {car.name} out {car.IsOut} at {car.Position} edge "
+                        + $"{round.Edge.DistanceToEdge(car.Position, 0f):0.0} mega {car.IsRunning(ItemKind.Mega)} "
+                        + $"item {car.HeldItem} staggered {car.Movement.IsStaggered}");
+                }
+            }
             Assert.That(round.IsFinished, Is.True, $"finished within {Limit} s; at {tutorial.Step}");
             Assert.That(tutorial.IsDone, Is.True);
             Assert.That(result?.Outcome, Is.EqualTo(RoundOutcome.Won));
             Assert.That(steps, Is.EqualTo(new[] {
-                TutorialStep.Push, TutorialStep.Box, TutorialStep.Use, TutorialStep.Done,
+                TutorialStep.Push, TutorialStep.Box, TutorialStep.Use, TutorialStep.Smash, TutorialStep.Done,
             }));
             Assert.That(hitByBot, Is.False, "the bots never drive into the player");
-            Assert.That(selfFalls, Is.Zero, "every bot off was knocked off (by the player, or by a bot the Shockwave threw): none drives off by itself");
+            Assert.That(selfFalls, Is.Zero, "every bot off was knocked off (by the player, or by a bot thrown into it): none drives off by itself");
         }
 
         [UnityTest]
@@ -88,8 +95,30 @@ namespace ToyCarArena.Tests.PlayMode
 
             Assert.That(tutorial.Step, Is.EqualTo(TutorialStep.Box));
             Assert.That(tutorial.Box, Is.Not.Null, "the box is laid");
-            Assert.That(tutorial.Box.Item, Is.EqualTo(ItemKind.Shockwave));
+            Assert.That(tutorial.Box.Item, Is.EqualTo(ItemKind.Mega));
             Assert.That(tutorial.Pair, Has.Member(tutorial.Target), "the bot that was to be pushed waits with the other");
+        }
+
+        [UnityTest]
+        public IEnumerator TheTutorialsMegaHasNoTimer()
+        {
+            yield return Open("sandbox", true);
+            round.Begin();
+            yield return null;
+            Assert.That(round.KnockOut(tutorial.Target, round.Player), Is.True);
+            for (var i = 0; i < 10 && tutorial.Step < TutorialStep.Box; i++) {
+                yield return null;
+            }
+
+            var pickups = GameScope().Container.Resolve<ToyCarArena.Gameplay.Pickups.ArenaPickups>();
+            Assert.That(pickups.Give(round.Player, ItemKind.Mega), Is.True);
+            Assert.That(pickups.Use(round.Player), Is.True);
+            Assert.That(float.IsPositiveInfinity(round.Player.TimeLeft(ItemKind.Mega)), Is.True, "runs with no end");
+            for (var i = 0; i < 5 && tutorial.Step < TutorialStep.Smash; i++) {
+                yield return null;
+            }
+
+            Assert.That(tutorial.Step, Is.EqualTo(TutorialStep.Smash), "a running Mega passes the box and the use");
         }
 
         [UnityTest]
@@ -144,26 +173,43 @@ namespace ToyCarArena.Tests.PlayMode
                     }
 
                     break;
-                case TutorialStep.Use: {
-                    var middle = Vector3.zero;
-                    foreach (var car in tutorial.Pair) {
-                        middle += car.Position;
-                    }
-
-                    middle /= Mathf.Max(1, tutorial.Pair.Count);
+                case TutorialStep.Use:
+                case TutorialStep.Smash: {
                     if (player.HasItem) {
-                        Steer(middle - player.Position);
-                        if (player.IsItemReady && Flat(middle - player.Position).magnitude < 4.5f
-                            && Time.time - usedAt > 0.5f) {
+                        Steer(Vector3.zero);
+                        if (player.IsItemReady && Time.time - usedAt > 0.5f) {
                             input.PressItem();
                             usedAt = Time.time;
                         }
                     }
-                    else if (tutorial.Box != null && tutorial.Box.IsLive) {
-                        Steer(tutorial.Box.Position - player.Position);
+                    else if (!player.IsRunning(ItemKind.Mega)) {
+                        Steer(tutorial.Box != null && tutorial.Box.IsLive ? tutorial.Box.Position - player.Position
+                            : Vector3.zero);
                     }
                     else {
-                        Steer(Vector3.zero);
+                        // Grown: ram the nearer of the last two straight out, as the push step.
+                        Car nearest = null;
+                        foreach (var car in tutorial.Pair) {
+                            if (!car.IsOut && (nearest == null || Flat(car.Position - player.Position).sqrMagnitude
+                                    < Flat(nearest.Position - player.Position).sqrMagnitude)) {
+                                nearest = car;
+                            }
+                        }
+
+                        if (nearest == null) {
+                            Steer(Vector3.zero);
+                            break;
+                        }
+
+                        var target = nearest.Position;
+                        var outward = Flat(target).normalized;
+                        var behind = target - outward * 3.5f;
+                        // Outside it (between it and the edge), come round to the middle's side first.
+                        var isOutside = Flat(player.Position).magnitude > Flat(target).magnitude - 1f;
+                        var side = Vector3.Cross(Vector3.up, outward);
+                        var round_ = behind + side * (Vector3.Dot(player.Position - target, side) >= 0f ? 3f : -3f);
+                        Steer(isOutside ? round_ - player.Position
+                            : Flat(player.Position - target).magnitude > 4.2f ? behind - player.Position : outward);
                     }
 
                     break;

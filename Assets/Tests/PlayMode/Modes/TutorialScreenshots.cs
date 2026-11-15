@@ -91,7 +91,9 @@ namespace ToyCarArena.Tests.PlayMode
                     yield return null;
                 }
 
-                foreach (var step in new[] { TutorialStep.Drive, TutorialStep.Push, TutorialStep.Box, TutorialStep.Use }) {
+                foreach (var step in new[] {
+                             TutorialStep.Drive, TutorialStep.Push, TutorialStep.Box, TutorialStep.Use, TutorialStep.Smash,
+                         }) {
                     // Bring the lesson to the step by doing the one before it.
                     if (step == TutorialStep.Push) {
                         round.Player.Movement.Place(tutorial.DrivePoint, round.Player.transform.rotation);
@@ -100,7 +102,10 @@ namespace ToyCarArena.Tests.PlayMode
                         Assert.That(round.KnockOut(tutorial.Target, round.Player), Is.True);
                     }
                     else if (step == TutorialStep.Use) {
-                        Assert.That(pickups.Give(round.Player, ItemKind.Shockwave), Is.True);
+                        Assert.That(pickups.Give(round.Player, ItemKind.Mega), Is.True);
+                    }
+                    else if (step == TutorialStep.Smash) {
+                        Assert.That(pickups.Use(round.Player), Is.True);
                     }
 
                     var waited = Time.realtimeSinceStartup + 3f;

@@ -1,17 +1,22 @@
 using System;
 using Bugord.App.Localization;
+using ToyCarArena.Gameplay.Cars;
 using ToyCarArena.Gameplay.Modes;
+using ToyCarArena.Gameplay;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace ToyCarArena.UI
 {
     /// <summary>
-    /// The tutorial on the HUD (<see cref="TutorialMode"/>): under the bar a white sticker says what to do now, with the
-    /// step's number on a gold disc (1 to 4), and pops whenever the step changes; a gold arrow bobs over where the step
-    /// is (the point to drive to, the bot to push, the box, the last two bots), kept on the screen. The round's clock is
-    /// hidden: the tutorial ends with its lesson, not on time. When the last bot is off the sticker turns green with the
-    /// last words.
+    /// The tutorial on the HUD (<see cref="TutorialMode"/>): a gold arrow bobs over where the step is (the point to
+    /// drive to, the bot to push, the box, the last two bots) and a white sticker right over the arrow says what to do
+    /// there, with the step's number on a gold disc (1 to 5); it pops whenever the step changes. The words stand at the
+    /// place in the world, not at an edge of the screen: a new player looks at the arena, not at the HUD. Using the item
+    /// and at the end, the sticker stands over the player's own car without an arrow. Both are kept on the screen, and
+    /// the sticker goes under the place when the top of the screen has no room for it. The round's clock and the kill
+    /// feed are hidden: the tutorial ends with its lesson, not on time. When the last bot is off the sticker turns green
+    /// with the last words.
     /// <para>
     /// The arrow is not a ring on the floor: a white ring is the player's own marker. Built once; a frame only sets
     /// styles, on real time, and nothing here catches input.
@@ -19,23 +24,28 @@ namespace ToyCarArena.UI
     /// </summary>
     internal sealed class TutorialHud : IModeHud
     {
-        private const int StepCount = 4;
-
-        // Where the sticker sits, clear of the arena's far edge, where the last two bots wait: in portrait right under
-        // the bar (the kill feed there is hidden: the lesson needs none), in landscape at the bottom middle, between the
-        // item button and the corner it is not in.
-        private const float PortraitTop = 205f;
-        private const float LandscapeBottom = 60f;
+        private const int StepCount = 5;
 
         // Metres over the step's place the arrow's tip floats, by what it points at.
         private const float PointLift = 0.6f;
         private const float CarLift = 2.2f;
         private const float BoxLift = 1.7f;
 
+        // Metres over the player's own car the sticker's bottom stands.
+        private const float OwnCarLift = 3.4f;
+
         // The arrow's bob: reference pixels up and down, cycles a second.
         private const float BobHeight = 22f;
         private const float BobRate = 2.4f;
         private const float ArrowMargin = 70f;
+
+        // Reference pixels: the arrow's height (as in the style sheet), the gap from the arrow to the sticker, how far
+        // under the place a sticker with no room above stands, the room the bar takes at the top and the sides' margin.
+        private const float ArrowHeight = 112f;
+        private const float StickerGap = 6f;
+        private const float BelowGap = 110f;
+        private const float BarRoom = 150f;
+        private const float SideMargin = 16f;
 
         // The sticker's pop on a new step, and how long the last words stay.
         private const float PopScale = 1.18f;
@@ -76,6 +86,13 @@ namespace ToyCarArena.UI
             this.tutorial = tutorial;
             this.layer = layer;
 
+            arrow = new VisualElement { name = "tutorial-arrow", pickingMode = PickingMode.Ignore };
+            arrow.AddToClassList("hud__tutorial-arrow");
+            arrow.generateVisualContent += PaintArrow;
+            // Turned round its tip when it points up from under a place by the top.
+            arrow.style.transformOrigin = new TransformOrigin(Length.Percent(50f), Length.Percent(100f));
+            layer.Add(arrow);
+
             banner = new VisualElement { name = "tutorial", pickingMode = PickingMode.Ignore };
             banner.AddToClassList("hud__tutorial");
             sticker = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -86,12 +103,9 @@ namespace ToyCarArena.UI
             sticker.Add(disc);
             sticker.Add(StrokeText.Create("", null, out textLabels, "hud__tutorial-text"));
             banner.Add(sticker);
-            root.Add(banner);
-
-            arrow = new VisualElement { name = "tutorial-arrow", pickingMode = PickingMode.Ignore };
-            arrow.AddToClassList("hud__tutorial-arrow");
-            arrow.generateVisualContent += PaintArrow;
-            layer.Add(arrow);
+            // Off the screen until its first frame has a place: it measures itself there first.
+            banner.style.left = -10000f;
+            layer.Add(banner);
 
             // The clock would count five minutes down: the lesson has no time limit, so the bar shows only the cars.
             timePill = root.Q<VisualElement>("time-pill");
@@ -121,27 +135,18 @@ namespace ToyCarArena.UI
                 }
             }
 
-            var size = banner.parent?.layout.size ?? Vector2.zero;
-            if (size.x > size.y) {
-                banner.style.top = StyleKeyword.Auto;
-                banner.style.bottom = LandscapeBottom;
-            }
-            else {
-                banner.style.top = top + PortraitTop;
-                banner.style.bottom = StyleKeyword.Auto;
-            }
             var isShown = step != TutorialStep.None && !model.IsFinished || step == TutorialStep.Done
                 && now - doneAt < DoneSeconds;
             if (model.PlayerCar != null && model.PlayerCar.IsOut) {
                 isShown = false;
             }
 
-            banner.EnableInClassList(ShownClass, isShown);
             var pop = Mathf.Clamp01((now - popAt) / PopSeconds);
             var scale = 1f + (PopScale - 1f) * Mathf.Sin(pop * Mathf.PI) * (1f - pop * 0.5f);
             sticker.style.scale = new Scale(new Vector3(scale, scale, 1f));
 
-            TickArrow(camera, now, top, left, right);
+            var hasPlace = Place(camera, now, top, left, right);
+            banner.EnableInClassList(ShownClass, isShown && hasPlace);
         }
 
         public void Dispose()
@@ -162,6 +167,7 @@ namespace ToyCarArena.UI
                 TutorialStep.Push => "tutorial.push",
                 TutorialStep.Box => "tutorial.box",
                 TutorialStep.Use => "tutorial.use",
+                TutorialStep.Smash => "tutorial.smash",
                 TutorialStep.Done => "tutorial.done",
                 _ => "tutorial.drive",
             };
@@ -170,31 +176,69 @@ namespace ToyCarArena.UI
             StrokeText.SetText(stepLabels, isDone ? "!" : number.ToString());
         }
 
-        private void TickArrow(Camera camera, float now, float top, float left, float right)
+        /// <summary>
+        /// The arrow over the step's place and the sticker right over the arrow; on the player's own car the sticker
+        /// alone. False when the step has no place on the screen now.
+        /// </summary>
+        private bool Place(Camera camera, float now, float top, float left, float right)
         {
-            var isPointing = TryGetPlace(out var place) && camera != null && arrow.panel != null && !model.IsFinished;
+            var hasPlace = TryGetPlace(out var place, out var isOwnCar) && camera != null && layer.panel != null;
+            var isPointing = hasPlace && !isOwnCar && !model.IsFinished;
             arrow.EnableInClassList(ArrowShownClass, isPointing);
-            if (!isPointing) {
-                return;
+            if (!hasPlace) {
+                return false;
             }
 
-            var panelPoint = RuntimePanelUtils.CameraTransformWorldToPanel(arrow.panel, place, camera);
+            var panelPoint = RuntimePanelUtils.CameraTransformWorldToPanel(layer.panel, place, camera);
             var point = layer.WorldToLocal(panelPoint);
-            point.y -= BobHeight * (0.5f + 0.5f * Mathf.Sin(now * BobRate * Mathf.PI * 2f));
             var size = layer.layout.size;
-            var minX = left + ArrowMargin;
-            point.x = Mathf.Clamp(point.x, minX, Mathf.Max(minX, size.x - right - ArrowMargin));
-            // Under the bar and, in portrait, the sticker under it.
-            var minY = top + ArrowMargin + (size.x > size.y ? 230f : PortraitTop + 130f);
-            point.y = Mathf.Clamp(point.y, minY, Mathf.Max(minY, size.y - ArrowMargin));
-            arrow.style.left = point.x;
-            arrow.style.top = point.y;
+            var minY = top + BarRoom;
+            var bottom = point.y;
+            // A place too near the top for the arrow over it (the bar above it, a wide screen): the arrow points up at
+            // it from below, and the sticker stands under the arrow.
+            var isFlipped = isPointing && point.y - ArrowHeight - BobHeight < minY;
+            var below = point.y;
+            if (isPointing) {
+                var minX = left + ArrowMargin;
+                var tipX = Mathf.Clamp(point.x, minX, Mathf.Max(minX, size.x - right - ArrowMargin));
+                var bob = BobHeight * (0.5f + 0.5f * Mathf.Sin(now * BobRate * Mathf.PI * 2f));
+                var tipY = isFlipped ? point.y + bob : point.y - bob;
+                tipY = Mathf.Clamp(tipY, isFlipped ? top : minY, Mathf.Max(minY, size.y - ArrowMargin));
+                arrow.style.left = tipX;
+                arrow.style.top = tipY;
+                arrow.style.rotate = new Rotate(isFlipped ? 180f : 0f);
+                bottom = tipY - ArrowHeight;
+                below = tipY + ArrowHeight;
+            }
+
+            // The sticker's bottom middle over the arrow or the car, its sides on the screen; with no room above it
+            // stands under the place instead.
+            var bubble = banner.layout.size;
+            var half = bubble.x * 0.5f;
+            var lowX = left + half + SideMargin;
+            var x = Mathf.Clamp(point.x, lowX, Mathf.Max(lowX, size.x - right - half - SideMargin));
+            var y = bottom - StickerGap - bubble.y;
+            if (isFlipped) {
+                y = Mathf.Min(below + StickerGap, size.y - bubble.y - SideMargin);
+            }
+            else if (y < minY) {
+                y = Mathf.Min(point.y + BelowGap, size.y - bubble.y - SideMargin);
+            }
+
+            banner.style.left = x - half;
+            banner.style.top = y;
+            return true;
         }
 
-        /// <summary>Where the step is, in the world, for the arrow: the tip floats over it.</summary>
-        private bool TryGetPlace(out Vector3 place)
+        /// <summary>
+        /// Where the step is, in the world: the arrow's tip floats over it, or, on the player's own car
+        /// (<paramref name="isOwnCar"/>), the sticker.
+        /// </summary>
+        private bool TryGetPlace(out Vector3 place, out bool isOwnCar)
         {
             place = default;
+            isOwnCar = false;
+            var player = model.PlayerCar;
             switch (tutorial.Step) {
                 case TutorialStep.Drive:
                     place = tutorial.DrivePoint + Vector3.up * PointLift;
@@ -209,9 +253,11 @@ namespace ToyCarArena.UI
                 case TutorialStep.Box:
                     return TryGetBox(out place);
                 case TutorialStep.Use:
-                    var player = model.PlayerCar;
-                    if (player != null && !player.HasItem) {
-                        return TryGetBox(out place);
+                    return player != null && !player.HasItem ? TryGetBox(out place) : OverPlayer(player, out place, out isOwnCar);
+                case TutorialStep.Smash:
+                    // Grown, at the last two; a mega lost to a fall means the box again (or the item to use).
+                    if (player != null && !player.IsRunning(ItemKind.Mega)) {
+                        return player.HasItem ? OverPlayer(player, out place, out isOwnCar) : TryGetBox(out place);
                     }
 
                     var middle = Vector3.zero;
@@ -229,9 +275,18 @@ namespace ToyCarArena.UI
 
                     place = middle / count + Vector3.up * CarLift;
                     return true;
+                case TutorialStep.Done:
+                    return OverPlayer(player, out place, out isOwnCar);
                 default:
                     return false;
             }
+        }
+
+        private static bool OverPlayer(Car player, out Vector3 place, out bool isOwnCar)
+        {
+            isOwnCar = true;
+            place = player != null ? player.Position + Vector3.up * OwnCarLift : default;
+            return player != null && !player.IsOut;
         }
 
         private bool TryGetBox(out Vector3 place)

@@ -147,6 +147,12 @@ namespace ToyCarArena.Gameplay.Cars
         /// </summary>
         public bool IsRunning(ItemKind kind) => Time.time < abilityEnds[(int)kind];
 
+        /// <summary>
+        /// A timed item that runs without end on this car once used, until a fall or <see cref="ClearAbility"/>
+        /// (<see cref="ItemKind.None"/>: every item keeps its time). The tutorial's mega.
+        /// </summary>
+        public ItemKind UntimedAbility { get; set; }
+
         /// <summary>Seconds the running <paramref name="kind"/> has left; 0 when it does not run.</summary>
         public float TimeLeft(ItemKind kind) => Mathf.Max(0f, abilityEnds[(int)kind] - Time.time);
 
@@ -349,6 +355,12 @@ namespace ToyCarArena.Gameplay.Cars
             var length = pickupSettings.DurationOf(kind);
             if (length <= 0f) {
                 return;
+            }
+
+            // The tutorial's mega lasts until the lesson is over: a timer running out under a new player teaches
+            // nothing but haste.
+            if (kind == UntimedAbility) {
+                length = float.PositiveInfinity;
             }
 
             abilityEnds[(int)kind] = Time.time + length;

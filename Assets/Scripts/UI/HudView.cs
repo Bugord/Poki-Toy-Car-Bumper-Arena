@@ -1197,6 +1197,11 @@ namespace ToyCarArena.UI
                 return;
             }
 
+            // An item with no end (the tutorial's mega) has no timer to show.
+            var isUntimed = float.IsPositiveInfinity(ViewModel.AbilityTimeLeft);
+            powerFill.parent.style.display = isUntimed
+                ? DisplayStyle.None
+                : new StyleEnum<DisplayStyle>(StyleKeyword.Null);
             powerFill.style.width = Length.Percent(ViewModel.AbilityShare * 100f);
             var isBlinking = ViewModel.AbilityTimeLeft < PowerBlinkTime
                 && Mathf.Repeat(Time.unscaledTime * PowerBlinkRate, 1f) < 0.5f;

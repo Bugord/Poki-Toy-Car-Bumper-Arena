@@ -19,13 +19,13 @@ namespace ToyCarArena.Gameplay
         /// The tutorial: a new player's very first round (no experience and no round finished on this device, the
         /// visit's first round of QUICK MATCH, not in a match) teaches the game step by step on a still floor, with three
         /// bots that never attack. Drive to a point; push one bot off the edge; take a box, which always holds a
-        /// Shockwave; use it next to the last two bots. The round ends when the last bot is off, as a win, and pays a
+        /// Mega, which runs with no timer here; grown, push the last two bots off. The round ends when the last bot is off, as a win, and pays a
         /// hat (<see cref="TopperSettings.GiftTopper"/>). The player cannot fall: the safe first rounds catch them
         /// (<see cref="SafetySettings"/>).
         /// <para>
         /// Every step is a gate on what has happened, not on the order: a bot pushed off early, or both shoved off by
         /// ramming, moves the lesson on all the same. A step the player does not get on with is helped along after a
-        /// while: the point to drive to is skipped, the bot to push comes closer, and a Shockwave used too far away
+        /// while: the point to drive to is skipped, the bot to push comes closer, and a Mega lost to a fall
         /// brings another box.
         /// </para>
         /// </summary>
@@ -61,7 +61,7 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float helpStop = 3.5f;
 
-            [Tooltip("How far inside the safe edge the last two bots wait for the Shockwave, in metres")]
+            [Tooltip("How far inside the safe edge the last two bots wait for the grown player, in metres")]
             [Min(1f)]
             [SerializeField]
             private float pairInset = 3.5f;
@@ -76,7 +76,7 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float boxDistance = 1f;
 
-            [Tooltip("Seconds after a Shockwave that left bots standing until the next box")]
+            [Tooltip("Seconds after the Mega was lost with bots left standing until the next box")]
             [Min(0f)]
             [SerializeField]
             private float boxAgain = 1.5f;
@@ -104,7 +104,12 @@ namespace ToyCarArena.Gameplay
             public float BoxAgain => boxAgain;
             public float BotPace => botPace;
 
-            /// <summary>The bots of the tutorial: one to push, two for the Shockwave.</summary>
+            /// <summary>
+            /// Seconds a bot the player rammed stands still instead of walking back to its place: it would push back.
+            /// </summary>
+            public float RammedRest => 1.5f;
+
+            /// <summary>The bots of the tutorial: one to push, two to smash off grown.</summary>
             public int Bots => 3;
 
             /// <summary>
