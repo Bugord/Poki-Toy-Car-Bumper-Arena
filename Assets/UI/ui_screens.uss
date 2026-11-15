@@ -6462,6 +6462,13 @@
 .mission-icon__sign--revenge { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_revenge.png"); }
 .mission-icon__sign--boost { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_boost.png"); }
 .mission-icon__sign--rounds { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_rounds.png"); }
+.mission-icon__sign--mode-hot-potato { background-image: url("/Assets/Art/Sprites/UI/sprite_mode_icon_hot_potato.png"); }
+.mission-icon__sign--mode-crown { background-image: url("/Assets/Art/Sprites/UI/sprite_mode_icon_crown.png"); }
+.mission-icon__sign--mode-gold-rush { background-image: url("/Assets/Art/Sprites/UI/sprite_mode_icon_gold_rush.png"); }
+.mission-icon__sign--mode-item-frenzy { background-image: url("/Assets/Art/Sprites/UI/sprite_mode_icon_item_frenzy.png"); }
+.mission-icon__sign--mode-overheat { background-image: url("/Assets/Art/Sprites/UI/sprite_mode_icon_overheat.png"); }
+.mission-icon__sign--mode-team-push { background-image: url("/Assets/Art/Sprites/UI/sprite_mode_icon_team_push.png"); }
+.mission-icon__sign--mode-football { background-image: url("/Assets/Art/Sprites/UI/sprite_mode_icon_football.png"); }
 .round-over__home-icon--painted {
     background-image: url("/Assets/Art/Sprites/UI/sprite_icon_hub.png");
     -unity-background-scale-mode: scale-to-fit;
