@@ -6149,3 +6149,92 @@
 }
 
 .hud__meltdown-text.stroke__drop { translate: 0 10px; display: flex; }
+
+/* FOOTBALL (HudFootball): GOAL! in the scoring team's colour with the scorer's nick under it, the arrow from the
+   player's car to the goal it attacks at each kick-off, and the ball at the screen's edge while it is off the screen. */
+.hud__goal {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    translate: 0 -50%;
+    align-items: center;
+}
+
+.hud__goal-sticker {
+    padding: 4px 56px 14px 56px;
+    border-radius: 40px;
+    border-width: 7px 7px 17px 7px;
+    border-color: var(--navy);
+    background-color: var(--car-blue);
+    rotate: -5deg;
+}
+
+.hud__goal--red .hud__goal-sticker {
+    background-color: var(--car-red);
+    rotate: 5deg;
+}
+
+.hud__goal-text {
+    margin: 0;
+    padding: 0;
+    font-size: 150px;
+    color: var(--white);
+    -unity-text-outline-width: 10px;
+    -unity-text-outline-color: var(--navy);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.hud__goal-text.stroke__drop { translate: 0 12px; display: flex; }
+
+.hud__goal-scorer {
+    margin-top: -6px;
+    padding: 2px 34px 8px 34px;
+    border-radius: 30px;
+    border-width: 5px 5px 11px 5px;
+    border-color: var(--navy);
+    background-color: var(--white);
+}
+
+.hud__goal-scorer--you {
+    background-color: var(--gold);
+}
+
+.hud__goal-scorer-text {
+    margin: 0;
+    padding: 0;
+    font-size: 54px;
+    color: var(--navy);
+    -unity-text-outline-width: 0;
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.hud__attack {
+    position: absolute;
+    display: none;
+}
+
+.hud__ball-pointer {
+    position: absolute;
+    display: none;
+    width: 96px;
+    height: 96px;
+}
+
+.hud__ball-pointer-tip {
+    position: absolute;
+    left: -24px;
+    top: -24px;
+    width: 144px;
+    height: 144px;
+}
+
+.hud__ball-pointer-ball {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    width: 80px;
+    height: 80px;
+}

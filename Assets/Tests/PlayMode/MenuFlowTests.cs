@@ -225,6 +225,75 @@ namespace ToyCarArena.Tests.PlayMode
             yield return WaitFor(() => Round == null || Round.IsFinished, "the end of the round");
         }
 
+        [UnityTest]
+        public IEnumerator FootballFromTheMenuTileKeepsItsPitchThroughNextMatch()
+        {
+            ReturningPlayer();
+            EventSchedule.Forced = EventMode.Football;
+            object savedDuration = null;
+            System.Reflection.FieldInfo duration = null;
+            GameTuning.FootballSettings settings = null;
+            try {
+                yield return Boot();
+                // A short match: the flow, not the football, is under test.
+                settings = Scope.Container.Resolve<GameTuning>().Football;
+                duration = settings.GetType().GetField("duration", System.Reflection.BindingFlags.Instance |
+                    System.Reflection.BindingFlags.NonPublic);
+                savedDuration = duration.GetValue(settings);
+                duration.SetValue(settings, 6f);
+
+                yield return WaitFor(() => IsShown(EventTile), "the menu's FOOTBALL tile");
+                yield return Wait(0.5f);
+                Assert.That(platform.Events, Does.Contain(("menu", "event-football", "visible")));
+                Press(EventTile);
+                yield return WaitFor(() => State == typeof(RoundState) && Round is { HasBegun: true }, "the match");
+                Assert.That(platform.Events, Does.Contain(("menu", "event-football", "interact")));
+                Assert.That(Scope.Container.Resolve<ISessionProgress>().Mode, Is.EqualTo(EventMode.Football));
+                ExpectFootballOnThePitch();
+                Assert.That(platform.Events, Does.Contain(("special", "football", "start")));
+
+                yield return WaitFor(() => State == typeof(ResultState) && IsShown(FindButton("play-again-button")),
+                    "the result");
+                Assert.That(platform.Events.Any(e => e.Item1 == "special" && e.Item2.StartsWith("football-goals-") &&
+                    e.Item3 == "goals"), Is.True, "the match's goals are measured");
+                Assert.That(platform.Events.Any(e => e.Item1 == "special" && e.Item2.StartsWith("football-team-")),
+                    Is.True, "the team layer's ending is measured");
+                yield return Wait(1f);
+                Press(FindButton("play-again-button"));
+
+                yield return WaitFor(() => State == typeof(RoundState) && Round is { HasBegun: true }, "the next match");
+                Assert.That(Scope.Container.Resolve<ISessionProgress>().Round, Is.EqualTo(2));
+                ExpectFootballOnThePitch();
+                Assert.That(platform.Events.Count(e => e == ("special", "football", "start")), Is.EqualTo(2));
+            } finally {
+                EventSchedule.Forced = null;
+                if (duration != null) {
+                    duration.SetValue(settings, savedDuration);
+                }
+            }
+        }
+
+        // The round now plays FOOTBALL, on its own pitch, with its ball.
+        private static void ExpectFootballOnThePitch()
+        {
+            var level = Scope.Container.Resolve<LevelScene>();
+            Assert.That(level.Resolve<ArenaMap>().Id, Is.EqualTo("pitch"));
+            Assert.That(level.Resolve<RoundRules>().Kind, Is.EqualTo(SpecialRound.Football));
+            var mode = level.Resolve<ToyCarArena.Gameplay.Modes.FootballMode>();
+            Assert.That(mode.IsActive, Is.True);
+            Assert.That(mode.Ball, Is.Not.Null, "the ball is on the pitch");
+            Assert.That(Round.Cars.Count, Is.EqualTo(6), "three a side");
+        }
+
+        // The menu's tile of the event of the day.
+        private static Button EventTile
+        {
+            get {
+                var root = Scope?.Container?.Resolve<IUIRootProvider>()?.GetLayerRoot(UILayer.Screen);
+                return root?.Q<VisualElement>(className: "menu__tile--event")?.Q<Button>(className: "menu__tile-button");
+            }
+        }
+
         // The layers the arena's camera draws now.
         private static int ArenaLayers => Object.FindAnyObjectByType<ArenaCamera>().Camera.cullingMask;
 

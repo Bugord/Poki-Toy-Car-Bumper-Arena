@@ -114,6 +114,7 @@ arena.sandbox.name,Arena name,SANDBOX,BAC À SABLE,SABBIERA,SANDKASTEN,ARENERO,K
 arena.tabletop.name,Arena name,TABLETOP,TABLE,TAVOLO,TISCH,MESA,MASA,MESA,СТОЛ
 arena.candy.name,Arena name,CANDY,BONBONS,CARAMELLE,SÜSSES,DULCES,ŞEKER,DOCES,КОНФЕТЫ
 arena.playroom.name,Arena name,PLAYROOM,SALLE DE JEUX,STANZA GIOCHI,SPIELZIMMER,CUARTO DE JUEGOS,OYUN ODASI,BRINQUEDOTECA,ДЕТСКАЯ
+arena.pitch.name,Arena name: the football mode's own pitch,PITCH,TERRAIN,CAMPO,SPIELFELD,CANCHA,SAHA,CAMPO,ПОЛЕ
 hud.item_mega,"Match: item name; sticker on use and badge when the player uses the mega item (the car grows big and heavy); max ~12 chars",MEGA!,MÉGA !,MEGA!,MEGA!,¡MEGA!,MEGA!,MEGA!,МЕГА!
 hud.item_shockwave,"Match: item name; sticker when the player uses the shockwave item (a ring pushes the cars near); max ~14 chars",SHOCKWAVE!,ONDE DE CHOC !,ONDA URTO!,DRUCKWELLE!,¡ONDA!,ŞOK DALGASI!,ONDA DE CHOQUE!,УДАРНАЯ ВОЛНА!
 hud.item_shield,"Match: item name; sticker on use and badge when the player uses the shield item (absorbs the next hit); max ~12 chars",SHIELD!,BOUCLIER !,SCUDO!,SCHILD!,¡ESCUDO!,KALKAN!,ESCUDO!,ЩИТ!
@@ -296,9 +297,11 @@ menu.team_push_hint,What the team push mode is,BLUE VS RED! PUSH THE OTHER TEAM 
 special.team-push.name,Event round name: two teams (lobby tag and over the countdown),TEAM PUSH!,ÉQUIPES !,SQUADRE!,TEAM-DUELL!,¡EQUIPOS!,TAKIM SAVAŞI!,EQUIPES!,КОМАНДЫ!
 special.team-push.hint,Event round rule in one line,PUSH THE OTHER TEAM OFF!,ÉJECTE L'AUTRE ÉQUIPE !,BUTTA GIÙ L'ALTRA SQUADRA!,SCHIEB DAS ANDERE TEAM RUNTER!,¡ECHA AL OTRO EQUIPO!,DİĞER TAKIMI DÜŞÜR!,DERRUBE O OUTRO TIME!,СТОЛКНИ ЧУЖУЮ КОМАНДУ!
 menu.football,Event game mode: two teams push a ball into each other's goal,FOOTBALL,FOOTBALL,CALCIO,FUSSBALL,FÚTBOL,FUTBOL,FUTEBOL,ФУТБОЛ
-menu.football_hint,What the football mode is,PUSH THE BALL INTO THEIR GOAL!,POUSSE LE BALLON DANS LEUR BUT !,SPINGI LA PALLA NELLA LORO PORTA!,SCHIEB DEN BALL INS GEGNERISCHE TOR!,¡EMPUJA EL BALÓN A SU PORTERÍA!,TOPU ONLARIN KALESİNE İT!,EMPURRE A BOLA PARA O GOL DELES!,ЗАКАТИ МЯЧ В ЧУЖИЕ ВОРОТА!
+menu.football_hint,What the football mode is,BLUE VS RED! PUSH THE BALL INTO THEIR GOAL,BLEUS CONTRE ROUGES ! POUSSE LE BALLON DANS LEUR BUT,BLU CONTRO ROSSI! SPINGI LA PALLA NELLA LORO PORTA,BLAU GEGEN ROT! SCHIEB DEN BALL INS GEGNERISCHE TOR,¡AZULES CONTRA ROJOS! EMPUJA EL BALÓN A SU PORTERÍA,"MAVİ, KIRMIZIYA KARŞI! TOPU ONLARIN KALESİNE İT",AZUL CONTRA VERMELHO! EMPURRE A BOLA PARA O GOL DELES,СИНИЕ ПРОТИВ КРАСНЫХ! ЗАКАТИ МЯЧ В ИХ ВОРОТА
 special.football.name,Event round name: football (lobby tag and over the countdown),FOOTBALL!,FOOTBALL !,CALCIO!,FUSSBALL!,¡FÚTBOL!,FUTBOL!,FUTEBOL!,ФУТБОЛ!
-special.football.hint,Event round rule in one line,SCORE MORE GOALS!,MARQUE PLUS DE BUTS !,SEGNA PIÙ GOL!,SCHIESS MEHR TORE!,¡MARCA MÁS GOLES!,DAHA ÇOK GOL AT!,FAÇA MAIS GOLS!,ЗАБЕЙ БОЛЬШЕ ГОЛОВ!
+special.football.hint,Event round rule in one line,PUSH THE BALL INTO THE RED GOAL!,POUSSE LE BALLON DANS LE BUT ROUGE !,SPINGI LA PALLA NELLA PORTA ROSSA!,SCHIEB DEN BALL INS ROTE TOR!,¡EMPUJA EL BALÓN A LA PORTERÍA ROJA!,TOPU KIRMIZI KALEYE İT!,EMPURRE A BOLA PARA O GOL VERMELHO!,ЗАГОНИ МЯЧ В КРАСНЫЕ ВОРОТА!
+hud.football_goal,Football: a goal is scored (big banner),GOAL!,BUT !,GOL!,TOR!,¡GOL!,GOL!,GOL!,ГОЛ!
+hud.football_own_goal,Football: a team put the ball into its own goal,OWN GOAL!,CSC !,AUTOGOL!,EIGENTOR!,¡AUTOGOL!,KENDİ KALESİNE!,GOL CONTRA!,АВТОГОЛ!
 mission.play_event,"Daily task: finish a round of today's event mode, {0} is its name (menu.*)",PLAY {0},JOUE EN MODE {0},GIOCA A {0},SPIELE {0},JUEGA A {0},{0} MODUNU OYNA,JOGUE {0},СЫГРАЙ В РЕЖИМЕ «{0}»
 result.mode_won_subtitle,Result subtitle for first place in a timed event mode,TOP SCORE!,MEILLEUR SCORE !,PUNTEGGIO MIGLIORE!,BESTE PUNKTZAHL!,¡MEJOR PUNTUACIÓN!,EN YÜKSEK SKOR!,MAIOR PONTUAÇÃO!,ЛУЧШИЙ СЧЁТ!
 result.mode_place,"Result subtitle in a timed event mode: the place, e.g. PLACE 3",PLACE {0},PLACE {0},{0}° POSTO,PLATZ {0},PUESTO {0},{0}. SIRA,{0}º LUGAR,{0} МЕСТО

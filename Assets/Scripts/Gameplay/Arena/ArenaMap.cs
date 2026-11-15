@@ -11,13 +11,13 @@ namespace ToyCarArena.Gameplay.Arena
     public sealed class ArenaMap
     {
         public string Id { get; }
-        public GameTuning.ArenaSettings Settings { get; }
+        public GameTuning.ArenaSettings Settings { get; private set; }
 
         /// <summary>The variant of the arena this scene plays: its floor and its mechanic.</summary>
-        public string Variant { get; }
+        public string Variant { get; private set; }
 
         /// <summary>The twist of the variant; every mechanic runs only in the variant that names it.</summary>
-        public GameTuning.ArenaMechanic Mechanic { get; }
+        public GameTuning.ArenaMechanic Mechanic { get; private set; }
 
         /// <summary>The look of the arena, or null when the catalog has no entry for it: the scene's own stays.</summary>
         public ArenaCatalog.Entry Theme { get; }
@@ -28,23 +28,28 @@ namespace ToyCarArena.Gameplay.Arena
         /// </summary>
         public ArenaShape Shape { get; }
 
+        /// <summary>The rotation's arena, whatever the round's mode: a test of the rotation alone.</summary>
         public ArenaMap(GameTuning tuning, IArenaRotation rotation, ArenaCatalog catalog)
+            : this(tuning, rotation, catalog, null)
         {
-            Id = rotation.Current;
-            foreach (var map in tuning.Maps) {
-                if (map.Id == Id) {
-                    Settings = map.Arena;
-                    var variants = map.Variants;
-                    var wanted = rotation.CurrentVariant;
-                    // No variant named (a scene opened on its own) is the arena's first; one that does not exist is a typo.
-                    var variant = string.IsNullOrEmpty(wanted) ? (variants.Count > 0 ? variants[0] : null) : map.FindVariant(wanted);
-                    if (variant == null && !string.IsNullOrEmpty(wanted)) {
-                        throw new ArgumentException($"GameTuning.Maps arena '{Id}' has no variant '{wanted}'.");
-                    }
+        }
 
-                    Variant = variant != null ? variant.Id : "";
-                    Mechanic = variant != null ? variant.Mechanic : GameTuning.ArenaMechanic.None;
-                    break;
+        public ArenaMap(GameTuning tuning, IArenaRotation rotation, ArenaCatalog catalog, RoundRules rules)
+        {
+            // A mode with an arena of its own (FOOTBALL's pitch) plays it whatever the rotation says: the rotation of
+            // the app answers the same, a scene opened on its own or a test's fixed one does not know the mode.
+            var own = rules?.Mode.Arena;
+            if (own != null) {
+                Id = own.Id;
+                Use(own, null);
+            }
+            else {
+                Id = rotation.Current;
+                foreach (var map in tuning.Maps) {
+                    if (map.Id == Id) {
+                        Use(map, rotation.CurrentVariant);
+                        break;
+                    }
                 }
             }
 
@@ -55,6 +60,20 @@ namespace ToyCarArena.Gameplay.Arena
             Theme = catalog.Find(Id);
             // The random numbers only decide the order tiles crumble in, so each round is a different crumbling.
             Shape = ArenaShape.Create(Settings, new System.Random(UnityEngine.Random.Range(int.MinValue, int.MaxValue)));
+        }
+
+        private void Use(GameTuning.MapSettings map, string wanted)
+        {
+            Settings = map.Arena;
+            var variants = map.Variants;
+            // No variant named (a scene opened on its own) is the arena's first; one that does not exist is a typo.
+            var variant = string.IsNullOrEmpty(wanted) ? (variants.Count > 0 ? variants[0] : null) : map.FindVariant(wanted);
+            if (variant == null && !string.IsNullOrEmpty(wanted)) {
+                throw new ArgumentException($"GameTuning.Maps arena '{Id}' has no variant '{wanted}'.");
+            }
+
+            Variant = variant != null ? variant.Id : "";
+            Mechanic = variant != null ? variant.Mechanic : GameTuning.ArenaMechanic.None;
         }
 
         /// <summary>

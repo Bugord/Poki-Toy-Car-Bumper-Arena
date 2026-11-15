@@ -26,6 +26,21 @@ namespace ToyCarArena.Tests.PlayMode
         public float RandomBoostChance = 0.025f;
         public float IdleChance = 0.25f;
 
+        /// <summary>
+        /// Football: where the ball is now, or null without one. With a ball the novice drives at it instead of at the
+        /// other team's cars.
+        /// </summary>
+        public Func<Vector3?> Ball;
+
+        /// <summary>Football: the goal the novice attacks.</summary>
+        public Vector3 Goal;
+
+        /// <summary>Football: share of looks the novice lines up behind the ball (from the goal) instead of at it.</summary>
+        public float LineUpChance = 0.35f;
+
+        /// <summary>Football: how far behind the ball the novice lines up, in metres.</summary>
+        public float LineUpBehind = 2f;
+
         private readonly System.Random random;
         private readonly ArenaRound round;
         private readonly ArenaCamera arenaCamera;
@@ -55,8 +70,19 @@ namespace ToyCarArena.Tests.PlayMode
 
             var player = round.Player;
             var position = Flat(player.Position);
-            var target = PickTarget(player);
+            var ball = Ball?.Invoke();
+            var target = ball.HasValue ? null : PickTarget(player);
             var toTarget = target != null ? Flat(target.Position) - position : -position;
+            if (ball.HasValue) {
+                var at = Flat(ball.Value);
+                // A novice mostly chases the ball; now and then it goes round to push it the right way.
+                if (Chance(LineUpChance)) {
+                    at -= (Flat(Goal) - at).normalized * LineUpBehind;
+                }
+
+                toTarget = at - position;
+            }
+
             var heading = toTarget.normalized;
             if (round.Edge.DistanceToEdge(position) < EdgeFear && Chance(EdgeFearChance)) {
                 heading = round.Edge.Inward(position).normalized;
@@ -67,7 +93,7 @@ namespace ToyCarArena.Tests.PlayMode
             var local = Quaternion.Inverse(Quaternion.Euler(0f, arenaCamera.transform.eulerAngles.y, 0f)) * heading;
             input.SetMove(new Vector2(local.x, local.z));
 
-            var canAttack = target != null && toTarget.magnitude < BoostRange &&
+            var canAttack = (target != null || ball.HasValue) && toTarget.magnitude < BoostRange &&
                 Vector3.Angle(Flat(player.transform.forward), toTarget) < BoostAngle;
             if ((canAttack && Chance(BoostChance)) || Chance(RandomBoostChance)) {
                 input.PressBoost();

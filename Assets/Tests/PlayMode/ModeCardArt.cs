@@ -100,7 +100,7 @@ namespace ToyCarArena.Tests.PlayMode
                 // The prop as it rides in the round (the bomb lit, its spark up), its flash off.
                 var prop = Object.Instantiate(sceneProp, root.transform, false).transform;
                 prop.gameObject.SetActive(true);
-                prop.localScale = Vector3.one;
+                prop.localScale = Vector3.one * card.PropScale;
                 prop.localRotation = Quaternion.Euler(0f, -10f, 8f);
                 prop.localPosition = Vector3.up * (bounds.size.y + PropGap + card.PropRadius);
                 var flash = prop.Find("Flash");
