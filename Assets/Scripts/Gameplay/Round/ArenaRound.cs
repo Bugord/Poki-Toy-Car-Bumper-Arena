@@ -207,7 +207,7 @@ namespace ToyCarArena.Gameplay.Round
         public bool IsBotsPlaying => IsRunning || (!mode.IsTimed && IsFinished && Player != null && Player.IsOut);
 
         /// <summary>Seconds the round lasts at most: a timed round's own length, else the round's.</summary>
-        public float Duration => mode.IsTimed ? mode.Duration : tuning.Round.Duration;
+        public float Duration => mode.IsTimed ? mode.Duration : mode.Length > 0f ? mode.Length : tuning.Round.Duration;
 
         public float TimeLeft => Mathf.Max(0f, Duration - elapsed);
 
@@ -396,7 +396,7 @@ namespace ToyCarArena.Gameplay.Round
             else if (cars.Count > 1 && CarsLeft == 1) {
                 Finish(RoundOutcome.Won, 1);
             }
-            else if (elapsed >= tuning.Round.Duration) {
+            else if (elapsed >= Duration) {
                 Finish(CarsLeft == 1 ? RoundOutcome.Won : RoundOutcome.Survived, 1);
             }
         }
@@ -430,7 +430,7 @@ namespace ToyCarArena.Gameplay.Round
             else if (otherLeft == 0) {
                 Finish(RoundOutcome.Won, 1);
             }
-            else if (elapsed >= tuning.Round.Duration) {
+            else if (elapsed >= Duration) {
                 Finish(ownLeft > otherLeft ? RoundOutcome.Won : RoundOutcome.Survived, ownLeft >= otherLeft ? 1 : 2);
             }
         }

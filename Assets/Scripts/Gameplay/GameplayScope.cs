@@ -176,6 +176,7 @@ namespace ToyCarArena.Gameplay
             builder.RegisterEntryPoint<ItemFrenzyMode>().AsSelf();
             builder.RegisterEntryPoint<OverheatMode>().AsSelf();
             builder.RegisterEntryPoint<TeamPushMode>().AsSelf();
+            builder.RegisterEntryPoint<TutorialMode>().AsSelf();
             builder.RegisterEntryPoint<FootballMode>().AsSelf();
             // Every mode of the scene and the active one, for the bots and the HUD.
             builder.Register<RoundModes>(Lifetime.Singleton);

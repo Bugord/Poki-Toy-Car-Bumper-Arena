@@ -71,6 +71,8 @@ namespace ToyCarArena.Gameplay.Pickups
         private readonly bool isEnabled;
         private readonly float pace;
         private readonly int maxCount;
+        // The spawner lays boxes of its own; a mode that lays only its own (the tutorial) turns it off.
+        private readonly bool isLaying;
         private readonly float rollTime;
         private readonly List<FloorPickup> live = new();
         private readonly List<(Car car, Action handler)> shieldHandlers = new();
@@ -111,7 +113,7 @@ namespace ToyCarArena.Gameplay.Pickups
             // visit's round the tuning says, and a mode may have none (HOT POTATO: the bomb is its only item). A scene
             // without them never builds an object for one.
             this.isEnabled = settings.Enabled && rules.Mode.Pickups switch {
-                PickupRule.Always => true,
+                PickupRule.Always or PickupRule.Laid => true,
                 PickupRule.Usual => settings.FirstRound > 0 && progress.Round >= settings.FirstRound,
                 _ => false,
             };
@@ -119,6 +121,7 @@ namespace ToyCarArena.Gameplay.Pickups
             this.pace = Mathf.Max(0.01f, rules.Mode.PickupPace);
             this.maxCount = rules.Mode.PickupMax > 0 ? rules.Mode.PickupMax : settings.MaxCount;
             this.rollTime = rules.Mode.PickupRollTime > 0f ? rules.Mode.PickupRollTime : settings.RollTime;
+            this.isLaying = rules.Mode.Pickups != PickupRule.Laid;
         }
 
         /// <summary>
@@ -175,7 +178,9 @@ namespace ToyCarArena.Gameplay.Pickups
             }
 
             TickLive(deltaTime);
-            TrySpawn();
+            if (isLaying) {
+                TrySpawn();
+            }
         }
 
         /// <summary>
@@ -183,7 +188,9 @@ namespace ToyCarArena.Gameplay.Pickups
         /// null when every slot is taken. For the spawner, tests and the dev console. With <paramref name="owner"/> only that
         /// car may break it and the bots leave it lying (the item lesson's box).
         /// </summary>
-        public FloorPickup Spawn(Vector3 position, Car owner = null)
+        /// <param name="item">The item the box always gives, in place of the roll (the tutorial's Shockwave).</param>
+        /// <param name="isLasting">The box lies until taken rather than fading after its lifetime.</param>
+        public FloorPickup Spawn(Vector3 position, Car owner = null, ItemKind? item = null, bool isLasting = false)
         {
             EnsureBuilt();
             foreach (var slot in slots) {
@@ -196,6 +203,8 @@ namespace ToyCarArena.Gameplay.Pickups
                 slot.StageTime = 0f;
                 slot.WasTaken = false;
                 slot.Owner = owner;
+                slot.Item = item;
+                slot.IsLasting = isLasting;
                 slot.State = FloorPickup.Stage.Live;
                 slot.Phase = (float)random.NextDouble() * Mathf.PI * 2f;
                 slot.Root.position = slot.Position;
@@ -393,7 +402,8 @@ namespace ToyCarArena.Gameplay.Pickups
                 var pickup = live[i];
                 pickup.Age += deltaTime;
                 // The safe view of the edge drops a wave as soon as it shakes, so this also catches a rim, a pit and a hole.
-                if (pickup.Age >= settings.Lifetime || edge.DistanceToEdge(pickup.Position, settings.VanishMargin) < 0f) {
+                if (pickup.Age >= settings.Lifetime && !pickup.IsLasting
+                    || edge.DistanceToEdge(pickup.Position, settings.VanishMargin) < 0f) {
                     Leave(pickup, false);
                     continue;
                 }
@@ -401,7 +411,7 @@ namespace ToyCarArena.Gameplay.Pickups
                 var taker = NearestTaker(pickup);
                 if (taker != null) {
                     Leave(pickup, true);
-                    Break(taker);
+                    Break(taker, pickup.Item);
                 }
             }
         }
@@ -409,10 +419,12 @@ namespace ToyCarArena.Gameplay.Pickups
         /// <summary>
         /// A car broke a box: its empty slot starts to spin on an item drawn for how far the car trails the leader.
         /// </summary>
-        private void Break(Car car)
+        private void Break(Car car, ItemKind? item)
         {
             var trailing = ItemRoll.TrailingOf(round.Score, round.IndexOf(car), settings);
+            // A box with its own item still draws the roll, so the dice after it are the same either way.
             var kind = ItemRoll.Choose(random, settings, trailing);
+            kind = item ?? kind;
             car.GiveItem(kind, rollTime);
             if (effects != null) {
                 effects.PlayPickup(car.Position);
@@ -655,7 +667,7 @@ namespace ToyCarArena.Gameplay.Pickups
                 var scale = 1f;
                 if (slot.State == FloorPickup.Stage.Live) {
                     scale = EaseOutBack(Mathf.Clamp01(slot.Age / PopTime));
-                    var isBlinking = settings.Lifetime - slot.Age < BlinkTime;
+                    var isBlinking = !slot.IsLasting && settings.Lifetime - slot.Age < BlinkTime;
                     slot.Hover.gameObject.SetActive(!isBlinking || Mathf.Repeat(slot.Phase * BlinkRate, 1f) < 0.7f);
                 }
                 else {

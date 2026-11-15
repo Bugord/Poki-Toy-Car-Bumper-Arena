@@ -35,7 +35,7 @@ namespace ToyCarArena.Gameplay.Pickups
             this.round = round;
             this.pickups = pickups;
             this.lesson = lesson;
-            this.isLaying = rules.Kind != SpecialRound.ItemFrenzy;
+            this.isLaying = rules.Kind != SpecialRound.ItemFrenzy && rules.Mode.Pickups != PickupRule.Laid;
         }
 
         /// <summary>Where the lesson's box was laid this round; null when it laid none.</summary>

@@ -21,6 +21,7 @@ namespace ToyCarArena.Gameplay.Round
         private readonly IKeyValueStorage storage;
         private readonly GameTuning tuning;
         private int roundsBefore = -1;
+        private bool? isNewPlayer;
 
         /// <param name="storage">Where the rounds finished are kept; null keeps nothing, as a new player.</param>
         /// <param name="tuning">Kept for the scope's registration; the count no longer needs it.</param>
@@ -49,6 +50,19 @@ namespace ToyCarArena.Gameplay.Round
                 }
 
                 return roundsBefore;
+            }
+        }
+
+        /// <summary>Read on first use and kept for the visit: the rounds this visit finishes do not change it.</summary>
+        public bool IsNewPlayer
+        {
+            get
+            {
+                if (isNewPlayer == null) {
+                    isNewPlayer = storage != null && RoundsBefore == 0 && storage.GetInt(PlayerProgress.XpKey) <= 0;
+                }
+
+                return isNewPlayer.Value;
             }
         }
 
