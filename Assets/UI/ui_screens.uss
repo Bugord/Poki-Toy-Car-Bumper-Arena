@@ -2797,12 +2797,15 @@
 }
 
 .track__map {
-    width: 55px;
-    height: 55px;
-    border-width: 7px;
-    border-color: var(--navy);
-    border-radius: 999px;
+    width: 76px;
+    height: 76px;
+    -unity-background-scale-mode: scale-to-fit;
 }
+
+.track__map--sandbox { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_arena_sandbox.png"); }
+.track__map--tabletop { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_arena_tabletop.png"); }
+.track__map--candy { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_arena_candy.png"); }
+.track__map--playroom { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_arena_playroom.png"); }
 
 /* As wide as the step between stops, so a long name in another language shrinks rather than runs into its
    neighbour's. */
@@ -6127,6 +6130,6 @@
 .mission-icon__sign--boost { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_boost.png"); }
 .mission-icon__sign--rounds { background-image: url("/Assets/Art/Sprites/UI/sprite_icon_rounds.png"); }
 .round-over__home-icon--painted {
-    background-image: url("/Assets/Art/Sprites/UI/sprite_icon_home.png");
+    background-image: url("/Assets/Art/Sprites/UI/sprite_icon_hub.png");
     -unity-background-scale-mode: scale-to-fit;
 }

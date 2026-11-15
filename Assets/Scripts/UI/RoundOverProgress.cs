@@ -283,8 +283,9 @@ namespace ToyCarArena.UI
             }
             else {
                 var map = new VisualElement { pickingMode = PickingMode.Ignore };
+                // The arena's painted picture (sprite_icon_arena_<id>).
                 map.AddToClassList("track__map");
-                map.style.backgroundColor = reward.Arena.Background;
+                map.AddToClassList($"track__map--{reward.Arena.Id}");
                 node.Add(map);
             }
 
