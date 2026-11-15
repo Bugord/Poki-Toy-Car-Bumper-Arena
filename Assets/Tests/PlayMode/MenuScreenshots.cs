@@ -120,6 +120,27 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         /// <summary>
+        /// NEW MODE! as the menu opens it by itself for a mode of the day not shown yet, and CHOOSE MODE after TRY with
+        /// the mode picked, in English and Russian. <c>Logs/menu/[ru-]newmode[-try]_&lt;w&gt;x&lt;h&gt;.png</c>.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator CaptureTheNewMode()
+        {
+            Strings.Load(new StringTable(AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Localization/strings.csv").text));
+            var directory = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "menu");
+            Directory.CreateDirectory(directory);
+            foreach (var language in new[] { "en", "ru" }) {
+                Strings.SetLanguage(language);
+                var prefix = language == "en" ? "" : language + "-";
+                yield return Capture(directory, prefix + "newmode", (1080, 1920, true), false, newMode: true);
+                yield return Capture(directory, prefix + "newmode", (1920, 1080, false), false, newMode: true);
+            }
+
+            Strings.SetLanguage("en");
+            typeof(Strings).GetField("table", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
+        }
+
+        /// <summary>
         /// The menu and CHOOSE MODE with other modes of the day (stubs, forced as the dev console's event_day does):
         /// their colours, card pictures, names, rules (GOLD RUSH's the longest) and the clock on the card and the tile, in
         /// English, Russian and French. <c>Logs/menu/event-&lt;id&gt;*_&lt;w&gt;x&lt;h&gt;.png</c>, <c>ru-event-&lt;id&gt;*</c>
@@ -152,7 +173,7 @@ namespace ToyCarArena.Tests.PlayMode
 
         private static IEnumerator Capture(string directory, string name, (int Width, int Height, bool IsTouch) size,
             bool withPopups, int xp = 540, int leagueSeen = 0, bool withLeagues = false, int boost = 0,
-            int dailyStreak = 0, bool modes = false, int tasks = 0)
+            int dailyStreak = 0, bool modes = false, int tasks = 0, bool newMode = false)
         {
             var catalog = AssetDatabase.LoadAssetAtPath<CarCatalog>("Assets/Data/Cars/data_car_catalog.asset");
             var arenas = AssetDatabase.LoadAssetAtPath<ArenaCatalog>("Assets/Data/Arenas/data_arena_catalog.asset");
@@ -172,6 +193,12 @@ namespace ToyCarArena.Tests.PlayMode
             storage.SetString("toppers_owned", "party-hat");
             storage.SetString("topper_selected", "party-hat");
             storage.SetInt("xp_boost", boost);
+            // Every mode of the day shown already, but in the new mode's case: NEW MODE! opens by itself then.
+            if (!newMode) {
+                foreach (var mode in EventModes.Circle) {
+                    storage.SetBool("intro_mode-" + EventModes.IdOf(mode), true);
+                }
+            }
             // The daily gift taken today (the tile shows the time to the next), or yesterday after this many days in a
             // row: today's waits. The menu does not open it by itself here; the daily cases open it by hand.
             var wallet = new PlayerWallet(storage, tuning);
@@ -230,6 +257,12 @@ namespace ToyCarArena.Tests.PlayMode
                 typeof(MenuView).GetMethod("Place", Private)?.Invoke(view, null);
                 yield return Wait(0.6f);
                 Save(target, Path.Combine(directory, $"{name}_{width}x{height}.png"));
+                if (newMode) {
+                    typeof(MenuView).GetMethod("PressTryMode", Private)?.Invoke(view, null);
+                    yield return Wait(0.5f);
+                    Save(target, Path.Combine(directory, $"{name}-try_{width}x{height}.png"));
+                }
+
                 if (modes) {
                     typeof(MenuView).GetMethod("OpenModes", Private)?.Invoke(view, null);
                     yield return Wait(0.3f);

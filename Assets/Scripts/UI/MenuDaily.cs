@@ -351,7 +351,7 @@ namespace ToyCarArena.UI
             ShowTomorrow(gift, true);
             // The stamp goes over the whole calendar: a cell is too narrow for it.
             var stamp = Strings.Get(claim.Hat != null ? "result.equipped" : "daily.claimed");
-            RewardCelebration.Play(overlay, sheet, days, stamp, claim.Hat == null ? cell.Art : null,
+            RewardCelebration.Play(overlay, sheet, days, cell.Root, stamp, claim.Hat == null ? cell.Art : null,
                 claim.Hat == null ? coinCounter : null, token);
         }
 

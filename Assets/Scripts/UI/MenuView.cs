@@ -207,6 +207,9 @@ namespace ToyCarArena.UI
         private VisualElement rightRail;
         private VisualElement boostTile;
         private VisualElement eventTile;
+        private VisualElement newModePopup;
+        private VisualElement newModeFace;
+        private VisualElement newModeArt;
         private Label boostLeft;
         private VisualElement xpBoost;
         private Label[] xpBoostLabels;
@@ -251,6 +254,7 @@ namespace ToyCarArena.UI
             BuildModesPopup(menu);
             BuildBoostPopup(menu);
             BuildDailyPopup(menu);
+            BuildNewModePopup(menu);
             // The daily gift waits behind NEW LEAGUE!: it opens once that closes, unless PLAY or the garage closed it.
             leagues = new MenuLeagues(menu, audioService.PlayUiClick, () => {
                 Root?.Focus();
@@ -317,7 +321,7 @@ namespace ToyCarArena.UI
             ViewModel.IsAdPlaying;
 
         private bool IsPopupOpen => missionsPopup.ClassListContains(OpenClass) || modesPopup.ClassListContains(OpenClass) ||
-            IsBoostOpen || IsDailyOpen || leagues.IsNewLeagueOpen || leagues.IsListOpen;
+            newModePopup.ClassListContains(OpenClass) || IsBoostOpen || IsDailyOpen || leagues.IsNewLeagueOpen || leagues.IsListOpen;
 
         private bool IsBoostOpen => boostPopup.ClassListContains(OpenClass);
 
@@ -426,7 +430,7 @@ namespace ToyCarArena.UI
 
         private VisualElement BuildEventTile()
         {
-            eventTile = Tile(null, EventName, EventKey.ToString(), PlayEvent);
+            eventTile = Tile(null, EventName, EventKey.ToString(), OpenEvent);
             eventTile.AddToClassList("menu__tile--event");
             var button = eventTile.Q<VisualElement>(className: "menu__tile-button");
             var face = button.Q<VisualElement>(className: "menu__face");
@@ -565,16 +569,7 @@ namespace ToyCarArena.UI
             eventArt = Element("menu__event-art");
             eventFace.Add(eventArt);
             var head = Element("menu__event-head");
-            var tag = Element("menu__event-tag");
-            tag.Add(Icon("menu__event-bolt", DrawBolt));
-            var tagText = StrokeText.Create("", "menu__event-tag-label", out var tagLabels,
-                "menu__event-tag-label-text");
-            foreach (var label in tagLabels) {
-                text.Set(label, () => Strings.Get("menu.event"));
-            }
-
-            tag.Add(tagText);
-            head.Add(tag);
+            head.Add(EventTag());
             // A clock and 5H 12M: the event changes at midnight, as DAILY's gift does. No words, as on DAILY's tile:
             // НОВЫЙ ЧЕРЕЗ ran into SELECTED on the card.
             var timer = Element("menu__event-timer");
@@ -626,6 +621,119 @@ namespace ToyCarArena.UI
             sheet.Add(play);
         }
 
+        // The white EVENT tag with a bolt at the top of an event's card.
+        private VisualElement EventTag()
+        {
+            var tag = Element("menu__event-tag");
+            tag.Add(Icon("menu__event-bolt", DrawBolt));
+            var tagText = StrokeText.Create("", "menu__event-tag-label", out var tagLabels,
+                "menu__event-tag-label-text");
+            foreach (var label in tagLabels) {
+                text.Set(label, () => Strings.Get("menu.event"));
+            }
+
+            tag.Add(tagText);
+            return tag;
+        }
+
+        /// <summary>
+        /// NEW MODE!: the event of the day the player has not been shown yet, on the same orange card as in CHOOSE
+        /// MODE, with TRY (CHOOSE MODE opens on it, as its tile does) and LATER (closes). Once a mode, after
+        /// NEW LEAGUE! and the daily gift.
+        /// </summary>
+        private void BuildNewModePopup(VisualElement menu)
+        {
+            newModePopup = Popup(menu, () => Strings.Get("menu.new_mode"), out var sheet);
+            newModePopup.AddToClassList("menu__newmode-popup");
+            var holder = Element("menu__mode-holder");
+            holder.AddToClassList("menu__newmode-holder");
+            holder.Add(Element("menu__mode-drop"));
+            newModeFace = Element("menu__mode-card");
+            newModeFace.AddToClassList("menu__mode-card--event");
+            newModeFace.Add(Icon("menu__event-rays", DrawEventRays));
+            newModeArt = Element("menu__event-art");
+            newModeFace.Add(newModeArt);
+            var head = Element("menu__event-head");
+            head.Add(EventTag());
+            newModeFace.Add(head);
+            var title = StrokeText.Create("", "menu__event-title", out var titleLabels, "menu__event-title-text");
+            foreach (var label in titleLabels) {
+                text.Set(label, EventName);
+            }
+
+            title.AddToClassList("menu__event-title-box");
+            FitText.Fit(title, titleLabels);
+            newModeFace.Add(title);
+            var hint = Text("menu__mode-desc");
+            hint.AddToClassList("menu__mode-desc--event");
+            text.Set(hint, EventHint);
+            newModeFace.Add(hint);
+            FitToHeight(hint, newModeFace);
+            holder.Add(newModeFace);
+            sheet.Add(holder);
+
+            var tryIt = new Button(PressTryMode);
+            tryIt.RemoveFromClassList(Button.ussClassName);
+            tryIt.AddToClassList("button");
+            tryIt.AddToClassList("button--green");
+            tryIt.AddToClassList("button--big");
+            tryIt.AddToClassList("menu__try");
+            tryIt.focusable = false;
+            tryIt.Add(Element("button__face"));
+            tryIt.Add(StrokeText.Create("", null, out var tryLabels, "button__label"));
+            foreach (var label in tryLabels) {
+                text.Set(label, () => Strings.Get("menu.try"));
+            }
+
+            var tryKey = Element("key");
+            tryKey.AddToClassList("menu__play-key");
+            var tryKeyText = Text("key__text");
+            text.Set(tryKeyText, () => Strings.Get("common.space"));
+            tryKey.Add(tryKeyText);
+            tryIt.Add(tryKey);
+            sheet.Add(tryIt);
+
+            var later = new Button(() => {
+                audioService.PlayUiClick();
+                ClosePopups();
+            });
+            later.RemoveFromClassList(Button.ussClassName);
+            later.AddToClassList("button");
+            later.AddToClassList("button--white");
+            later.AddToClassList("menu__no-thanks");
+            later.focusable = false;
+            later.Add(Element("button__face"));
+            var laterLabel = Text("button__label");
+            laterLabel.AddToClassList("menu__no-thanks-label");
+            text.Set(laterLabel, () => Strings.Get("menu.later"));
+            later.Add(laterLabel);
+            sheet.Add(later);
+        }
+
+        // NEW MODE! by itself: once a mode, on a menu with nothing over it.
+        private void OfferNewMode()
+        {
+            if (Root?.panel == null || IsBusy || IsPopupOpen || !ViewModel.TakeNewMode()) {
+                return;
+            }
+
+            ShowEvent();
+            newModePopup.AddToClassList(OpenClass);
+        }
+
+        private bool IsNewModeOpen => newModePopup.ClassListContains(OpenClass);
+
+        private void PressTryMode()
+        {
+            if (IsBusy || !IsNewModeOpen) {
+                return;
+            }
+
+            newModePopup.RemoveFromClassList(OpenClass);
+            ViewModel.NewModeTried();
+            OpenModesOn(ViewModel.TodayEvent);
+        }
+
         /// <summary>
         /// A mode's card: the face (filled by the caller) inside a holder that carries the green ring, the shadow and the
         /// SELECTED tag, which the face's clipping would cut. A tap picks the mode.
@@ -664,6 +772,11 @@ namespace ToyCarArena.UI
             }
 
             audioService.PlayUiClick();
+            ChooseMode(mode, card);
+        }
+
+        private void ChooseMode(EventMode mode, VisualElement card)
+        {
             var isNew = mode != ViewModel.Mode;
             ViewModel.SelectMode(mode);
             ShowMode();
@@ -737,14 +850,17 @@ namespace ToyCarArena.UI
             var back = EventBack(look);
             eventFace.style.backgroundImage = back;
             eventTileFill.style.backgroundImage = back;
+            newModeFace.style.backgroundImage = back;
             if (eventArtClass != null) {
                 eventArt.RemoveFromClassList(eventArtClass);
                 eventTileArt.RemoveFromClassList(eventArtClass);
+                newModeArt.RemoveFromClassList(eventArtClass);
             }
 
             eventArtClass = look.ArtClass;
             eventArt.AddToClassList(eventArtClass);
             eventTileArt.AddToClassList(eventArtClass);
+            newModeArt.AddToClassList(eventArtClass);
             foreach (var label in eventTitle) {
                 text.Set(label, EventName);
             }
@@ -1563,6 +1679,16 @@ namespace ToyCarArena.UI
                 return;
             }
 
+            // NEW MODE!: Space or Enter is TRY, Esc is LATER; nothing else reaches through it.
+            if (IsNewModeOpen && evt.keyCode is not KeyCode.Escape) {
+                evt.StopPropagation();
+                if (evt.keyCode is KeyCode.Space or KeyCode.Return or KeyCode.KeypadEnter) {
+                    PressTryMode();
+                }
+
+                return;
+            }
+
             // The leagues list closes with Esc; PLAY's and the tiles' keys do not reach through it.
             if (leagues.IsListOpen && evt.keyCode is not KeyCode.Escape) {
                 evt.StopPropagation();
@@ -1596,7 +1722,7 @@ namespace ToyCarArena.UI
                     break;
                 case EventKey:
                     evt.StopPropagation();
-                    PlayEvent();
+                    OpenEvent();
                     break;
                 case KeyCode.Escape:
                     evt.StopPropagation();
@@ -1616,17 +1742,17 @@ namespace ToyCarArena.UI
             ViewModel.Play();
         }
 
-        // The HOT POTATO tile: the event becomes the mode in play and starts, as PLAY would.
-        private void PlayEvent()
+        // The event tile: CHOOSE MODE opens with the event of the day picked, and PLAY in it starts the event. It
+        // does not start the round itself: a player tapping a picture expects to see what it is first.
+        private void OpenEvent()
         {
-            if (IsBusy || !ViewModel.HasEvents) {
+            if (IsBusy || IsPopupOpen || !ViewModel.HasEvents) {
                 return;
             }
 
-            audioService.PlayUiClick();
-            ClosePopups();
             Pop(eventTile);
-            ViewModel.PlayEvent();
+            ViewModel.EventPressed();
+            OpenModesOn(ViewModel.TodayEvent);
         }
 
         private void OpenGarage()
@@ -1701,7 +1827,10 @@ namespace ToyCarArena.UI
             leagues.ShowList(ViewModel.Level.Level, !isTouch);
         }
 
-        private void OpenModes()
+        private void OpenModes() => OpenModesOn(null);
+
+        // CHOOSE MODE, with the pick picked as a tap on its card would (the event tile, TRY on NEW MODE!).
+        private void OpenModesOn(EventMode? pick)
         {
             if (IsBusy || IsPopupOpen) {
                 return;
@@ -1710,6 +1839,9 @@ namespace ToyCarArena.UI
             audioService.PlayUiClick();
             ViewModel.ModesOpened();
             modesPopup.AddToClassList(OpenClass);
+            if (pick is { } mode) {
+                ChooseMode(mode, mode == EventMode.None ? quickCard : eventCard);
+            }
         }
 
         private void OpenBoost()
@@ -1779,7 +1911,12 @@ namespace ToyCarArena.UI
         // The daily gift by itself: once a visit, on a menu that is up with nothing over it and a gift to claim.
         private void OfferDaily()
         {
-            if (Root?.panel == null || IsBusy || IsPopupOpen || !ViewModel.TakeDailyOffer()) {
+            if (Root?.panel == null || IsBusy || IsPopupOpen) {
+                return;
+            }
+
+            if (!ViewModel.TakeDailyOffer()) {
+                OfferNewMode();
                 return;
             }
 
@@ -1866,6 +2003,7 @@ namespace ToyCarArena.UI
                     }
                     else {
                         dailyPopup.RemoveFromClassList(OpenClass);
+                        Root.schedule.Execute(OfferNewMode);
                     }
 
                     Root.Focus();
@@ -1923,12 +2061,18 @@ namespace ToyCarArena.UI
                 ViewModel.DailyDeclined();
             }
 
+            var wasDailyOpen = IsDailyOpen;
             boostPopup.RemoveFromClassList(OpenClass);
             dailyPopup.RemoveFromClassList(OpenClass);
+            newModePopup.RemoveFromClassList(OpenClass);
             isDailyClaimed = false;
             missionsPopup.RemoveFromClassList(OpenClass);
             modesPopup.RemoveFromClassList(OpenClass);
             leagues?.Close();
+            // A new mode waits behind the daily gift: it is offered once that closes (not after PLAY or the garage).
+            if (wasDailyOpen) {
+                Root?.schedule.Execute(OfferNewMode);
+            }
         }
 
         // A mode not out yet answers a press with a click and a little shake, and stays as it is.

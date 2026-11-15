@@ -2489,3 +2489,12 @@
     color: var(--white);
     white-space: nowrap;
 }
+
+/* NEW MODE!: the event's orange card as in CHOOSE MODE, then TRY IT! and LATER under it. */
+.menu__newmode-popup .menu__sheet { width: 960px; align-items: stretch; }
+.menu__newmode-popup .menu__sheet-head > .stroke { rotate: -4deg; }
+.menu__newmode-popup .menu__sheet-title { color: var(--orange); }
+.menu__newmode-holder { margin: 10px 0 40px 0; }
+.menu__try { height: 190px; padding-bottom: 36px; }
+.menu__try .button__label { font-size: 96px; }
+.menu__newmode-popup .menu__no-thanks { align-self: center; }
