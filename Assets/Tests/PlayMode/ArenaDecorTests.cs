@@ -2,6 +2,7 @@ using System.Collections;
 using NUnit.Framework;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Gameplay.Arena;
+using ToyCarArena.Rendering;
 using UnityEngine;
 using UnityEngine.TestTools;
 using VContainer;
@@ -25,7 +26,9 @@ namespace ToyCarArena.Tests.PlayMode
 
             var root = scope.transform.Find("Decor");
             Assert.That(root, Is.Not.Null, $"{map} has no Decor root");
-            Assert.That(root.childCount, Is.EqualTo(expected));
+            // One more: the props merged into one mesh per material (StaticMerge).
+            Assert.That(root.childCount, Is.EqualTo(expected + 1));
+            Assert.That(root.Find(StaticMerge.MergedName), Is.Not.Null, $"{map}: the props are not merged");
             Assert.That(expected, Is.GreaterThan(0));
             AssertScenery(root);
         }
@@ -44,7 +47,8 @@ namespace ToyCarArena.Tests.PlayMode
             Assert.That(root.Find("Ground"), Is.Not.Null, $"{map} has no ground");
             Assert.That(root.Find("Ground").position.y, Is.LessThan(-theme.GroundDepth + 0.01f));
             Assert.That(theme.Pedestal.Count, Is.GreaterThan(0));
-            Assert.That(root.childCount, Is.EqualTo(1 + theme.Pedestal.Count + theme.GroundPieces.Count));
+            // The ground, the pieces, and the pieces merged into one mesh per material (StaticMerge).
+            Assert.That(root.childCount, Is.EqualTo(2 + theme.Pedestal.Count + theme.GroundPieces.Count));
             AssertScenery(root);
 
             // The pedestal stays under the floor, and what meets the floor is narrower than it, so the rim and the drop show.

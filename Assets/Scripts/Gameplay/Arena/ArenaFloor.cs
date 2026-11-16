@@ -19,6 +19,11 @@ namespace ToyCarArena.Gameplay.Arena
     /// When the floor goes in cycles a fallen wave comes back (<see cref="Raise"/>, <see cref="Restore"/>): its blocks
     /// appear hanging over their places, then drop into them, and only as they land do the collider and the edge take
     /// them back, so nothing on the floor collides with a block in the air.
+    /// <para>
+    /// A wave that stands is drawn as one mesh of all its blocks at rest, not block by block: a round floor has some 55
+    /// blocks, and on a phone every draw counts. Its blocks show again (and the merged mesh hides) the moment it starts
+    /// to shake, and the merged mesh is back once the wave stands again, so what is seen never changes.
+    /// </para>
     /// </summary>
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider))]
     public sealed class ArenaFloor : MonoBehaviour, IArenaEdge
@@ -106,6 +111,7 @@ namespace ToyCarArena.Gameplay.Arena
         private ArenaLayout layout;
         private WaveBlocks[] waves = new WaveBlocks[0];
         private WaveState[] states = new WaveState[0];
+        private readonly List<Mesh> restMeshes = new();
 
         // Waves shaking or falling, which Update has to move.
         private int movingWaves;
@@ -186,7 +192,8 @@ namespace ToyCarArena.Gameplay.Arena
             }
 
             for (var i = 0; i < waves.Length; i++) {
-                waves[i] = new WaveBlocks(blocks[i].ToArray());
+                waves[i] = new WaveBlocks(blocks[i].ToArray(), BuildRest(i, blocks[i], template));
+                SetResting(waves[i], true);
             }
 
             GetComponent<MeshFilter>().sharedMesh = layout.CoreMesh;
@@ -201,6 +208,59 @@ namespace ToyCarArena.Gameplay.Arena
 
             foreach (var mesh in layout.Meshes) {
                 Destroy(mesh);
+            }
+
+            foreach (var mesh in restMeshes) {
+                Destroy(mesh);
+            }
+        }
+
+        /// <summary>One renderer of all the blocks of a wave at rest, in the floor's own space; null for an empty wave.</summary>
+        private MeshRenderer BuildRest(int wave, List<Block> blocks, MeshRenderer template)
+        {
+            if (blocks.Count == 0) {
+                return null;
+            }
+
+            var parts = new CombineInstance[blocks.Count];
+            var vertices = 0;
+            for (var i = 0; i < blocks.Count; i++) {
+                var mesh = blocks[i].Transform.GetComponent<MeshFilter>().sharedMesh;
+                vertices += mesh.vertexCount;
+                parts[i] = new CombineInstance {
+                    mesh = mesh, transform = Matrix4x4.TRS(blocks[i].RestPosition, blocks[i].RestRotation, Vector3.one),
+                };
+            }
+
+            var merged = new Mesh { name = $"Wave {wave} at rest" };
+            if (vertices > ushort.MaxValue) {
+                merged.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+            }
+
+            merged.CombineMeshes(parts, true, true, false);
+            merged.UploadMeshData(true);
+            restMeshes.Add(merged);
+
+            var holder = new GameObject($"Wave {wave} at rest") { layer = gameObject.layer };
+            holder.transform.SetParent(transform, false);
+            holder.AddComponent<MeshFilter>().sharedMesh = merged;
+            var look = holder.AddComponent<MeshRenderer>();
+            look.sharedMaterial = template.sharedMaterial;
+            look.shadowCastingMode = template.shadowCastingMode;
+            look.receiveShadows = template.receiveShadows;
+            return look;
+        }
+
+        /// <summary>Draws a wave as its one merged mesh (it stands still) or block by block (it moves).</summary>
+        private static void SetResting(WaveBlocks wave, bool isResting)
+        {
+            if (wave.Rest == null) {
+                return;
+            }
+
+            wave.Rest.enabled = isResting;
+            foreach (var block in wave.Blocks) {
+                block.Renderer.enabled = !isResting;
             }
         }
 
@@ -265,6 +325,10 @@ namespace ToyCarArena.Gameplay.Arena
                 foreach (var block in waves[i].Blocks) {
                     block.Renderer.sharedMaterial = material;
                 }
+
+                if (waves[i].Rest != null) {
+                    waves[i].Rest.sharedMaterial = material;
+                }
             }
 
             if (!fallenOnly) {
@@ -298,6 +362,7 @@ namespace ToyCarArena.Gameplay.Arena
             }
 
             states[wave] = WaveState.Warning;
+            SetResting(waves[wave], false);
             waves[wave].WarnedAt = Time.time;
             waves[wave].WarningTime = duration;
             movingWaves++;
@@ -316,6 +381,7 @@ namespace ToyCarArena.Gameplay.Arena
 
             if (states[wave] == WaveState.Standing) {
                 movingWaves++;
+                SetResting(target, false);
             }
 
             states[wave] = WaveState.Falling;
@@ -380,6 +446,8 @@ namespace ToyCarArena.Gameplay.Arena
                 block.Transform.gameObject.SetActive(true);
                 block.Transform.SetLocalPositionAndRotation(block.RestPosition, block.RestRotation);
             }
+
+            SetResting(waves[wave], true);
 
             Refresh();
         }
@@ -487,14 +555,17 @@ namespace ToyCarArena.Gameplay.Arena
         private sealed class WaveBlocks
         {
             public readonly Block[] Blocks;
+            // All the blocks at rest in one mesh, drawn instead of them while the wave stands.
+            public readonly MeshRenderer Rest;
             public float WarnedAt;
             public float WarningTime;
             public float RaisedAt;
             public float LandAt;
 
-            public WaveBlocks(Block[] blocks)
+            public WaveBlocks(Block[] blocks, MeshRenderer rest)
             {
                 this.Blocks = blocks;
+                this.Rest = rest;
             }
         }
 

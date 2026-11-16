@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using ToyCarArena.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -15,11 +17,12 @@ namespace ToyCarArena.Gameplay.Arena
     /// angle 0 is straight behind the arena as the camera sees it, 90 to the right of the screen, 180 in front of it.
     /// </para>
     /// </summary>
-    public sealed class ArenaDecor : IInitializable
+    public sealed class ArenaDecor : IInitializable, IDisposable
     {
         private readonly ArenaMap map;
         private readonly ArenaCamera arenaCamera;
         private readonly Transform parent;
+        private readonly List<Mesh> merged = new();
 
         public ArenaDecor(ArenaMap map, ArenaCamera arenaCamera, Transform parent)
         {
@@ -52,6 +55,20 @@ namespace ToyCarArena.Gameplay.Arena
 
                 Place(item.Model, position, rotation, item.Scale, root);
             }
+
+            // The props never move: one draw per material instead of one (and an outline draw) per prop.
+            merged.AddRange(StaticMerge.Merge(root));
+        }
+
+        public void Dispose()
+        {
+            foreach (var mesh in merged) {
+                if (mesh != null) {
+                    UnityEngine.Object.Destroy(mesh);
+                }
+            }
+
+            merged.Clear();
         }
 
         /// <summary>
@@ -63,7 +80,7 @@ namespace ToyCarArena.Gameplay.Arena
             var pivot = new GameObject(model.name).transform;
             pivot.SetParent(parent, false);
             pivot.position = position;
-            var instance = Object.Instantiate(model, pivot);
+            var instance = UnityEngine.Object.Instantiate(model, pivot);
             instance.transform.localScale = Vector3.one * scale;
             Outline.Apply(instance);
             var renderers = instance.GetComponentsInChildren<Renderer>();
