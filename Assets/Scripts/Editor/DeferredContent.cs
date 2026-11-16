@@ -130,6 +130,11 @@ namespace ToyCarArena.Editor
         public void CopyTo(string outputPath)
         {
             var folder = Path.Combine(outputPath, "StreamingAssets", ContentNames.Folder);
+            // A build into the last one's folder would otherwise upload its bundles too, under names no longer used.
+            if (Directory.Exists(folder)) {
+                Directory.Delete(folder, true);
+            }
+
             Directory.CreateDirectory(folder);
             foreach (var name in bundles.Keys) {
                 File.Copy(Path.Combine(BundleFolder, name), Path.Combine(folder, ContentNames.FileOf(name)), true);

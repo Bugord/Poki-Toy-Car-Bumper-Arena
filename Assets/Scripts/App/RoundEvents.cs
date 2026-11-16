@@ -162,7 +162,9 @@ namespace ToyCarArena.App
         /// <summary>
         /// A content bundle (<see cref="ContentBundles"/>) that never came (<c>failed</c>), that came only as plain bytes
         /// after the streamed download failed (<c>memory</c>), or that a round or result screen stopped waiting for
-        /// (<c>late</c>): <c>content / late-floors-tabletop / load</c>. The bundle names carry no numbers.
+        /// (<c>late</c>): <c>content / late-floors-tabletop / load</c>; after v0.19.0 also why each attempt failed
+        /// (<c>why-timeout|network|http|unpack|empty|open|apply|other</c>): <c>content / why-network-music / load</c>.
+        /// The bundle names carry no numbers.
         /// </summary>
         public static void MeasureContent(this IGamePlatform platform, string how, string bundle) =>
             platform.Measure("content", $"{how}-{bundle}", "load");
