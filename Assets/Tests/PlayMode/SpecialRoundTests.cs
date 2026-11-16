@@ -14,26 +14,29 @@ namespace ToyCarArena.Tests.PlayMode
 {
     /// <summary>
     /// The special rounds of a visit: when they come, and that each one changes its rule in the real Game scene (the
-    /// ice, the low gravity and its return, the giants, the boss and its reward). Low gravity and the hot potato are in
-    /// the rotation; the others stay for <see cref="GameTuning.SpecialRoundSettings.Force"/>. The hot potato, a mode of
-    /// the menu too, has <see cref="HotPotatoModeTests"/>.
+    /// ice, the low gravity and its return, the giants, the boss and its reward). Low gravity and four event modes are in
+    /// the rotation; the others stay for <see cref="GameTuning.SpecialRoundSettings.Force"/>. The modes have their own
+    /// tests (<see cref="HotPotatoModeTests"/> and the rest).
     /// </summary>
     public sealed class SpecialRoundTests : ObjectsBFixture
     {
         [Test]
-        public void TheScheduleStartsAtTheFourthRoundAndRepeatsEveryThird()
+        public void TheScheduleStartsAtTheThirdRoundAndRepeatsEveryThird()
         {
             var tuning = ScriptableObject.CreateInstance<GameTuning>();
             try {
                 var specials = tuning.SpecialRounds;
                 Assert.That(specials.For(1), Is.EqualTo(SpecialRound.None));
-                Assert.That(specials.For(3), Is.EqualTo(SpecialRound.None));
-                // Low gravity, then the hot potato (a mode of the menu as well), then again.
-                Assert.That(specials.For(4), Is.EqualTo(SpecialRound.LowGravity));
+                Assert.That(specials.For(2), Is.EqualTo(SpecialRound.None));
+                // The modes that kept the playtests, low gravity among them and the hot potato last, then again.
+                Assert.That(specials.For(3), Is.EqualTo(SpecialRound.ItemFrenzy));
+                Assert.That(specials.For(4), Is.EqualTo(SpecialRound.None));
                 Assert.That(specials.For(5), Is.EqualTo(SpecialRound.None));
-                Assert.That(specials.For(7), Is.EqualTo(SpecialRound.HotPotato));
-                Assert.That(specials.For(10), Is.EqualTo(SpecialRound.LowGravity));
-                Assert.That(specials.For(13), Is.EqualTo(SpecialRound.HotPotato));
+                Assert.That(specials.For(6), Is.EqualTo(SpecialRound.GoldRush));
+                Assert.That(specials.For(9), Is.EqualTo(SpecialRound.LowGravity));
+                Assert.That(specials.For(12), Is.EqualTo(SpecialRound.TeamPush));
+                Assert.That(specials.For(15), Is.EqualTo(SpecialRound.HotPotato));
+                Assert.That(specials.For(18), Is.EqualTo(SpecialRound.ItemFrenzy));
                 specials.Force(SpecialRound.Boss);
                 Assert.That(specials.For(1), Is.EqualTo(SpecialRound.Boss));
                 specials.Force(null);

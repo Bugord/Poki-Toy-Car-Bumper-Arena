@@ -30,8 +30,8 @@ namespace ToyCarArena.Gameplay
         /// <summary>Gravity is weak: hits throw cars high and far.</summary>
         LowGravity,
 
-        // The event modes after hot potato (EventMode, one to one): only as a mode of the menu, the mode of the day
-        // or the rotation's mode slot, never in the order of special rounds by themselves.
+        // The event modes after hot potato (EventMode, one to one): a mode of the menu, the mode of the day, and the
+        // ones that kept the playtests of v0.19.0 in the order of special rounds too.
 
         /// <summary>CROWN: the car that holds the crown longest wins; a bump steals it.</summary>
         Crown,
@@ -53,9 +53,10 @@ namespace ToyCarArena.Gameplay
     }
 
     /// <summary>
-    /// The special rounds of a visit, kept apart from the main file: from the fourth round on (v0.13.5 lost 13–15% of
-    /// the visits after each round from the third, and rounds read alike by then), every third round changes one rule
-    /// and the lobby names it. Only in a build of last-car-standing rounds; a match has its own variety.
+    /// The special rounds of a visit, kept apart from the main file: from the third round on (the first is the tutorial,
+    /// the second safe, and the first real loss comes in the third, where v0.19.0 lost the most visits), every third
+    /// round changes one rule or plays an event mode, and the lobby names it. Only in a build of last-car-standing
+    /// rounds; a match has its own variety.
     /// </summary>
     public sealed partial class GameTuning
     {
@@ -76,20 +77,24 @@ namespace ToyCarArena.Gameplay
             [Tooltip("The visit's first round that is special; the first round is never")]
             [Min(2)]
             [SerializeField]
-            private int firstRound = 4;
+            private int firstRound = 3;
 
             [Tooltip("Every this many rounds from the first one is special")]
             [Min(1)]
             [SerializeField]
             private int every = 3;
 
-            // Low gravity and the hot potato (after v0.17.9): the hot potato became a mode of the menu (EventMode) after
-            // v0.17.4, but on v0.17.9 only 6 of 557 visits found it there (the first visit has no menu), so it is back in
-            // the rotation as well, after low gravity: round 4 stays as v0.17.9 had it, round 7 is the hot potato. The
+            // After v0.19.0 the plain rounds are thinned with the modes that kept the playtests: ITEM FRENZY (none of its
+            // 17 rounds left), GOLD RUSH and TEAM PUSH, with low gravity (1% of its rounds unfinished on v0.19.0) and the
+            // hot potato (never left, but hard for a new player, so last). CROWN and OVERHEAT were left the most and stay
+            // in the menu and the mode of the day only; FOOTBALL is off. A mode a build has off plays a plain round. The
             // user took mega, boss and ice out; their code stays, reachable by Force.
-            [Tooltip("The special rounds in the order they come, then again from the start")]
+            [Tooltip("The special rounds and event modes in the order they come, then again from the start")]
             [SerializeField]
-            private SpecialRound[] order = { SpecialRound.LowGravity, SpecialRound.HotPotato };
+            private SpecialRound[] order = {
+                SpecialRound.ItemFrenzy, SpecialRound.GoldRush, SpecialRound.LowGravity, SpecialRound.TeamPush,
+                SpecialRound.HotPotato,
+            };
 
             [Header("Mega")]
             [Tooltip("How many times its own size every car is in a mega round")]
