@@ -64,7 +64,10 @@ namespace ToyCarArena.Editor
                 return;
             }
 
-            var name = $"{product} v{version} ({number}){(development ? DevelopmentSuffix : "")}";
+            // A playtest build of one event mode says which: builds of different modes come from one commit.
+            var playtest = Regex.Match(buildInfo, "\"playtest\": \"([^\"]*)\"").Groups[1].Value;
+            var playtestSuffix = string.IsNullOrEmpty(playtest) ? "" : $" playtest {playtest}";
+            var name = $"{product} v{version} ({number}){(development ? DevelopmentSuffix : "")}{playtestSuffix}";
             // The notes name the commit built, which need not be the one checked out now.
             var message = Git($"log -1 --pretty=%s {commit}");
             var notes = string.IsNullOrEmpty(message) ? commit : $"{commit}: {message}";

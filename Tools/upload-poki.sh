@@ -39,6 +39,11 @@ NAME="$PRODUCT v$VERSION ($BUILD_NUMBER)"
 if ! grep -q '"development_player": "false"' "$BUILD/index.json"; then
     NAME="$NAME dev"
 fi
+# A playtest build of one event mode says which: builds of different modes come from one commit.
+PLAYTEST=$(field "$BUILD/build.json" playtest)
+if [ -n "$PLAYTEST" ]; then
+    NAME="$NAME playtest $PLAYTEST"
+fi
 
 case "$(git rev-parse HEAD)" in
     "$COMMIT"*) ;;
