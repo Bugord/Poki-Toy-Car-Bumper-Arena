@@ -24,6 +24,13 @@ namespace ToyCarArena.App
         /// </summary>
         public static string FileOf(string bundle) => bundle + ".bin";
 
+        /// <summary>
+        /// The file with a bundle's content outside any bundle, which the player falls back to when its bundle will not
+        /// open: the music as the encoded audio the browser decodes, or the textures as their raw GPU data
+        /// (<see cref="RawTextures"/>).
+        /// </summary>
+        public static string RawFileOf(string bundle) => bundle + "-raw.bin";
+
         public const string MusicBundle = "music";
         public const string CarsBundle = "cars";
 

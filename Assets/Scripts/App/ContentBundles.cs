@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using Bugord.App.Platform;
 using Cysharp.Threading.Tasks;
@@ -24,7 +25,9 @@ namespace ToyCarArena.App
     /// </summary>
     public sealed class ContentBundles : IStartable, IDisposable
     {
-        private const int Attempts = 3;
+        // Each attempt's way in, in order: the bundle streamed, the bundle as a file (or from memory), then twice the
+        // content without a bundle.
+        private static readonly Route[] Routes = { Route.Streamed, Route.Bytes, Route.Raw, Route.Raw };
         private const float RetryDelay = 2f;
         private const int RequestTimeout = 30;
 
@@ -148,49 +151,65 @@ namespace ToyCarArena.App
         private async UniTask<bool> Download(string name, CancellationToken token)
         {
             var url = $"{Application.streamingAssetsPath}/{ContentNames.Folder}/{ContentNames.FileOf(name)}";
-            for (var attempt = 1; ; attempt++) {
-                AssetBundle bundle = null;
-                // The streaming handler failed to unpack every bundle on some phones (v0.17.9: about one visit in ten,
-                // all bundles, every attempt, while the CDN served the files byte for byte), so after its first try the
-                // file comes as plain bytes, past any cache, and opens from memory.
-                var isFromMemory = attempt > 1;
+            var rawUrl = $"{Application.streamingAssetsPath}/{ContentNames.Folder}/{ContentNames.RawFileOf(name)}";
+            for (var attempt = FirstAttempt(); attempt < Routes.Length; attempt++) {
+                var route = Routes[attempt];
+                Content content = null;
                 try {
-                    bundle = isFromMemory ? await DownloadToMemory(url, attempt, token) : await DownloadStreamed(url, token);
+                    switch (route) {
+                        case Route.Streamed:
+                            content = await Unpack(name, await DownloadStreamed(url, token));
+                            break;
+                        case Route.Bytes:
+                            var (bundle, how) = await DownloadToFile(name, url, attempt, token);
+                            content = await Unpack(name, bundle);
+                            platform.MeasureContent(how, name);
+                            break;
+                        default:
+                            content = await DownloadRaw(name, rawUrl, attempt, token);
+                            platform.MeasureContent("raw", name);
+                            break;
+                    }
                 } catch (OperationCanceledException) {
                     return false;
                 } catch (Exception exception) {
-                    Debug.LogWarning($"Content bundle '{name}', attempt {attempt}: {exception.Message}");
+                    Debug.LogWarning($"Content bundle '{name}', attempt {attempt + 1} ({route}): {exception.Message}");
                     platform.MeasureContent(ReasonOf(exception), name);
-                }
-
-                if (bundle != null && isFromMemory) {
-                    platform.MeasureContent("memory", name);
-                }
-
-                if (bundle != null) {
-                    bundles.Add(bundle);
-                    // A bundle that came but would not unpack is not asked for again: the game goes on without it.
-                    try {
-                        await Apply(name, bundle);
-                        return true;
-                    } catch (Exception exception) when (exception is not OperationCanceledException) {
-                        Debug.LogWarning($"Content bundle '{name}' did not apply: {exception.Message}");
-                        platform.MeasureContent(ApplyFailed, name);
-                        platform.MeasureContent("failed", name);
-                        return false;
+                    // A bundle that opened but would not give its assets is not opened again (it stays loaded, and a
+                    // second copy of it would not load): its raw copy comes next.
+                    if (exception is ContentException { Reason: ApplyFailed } && route != Route.Raw) {
+                        attempt = Array.IndexOf(Routes, Route.Raw) - 1;
+                        continue;
                     }
                 }
 
-                if (attempt >= Attempts) {
-                    platform.MeasureContent("failed", name);
-                    return false;
+                if (content != null) {
+                    Put(name, content);
+                    Debug.Log($"Content bundle '{name}' in, attempt {attempt + 1} ({route})");
+                    return true;
                 }
 
-                if (await UniTask.Delay(TimeSpan.FromSeconds(RetryDelay), DelayType.Realtime, cancellationToken: token)
+                if (attempt + 1 < Routes.Length
+                    && await UniTask.Delay(TimeSpan.FromSeconds(RetryDelay), DelayType.Realtime, cancellationToken: token)
                         .SuppressCancellationThrow()) {
                     return false;
                 }
             }
+
+            platform.MeasureContent("failed", name);
+            return false;
+        }
+
+        /// <summary>
+        /// The first attempt: the streamed bundle, unless the page asks to start further along, for checking the
+        /// fallbacks in a build: <c>?content=file</c> starts with the bundle as a file, <c>?content=raw</c> with the
+        /// content without a bundle.
+        /// </summary>
+        private static int FirstAttempt()
+        {
+            var page = Application.absoluteURL ?? "";
+            var route = page.Contains("content=raw") ? Route.Raw : page.Contains("content=file") ? Route.Bytes : Route.Streamed;
+            return Array.IndexOf(Routes, route);
         }
 
         private static async UniTask<AssetBundle> DownloadStreamed(string url, CancellationToken token)
@@ -207,20 +226,29 @@ namespace ToyCarArena.App
         }
 
         /// <summary>
-        /// The bundle as bytes, opened from memory: no streaming unpacker, and a query that keeps the browser and the
-        /// player's download cache from handing back what failed before.
+        /// The bundle as bytes, past any cache (a query keeps the browser from handing back what failed before), opened
+        /// from a file in the player's virtual file system, the way the player opens its own data archive, which the
+        /// phones that fail the streamed bundle do open; from memory if the file will not do. The second item says which
+        /// opened it, <c>file</c> or <c>memory</c>, for <c>content / &lt;how&gt;-&lt;bundle&gt; / load</c>.
         /// </summary>
-        private static async UniTask<AssetBundle> DownloadToMemory(string url, int attempt, CancellationToken token)
+        private static async UniTask<(AssetBundle, string)> DownloadToFile(string name, string url, int attempt,
+            CancellationToken token)
         {
-            byte[] bytes;
-            using (var request = UnityWebRequest.Get($"{url}?try={attempt}")) {
-                request.timeout = RequestTimeout;
-                await request.SendWebRequest().ToUniTask(cancellationToken: token);
-                bytes = request.downloadHandler.data;
+            var bytes = await DownloadBytes($"{url}?try={attempt}", token);
+            string path;
+            try {
+                path = Path.Combine(Application.temporaryCachePath, ContentNames.FileOf(name));
+                File.WriteAllBytes(path, bytes);
+            } catch (Exception exception) {
+                Debug.LogWarning($"Content bundle '{name}' could not be written to a file: {exception.Message}");
+                path = null;
             }
 
-            if (bytes == null || bytes.Length == 0) {
-                throw new ContentException(EmptyDownload, "empty download");
+            if (path != null) {
+                var fromFile = await AssetBundle.LoadFromFileAsync(path).ToUniTask(cancellationToken: token);
+                if (fromFile != null) {
+                    return (fromFile, "file");
+                }
             }
 
             var bundle = await AssetBundle.LoadFromMemoryAsync(bytes).ToUniTask(cancellationToken: token);
@@ -228,30 +256,88 @@ namespace ToyCarArena.App
                 throw new ContentException(OpenFailed, $"{bytes.Length} bytes did not open as a bundle");
             }
 
-            return bundle;
+            return (bundle, "memory");
         }
 
-        private async UniTask Apply(string name, AssetBundle bundle)
+        private static async UniTask<byte[]> DownloadBytes(string url, CancellationToken token)
+        {
+            using var request = UnityWebRequest.Get(url);
+            request.timeout = RequestTimeout;
+            await request.SendWebRequest().ToUniTask(cancellationToken: token);
+            var bytes = request.downloadHandler.data;
+            if (bytes == null || bytes.Length == 0) {
+                throw new ContentException(EmptyDownload, "empty download");
+            }
+
+            return bytes;
+        }
+
+        /// <summary>
+        /// The bundle's content without the bundle (<see cref="ContentNames.RawFileOf"/>): the music decoded by the
+        /// browser, the textures made from their raw data. No archive is opened, so whatever fails to unpack the bundles
+        /// on some phones is not on this path.
+        /// </summary>
+        private static async UniTask<Content> DownloadRaw(string name, string url, int attempt, CancellationToken token)
+        {
+            url = $"{url}?try={attempt}";
+            if (name == ContentNames.MusicBundle) {
+                using var request = UnityWebRequestMultimedia.GetAudioClip(url, AudioType.ACC);
+                request.timeout = RequestTimeout;
+                await request.SendWebRequest().ToUniTask(cancellationToken: token);
+                var clip = DownloadHandlerAudioClip.GetContent(request);
+                if (clip == null) {
+                    throw new ContentException(RawFailed, $"{request.downloadedBytes} bytes did not decode as audio");
+                }
+
+                clip.name = name;
+                return new Content { Music = clip };
+            }
+
+            var bytes = await DownloadBytes(url, token);
+            try {
+                return new Content { Textures = RawTextures.Read(bytes) };
+            } catch (Exception exception) {
+                throw new ContentException(RawFailed, $"{bytes.Length} raw bytes did not make textures: {exception.Message}");
+            }
+        }
+
+        /// <summary>The assets of a bundle that opened; a bundle that opened but will not give them fails to apply.</summary>
+        private async UniTask<Content> Unpack(string name, AssetBundle bundle)
+        {
+            bundles.Add(bundle);
+            try {
+                if (name == ContentNames.MusicBundle) {
+                    var request = bundle.LoadAllAssetsAsync<AudioClip>();
+                    await request;
+                    return new Content { Music = request.allAssets.Length > 0 ? (AudioClip)request.allAssets[0] : null };
+                }
+
+                var textures = new Dictionary<string, Texture2D>();
+                var load = bundle.LoadAllAssetsAsync<Texture2D>();
+                await load;
+                foreach (var asset in load.allAssets) {
+                    textures[asset.name] = (Texture2D)asset;
+                }
+
+                return new Content { Textures = textures };
+            } catch (Exception exception) when (exception is not OperationCanceledException) {
+                throw new ContentException(ApplyFailed, $"did not apply: {exception.Message}");
+            }
+        }
+
+        /// <summary>Puts a bundle's assets where the player's assets expect them.</summary>
+        private void Put(string name, Content content)
         {
             if (name == ContentNames.MusicBundle) {
-                var request = bundle.LoadAllAssetsAsync<AudioClip>();
-                await request;
-                if (request.allAssets.Length > 0) {
-                    var clip = (AudioClip)request.allAssets[0];
-                    clip.LoadAudioData();
-                    audio.SetArenaMusic(clip);
+                if (content.Music != null) {
+                    content.Music.LoadAudioData();
+                    audio.SetArenaMusic(content.Music);
                 }
 
                 return;
             }
 
-            var textures = new Dictionary<string, Texture2D>();
-            var load = bundle.LoadAllAssetsAsync<Texture2D>();
-            await load;
-            foreach (var asset in load.allAssets) {
-                textures[asset.name] = (Texture2D)asset;
-            }
-
+            var textures = content.Textures;
             if (name == ContentNames.CarsBundle) {
                 foreach (var car in cars.Cars) {
                     textures.TryGetValue(ContentNames.PortraitOf(car), out var portrait);
@@ -273,6 +359,13 @@ namespace ToyCarArena.App
             }
         }
 
+        /// <summary>What a bundle brings, from the bundle or from its raw copy.</summary>
+        private sealed class Content
+        {
+            public AudioClip Music;
+            public Dictionary<string, Texture2D> Textures;
+        }
+
         /// <summary>
         /// Why an attempt failed, for <c>content / why-&lt;reason&gt;-&lt;bundle&gt; / load</c>: the request timed out, the
         /// connection or the browser's fetch failed, the server answered with an error, the file came empty, the
@@ -292,6 +385,14 @@ namespace ToyCarArena.App
         private const string OpenFailed = "why-open";
         private const string EmptyDownload = "why-empty";
         private const string ApplyFailed = "why-apply";
+        private const string RawFailed = "why-raw";
+
+        private enum Route
+        {
+            Streamed,
+            Bytes,
+            Raw,
+        }
 
         /// <summary>A failed attempt whose reason is already known.</summary>
         private sealed class ContentException : Exception
