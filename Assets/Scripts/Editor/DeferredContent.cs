@@ -88,6 +88,7 @@ namespace ToyCarArena.Editor
                 throw new BuildFailedException("The content bundles did not build.");
             }
 
+            content.WriteRaw();
             return content;
         }
 
@@ -130,9 +131,15 @@ namespace ToyCarArena.Editor
         public void CopyTo(string outputPath)
         {
             var folder = Path.Combine(outputPath, "StreamingAssets", ContentNames.Folder);
+            // A build into the last one's folder would otherwise upload its bundles too, under names no longer used.
+            if (Directory.Exists(folder)) {
+                Directory.Delete(folder, true);
+            }
+
             Directory.CreateDirectory(folder);
             foreach (var name in bundles.Keys) {
                 File.Copy(Path.Combine(BundleFolder, name), Path.Combine(folder, ContentNames.FileOf(name)), true);
+                File.Copy(RawPathOf(name), Path.Combine(folder, ContentNames.RawFileOf(name)), true);
             }
         }
 
@@ -145,6 +152,45 @@ namespace ToyCarArena.Editor
 
             originals.Clear();
         }
+
+        /// <summary>
+        /// Writes every bundle's content outside the bundle too (<see cref="ContentNames.RawFileOf"/>), the player's
+        /// fallback on the phones where no bundle opens (build 645: Mali phones failed every bundle, streamed and from
+        /// memory, with "Failed to decompress data for the AssetBundle", while the files came byte for byte). The music is
+        /// the encoded audio the build put in its bundle, which the browser decodes; the textures are their raw data
+        /// in the format they were imported in for WebGL (<see cref="RawTextures"/>).
+        /// </summary>
+        private void WriteRaw()
+        {
+            // The editor holds the textures as imported for the active target, and these are what the raw copy writes.
+            if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.WebGL) {
+                throw new BuildFailedException("Switch the active build target to WebGL first: the raw textures are written as imported for it.");
+            }
+
+            foreach (var (bundle, paths) in bundles) {
+                if (bundle == ContentNames.MusicBundle) {
+                    var audio = BundleArchive.Files(Path.Combine(BundleFolder, bundle))
+                        .Where(file => file.Key.EndsWith(".resource")).Select(file => file.Value).ToList();
+                    // The WebGL build encodes audio as AAC in an MP4 container: the box after its first four bytes.
+                    if (audio.Count != 1 || audio[0].Length < 8 || System.Text.Encoding.ASCII.GetString(audio[0], 4, 4) != "ftyp") {
+                        throw new BuildFailedException($"Bundle {bundle}: expected one MP4 audio resource for its raw copy.");
+                    }
+
+                    File.WriteAllBytes(RawPathOf(bundle), audio[0]);
+                    continue;
+                }
+
+                var textures = paths.Select(AssetDatabase.LoadAssetAtPath<Texture2D>).ToList();
+                if (textures.Any(texture => texture == null)) {
+                    throw new BuildFailedException($"Bundle {bundle}: only textures and the music have raw copies.");
+                }
+
+                using var file = File.Create(RawPathOf(bundle));
+                RawTextures.Write(file, textures);
+            }
+        }
+
+        private static string RawPathOf(string bundle) => Path.Combine(BundleFolder, ContentNames.RawFileOf(bundle));
 
         private void Add(string bundle, Object asset, string name)
         {

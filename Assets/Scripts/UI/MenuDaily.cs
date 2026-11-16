@@ -204,7 +204,7 @@ namespace ToyCarArena.UI
 
             var canClaim = gift.CanClaim;
             var today = gift.Slot;
-            streak.text = Strings.Format("daily.streak", gift.Streak);
+            streak.text = Strings.Format("daily.streak", today + 1);
             if (cells.Length != gift.Days) {
                 days.Clear();
                 cells = new Cell[gift.Days];

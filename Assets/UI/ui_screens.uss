@@ -1271,6 +1271,32 @@
     white-space: normal;
 }
 
+/* At the item button (the step "use it"): bigger, the button is small and far from the steering thumb. */
+.hud__tutorial--button .hud__tutorial-sticker {
+    max-width: 1010px;
+    padding: 14px 44px 16px 16px;
+    border-radius: 80px;
+}
+
+.hud__tutorial--button .hud__tutorial-step {
+    width: 112px;
+    height: 112px;
+    margin-right: 28px;
+    border-radius: 56px;
+}
+
+.hud__tutorial--button .hud__tutorial-step-text {
+    font-size: 72px;
+}
+
+.hud__tutorial--button .hud__tutorial-text {
+    font-size: 64px;
+}
+
+.hud__tutorial--button .hud__tutorial-hint {
+    font-size: 44px;
+}
+
 .hud__tutorial--done .hud__tutorial-text {
     color: var(--white);
     -unity-text-outline-width: 6px;
@@ -5977,6 +6003,19 @@
     font-size: 24px;
     color: var(--white);
     -unity-text-align: middle-center;
+}
+
+/* The colon's holder, as tall as a side, so the tab under it lines up with YOU. */
+.team-score__middle {
+    height: 78px;
+    justify-content: center;
+    align-items: center;
+}
+
+/* The points to win under the colon: the narrow colon must not wrap it, and gold tells it from YOU. */
+.team-score__target {
+    white-space: nowrap;
+    color: var(--gold);
 }
 
 /* The +N of a point, springing up under its side and flying into the number. */

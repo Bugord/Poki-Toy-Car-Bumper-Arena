@@ -529,6 +529,9 @@ namespace ToyCarArena.UI
         /// </summary>
         public bool IsTimed { get; private set; }
 
+        /// <summary>Whether a timed round ended on its points to win, before its time: the title is not TIME UP!.</summary>
+        public bool EndedOnPoints { get; private set; }
+
         public int Place { get; private set; }
 
         public int Knockouts { get; private set; }
@@ -609,6 +612,7 @@ namespace ToyCarArena.UI
             Streak = payload.Streak;
             Outcome = result.Outcome;
             IsTimed = result.IsTimed;
+            EndedOnPoints = result.EndedOnPoints;
             Place = result.Place;
             Knockouts = result.Knockouts;
             Points = result.Points;

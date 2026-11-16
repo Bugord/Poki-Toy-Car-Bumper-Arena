@@ -567,7 +567,7 @@ def report(version, previous):
         out.append(line("Закрыли над результатом, не забрав", lambda s: (lambda n: f"{n} ({pct(n, on_result(s))})")(num(s.get("result_daily_no"), "interacted"))))
         for day in range(1, 8):
             out.append(line(f"Забрали день {day} (визиты)", lambda s, day=day: str(s["daily_claim"].get(f"day-{day}", 0))))
-        out.append(line("Серия сброшена (визиты)", lambda s: str(s["daily_claim"].get("reset", 0))))
+        out.append(line("Серия сброшена (визиты; до v0.19.0, позже пропуск не сбрасывает)", lambda s: str(s["daily_claim"].get("reset", 0))))
         out.append(line("Шапка недели (визиты)", lambda s: str(s["daily_claim"].get("hat", 0))))
         out.append(line("CLAIM x2 (нажали / показано)", lambda s: f"{num(s['ad_daily'], 'interacted')} / {num(s['ad_daily'], 'seen')} ({pct(num(s['ad_daily'], 'interacted'), num(s['ad_daily'], 'seen'))})"))
         for how in ("granted", "unavailable", "dismissed"):

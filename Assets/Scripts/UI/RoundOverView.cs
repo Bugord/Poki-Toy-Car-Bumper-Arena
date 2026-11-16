@@ -414,6 +414,11 @@ namespace ToyCarArena.UI
                 _ => (Strings.Get("result.time_up"), Strings.Get("result.time_up_subtitle")),
             };
 
+            // A round another car ended on points before its time did not run out of time.
+            if (ViewModel.EndedOnPoints && ViewModel.Outcome != RoundOutcome.Won) {
+                title = Strings.Get("hud.finish");
+            }
+
             // A match always runs out its time: first place has the most knock-outs, the others hear where they ended.
             // A timed event mode scores what it counts, not knock-outs: the subtitle gives the place alone.
             if (ViewModel.IsTimed) {

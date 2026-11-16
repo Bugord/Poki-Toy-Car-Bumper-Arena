@@ -44,10 +44,15 @@ namespace ToyCarArena.UI
         /// <summary>The coming round's teams, 0 without: the seats are then shown team by team.</summary>
         public int Teams { get; private set; }
 
+        /// <summary>The points that end the coming round before its time, 0 when only the time does.</summary>
+        public int PointsToWin { get; private set; }
+
         public void ShowLobby(ISessionRoster roster, int botCount, int nemesis, string arenaName = null, bool arenaIsNew = false,
-            int streak = 0, string mission = null, SpecialRound special = SpecialRound.None, int teams = 0)
+            int streak = 0, string mission = null, SpecialRound special = SpecialRound.None, int teams = 0,
+            int pointsToWin = 0)
         {
             Teams = teams;
+            PointsToWin = pointsToWin;
             Streak = streak;
             Mission = mission;
             Special = special;

@@ -10,7 +10,7 @@ namespace ToyCarArena.Tests.PlayMode
 {
     /// <summary>
     /// The mode of the day (<see cref="EventSchedule"/>): one mode a calendar day round the fixed circle, only the modes
-    /// the build has on, a new one at midnight, and the rotation's event slot playing it. The modes' <c>enabled</c> are
+    /// the build has on, a new one at midnight, and the rotation keeping its own modes. The modes' <c>enabled</c> are
     /// switched in memory and given back after each test; the asset is never saved.
     /// </summary>
     public sealed class EventScheduleTests : ObjectsBFixture
@@ -113,7 +113,7 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [Test]
-        public void TheRotationsEventSlotPlaysTheModeOfTheDay()
+        public void TheRotationPlaysItsOwnModesWhateverTheDay()
         {
             var tuning = LoadTuning();
             var specials = tuning.SpecialRounds;
@@ -121,29 +121,67 @@ namespace ToyCarArena.Tests.PlayMode
             specials.Force(null);
             var slot = -1;
             for (var round = 1; round < 40 && slot < 0; round++) {
-                if (specials.For(round) == SpecialRound.HotPotato) {
+                if (specials.For(round) == SpecialRound.ItemFrenzy) {
                     slot = round;
                 }
             }
 
-            Assert.That(slot, Is.GreaterThan(0), "The rotation has no event slot.");
-            Assert.That(RoundRules.For(tuning, slot, EventMode.None),
-                Is.EqualTo(EventModes.KindOf(EventSchedule.Today(tuning))),
-                "The build as it ships plays the mode of the day there.");
+            Assert.That(slot, Is.GreaterThan(0), "The rotation has no ITEM FRENZY.");
+            Assert.That(RoundRules.For(tuning, slot, EventMode.None), Is.EqualTo(SpecialRound.ItemFrenzy));
 
+            // Another mode of the day leaves the rotation as it is; the menu's own pick is the menu's.
             EventSchedule.Forced = EventMode.Crown;
-            Assert.That(RoundRules.For(tuning, slot, EventMode.None), Is.EqualTo(SpecialRound.Crown));
-            // The other special rounds and the menu's own pick are not the schedule's.
-            Assert.That(RoundRules.For(tuning, specials.FirstRound, EventMode.None), Is.EqualTo(SpecialRound.LowGravity));
+            Assert.That(RoundRules.For(tuning, slot, EventMode.None), Is.EqualTo(SpecialRound.ItemFrenzy));
             Assert.That(RoundRules.For(tuning, slot, EventMode.HotPotato), Is.EqualTo(SpecialRound.HotPotato));
 
-            // Every mode off: the slot is a plain round.
-            EventSchedule.Forced = null;
-            foreach (var mode in EventModes.Circle) {
-                Enable(tuning, mode, false);
-            }
-
+            // A mode the build has off plays a plain round in its place.
+            Enable(tuning, EventMode.ItemFrenzy, false);
             Assert.That(RoundRules.For(tuning, slot, EventMode.None), Is.EqualTo(SpecialRound.None));
+        }
+
+        [Test]
+        public void APlaytestBuildPlaysItsOneModeEarlyAndOften()
+        {
+            var tuning = LoadTuning();
+            var specials = tuning.SpecialRounds;
+            var playtest = tuning.Playtest;
+            Assert.That(playtest.IsOn, Is.False, "The build as it ships playtests no mode.");
+            // The fixture forces plain rounds for every test; this one reads the build's schedule.
+            specials.Force(null);
+            Enable(tuning, EventMode.Football, false);
+            playtest.Force(EventMode.Football);
+            try {
+                // Every day is the playtested mode, even with it off in the rotation.
+                Assert.That(EventSchedule.Of(tuning, 738000), Is.EqualTo(EventMode.Football));
+                Assert.That(EventSchedule.Of(tuning, 738001), Is.EqualTo(EventMode.Football));
+
+                for (var round = 1; round < 20; round++) {
+                    var expected = round >= playtest.FromRound && (round - playtest.FromRound) % playtest.Every == 0
+                        ? SpecialRound.Football
+                        : SpecialRound.None;
+                    Assert.That(RoundRules.For(tuning, round, EventMode.None), Is.EqualTo(expected), $"Round {round}.");
+                }
+
+                // The menu's own pick and a test's forced kind are not the playtest's.
+                Assert.That(RoundRules.For(tuning, playtest.FromRound + 1, EventMode.HotPotato),
+                    Is.EqualTo(SpecialRound.HotPotato));
+                specials.Force(SpecialRound.LowGravity);
+                Assert.That(RoundRules.For(tuning, playtest.FromRound, EventMode.None),
+                    Is.EqualTo(SpecialRound.LowGravity));
+            }
+            finally {
+                playtest.Force(null);
+            }
+        }
+
+        [Test]
+        public void FootballIsOutOfTheRotation()
+        {
+            var tuning = LoadTuning();
+            Assert.That(tuning.IsModeEnabled(EventMode.Football), Is.False, "FOOTBALL is out for rework after v0.19.0.");
+            for (var day = 738000; day < 738000 + EventModes.Circle.Length * 2; day++) {
+                Assert.That(EventSchedule.Of(tuning, day), Is.Not.EqualTo(EventMode.Football), $"Day {day}.");
+            }
         }
 
         [Test]

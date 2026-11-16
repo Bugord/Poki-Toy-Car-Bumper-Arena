@@ -91,6 +91,11 @@ namespace ToyCarArena.App
             // chosen once the platform is up.
             builder.AddLocalization(strings);
             builder.RegisterInstance(tuning, typeof(GameTuning));
+            // A playtest build says which mode it plays, so the player's console proves the build is the one uploaded.
+            if (tuning.Playtest.IsOn) {
+                Debug.Log($"[Playtest] {EventModes.IdOf(tuning.Playtest.Mode)} from round {tuning.Playtest.FromRound}, " +
+                    $"every {tuning.Playtest.Every}");
+            }
             builder.RegisterInstance(carCatalog, typeof(CarCatalog));
             builder.RegisterInstance(arenaCatalog, typeof(ArenaCatalog));
 

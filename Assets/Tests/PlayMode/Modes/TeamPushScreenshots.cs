@@ -380,7 +380,7 @@ namespace ToyCarArena.Tests.PlayMode
                             view.Attach(curtain);
                             view.ShowAsync(CancellationToken.None).Forget();
                             model.ShowLobby(roster, bots, RoundResult.Nobody, Strings.Get("arena.tabletop.name"), false,
-                                0, null, SpecialRound.TeamPush, rules.Teams);
+                                0, null, SpecialRound.TeamPush, rules.Teams, rules.PointsToWin);
                             while (Time.realtimeSinceStartupAsDouble - model.StartedAt < 0.7f) {
                                 yield return null;
                             }

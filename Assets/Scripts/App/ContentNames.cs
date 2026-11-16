@@ -16,8 +16,20 @@ namespace ToyCarArena.App
         /// <summary>Folder under StreamingAssets the bundles are copied to.</summary>
         public const string Folder = "Bundles";
 
-        /// <summary>The file a bundle is copied to, which the player downloads.</summary>
-        public static string FileOf(string bundle) => bundle + ".bundle";
+        /// <summary>
+        /// The file a bundle is copied to, which the player downloads. Not <c>.bundle</c>: the Unity loader's default
+        /// <c>cacheControl</c> sends every URL with <c>.bundle</c> in it (a query too) through its own IndexedDB cache,
+        /// and on v0.17.9 and v0.19.0 the same 8–9% of visits failed every bundle, streamed or as bytes, both of which
+        /// went through that cache. Any other name is fetched plainly, and the browser's HTTP cache still keeps it.
+        /// </summary>
+        public static string FileOf(string bundle) => bundle + ".bin";
+
+        /// <summary>
+        /// The file with a bundle's content outside any bundle, which the player falls back to when its bundle will not
+        /// open: the music as the encoded audio the browser decodes, or the textures as their raw GPU data
+        /// (<see cref="RawTextures"/>).
+        /// </summary>
+        public static string RawFileOf(string bundle) => bundle + "-raw.bin";
 
         public const string MusicBundle = "music";
         public const string CarsBundle = "cars";

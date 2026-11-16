@@ -211,7 +211,7 @@ namespace ToyCarArena.UI
             }
 
             specialCard.Add(tag);
-            var rule = new Label(GameText.SpecialHint(ViewModel.Special)) { pickingMode = PickingMode.Ignore };
+            var rule = new Label(GameText.SpecialHint(ViewModel.Special, ViewModel.PointsToWin)) { pickingMode = PickingMode.Ignore };
             rule.AddToClassList("lobby__special-rule");
             specialCard.Add(rule);
             arenaLine.parent.Insert(arenaLine.parent.IndexOf(arenaLine) + 1, specialCard);

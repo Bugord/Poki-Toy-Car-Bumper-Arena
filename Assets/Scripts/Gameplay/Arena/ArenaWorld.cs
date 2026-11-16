@@ -73,6 +73,9 @@ namespace ToyCarArena.Gameplay.Arena
             foreach (var piece in theme.GroundPieces) {
                 Place(piece, cylinder, box, outline, behind, right, root);
             }
+
+            // Nothing here moves: one draw per material instead of one (and an outline draw) per piece.
+            meshes.AddRange(StaticMerge.Merge(root));
         }
 
         public void Dispose()

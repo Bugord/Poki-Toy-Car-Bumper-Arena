@@ -56,7 +56,7 @@ namespace ToyCarArena.Gameplay.Round
         /// <summary>
         /// The special round of the visit's round <paramref name="round"/> in this build, in the menu's
         /// <paramref name="mode"/>: none in a match, the mode's own for an event mode, else the rotation's, whose event
-        /// slot is the mode of the day (<see cref="EventSchedule"/>).
+        /// modes play only if the build has them on.
         /// </summary>
         public static SpecialRound For(GameTuning tuning, int round, EventMode mode)
         {
@@ -68,11 +68,17 @@ namespace ToyCarArena.Gameplay.Round
                 return EventModes.KindOf(mode);
             }
 
+            // A playtest build plays its mode early and often instead of the special rounds; a test's forced kind stays.
+            if (tuning.Playtest.IsOn && !tuning.SpecialRounds.IsForced) {
+                return tuning.Playtest.For(round);
+            }
+
             var kind = tuning.SpecialRounds.For(round);
-            // The rotation's event slot (HOT POTATO's in the order) plays the mode of the day, so a player of QUICK
-            // MATCH meets every mode in turn; with every mode off it is a plain round. A test's forced kind stays.
-            if (EventModes.IsEvent(kind) && !tuning.SpecialRounds.IsForced) {
-                kind = EventModes.KindOf(EventSchedule.Today(tuning));
+            // An event mode of the order plays itself, the same every day, so a test on Poki measures one schedule; a
+            // mode the build has off is a plain round. A test's forced kind stays.
+            if (EventModes.IsEvent(kind) && !tuning.SpecialRounds.IsForced
+                && !tuning.IsModeEnabled(EventModes.ModeOf(kind))) {
+                kind = SpecialRound.None;
             }
 
             return kind;

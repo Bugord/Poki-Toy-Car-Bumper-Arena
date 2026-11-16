@@ -31,8 +31,11 @@ namespace ToyCarArena.Gameplay
 
             [Tooltip("Whether the build plays the mode: the menu, the mode of the day and the rotation offer only modes " +
                 "that are on")]
+            // Off after v0.19.0, for rework: on its Player Fit Test the mode took round 7 of the rotation, and 108 of 508
+            // matches never ended (low gravity 8 of 642), the reach of round 8 fell from 90% to 73%. A playtest build
+            // still plays it (GameTuning.Playtest), and so do the tests.
             [SerializeField]
-            private bool enabled = true;
+            private bool enabled = false;
 
             [Tooltip("Seconds a match of football lasts; the team with more goals wins, a level score is a draw")]
             [Min(10f)]

@@ -228,12 +228,19 @@ namespace ToyCarArena.Gameplay.Round
         public IReadOnlyList<int> Colors { get; }
         public int ColorOf(int index) => Colors[index];
 
+        /// <summary>
+        /// A timed round that ended because a car (or a team) got the points to win (<see cref="ModeRules.PointsToWin"/>)
+        /// before its time ran out: the result does not say TIME UP!.
+        /// </summary>
+        public bool EndedOnPoints { get; }
+
         public RoundResult(RoundOutcome outcome, int place, int carCount, float seconds, int knockouts, int knockedOutBy,
             FallCause fallCause, bool hadNemesis, bool revengeTaken, IReadOnlyList<RoundStanding> standings = null,
             IReadOnlyList<int> colors = null, bool isMatch = false, int falls = 0, int knockedOff = 0, bool? isLoss = null,
             int bonusKnockouts = 0, bool? isTimed = null, SpecialRound kind = SpecialRound.None, int knockoutRewardCap = 0,
-            int teams = 0, IReadOnlyList<int> teamPoints = null)
+            int teams = 0, IReadOnlyList<int> teamPoints = null, bool endedOnPoints = false)
         {
+            EndedOnPoints = endedOnPoints;
             TeamPoints = teamPoints ?? Array.Empty<int>();
             IsTimed = isTimed ?? isMatch;
             Kind = kind;

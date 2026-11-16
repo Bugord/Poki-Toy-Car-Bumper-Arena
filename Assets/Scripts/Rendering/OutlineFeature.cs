@@ -19,8 +19,18 @@ namespace ToyCarArena.Rendering
 
         private OutlinePass pass;
 
+        /// <summary>
+        /// The outline material of the renderer in use, for a merged hull that draws the outline of scenery itself
+        /// (<see cref="StaticMerge"/>); null until a renderer with this feature has been created.
+        /// </summary>
+        public static Material HullMaterial { get; private set; }
+
         public override void Create()
         {
+            if (this.material != null) {
+                HullMaterial = this.material;
+            }
+
             this.pass = new OutlinePass { renderPassEvent = RenderPassEvent.AfterRenderingOpaques };
         }
 

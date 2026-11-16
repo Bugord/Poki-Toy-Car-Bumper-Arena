@@ -5,8 +5,9 @@ namespace ToyCarArena.Gameplay.Round
     /// <summary>
     /// The mode of the day: one event mode a calendar day (<see cref="CalendarDay"/>, the player's clock), going round
     /// the fixed circle of <see cref="EventModes.Circle"/> and skipping the modes the build has off (their
-    /// <c>enabled</c>). The menu offers it beside QUICK MATCH and the rotation's event slot plays it, so every player sees
-    /// the same mode on the same day and a new one the next. Pure: the day comes in, the mode comes out.
+    /// <c>enabled</c>). The menu offers it beside QUICK MATCH and its daily task asks for a round of it, so every player
+    /// sees the same mode on the same day and a new one the next; the rotation of special rounds has its own fixed order.
+    /// Pure: the day comes in, the mode comes out.
     /// </summary>
     public static class EventSchedule
     {
@@ -28,6 +29,11 @@ namespace ToyCarArena.Gameplay.Round
 
             if (Forced.HasValue) {
                 return Forced.Value;
+            }
+
+            // A playtest build plays its one mode every day, on or off in the rotation.
+            if (tuning.Playtest.IsOn) {
+                return tuning.Playtest.Mode;
             }
 
             var count = 0;

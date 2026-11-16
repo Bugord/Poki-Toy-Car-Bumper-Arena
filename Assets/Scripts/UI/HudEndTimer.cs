@@ -191,6 +191,15 @@ namespace ToyCarArena.UI
             foreach (var element in hiddenAtStamp) {
                 element.style.visibility = Visibility.Hidden;
             }
+
+            // A round won on points before its time ends on FINISH!, not TIME UP!: set either way, the string binding
+            // let go of, so the text never hangs on from another round.
+            var labels = StrokeText.LabelsOf(stampSticker);
+            foreach (var label in labels) {
+                label.ClearBindings();
+            }
+
+            StrokeText.SetText(labels, Strings.Get(model.EndedOnPoints ? "hud.finish" : "result.time_up"));
         }
 
         // The bar grows into each stage from the top centre (ui_screens), so it never slides off its place.

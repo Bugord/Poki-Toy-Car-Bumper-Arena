@@ -34,6 +34,18 @@ namespace ToyCarArena.UI
             kind == SpecialRound.None ? null : Strings.Get($"special.{Gameplay.Round.RoundRules.IdOf(kind)}.hint");
 
         /// <summary>
+        /// A special round's rule with the points that end it early on a line of its own (FIRST TO 5 KNOCKOUTS WINS!), in
+        /// the mode's own unit: a mode with points to win has its string special.&lt;id&gt;.goal.
+        /// </summary>
+        public static string SpecialHint(SpecialRound kind, int pointsToWin)
+        {
+            var hint = SpecialHint(kind);
+            return hint == null || pointsToWin <= 0
+                ? hint
+                : hint + "\n" + Strings.Format($"special.{Gameplay.Round.RoundRules.IdOf(kind)}.goal", pointsToWin);
+        }
+
+        /// <summary>
         /// A mission's task with its number: the text follows what it counts and whether it asks for it in one round, so
         /// a new mission in the pool needs no new string; <paramref name="arena"/> names the arena of one on an arena.
         /// </summary>
