@@ -1271,6 +1271,32 @@
     white-space: normal;
 }
 
+/* At the item button (the step "use it"): bigger, the button is small and far from the steering thumb. */
+.hud__tutorial--button .hud__tutorial-sticker {
+    max-width: 1010px;
+    padding: 14px 44px 16px 16px;
+    border-radius: 80px;
+}
+
+.hud__tutorial--button .hud__tutorial-step {
+    width: 112px;
+    height: 112px;
+    margin-right: 28px;
+    border-radius: 56px;
+}
+
+.hud__tutorial--button .hud__tutorial-step-text {
+    font-size: 72px;
+}
+
+.hud__tutorial--button .hud__tutorial-text {
+    font-size: 64px;
+}
+
+.hud__tutorial--button .hud__tutorial-hint {
+    font-size: 44px;
+}
+
 .hud__tutorial--done .hud__tutorial-text {
     color: var(--white);
     -unity-text-outline-width: 6px;

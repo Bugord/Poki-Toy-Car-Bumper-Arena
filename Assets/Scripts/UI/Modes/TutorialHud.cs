@@ -58,6 +58,8 @@ namespace ToyCarArena.UI
 
         private const string ShownClass = "hud__tutorial--shown";
         private const string DoneClass = "hud__tutorial--done";
+        // Bigger at the item button: on the v0.19.0 playtest a phone player drove 76 s with the item and never found it.
+        private const string AtButtonClass = "hud__tutorial--button";
         private const string CheerShownClass = "hud__tutorial-cheer--shown";
         private const string ArrowShownClass = "hud__tutorial-arrow--shown";
 
@@ -128,8 +130,9 @@ namespace ToyCarArena.UI
             words.Add(hint);
             sticker.Add(words);
             banner.Add(sticker);
-            // Off the screen until its first frame has a place: it measures itself there first.
-            banner.style.left = -10000f;
+            // Off the screen until its first frame has a place: it measures itself there first. Moved by translate, not
+            // left: an absolute element left near the right edge shrinks to the room left of it and wraps its words.
+            banner.style.translate = new Translate(-10000f, 0f);
             layer.Add(banner);
 
             // The praise and the last words: big tilted gold words in the middle of the screen with confetti, as YOU
@@ -225,6 +228,8 @@ namespace ToyCarArena.UI
                 },
             };
             StrokeText.SetText(textLabels, Strings.Get(key));
+            // Again on a new language: Place sets it only when the hint shows or hides.
+            StrokeText.SetText(hintLabels, Strings.Get("tutorial.use_keys"));
             if (isCheer) {
                 var isNew = !cheer.ClassListContains(CheerShownClass) || praise != shownCheer;
                 StrokeText.SetText(cheerLabels, Strings.Get(key));
@@ -247,6 +252,7 @@ namespace ToyCarArena.UI
         {
             // An item to use: the arrow points at the item button, where the press is, not at the car.
             var isAtButton = TryGetButton(out var point);
+            banner.EnableInClassList(AtButtonClass, isAtButton);
             // At the button on a computer the sticker also says which press uses the item (the shared hint is off).
             var isKeyed = isAtButton && !isTouch();
             if (isKeyed != (hint.resolvedStyle.display == DisplayStyle.Flex)) {
@@ -310,8 +316,7 @@ namespace ToyCarArena.UI
                 y = Mathf.Min(point.y + BelowGap, size.y - bubble.y - SideMargin);
             }
 
-            banner.style.left = x - half;
-            banner.style.top = y;
+            banner.style.translate = new Translate(x - half, y);
             return true;
         }
 
