@@ -160,6 +160,7 @@ namespace ToyCarArena.App
                     return false;
                 } catch (Exception exception) {
                     Debug.LogWarning($"Content bundle '{name}', attempt {attempt}: {exception.Message}");
+                    platform.MeasureContent(ReasonOf(exception), name);
                 }
 
                 if (bundle != null && isFromMemory) {
@@ -174,6 +175,7 @@ namespace ToyCarArena.App
                         return true;
                     } catch (Exception exception) when (exception is not OperationCanceledException) {
                         Debug.LogWarning($"Content bundle '{name}' did not apply: {exception.Message}");
+                        platform.MeasureContent(ApplyFailed, name);
                         platform.MeasureContent("failed", name);
                         return false;
                     }
@@ -196,7 +198,12 @@ namespace ToyCarArena.App
             using var request = UnityWebRequestAssetBundle.GetAssetBundle(url);
             request.timeout = RequestTimeout;
             await request.SendWebRequest().ToUniTask(cancellationToken: token);
-            return DownloadHandlerAssetBundle.GetContent(request);
+            var bundle = DownloadHandlerAssetBundle.GetContent(request);
+            if (bundle == null) {
+                throw new ContentException(OpenFailed, $"{request.downloadedBytes} bytes did not open as a bundle");
+            }
+
+            return bundle;
         }
 
         /// <summary>
@@ -213,12 +220,12 @@ namespace ToyCarArena.App
             }
 
             if (bytes == null || bytes.Length == 0) {
-                throw new InvalidOperationException("empty download");
+                throw new ContentException(EmptyDownload, "empty download");
             }
 
             var bundle = await AssetBundle.LoadFromMemoryAsync(bytes).ToUniTask(cancellationToken: token);
             if (bundle == null) {
-                throw new InvalidOperationException($"{bytes.Length} bytes did not open as a bundle");
+                throw new ContentException(OpenFailed, $"{bytes.Length} bytes did not open as a bundle");
             }
 
             return bundle;
@@ -264,6 +271,34 @@ namespace ToyCarArena.App
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Why an attempt failed, for <c>content / why-&lt;reason&gt;-&lt;bundle&gt; / load</c>: the request timed out, the
+        /// connection or the browser's fetch failed, the server answered with an error, the file came empty, the
+        /// bytes did not open as a bundle, or something else threw. Sent on every failed attempt, so a visit's
+        /// reasons are all counted, not only its last.
+        /// </summary>
+        private static string ReasonOf(Exception exception) => exception switch {
+            ContentException content => content.Reason,
+            UnityWebRequestException web when web.Error != null
+                && web.Error.IndexOf("timeout", StringComparison.OrdinalIgnoreCase) >= 0 => "why-timeout",
+            UnityWebRequestException { Result: UnityWebRequest.Result.ConnectionError } => "why-network",
+            UnityWebRequestException { Result: UnityWebRequest.Result.ProtocolError } => "why-http",
+            UnityWebRequestException { Result: UnityWebRequest.Result.DataProcessingError } => "why-unpack",
+            _ => "why-other",
+        };
+
+        private const string OpenFailed = "why-open";
+        private const string EmptyDownload = "why-empty";
+        private const string ApplyFailed = "why-apply";
+
+        /// <summary>A failed attempt whose reason is already known.</summary>
+        private sealed class ContentException : Exception
+        {
+            public ContentException(string reason, string message) : base(message) => Reason = reason;
+
+            public string Reason { get; }
         }
 
         private static bool HasTexture(Material material) =>
