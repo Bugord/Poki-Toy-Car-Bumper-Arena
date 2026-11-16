@@ -68,6 +68,11 @@ namespace ToyCarArena.Gameplay.Round
                 return EventModes.KindOf(mode);
             }
 
+            // A playtest build plays its mode early and often instead of the special rounds; a test's forced kind stays.
+            if (tuning.Playtest.IsOn && !tuning.SpecialRounds.IsForced) {
+                return tuning.Playtest.For(round);
+            }
+
             var kind = tuning.SpecialRounds.For(round);
             // The rotation's event slot (HOT POTATO's in the order) plays the mode of the day, so a player of QUICK
             // MATCH meets every mode in turn; with every mode off it is a plain round. A test's forced kind stays.

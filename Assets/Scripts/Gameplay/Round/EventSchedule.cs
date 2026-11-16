@@ -30,6 +30,11 @@ namespace ToyCarArena.Gameplay.Round
                 return Forced.Value;
             }
 
+            // A playtest build plays its one mode every day, on or off in the rotation.
+            if (tuning.Playtest.IsOn) {
+                return tuning.Playtest.Mode;
+            }
+
             var count = 0;
             foreach (var mode in EventModes.Circle) {
                 if (tuning.IsModeEnabled(mode)) {
