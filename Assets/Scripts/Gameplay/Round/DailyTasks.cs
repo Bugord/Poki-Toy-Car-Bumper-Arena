@@ -296,8 +296,8 @@ namespace ToyCarArena.Gameplay.Round
         }
 
         /// <summary>
-        /// The task of the day's event mode: finish one round of it (the menu's event, or the rotation's event slot that
-        /// plays it), an easy one; null when the build has no event that day.
+        /// The task of the day's event mode: finish one round of it (the menu's event, or the rotation when that mode is
+        /// in it), an easy one; null when the build has no event that day.
         /// </summary>
         private GameTuning.MissionDefinition EventTaskOf(int today)
         {
