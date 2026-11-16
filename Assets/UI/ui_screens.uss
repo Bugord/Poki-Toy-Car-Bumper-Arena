@@ -6005,6 +6005,19 @@
     -unity-text-align: middle-center;
 }
 
+/* The colon's holder, as tall as a side, so the tab under it lines up with YOU. */
+.team-score__middle {
+    height: 78px;
+    justify-content: center;
+    align-items: center;
+}
+
+/* The points to win under the colon: the narrow colon must not wrap it, and gold tells it from YOU. */
+.team-score__target {
+    white-space: nowrap;
+    color: var(--gold);
+}
+
 /* The +N of a point, springing up under its side and flying into the number. */
 .team-score__point {
     position: absolute;

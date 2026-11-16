@@ -373,7 +373,7 @@ namespace ToyCarArena.Tests.PlayMode
                             view.Attach(curtain);
                             view.ShowAsync(CancellationToken.None).Forget();
                             model.ShowLobby(roster, bots, RoundResult.Nobody, Strings.Get("arena.candy.name"), false,
-                                0, null, SpecialRound.GoldRush, rules.Teams);
+                                0, null, SpecialRound.GoldRush, rules.Teams, rules.PointsToWin);
                             yield return model.Ready(CancellationToken.None).ToCoroutine();
                             yield return null;
                             yield return null;

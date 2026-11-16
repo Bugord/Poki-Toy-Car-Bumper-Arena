@@ -42,8 +42,10 @@ namespace ToyCarArena.UI
         }
 
         public void ShowLobby(ISessionRoster roster, int botCount, int nemesis, string arenaName = null, bool arenaIsNew = false,
-            int streak = 0, string mission = null, SpecialRound special = SpecialRound.None, int teams = 0) =>
-            handle.ViewModel.ShowLobby(roster, botCount, nemesis, arenaName, arenaIsNew, streak, mission, special, teams);
+            int streak = 0, string mission = null, SpecialRound special = SpecialRound.None, int teams = 0,
+            int pointsToWin = 0) =>
+            handle.ViewModel.ShowLobby(roster, botCount, nemesis, arenaName, arenaIsNew, streak, mission, special, teams,
+                pointsToWin);
 
         public UniTask Ready(CancellationToken token) => handle.ViewModel.Ready(token);
     }

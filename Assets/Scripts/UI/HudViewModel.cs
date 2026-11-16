@@ -229,6 +229,15 @@ namespace ToyCarArena.UI
         /// <summary>The points the player has scored in the timed round.</summary>
         public int PlayerScore => ScoreOf(PlayerIndex);
 
+        /// <summary>
+        /// The points that end the timed round before its time (a car's, or with teams a team's sum); 0 when only the
+        /// time ends it.
+        /// </summary>
+        public int PointsToWin => round?.PointsToWin ?? 0;
+
+        /// <summary>The timed round ended because someone got the points to win, not on its time.</summary>
+        public bool EndedOnPoints => round != null && round.EndedOnPoints;
+
         /// <summary>The number of teams of the round, 0 without teams.</summary>
         public int Teams => round?.Mode.Teams ?? 0;
 

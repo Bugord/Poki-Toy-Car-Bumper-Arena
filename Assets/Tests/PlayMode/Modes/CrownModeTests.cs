@@ -26,6 +26,7 @@ namespace ToyCarArena.Tests.PlayMode
     public sealed class CrownModeTests : ModeFixture
     {
         private float? originalDuration;
+        private int? originalPointsToWin;
 
         [TearDown]
         public void RestoreDuration()
@@ -33,6 +34,11 @@ namespace ToyCarArena.Tests.PlayMode
             if (originalDuration.HasValue) {
                 DurationField().SetValue(LoadTuning().Crown, originalDuration.Value);
                 originalDuration = null;
+            }
+
+            if (originalPointsToWin.HasValue) {
+                PointsToWinField().SetValue(LoadTuning().Crown, originalPointsToWin.Value);
+                originalPointsToWin = null;
             }
         }
 
@@ -180,6 +186,9 @@ namespace ToyCarArena.Tests.PlayMode
             originalDuration = Tuning0().Duration;
             // Long enough that the player, who steals it a few seconds in, holds it far longer than the bot did.
             DurationField().SetValue(Tuning0(), 30f);
+            // The time is under test: the player holds the crown past the points to win.
+            originalPointsToWin = Tuning0().PointsToWin;
+            PointsToWinField().SetValue(Tuning0(), 0);
             yield return OpenMode(SpecialRound.Crown);
             var crown = Container.Resolve<CrownMode>();
             RoundResult? result = null;
@@ -429,6 +438,9 @@ namespace ToyCarArena.Tests.PlayMode
 
         private static FieldInfo DurationField() =>
             typeof(GameTuning.CrownSettings).GetField("duration", BindingFlags.Instance | BindingFlags.NonPublic);
+
+        private static FieldInfo PointsToWinField() =>
+            typeof(GameTuning.CrownSettings).GetField("pointsToWin", BindingFlags.Instance | BindingFlags.NonPublic);
 
         private static GameTuning.CrownSettings Tuning0() => LoadTuning().Crown;
 

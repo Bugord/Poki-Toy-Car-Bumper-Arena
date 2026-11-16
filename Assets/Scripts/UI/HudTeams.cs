@@ -57,6 +57,8 @@ namespace ToyCarArena.UI
         // The HUD's top bar, which the end timer grows from its top centre in the last seconds: the score moves down
         // with its bottom edge, or the grown bar would cover it.
         private readonly VisualElement hudBar;
+        // The points to win on a tab under the colon, null when only the time ends the round.
+        private readonly Label target;
         private float barShift;
         private int nextSticker;
 
@@ -78,7 +80,19 @@ namespace ToyCarArena.UI
             sides[0] = new Side(playerTeam, true);
             bar.Add(sides[0].Root);
             var colon = StrokeText.Create(":", "team-score__colon", out _, "display", "team-score__colon-text");
-            bar.Add(colon);
+            // A round that ends on points says how many on a tab under the colon, as YOU sits under the player's side:
+            // a holder as tall as a side carries both, so the tab is not a child of the colon's outlined text.
+            var middle = new VisualElement { pickingMode = PickingMode.Ignore };
+            middle.AddToClassList("team-score__middle");
+            middle.Add(colon);
+            bar.Add(middle);
+            if (model.PointsToWin > 0) {
+                target = new Label { pickingMode = PickingMode.Ignore };
+                target.AddToClassList("team-score__you");
+                target.AddToClassList("team-score__target");
+                middle.Add(target);
+            }
+
             sides[1] = new Side(otherTeam, false);
             bar.Add(sides[1].Root);
 
@@ -94,10 +108,20 @@ namespace ToyCarArena.UI
                 foreach (var side in sides) {
                     side.SetName();
                 }
+
+                SetTarget();
             };
             Strings.Changed += onLanguage;
+            SetTarget();
             Refresh();
             tick = root.schedule.Execute(Tick).Every(0);
+        }
+
+        private void SetTarget()
+        {
+            if (target != null) {
+                target.text = Strings.Format("hud.team_target", model.PointsToWin);
+            }
         }
 
         /// <summary>The score's element, for the end timer's note and the name tags to keep clear of.</summary>
