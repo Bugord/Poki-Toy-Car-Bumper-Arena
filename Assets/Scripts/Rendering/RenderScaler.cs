@@ -1,4 +1,7 @@
 using System;
+#if UNITY_WEBGL && !UNITY_EDITOR
+using System.Runtime.InteropServices;
+#endif
 using ToyCarArena.UI;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -26,6 +29,12 @@ namespace ToyCarArena.Rendering
     /// frame on Poki is a window with few pixels on its short side, and the comic line, drawn without anti-aliasing at a
     /// share of that side, came out about 2 pixels wide and stair-stepped. A touch device keeps MSAA off: phones are fill
     /// rate bound, and their dense screens hide the steps anyway.
+    /// </para>
+    /// <para>
+    /// A touch device also sizes its canvas at a pixel ratio of at most <see cref="TouchPixelRatio"/>. The render scale
+    /// only shrinks the 3D image: UI Toolkit, the copy to the canvas and the browser's own compositing still fill every
+    /// pixel of a ratio-3 phone, and a full-screen menu or garage is mostly UI. At 2 the canvas has 0.44 of the pixels
+    /// and still looks sharp at phone viewing distance.
     /// </para>
     /// </summary>
     /// <remarks>
@@ -58,6 +67,9 @@ namespace ToyCarArena.Rendering
         /// <summary>How much thicker the outline is drawn on a desktop than its share of the short side gives.</summary>
         public const float DesktopOutline = 1.3f;
 
+        /// <summary>The highest device pixel ratio a touch device's canvas is sized with; a desktop keeps its own.</summary>
+        public const float TouchPixelRatio = 2f;
+
         private static readonly int OutlineDeviceScaleId = Shader.PropertyToID("_OutlineDeviceScale");
 
         private readonly HudControls controls;
@@ -70,6 +82,7 @@ namespace ToyCarArena.Rendering
         private int lastWidth = -1;
         private int lastHeight = -1;
         private bool lastTouch;
+        private bool lastCovered;
         private bool isDeviceSet;
         private float scaleOverride;
         private bool isDirty = true;
@@ -126,28 +139,35 @@ namespace ToyCarArena.Rendering
                 SampleSpeed();
             }
 
-            if (!isDirty && width == lastWidth && height == lastHeight && isTouch == lastTouch) {
+            var isCovered = ShownScreens.IsArenaCovered;
+            if (!isDirty && width == lastWidth && height == lastHeight && isTouch == lastTouch && isCovered == lastCovered) {
                 return;
             }
 
-            // Only when the kind of device changes, so a developer's perf_msaa stays until then. A touch laptop turns
-            // into a touch device on its first touch and loses MSAA there.
-            if (!isDeviceSet || isTouch != lastTouch) {
+            // Only when the kind of device changes or an opaque screen comes or goes, so a developer's perf_msaa stays
+            // until then. A touch laptop turns into a touch device on its first touch and loses MSAA there.
+            if (!isDeviceSet || isTouch != lastTouch || isCovered != lastCovered) {
                 isDeviceSet = true;
-                asset.msaaSampleCount = isTouch ? 1 : DesktopMsaa;
+                asset.msaaSampleCount = isTouch || isCovered ? 1 : DesktopMsaa;
                 Shader.SetGlobalFloat(OutlineDeviceScaleId, isTouch ? 1f : DesktopOutline);
             }
 
+            // Every size change too: a phone's pixel ratio changes with the browser's zoom.
+            LimitCanvasRatio(isTouch ? TouchPixelRatio : 0f);
             isDirty = false;
             lastWidth = width;
             lastHeight = height;
             lastTouch = isTouch;
+            lastCovered = isCovered;
             if (width <= 0 || height <= 0) {
                 return;
             }
 
-            var scale = scaleOverride > 0f
-                ? scaleOverride
+            // Under an opaque screen (menu, garage, curtain) the camera draws nothing but its clear, and a scaled image
+            // costs two full-screen copies a frame (up to the screen's size, then to the canvas) for nothing: at 1, with
+            // MSAA off, URP draws the clear and the UI straight to the canvas.
+            var scale = scaleOverride > 0f ? scaleOverride
+                : isCovered ? 1f
                 : ScaleFor(Mathf.Min(width, height), isTouch ? touchCap : desktopMaxShortSide);
             scale = Mathf.Clamp(scale, MinScale, 2f);
 
@@ -190,7 +210,11 @@ namespace ToyCarArena.Rendering
             fpsBeforeStep = 0f;
             if (fps < SlowFps) {
                 fpsBeforeStep = fps;
-                touchCap = Mathf.Max(LowestShortSide, touchCap * StepDown);
+                // From the picture as drawn, not the cap: with the canvas held to a pixel ratio of 2 a phone's shorter side is
+                // often under the cap already, and a step from the cap barely shrank the picture, gained nothing and stopped
+                // the steps for good.
+                var drawn = Mathf.Min(touchCap, Mathf.Min(Screen.width, Screen.height));
+                touchCap = Mathf.Max(LowestShortSide, drawn * StepDown);
                 isDirty = true;
             }
         }
@@ -203,6 +227,20 @@ namespace ToyCarArena.Rendering
             }
 
             Shader.SetGlobalFloat(OutlineDeviceScaleId, 1f);
+            LimitCanvasRatio(0f);
+        }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        [DllImport("__Internal")]
+        private static extern void JS_CanvasRatio_Limit(float max);
+#endif
+
+        /// <summary>Caps the canvas's pixel ratio at <paramref name="max"/>; 0 gives the page its own back.</summary>
+        private static void LimitCanvasRatio(float max)
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            JS_CanvasRatio_Limit(max);
+#endif
         }
 
         /// <summary>

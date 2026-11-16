@@ -111,7 +111,7 @@ namespace ToyCarArena.UI
         {
             listLevel = level;
             listKey.style.display = isDesktop ? DisplayStyle.Flex : DisplayStyle.None;
-            list.style.backgroundImage = new StyleBackground(LeagueLook.CardSkyOf(PlayerRank.TierOf(level)));
+            LeagueLook.Cover(list, LeagueLook.CardSkyOf(PlayerRank.TierOf(level)));
             FillList();
             list.AddToClassList(OpenClass);
         }

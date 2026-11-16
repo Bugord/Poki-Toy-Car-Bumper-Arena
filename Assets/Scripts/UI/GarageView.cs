@@ -143,6 +143,9 @@ namespace ToyCarArena.UI
         private VisualElement hatsDot;
         private VisualElement panel;
         private ScrollView scroll;
+        // Reference pixels around the scroll view in which a card still draws (CullCards).
+        private const float CullMargin = 40f;
+
         private VisualElement carGrid;
         private VisualElement hatGrid;
         private VisualElement paintGrid;
@@ -209,7 +212,7 @@ namespace ToyCarArena.UI
             isTouch = controls != null && controls.CheckTouchScreen();
             var screen = Screen;
             screen.EnableInClassList(DesktopClass, !isTouch);
-            screen.style.backgroundImage = new StyleBackground(LeagueLook.SkyOf(ViewModel.League));
+            LeagueLook.Cover(screen, LeagueLook.SkyOf(ViewModel.League));
             DriftingChecker.AddTo(screen, CheckerColor, CheckerShare);
             garageStage = ViewModel.Stage;
 
@@ -369,6 +372,9 @@ namespace ToyCarArena.UI
             BuildHats();
             BuildPaints();
             panel.RegisterCallback<GeometryChangedEvent>(_ => LayoutCards());
+            scroll.verticalScroller.valueChanged += _ => CullCards();
+            scroll.contentContainer.RegisterCallback<GeometryChangedEvent>(_ => CullCards());
+            scroll.contentViewport.RegisterCallback<GeometryChangedEvent>(_ => CullCards());
             side.Add(panel);
 
             BuildAction();
@@ -1245,6 +1251,32 @@ namespace ToyCarArena.UI
             var sheetFit = Mathf.Max(0.55f, Mathf.Min(isWide && isTouch ? 1.3f : 1f, (size.y - 2f * Edge) / 1750f));
             sheet.style.scale = new Scale(new Vector3(sheetFit, sheetFit, 1f));
             Root.schedule.Execute(LayoutCards);
+        }
+
+        /// <summary>
+        /// Hides the cards wholly outside the panel's scroll view and shows the rest. UI Toolkit clips a scroll view in
+        /// its shader, so a card scrolled out of sight was still filled pixel by pixel and thrown away: on a phone the
+        /// rows under the panel cost more than the visible ones. Hidden, they draw nothing; the layout does not change.
+        /// </summary>
+        private void CullCards()
+        {
+            var view = scroll.contentViewport.worldBound;
+            if (float.IsNaN(view.height) || view.height <= 0f) {
+                return;
+            }
+
+            CullCards(carGrid, view);
+            CullCards(hatGrid, view);
+        }
+
+        private static void CullCards(VisualElement grid, Rect view)
+        {
+            foreach (var card in grid.Children()) {
+                // A margin for the drop shadow under a card and its pop when picked.
+                var bound = card.worldBound;
+                var isOutside = bound.yMax + CullMargin < view.yMin || bound.yMin - CullMargin > view.yMax;
+                card.style.visibility = isOutside ? Visibility.Hidden : StyleKeyword.Null;
+            }
         }
 
         /// <summary>The cards three to a row upright (four sideways), as wide as the panel leaves them.</summary>

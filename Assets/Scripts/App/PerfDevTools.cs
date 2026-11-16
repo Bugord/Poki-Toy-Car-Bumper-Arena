@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Bugord.Core.Storage;
 using ToyCarArena.Gameplay;
 using ToyCarArena.Rendering;
+using UIKit.Runtime.Core;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -35,11 +36,15 @@ namespace ToyCarArena.App
         // Saved, so a tester who turns the overlay on keeps it on the next time the page loads.
         private const string OverlayKey = "perf.overlay";
 
+        // How long the per-screen log of ?perflog sums frames for one line.
+        private const float LogInterval = 2f;
+
         private static readonly string[] WorldRoots = { "World", "Decor" };
         private static readonly string[] MechanicRoots = { "Candy Patches", "Carousel", "ArenaBall" };
 
         private readonly RenderScaler scaler;
         private readonly IKeyValueStorage storage;
+        private readonly IUIRootProvider uiRoots;
         private readonly FrameStats stats = new();
         private readonly Dictionary<OutlineFeature, bool> originalOutline = new();
         private readonly List<GameObject> worldObjects = new();
@@ -57,11 +62,17 @@ namespace ToyCarArena.App
         private bool isWorldShown = true;
         private bool isMechanicShown = true;
         private float sinceReapply;
+        private bool isLogging;
+        private ShownScreen logScreen;
+        private float logTime;
+        private float logWorst;
+        private int logFrames;
 
-        public PerfDevTools(RenderScaler scaler, GameTuning tuning, IKeyValueStorage storage)
+        public PerfDevTools(RenderScaler scaler, GameTuning tuning, IKeyValueStorage storage, IUIRootProvider uiRoots)
         {
             this.scaler = scaler;
             this.storage = storage;
+            this.uiRoots = uiRoots;
             originalMsaa = asset != null ? asset.msaaSampleCount : 1;
 #if !UNITY_EDITOR
             this.tuning = tuning;
@@ -76,6 +87,13 @@ namespace ToyCarArena.App
             overlayView.Bind(stats, scaler);
             // A disabled component gets neither Update nor OnGUI, so a hidden overlay costs nothing per frame.
             overlayView.enabled = storage.GetBool(OverlayKey);
+            // Named for the page's SendMessage; on the overlay's object, which lives as long as these tools.
+            var bridge = new GameObject(nameof(PerfBridge));
+            bridge.transform.SetParent(overlay.transform, false);
+            bridge.AddComponent<PerfBridge>().Bind(Run, () => uiRoots.GetLayerRoot(UILayer.Screen).parent);
+            // A page opened with ?perflog writes a line of frame times per screen to the browser console every couple of
+            // seconds, so a script driving the game (CPU throttling, a phone's pixel ratio) can read them.
+            isLogging = Application.absoluteURL.Contains("perflog");
 
 #if BUGORD_SUPERCONSOLE
             RegisterWatches();
@@ -86,6 +104,10 @@ namespace ToyCarArena.App
         public void Tick()
         {
             stats.Add(Time.unscaledDeltaTime);
+            if (isLogging) {
+                Log(Time.unscaledDeltaTime);
+            }
+
             if (isWorldShown && isMechanicShown) {
                 return;
             }
@@ -124,6 +146,37 @@ namespace ToyCarArena.App
             if (overlay != null) {
                 UnityEngine.Object.Destroy(overlay);
             }
+        }
+
+        private void Log(float frame)
+        {
+            var screen = ShownScreens.Current;
+            if (screen != logScreen) {
+                logScreen = screen;
+                logTime = 0f;
+                logFrames = 0;
+                logWorst = 0f;
+                return;
+            }
+
+            if (frame <= 0f || frame > 1f) {
+                return;
+            }
+
+            logTime += frame;
+            logFrames++;
+            logWorst = Mathf.Max(logWorst, frame);
+            if (logTime < LogInterval) {
+                return;
+            }
+
+            var size = scaler.RenderSize;
+            Debug.Log($"[perf] screen={screen} covered={ShownScreens.IsArenaCovered} fps={logFrames / logTime:0.0} "
+                + $"avg={logTime / logFrames * 1000f:0.0} worst={logWorst * 1000f:0.0} 3d={size.x}x{size.y} "
+                + $"canvas={Screen.width}x{Screen.height}");
+            logTime = 0f;
+            logFrames = 0;
+            logWorst = 0f;
         }
 
 #if BUGORD_SUPERCONSOLE
@@ -193,6 +246,38 @@ namespace ToyCarArena.App
         }
 #endif
 
+        /// <summary>
+        /// One switch by its words, for <see cref="PerfBridge"/>: <c>scale x</c>, <c>msaa n</c>, <c>outline 0|1</c>,
+        /// <c>fog 0|1</c>, <c>world 0|1</c>, <c>mech 0|1</c>.
+        /// </summary>
+        internal string Run(string command)
+        {
+            var parts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var value = parts.Length > 1 && float.TryParse(parts[1], System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var number) ? number : 1f;
+            switch (parts.Length > 0 ? parts[0] : "") {
+                case "scale":
+                    scaler.Override = value;
+                    scaler.Tick();
+                    return $"scale {scaler.Scale:0.00}";
+                case "msaa":
+                    return $"msaa {SetMsaa((int)value)}";
+                case "outline":
+                    return SetOutline(value != 0f) ? $"outline {value != 0f}" : "no outline feature";
+                case "fog":
+                    RenderSettings.fog = value != 0f;
+                    return $"fog {RenderSettings.fog}";
+                case "world":
+                    SetWorld(value != 0f);
+                    return $"world {isWorldShown}";
+                case "mech":
+                    SetMechanic(value != 0f);
+                    return $"mechanic {isMechanicShown}";
+                default:
+                    return "unknown";
+            }
+        }
+
         private float FramesPerSecond()
         {
             return stats.Measure(WatchInterval, out var average, out _) ? Mathf.Round(1f / average) : 0f;
@@ -253,6 +338,16 @@ namespace ToyCarArena.App
             foreach (var feature in outlineFeatures) {
                 originalOutline.TryAdd(feature, feature.isActive);
                 feature.SetActive(on);
+            }
+
+            // The merged scenery draws its outline as a hull of its own (StaticMerge), not through the pass.
+            var hull = OutlineFeature.HullMaterial;
+            if (hull != null) {
+                foreach (var renderer in UnityEngine.Object.FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None)) {
+                    if (renderer.sharedMaterial == hull) {
+                        renderer.enabled = on;
+                    }
+                }
             }
 
             return outlineFeatures.Length > 0;

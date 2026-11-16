@@ -1210,7 +1210,7 @@ namespace ToyCarArena.UI
             coins.text = ViewModel.Coins.ToString();
             // The league's sky under the checker, and its colour on the pedestal's top (ShowCar).
             var league = ViewModel.League;
-            Menu.style.backgroundImage = new StyleBackground(LeagueLook.SkyOf(league));
+            LeagueLook.Cover(Menu, LeagueLook.SkyOf(league));
             plinthTop.style.backgroundColor = LeagueLook.PedestalOf(league);
 
             garageTile.EnableInClassList("menu__tile--new", ViewModel.HasNewCar);

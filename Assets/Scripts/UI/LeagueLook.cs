@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace ToyCarArena.UI
 {
@@ -66,6 +67,17 @@ namespace ToyCarArena.UI
         public static Color TopOf(int tier) => Looks[Clamp(tier)].Top;
         public static Color TopLightOf(int tier) => Looks[Clamp(tier)].TopLight;
         public static Color SideOf(int tier) => Looks[Clamp(tier)].Side;
+
+        /// <summary>
+        /// Covers <paramref name="screen"/> with <paramref name="sky"/> and drops the background colour under it. The sky
+        /// is opaque, so the colour never showed, yet it was one more fill of the whole screen a frame: on a phone at a
+        /// device pixel ratio of 3 the colour alone cost as much as the sky.
+        /// </summary>
+        public static void Cover(VisualElement screen, Texture2D sky)
+        {
+            screen.style.backgroundImage = new StyleBackground(sky);
+            screen.style.backgroundColor = Color.clear;
+        }
 
         /// <summary>The menu's sky in this league, to cover the screen with.</summary>
         public static Texture2D SkyOf(int tier) => Radial(tier, 0, MenuMiddle, MenuRadius);
