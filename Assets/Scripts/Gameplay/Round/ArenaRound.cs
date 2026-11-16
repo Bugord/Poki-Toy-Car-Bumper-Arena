@@ -220,6 +220,38 @@ namespace ToyCarArena.Gameplay.Round
         public float TimeLeft => Mathf.Max(0f, Duration - elapsed);
 
         /// <summary>
+        /// The points that end this timed round before its time (<see cref="ModeRules.PointsToWin"/>): a car's, or with
+        /// teams a team's sum. 0 when only the time ends it.
+        /// </summary>
+        public int PointsToWin => mode.HasPointsToWin ? mode.PointsToWin : 0;
+
+        /// <summary>Whether a car, or with teams a team, has the points to win (<see cref="PointsToWin"/>).</summary>
+        public bool IsTargetReached
+        {
+            get
+            {
+                if (PointsToWin <= 0 || Score == null) {
+                    return false;
+                }
+
+                if (mode.Teams > 0) {
+                    for (var team = 0; team < mode.Teams; team++) {
+                        if (Score.TeamPointsOf(team) >= PointsToWin) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                }
+
+                return Score.Count > 0 && Score.PointsOf(Score.Leader) >= PointsToWin;
+            }
+        }
+
+        /// <summary>The timed round ended because someone got the points to win, not because its time ran out.</summary>
+        public bool EndedOnPoints { get; private set; }
+
+        /// <summary>
         /// Seconds since the round began.
         /// </summary>
         public float Elapsed => elapsed;
@@ -425,7 +457,12 @@ namespace ToyCarArena.Gameplay.Round
             }
 
             if (mode.IsTimed) {
-                if (elapsed >= mode.Duration) {
+                // Time or the points to win, whichever comes first.
+                if (IsTargetReached) {
+                    EndedOnPoints = true;
+                    FinishMatch();
+                }
+                else if (elapsed >= mode.Duration) {
                     FinishMatch();
                 }
 
@@ -770,7 +807,7 @@ namespace ToyCarArena.Gameplay.Round
                 // as a knock-out, under the same cap.
                 bonusKnockouts: mode.PointsPayAsKnockouts ? Score.PointsOf(0) : 0,
                 kind: rules.Kind, knockoutRewardCap: mode.KnockoutRewardCap, teams: mode.Teams,
-                teamPoints: mode.Teams > 0 ? Array.AsReadOnly(Score.TeamScores()) : null));
+                teamPoints: mode.Teams > 0 ? Array.AsReadOnly(Score.TeamScores()) : null, endedOnPoints: EndedOnPoints));
         }
 
         private void Finish(RoundOutcome outcome, int place)

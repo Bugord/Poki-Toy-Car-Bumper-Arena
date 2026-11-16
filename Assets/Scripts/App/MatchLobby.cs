@@ -76,12 +76,13 @@ namespace ToyCarArena.App
                 var arena = arenaCatalog.Find(mapId);
                 var special = RoundRules.For(tuning, progress.Round, progress.Mode);
                 // A round in teams has its rival within the round, from the other team: the visit's is not shown.
-                var teams = tuning.RulesOf(special).Teams;
+                var rules = tuning.RulesOf(special);
+                var teams = rules.Teams;
                 curtain.ShowLobby(roster, RoundDifficulty.BotCountFor(tuning, progress),
                     teams > 0 ? RoundResult.Nobody : progress.Nemesis,
                     GameText.Arena(arena), arena != null && arenaRotation.IsNew(arena.Id),
                     progress.WinStreak >= tuning.Streaks.Start ? progress.WinStreak : 0, NearestMission(),
-                    special, teams);
+                    special, teams, rules.HasPointsToWin ? rules.PointsToWin : 0);
             }
             catch {
                 await closeScreen();

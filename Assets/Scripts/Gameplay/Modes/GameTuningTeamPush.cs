@@ -30,10 +30,15 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private bool enabled = true;
 
-            [Tooltip("Seconds a round of the mode lasts; the team with more points wins")]
+            [Tooltip("Seconds a round of the mode lasts at most; the team with more points wins")]
             [Min(10f)]
             [SerializeField]
-            private float duration = 60f;
+            private float duration = 45f;
+
+            [Tooltip("A team's points that end the round at once, before its time; 0 for none")]
+            [Min(0)]
+            [SerializeField]
+            private int pointsToWin = 8;
 
             [Tooltip("Bots in the round beside the player: three against three")]
             [Min(1)]
@@ -56,6 +61,7 @@ namespace ToyCarArena.Gameplay
 
             public bool Enabled => enabled;
             public float Duration => duration;
+            public int PointsToWin => pointsToWin;
             public int Bots => bots;
             public FloorRule Floor => floor;
             public int PointsPerFall => pointsPerFall;
@@ -64,7 +70,7 @@ namespace ToyCarArena.Gameplay
             /// <summary>What the mode changes in the shared round (<see cref="ModeRules"/>).</summary>
             public ModeRules Rules => ModeRules.Plain.With(fall: FallRule.Respawn, floor: floor, mechanics: false,
                 pickups: PickupRule.None, duration: duration, pointsPerKnockout: pointsPerFall, teams: 2, bots: bots,
-                knockoutRewardCap: knockoutRewardCap);
+                knockoutRewardCap: knockoutRewardCap, pointsToWin: pointsToWin);
         }
     }
 }

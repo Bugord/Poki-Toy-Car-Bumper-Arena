@@ -205,6 +205,75 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator ATimedModeEndsEarlyOnItsPointsToWin()
+        {
+            const int target = 4;
+            UseRules(SpecialRound.None, TimedRespawn(ShortRound * 3f).With(pointsToWin: target));
+            yield return Open("sandbox", "rake");
+            Assert.That(Round.PointsToWin, Is.EqualTo(target));
+
+            RoundResult? result = null;
+            Round.Finished += r => result = r;
+            Assert.That(Round.AddPoints(Round.Cars[1], target - 1), Is.True);
+            yield return Wait(0.3f);
+            Assert.That(result.HasValue, Is.False, "One point short of the target ended the round.");
+            Assert.That(Round.IsTargetReached, Is.False);
+
+            var started = Time.time;
+            Assert.That(Round.AddPoints(Round.Player, target), Is.True);
+            while (!result.HasValue && Time.time < started + 1f) {
+                yield return Step();
+            }
+
+            Assert.That(result.HasValue, Is.True, "Reaching the points to win did not end the round.");
+            Assert.That(Round.EndedOnPoints, Is.True);
+            var end = result.Value;
+            Assert.That(end.EndedOnPoints, Is.True);
+            Assert.That(end.Outcome, Is.EqualTo(RoundOutcome.Won));
+            Assert.That(end.Place, Is.EqualTo(1));
+            Assert.That(end.Points, Is.EqualTo(target));
+        }
+
+        [UnityTest]
+        public IEnumerator ATeamRoundEndsEarlyOnItsTeamPointsToWin()
+        {
+            const int target = 3;
+            UseRules(SpecialRound.None, TimedRespawn(ShortRound * 3f).With(teams: 2, pointsToWin: target));
+            yield return Open("sandbox", "rake");
+
+            RoundResult? result = null;
+            Round.Finished += r => result = r;
+            var other = 1 - Round.TeamOf(0);
+            Assert.That(Round.AddTeamPoints(other, target), Is.True);
+            var started = Time.time;
+            while (!result.HasValue && Time.time < started + 1f) {
+                yield return Step();
+            }
+
+            Assert.That(result.HasValue, Is.True, "The other team reaching the points to win did not end the round.");
+            var end = result.Value;
+            Assert.That(end.EndedOnPoints, Is.True);
+            Assert.That(end.Outcome, Is.Not.EqualTo(RoundOutcome.Won));
+            Assert.That(end.IsLoss, Is.True, "The player's team lost on the other team's points.");
+        }
+
+        [Test]
+        public void EveryTimedEventModeHasItsPointsToWinAndAShorterRound()
+        {
+            var tuning = LoadTuning();
+            foreach (var kind in new[] {
+                         SpecialRound.TeamPush, SpecialRound.Overheat, SpecialRound.Crown, SpecialRound.GoldRush,
+                     }) {
+                var rules = tuning.RulesOf(kind);
+                Assert.That(rules.IsTimed, Is.True, $"{kind} is not timed.");
+                Assert.That(rules.Duration, Is.EqualTo(45f), $"{kind} does not last 45 s.");
+                Assert.That(rules.HasPointsToWin, Is.True, $"{kind} has no points to win.");
+            }
+
+            Assert.That(tuning.RulesOf(SpecialRound.None).HasPointsToWin, Is.False, "The plain round ends on points.");
+        }
+
+        [UnityTest]
         public IEnumerator ACarThatFallsInARespawnModeComesBack()
         {
             var tuning = LoadTuning();

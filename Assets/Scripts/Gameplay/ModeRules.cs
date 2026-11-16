@@ -110,6 +110,14 @@ namespace ToyCarArena.Gameplay
         public bool IsTimed => Duration > 0f;
 
         /// <summary>
+        /// The points that end a timed round early, whoever gets there first (a car, or with teams a team's sum): the
+        /// round ends on its time or on this, whichever comes first. 0 for no such end: the round runs out its time.
+        /// </summary>
+        public int PointsToWin { get; private set; }
+
+        public bool HasPointsToWin => IsTimed && PointsToWin > 0;
+
+        /// <summary>
         /// How long a round that is not timed may last, in seconds, in place of the plain round's
         /// (<see cref="GameTuning.RoundSettings.Duration"/>); 0 keeps the plain round's. The tutorial's is long: it ends
         /// when its lesson does.
@@ -194,7 +202,8 @@ namespace ToyCarArena.Gameplay
             PickupRule? pickups = null, float? pickupPace = null, int? pickupMax = null, float? duration = null,
             int? pointsPerKnockout = null, int? teams = null, int? bots = null, bool? edgeAssist = null,
             int? knockoutRewardCap = null, int? topPlaces = null, float? pickupRollTime = null,
-            GameTuning.MapSettings arena = null, bool? pointsPayAsKnockouts = null, float? length = null)
+            GameTuning.MapSettings arena = null, bool? pointsPayAsKnockouts = null, float? length = null,
+            int? pointsToWin = null)
         {
             return new ModeRules {
                 Fall = fall ?? Fall,
@@ -215,6 +224,7 @@ namespace ToyCarArena.Gameplay
                 Arena = arena ?? Arena,
                 PointsPayAsKnockouts = pointsPayAsKnockouts ?? PointsPayAsKnockouts,
                 Length = length ?? Length,
+                PointsToWin = pointsToWin ?? PointsToWin,
             };
         }
     }

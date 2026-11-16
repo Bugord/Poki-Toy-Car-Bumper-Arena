@@ -29,10 +29,15 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private bool enabled = true;
 
-            [Tooltip("Seconds a round of the mode lasts; the car that held the crown longest wins")]
+            [Tooltip("Seconds a round of the mode lasts at most; the car that held the crown longest wins")]
             [Min(10f)]
             [SerializeField]
-            private float duration = 60f;
+            private float duration = 45f;
+
+            [Tooltip("Seconds with the crown that end the round at once, before its time; 0 for none")]
+            [Min(0)]
+            [SerializeField]
+            private int pointsToWin = 20;
 
             [Tooltip("The most knock-outs a round pays XP and coins for (nobody falls, so there are none; kept for the " +
                 "framework's cap)")]
@@ -193,6 +198,7 @@ namespace ToyCarArena.Gameplay
 
             public bool Enabled => enabled;
             public float Duration => duration;
+            public int PointsToWin => pointsToWin;
             public int KnockoutRewardCap => knockoutRewardCap;
             public float FirstDelay => firstDelay;
             public float PickRadius => pickRadius;
@@ -229,7 +235,7 @@ namespace ToyCarArena.Gameplay
             /// </summary>
             public ModeRules Rules => ModeRules.Plain.With(fall: FallRule.PutBack, fence: true, floor: FloorRule.Still,
                 mechanics: false, pickups: PickupRule.None, edgeAssist: false, duration: duration,
-                knockoutRewardCap: knockoutRewardCap);
+                knockoutRewardCap: knockoutRewardCap, pointsToWin: pointsToWin);
         }
     }
 }

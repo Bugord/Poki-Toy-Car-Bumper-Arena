@@ -28,10 +28,15 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private bool enabled = true;
 
-            [Tooltip("Seconds a round of the mode lasts; the car with the most coins wins")]
+            [Tooltip("Seconds a round of the mode lasts at most; the car with the most coins wins")]
             [Min(10f)]
             [SerializeField]
-            private float duration = 60f;
+            private float duration = 45f;
+
+            [Tooltip("Coins a car carries that end the round at once, before its time; 0 for none")]
+            [Min(0)]
+            [SerializeField]
+            private int pointsToWin = 25;
 
             [Tooltip("The most knock-outs a round pays XP and coins for: cars come back, so there are many")]
             [Min(0)]
@@ -246,6 +251,7 @@ namespace ToyCarArena.Gameplay
 
             public bool Enabled => enabled;
             public float Duration => duration;
+            public int PointsToWin => pointsToWin;
             public int KnockoutRewardCap => knockoutRewardCap;
             public float FirstDelay => firstDelay;
             public float OpeningAhead => openingAhead;
@@ -306,7 +312,8 @@ namespace ToyCarArena.Gameplay
 
             /// <summary>What the mode changes in the shared round (<see cref="ModeRules"/>).</summary>
             public ModeRules Rules => ModeRules.Plain.With(fall: FallRule.Respawn, floor: FloorRule.Still,
-                mechanics: false, pickups: PickupRule.None, duration: duration, knockoutRewardCap: knockoutRewardCap);
+                mechanics: false, pickups: PickupRule.None, duration: duration, knockoutRewardCap: knockoutRewardCap,
+                pointsToWin: pointsToWin);
         }
     }
 }

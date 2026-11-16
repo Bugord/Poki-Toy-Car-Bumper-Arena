@@ -249,6 +249,8 @@ namespace ToyCarArena.Tests.PlayMode
         public IEnumerator TheRoundEndsByTimeAndTheMostCoinsWin([Values("win", "second", "last")] string end)
         {
             SetField(LoadTuning().GoldRush, "duration", ShortRound);
+            // The time is under test: the coins given are past the points to win.
+            SetField(LoadTuning().GoldRush, "pointsToWin", 0);
             yield return OpenMode(SpecialRound.GoldRush);
             var mode = Container.Resolve<GoldRushMode>();
             RoundResult? result = null;

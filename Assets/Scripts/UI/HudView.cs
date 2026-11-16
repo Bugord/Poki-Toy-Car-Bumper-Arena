@@ -578,7 +578,10 @@ namespace ToyCarArena.UI
             var knockouts = ViewModel.IsTimed ? ViewModel.PlayerScore : ViewModel.Knockouts;
             if (knockouts != shownKnockouts) {
                 shownKnockouts = knockouts;
-                knockoutLabel.text = knockouts.ToString();
+                // A round that ends on points shows how far the player is from them: 3/5. With teams the team's sum is
+                // what counts, and the team score shows its own target.
+                var target = ViewModel.Teams > 0 ? 0 : ViewModel.PointsToWin;
+                knockoutLabel.text = target > 0 ? $"{knockouts}/{target}" : knockouts.ToString();
                 knockoutBadge.EnableInClassList(KnockoutShownClass, knockouts > 0 || ViewModel.IsTimed);
                 Pulse(knockoutBadge, KnockoutPopClass);
             }
@@ -832,7 +835,7 @@ namespace ToyCarArena.UI
                 if (special != null) {
                     kickoffSpecialName.text = special;
                     kickoffSpecialNameFace.text = special;
-                    kickoffSpecialHint.text = GameText.SpecialHint(ViewModel.Special);
+                    kickoffSpecialHint.text = GameText.SpecialHint(ViewModel.Special, ViewModel.PointsToWin);
                 }
                 if (!isGo) {
                     var digit = KickoffDigits[Mathf.Clamp(step, 0, KickoffDigits.Length - 1)];
