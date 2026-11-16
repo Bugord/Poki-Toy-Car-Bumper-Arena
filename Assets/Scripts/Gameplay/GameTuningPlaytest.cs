@@ -31,10 +31,12 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private EventMode mode = EventMode.None;
 
+            // Round 2, right after the tutorial: of the ten recordings of the v0.19.0 playtest, half played three rounds
+            // or fewer, so from round 3 half the testers would never have met the mode.
             [Tooltip("The visit's first round that plays the mode; the first round is the tutorial")]
             [Min(2)]
             [SerializeField]
-            private int fromRound = 3;
+            private int fromRound = 2;
 
             [Tooltip("Every this many rounds from the first one plays the mode, the rounds between are plain")]
             [Min(1)]

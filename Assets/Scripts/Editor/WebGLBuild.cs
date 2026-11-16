@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using ToyCarArena.Gameplay;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -22,6 +23,12 @@ namespace ToyCarArena.Editor
     /// The build carries its <see cref="BuildNumber"/>: in <c>Resources/data_build_info.txt</c> while it builds, which
     /// the game logs at startup (<see cref="ToyCarArena.App.BuildInfo"/>), in <c>build.json</c> beside <c>index.json</c>, which
     /// the upload names the version after, and in the report.
+    /// <para>
+    /// Tools > Build > WebGL Playtest > (mode) builds a release that playtests one event mode with new players
+    /// (<see cref="GameTuning.PlaytestSettings"/>): the mode is set in the tuning asset for the build only, and the file
+    /// is written back byte for byte after it. Its id goes into <c>build.json</c>, so the upload names the version after
+    /// it (<c>Bonk Arena v0.19.0 (640) playtest crown</c>) and builds of different modes are never taken for each other.
+    /// </para>
     /// </summary>
     public static class WebGLBuild
     {
@@ -46,8 +53,29 @@ namespace ToyCarArena.Editor
         [MenuItem("Tools/Build/WebGL Development (Poki)")]
         public static void BuildDevelopment() => Run(true);
 
+        [MenuItem("Tools/Build/WebGL Playtest/HOT POTATO")]
+        public static void PlaytestHotPotato() => Run(false, EventMode.HotPotato);
+
+        [MenuItem("Tools/Build/WebGL Playtest/CROWN")]
+        public static void PlaytestCrown() => Run(false, EventMode.Crown);
+
+        [MenuItem("Tools/Build/WebGL Playtest/GOLD RUSH")]
+        public static void PlaytestGoldRush() => Run(false, EventMode.GoldRush);
+
+        [MenuItem("Tools/Build/WebGL Playtest/ITEM FRENZY")]
+        public static void PlaytestItemFrenzy() => Run(false, EventMode.ItemFrenzy);
+
+        [MenuItem("Tools/Build/WebGL Playtest/OVERHEAT")]
+        public static void PlaytestOverheat() => Run(false, EventMode.Overheat);
+
+        [MenuItem("Tools/Build/WebGL Playtest/TEAM PUSH")]
+        public static void PlaytestTeamPush() => Run(false, EventMode.TeamPush);
+
+        [MenuItem("Tools/Build/WebGL Playtest/FOOTBALL")]
+        public static void PlaytestFootball() => Run(false, EventMode.Football);
+
         // Not an overload of Build: -executeMethod finds the method by name alone.
-        private static void Run(bool development)
+        private static void Run(bool development, EventMode playtest = EventMode.None)
         {
             var defines = PlayerSettings.GetScriptingDefineSymbols(NamedBuildTarget.WebGL);
             if (!defines.Split(';').Contains(PokiDefine)) {
@@ -79,16 +107,20 @@ namespace ToyCarArena.Editor
             };
 
             BuildReport report;
+            var playtestId = playtest != EventMode.None ? EventModes.IdOf(playtest) : null;
             using var deferred = DeferredContent.Build();
+            using var playtestBuild = new PlaytestBuild(playtest);
             // Super Console keeps its settings there, but a project without it may have no Resources folder yet.
             Directory.CreateDirectory(Path.GetDirectoryName(BuildInfoAsset));
             File.WriteAllText(BuildInfoAsset, $"{build.Number}\n{build.Commit}\n");
             AssetDatabase.ImportAsset(BuildInfoAsset, ImportAssetOptions.ForceSynchronousImport);
             try {
                 deferred.Strip();
+                playtestBuild.Apply();
                 report = BuildPipeline.BuildPlayer(options);
             }
             finally {
+                playtestBuild.Dispose();
                 deferred.Dispose();
                 AssetDatabase.DeleteAsset(BuildInfoAsset);
             }
@@ -97,7 +129,7 @@ namespace ToyCarArena.Editor
                 deferred.CopyTo(OutputPath);
             }
 
-            var shipped = WriteReport(report, build, deferred);
+            var shipped = WriteReport(report, build, deferred, playtestId);
             if (report.summary.result != BuildResult.Succeeded) {
                 throw new BuildFailedException($"WebGL build {report.summary.result}, see {ReportPath}");
             }
@@ -106,8 +138,9 @@ namespace ToyCarArena.Editor
                 throw new BuildFailedException($"{shipped} assets meant for the content bundles are still in the player, see {ReportPath}");
             }
 
+            var playtestLine = playtestId != null ? $",\n  \"playtest\": \"{playtestId}\"" : "";
             File.WriteAllText(buildFile,
-                $"{{\n  \"build_number\": \"{build.Number}\",\n  \"commit\": \"{build.Commit}\"\n}}\n");
+                $"{{\n  \"build_number\": \"{build.Number}\",\n  \"commit\": \"{build.Commit}\"{playtestLine}\n}}\n");
             Debug.Log($"[{nameof(WebGLBuild)}] Built {OutputPath}, build {build}, " +
                 $"{FormatSize(report.summary.totalSize)}; see {ReportPath}");
         }
@@ -129,7 +162,7 @@ namespace ToyCarArena.Editor
         }
 
         /// <summary>Writes the report; how many of the deferred assets still shipped in the player.</summary>
-        private static int WriteReport(BuildReport report, BuildNumber build, DeferredContent deferred)
+        private static int WriteReport(BuildReport report, BuildNumber build, DeferredContent deferred, string playtest)
         {
             var deferredPaths = new HashSet<string>(deferred.Paths);
             var shipped = report.packedAssets
@@ -154,6 +187,7 @@ namespace ToyCarArena.Editor
             text.AppendLine($"Content bundles: {string.Join(", ", deferred.BundleNames)}; " +
                 $"{deferredPaths.Count} assets moved, {shipped.Count} still in the player" +
                 (shipped.Count > 0 ? $" ({string.Join(", ", shipped)})" : ""));
+            text.AppendLine($"Playtest: {playtest ?? "none"}");
             text.AppendLine();
 
             text.AppendLine("Output files:");
@@ -201,5 +235,70 @@ namespace ToyCarArena.Editor
         }
 
         private static string FormatSize(ulong bytes) => FormatSize((long)bytes);
+
+        /// <summary>
+        /// Sets the playtested mode in the tuning asset while the player builds, then writes the file back byte for
+        /// byte: saving the asset would also write the sections that live only in code, with their defaults frozen.
+        /// </summary>
+        private sealed class PlaytestBuild : IDisposable
+        {
+            private const string ModeProperty = "playtest.mode";
+
+            private readonly EventMode mode;
+            private string path;
+            private byte[] original;
+
+            public PlaytestBuild(EventMode mode)
+            {
+                this.mode = mode;
+            }
+
+            public void Apply()
+            {
+                var guids = AssetDatabase.FindAssets($"t:{nameof(GameTuning)}");
+                if (guids.Length != 1) {
+                    throw new BuildFailedException($"Expected one {nameof(GameTuning)}, found {guids.Length}.");
+                }
+
+                var tuningPath = AssetDatabase.GUIDToAssetPath(guids[0]);
+                var tuning = AssetDatabase.LoadAssetAtPath<GameTuning>(tuningPath);
+                // Only the build sets a mode: a tuning that already playtests one would ship it in a plain build too.
+                if (tuning.Playtest.Mode != EventMode.None) {
+                    throw new BuildFailedException($"{tuningPath} already playtests {tuning.Playtest.Mode}; set it to None.");
+                }
+
+                if (mode == EventMode.None) {
+                    return;
+                }
+
+                this.path = tuningPath;
+                this.original = File.ReadAllBytes(tuningPath);
+                var serialized = new SerializedObject(tuning);
+                var property = serialized.FindProperty(ModeProperty);
+                if (property == null) {
+                    throw new BuildFailedException($"{nameof(GameTuning)} has no {ModeProperty}.");
+                }
+
+                property.intValue = (int)mode;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                AssetDatabase.SaveAssetIfDirty(tuning);
+                if (tuning.Playtest.Mode != mode) {
+                    throw new BuildFailedException($"The tuning playtests {tuning.Playtest.Mode}, not {mode}.");
+                }
+
+                Debug.Log($"[{nameof(WebGLBuild)}] Playtest build of {EventModes.IdOf(mode)}");
+            }
+
+            public void Dispose()
+            {
+                if (original == null) {
+                    return;
+                }
+
+                File.WriteAllBytes(path, original);
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+                original = null;
+            }
+        }
     }
 }
