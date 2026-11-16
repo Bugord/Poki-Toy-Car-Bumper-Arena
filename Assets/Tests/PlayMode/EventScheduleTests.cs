@@ -147,6 +147,51 @@ namespace ToyCarArena.Tests.PlayMode
         }
 
         [Test]
+        public void APlaytestBuildPlaysItsOneModeEarlyAndOften()
+        {
+            var tuning = LoadTuning();
+            var specials = tuning.SpecialRounds;
+            var playtest = tuning.Playtest;
+            Assert.That(playtest.IsOn, Is.False, "The build as it ships playtests no mode.");
+            // The fixture forces plain rounds for every test; this one reads the build's schedule.
+            specials.Force(null);
+            Enable(tuning, EventMode.Football, false);
+            playtest.Force(EventMode.Football);
+            try {
+                // Every day is the playtested mode, even with it off in the rotation.
+                Assert.That(EventSchedule.Of(tuning, 738000), Is.EqualTo(EventMode.Football));
+                Assert.That(EventSchedule.Of(tuning, 738001), Is.EqualTo(EventMode.Football));
+
+                for (var round = 1; round < 20; round++) {
+                    var expected = round >= playtest.FromRound && (round - playtest.FromRound) % playtest.Every == 0
+                        ? SpecialRound.Football
+                        : SpecialRound.None;
+                    Assert.That(RoundRules.For(tuning, round, EventMode.None), Is.EqualTo(expected), $"Round {round}.");
+                }
+
+                // The menu's own pick and a test's forced kind are not the playtest's.
+                Assert.That(RoundRules.For(tuning, playtest.FromRound + 1, EventMode.HotPotato),
+                    Is.EqualTo(SpecialRound.HotPotato));
+                specials.Force(SpecialRound.LowGravity);
+                Assert.That(RoundRules.For(tuning, playtest.FromRound, EventMode.None),
+                    Is.EqualTo(SpecialRound.LowGravity));
+            }
+            finally {
+                playtest.Force(null);
+            }
+        }
+
+        [Test]
+        public void FootballIsOutOfTheRotation()
+        {
+            var tuning = LoadTuning();
+            Assert.That(tuning.IsModeEnabled(EventMode.Football), Is.False, "FOOTBALL is out for rework after v0.19.0.");
+            for (var day = 738000; day < 738000 + EventModes.Circle.Length * 2; day++) {
+                Assert.That(EventSchedule.Of(tuning, day), Is.Not.EqualTo(EventMode.Football), $"Day {day}.");
+            }
+        }
+
+        [Test]
         public void TheDevConsoleOffersEveryModeAndTheSchedule()
         {
             var ids = ProgressDevConsole.EventDayIds();
