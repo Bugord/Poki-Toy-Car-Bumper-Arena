@@ -796,7 +796,7 @@
 /* Sized from the GarageB2 confirm board: 350 design px wide, about 2.9 reference px to one. */
 .garage__sheet {
     width: 1040px;
-    padding: 70px 64px 58px 64px;
+    padding: 56px 64px 48px 64px;
     align-items: center;
     border-width: 9px;
     border-bottom-width: 26px;
@@ -821,7 +821,7 @@
 .garage__sheet-frame {
     align-self: stretch;
     height: 540px;
-    margin-top: 66px;
+    margin-top: 40px;
     overflow: hidden;
     border-width: 9px;
     border-color: var(--navy);
@@ -859,7 +859,7 @@
 
 /* The stats bare under the picture, without the pill they wear under the pedestal. */
 .garage__sheet-stats {
-    margin-top: 58px;
+    margin-top: 36px;
     padding: 0;
     border-width: 0;
     background-color: rgba(0, 0, 0, 0);
@@ -873,7 +873,7 @@
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    margin-top: 66px;
+    margin-top: 40px;
 }
 
 .garage__sheet-pill {
@@ -907,7 +907,7 @@
     flex-direction: row;
     align-items: center;
     height: 116px;
-    margin-top: 66px;
+    margin-top: 40px;
     padding: 0 46px 0 28px;
     border-width: 9px;
     border-bottom-width: 18px;
@@ -923,13 +923,23 @@
     color: var(--navy);
 }
 
-/* BUY gold, as the bottom button's BUY; WATCH AD purple. 76 design px tall, CANCEL 52 under them. */
+/* BUY gold, as the bottom button's BUY, 76 design px tall, CANCEL 52 under it (CANCEL comes first, so the column is
+   reversed). For an ad, CANCEL beside WATCH AD (purple) and as big: Poki wants the standard button next to the rewarded
+   one or above it, at least as big. */
+.garage__sheet-actions {
+    align-self: stretch;
+    flex-direction: column-reverse;
+    margin-top: 56px;
+}
+
+.garage__sheet-actions--ad { flex-direction: row; }
+
 .garage__sheet-buy,
 .garage__sheet-watch {
     align-self: stretch;
     min-width: 0;
     height: 220px;
-    margin-top: 75px;
+    margin-top: 0;
     padding: 0 40px 26px 40px;
     border-radius: 70px;
 }
@@ -945,13 +955,34 @@
     align-self: stretch;
     min-width: 0;
     height: 150px;
-    margin-top: 46px;
+    margin-top: 32px;
     padding: 0 40px 12px 40px;
     border-bottom-width: 18px;
     border-radius: 58px;
 }
 
 .garage__sheet-cancel > .button__face { bottom: 0; border-radius: 49px; }
+
+/* Beside WATCH AD: the same size and the same shape. */
+.garage__sheet-actions--ad > .garage__sheet-cancel,
+.garage__sheet-actions--ad > .garage__sheet-watch {
+    flex-grow: 1;
+    flex-basis: 0;
+    align-self: auto;
+    height: 200px;
+    margin: 0;
+    padding: 0 30px 22px 30px;
+    border-bottom-width: 20px;
+    border-radius: 66px;
+}
+
+.garage__sheet-actions--ad > .garage__sheet-cancel { margin-right: 30px; }
+
+.garage__sheet-actions--ad > .garage__sheet-cancel > .button__face,
+.garage__sheet-actions--ad > .garage__sheet-watch > .button__face { bottom: 16px; border-radius: 57px; }
+
+.garage__sheet-actions--ad .menu__watch-label-text { font-size: 72px; }
+.garage__sheet-actions--ad .garage__sheet-cancel-label { font-size: 64px; }
 
 .garage__sheet-cancel-label {
     font-size: 70px;

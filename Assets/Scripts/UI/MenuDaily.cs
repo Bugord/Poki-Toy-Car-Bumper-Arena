@@ -46,6 +46,7 @@ namespace ToyCarArena.UI
         private readonly Label[] giftTabLabels;
         private readonly Label[] tasksTabLabels;
         private readonly Label streak;
+        private readonly Label headStreak;
         private readonly VisualElement days;
         private readonly Label hint;
         private readonly VisualElement claimRow;
@@ -76,7 +77,13 @@ namespace ToyCarArena.UI
             giftPage = Element("menu__daily-page");
             sheet.Add(giftPage);
             streak = Text("menu__daily-streak");
+            streak.AddToClassList("menu__daily-streak--row");
             giftPage.Add(streak);
+            // Sideways the title row is wide and empty in the middle: DAY N stands beside the title there instead, and
+            // the style sheet shows one of the two.
+            headStreak = Text("menu__daily-streak");
+            headStreak.AddToClassList("menu__daily-streak--head");
+            sheet.Q<VisualElement>(className: "menu__sheet-head")?.Insert(1, headStreak);
             days = Element("menu__daily-days");
             giftPage.Add(days);
             hint = Text("menu__daily-hint");
@@ -187,6 +194,8 @@ namespace ToyCarArena.UI
             giftTab.EnableInClassList(TabOnClass, !IsTasks);
             tasksTab.EnableInClassList(TabOnClass, IsTasks);
             giftDot.style.display = gift.CanClaim ? DisplayStyle.Flex : DisplayStyle.None;
+            // DAY N belongs to the calendar: the tasks' title row has none (the style sheet decides where it shows).
+            headStreak.style.display = IsTasks ? DisplayStyle.None : StyleKeyword.Null;
             StrokeText.SetText(giftTabLabels, Strings.Get("daily.tab_gift"));
             if (hasTasks) {
                 StrokeText.SetText(tasksTabLabels,
@@ -205,6 +214,7 @@ namespace ToyCarArena.UI
             var canClaim = gift.CanClaim;
             var today = gift.Slot;
             streak.text = Strings.Format("daily.streak", today + 1);
+            headStreak.text = streak.text;
             if (cells.Length != gift.Days) {
                 days.Clear();
                 cells = new Cell[gift.Days];
@@ -350,9 +360,8 @@ namespace ToyCarArena.UI
                 claim.Hat == null ? coinCounter : null, token);
         }
 
-        /// <summary>The ad gave nothing: the card shakes and NO AD RIGHT NOW floats over CLAIM ×2.</summary>
-        public void Refuse(VisualElement overlay, CancellationToken token) =>
-            RewardCelebration.Refuse(overlay, sheet, doubleButton, Strings.Get("garage.no_ad"), token);
+        /// <summary>The ad gave nothing: the card shakes, with no words of its own (Poki tells the player).</summary>
+        public void Refuse(CancellationToken token) => RewardCelebration.NoReward(sheet, token);
 
         private void ShowTomorrow(DailyGift gift, bool isShown)
         {

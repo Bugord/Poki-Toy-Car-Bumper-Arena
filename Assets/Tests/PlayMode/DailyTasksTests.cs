@@ -35,6 +35,8 @@ namespace ToyCarArena.Tests.PlayMode
         {
             storage = new RoundOverScreenshots.MemoryStorage();
             tuning = ScriptableObject.CreateInstance<GameTuning>();
+            // The build has the tasks off (the DAILY popup is the gift alone); these tests are about the tasks.
+            TasksEnabled.SetValue(tuning.Daily, true);
             catalog = AssetDatabase.LoadAssetAtPath<CarCatalog>("Assets/Data/Cars/data_car_catalog.asset");
             progress = new PlayerProgress(storage, tuning, catalog);
             wallet = new PlayerWallet(storage, tuning);
@@ -325,6 +327,9 @@ namespace ToyCarArena.Tests.PlayMode
 
             return total;
         }
+
+        private static readonly FieldInfo TasksEnabled =
+            typeof(GameTuning.DailySettings).GetField("tasksEnabled", BindingFlags.Instance | BindingFlags.NonPublic);
 
         private static readonly FieldInfo BoostEnabled =
             typeof(GameTuning.BoostSettings).GetField("enabled", BindingFlags.Instance | BindingFlags.NonPublic);
