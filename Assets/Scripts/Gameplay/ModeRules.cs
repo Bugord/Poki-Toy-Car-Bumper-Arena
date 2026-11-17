@@ -43,7 +43,7 @@ namespace ToyCarArena.Gameplay
         /// <summary>No boxes.</summary>
         None,
 
-        /// <summary>From the visit's <see cref="GameTuning.PickupSettings.FirstRound"/> on, as a plain round has them.</summary>
+        /// <summary>From the player's <see cref="GameTuning.PickupSettings.FirstRound"/> on (all visits), as a plain round has them.</summary>
         Usual,
 
         /// <summary>From the first round of the visit on, as a match has them.</summary>
