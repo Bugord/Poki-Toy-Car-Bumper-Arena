@@ -691,6 +691,29 @@
 
 .menu__no-thanks-key .key__text { font-size: 26px; }
 
+/* The boost's NO THANKS and WATCH side by side and the same size (Poki: the standard button at least as big as the
+   rewarded one, beside or above it). */
+.menu__boost-buttons {
+    align-self: stretch;
+    flex-direction: row;
+}
+
+.menu__boost-buttons > .menu__no-thanks,
+.menu__boost-buttons > .menu__watch {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+    height: 160px;
+    margin: 0;
+    padding: 0 24px 20px 24px;
+}
+
+.menu__boost-buttons > .menu__no-thanks { margin-right: 26px; }
+.menu__boost-buttons .menu__no-thanks-label { font-size: 52px; }
+.menu__boost-buttons .menu__watch .double__play { width: 64px; height: 64px; margin-right: 14px; }
+.menu__boost-buttons .menu__watch-label-text { font-size: 64px; -unity-text-outline-width: 11px; }
+.menu__boost-buttons .menu__watch-key { margin-left: 16px; }
+
 .menu--desktop .menu__watch-key,
 .menu--desktop .menu__no-thanks-key { display: flex; }
 
@@ -2077,9 +2100,17 @@
 .menu__daily-popup .menu__sheet-title { color: var(--gold); }
 .menu--wide .menu__daily-popup .menu__sheet { width: 1760px; }
 
+/* Sideways DAY N stands beside the title, the two in the middle over the calendar, the cross at the right: a title at
+   the left and the cross at the right left the middle of the wide card empty. Upright it has its own row. */
+.menu__daily-streak--head { display: none; }
+.menu--wide .menu__daily-sheet > .menu__sheet-head { justify-content: center; margin-bottom: 22px; }
+.menu--wide .menu__daily-sheet > .menu__sheet-head > .menu__close { position: absolute; right: 0; top: 4px; }
+.menu--wide .menu__daily-streak--head { display: flex; margin: 0 0 0 36px; }
+.menu--wide .menu__daily-streak--row { display: none; }
+
 .menu__daily-streak {
     align-self: center;
-    margin: 0 0 30px 0;
+    margin: 0 0 16px 0;
     padding: 4px 28px 6px 28px;
     border-width: 6px;
     border-color: var(--navy);
@@ -2100,7 +2131,7 @@
 .menu__daily-day {
     width: 23%;
     height: 250px;
-    margin: 12px 1%;
+    margin: 8px 1%;
     padding: 10px 0 12px 0;
     align-items: center;
     justify-content: space-between;
@@ -2112,7 +2143,7 @@
 }
 
 .menu__daily-day--big { width: 48%; background-color: var(--purple); }
-.menu--wide .menu__daily-day { width: 11.5%; margin: 12px 0.5%; }
+.menu--wide .menu__daily-day { width: 11.5%; margin: 8px 0.5%; }
 .menu--wide .menu__daily-day--big { width: 23.5%; }
 
 .menu__daily-caption {
@@ -2210,20 +2241,25 @@
     -unity-text-align: middle-center;
 }
 
-/* CLAIM ×2 (purple, a gold AD tag at the top left) and CLAIM side by side; CLAIM alone fills the row. Well clear of
-   the calendar: the AD tag and the key caps on their top edges stand 26px over the buttons. */
-.menu__daily-buttons { flex-direction: row; margin-top: 58px; }
+/* CLAIM and CLAIM ×2 (purple, a gold AD tag at the top left) the same size: Poki wants the standard button at least as
+   big as the rewarded one, beside or above it. On a phone held upright half the card is too narrow for CLAIM, a coin and
+   the amount, so CLAIM stands above CLAIM ×2; in landscape they sit side by side, CLAIM ×2 first. CLAIM alone fills the
+   row. Well clear of the calendar: the AD tag and the key caps on their top edges stand 26px over the buttons. */
+.menu__daily-buttons { flex-direction: column-reverse; margin-top: 44px; }
+.menu--wide .menu__daily-buttons { flex-direction: row; }
 
 .menu__daily-double,
 .menu__daily-claim {
-    flex-grow: 1;
-    flex-basis: 0;
+    flex-shrink: 0;
     min-width: 0;
     height: 160px;
     padding: 0 24px 20px 24px;
 }
 
-.menu__daily-double { flex-grow: 1.3; margin-right: 26px; }
+.menu__daily-double { margin-top: 44px; }
+.menu--wide .menu__daily-double,
+.menu--wide .menu__daily-claim { flex-grow: 1; flex-shrink: 1; flex-basis: 0; }
+.menu--wide .menu__daily-double { margin-top: 0; margin-right: 26px; }
 .menu__daily-double .double__play { flex-shrink: 0; width: 64px; height: 64px; margin-right: 14px; }
 
 .menu__daily-label { flex-grow: 0; flex-shrink: 1; min-width: 0; }
@@ -2298,7 +2334,7 @@
     align-self: center;
     width: 640px;
     height: 104px;
-    margin: 0 0 30px 0;
+    margin: 0 0 20px 0;
     flex-shrink: 0;
 }
 

@@ -64,9 +64,10 @@ namespace ToyCarArena.Gameplay
             private int firstWinMultiplier = 2;
 
             [Header("Daily tasks")]
-            [Tooltip("Whether the three daily tasks run at all")]
+            [Tooltip("Whether the three daily tasks run at all. Off after v0.20.0: the DAILY popup shows only the gift, " +
+                "and the menu's MISSIONS already ask for the same things")]
             [SerializeField]
-            private bool tasksEnabled = true;
+            private bool tasksEnabled;
 
             [Tooltip("XP of a done daily task by tier (easy, medium, hard), paid with the round that does it")]
             [SerializeField]

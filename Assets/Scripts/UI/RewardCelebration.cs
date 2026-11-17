@@ -62,6 +62,12 @@ namespace ToyCarArena.UI
             Toast(overlay, button, text, token).Forget();
         }
 
+        /// <summary>
+        /// The rewarded ad gave nothing: only the card shakes. Poki asks for no "ad blocked" message of the game's own;
+        /// it tells the player itself.
+        /// </summary>
+        public static void NoReward(VisualElement card, CancellationToken token) => Shake(card, token).Forget();
+
         private static async UniTaskVoid Flash(VisualElement overlay, CancellationToken token)
         {
             var flash = new VisualElement { pickingMode = PickingMode.Ignore };

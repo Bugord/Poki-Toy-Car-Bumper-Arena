@@ -207,8 +207,11 @@ namespace ToyCarArena.UI
         /// <summary>Whether the menu has the DAILY tile at all: the gift, or the tasks and the first win.</summary>
         public bool HasDaily => daily.IsEnabled || HasDailyTasks;
 
-        /// <summary>Whether the popup has its TASKS tab: the day's tasks or the day's first win.</summary>
-        public bool HasDailyTasks => dailyTasks.IsEnabled || tuning.Daily.HasFirstWin;
+        /// <summary>
+        /// Whether the popup has its TASKS tab, with the day's tasks and the first win's card: only while the tasks run.
+        /// Without them the first win still pays, and the result says so; the popup is the gift alone.
+        /// </summary>
+        public bool HasDailyTasks => dailyTasks.IsEnabled;
 
         /// <summary>Whether the popup has its GIFT tab, the calendar.</summary>
         public bool HasDailyGift => daily.IsEnabled;
