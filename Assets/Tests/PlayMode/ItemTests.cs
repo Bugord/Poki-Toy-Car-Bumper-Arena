@@ -50,10 +50,10 @@ namespace ToyCarArena.Tests.PlayMode
             saved.Clear();
         }
 
-        // --- In a match, and in rounds from the visit's second ---
+        // --- In a match, and in rounds from the player's second (all visits) ---
 
         [UnityTest]
-        public IEnumerator TheFirstRoundOfAVisitHasNoBoxesAndNoItems()
+        public IEnumerator ANewPlayersFirstRoundHasNoBoxesAndNoItems()
         {
             tuning = UseMode(GameTuning.GameMode.LastStanding);
             yield return Load(false, 1);
@@ -77,13 +77,24 @@ namespace ToyCarArena.Tests.PlayMode
         public IEnumerator ALaterRoundOfLastCarStandingHasBoxes()
         {
             tuning = UseMode(GameTuning.GameMode.LastStanding);
-            Assert.That(tuning.Pickups.FirstRound, Is.EqualTo(2), "boxes come from the visit's second round");
+            Assert.That(tuning.Pickups.FirstRound, Is.EqualTo(2), "boxes come from the player's second round");
             yield return Load(true, 2);
             Assert.That(pickups.IsEnabled, Is.True);
             var spawned = 0;
             pickups.Spawned += _ => spawned++;
             yield return Until(() => spawned > 0, 8f, "no box appeared in a round");
             Assert.That(pickups.Give(round.Player, ItemKind.Bomb), Is.True, "a round fills a slot");
+        }
+
+        [UnityTest]
+        public IEnumerator AReturningPlayersFirstRoundOfAVisitHasBoxes()
+        {
+            tuning = UseMode(GameTuning.GameMode.LastStanding);
+            yield return Load(true, 1, roundsBefore: 20);
+            Assert.That(pickups.IsEnabled, Is.True, "a player who has played before has boxes from the visit's first round");
+            var spawned = 0;
+            pickups.Spawned += _ => spawned++;
+            yield return Until(() => spawned > 0, 8f, "no box appeared in a returning player's first round");
         }
 
         // --- When and where boxes appear ---
@@ -906,10 +917,10 @@ namespace ToyCarArena.Tests.PlayMode
         /// Loads the Game scene in the mode the test set. With <paramref name="freezeBots"/> the bots stand still and the
         /// cars are placed and the round begun (a round of last-car-standing always is); otherwise the test does it.
         /// </summary>
-        private IEnumerator Load(bool freezeBots, int visitRound)
+        private IEnumerator Load(bool freezeBots, int visitRound, int roundsBefore = 0)
         {
             input = new SimulationInput();
-            CreateParent(input, new SimulationProgress { Round = visitRound }, "sandbox");
+            CreateParent(input, new SimulationProgress { Round = visitRound, RoundsBefore = roundsBefore }, "sandbox");
             yield return LoadGame();
             container = GameScope().Container;
             round = container.Resolve<ArenaRound>();

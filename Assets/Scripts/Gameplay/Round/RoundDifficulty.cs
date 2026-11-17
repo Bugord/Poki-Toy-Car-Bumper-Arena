@@ -20,7 +20,7 @@ namespace ToyCarArena.Gameplay.Round
         public RoundDifficulty(GameTuning tuning, ISessionProgress progress)
         {
             var settings = tuning.Bots;
-            this.Level = LevelFor(settings, progress);
+            this.Level = LevelFor(tuning, progress);
 
             var easy = settings.Easy;
             var normal = settings.Normal;
@@ -38,8 +38,11 @@ namespace ToyCarArena.Gameplay.Round
             this.EscapeBoostChance = Mathf.Lerp(easy.EscapeBoostChance, normal.EscapeBoostChance, level);
             // A mode may turn the help off: on HOT POTATO's fenced floor it would only make the car stick and slow along
             // the fence.
+            // Falls off on one's own add help on top; the bots stay as they were.
             this.EdgeAssist = !RoundRules.RulesFor(tuning, progress).HasEdgeAssist ? 0f :
-                Mathf.Lerp(easy.EdgeAssist, normal.EdgeAssist, LevelFor(settings, progress, settings.EdgeAssistRounds));
+                Mathf.Min(1f, Mathf.Lerp(easy.EdgeAssist, normal.EdgeAssist,
+                        LevelFor(tuning, progress, settings.EdgeAssistRounds))
+                    + Mathf.Min(settings.MaxSelfFallAssist, settings.SelfFallAssist * Mathf.Max(0, progress.SelfFalls)));
             this.AutoBoost = Mathf.Lerp(easy.AutoBoost, normal.AutoBoost, level);
             this.PlayerBump = Mathf.Lerp(easy.PlayerBump, normal.PlayerBump, level);
             this.PlayerStaggerScale = Mathf.Lerp(easy.PlayerStaggerScale, normal.PlayerStaggerScale, level);
@@ -76,15 +79,16 @@ namespace ToyCarArena.Gameplay.Round
         public static int BotCountFor(GameTuning tuning, ISessionProgress progress)
         {
             var bots = Mathf.RoundToInt(Mathf.Lerp(tuning.Bots.Easy.Bots, tuning.Bots.Normal.Bots,
-                LevelFor(tuning.Bots, progress)));
+                LevelFor(tuning, progress)));
             return RoundRules.RulesFor(tuning, progress).BotCountFor(bots, SessionRoster.MaxBots);
         }
 
-        private static float LevelFor(GameTuning.BotSettings settings, ISessionProgress progress) =>
-            LevelFor(settings, progress, settings.RampRounds);
+        private static float LevelFor(GameTuning tuning, ISessionProgress progress) =>
+            LevelFor(tuning, progress, tuning.Bots.RampRounds);
 
-        private static float LevelFor(GameTuning.BotSettings settings, ISessionProgress progress, int rampRounds)
+        private static float LevelFor(GameTuning tuning, ISessionProgress progress, int rampRounds)
         {
+            var settings = tuning.Bots;
             var before = Mathf.Max(0, progress.RoundsBefore);
             var ramp = rampRounds > 0 ? Mathf.Clamp01((before + progress.Round - 1f) / rampRounds) : 1f;
             // A returning player warms up in the visit's first rounds; one who has played only a round or two is still
@@ -96,8 +100,17 @@ namespace ToyCarArena.Gameplay.Round
                 ramp = Mathf.Min(ramp, warmUp);
             }
 
-            var streak = progress.LosingStreak - settings.StreakStart + 1;
+            // A run of losses, or a visit lost more often than not, steps it back towards easy: fewer, slower bots and a
+            // harder-hitting player.
+            var streak = Mathf.Max(progress.LosingStreak, progress.Struggle) - settings.StreakStart + 1;
             var ease = streak > 0 ? Mathf.Min(settings.MaxStreakEase, settings.StreakEase * streak) : 0f;
+            // The first rounds of an event mode the player has not learned yet are easier too, so a new mode does not
+            // put them off; its own levers read the same level.
+            var kind = RoundRules.KindFor(tuning, progress);
+            if (EventModes.IsEvent(kind)) {
+                ease += settings.ModeEaseAfter(progress.ModeRoundsOf(kind));
+            }
+
             return Mathf.Clamp01(ramp - ease);
         }
 
