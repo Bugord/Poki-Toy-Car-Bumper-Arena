@@ -18,13 +18,16 @@ namespace ToyCarArena.Gameplay.Round
         /// <summary>The rounds finished on this device, saved after each one.</summary>
         public const string RoundsKey = "rounds_played";
 
+        /// <summary>The rounds of an event mode finished on this device, by the mode's id, saved after each one.</summary>
+        public const string ModeRoundsKey = "mode_rounds_";
+
         private readonly IKeyValueStorage storage;
         private readonly GameTuning tuning;
         private int roundsBefore = -1;
         private bool? isNewPlayer;
 
         /// <param name="storage">Where the rounds finished are kept; null keeps nothing, as a new player.</param>
-        /// <param name="tuning">Kept for the scope's registration; the count no longer needs it.</param>
+        /// <param name="tuning">The bots' easing caps and the round's mode; null caps nothing and counts no mode.</param>
         public SessionProgress(IKeyValueStorage storage = null, GameTuning tuning = null)
         {
             this.storage = storage;
@@ -68,6 +71,14 @@ namespace ToyCarArena.Gameplay.Round
 
         public int LosingStreak { get; private set; }
 
+        public int Struggle { get; private set; }
+
+        public int SelfFalls { get; private set; }
+
+        public int ModeRoundsOf(SpecialRound kind) => storage == null || !EventModes.IsEvent(kind)
+            ? 0
+            : Math.Max(0, storage.GetInt(ModeRoundsKey + RoundRules.IdOf(kind)));
+
         public int Nemesis { get; private set; } = RoundResult.Nobody;
 
         public int WinStreak { get; private set; }
@@ -102,6 +113,36 @@ namespace ToyCarArena.Gameplay.Round
             }
 
             this.LosingStreak = result.IsLoss ? LosingStreak + 1 : 0;
+            // A struggle grows no further than where the bots are eased the most, so as many rounds not lost bring it
+            // back down.
+            var bots = tuning?.Bots;
+            var struggle = result.IsLoss ? Struggle + 1 : Struggle - 1;
+            if (bots != null && bots.StreakEase > 0f) {
+                struggle = Math.Min(struggle,
+                    bots.StreakStart - 1 + (int)Math.Ceiling(bots.MaxStreakEase / bots.StreakEase));
+            }
+
+            this.Struggle = Math.Max(0, struggle);
+            // A fall the help at the edge could have stopped: out, no car to credit, and not the arena's ball.
+            if (result.Outcome == RoundOutcome.Out && result.KnockedOutBy == RoundResult.Nobody
+                && result.FallCause != FallCause.Ball) {
+                SelfFalls++;
+                if (bots != null && bots.SelfFallAssist > 0f) {
+                    SelfFalls = Math.Min(SelfFalls, (int)Math.Ceiling(bots.MaxSelfFallAssist / bots.SelfFallAssist));
+                }
+            }
+            else if (result.Outcome == RoundOutcome.Won) {
+                SelfFalls = Math.Max(0, SelfFalls - 1);
+            }
+
+            // The rounds of an event mode, kept for good: its first rounds are easier. Read before the round moves on.
+            if (tuning != null && storage != null) {
+                var kind = RoundRules.KindFor(tuning, this);
+                if (EventModes.IsEvent(kind)) {
+                    storage.SetInt(ModeRoundsKey + RoundRules.IdOf(kind), ModeRoundsOf(kind) + 1);
+                }
+            }
+
             // Read the count from before this visit first: from here on the saved one includes this visit's rounds.
             var before = RoundsBefore;
             this.Round = Round + 1;
