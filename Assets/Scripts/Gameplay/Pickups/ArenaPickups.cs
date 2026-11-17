@@ -110,11 +110,12 @@ namespace ToyCarArena.Gameplay.Pickups
             this.surface = surface;
             this.parent = parent;
             // The one place the mode is read: a match (and a mode that says so) always has boxes, a plain round from the
-            // visit's round the tuning says, and a mode may have none (HOT POTATO: the bomb is its only item). A scene
+            // player's round the tuning says (counting the rounds of earlier visits, so a returning player has them from
+            // the visit's first), and a mode may have none (HOT POTATO: the bomb is its only item). A scene
             // without them never builds an object for one.
             this.isEnabled = settings.Enabled && rules.Mode.Pickups switch {
                 PickupRule.Always or PickupRule.Laid => true,
-                PickupRule.Usual => settings.FirstRound > 0 && progress.Round >= settings.FirstRound,
+                PickupRule.Usual => settings.HasBoxesIn(Mathf.Max(0, progress.RoundsBefore) + progress.Round),
                 _ => false,
             };
             // A mode may bring boxes faster and more of them at once (ITEM FRENZY).
@@ -125,8 +126,8 @@ namespace ToyCarArena.Gameplay.Pickups
         }
 
         /// <summary>
-        /// Whether this scene has boxes and items at all: a long match, or a round from
-        /// <see cref="GameTuning.PickupSettings.FirstRound"/> of the visit, with them switched on.
+        /// Whether this scene has boxes and items at all: a long match, or a round from the player's
+        /// <see cref="GameTuning.PickupSettings.FirstRound"/> (all visits), with them switched on.
         /// </summary>
         public bool IsEnabled => isEnabled;
 

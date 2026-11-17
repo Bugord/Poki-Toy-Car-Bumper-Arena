@@ -12,7 +12,7 @@ namespace ToyCarArena.Gameplay.Round
     /// reloaded every round.
     /// <para>
     /// A player with no missions yet gets each slot's starter, so the first round nearly always ends with one done. A
-    /// lesson about items is drawn only for a round that has boxes (<see cref="GameTuning.PickupSettings.FirstRound"/>),
+    /// lesson about items is drawn only for a round that has boxes (<see cref="GameTuning.PickupSettings.HasBoxesIn"/>),
     /// a mission on an arena only once the arena is open.
     /// </para>
     /// </summary>
@@ -109,8 +109,8 @@ namespace ToyCarArena.Gameplay.Round
 
         /// <summary>
         /// Counts a decided round towards every mission, saves, and replaces the done ones for the next round
-        /// (<paramref name="level"/> after the round opens arenas, <paramref name="nextRound"/> of the visit gates the
-        /// item lessons).
+        /// (<paramref name="level"/> after the round opens arenas, the player's <paramref name="nextRound"/> across visits
+        /// gates the item lessons).
         /// </summary>
         public MissionRound Record(MissionStats stats, int level, int nextRound)
         {
@@ -279,8 +279,7 @@ namespace ToyCarArena.Gameplay.Round
             }
 
             if (definition.NeedsItems) {
-                var first = tuning.Pickups.FirstRound;
-                if (!tuning.Pickups.Enabled || (!tuning.IsMatch && (first <= 0 || nextRound < first))) {
+                if (!tuning.Pickups.Enabled || (!tuning.IsMatch && !tuning.Pickups.HasBoxesIn(nextRound))) {
                     return false;
                 }
             }

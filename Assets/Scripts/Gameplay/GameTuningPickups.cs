@@ -6,7 +6,8 @@ namespace ToyCarArena.Gameplay
     /// <summary>
     /// The mystery boxes lying on the floor and the items they give, apart from the main file so they can change side by
     /// side with the match and the floor: <see cref="PickupSettings"/>. A long match has them from the start, a round of
-    /// last-car-standing from <see cref="PickupSettings.FirstRound"/> of a visit, so the first round stays plain.
+    /// last-car-standing from the player's <see cref="PickupSettings.FirstRound"/> (rounds on this device, not of the
+    /// visit), so a new player's first round stays plain and a returning one has boxes from the visit's first.
     /// </summary>
     public sealed partial class GameTuning
     {
@@ -34,8 +35,8 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private bool enabled = true;
 
-            [Tooltip("Round of a visit from which a round of last-car-standing has boxes, so a new player learns to " +
-                "drive and push first; a long match always has them. 0 never in a round")]
+            [Tooltip("The player's round (on this device, all visits) from which a round of last-car-standing has " +
+                "boxes, so a new player learns to drive and push first; a long match always has them. 0 never in a round")]
             [Min(0)]
             [SerializeField]
             private int firstRound = 2;
@@ -179,6 +180,12 @@ namespace ToyCarArena.Gameplay
 
             public bool Enabled => enabled;
             public int FirstRound => firstRound;
+
+            /// <summary>
+            /// Whether a round of last-car-standing has boxes in the player's <paramref name="playerRound"/> (rounds played
+            /// on this device before the visit plus the visit's): a returning player has them from the visit's first.
+            /// </summary>
+            public bool HasBoxesIn(int playerRound) => firstRound > 0 && playerRound >= firstRound;
             public float LessonDistance => lessonDistance;
             public float FirstDelay => firstDelay;
             public float Interval => interval;

@@ -248,7 +248,7 @@ namespace ToyCarArena.Gameplay
             /// </summary>
             public string Mode => mode ?? "";
 
-            /// <summary>Whether it counts items, which a round of a visit has only from <see cref="PickupSettings.FirstRound"/>.</summary>
+            /// <summary>Whether it counts items, which a round has only from the player's <see cref="PickupSettings.FirstRound"/>.</summary>
             public bool NeedsItems => counter is MissionCounter.ItemsUsed or MissionCounter.Boxes or
                 MissionCounter.ItemKnockouts;
 
