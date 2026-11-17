@@ -294,8 +294,10 @@ namespace ToyCarArena.App
                     isStreakRound ? streaks : null, missionRound.Xp + taskRound.Xp, firstWin);
                 var coinGain = isLesson ? wallet.AddBonus(0)
                     : wallet.Record(result, isStreakRound, missionRound.Coins + taskRound.Coins, firstWin);
-                // The free topper of its level, or the tutorial's reward: the result offers to wear it.
-                wallet.TryGift(xpGain.After.Level, tutorial is { IsActive: true, IsDone: true });
+                // The free topper of its level, or the tutorial's reward: the result offers to wear it. The lesson is won
+                // only once the last two are off, which is its end; its Done step comes a frame later than the finish
+                // that wakes this, so the win is what earns the hat.
+                wallet.TryGift(xpGain.After.Level, isLesson && (tutorial.IsDone || result.Outcome == RoundOutcome.Won));
                 var record = bests.Record(result).WithXp(xpGain).WithKnocker(
                     result.KnockedOutBy == RoundResult.Nobody ? "" : round.NameOf(result.KnockedOutBy)).WithRoster(
                     round.Names, round.Levels, IndexOf(round, round.Nemesis)).WithMeta(coinGain, missionRound,
