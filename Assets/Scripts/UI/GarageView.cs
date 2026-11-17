@@ -185,6 +185,7 @@ namespace ToyCarArena.UI
         private VisualElement sheetBuyPrice;
         private Label[] sheetBuyPriceLabels;
         private Button sheetWatch;
+        private VisualElement sheetActions;
         private bool isConfirmOpen;
         private bool isCelebrating;
         private CarCatalog.Entry confirmCar;
@@ -600,7 +601,6 @@ namespace ToyCarArena.UI
             sheetBuyPrice = StrokeText.Outlined("", "garage__sheet-buy-price", out sheetBuyPriceLabels);
             sheetBuy.Add(sheetBuyPrice);
             sheetBuy.Add(KeyCap(null, "garage__sheet-key", () => Strings.Get("common.space")));
-            sheet.Add(sheetBuy);
 
             sheetWatch = new Button(Confirm);
             sheetWatch.RemoveFromClassList(Button.ussClassName);
@@ -623,7 +623,6 @@ namespace ToyCarArena.UI
             var tag = Text("menu__watch-tag");
             text.Set(tag, () => Strings.Get("result.ad"));
             sheetWatch.Add(tag);
-            sheet.Add(sheetWatch);
 
             var cancel = new Button(() => CloseConfirm(true));
             cancel.RemoveFromClassList(Button.ussClassName);
@@ -637,7 +636,14 @@ namespace ToyCarArena.UI
             text.Set(cancelLabel, () => Strings.Get("garage.cancel"));
             cancel.Add(cancelLabel);
             cancel.Add(KeyCap("ESC", "garage__sheet-cancel-key"));
-            sheet.Add(cancel);
+
+            // BUY over CANCEL; for an ad, CANCEL beside WATCH AD and as big, as Poki wants the standard button next to
+            // the rewarded one or above it, never smaller.
+            sheetActions = Element("garage__sheet-actions");
+            sheetActions.Add(cancel);
+            sheetActions.Add(sheetBuy);
+            sheetActions.Add(sheetWatch);
+            sheet.Add(sheetActions);
 
             confirm.Add(sheet);
             screen.Add(confirm);
@@ -1055,6 +1061,7 @@ namespace ToyCarArena.UI
             Show(sheetBuy, !isAd);
             Show(sheetFree, isAd);
             Show(sheetWatch, isAd);
+            sheetActions.EnableInClassList("garage__sheet-actions--ad", isAd);
             if (isAd) {
                 ViewModel.AdCarShown(confirmCar.Id);
             }
@@ -1117,8 +1124,9 @@ namespace ToyCarArena.UI
             }
 
             if (!isGranted) {
-                // No ad came, or it was closed early: the window stays, and says so.
-                RewardCelebration.Refuse(confirm, sheet, sheetWatch, Strings.Get("garage.no_ad"), token);
+                // No ad came, or it was closed early: the window stays and shakes, with no words of its own (Poki
+                // tells the player about a blocked ad itself).
+                RewardCelebration.NoReward(sheet, token);
                 return;
             }
 

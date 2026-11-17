@@ -207,7 +207,7 @@ namespace ToyCarArena.UI
             if (claim == null) {
                 // No reward: CLAIM ×2 goes, and CLAIM still takes the gift.
                 daily.Fill(viewModel.Daily);
-                daily.Refuse(popup, token);
+                daily.Refuse(token);
                 return;
             }
 

@@ -164,7 +164,6 @@ garage.unlock_title,"Title of the window that asks before an ad opens a car, wit
 garage.free,"Pill in the ad window: the car costs no coins",FREE,GRATUIT,GRATIS,GRATIS,GRATIS,ÜCRETSİZ,GRÁTIS,БЕСПЛАТНО
 garage.watch_ad,"Button in the ad window that plays the rewarded ad; short",WATCH AD,VOIR LA PUB,GUARDA AD,WERBUNG SEHEN,VER ANUNCIO,REKLAM İZLE,VER ANÚNCIO,СМОТРЕТЬ
 garage.cancel,"Button that closes the buy or ad window without doing anything",CANCEL,ANNULER,ANNULLA,ABBRECHEN,CANCELAR,İPTAL,CANCELAR,ОТМЕНА
-garage.no_ad,"Over WATCH AD when the ad did not play or was closed early; max ~16 chars",NO AD RIGHT NOW,PAS DE PUB,NESSUN AD ORA,KEINE WERBUNG,SIN ANUNCIO,REKLAM YOK,SEM ANÚNCIO,РЕКЛАМЫ НЕТ
 paint.green,Garage paint name under its swatch; max ~10 chars,GREEN,VERT,VERDE,GRÜN,VERDE,YEŞİL,VERDE,ЗЕЛЁНЫЙ
 paint.red,Garage paint name under its swatch; max ~10 chars,RED,ROUGE,ROSSO,ROT,ROJO,KIRMIZI,VERMELHO,КРАСНЫЙ
 paint.blue,Garage paint name under its swatch; max ~10 chars,BLUE,BLEU,BLU,BLAU,AZUL,MAVİ,AZUL,СИНИЙ

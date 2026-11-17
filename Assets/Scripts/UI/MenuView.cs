@@ -159,6 +159,9 @@ namespace ToyCarArena.UI
         private VisualElement rail;
         private VisualElement garageTile;
         private VisualElement missionsTile;
+        private VisualElement leaguesTile;
+        private VisualElement leagueEmblem;
+        private string leagueEmblemClass;
         private VisualElement stage;
         private VisualElement rays;
         private VisualElement plinth;
@@ -392,6 +395,11 @@ namespace ToyCarArena.UI
             // The missions open at level 3: before it the tile would show a list that counts nothing.
             missionsTile.style.display = ViewModel.HasMissions ? DisplayStyle.Flex : DisplayStyle.None;
             rail.Add(missionsTile);
+            // LEAGUES: the player's league emblem, opening the same list as a tap on the level or the XP bar.
+            leaguesTile = Tile(null, () => Strings.Get("menu.leagues"), "L", OpenLeagues);
+            leagueEmblem = Element("menu__icon");
+            leaguesTile.Q<VisualElement>(className: "menu__face").Add(leagueEmblem);
+            rail.Add(leaguesTile);
             menu.Add(rail);
         }
 
@@ -917,6 +925,7 @@ namespace ToyCarArena.UI
                 text.Set(label, () => Strings.Get("menu.watch"));
             }
 
+            FitText.Fit(watchLabel, watchLabels);
             watch.Add(watchLabel);
             // Shown only with a mouse, by `menu--desktop`, as the tiles' keys.
             watch.Add(KeyCap("X", "menu__watch-key"));
@@ -924,7 +933,6 @@ namespace ToyCarArena.UI
             var tag = Text("menu__watch-tag");
             text.Set(tag, () => Strings.Get("result.ad"));
             watch.Add(tag);
-            sheet.Add(watch);
 
             var no = new Button(() => {
                 if (!ViewModel.IsAdPlaying) {
@@ -941,10 +949,16 @@ namespace ToyCarArena.UI
             var noLabel = Text("button__label");
             noLabel.AddToClassList("menu__no-thanks-label");
             text.Set(noLabel, () => Strings.Get("menu.no_thanks"));
+            FitText.Fit(no, new[] { noLabel });
             no.Add(noLabel);
             no.Add(KeyCap("ESC", "menu__no-thanks-key"));
 
-            sheet.Add(no);
+            // NO THANKS beside WATCH and as big: Poki wants the standard button at least as big as the rewarded one,
+            // next to it or above it.
+            var buttons = Element("menu__boost-buttons");
+            buttons.Add(no);
+            buttons.Add(watch);
+            sheet.Add(buttons);
         }
 
         private static VisualElement KeyCap(string key, string className)
@@ -1212,6 +1226,15 @@ namespace ToyCarArena.UI
             var league = ViewModel.League;
             LeagueLook.Cover(Menu, LeagueLook.SkyOf(league));
             plinthTop.style.backgroundColor = LeagueLook.PedestalOf(league);
+            var emblemClass = "menu__league-emblem--" + PlayerRank.IdOfTier(league);
+            if (emblemClass != leagueEmblemClass) {
+                if (leagueEmblemClass != null) {
+                    leagueEmblem.RemoveFromClassList(leagueEmblemClass);
+                }
+
+                leagueEmblem.AddToClassList(emblemClass);
+                leagueEmblemClass = emblemClass;
+            }
 
             garageTile.EnableInClassList("menu__tile--new", ViewModel.HasNewCar);
             // NEW says it already: the dot only when there is no new car to show.
@@ -1712,6 +1735,10 @@ namespace ToyCarArena.UI
                     evt.StopPropagation();
                     OpenMissions();
                     break;
+                case KeyCode.L:
+                    evt.StopPropagation();
+                    OpenLeagues();
+                    break;
                 case ModesKey:
                     evt.StopPropagation();
                     OpenModes();
@@ -1977,7 +2004,7 @@ namespace ToyCarArena.UI
             if (claim == null) {
                 // No reward: CLAIM ×2 goes, and CLAIM still takes the gift.
                 daily.Fill(ViewModel.Daily, ViewModel);
-                daily.Refuse(dailyPopup, lifetime.Token);
+                daily.Refuse(lifetime.Token);
                 return;
             }
 

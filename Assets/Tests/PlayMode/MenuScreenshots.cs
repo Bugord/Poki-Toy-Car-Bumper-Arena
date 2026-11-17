@@ -80,9 +80,6 @@ namespace ToyCarArena.Tests.PlayMode
                 // The daily gift on day 3 (coins, CLAIM ×2 beside CLAIM) and day 7 (the mystery hat).
                 yield return Capture(directory, "daily", size, false, dailyStreak: 2);
                 yield return Capture(directory, "daily7", size, false, dailyStreak: 6);
-                // The day's tasks: under way with the first win still to come, then one done and the first win taken.
-                yield return Capture(directory, "tasks", size, false, tasks: 1);
-                yield return Capture(directory, "tasks-done", size, false, tasks: 2);
             }
 
             Strings.SetLanguage("ru");
@@ -91,8 +88,6 @@ namespace ToyCarArena.Tests.PlayMode
             yield return Capture(directory, "ru-boosted", (1080, 1920, true), false, boost: 3);
             yield return Capture(directory, "ru-daily", (1080, 1920, true), false, dailyStreak: 2);
             yield return Capture(directory, "ru-daily", (1920, 1080, false), false, dailyStreak: 2);
-            yield return Capture(directory, "ru-tasks", (1080, 1920, true), false, tasks: 2);
-            yield return Capture(directory, "ru-tasks", (1920, 1080, false), false, tasks: 2);
             Strings.SetLanguage("en");
             typeof(Strings).GetField("table", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
         }
