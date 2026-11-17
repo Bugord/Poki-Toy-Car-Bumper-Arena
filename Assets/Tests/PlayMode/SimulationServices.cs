@@ -19,6 +19,16 @@ namespace ToyCarArena.Tests.PlayMode
 
         /// <summary>False, so the measured first round is a plain one; a tutorial test sets it.</summary>
         public bool IsNewPlayer { get; set; }
+
+        /// <summary>0, so only <see cref="LosingStreak"/> eases a measured round, as it always did.</summary>
+        public int Struggle { get; set; }
+
+        public int SelfFalls { get; set; }
+
+        /// <summary>Every mode already learned unless a test says otherwise, so a measured mode is not eased.</summary>
+        public int ModeRounds { get; set; } = int.MaxValue;
+
+        public int ModeRoundsOf(ToyCarArena.Gameplay.SpecialRound kind) => ModeRounds;
     }
 
     /// <summary>

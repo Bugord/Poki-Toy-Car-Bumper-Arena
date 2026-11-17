@@ -742,6 +742,28 @@ namespace ToyCarArena.Gameplay
             [SerializeField]
             private float maxStreakEase = 0.75f;
 
+            [Tooltip("Help against driving off the edge (EdgeAssist, and with it the edge hold) added on top of the " +
+                "round's for each fall off on one's own in the visit; a round won takes one back. The bots are not eased")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float selfFallAssist = 0.2f;
+
+            [Tooltip("Most help the falls on one's own add to the edge assist")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float maxSelfFallAssist = 0.6f;
+
+            [Tooltip("Share of the way back to easy the first round of an event mode the player has never played steps " +
+                "the round (the bots and the mode's own levers that read the level); it fades out over Mode Ease Rounds")]
+            [Range(0f, 1f)]
+            [SerializeField]
+            private float modeEase = 0.4f;
+
+            [Tooltip("The player's first rounds of each event mode that are eased, the first the most; 0 none")]
+            [Min(0)]
+            [SerializeField]
+            private int modeEaseRounds = 2;
+
             [Header("Personalities")]
             [Tooltip("The personalities of a round's bots: the first as many as there are bots this round, shuffled " +
                 "among them each round; a short list repeats from its start")]
@@ -811,6 +833,18 @@ namespace ToyCarArena.Gameplay
             public int StreakStart => streakStart;
             public float StreakEase => streakEase;
             public float MaxStreakEase => maxStreakEase;
+            public float SelfFallAssist => selfFallAssist;
+            public float MaxSelfFallAssist => maxSelfFallAssist;
+            public float ModeEase => modeEase;
+            public int ModeEaseRounds => modeEaseRounds;
+
+            /// <summary>
+            /// How far a round eases towards easy for an event mode the player has played <paramref name="played"/>
+            /// rounds of: <see cref="ModeEase"/> in the first, fading to none at <see cref="ModeEaseRounds"/>.
+            /// </summary>
+            public float ModeEaseAfter(int played) => modeEaseRounds <= 0 || played >= modeEaseRounds
+                ? 0f
+                : modeEase * (1f - (float)Mathf.Max(0, played) / modeEaseRounds);
             public BotPersonality[] Mix => mix;
 
             public PersonalitySettings Personality(BotPersonality personality)

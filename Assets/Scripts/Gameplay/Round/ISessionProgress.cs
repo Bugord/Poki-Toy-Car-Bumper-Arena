@@ -47,5 +47,27 @@ namespace ToyCarArena.Gameplay.Round
         /// saved (the Game scene on its own, the simulation), so only the app's visits get the tutorial.
         /// </summary>
         bool IsNewPlayer => false;
+
+        /// <summary>
+        /// How badly the visit is going: each round lost adds one, each round not lost takes one away, never below 0. It
+        /// eases the next round like <see cref="LosingStreak"/> (the larger of the two counts), but a lone win between
+        /// losses no longer wipes it out, so a player who loses most rounds keeps the easier bots. The losing streak by
+        /// default, where nothing tracks it.
+        /// </summary>
+        int Struggle => LosingStreak;
+
+        /// <summary>
+        /// The player's falls off the floor on their own in this visit (out with no car to credit, not by the arena's
+        /// ball), less one for each round won: each adds to the help against driving off the edge
+        /// (<see cref="GameTuning.BotSettings.SelfFallAssist"/>). 0 where nothing tracks it.
+        /// </summary>
+        int SelfFalls => 0;
+
+        /// <summary>
+        /// Rounds of the event mode <paramref name="kind"/> the player has finished on this device before the round to
+        /// come: the first ones of a mode are easier (<see cref="GameTuning.BotSettings.ModeEase"/>). Where nothing is
+        /// saved (the simulation) the player knows every mode, so a measured round plays as it always did.
+        /// </summary>
+        int ModeRoundsOf(SpecialRound kind) => int.MaxValue;
     }
 }
